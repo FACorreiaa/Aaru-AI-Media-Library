@@ -70,7 +70,7 @@ swift test --package-path aaru-core
 # Server (needs Postgres: cd aaru-server && docker compose up -d)
 cd aaru-server && swift run
 cd aaru-server && swift test
-cd aaru-server && swift run aaru --db.migrate true
+cd aaru-server && swift run aaru --db-migrate
 
 # Web
 cd aaru-client && npm run dev

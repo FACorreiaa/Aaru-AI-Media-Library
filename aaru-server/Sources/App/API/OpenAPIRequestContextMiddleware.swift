@@ -11,7 +11,11 @@ extension AppRequestContext {
 struct OpenAPIRequestContextMiddleware: RouterMiddleware {
     typealias Context = AppRequestContext
 
-    func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+    func handle(
+        _ request: Request,
+        context: Context,
+        next: (Request, Context) async throws -> Response
+    ) async throws -> Response {
         try await AppRequestContext.$current.withValue(context) {
             try await next(request, context)
         }

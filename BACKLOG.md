@@ -195,17 +195,19 @@ handler test can run against an in-memory or fake store without Postgres.
 `users`, `auth_identities` (provider, provider_subject, email, unique on
 `(provider, provider_subject)`).
 
-**Done when:** `swift run aaru --db.migrate true` creates both tables against the
+**Done when:** `swift run aaru --db-migrate` creates both tables against the
 docker-compose database and is re-runnable without error.
 
 ### SRV-005 · Migration 002: titles and episodes · M
 **Needs:** SRV-004.
-`titles` with partial unique indexes on each external ID where not null (`tmdb`, `imdb`,
-`trakt`, `tvdb`, `isbn`, `open_library`); `show_episodes (title_id, season, episode,
+`titles` with partial unique indexes on each external ID where not null. TMDB and Trakt
+number movies and shows separately, so `tmdb` and `trakt` are unique per `(type, id)`;
+`imdb`, `tvdb`, `isbn`, `open_library`, and the CAT-008 anime ids (`anilist`, `mal`, `anidb`)
+are globally unique; `show_episodes (title_id, season, episode,
 air_date?, tmdb_episode_id?)` unique on `(title_id, season, episode)`.
 
-**Done when:** inserting two titles with the same non-null `tmdb` id fails at the database
-level, and two titles with null `tmdb` ids both insert.
+**Done when:** inserting two titles of the same type with the same non-null `tmdb` id fails
+at the database level, and two titles with null `tmdb` ids both insert.
 
 ### SRV-006 · Migration 003: library, progress, lists · M
 **Needs:** SRV-005.
