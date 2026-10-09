@@ -1,15 +1,15 @@
 # Aaru
 
-Aaru is a private-first media library and tracking app for movies, TV shows, and books. The name comes from the Egyptian Field of Reeds: a calm place where stories live. Collaboration (shared lists, activity, live updates) is planned, but it is not part of v1.
+Aaru is a private-first media library and tracking app for movies, TV shows, anime, and books. The name comes from the Egyptian Field of Reeds: a calm place where stories live. Social features (friends, activity, encrypted DMs, watch-together), gamification, and scrobbling are planned. They are scheduled in `BACKLOG.md` phases P3–P6 and do not start until the P2 gate ("basics done") is met.
 
 This file is the working contract for anyone — human or agent — changing the repo.
 
 ## Product rules
 
-- Aaru is the source of truth after import. Imports are one-way into Aaru. Do not build two-way sync or a conflict engine in v1.
-- Private by default. No public profiles, friend feeds, or collaborative lists in MVP.
-- Catalog metadata and user library are different layers. Never treat TMDB/Trakt/Open Library payloads as the user’s library row.
-- Every saved title must store external IDs when known: `tmdb`, `imdb`, `trakt`, `tvdb`, `isbn`.
+- Aaru is the source of truth after import. Imports and scrobbles are one-way into Aaru. Pushes to Trakt, MAL, and AniList (P3) are one-way out and are never read back as a conflict source. Do not build two-way sync or a conflict engine.
+- Private by default. A new account has no visible surface. Social is opt-in per user and friends-only; there is no global feed and no public profile page.
+- Catalog metadata and user library are different layers. Never treat TMDB/Trakt/Open Library/AniList payloads as the user’s library row.
+- Every saved title must store external IDs when known: `tmdb`, `imdb`, `trakt`, `tvdb`, `isbn`, `anilist`, `mal`, `anidb`.
 - Pogdesign CAT is a minor on-ramp (show list + optional ICS), not a first-class sync target. No CAT scraping.
 - Do not mention or implement the tattoo-artist product in this repo.
 
@@ -19,17 +19,21 @@ This file is the working contract for anyone — human or agent — changing the
 | --- | --- |
 | API server | Hummingbird 2 (Swift, structured concurrency); routes generated from `aaru-server/Sources/AppAPI/openapi.yaml` |
 | Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation). No HTTP client yet |
-| iOS | SwiftUI |
-| Mac | SwiftUI, same app target if possible |
-| Web (now) | `aaru-landing/` — marketing landing page only (Hummingbird + Mustache or Elementary, Tailwind) |
-| Web (after native launch) | `aaru-site/` — logged-in library client against the same API |
-| Database | PostgreSQL via Fluent (`hummingbird-fluent`) |
+| iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
+| Web | `aaru-client/` — SvelteKit (Svelte 5) on Cloudflare Workers, a pure client of `/v1`. Landing pages are a route group in the same app. No DB access, no business logic |
+| Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB |
+| Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1 |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient) |
 | User import — primary | Trakt OAuth |
-| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS |
-| User import — capture | Pasted text, image, or URL. One-shot, out-of-band, phase 1.5 |
+| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL XML, AniList list |
+| Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs only) |
+| Realtime (P6) | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server` |
+| Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
+| Push (P4) | APNSwift, per-device environment |
+| Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
+| User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
 | Agent model | Pluggable `ModelProviding` in `Server`. Anthropic default, user key supported, spend metered daily |
 | Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/AppMCP`. Not a second backend |
 
@@ -39,14 +43,14 @@ This file is the working contract for anyone — human or agent — changing the
 aaru/
   aaru-core/             # AaruCore: models, IDs, validation. Shared by server and clients
   aaru-server/           # Hummingbird API
-  aaru-ios/              # SwiftUI iPhone + Mac (not scaffolded)
-  aaru-landing/          # marketing landing page (not scaffolded)
-  aaru-site/             # logged-in web client on /v1, after native launch (not scaffolded)
+  aaru-ios/              # SwiftUI iPhone + Mac + widget extension (not scaffolded)
+  aaru-client/           # SvelteKit web on Cloudflare Workers: landing + logged-in client on /v1
   README.md
   ARCHITECTURE.md
   DESIGN.md              # what Aaru feels like: surfaces, agentic rules
   VIEWS.md               # surfaces + component catalog the agent may emit
   BACKLOG.md
+  BUSINESS.md            # moat + monetisation thinking. Notes, not a plan of record
   CLAUDE.md
 ```
 
@@ -68,12 +72,30 @@ cd aaru-server && swift run
 cd aaru-server && swift test
 cd aaru-server && swift run aaru --db.migrate true
 
+# Web
+cd aaru-client && npm run dev
+cd aaru-client && npm run check && npm run lint
+cd aaru-client && npm run test:unit -- --run
+
 # Format / lint (use whatever the repo actually configures)
 swiftformat .
 swiftlint
 ```
 
 Never run destructive DB commands against a non-local database.
+
+## Release channels
+
+One backend. **Beta is client-side only**, as in the other apps:
+
+| Channel | Apple | Web | API |
+| --- | --- | --- | --- |
+| Beta | TestFlight, bundle id + `.beta`, scheme "Aaru Beta", fastlane `beta` on every merge to `main` | `wrangler.staging.jsonc` Worker, deployed on every merge to `main` | production |
+| Prod | App Store, fastlane `release` on manual dispatch | `wrangler.jsonc` Worker, manual dispatch | production |
+
+The API ships only through a merged promote PR in `~/Work/production/platform/infra`. Never
+edit an app-local `*-infra/` copy. Push tokens carry their APNs environment so Beta and Prod
+apps share one API. See `BACKLOG.md` REL-001…REL-006.
 
 ## Coding conventions
 
@@ -90,7 +112,7 @@ Never run destructive DB commands against a non-local database.
 
 Use these words in code, APIs, and UI:
 
-- **Title** — a movie, show, or book in the catalog
+- **Title** — a movie, show, anime, or book in the catalog
 - **Library item** — a user’s relationship to a title
 - **Status** — consumption only: `wishlist` | `in_progress` | `finished` | `dropped`
 - **Owned** — separate `isOwned` flag; do not overload status
@@ -106,33 +128,53 @@ Use these words in code, APIs, and UI:
   Aaru's tool layer. Not an API key for a third-party developer
 - **Approval** — the user's yes to a plan an agent proposed. Approval happens inside Aaru; no
   caller approves its own plan
+- **Watch event** — one scrobble (start/pause/stop with progress) from a player. It may tick
+  progress; it is never library truth on its own
+- **Friend** — a mutual, accepted connection. There is no one-way follow
+- **Points event** — one row in the append-only points ledger, idempotent by dedupe key.
+  Never a counter
+- **Streak** — consecutive local days with at least one progress write
+- **Badge** — an award derived from points events, defined in code
+- **Room** — a watch-together session: invite, countdown, reactions, shared check-off. Aaru
+  does not control anyone's player
+- **Conversation / Message** — an end-to-end encrypted DM thread. The server only ever holds
+  ciphertext
+- **Device** — one installed client, the unit for push tokens and Signal keys
 
 Do not use “portfolio”, “watchlist-only”, or vendor names as the primary domain terms. Vendor names belong on `ExternalID` and import sources.
 
-## MVP scope (build this)
+## Basics (P0–P2, build this first)
 
-1. Auth: Sign in with Apple + email/password (or magic link). Sessions/JWT as implemented in `Server`.
-2. Search titles via TMDB / Open Library.
-3. Add to library, set status, rating, notes.
-4. TV progress by season/episode.
-5. Manual lists.
-6. Trakt OAuth import.
-7. CSV import for IMDb, Letterboxd, Goodreads.
-8. Optional CAT show-name list + ICS parse (tracked series only).
-9. iOS + Mac clients on the JSON API.
+1. Rails: root CI, Xcode project with Beta/Release, fastlane, API on `maat`, Workers beta/prod.
+2. Auth: Sign in with Apple + email/password (or magic link). Sessions/JWT as implemented in `Server`.
+3. Search titles via TMDB / AniList / Open Library.
+4. Add to library, set status, rating, notes.
+5. TV and anime progress by season/episode; calendar and Up Next.
+6. Manual lists.
+7. iOS + Mac clients on the JSON API: home rows, week grid, widgets, Live Activity.
+8. Web client (`aaru-client`) on the same API.
+9. Trakt OAuth import; CSV import for IMDb, Letterboxd, Goodreads; CAT list + ICS; TV Time, MAL, AniList.
+
+## Later phases (after the P2 gate, see `BACKLOG.md`)
+
+- P3 Tracking: scrobble ingest, Plex/Jellyfin webhooks, Stremio addon (catalogs only), one-way push to Trakt/MAL/AniList
+- P4 Social: profiles, friends, blocks, invites, friend activity and "Today" stories, push, shared lists
+- P5 Gamification: points ledger, levels, streaks, badges, friends-only leaderboard, stats
+- P6 Realtime: WebSocket gateway, libsignal DMs, watch-together rooms, SharePlay
+- P7 Agent surfaces (M13/M14)
+
+Do not write code for a later phase before the P2 gate, and do not add empty abstractions for it.
 
 ## Out of scope (do not add unless asked)
 
-- Two-way sync with Trakt/IMDb/Letterboxd
+- Two-way sync with any provider, or a conflict engine
 - A documented public API with third-party clients, quotas, and a deprecation policy
-- Scrobbling
 - Recommendations engine
-- Friend graph, activity feed, collaborative lists, WebSocket presence
-- Public profile pages
-- AniList / MyAnimeList / Serializd / SIMKL live integrations
+- A global or public activity feed; public profile pages indexed by search engines
+- Serializd / SIMKL integrations
 - Music, comics, games
-- Scraping Pogdesign, IMDb pages, or any site without an official export/API
-- Rebuilding the full native app as SSR before native launch
+- Scraping Pogdesign, IMDb pages, AniDB, or any site without an official export/API
+- Any Stremio `stream` resource or stream source
 
 ## Import order (product + matching code)
 
@@ -143,9 +185,14 @@ When implementing multi-source import for one account, apply in this order and s
 3. Letterboxd CSV
 4. Goodreads CSV
 5. CAT show list / ICS
+6. TV Time export
+7. MyAnimeList XML
+8. AniList list
 
 Capture is **not** in this order. It is a user-triggered one-shot, applied when the user asks
 and never as part of reconciling an account's connected sources.
+
+Scrobbles are not in this order either: they are live events, applied as they arrive.
 
 Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name.
 
@@ -163,8 +210,9 @@ When you add a source, status, or client, update this file and `ARCHITECTURE.md`
 - If a task needs a new table, DTO, and client screen, do them in that order so the API stays the source of behavior.
 - Update this file and `ARCHITECTURE.md` when you add a source, status, or client. Adding or
   renaming a surface or component updates `DESIGN.md` and `VIEWS.md` too.
-- Do not introduce Vapor, Node, or a second backend. MCP is a transport inside `aaru-server`,
-  not a service.
+- Do not introduce Vapor, a Node server, or a second backend. MCP, the Stremio addon, scrobble
+  webhooks, and the WebSocket gateway are transports inside `aaru-server`, not services. The
+  SvelteKit Worker is a client: it may proxy the session cookie exchange, nothing else.
 - Third-party agent access is per-user and token-scoped, over the same tool layer a tap uses.
   An outside caller gets no capability a signed-in session lacks: single-item writes behave
   like a tap, anything larger becomes a plan the user approves inside Aaru. See X-009 in

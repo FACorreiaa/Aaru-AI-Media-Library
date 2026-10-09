@@ -4,29 +4,42 @@ Surfaces and the component catalog. `DESIGN.md` says what Aaru should feel like;
 says what gets built, what each surface is allowed to emit, and which server routes back it.
 
 Rules from `CLAUDE.md` bound everything here: private by default, catalog layer and library
-layer stay separate, no vendor JSON across the API boundary, imports are one-way jobs.
+layer stay separate, no vendor JSON across the API boundary, imports are one-way jobs. Social
+surfaces are opt-in, friends-only, and wait for the Phase 2 gate.
 
 ---
 
 ## Surface map
 
-| Surface | Emits | Server routes | Milestone |
+Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + imports,
+3 Tracking, 4 Social, 5 Gamification, 6 Realtime / DMs / rooms, 7 Agent.
+
+| Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `TonightStrip`, `Shelf`, `CalendarMonth`, `JobLedger`, `UndoRibbon` | `GET /v1/library/items`, `GET /v1/imports` | M7 |
-| Composer | none — produces intent | agent tool layer | M13 |
-| Intent preview | `PlanCard` | `POST .../plan` (dry run) | M13 |
-| Work ledger | `JobLedger` | `GET /v1/imports/{id}` | M8 |
-| Title room | `TitleCard`, `SeasonMap` | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | M7 |
-| Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | M13 |
-| Shelf | `Shelf` | `GET /v1/library/items` + saved query | M6 / M7 |
-| Catch-up calendar | `CalendarMonth` | airings derived from library + `show_episodes` | M9 |
-| Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage | M9 |
-| Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | M13 |
-| Undo ribbon | `UndoRibbon` | action journal + undo endpoint | M4 |
-| Mac companion | sidebar + inspector over the same components | same `/v1` | M7 |
-| Approvals | `PlanCard` | `POST /v1/plans/{id}/approve`, `/deny` | M14 |
-| Shortcuts / App Intents | `TitleCard`, `TonightStrip` as intent snippets | agent tool layer | M14 |
-| MCP | none — headless, no rendering | `POST /v1/mcp` | M14 |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon` (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next`, `GET /v1/calendar`, `GET /v1/library/items`, `GET /v1/imports` | 2 · M7 |
+| Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
+| Composer | none — produces intent | agent tool layer | 7 · M13 |
+| Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
+| Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
+| Title room | `TitleCard`, `SeasonMap` (+ friends watching in 4) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
+| Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 |
+| Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
+| Catch-up calendar | `CalendarMonth` | `GET /v1/calendar` | 2 · M9 |
+| Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage | 2 · M9 |
+| Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | 7 · M13 |
+| Undo ribbon | `UndoRibbon` | action journal + undo endpoint | 1 · M4 |
+| Mac companion | sidebar + inspector over the same components | same `/v1` | 2 · M7 |
+| Web (`aaru-client`) | same components as Svelte views | same `/v1` | 2 · WEB-001 |
+| Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
+| Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3) | 2–3 |
+| Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
+| Profile and stats | `StatsPanel`, `BadgeShelf` | stats + badges routes | 5 · GAM-004/006 |
+| Leaderboard | `Shelf`-like ranked list, friends only | leaderboard route | 5 · GAM-005 |
+| Room | `RoomPanel` | rooms routes + `/v1/ws` | 6 · ROOM-001 |
+| Conversations | `ConversationView` | ciphertext message routes + `/v1/ws` | 6 · DM-* |
+| Approvals | `PlanCard` | `POST /v1/plans/{id}/approve`, `/deny` | 7 · M14 |
+| Shortcuts / App Intents | `TitleCard`, `TonightStrip` as intent snippets | agent tool layer | 7 · M14 |
+| MCP | none — headless, no rendering | `POST /v1/mcp` | 7 · M14 |
 
 No surface gets a private endpoint. If a view needs data no route returns, add the route,
 not a view-shaped one.
@@ -50,14 +63,37 @@ refuses and substitutes the nearest catalog piece.
 | `CalendarMonth` | Your airings | month, day → episode refs, agent highlight string |
 | `MatchTable` | Import reconciliation | `importJobId`, three buckets: matched / needs eyes / unknown |
 | `UndoRibbon` | Last agent write | `actionId`, human summary, expiry, `isUndoable` |
+| `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, network, local time, banner URL, state: watched / premiere / finale / today) |
+| `ContinueRow` | In-progress titles | ordered `libraryItemId`, next `EpisodeKey`, time left, remaining count + duration, `isFinale` |
+| `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
+| `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |
+| `NowPlayingCard` | Current watch | `libraryItemId`, `EpisodeKey`, progress, started at, ends at, source (check-in / scrobble) |
+| `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
+| `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
+| `BadgeShelf` | Earned badges | badge ids, tier, earned at |
+| `StatsPanel` | Profile numbers | days watched, episodes, mean score, breakdowns |
+| `RoomPanel` | Watch-together room | `roomId`, title / episode, members + drift, countdown, state |
+| `ConversationView` | E2E conversation | `conversationId`, participants; message bodies decrypt on device only |
 
 `PlanCard`, `JobLedger`, `MatchTable`, and `UndoRibbon` are the four that make agent writes
 safe. None of them is optional decoration.
 
-**The catalog is nine components and phase 1.5 did not grow it.** Capture, remote approval,
-Shortcuts, and MCP all render on the nine above. That is the check on the design: a new agent
-surface that needs a tenth component is adding product, not adding reach. If a future change
-needs one, say so out loud here rather than quietly appending a row.
+**The catalog grows from nine to twenty, said out loud here (2026-10-09).** Phase 1.5 did not
+grow it, and Capture, remote approval, Shortcuts, and MCP still render on the original nine.
+The eleven new components add product, not agent reach, and each has a reason:
+
+- `WeekGrid` (Phase 2) — the CAT week schedule is the one view users of that site ask for by
+  name; `CalendarMonth` cannot show seven dense days.
+- `ContinueRow`, `StartRow`, `CalendarRow` (Phase 2) — the Field needs concrete rows that work
+  without the agent; these are Trakt's proven shapes.
+- `NowPlayingCard` (Phase 2) — the same data drives the Live Activity; one renderer for both.
+- `FriendStories` (Phase 4) — the only social read surface on Home.
+- `StreakBar`, `BadgeShelf`, `StatsPanel` (Phase 5) — gamification has no home in the nine.
+- `RoomPanel`, `ConversationView` (Phase 6) — realtime and E2E messaging are new objects.
+
+The agent may emit the read-only social components but never initiates a friend request, a
+message, or a room invite: those are user acts with no agent write path. A twenty-first
+component still needs a paragraph here.
 
 ---
 
@@ -115,19 +151,28 @@ Wording that follows from this: the user "pins a shelf", "adds to a list". Do no
 
 Client work follows the server, per `CLAUDE.md`: table, then DTO, then screen.
 
-1. **M4** — action journal + undo endpoint land with library mutations, not after them.
-2. **M6** — `saved_queries` alongside lists, so the Shelf/List split exists in the schema
-   from the start.
-3. **M7** — `TitleCard`, `SeasonMap`, `Shelf`, `UndoRibbon` as plain SwiftUI views driven by
-   direct user input. No agent yet. This proves the components before the model touches them.
-4. **M8/M9** — `JobLedger`, `MatchTable`, `CalendarMonth` with real import data.
-5. **M13** — composer, `PlanCard`, `TonightStrip`, and the tool layer
+0. **Phase 0 · Rails** — no views. CI, Xcode project, release lanes, infra.
+1. **Phase 1 · M4** — action journal + undo endpoint land with library mutations, not after
+   them.
+2. **Phase 1 · M6** — `saved_queries` alongside lists, so the Shelf/List split exists in the
+   schema from the start. `CAL-001` and `UPN-001` give the rows and the grid their data.
+3. **Phase 2 · M7** — `TitleCard`, `SeasonMap`, `Shelf`, `UndoRibbon`, `ContinueRow`,
+   `StartRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` as plain SwiftUI views driven by
+   direct user input, the same set in `aaru-client` (Svelte), then widgets from the same
+   snapshot. No agent yet. This proves the components before the model touches them.
+4. **Phase 2 · M8/M9** — `JobLedger`, `MatchTable`, `CalendarMonth` with real import data.
+   **Gate:** basics done. Nothing below starts before it.
+5. **Phase 3** — `NowPlayingCard` fed by scrobbles. No new component.
+6. **Phase 4** — `FriendStories`, friends watching on the Title room.
+7. **Phase 5** — `StreakBar`, `BadgeShelf`, `StatsPanel`, streak widget.
+8. **Phase 6** — `RoomPanel`, `ConversationView` on the WebSocket gateway.
+9. **Phase 7 · M13** — composer, `PlanCard`, `TonightStrip`, and the tool layer
    (`search_titles`, `read_library`, `plan_import`, `apply_library_patch`, `list_airs`) on top
    of components that already work by hand. Then Capture, which is an import source reusing
    `JobLedger` / `MatchTable` / `PlanCard`, and the model provider behind it.
-6. **M14** — the outbound transports on the finished tool layer: App Intents first (no server
-   work), then MCP with agent tokens and remote approval. `Approvals` renders a `PlanCard` a
-   caller proposed; nothing new is drawn.
+10. **Phase 7 · M14** — the outbound transports on the finished tool layer: App Intents first
+    (no server work), then MCP with agent tokens and remote approval. `Approvals` renders a
+    `PlanCard` a caller proposed; nothing new is drawn.
 
 The order matters: every component must be usable without the agent before the agent is
 allowed to emit it. That is what keeps a failed model call from producing a dead screen.
