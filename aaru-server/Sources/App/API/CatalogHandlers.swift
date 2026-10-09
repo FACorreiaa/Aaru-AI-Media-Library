@@ -6,27 +6,13 @@ import OpenAPIRuntime
 extension APIImplementation {
     func searchCatalog(_ input: Operations.SearchCatalog.Input) async throws -> Operations.SearchCatalog.Output {
         guard let scope = SearchScope(rawValue: input.query._type.rawValue) else { throw AppError.badRequest() }
-        do {
-            let hits = try await catalog.search(query: input.query.q, scope: scope)
-            return .ok(.init(body: .json(.init(items: hits.map(Components.Schemas.CatalogHit.init)))))
-        } catch let error as ProviderError {
-            throw AppError(error)
-        }
+        let hits = try await catalog.search(query: input.query.q, scope: scope)
+        return .ok(.init(body: .json(.init(items: hits.map(Components.Schemas.CatalogHit.init)))))
     }
 
     func getTitle(_ input: Operations.GetTitle.Input) async throws -> Operations.GetTitle.Output {
         guard let id = TitleID(uuidString: input.path.id) else { throw AppError.notFound() }
-        do {
-            return try await .ok(.init(body: .json(.init(catalog.detail(id)))))
-        } catch let error as ProviderError {
-            throw AppError(error)
-        }
-    }
-}
-
-extension AppError {
-    init(_ error: ProviderError) {
-        self.init(status: .badGateway, code: "provider_unavailable", message: "The catalog is unavailable. Try again.")
+        return try await .ok(.init(body: .json(.init(catalog.detail(id)))))
     }
 }
 

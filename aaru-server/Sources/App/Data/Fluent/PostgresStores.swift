@@ -17,7 +17,7 @@ extension Stores {
             magicLinks: PostgresMagicLinkStore(sql: sql),
             titles: PostgresTitleStore(sql: sql),
             animeMappings: PostgresAnimeMappingStore(sql: sql),
-            library: PostgresLibraryStore(sql: sql),
+            library: PostgresLibraryStore(database: database),
             lists: PostgresListStore(database: database, sql: sql),
             importJobs: PostgresImportJobStore(sql: sql)
         )
@@ -78,62 +78,6 @@ struct PostgresUserStore: UserStore {
             .where("provider_subject", .equal, subject)
             .first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
         return row.map { UserID($0.userId) }
-    }
-}
-
-struct PostgresLibraryStore: LibraryStore {
-    let sql: any SQLDatabase
-
-    private struct Row: Codable {
-        let id: UUID
-        let userId: UUID
-        let titleId: UUID
-        let status: String
-        let isOwned: Bool
-        let rating: Double?
-        let notes: String?
-        let addedAt: Date
-        let updatedAt: Date
-        let finishedAt: Date?
-    }
-
-    func insert(_ item: LibraryItem) async throws {
-        let row = Row(
-            id: item.id.rawValue,
-            userId: item.userID.rawValue,
-            titleId: item.titleID.rawValue,
-            status: item.status.rawValue,
-            isOwned: item.isOwned,
-            rating: item.rating?.value,
-            notes: item.notes,
-            addedAt: item.addedAt,
-            updatedAt: item.updatedAt,
-            finishedAt: item.finishedAt
-        )
-        try await mappingConflicts("This title is already in the library.") {
-            try await sql.insert(into: "library_items").model(row, keyEncodingStrategy: .convertToSnakeCase).run()
-        }
-    }
-
-    func item(id: LibraryItemID, userID: UserID) async throws -> LibraryItem? {
-        guard let row = try await sql.select().columns(SQLLiteral.all).from("library_items")
-            .where("id", .equal, id.rawValue)
-            .where("user_id", .equal, userID.rawValue)
-            .first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase),
-            let status = LibraryStatus(rawValue: row.status)
-        else { return nil }
-        return try LibraryItem(
-            id: LibraryItemID(row.id),
-            userID: UserID(row.userId),
-            titleID: TitleID(row.titleId),
-            status: status,
-            isOwned: row.isOwned,
-            rating: row.rating.map(Rating.init),
-            notes: row.notes,
-            addedAt: row.addedAt,
-            updatedAt: row.updatedAt,
-            finishedAt: row.finishedAt
-        )
     }
 }
 

@@ -83,3 +83,28 @@ extension ValidationError {
         }
     }
 }
+
+/// A domain error that knows its HTTP shape. `ErrorMiddleware` renders any of these.
+protocol AppErrorConvertible: Error {
+    var appError: AppError { get }
+}
+
+extension ProviderError: AppErrorConvertible {
+    var appError: AppError {
+        AppError(status: .badGateway, code: "provider_unavailable", message: "The catalog is unavailable. Try again.")
+    }
+}
+
+extension ResolutionError: AppErrorConvertible {}
+
+extension ActionConflict: AppErrorConvertible {
+    var appError: AppError {
+        AppError(status: .conflict, code: "conflict", message: message)
+    }
+}
+
+extension StoreConflict: AppErrorConvertible {
+    var appError: AppError {
+        AppError(status: .conflict, code: "conflict", message: message)
+    }
+}

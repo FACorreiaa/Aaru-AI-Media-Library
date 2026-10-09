@@ -138,11 +138,45 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func insert(_: LibraryItem) async throws {
+    func apply(_: LibraryOp, userID _: UserID, actor _: Actor, kind _: String, summary _: String) async throws
+        -> ActionRecord
+    {
         throw Touched()
     }
 
     func item(id _: LibraryItemID, userID _: UserID) async throws -> LibraryItem? {
+        throw Touched()
+    }
+
+    func item(userID _: UserID, titleID _: TitleID) async throws -> LibraryItem? {
+        throw Touched()
+    }
+
+    func entry(id _: LibraryItemID, userID _: UserID, now _: Date) async throws -> LibraryEntry? {
+        throw Touched()
+    }
+
+    func entries(userID _: UserID, filter _: LibraryFilter, after _: LibraryCursor?, limit _: Int, now _: Date)
+        async throws -> (entries: [LibraryEntry], next: LibraryCursor?)
+    {
+        throw Touched()
+    }
+
+    func changes(userID _: UserID, since _: Date?, now _: Date) async throws
+        -> (entries: [LibraryEntry], deleted: [LibraryItemID])
+    {
+        throw Touched()
+    }
+
+    func watched(itemID _: LibraryItemID) async throws -> Set<EpisodeKey> {
+        throw Touched()
+    }
+
+    func actions(userID _: UserID, limit _: Int) async throws -> [ActionRecord] {
+        throw Touched()
+    }
+
+    func undo(actionID _: UUID, userID _: UserID) async throws -> ActionRecord {
         throw Touched()
     }
 
@@ -205,10 +239,10 @@ struct UntouchedAppleVerifier: AppleIdentityVerifying {
 /// Router over fake stores, for contract tests that need no database.
 func fakeRouter(databaseReachable: Bool = true) throws -> Router<AppRequestContext> {
     let stores = fakeStores(databaseReachable: databaseReachable)
+    let auth = AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil)
     return try buildRouter(
         stores: stores,
-        auth: AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil),
-        catalog: CatalogService(stores: stores, catalogs: FakeCatalog.providers(FakeCatalog()))
+        services: Services.make(stores: stores, catalogs: FakeCatalog.providers(FakeCatalog()), auth: auth)
     )
 }
 

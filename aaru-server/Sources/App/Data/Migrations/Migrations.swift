@@ -13,6 +13,7 @@ let allMigrations: [any Migration] = [
     CreateImportJobs(),
     CreateSessions(),
     AddCatalogDetail(),
+    CreateActionJournal(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {
@@ -270,5 +271,51 @@ struct AddCatalogDetail: SQLMigration {
         "ALTER TABLE titles DROP COLUMN runtime_minutes",
         "ALTER TABLE titles DROP COLUMN status",
         "ALTER TABLE titles DROP COLUMN is_anime",
+    ]
+}
+
+/// AUD-001, LIB-004, PROG-004 · action journal, deletion tombstones, book progress.
+struct CreateActionJournal: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE actions (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            actor text NOT NULL CHECK (actor IN ('user', 'agent', 'external_agent')),
+            kind text NOT NULL,
+            summary text NOT NULL,
+            item_ids uuid[] NOT NULL DEFAULT '{}',
+            inverse jsonb NOT NULL,
+            undo_of uuid REFERENCES actions(id) ON DELETE SET NULL,
+            undone_at timestamptz,
+            created_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+        "CREATE INDEX actions_user_created ON actions (user_id, created_at DESC)",
+        """
+        CREATE TABLE library_tombstones (
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            library_item_id uuid NOT NULL,
+            deleted_at timestamptz NOT NULL DEFAULT now(),
+            PRIMARY KEY (user_id, library_item_id)
+        )
+        """,
+        "CREATE INDEX library_tombstones_user_deleted ON library_tombstones (user_id, deleted_at)",
+        "ALTER TABLE library_items ADD COLUMN book_page integer CHECK (book_page >= 0)",
+        """
+        ALTER TABLE library_items ADD COLUMN book_percent double precision
+            CHECK (book_percent BETWEEN 0 AND 100)
+        """,
+        """
+        ALTER TABLE library_items ADD CONSTRAINT library_items_one_book_progress
+            CHECK (book_page IS NULL OR book_percent IS NULL)
+        """,
+    ]
+    let backward = [
+        "ALTER TABLE library_items DROP CONSTRAINT library_items_one_book_progress",
+        "ALTER TABLE library_items DROP COLUMN book_percent",
+        "ALTER TABLE library_items DROP COLUMN book_page",
+        "DROP TABLE library_tombstones",
+        "DROP TABLE actions",
     ]
 }

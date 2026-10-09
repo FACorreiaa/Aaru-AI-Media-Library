@@ -460,7 +460,8 @@ store for a first-class view, so it is user data with retention, not observabili
 **Done when:** a `PATCH` and a season bulk-mark each produce exactly one journal row inside
 the same transaction as the write, and a failed write leaves no row.
 
-**Decided 2026-10-09:** keep 90 days of journal rows, and the last 20 per user forever.
+**Decided 2026-10-09:** keep 90 days of journal rows, and the last 20 per user forever. The prune
+runs as a job, so it lands with JOB-001; until then nothing is deleted.
 
 ### AUD-002 · Undo endpoint · M
 **Needs:** AUD-001, PROG-002.

@@ -16,6 +16,7 @@ identifier_name:
     - id
     - x
     - y
+    - op # a library operation (LibraryOp); the domain word
 
 opt_in_rules:
   - empty_count

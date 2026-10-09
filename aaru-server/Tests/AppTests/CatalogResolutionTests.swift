@@ -201,10 +201,8 @@ struct CatalogResolutionTests {
             let (_, token) = try await signedInUser(stores)
             let auth = AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil)
             let app = try Application(router: buildRouter(
-                stores: stores, auth: auth, catalog: CatalogService(
-                    stores: stores,
-                    catalogs: FakeCatalog.providers(fake)
-                )
+                stores: stores,
+                services: Services.make(stores: stores, catalogs: FakeCatalog.providers(fake), auth: auth)
             ))
             try await app.test(.router) { client in
                 let headers: HTTPFields = [.authorization: "Bearer \(token)"]

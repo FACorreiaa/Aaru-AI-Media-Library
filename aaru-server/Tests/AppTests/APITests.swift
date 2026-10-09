@@ -127,7 +127,7 @@ struct ErrorLoggingTests {
     func noRequestInLogs() {
         let metadata = ErrorMiddleware<AppRequestContext>.logMetadata(
             for: ProviderError(provider: "tmdb", kind: .unavailable),
-            appError: AppError(ProviderError(provider: "tmdb", kind: .unavailable))
+            appError: ProviderError(provider: "tmdb", kind: .unavailable).appError
         )
         let rendered = metadata.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: " ")
         #expect(rendered ==

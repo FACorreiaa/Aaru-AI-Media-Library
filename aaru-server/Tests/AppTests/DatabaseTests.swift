@@ -71,21 +71,28 @@ struct DatabaseTests {
             )
             let title = Title(type: .movie, title: "Dune")
             try await stores.titles.insert(title)
-            let item = try LibraryItem(
-                userID: user,
-                titleID: title.id,
-                status: .wishlist,
-                rating: Rating(8.5),
-                addedAt: wholeSecondNow(),
-                updatedAt: wholeSecondNow()
+            let snapshot = ItemSnapshot(
+                id: LibraryItemID(), titleID: title.id,
+                fields: ItemFields(status: .wishlist, rating: 8.5, isOwned: false), addedAt: wholeSecondNow(),
+                watched: []
             )
-            try await stores.library.insert(item)
-            #expect(try await stores.library.item(id: item.id, userID: user) == item)
+            try await stores.library.apply(.insertItem(snapshot), userID: user, actor: .user, kind: "add", summary: "a")
+            let stored = try await stores.library.item(id: snapshot.id, userID: user)
+            #expect(try stored?.rating == Rating(8.5))
+            #expect(stored?.addedAt == snapshot.addedAt)
             await #expect(throws: StoreConflict.self) {
-                try await stores.library.insert(LibraryItem(userID: user, titleID: title.id, status: .finished))
+                var duplicate = snapshot
+                duplicate.id = LibraryItemID()
+                try await stores.library.apply(
+                    .insertItem(duplicate),
+                    userID: user,
+                    actor: .user,
+                    kind: "add",
+                    summary: "b"
+                )
             }
             // Another user cannot read it.
-            #expect(try await stores.library.item(id: item.id, userID: UserID()) == nil)
+            #expect(try await stores.library.item(id: snapshot.id, userID: UserID()) == nil)
         }
     }
 

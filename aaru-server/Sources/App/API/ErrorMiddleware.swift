@@ -35,6 +35,8 @@ struct ErrorMiddleware<Context: RequestContext>: RouterMiddleware {
             return AppError(error)
         case let error as HTTPError:
             return AppError(error)
+        case let error as any AppErrorConvertible:
+            return error.appError
         case let error as ServerError:
             // OpenAPI wraps handler errors; prefer the handler's own meaning.
             let underlying = appError(for: error.underlyingError)

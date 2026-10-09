@@ -6,8 +6,19 @@ import OpenAPIRuntime
 /// `Stores` and to business rules through services.
 struct APIImplementation: APIProtocol {
     let stores: Stores
-    let auth: AuthService
-    let catalog: CatalogService
+    let services: Services
+
+    var auth: AuthService {
+        services.auth
+    }
+
+    var catalog: CatalogService {
+        services.catalog
+    }
+
+    var library: LibraryService {
+        services.library
+    }
 
     func getHealth(_: Operations.GetHealth.Input) async throws -> Operations.GetHealth.Output {
         if await stores.health.isReachable() {

@@ -49,8 +49,8 @@ struct AuthFlowTests {
                     URL(string: "https://aaru.test/auth/verify")!
                 )
             )
-            let catalog = CatalogService(stores: stores, catalogs: FakeCatalog.providers(FakeCatalog()))
-            let app = try Application(router: buildRouter(stores: stores, auth: auth, catalog: catalog))
+            let services = Services.make(stores: stores, catalogs: FakeCatalog.providers(FakeCatalog()), auth: auth)
+            let app = try Application(router: buildRouter(stores: stores, services: services))
             try await app.test(.router) { client in try await body(client, stores) }
         }
     }
@@ -197,7 +197,13 @@ struct AuthFlowTests {
             // Give the user rows in every user-owned table that exists today.
             let title = Title(type: .movie, title: "Dune")
             try await stores.titles.insert(title)
-            try await stores.library.insert(LibraryItem(userID: userID, titleID: title.id, status: .wishlist))
+            try await stores.library.apply(
+                .insertItem(ItemSnapshot(
+                    id: LibraryItemID(), titleID: title.id,
+                    fields: ItemFields(status: .wishlist, isOwned: false), addedAt: Date(), watched: []
+                )),
+                userID: userID, actor: .user, kind: "add", summary: "Added"
+            )
             try await stores.lists.create(AaruList(userID: userID, name: "L", titleIDs: [title.id]))
             try await stores.importJobs.insert(ImportJob(userID: userID, source: .trakt))
 

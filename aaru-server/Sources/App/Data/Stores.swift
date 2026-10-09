@@ -99,10 +99,34 @@ protocol AnimeMappingStore: Sendable {
     func upsert(_ mapping: AnimeMapping) async throws
 }
 
+/// The library and its journal. Every write goes through `apply`, which runs the op,
+/// records its inverse in `actions`, and commits both or neither (AUD-001, X-007).
 protocol LibraryStore: Sendable {
-    /// Throws `StoreConflict` when the user already has an item for the title.
-    func insert(_ item: LibraryItem) async throws
+    /// Applies `op` for `userID` in one transaction and journals its inverse.
+    /// Throws `StoreConflict` on a duplicate (user, title) and `AppError.notFound` when an
+    /// op names an item the user does not own.
+    @discardableResult
+    func apply(_ op: LibraryOp, userID: UserID, actor: Actor, kind: String, summary: String) async throws
+        -> ActionRecord
     func item(id: LibraryItemID, userID: UserID) async throws -> LibraryItem?
+    func item(userID: UserID, titleID: TitleID) async throws -> LibraryItem?
+    func entry(id: LibraryItemID, userID: UserID, now: Date) async throws -> LibraryEntry?
+    func entries(
+        userID: UserID,
+        filter: LibraryFilter,
+        after: LibraryCursor?,
+        limit: Int,
+        now: Date
+    ) async throws -> (entries: [LibraryEntry], next: LibraryCursor?)
+    /// Items changed after `since` (all when nil), ids deleted after it, and the token to
+    /// pass next time.
+    func changes(userID: UserID, since: Date?, now: Date) async throws
+        -> (entries: [LibraryEntry], deleted: [LibraryItemID])
+    func watched(itemID: LibraryItemID) async throws -> Set<EpisodeKey>
+    func actions(userID: UserID, limit: Int) async throws -> [ActionRecord]
+    /// Applies the action's inverse and journals that as a new `undo` action. Throws
+    /// `ActionConflict` if it was already undone or its target no longer matches.
+    func undo(actionID: UUID, userID: UserID) async throws -> ActionRecord
 }
 
 protocol ListStore: Sendable {

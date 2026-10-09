@@ -33,11 +33,11 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let transport = AsyncHTTPTransport(client: .shared)
     let auth = makeAuthService(config: config, stores: stores, transport: transport)
     let catalogs = makeCatalogProviders(config: config, transport: transport)
-    let catalog = CatalogService(stores: stores, catalogs: catalogs)
+    let services = Services.make(stores: stores, catalogs: catalogs, auth: auth)
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
-    let router = try buildRouter(stores: stores, auth: auth, catalog: catalog)
+    let router = try buildRouter(stores: stores, services: services)
     return Application(
         router: router,
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
@@ -67,7 +67,7 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
 }
 
 /// Builds the router: logging, the shared error shape, auth, then the generated `/v1` handlers.
-func buildRouter(stores: Stores, auth: AuthService, catalog: CatalogService) throws -> Router<AppRequestContext> {
+func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
         LogRequestsMiddleware(.info)
@@ -76,7 +76,7 @@ func buildRouter(stores: Stores, auth: AuthService, catalog: CatalogService) thr
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()
     }
-    try APIImplementation(stores: stores, auth: auth, catalog: catalog).registerHandlers(on: router)
+    try APIImplementation(stores: stores, services: services).registerHandlers(on: router)
     return router
 }
 
