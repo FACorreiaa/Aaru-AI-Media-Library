@@ -1,0 +1,8 @@
+#include "Base.xcconfig"
+
+// App Store.
+APP_BUNDLE_ID = com.fernandocorreia.aaru
+APP_DISPLAY_NAME = Aaru
+APP_ICON_NAME = AppIcon
+// Placeholder until the domain exists (BACKLOG REL-005 OPEN).
+API_BASE_URL = https:/$()/api.aaru.example

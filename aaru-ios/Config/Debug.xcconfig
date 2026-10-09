@@ -1,0 +1,8 @@
+#include "Base.xcconfig"
+
+// Local development: the Beta identity (no extra App ID to register) against a
+// server on this machine (`cd aaru-server && swift run`).
+APP_BUNDLE_ID = com.fernandocorreia.aaru.beta
+APP_DISPLAY_NAME = Aaru Dev
+APP_ICON_NAME = AppIconBeta
+API_BASE_URL = http:/$()/localhost:8080

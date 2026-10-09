@@ -1,0 +1,15 @@
+// Shared by Debug, Beta and Release. Per-variant values (bundle id, display
+// name, icon, API base URL) live in Debug.xcconfig / Beta.xcconfig /
+// Release.xcconfig, which include this file.
+//
+// Secrets.xcconfig is git-ignored. CI writes it from the SECRETS_XCCONFIG
+// Actions secret; locally, copy Secrets.example.xcconfig. The optional include
+// keeps a fresh clone building without it.
+
+DEVELOPMENT_TEAM = 84X9WYBF36
+
+// The app and the widget extension share one App Group and one keychain group,
+// both derived from the app's bundle id so Beta and Release never share data.
+APP_GROUP_ID = group.$(APP_BUNDLE_ID)
+
+#include? "Secrets.xcconfig"
