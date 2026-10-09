@@ -35,8 +35,12 @@ public struct MediaRef: Codable, Hashable, Sendable {
 
     /// True when the server has something to resolve against.
     public var isResolvable: Bool {
-        if titleID != nil { return true }
-        if !ids.isEmpty { return true }
+        if titleID != nil {
+            return true
+        }
+        if !ids.isEmpty {
+            return true
+        }
         guard let title else { return false }
         return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && year != nil
     }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-
 @testable import AaruCore
 
 /// Encodes then decodes a value and returns the result, so a test can assert the
@@ -11,11 +10,10 @@ private func roundTrip<T: Codable & Equatable>(_ value: T) throws -> T {
     return try JSONDecoder().decode(T.self, from: data)
 }
 
-@Suite
 struct CodableRoundTripTests {
     @Test
     func titleSurvivesRoundTrip() throws {
-        let title = Title(
+        let title = try Title(
             type: .show,
             title: "Severance",
             originalTitle: "Severance",
@@ -27,8 +25,8 @@ struct CodableRoundTripTests {
                 Season(
                     number: 1,
                     name: "Season 1",
-                    episodes: [Episode(key: try EpisodeKey(season: 1, episode: 1), name: "Good News About Hell")]
-                )
+                    episodes: [Episode(key: EpisodeKey(season: 1, episode: 1), name: "Good News About Hell")]
+                ),
             ]
         )
         #expect(try roundTrip(title) == title)
@@ -36,16 +34,16 @@ struct CodableRoundTripTests {
 
     @Test
     func libraryItemSurvivesRoundTrip() throws {
-        let item = LibraryItem(
+        let item = try LibraryItem(
             userID: UserID(),
             titleID: TitleID(),
             status: .inProgress,
             isOwned: true,
-            rating: try Rating(8.5),
+            rating: Rating(8.5),
             notes: "Rewatch before season 3.",
             progress: .show(
                 ShowProgress(
-                    watched: [try EpisodeKey(season: 1, episode: 1), try EpisodeKey(season: 1, episode: 2)],
+                    watched: [EpisodeKey(season: 1, episode: 1), EpisodeKey(season: 1, episode: 2)],
                     currentSeason: 1,
                     currentEpisode: 3
                 )
@@ -60,7 +58,7 @@ struct CodableRoundTripTests {
 
     @Test
     func bookProgressSurvivesRoundTrip() throws {
-        let progress = Progress.book(try BookProgress(page: 120, percent: 34.5))
+        let progress = try Progress.book(BookProgress(page: 120, percent: 34.5))
         let decoded = try roundTrip(progress)
         #expect(decoded.book?.page == 120)
         #expect(decoded.book?.percent == 34.5)
@@ -92,7 +90,7 @@ struct CodableRoundTripTests {
     func identifiersEncodeAsBareUUIDStrings() throws {
         let id = TitleID()
         let data = try JSONEncoder().encode(id)
-        #expect(String(decoding: data, as: UTF8.self) == "\"\(id.rawValue.uuidString)\"")
+        #expect(String(bytes: data, encoding: .utf8) == "\"\(id.rawValue.uuidString)\"")
         #expect(try JSONDecoder().decode(TitleID.self, from: data) == id)
     }
 }

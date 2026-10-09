@@ -1,10 +1,8 @@
 import Testing
-
 @testable import AaruCore
 
 /// Raw values are stored on the server and cached on clients. Changing one is a
 /// migration, not a rename — these tests exist to make that break loudly.
-@Suite
 struct WireContractTests {
     @Test
     func libraryStatusRawValuesAreStable() {

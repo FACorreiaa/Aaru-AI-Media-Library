@@ -24,4 +24,5 @@ opt_in_rules:
   - unused_import
 
 disabled_rules:
+  - trailing_comma # swiftformat owns commas
   - trailing_whitespace

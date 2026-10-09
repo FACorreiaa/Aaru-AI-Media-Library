@@ -35,12 +35,24 @@ public struct ExternalIDs: Codable, Hashable, Sendable {
     /// Every identifier that is set, as `(provider, value)` pairs.
     public var known: [(provider: String, value: String)] {
         var pairs: [(String, String)] = []
-        if let tmdb { pairs.append(("tmdb", tmdb)) }
-        if let imdb { pairs.append(("imdb", imdb)) }
-        if let trakt { pairs.append(("trakt", trakt)) }
-        if let tvdb { pairs.append(("tvdb", tvdb)) }
-        if let isbn { pairs.append(("isbn", isbn)) }
-        if let openLibrary { pairs.append(("openLibrary", openLibrary)) }
+        if let tmdb {
+            pairs.append(("tmdb", tmdb))
+        }
+        if let imdb {
+            pairs.append(("imdb", imdb))
+        }
+        if let trakt {
+            pairs.append(("trakt", trakt))
+        }
+        if let tvdb {
+            pairs.append(("tvdb", tvdb))
+        }
+        if let isbn {
+            pairs.append(("isbn", isbn))
+        }
+        if let openLibrary {
+            pairs.append(("openLibrary", openLibrary))
+        }
         return pairs
     }
 

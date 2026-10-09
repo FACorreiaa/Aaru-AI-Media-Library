@@ -16,6 +16,10 @@ identifier_name:
     - id
     - x
     - y
+    # pairwise comparisons in matching code and its tests
+    - a
+    - b
+    - c
 
 opt_in_rules:
   - empty_count
@@ -24,4 +28,5 @@ opt_in_rules:
   - unused_import
 
 disabled_rules:
+  - trailing_comma # swiftformat owns commas
   - trailing_whitespace

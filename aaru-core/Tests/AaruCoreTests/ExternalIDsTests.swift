@@ -1,8 +1,6 @@
 import Testing
-
 @testable import AaruCore
 
-@Suite
 struct ExternalIDsTests {
     @Test
     func emptyIsEmpty() {
