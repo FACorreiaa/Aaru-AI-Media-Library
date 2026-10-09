@@ -311,6 +311,185 @@ paths:
               schema: {$ref: '#/components/schemas/Action'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/lists:
+    get:
+      operationId: listLists
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateList'}
+      responses:
+        '200':
+          description: The new list.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getList
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: renameList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RenameList'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteList
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists/{id}/items:
+    post:
+      operationId: addListItem
+      summary: Add a title to a list. It need not be in the library.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AddListItem'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists/{id}/items/{titleId}:
+    delete:
+      operationId: removeListItem
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: titleId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists/{id}/order:
+    put:
+      operationId: reorderList
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ListOrder'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/shelves:
+    get:
+      operationId: listShelves
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShelfList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createShelf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateShelf'}
+      responses:
+        '200':
+          description: The new shelf.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Shelf'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/shelves/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: updateShelf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateShelf'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Shelf'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteShelf
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/shelves/{id}/items:
+    get:
+      operationId: listShelfItems
+      summary: The shelf's query, resolved now. Same DTO as GET /v1/library/items.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibraryPage'}
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -615,6 +794,92 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/Action'}
+    ListSummary:
+      type: object
+      required: [id, name, itemCount, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        itemCount: {type: integer}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    ListList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ListSummary'}
+    ListDetail:
+      type: object
+      required: [id, name, titles, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        titles:
+          type: array
+          items: {$ref: '#/components/schemas/TitleSummary'}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    CreateList:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    RenameList:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    AddListItem:
+      type: object
+      required: [mediaRef]
+      properties:
+        mediaRef: {$ref: '#/components/schemas/MediaRef'}
+    ListOrder:
+      type: object
+      required: [titleIds]
+      properties:
+        titleIds:
+          type: array
+          items: {type: string, format: uuid}
+    ShelfFilter:
+      type: object
+      description: The same filters GET /v1/library/items accepts.
+      properties:
+        type: {$ref: '#/components/schemas/MediaType'}
+        anime: {type: boolean}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+        owned: {type: boolean}
+        list: {type: string, format: uuid}
+    Shelf:
+      type: object
+      required: [id, name, filter, isPinned]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        filter: {$ref: '#/components/schemas/ShelfFilter'}
+        isPinned: {type: boolean}
+    ShelfList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Shelf'}
+    CreateShelf:
+      type: object
+      required: [name, filter]
+      properties:
+        name: {type: string}
+        filter: {$ref: '#/components/schemas/ShelfFilter'}
+        isPinned: {type: boolean}
+    UpdateShelf:
+      type: object
+      properties:
+        name: {type: string}
+        filter: {$ref: '#/components/schemas/ShelfFilter'}
+        isPinned: {type: boolean}
     Health:
       type: object
       required: [status]

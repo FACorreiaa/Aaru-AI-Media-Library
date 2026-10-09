@@ -65,14 +65,28 @@ struct PostgresLibraryStore: LibraryStore {
     }
 
     /// Runs one op inside the caller's transaction and returns its inverse.
-    private static func run(_ op: LibraryOp, userID: UserID, sql: any SQLDatabase) async throws -> LibraryOp {
+    static func run(_ op: LibraryOp, userID: UserID, sql: any SQLDatabase) async throws -> LibraryOp {
+        switch op {
+        case .insertList, .deleteList, .renameList, .setListMembers:
+            return try await runListOp(op, userID: userID, sql: sql)
+        case let .batch(ops):
+            var inverses: [LibraryOp] = []
+            for child in ops {
+                try await inverses.append(run(child, userID: userID, sql: sql))
+            }
+            return .batch(inverses.reversed())
+        default:
+            return try await runItemOp(op, userID: userID, sql: sql)
+        }
+    }
+
+    private static func runItemOp(_ op: LibraryOp, userID: UserID, sql: any SQLDatabase) async throws -> LibraryOp {
         switch op {
         case let .insertItem(snapshot):
             try await insert(snapshot, userID: userID, sql: sql)
             return .deleteItem(snapshot.id)
         case let .deleteItem(id):
-            let snapshot = try await delete(id, userID: userID, sql: sql)
-            return .insertItem(snapshot)
+            return try await .insertItem(delete(id, userID: userID, sql: sql))
         case let .setFields(id, fields):
             let previous = try await lockedFields(id, userID: userID, sql: sql)
             try await sql.raw("""
@@ -84,32 +98,38 @@ struct PostgresLibraryStore: LibraryStore {
             """).run()
             return .setFields(id, previous)
         case let .setEpisodes(id, watch, unwatch):
-            _ = try await lockedFields(id, userID: userID, sql: sql)
-            let current = try await watchedKeys(id, sql: sql)
-            let added = watch.filter { !current.contains($0) }
-            let removed = unwatch.filter { current.contains($0) }
-            for key in added {
-                try await sql.raw("""
-                INSERT INTO episode_progress (id, library_item_id, season, episode)
-                VALUES (\(bind: UUID()), \(bind: id.rawValue), \(bind: key.season), \(bind: key.episode))
-                ON CONFLICT (library_item_id, season, episode) DO NOTHING
-                """).run()
-            }
-            for key in removed {
-                try await sql.raw("""
-                DELETE FROM episode_progress WHERE library_item_id = \(bind: id.rawValue)
-                AND season = \(bind: key.season) AND episode = \(bind: key.episode)
-                """).run()
-            }
-            try await sql.raw("UPDATE library_items SET updated_at = now() WHERE id = \(bind: id.rawValue)").run()
-            return .setEpisodes(id, watch: removed, unwatch: added)
-        case let .batch(ops):
-            var inverses: [LibraryOp] = []
-            for child in ops {
-                try await inverses.append(run(child, userID: userID, sql: sql))
-            }
-            return .batch(inverses.reversed())
+            return try await setEpisodes(id, watch: watch, unwatch: unwatch, userID: userID, sql: sql)
+        default:
+            preconditionFailure("runItemOp got a non-item op")
         }
+    }
+
+    private static func setEpisodes(
+        _ id: LibraryItemID,
+        watch: [EpisodeKey],
+        unwatch: [EpisodeKey],
+        userID: UserID,
+        sql: any SQLDatabase
+    ) async throws -> LibraryOp {
+        _ = try await lockedFields(id, userID: userID, sql: sql)
+        let current = try await watchedKeys(id, sql: sql)
+        let added = watch.filter { !current.contains($0) }
+        let removed = unwatch.filter { current.contains($0) }
+        for key in added {
+            try await sql.raw("""
+            INSERT INTO episode_progress (id, library_item_id, season, episode)
+            VALUES (\(bind: UUID()), \(bind: id.rawValue), \(bind: key.season), \(bind: key.episode))
+            ON CONFLICT (library_item_id, season, episode) DO NOTHING
+            """).run()
+        }
+        for key in removed {
+            try await sql.raw("""
+            DELETE FROM episode_progress WHERE library_item_id = \(bind: id.rawValue)
+            AND season = \(bind: key.season) AND episode = \(bind: key.episode)
+            """).run()
+        }
+        try await sql.raw("UPDATE library_items SET updated_at = now() WHERE id = \(bind: id.rawValue)").run()
+        return .setEpisodes(id, watch: removed, unwatch: added)
     }
 
     private static func insert(_ snapshot: ItemSnapshot, userID: UserID, sql: any SQLDatabase) async throws {
@@ -245,6 +265,7 @@ extension LibraryOp {
         switch self {
         case let .insertItem(snapshot): [snapshot.id]
         case let .deleteItem(id), let .setFields(id, _), let .setEpisodes(id, _, _): [id]
+        case .insertList, .deleteList, .renameList, .setListMembers: []
         case let .batch(ops): Array(Set(ops.flatMap(\.itemIDs)))
             .sorted { $0.rawValue.uuidString < $1.rawValue.uuidString }
         }

@@ -30,7 +30,20 @@ indirect enum LibraryOp: Codable, Sendable, Equatable {
     case deleteItem(LibraryItemID)
     case setFields(LibraryItemID, ItemFields)
     case setEpisodes(LibraryItemID, watch: [EpisodeKey], unwatch: [EpisodeKey])
+    case insertList(ListSnapshot)
+    case deleteList(ListID)
+    case renameList(ListID, String)
+    /// The list's full ordered membership: add, remove, and reorder are all this.
+    case setListMembers(ListID, [TitleID])
     case batch([LibraryOp])
+}
+
+/// Everything needed to recreate a deleted list.
+struct ListSnapshot: Codable, Sendable, Equatable {
+    var id: ListID
+    var name: String
+    var createdAt: Date
+    var members: [TitleID]
 }
 
 /// Who made a write. The ribbon shows it; external agents arrive with M14.

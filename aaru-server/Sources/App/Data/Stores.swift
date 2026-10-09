@@ -70,6 +70,8 @@ protocol TitleStore: Sendable {
     /// was hydrated. Never deletes: progress refers to episodes by number.
     func saveEpisodes(_ id: TitleID, _ episodes: [CatalogEpisode], status: TitleStatus?, hydratedAt: Date) async throws
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode]
+    /// The titles with these ids, in the order given; unknown ids are skipped.
+    func titles(ids: [TitleID]) async throws -> [Title]
 }
 
 extension TitleStore {
@@ -129,9 +131,26 @@ protocol LibraryStore: Sendable {
     func undo(actionID: UUID, userID: UserID) async throws -> ActionRecord
 }
 
+/// List reads. List writes are `LibraryOp`s through `LibraryStore.apply`.
 protocol ListStore: Sendable {
-    func create(_ list: AaruList) async throws
     func lists(userID: UserID) async throws -> [AaruList]
+    func list(id: ListID, userID: UserID) async throws -> AaruList?
+}
+
+/// A shelf: a saved query over the library (SHF-001). Never membership (X-008).
+struct Shelf: Sendable, Equatable {
+    var id: UUID
+    var name: String
+    var filter: LibraryFilter
+    var isPinned: Bool
+    var createdAt: Date
+}
+
+protocol ShelfStore: Sendable {
+    func shelves(userID: UserID) async throws -> [Shelf]
+    func shelf(id: UUID, userID: UserID) async throws -> Shelf?
+    func save(_ shelf: Shelf, userID: UserID) async throws
+    func delete(id: UUID, userID: UserID) async throws -> Bool
 }
 
 protocol ImportJobStore: Sendable {
@@ -150,5 +169,6 @@ struct Stores: Sendable {
     var animeMappings: any AnimeMappingStore
     var library: any LibraryStore
     var lists: any ListStore
+    var shelves: any ShelfStore
     var importJobs: any ImportJobStore
 }

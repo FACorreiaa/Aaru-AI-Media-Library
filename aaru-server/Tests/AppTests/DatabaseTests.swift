@@ -107,15 +107,20 @@ struct DatabaseTests {
             let second = Title(type: .book, title: "Children of Dune")
             try await stores.titles.insert(first)
             try await stores.titles.insert(second)
-            let list = AaruList(
-                userID: user,
-                name: "Arrakis",
-                titleIDs: [second.id, first.id],
-                createdAt: wholeSecondNow(),
-                updatedAt: wholeSecondNow()
+            let snapshot = ListSnapshot(
+                id: ListID(), name: "Arrakis", createdAt: wholeSecondNow(), members: [second.id, first.id]
             )
-            try await stores.lists.create(list)
-            #expect(try await stores.lists.lists(userID: user) == [list])
+            try await stores.library.apply(
+                .insertList(snapshot),
+                userID: user,
+                actor: .user,
+                kind: "list",
+                summary: "L"
+            )
+            let stored = try await stores.lists.lists(userID: user)
+            #expect(stored.map(\.titleIDs) == [[second.id, first.id]])
+            #expect(stored.first?.createdAt == snapshot.createdAt)
+            #expect(try await stores.lists.list(id: snapshot.id, userID: UserID()) == nil)
         }
     }
 

@@ -146,6 +146,15 @@ struct PostgresTitleStore: TitleStore {
             .run()
     }
 
+    func titles(ids: [TitleID]) async throws -> [Title] {
+        guard !ids.isEmpty else { return [] }
+        let rows = try await sql.select().columns(SQLLiteral.all).from("titles")
+            .where("id", .in, ids.map(\.rawValue))
+            .all(decoding: Row.self, keyDecodingStrategy: snake)
+        let byID = Dictionary(rows.compactMap(\.asTitle).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return ids.compactMap { byID[$0] }
+    }
+
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode] {
         struct Row: Decodable {
             let season: Int

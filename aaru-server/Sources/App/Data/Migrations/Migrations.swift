@@ -14,6 +14,7 @@ let allMigrations: [any Migration] = [
     CreateSessions(),
     AddCatalogDetail(),
     CreateActionJournal(),
+    CreateShelves(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {
@@ -318,4 +319,23 @@ struct CreateActionJournal: SQLMigration {
         "DROP TABLE library_tombstones",
         "DROP TABLE actions",
     ]
+}
+
+/// SHF-001 · shelves: saved queries over the library. A stored filter, never membership.
+struct CreateShelves: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE saved_queries (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name text NOT NULL CHECK (btrim(name) <> ''),
+            filter jsonb NOT NULL,
+            is_pinned boolean NOT NULL DEFAULT false,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            updated_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+        "CREATE INDEX saved_queries_user ON saved_queries (user_id, created_at)",
+    ]
+    let backward = ["DROP TABLE saved_queries"]
 }

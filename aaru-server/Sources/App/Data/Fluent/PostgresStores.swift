@@ -18,7 +18,8 @@ extension Stores {
             titles: PostgresTitleStore(sql: sql),
             animeMappings: PostgresAnimeMappingStore(sql: sql),
             library: PostgresLibraryStore(database: database),
-            lists: PostgresListStore(database: database, sql: sql),
+            lists: PostgresListStore(sql: sql),
+            shelves: PostgresShelfStore(sql: sql),
             importJobs: PostgresImportJobStore(sql: sql)
         )
     }
@@ -82,7 +83,6 @@ struct PostgresUserStore: UserStore {
 }
 
 struct PostgresListStore: ListStore {
-    let database: any Database
     let sql: any SQLDatabase
 
     private struct Row: Codable {
@@ -93,35 +93,24 @@ struct PostgresListStore: ListStore {
         let updatedAt: Date
     }
 
-    func create(_ list: AaruList) async throws {
-        try list.validate()
-        let row = Row(
-            id: list.id.rawValue,
-            userId: list.userID.rawValue,
-            name: list.name,
-            createdAt: list.createdAt,
-            updatedAt: list.updatedAt
-        )
-        try await database.transaction { database in
-            let sql = try sqlDatabase(database)
-            try await sql.insert(into: "lists").model(row, keyEncodingStrategy: .convertToSnakeCase).run()
-            for (position, titleID) in list.titleIDs.enumerated() {
-                try await sql.insert(into: "list_items")
-                    .columns("id", "list_id", "title_id", "position")
-                    .values(SQLBind(UUID()), SQLBind(list.id.rawValue), SQLBind(titleID.rawValue), SQLBind(position))
-                    .run()
-            }
-        }
+    func lists(userID: UserID) async throws -> [AaruList] {
+        try await load(userID: userID, id: nil)
     }
 
-    func lists(userID: UserID) async throws -> [AaruList] {
+    func list(id: ListID, userID: UserID) async throws -> AaruList? {
+        try await load(userID: userID, id: id).first
+    }
+
+    private func load(userID: UserID, id: ListID?) async throws -> [AaruList] {
         struct Member: Decodable {
             let listId: UUID
             let titleId: UUID
         }
-        let rows = try await sql.select().columns(SQLLiteral.all).from("lists")
-            .where("user_id", .equal, userID.rawValue)
-            .orderBy("created_at")
+        var query = sql.select().columns(SQLLiteral.all).from("lists").where("user_id", .equal, userID.rawValue)
+        if let id {
+            query = query.where("id", .equal, id.rawValue)
+        }
+        let rows = try await query.orderBy("created_at")
             .all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
         guard !rows.isEmpty else { return [] }
         let members = try await sql.select().columns("list_id", "title_id").from("list_items")
@@ -139,6 +128,54 @@ struct PostgresListStore: ListStore {
                 updatedAt: row.updatedAt
             )
         }
+    }
+}
+
+struct PostgresShelfStore: ShelfStore {
+    let sql: any SQLDatabase
+
+    private struct Row: Codable {
+        let id: UUID
+        let name: String
+        let filter: LibraryFilter
+        let isPinned: Bool
+        let createdAt: Date
+
+        var shelf: Shelf {
+            Shelf(id: id, name: name, filter: filter, isPinned: isPinned, createdAt: createdAt)
+        }
+    }
+
+    func shelves(userID: UserID) async throws -> [Shelf] {
+        try await sql.raw("""
+        SELECT id, name, filter, is_pinned, created_at FROM saved_queries
+        WHERE user_id = \(bind: userID.rawValue) ORDER BY is_pinned DESC, created_at
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map(\.shelf)
+    }
+
+    func shelf(id: UUID, userID: UserID) async throws -> Shelf? {
+        try await sql.raw("""
+        SELECT id, name, filter, is_pinned, created_at FROM saved_queries
+        WHERE id = \(bind: id) AND user_id = \(bind: userID.rawValue)
+        """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)?.shelf
+    }
+
+    func save(_ shelf: Shelf, userID: UserID) async throws {
+        try await sql.raw("""
+        INSERT INTO saved_queries (id, user_id, name, filter, is_pinned, created_at)
+        VALUES (\(bind: shelf.id), \(bind: userID.rawValue), \(bind: shelf.name), \(bind: shelf.filter),
+            \(bind: shelf.isPinned), \(bind: shelf.createdAt))
+        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, filter = EXCLUDED.filter,
+            is_pinned = EXCLUDED.is_pinned, updated_at = now()
+        WHERE saved_queries.user_id = \(bind: userID.rawValue)
+        """).run()
+    }
+
+    func delete(id: UUID, userID: UserID) async throws -> Bool {
+        struct Deleted: Decodable { let id: UUID }
+        return try await sql.raw("""
+        DELETE FROM saved_queries WHERE id = \(bind: id) AND user_id = \(bind: userID.rawValue) RETURNING id
+        """).first(decoding: Deleted.self) != nil
     }
 }
 

@@ -204,7 +204,14 @@ struct AuthFlowTests {
                 )),
                 userID: userID, actor: .user, kind: "add", summary: "Added"
             )
-            try await stores.lists.create(AaruList(userID: userID, name: "L", titleIDs: [title.id]))
+            try await stores.library.apply(
+                .insertList(ListSnapshot(id: ListID(), name: "L", createdAt: Date(), members: [title.id])),
+                userID: userID, actor: .user, kind: "list", summary: "L"
+            )
+            try await stores.shelves.save(
+                Shelf(id: UUID(), name: "S", filter: LibraryFilter(), isPinned: false, createdAt: Date()),
+                userID: userID
+            )
             try await stores.importJobs.insert(ImportJob(userID: userID, source: .trakt))
 
             try await client.execute(

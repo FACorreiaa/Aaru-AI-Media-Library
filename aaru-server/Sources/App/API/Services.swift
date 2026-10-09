@@ -3,17 +3,19 @@ struct Services: Sendable {
     var auth: AuthService
     var catalog: CatalogService
     var library: LibraryService
+    var lists: ListService
+    var shelves: ShelfService
 
     static func make(stores: Stores, catalogs: CatalogProviders, auth: AuthService) -> Services {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
+        let resolver = TitleResolver(stores: stores, catalogs: catalogs)
+        let library = LibraryService(stores: stores, resolver: resolver, catalog: catalog)
         return Services(
             auth: auth,
             catalog: catalog,
-            library: LibraryService(
-                stores: stores,
-                resolver: TitleResolver(stores: stores, catalogs: catalogs),
-                catalog: catalog
-            )
+            library: library,
+            lists: ListService(stores: stores, resolver: resolver),
+            shelves: ShelfService(stores: stores, library: library)
         )
     }
 }
