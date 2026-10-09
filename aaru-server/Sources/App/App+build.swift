@@ -7,9 +7,6 @@ import Logging
 import OpenAPIHummingbird
 import ServiceLifecycle
 
-/// Request context used by application
-typealias AppRequestContext = BasicRequestContext
-
 /// Builds the application.
 ///
 /// With `db.migrate` set, applies migrations and exits without serving; that path
@@ -33,7 +30,14 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let config = try AppConfig.load(from: reader)
     let fluent = try await makeFluent(config.postgres, logger: logger)
     let stores = try Stores.postgres(fluent.db())
-    let router = try buildRouter(stores: stores)
+    let transport = AsyncHTTPTransport(client: .shared)
+    let auth = makeAuthService(config: config, stores: stores, transport: transport)
+    let catalogs = makeCatalogProviders(config: config, transport: transport)
+    let services = Services.make(stores: stores, catalogs: catalogs, auth: auth)
+    if config.email == nil {
+        logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
+    }
+    let router = try buildRouter(stores: stores, services: services)
     return Application(
         router: router,
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
@@ -62,15 +66,62 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
     return fluent
 }
 
-/// Builds the router: logging, the shared error shape, then the generated `/v1` handlers.
-func buildRouter(stores: Stores) throws -> Router<AppRequestContext> {
+/// Builds the router: logging, the shared error shape, auth, then the generated `/v1` handlers.
+func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
         LogRequestsMiddleware(.info)
         ErrorMiddleware()
+        AuthMiddleware(sessions: stores.sessions)
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()
     }
-    try APIImplementation(stores: stores).registerHandlers(on: router)
+    try APIImplementation(stores: stores, services: services).registerHandlers(on: router)
     return router
+}
+
+func makeAuthService(config: AppConfig, stores: Stores, transport: any HTTPTransport) -> AuthService {
+    AuthService(
+        stores: stores,
+        apple: AppleIdentityVerifier(
+            audiences: config.appleAudiences,
+            jwks: AppleJWKSCache(transport: transport, url: AppleIdentityVerifier.keysURL)
+        ),
+        magicLinks: config.email.map { email in
+            (
+                ResendMagicLinkSender(transport: transport, apiKey: email.resendAPIKey, from: email.from),
+                email.linkBaseURL
+            )
+        }
+    )
+}
+
+/// One `ProviderClient` (and so one rate pacer) per provider, shared by every caller.
+func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> CatalogProviders {
+    CatalogProviders(
+        tmdb: TMDBCatalog(
+            client: ProviderClient(
+                name: "tmdb",
+                transport: transport,
+                pacer: RequestPacer(requestsPerSecond: 40, burst: 40)
+            ),
+            apiKey: config.tmdbAPIKey
+        ),
+        anilist: AniListCatalog(
+            // 90 requests/minute.
+            client: ProviderClient(
+                name: "anilist",
+                transport: transport,
+                pacer: RequestPacer(requestsPerSecond: 1.5, burst: 5)
+            )
+        ),
+        openLibrary: OpenLibraryCatalog(
+            client: ProviderClient(
+                name: "openlibrary",
+                transport: transport,
+                pacer: RequestPacer(requestsPerSecond: 3, burst: 3)
+            ),
+            userAgent: config.openLibraryUserAgent
+        )
+    )
 }

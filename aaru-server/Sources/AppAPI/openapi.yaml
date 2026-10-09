@@ -31,6 +31,492 @@ paths:
                 $ref: '#/components/schemas/Health'
         default:
           $ref: '#/components/responses/Error'
+  /v1/auth/apple:
+    post:
+      operationId: signInWithApple
+      summary: Exchange a Sign in with Apple identity token for a session.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppleSignInRequest'
+      responses:
+        '200':
+          description: Signed in. The token is shown once.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/auth/email/link:
+    post:
+      operationId: requestMagicLink
+      summary: Email a one-time sign-in link. Same answer whether or not an account exists.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagicLinkRequest'
+      responses:
+        '202':
+          description: The link was sent (or would have been).
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/auth/email/verify:
+    post:
+      operationId: verifyMagicLink
+      summary: Exchange a magic-link token for a session. Creates the account on first use.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagicLinkVerifyRequest'
+      responses:
+        '200':
+          description: Signed in. The token is shown once.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/auth/session:
+    delete:
+      operationId: signOut
+      summary: End the current session.
+      responses:
+        '204':
+          description: Signed out.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me:
+    get:
+      operationId: getMe
+      summary: The signed-in account.
+      responses:
+        '200':
+          description: The account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteAccount
+      summary: Delete the account and everything that belongs to it.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/search:
+    get:
+      operationId: searchCatalog
+      summary: Search the catalog. Results are catalog projections, never library rows.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          description: "`anime` searches AniList; `movie`/`show` TMDB; `book` Open Library."
+          schema:
+            type: string
+            enum: [movie, show, anime, book]
+      responses:
+        '200':
+          description: Matches, best first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/titles/{id}:
+    get:
+      operationId: getTitle
+      summary: A title from the catalog. Shows include their seasons and episodes.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The title.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleDetail'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/library/items:
+    get:
+      operationId: listLibraryItems
+      summary: The user's library, most recently updated first. Shelves use the same filters.
+      parameters:
+        - {name: type, in: query, required: false, schema: {$ref: '#/components/schemas/MediaType'}}
+        - {name: anime, in: query, required: false, schema: {type: boolean}}
+        - {name: status, in: query, required: false, schema: {$ref: '#/components/schemas/LibraryStatus'}}
+        - {name: owned, in: query, required: false, schema: {type: boolean}}
+        - {name: list, in: query, required: false, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: One page.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibraryPage'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: addLibraryItem
+      summary: Add a title to the library. Adding the same title again returns the existing item.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AddLibraryItem'}
+      responses:
+        '200':
+          description: The item.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibraryEntry'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/library/items/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getLibraryItem
+      responses:
+        '200':
+          description: The item.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibraryEntry'}
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: updateLibraryItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LibraryItemPatch'}
+      responses:
+        '200':
+          description: The updated item.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibraryEntry'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteLibraryItem
+      responses:
+        '204':
+          description: Removed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/library/items/{id}/episodes/{season}/{episode}:
+    put:
+      operationId: setEpisodeWatched
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: season, in: path, required: true, schema: {type: integer}}
+        - {name: episode, in: path, required: true, schema: {type: integer}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EpisodeWatched'}
+      responses:
+        '200':
+          description: The item with updated progress.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibraryEntry'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/library/items/{id}/seasons/{season}/watched:
+    post:
+      operationId: markSeasonWatched
+      summary: Mark every aired episode of a season watched, as one undoable action.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: season, in: path, required: true, schema: {type: integer}}
+      responses:
+        '200':
+          description: The item with updated progress.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibraryEntry'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/library/sync:
+    get:
+      operationId: syncLibrary
+      summary: Items changed and ids deleted since a previous sync token (all items when absent).
+      parameters:
+        - {name: since, in: query, required: false, schema: {type: string}}
+      responses:
+        '200':
+          description: The changes and the token for next time.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibrarySync'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/actions:
+    get:
+      operationId: listActions
+      summary: The action journal, newest first. Backs the undo ribbon.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Actions.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ActionList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/actions/{id}/undo:
+    post:
+      operationId: undoAction
+      summary: Apply an action's inverse. Journaled as its own action; undoing twice is 409.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The undo, as an action.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Action'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists:
+    get:
+      operationId: listLists
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateList'}
+      responses:
+        '200':
+          description: The new list.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getList
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: renameList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RenameList'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteList
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists/{id}/items:
+    post:
+      operationId: addListItem
+      summary: Add a title to a list. It need not be in the library.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AddListItem'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists/{id}/items/{titleId}:
+    delete:
+      operationId: removeListItem
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: titleId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/lists/{id}/order:
+    put:
+      operationId: reorderList
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ListOrder'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/shelves:
+    get:
+      operationId: listShelves
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShelfList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createShelf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateShelf'}
+      responses:
+        '200':
+          description: The new shelf.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Shelf'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/shelves/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: updateShelf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateShelf'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Shelf'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteShelf
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/shelves/{id}/items:
+    get:
+      operationId: listShelfItems
+      summary: The shelf's query, resolved now. Same DTO as GET /v1/library/items.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LibraryPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/calendar:
+    get:
+      operationId: getCalendar
+      summary: Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+      parameters:
+        - {name: from, in: query, required: true, schema: {type: string, format: date-time}}
+        - {name: to, in: query, required: true, schema: {type: string, format: date-time}}
+      responses:
+        '200':
+          description: Episodes, by air time.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Calendar'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/up-next:
+    get:
+      operationId: getUpNext
+      summary: Continue Watching and Start Watching for the home screen, in one call.
+      responses:
+        '200':
+          description: Both rows.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UpNext'}
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -78,6 +564,404 @@ components:
       properties:
         nextCursor:
           type: [string, 'null']
+    AppleSignInRequest:
+      type: object
+      required: [identityToken, nonce]
+      properties:
+        identityToken:
+          type: string
+          description: The JWT from ASAuthorizationAppleIDCredential / Sign in with Apple JS.
+        nonce:
+          type: string
+          description: The raw nonce whose SHA-256 the client sent to Apple.
+        displayName:
+          type: string
+          description: Apple sends the name only on the first authorization; pass it then.
+    MagicLinkRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+    MagicLinkVerifyRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    Session:
+      type: object
+      required: [token, userId, expiresAt]
+      properties:
+        token:
+          type: string
+          description: "Bearer token, sent in the Authorization header as `Bearer <token>`."
+        userId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+    Me:
+      type: object
+      required: [userId, providers]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        providers:
+          type: array
+          items:
+            type: string
+            enum: [apple, email]
+    ExternalIds:
+      type: object
+      description: Provider identifiers known for a title. Absent means unknown.
+      properties:
+        tmdb: {type: string}
+        imdb: {type: string}
+        trakt: {type: string}
+        tvdb: {type: string}
+        isbn: {type: string}
+        openLibrary: {type: string}
+        anilist: {type: string}
+        mal: {type: string}
+        anidb: {type: string}
+    MediaType:
+      type: string
+      enum: [movie, show, book]
+    CatalogHit:
+      type: object
+      required: [type, title, isAnime, ids]
+      properties:
+        type: {$ref: '#/components/schemas/MediaType'}
+        title: {type: string}
+        originalTitle: {type: string}
+        year: {type: integer}
+        posterUrl: {type: string}
+        overview: {type: string}
+        byline:
+          type: string
+          description: Authors, for books.
+        isAnime: {type: boolean}
+        ids: {$ref: '#/components/schemas/ExternalIds'}
+    SearchResults:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CatalogHit'}
+    Episode:
+      type: object
+      required: [season, number]
+      properties:
+        season: {type: integer}
+        number: {type: integer}
+        name: {type: string}
+        airsAt: {type: string, format: date-time}
+        runtimeMinutes: {type: integer}
+    Season:
+      type: object
+      required: [number, episodes]
+      properties:
+        number: {type: integer}
+        episodes:
+          type: array
+          items: {$ref: '#/components/schemas/Episode'}
+    TitleDetail:
+      type: object
+      required: [id, type, title, isAnime, ids]
+      properties:
+        id: {type: string, format: uuid}
+        type: {$ref: '#/components/schemas/MediaType'}
+        title: {type: string}
+        originalTitle: {type: string}
+        year: {type: integer}
+        synopsis: {type: string}
+        posterUrl: {type: string}
+        isAnime: {type: boolean}
+        ids: {$ref: '#/components/schemas/ExternalIds'}
+        status:
+          type: string
+          enum: [upcoming, returning, ended, canceled]
+        runtimeMinutes: {type: integer}
+        seasons:
+          type: array
+          description: Shows only.
+          items: {$ref: '#/components/schemas/Season'}
+    LibraryStatus:
+      type: string
+      enum: [wishlist, in_progress, finished, dropped]
+    MediaRef:
+      type: object
+      required: [type]
+      description: A title by Aaru id, by provider ids, or by title + year.
+      properties:
+        titleId: {type: string, format: uuid}
+        type: {$ref: '#/components/schemas/MediaType'}
+        ids: {$ref: '#/components/schemas/ExternalIds'}
+        title: {type: string}
+        year: {type: integer}
+    AddLibraryItem:
+      type: object
+      required: [mediaRef]
+      properties:
+        mediaRef: {$ref: '#/components/schemas/MediaRef'}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+    LibraryItemPatch:
+      type: object
+      properties:
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+        rating:
+          type: number
+          description: 1–10 in 0.5 steps.
+        notes: {type: string}
+        isOwned: {type: boolean}
+        bookPage: {type: integer}
+        bookPercent: {type: number}
+        clear:
+          type: array
+          description: Fields to empty.
+          items:
+            type: string
+            enum: [rating, notes, bookProgress]
+    EpisodeWatched:
+      type: object
+      required: [watched]
+      properties:
+        watched: {type: boolean}
+    EpisodeRef:
+      type: object
+      required: [season, number]
+      properties:
+        season: {type: integer}
+        number: {type: integer}
+    ShowProgress:
+      type: object
+      required: [watchedCount, airedCount]
+      description: Specials (season 0) are not counted.
+      properties:
+        watchedCount: {type: integer}
+        airedCount: {type: integer}
+        nextEpisode: {$ref: '#/components/schemas/EpisodeRef'}
+    BookProgress:
+      type: object
+      properties:
+        page: {type: integer}
+        percent: {type: number}
+    TitleSummary:
+      type: object
+      required: [id, type, title, isAnime, ids]
+      properties:
+        id: {type: string, format: uuid}
+        type: {$ref: '#/components/schemas/MediaType'}
+        title: {type: string}
+        originalTitle: {type: string}
+        year: {type: integer}
+        posterUrl: {type: string}
+        isAnime: {type: boolean}
+        ids: {$ref: '#/components/schemas/ExternalIds'}
+    LibraryEntry:
+      type: object
+      required: [id, title, status, isOwned, addedAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+        rating: {type: number}
+        notes: {type: string}
+        isOwned: {type: boolean}
+        addedAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        finishedAt: {type: string, format: date-time}
+        progress: {$ref: '#/components/schemas/ShowProgress'}
+        bookProgress: {$ref: '#/components/schemas/BookProgress'}
+    LibraryPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/LibraryEntry'}
+        page: {$ref: '#/components/schemas/PageInfo'}
+    LibrarySync:
+      type: object
+      required: [items, deleted, token]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/LibraryEntry'}
+        deleted:
+          type: array
+          items: {type: string, format: uuid}
+        token: {type: string}
+    Action:
+      type: object
+      required: [id, actor, kind, summary, itemIds, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        actor:
+          type: string
+          enum: [user, agent, external_agent]
+        kind: {type: string}
+        summary: {type: string}
+        itemIds:
+          type: array
+          items: {type: string, format: uuid}
+        createdAt: {type: string, format: date-time}
+        undoneAt: {type: string, format: date-time}
+        undoOf: {type: string, format: uuid}
+    ActionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Action'}
+    ListSummary:
+      type: object
+      required: [id, name, itemCount, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        itemCount: {type: integer}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    ListList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ListSummary'}
+    ListDetail:
+      type: object
+      required: [id, name, titles, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        titles:
+          type: array
+          items: {$ref: '#/components/schemas/TitleSummary'}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    CreateList:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    RenameList:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    AddListItem:
+      type: object
+      required: [mediaRef]
+      properties:
+        mediaRef: {$ref: '#/components/schemas/MediaRef'}
+    ListOrder:
+      type: object
+      required: [titleIds]
+      properties:
+        titleIds:
+          type: array
+          items: {type: string, format: uuid}
+    ShelfFilter:
+      type: object
+      description: The same filters GET /v1/library/items accepts.
+      properties:
+        type: {$ref: '#/components/schemas/MediaType'}
+        anime: {type: boolean}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+        owned: {type: boolean}
+        list: {type: string, format: uuid}
+    Shelf:
+      type: object
+      required: [id, name, filter, isPinned]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        filter: {$ref: '#/components/schemas/ShelfFilter'}
+        isPinned: {type: boolean}
+    ShelfList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Shelf'}
+    CreateShelf:
+      type: object
+      required: [name, filter]
+      properties:
+        name: {type: string}
+        filter: {$ref: '#/components/schemas/ShelfFilter'}
+        isPinned: {type: boolean}
+    UpdateShelf:
+      type: object
+      properties:
+        name: {type: string}
+        filter: {$ref: '#/components/schemas/ShelfFilter'}
+        isPinned: {type: boolean}
+    CalendarEntry:
+      type: object
+      required: [libraryItemId, title, season, number, airsAt, watched, kind]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        season: {type: integer}
+        number: {type: integer}
+        episodeName: {type: string}
+        airsAt: {type: string, format: date-time}
+        runtimeMinutes: {type: integer}
+        watched: {type: boolean}
+        kind:
+          type: string
+          enum: [premiere, finale, regular]
+    Calendar:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CalendarEntry'}
+    ContinueEntry:
+      type: object
+      required: [libraryItemId, title, next, remainingCount, remainingMinutes, isFinale]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        next: {$ref: '#/components/schemas/EpisodeRef'}
+        nextName: {type: string}
+        nextRuntimeMinutes: {type: integer}
+        remainingCount:
+          type: integer
+          description: Aired, unwatched episodes including the next one. Specials excluded.
+        remainingMinutes: {type: integer}
+        isFinale:
+          type: boolean
+          description: The next episode is the last of its season.
+    StartEntry:
+      type: object
+      required: [libraryItemId, title]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        runtimeMinutes: {type: integer}
+    UpNext:
+      type: object
+      required: [continueWatching, startWatching]
+      properties:
+        continueWatching:
+          type: array
+          items: {$ref: '#/components/schemas/ContinueEntry'}
+        startWatching:
+          type: array
+          items: {$ref: '#/components/schemas/StartEntry'}
     Health:
       type: object
       required: [status]

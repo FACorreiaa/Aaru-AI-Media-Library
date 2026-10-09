@@ -57,6 +57,23 @@ So the real starting line is P0.
 | REL-005 | Image builds from the repo root and was smoke-tested locally (migrate, fail-fast, health 200); promote workflow written; infra draft PR LuminaVault/LuminaVaultInfra#292. Needs `TMDB_API_KEY` sealed, first image tag, `/data/pg-aaru` on the node, `INFRA_TOKEN`, and the domain. |
 | REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Needs Cloudflare secrets. |
 
+### P1 progress (2026-10-09, branch `p1-basics`, stacked on `p0-rails`, not pushed)
+
+Server side of P1 is built: 62 server tests and 37 core tests pass against local Postgres,
+with every provider stubbed.
+
+| Group | State |
+| --- | --- |
+| M2 Auth (AUTH-001…004) | Done. Email sign-in answers 503 until `RESEND_API_KEY` and a verified sending domain exist. |
+| M3 Catalog (CAT-001…009) | Done. CAT-010 (load the anime mapping dataset) is open: `anime_mappings` is empty until then. |
+| M4 Library + journal (LIB-001…004, AUD-001/002) | Done. Journal pruning (90 days / last 20) waits for JOB-001. |
+| M5 Progress (PROG-001…004) | Done. |
+| M6 Lists + shelves (LST-001/002, SHF-001/002) | Done. List writes are journaled and undoable. |
+| CAL-001, UPN-001 | Done. Network/platform is not shown: no provider field is stored for it yet. Shows hydrate when added; refreshing every tracked show on its staleness window needs a job (JOB-001). |
+
+**P1 gate** (works end to end against the production API on `maat`) is not met until P0's
+deploy steps are done.
+
 ---
 
 ## Phase map
@@ -189,8 +206,7 @@ envelope used by every list route. No business routes yet.
 spec references the shared error schema, and one deliberate 404 and one 422 return that
 shape in a test.
 
-**OPEN:** pagination style — cursor vs offset. Recommendation: cursor keyed on
-`(updated_at, id)`, because library sync from a client wants "changed since" anyway.
+**Decided 2026-10-09:** cursor keyed on `(updated_at, id)`, because library sync from a client wants "changed since" anyway.
 
 ### SRV-003 · Data layer boundary · M
 **Needs:** SRV-001.
@@ -277,8 +293,7 @@ Every `/v1` route except health and auth requires it.
 error shape, and a request with a token for user A cannot read user B's rows (test asserts
 this, not a comment).
 
-**OPEN:** JWT vs opaque session. Recommendation: opaque token in Postgres with a
-`sessions` table. Revocation matters more than statelessness at this scale, and the
+**Decided 2026-10-09:** opaque token in Postgres with a `sessions` table (was OPEN). Revocation matters more than statelessness at this scale, and the
 Trakt-token path already means the server keeps state.
 
 ### AUTH-002 · Sign in with Apple · M
@@ -299,7 +314,7 @@ magic link. One of the two, not both.
 unknown email are indistinguishable in response and timing to a reasonable degree, and
 sign-up is rate-limited per IP and per email.
 
-**OPEN:** password vs magic link. Recommendation: magic link. It removes password storage,
+**Decided 2026-10-09:** magic link, sent through Resend (was OPEN). It removes password storage,
 reset flows, and breach surface; the cost is an email sender dependency.
 
 ### AUTH-004 · Sign out and account delete · S
@@ -342,7 +357,7 @@ Search and detail for `book`. ISBN normalization (ISBN-10 to ISBN-13), cover URL
 **Needs:** CAT-002, CAT-003.
 `q` and `type=movie|show|anime|book` (`anime` is a search scope over the AniList adapter,
 see CAT-008). Fan out with structured concurrency when type is absent —
-**OPEN:** whether `type` is required. Recommendation: required in v1. Mixed-type ranking
+**Decided 2026-10-09:** `type` is required in v1 (was OPEN). Mixed-type ranking
 is a research problem and the client has tabs anyway.
 
 **Done when:** results are catalog projections with no library fields on them, and a
@@ -368,8 +383,7 @@ cache. Re-hydrate on a staleness window for airing shows.
 Postgres with no TMDB call, and adding a season upstream is picked up after the staleness
 window.
 
-**OPEN:** staleness window. Suggested: 24h for shows with an episode airing within 30
-days, 30d otherwise.
+**Decided 2026-10-09:** 24h for shows with an episode airing within 30 days, 30d otherwise.
 
 ### CAT-007 · AniList adapter · M
 **Needs:** CAT-001.
@@ -387,7 +401,7 @@ and no AniList field name appears in a response DTO.
 (migration alongside SRV-005 if it has not shipped, else its own migration). `Title` gains an
 anime marker; search gains the `anime` scope.
 
-**OPEN:** `MediaType.anime` vs an `isAnime` facet on `movie`/`show`. Recommendation: the facet.
+**Decided 2026-10-09:** an `isAnime` facet on `movie`/`show`, not a fourth `MediaType`.
 Anime series then reuse `ShowProgress`, `show_episodes`, calendar, Up Next, and every widget
 with no second code path; anime films are movies with the flag.
 
@@ -402,6 +416,15 @@ cross-ID exists and keeps them as separate titles otherwise. Never merge on name
 
 **Done when:** a multi-cour series with a known TMDB mapping resolves to one `Title`, one
 without a mapping stays separate, and no two titles merge on title similarity alone.
+
+### CAT-010 · Load the anime mapping dataset · S
+**Needs:** CAT-009.
+`anime_mappings` is empty until filled. Load the community AniList → TMDB/TVDB/MAL/AniDB
+mapping (e.g. Fribb/anime-lists, MIT) with a one-shot `aaru --anime-mappings <file>` run, and
+refresh it monthly. Catalog data only: no user rows, no scraping.
+
+**Done when:** a mapped AniList id from the dataset resolves to its TMDB show in production,
+and re-running the load is idempotent.
 
 ---
 
@@ -454,8 +477,8 @@ store for a first-class view, so it is user data with retention, not observabili
 **Done when:** a `PATCH` and a season bulk-mark each produce exactly one journal row inside
 the same transaction as the write, and a failed write leaves no row.
 
-**OPEN:** retention. Recommendation: keep 90 days of journal rows, keep the last 20 per user
-forever so the ribbon is never empty.
+**Decided 2026-10-09:** keep 90 days of journal rows, and the last 20 per user forever. The prune
+runs as a job, so it lands with JOB-001; until then nothing is deleted.
 
 ### AUD-002 · Undo endpoint · M
 **Needs:** AUD-001, PROG-002.
@@ -498,8 +521,7 @@ running show.
 whose finale has aired plus every episode watched reports `nextEpisode == nil` without
 flipping status on its own.
 
-**OPEN:** should completing an ended show auto-set `finished`? Recommendation: yes for
-shows TMDB reports as `Ended`/`Canceled`, no otherwise.
+**Decided 2026-10-09:** yes for shows TMDB reports as `Ended`/`Canceled`, no otherwise.
 
 ### PROG-004 · Book progress · S
 **Needs:** LIB-003.

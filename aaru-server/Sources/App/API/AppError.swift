@@ -19,6 +19,10 @@ struct AppError: Error, Sendable {
         AppError(status: .conflict, code: "conflict", message: message)
     }
 
+    static func badRequest(_ message: String = "The request could not be read.") -> AppError {
+        AppError(status: .badRequest, code: "bad_request", message: message)
+    }
+
     static func unauthorized(_ message: String = "Sign in to continue.") -> AppError {
         AppError(status: .unauthorized, code: "unauthorized", message: message)
     }
@@ -77,5 +81,30 @@ extension ValidationError {
         case .invalidBookProgress: "progress"
         case .unresolvableMediaRef: "mediaRef"
         }
+    }
+}
+
+/// A domain error that knows its HTTP shape. `ErrorMiddleware` renders any of these.
+protocol AppErrorConvertible: Error {
+    var appError: AppError { get }
+}
+
+extension ProviderError: AppErrorConvertible {
+    var appError: AppError {
+        AppError(status: .badGateway, code: "provider_unavailable", message: "The catalog is unavailable. Try again.")
+    }
+}
+
+extension ResolutionError: AppErrorConvertible {}
+
+extension ActionConflict: AppErrorConvertible {
+    var appError: AppError {
+        AppError(status: .conflict, code: "conflict", message: message)
+    }
+}
+
+extension StoreConflict: AppErrorConvertible {
+    var appError: AppError {
+        AppError(status: .conflict, code: "conflict", message: message)
     }
 }

@@ -1,4 +1,5 @@
 import Configuration
+import Foundation
 
 /// A required configuration key is missing. Boot stops and names the key.
 struct MissingConfigError: Error, CustomStringConvertible {
@@ -37,13 +38,43 @@ struct PostgresSettings: Sendable {
 /// Keys arrive with their owning ticket: Trakt with IMP-002, session signing with
 /// AUTH-001. Do not add a key here before the code that reads it exists.
 struct AppConfig: Sendable {
+    /// Bundle ids of the apps (Release and Beta) plus the web Services ID, comma-separated
+    /// in `APPLE_AUDIENCES`. Not secret.
+    static let defaultAppleAudiences = "com.fernandocorreia.aaru,com.fernandocorreia.aaru.beta"
+
     var postgres: PostgresSettings
     var tmdbAPIKey: String
+    var appleAudiences: Set<String>
+    /// Nil when `RESEND_API_KEY` is unset: email sign-in answers 503 rather than
+    /// blocking boot, because it needs a verified sending domain first.
+    var email: EmailSettings?
+    /// Sent as Open Library's User-Agent; they ask API users to identify themselves.
+    var openLibraryUserAgent: String
 
     static func load(from reader: ConfigReader) throws -> AppConfig {
-        try AppConfig(
+        let audiences = reader.string(forKey: "apple.audiences", default: defaultAppleAudiences)
+        return try AppConfig(
             postgres: PostgresSettings.load(from: reader),
-            tmdbAPIKey: required("tmdb.api.key", env: "TMDB_API_KEY", in: reader)
+            tmdbAPIKey: required("tmdb.api.key", env: "TMDB_API_KEY", in: reader),
+            appleAudiences: Set(audiences.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }),
+            email: emailSettings(from: reader),
+            openLibraryUserAgent: reader.string(
+                forKey: "open.library.user.agent",
+                default: "Aaru/0.1 (media library; contact: signin@aaru.example)"
+            )
+        )
+    }
+
+    private static func emailSettings(from reader: ConfigReader) throws -> EmailSettings? {
+        guard let apiKey = reader.string(forKey: "resend.api.key"), !apiKey.isEmpty else { return nil }
+        let base = reader.string(forKey: "magic.link.base.url", default: "https://aaru.example/auth/verify")
+        guard let linkBaseURL = URL(string: base) else {
+            throw MissingConfigError(environmentName: "MAGIC_LINK_BASE_URL", key: "magic.link.base.url")
+        }
+        return EmailSettings(
+            resendAPIKey: apiKey,
+            from: reader.string(forKey: "email.from", default: "Aaru <signin@aaru.example>"),
+            linkBaseURL: linkBaseURL
         )
     }
 }

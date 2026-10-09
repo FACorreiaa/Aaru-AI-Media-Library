@@ -11,6 +11,10 @@ let allMigrations: [any Migration] = [
     CreateTitles(),
     CreateLibrary(),
     CreateImportJobs(),
+    CreateSessions(),
+    AddCatalogDetail(),
+    CreateActionJournal(),
+    CreateShelves(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {
@@ -201,4 +205,137 @@ struct CreateImportJobs: SQLMigration {
         "CREATE INDEX import_jobs_user_created ON import_jobs (user_id, created_at DESC)",
     ]
     let backward = ["DROP TABLE import_jobs"]
+}
+
+/// AUTH-001…003 · opaque sessions, magic links, and the display name Apple sends once.
+struct CreateSessions: SQLMigration {
+    let forward = [
+        "ALTER TABLE users ADD COLUMN display_name text",
+        """
+        CREATE TABLE sessions (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token_hash text NOT NULL UNIQUE,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            expires_at timestamptz NOT NULL
+        )
+        """,
+        "CREATE INDEX sessions_user_id ON sessions (user_id)",
+        """
+        CREATE TABLE magic_links (
+            id uuid PRIMARY KEY,
+            email text NOT NULL,
+            token_hash text NOT NULL UNIQUE,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            expires_at timestamptz NOT NULL,
+            used_at timestamptz
+        )
+        """,
+        "CREATE INDEX magic_links_email ON magic_links (email)",
+    ]
+    let backward = [
+        "DROP TABLE magic_links",
+        "DROP TABLE sessions",
+        "ALTER TABLE users DROP COLUMN display_name",
+    ]
+}
+
+/// CAT-006…009 · anime facet, show status and runtime, hydration time, anime mappings.
+struct AddCatalogDetail: SQLMigration {
+    let forward = [
+        "ALTER TABLE titles ADD COLUMN is_anime boolean NOT NULL DEFAULT false",
+        """
+        ALTER TABLE titles ADD COLUMN status text
+            CHECK (status IN ('upcoming', 'returning', 'ended', 'canceled'))
+        """,
+        "ALTER TABLE titles ADD COLUMN runtime_minutes integer",
+        "ALTER TABLE titles ADD COLUMN episodes_hydrated_at timestamptz",
+        "ALTER TABLE show_episodes ADD COLUMN runtime_minutes integer",
+        "CREATE INDEX show_episodes_airs_at ON show_episodes (airs_at) WHERE airs_at IS NOT NULL",
+        """
+        CREATE TABLE anime_mappings (
+            anilist text PRIMARY KEY,
+            mal text,
+            anidb text,
+            tvdb text,
+            tmdb text,
+            tmdb_season integer
+        )
+        """,
+        "CREATE INDEX anime_mappings_tmdb ON anime_mappings (tmdb) WHERE tmdb IS NOT NULL",
+    ]
+    let backward = [
+        "DROP TABLE anime_mappings",
+        "DROP INDEX show_episodes_airs_at",
+        "ALTER TABLE show_episodes DROP COLUMN runtime_minutes",
+        "ALTER TABLE titles DROP COLUMN episodes_hydrated_at",
+        "ALTER TABLE titles DROP COLUMN runtime_minutes",
+        "ALTER TABLE titles DROP COLUMN status",
+        "ALTER TABLE titles DROP COLUMN is_anime",
+    ]
+}
+
+/// AUD-001, LIB-004, PROG-004 · action journal, deletion tombstones, book progress.
+struct CreateActionJournal: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE actions (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            actor text NOT NULL CHECK (actor IN ('user', 'agent', 'external_agent')),
+            kind text NOT NULL,
+            summary text NOT NULL,
+            item_ids uuid[] NOT NULL DEFAULT '{}',
+            inverse jsonb NOT NULL,
+            undo_of uuid REFERENCES actions(id) ON DELETE SET NULL,
+            undone_at timestamptz,
+            created_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+        "CREATE INDEX actions_user_created ON actions (user_id, created_at DESC)",
+        """
+        CREATE TABLE library_tombstones (
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            library_item_id uuid NOT NULL,
+            deleted_at timestamptz NOT NULL DEFAULT now(),
+            PRIMARY KEY (user_id, library_item_id)
+        )
+        """,
+        "CREATE INDEX library_tombstones_user_deleted ON library_tombstones (user_id, deleted_at)",
+        "ALTER TABLE library_items ADD COLUMN book_page integer CHECK (book_page >= 0)",
+        """
+        ALTER TABLE library_items ADD COLUMN book_percent double precision
+            CHECK (book_percent BETWEEN 0 AND 100)
+        """,
+        """
+        ALTER TABLE library_items ADD CONSTRAINT library_items_one_book_progress
+            CHECK (book_page IS NULL OR book_percent IS NULL)
+        """,
+    ]
+    let backward = [
+        "ALTER TABLE library_items DROP CONSTRAINT library_items_one_book_progress",
+        "ALTER TABLE library_items DROP COLUMN book_percent",
+        "ALTER TABLE library_items DROP COLUMN book_page",
+        "DROP TABLE library_tombstones",
+        "DROP TABLE actions",
+    ]
+}
+
+/// SHF-001 · shelves: saved queries over the library. A stored filter, never membership.
+struct CreateShelves: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE saved_queries (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name text NOT NULL CHECK (btrim(name) <> ''),
+            filter jsonb NOT NULL,
+            is_pinned boolean NOT NULL DEFAULT false,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            updated_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+        "CREATE INDEX saved_queries_user ON saved_queries (user_id, created_at)",
+    ]
+    let backward = ["DROP TABLE saved_queries"]
 }

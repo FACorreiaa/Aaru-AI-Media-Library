@@ -61,11 +61,13 @@ public extension MatchKey {
     /// fallback and requires the same type; a missing year on one side is allowed,
     /// two different years are not.
     static func canMerge(_ lhs: MediaRef, _ rhs: MediaRef) -> Bool {
+        // A movie and a show are never the same work — and TMDB/Trakt number them
+        // separately, so a shared id across types is a coincidence, not a match.
+        guard lhs.type == rhs.type else { return false }
         if lhs.ids.matches(rhs.ids) {
             return true
         }
-        guard lhs.type == rhs.type,
-              let left = lhs.matchKey,
+        guard let left = lhs.matchKey,
               let right = rhs.matchKey,
               left.normalizedTitle == right.normalizedTitle,
               !left.normalizedTitle.isEmpty

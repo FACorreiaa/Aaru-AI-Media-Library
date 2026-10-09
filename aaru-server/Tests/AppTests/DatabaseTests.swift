@@ -1,5 +1,6 @@
 import AaruCore
 import Foundation
+import Logging
 import Testing
 @testable import aaru
 
@@ -8,18 +9,24 @@ import Testing
 struct DatabaseTests {
     @Test("SRV-004: migrations are re-runnable")
     func migrationsRerun() async throws {
-        try await withMigratedStores { _ in }
-        try await withMigratedStores { _ in }
+        try await TestMigrations.shared.ensureMigrated()
+        var logger = Logger(label: "aaru-tests")
+        logger.logLevel = .warning
+        let fluent = try await makeFluent(testPostgresSettings(), logger: logger)
+        // Everything is already applied; running again must be a clean no-op.
+        try await fluent.migrate()
+        try await fluent.migrate()
+        try await fluent.shutdown()
     }
 
     @Test("SRV-004: one identity maps to one user")
     func identityIsUnique() async throws {
         try await withMigratedStores { stores in
             let identity = AuthIdentity(provider: .apple, subject: UUID().uuidString, email: nil)
-            let userID = try await stores.users.createUser(with: identity)
+            let userID = try await stores.users.createUser(with: identity, displayName: nil)
             #expect(try await stores.users.user(for: .apple, subject: identity.subject) == userID)
             await #expect(throws: StoreConflict.self) {
-                _ = try await stores.users.createUser(with: identity)
+                _ = try await stores.users.createUser(with: identity, displayName: nil)
             }
         }
     }
@@ -58,51 +65,72 @@ struct DatabaseTests {
     @Test("SRV-006: a second library item for the same user and title is rejected by the index")
     func libraryItemIsUnique() async throws {
         try await withMigratedStores { stores in
-            let user = try await stores.users.createUser(with: .init(provider: .email, subject: UUID().uuidString))
+            let user = try await stores.users.createUser(
+                with: .init(provider: .email, subject: UUID().uuidString),
+                displayName: nil
+            )
             let title = Title(type: .movie, title: "Dune")
             try await stores.titles.insert(title)
-            let item = try LibraryItem(
-                userID: user,
-                titleID: title.id,
-                status: .wishlist,
-                rating: Rating(8.5),
-                addedAt: wholeSecondNow(),
-                updatedAt: wholeSecondNow()
+            let snapshot = ItemSnapshot(
+                id: LibraryItemID(), titleID: title.id,
+                fields: ItemFields(status: .wishlist, rating: 8.5, isOwned: false), addedAt: wholeSecondNow(),
+                watched: []
             )
-            try await stores.library.insert(item)
-            #expect(try await stores.library.item(id: item.id, userID: user) == item)
+            try await stores.library.apply(.insertItem(snapshot), userID: user, actor: .user, kind: "add", summary: "a")
+            let stored = try await stores.library.item(id: snapshot.id, userID: user)
+            #expect(try stored?.rating == Rating(8.5))
+            #expect(stored?.addedAt == snapshot.addedAt)
             await #expect(throws: StoreConflict.self) {
-                try await stores.library.insert(LibraryItem(userID: user, titleID: title.id, status: .finished))
+                var duplicate = snapshot
+                duplicate.id = LibraryItemID()
+                try await stores.library.apply(
+                    .insertItem(duplicate),
+                    userID: user,
+                    actor: .user,
+                    kind: "add",
+                    summary: "b"
+                )
             }
             // Another user cannot read it.
-            #expect(try await stores.library.item(id: item.id, userID: UserID()) == nil)
+            #expect(try await stores.library.item(id: snapshot.id, userID: UserID()) == nil)
         }
     }
 
     @Test("SRV-006: lists keep member order and default to private")
     func listRoundTrip() async throws {
         try await withMigratedStores { stores in
-            let user = try await stores.users.createUser(with: .init(provider: .email, subject: UUID().uuidString))
+            let user = try await stores.users.createUser(
+                with: .init(provider: .email, subject: UUID().uuidString),
+                displayName: nil
+            )
             let first = Title(type: .book, title: "Dune")
             let second = Title(type: .book, title: "Children of Dune")
             try await stores.titles.insert(first)
             try await stores.titles.insert(second)
-            let list = AaruList(
-                userID: user,
-                name: "Arrakis",
-                titleIDs: [second.id, first.id],
-                createdAt: wholeSecondNow(),
-                updatedAt: wholeSecondNow()
+            let snapshot = ListSnapshot(
+                id: ListID(), name: "Arrakis", createdAt: wholeSecondNow(), members: [second.id, first.id]
             )
-            try await stores.lists.create(list)
-            #expect(try await stores.lists.lists(userID: user) == [list])
+            try await stores.library.apply(
+                .insertList(snapshot),
+                userID: user,
+                actor: .user,
+                kind: "list",
+                summary: "L"
+            )
+            let stored = try await stores.lists.lists(userID: user)
+            #expect(stored.map(\.titleIDs) == [[second.id, first.id]])
+            #expect(stored.first?.createdAt == snapshot.createdAt)
+            #expect(try await stores.lists.list(id: snapshot.id, userID: UserID()) == nil)
         }
     }
 
     @Test("SRV-007: an import job round-trips without losing a field")
     func importJobRoundTrip() async throws {
         try await withMigratedStores { stores in
-            let user = try await stores.users.createUser(with: .init(provider: .email, subject: UUID().uuidString))
+            let user = try await stores.users.createUser(
+                with: .init(provider: .email, subject: UUID().uuidString),
+                displayName: nil
+            )
             var job = ImportJob(
                 userID: user,
                 source: .letterboxdCSV,
