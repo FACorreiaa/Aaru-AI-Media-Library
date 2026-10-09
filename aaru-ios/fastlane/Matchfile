@@ -1,15 +1,16 @@
-# Aaru signs with the team's existing match storage, shared with Khepri:
-# NorthAIProject/north-ios-certificates. The team (84X9WYBF36) is at Apple's
-# limit of distribution certificates, so Aaru does not mint one; it reuses the
-# certificate already in that repo (see Khepri's Matchfile for its renewal date).
+# Aaru signs with Norviq's match storage: FinancePlanner/norviq-certificates.
+# That repo holds the team's Apple Distribution certificate (4AQ4Q8XM7Z), so
+# Aaru adds only its own App Store profiles next to Norviq's.
 #
 # Consequences:
-#   - MATCH_PASSWORD is that repo's password (the same secret Khepri uses).
+#   - MATCH_PASSWORD is that repo's password (the same secret Norviq uses).
 #   - MATCH_GIT_BASIC_AUTHORIZATION (base64 "x-access-token:<PAT>") needs a PAT
-#     that can read the repo; seed_signing needs read AND write.
-#   - Profiles for every id below are created by `bundle exec fastlane seed_signing`
-#     (iOS and macOS). CI only ever reads (readonly).
-git_url("https://github.com/NorthAIProject/north-ios-certificates.git")
+#     with Contents: Read AND Write on FinancePlanner/norviq-certificates: the
+#     beta lane runs match in write mode, like Norviq's, so CI creates Aaru's
+#     profiles the first time it signs. The App IDs and App Groups must exist
+#     in the Developer portal first — match creates profiles, not App IDs.
+#   - Revoking 4AQ4Q8XM7Z breaks Norviq AND Aaru signing.
+git_url("https://github.com/FinancePlanner/norviq-certificates.git")
 git_branch("main")
 storage_mode("git")
 type("appstore")

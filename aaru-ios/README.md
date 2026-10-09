@@ -48,23 +48,23 @@ the Developer portal. Release signing goes through fastlane match (REL-004).
 
 ```bash
 cd aaru-ios && bundle install
-bundle exec fastlane beta          # iOS + macOS, Beta config -> TestFlight (internal)
+bundle exec fastlane beta          # Beta config -> TestFlight (internal), iOS
 bundle exec fastlane release       # Release config -> App Store, phased
 bundle exec fastlane hotfix        # Release config -> App Store, not phased
-bundle exec fastlane seed_signing  # create match profiles, iOS + macOS
+bundle exec fastlane seed_signing  # refresh match profiles by hand
 ```
 
-In CI, `Apple Release` runs `beta` after `Apple CI` passes on `main`; `release` and
-`hotfix` run only on manual dispatch behind the `app-store` environment. Until the
-secrets exist the beta job skips with a notice.
+In CI, `Apple Release` runs `beta` after `Apple CI` passes on `main`; `release` and `hotfix`
+run only on manual dispatch behind the `app-store` environment. Until the secrets exist the
+beta job skips with a notice.
 
-One-time setup before the first upload:
+**Signing** reuses Norviq's match repo, `FinancePlanner/norviq-certificates` (team
+`84X9WYBF36`, distribution certificate `4AQ4Q8XM7Z`). The beta lane runs match in write mode,
+like Norviq's, so the first CI run creates Aaru's App Store profiles there.
 
-1. Register App IDs `com.fernandocorreia.aaru`, `.aaru.widgets`, `.aaru.beta`,
-   `.aaru.beta.widgets` with the App Groups and keychain sharing capabilities.
-2. Create App Store Connect app records for `com.fernandocorreia.aaru` and
-   `com.fernandocorreia.aaru.beta` (each with iOS and macOS platforms).
-3. Repo secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`, `MATCH_PASSWORD`,
-   `MATCH_GIT_BASIC_AUTHORIZATION` (the shared `north-ios-certificates` match repo).
-4. Dispatch **Seed signing** once (needs a write-capable token). macOS also needs a
-   Mac Installer Distribution certificate; match creates it if the team has room.
+**macOS** builds in CI but does not upload yet: the Mac App Store also needs a Mac Installer
+Distribution certificate, which the match repo does not hold. Add one, then add `macos` to
+`PLATFORMS` in the Fastfile.
+
+**Icons** are placeholders (reed field at dusk; the beta one carries a BETA band). The real
+logo and store metadata come with the first production release.

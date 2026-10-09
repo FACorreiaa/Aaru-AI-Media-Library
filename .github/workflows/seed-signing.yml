@@ -1,8 +1,7 @@
-# One-time (re-runnable) seeding of match profiles for every Aaru bundle id,
-# iOS and macOS (REL-004). Release runs match readonly, so dispatch this after
-# registering the App IDs and App Groups in the Developer portal, and whenever
-# a target or entitlement changes. MATCH_GIT_BASIC_AUTHORIZATION's token needs
-# Contents: Read AND Write on north-ios-certificates for this workflow.
+# On-demand seeding of match profiles for every Aaru bundle id (REL-004). The
+# beta lane already creates missing profiles, so this is only needed to refresh
+# them by hand, e.g. after an entitlement change. MATCH_GIT_BASIC_AUTHORIZATION's
+# token needs Contents: Read AND Write on FinancePlanner/norviq-certificates.
 name: Seed signing
 
 on:
