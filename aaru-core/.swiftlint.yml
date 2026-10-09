@@ -29,4 +29,5 @@ opt_in_rules:
 
 disabled_rules:
   - trailing_comma # swiftformat owns commas
+  - opening_brace # swiftformat owns brace wrapping
   - trailing_whitespace

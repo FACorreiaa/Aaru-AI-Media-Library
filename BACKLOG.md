@@ -189,8 +189,7 @@ envelope used by every list route. No business routes yet.
 spec references the shared error schema, and one deliberate 404 and one 422 return that
 shape in a test.
 
-**OPEN:** pagination style — cursor vs offset. Recommendation: cursor keyed on
-`(updated_at, id)`, because library sync from a client wants "changed since" anyway.
+**Decided 2026-10-09:** cursor keyed on `(updated_at, id)`, because library sync from a client wants "changed since" anyway.
 
 ### SRV-003 · Data layer boundary · M
 **Needs:** SRV-001.
@@ -277,8 +276,7 @@ Every `/v1` route except health and auth requires it.
 error shape, and a request with a token for user A cannot read user B's rows (test asserts
 this, not a comment).
 
-**OPEN:** JWT vs opaque session. Recommendation: opaque token in Postgres with a
-`sessions` table. Revocation matters more than statelessness at this scale, and the
+**Decided 2026-10-09:** opaque token in Postgres with a `sessions` table (was OPEN). Revocation matters more than statelessness at this scale, and the
 Trakt-token path already means the server keeps state.
 
 ### AUTH-002 · Sign in with Apple · M
@@ -299,7 +297,7 @@ magic link. One of the two, not both.
 unknown email are indistinguishable in response and timing to a reasonable degree, and
 sign-up is rate-limited per IP and per email.
 
-**OPEN:** password vs magic link. Recommendation: magic link. It removes password storage,
+**Decided 2026-10-09:** magic link, sent through Resend (was OPEN). It removes password storage,
 reset flows, and breach surface; the cost is an email sender dependency.
 
 ### AUTH-004 · Sign out and account delete · S
@@ -342,7 +340,7 @@ Search and detail for `book`. ISBN normalization (ISBN-10 to ISBN-13), cover URL
 **Needs:** CAT-002, CAT-003.
 `q` and `type=movie|show|anime|book` (`anime` is a search scope over the AniList adapter,
 see CAT-008). Fan out with structured concurrency when type is absent —
-**OPEN:** whether `type` is required. Recommendation: required in v1. Mixed-type ranking
+**Decided 2026-10-09:** `type` is required in v1 (was OPEN). Mixed-type ranking
 is a research problem and the client has tabs anyway.
 
 **Done when:** results are catalog projections with no library fields on them, and a
@@ -368,8 +366,7 @@ cache. Re-hydrate on a staleness window for airing shows.
 Postgres with no TMDB call, and adding a season upstream is picked up after the staleness
 window.
 
-**OPEN:** staleness window. Suggested: 24h for shows with an episode airing within 30
-days, 30d otherwise.
+**Decided 2026-10-09:** 24h for shows with an episode airing within 30 days, 30d otherwise.
 
 ### CAT-007 · AniList adapter · M
 **Needs:** CAT-001.
@@ -387,7 +384,7 @@ and no AniList field name appears in a response DTO.
 (migration alongside SRV-005 if it has not shipped, else its own migration). `Title` gains an
 anime marker; search gains the `anime` scope.
 
-**OPEN:** `MediaType.anime` vs an `isAnime` facet on `movie`/`show`. Recommendation: the facet.
+**Decided 2026-10-09:** an `isAnime` facet on `movie`/`show`, not a fourth `MediaType`.
 Anime series then reuse `ShowProgress`, `show_episodes`, calendar, Up Next, and every widget
 with no second code path; anime films are movies with the flag.
 
@@ -454,8 +451,7 @@ store for a first-class view, so it is user data with retention, not observabili
 **Done when:** a `PATCH` and a season bulk-mark each produce exactly one journal row inside
 the same transaction as the write, and a failed write leaves no row.
 
-**OPEN:** retention. Recommendation: keep 90 days of journal rows, keep the last 20 per user
-forever so the ribbon is never empty.
+**Decided 2026-10-09:** keep 90 days of journal rows, and the last 20 per user forever.
 
 ### AUD-002 · Undo endpoint · M
 **Needs:** AUD-001, PROG-002.
@@ -498,8 +494,7 @@ running show.
 whose finale has aired plus every episode watched reports `nextEpisode == nil` without
 flipping status on its own.
 
-**OPEN:** should completing an ended show auto-set `finished`? Recommendation: yes for
-shows TMDB reports as `Ended`/`Canceled`, no otherwise.
+**Decided 2026-10-09:** yes for shows TMDB reports as `Ended`/`Canceled`, no otherwise.
 
 ### PROG-004 · Book progress · S
 **Needs:** LIB-003.

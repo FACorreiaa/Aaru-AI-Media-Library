@@ -23,16 +23,27 @@ let package = Package(
         .package(url: "https://github.com/hummingbird-project/swift-openapi-hummingbird.git", from: "2.0.1"),
         .package(url: "https://github.com/vapor/fluent-kit.git", from: "1.56.0"),
         .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.12.0"),
+        .package(url: "https://github.com/vapor/jwt-kit.git", from: "5.0.0"),
+        .package(url: "https://github.com/apple/swift-crypto.git", "3.0.0" ..< "5.0.0"),
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.33.0"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
+        .package(url: "https://github.com/apple/swift-http-types.git", from: "1.3.0"),
     ],
     targets: [
         .executableTarget(
             name: "aaru",
             dependencies: [
                 .product(name: "AaruCore", package: "aaru-core"),
+                .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "Configuration", package: "swift-configuration"),
+                .product(name: "Crypto", package: "swift-crypto"),
+                .product(name: "JWTKit", package: "jwt-kit"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOHTTP1", package: "swift-nio"),
                 .product(name: "FluentKit", package: "fluent-kit"),
                 .product(name: "FluentSQL", package: "fluent-kit"),
                 .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
+                .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdFluent", package: "hummingbird-fluent"),
                 .byName(name: "aaruAPI"),
@@ -54,6 +65,8 @@ let package = Package(
             dependencies: [
                 .byName(name: "aaru"),
                 .product(name: "HummingbirdTesting", package: "hummingbird"),
+                .product(name: "JWTKit", package: "jwt-kit"),
+                .product(name: "FluentSQL", package: "fluent-kit"),
             ],
             path: "Tests/AppTests"
         ),

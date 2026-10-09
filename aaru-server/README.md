@@ -58,6 +58,10 @@ docker build -f aaru-server/Dockerfile -t aaru-server .
 | `postgres.password` | `POSTGRES_PASSWORD` | required |
 | `postgres.database` | `POSTGRES_DATABASE` | required |
 | `tmdb.api.key` | `TMDB_API_KEY` | required to serve |
+| `apple.audiences` | `APPLE_AUDIENCES` | `com.fernandocorreia.aaru,com.fernandocorreia.aaru.beta` (add the web Services ID) |
+| `resend.api.key` | `RESEND_API_KEY` | unset → email sign-in answers 503 |
+| `email.from` | `EMAIL_FROM` | `Aaru <signin@aaru.example>` |
+| `magic.link.base.url` | `MAGIC_LINK_BASE_URL` | `https://aaru.example/auth/verify` |
 | `log.level` | `LOG_LEVEL` | `info` |
 | `http.serverName` | — | `aaru-server` |
 | `db.migrate` | `DB_MIGRATE` (`--db-migrate`) | unset |

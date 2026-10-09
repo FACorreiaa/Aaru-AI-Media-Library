@@ -7,9 +7,6 @@ import Logging
 import OpenAPIHummingbird
 import ServiceLifecycle
 
-/// Request context used by application
-typealias AppRequestContext = BasicRequestContext
-
 /// Builds the application.
 ///
 /// With `db.migrate` set, applies migrations and exits without serving; that path
@@ -33,7 +30,24 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let config = try AppConfig.load(from: reader)
     let fluent = try await makeFluent(config.postgres, logger: logger)
     let stores = try Stores.postgres(fluent.db())
-    let router = try buildRouter(stores: stores)
+    let transport = AsyncHTTPTransport(client: .shared)
+    let auth = AuthService(
+        stores: stores,
+        apple: AppleIdentityVerifier(
+            audiences: config.appleAudiences,
+            jwks: AppleJWKSCache(transport: transport, url: AppleIdentityVerifier.keysURL)
+        ),
+        magicLinks: config.email.map { email in
+            (
+                ResendMagicLinkSender(transport: transport, apiKey: email.resendAPIKey, from: email.from),
+                email.linkBaseURL
+            )
+        }
+    )
+    if config.email == nil {
+        logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
+    }
+    let router = try buildRouter(stores: stores, auth: auth)
     return Application(
         router: router,
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
@@ -62,15 +76,16 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
     return fluent
 }
 
-/// Builds the router: logging, the shared error shape, then the generated `/v1` handlers.
-func buildRouter(stores: Stores) throws -> Router<AppRequestContext> {
+/// Builds the router: logging, the shared error shape, auth, then the generated `/v1` handlers.
+func buildRouter(stores: Stores, auth: AuthService) throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
         LogRequestsMiddleware(.info)
         ErrorMiddleware()
+        AuthMiddleware(sessions: stores.sessions)
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()
     }
-    try APIImplementation(stores: stores).registerHandlers(on: router)
+    try APIImplementation(stores: stores, auth: auth).registerHandlers(on: router)
     return router
 }

@@ -1,4 +1,5 @@
 import AaruCore
+import Foundation
 
 // The data layer boundary (SRV-003). Request handlers see only these protocols;
 // Fluent and SQL stay behind them. Methods arrive with the ticket that needs them —
@@ -28,8 +29,32 @@ protocol DatabaseHealth: Sendable {
 
 protocol UserStore: Sendable {
     /// Creates a user with its first identity, or throws `StoreConflict` if the identity exists.
-    func createUser(with identity: AuthIdentity) async throws -> UserID
+    func createUser(with identity: AuthIdentity, displayName: String?) async throws -> UserID
     func user(for provider: AuthIdentity.Provider, subject: String) async throws -> UserID?
+    func profile(_ id: UserID) async throws -> UserProfile?
+    /// Deletes the user and, by cascade, every row that belongs to them, plus the
+    /// magic links sent to their email identities (AUTH-004).
+    func deleteUser(_ id: UserID) async throws
+}
+
+struct UserProfile: Sendable, Equatable {
+    var id: UserID
+    var displayName: String?
+    var providers: [AuthIdentity.Provider]
+}
+
+protocol SessionStore: Sendable {
+    func create(userID: UserID, tokenHash: String, expiresAt: Date) async throws
+    /// The session's user, or nil when the token is unknown or expired.
+    func userID(forTokenHash tokenHash: String, now: Date) async throws -> UserID?
+    func delete(tokenHash: String) async throws
+}
+
+protocol MagicLinkStore: Sendable {
+    func create(email: String, tokenHash: String, expiresAt: Date) async throws
+    /// Atomically marks the link used and returns its email. Nil when the link is
+    /// unknown, expired, or already used — a link signs in once.
+    func consume(tokenHash: String, now: Date) async throws -> String?
 }
 
 protocol TitleStore: Sendable {
@@ -59,6 +84,8 @@ protocol ImportJobStore: Sendable {
 struct Stores: Sendable {
     var health: any DatabaseHealth
     var users: any UserStore
+    var sessions: any SessionStore
+    var magicLinks: any MagicLinkStore
     var titles: any TitleStore
     var library: any LibraryStore
     var lists: any ListStore

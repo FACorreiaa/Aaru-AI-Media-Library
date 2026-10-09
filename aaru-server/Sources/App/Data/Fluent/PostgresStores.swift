@@ -13,6 +13,8 @@ extension Stores {
         return Stores(
             health: PostgresHealth(sql: sql),
             users: PostgresUserStore(database: database),
+            sessions: PostgresSessionStore(sql: sql),
+            magicLinks: PostgresMagicLinkStore(sql: sql),
             titles: PostgresTitleStore(sql: sql),
             library: PostgresLibraryStore(sql: sql),
             lists: PostgresListStore(database: database, sql: sql),
@@ -21,7 +23,7 @@ extension Stores {
     }
 }
 
-private func sqlDatabase(_ database: any Database) throws -> any SQLDatabase {
+func sqlDatabase(_ database: any Database) throws -> any SQLDatabase {
     guard let sql = database as? any SQLDatabase else { throw MigrationNeedsSQL() }
     return sql
 }
@@ -46,12 +48,13 @@ struct PostgresHealth: DatabaseHealth {
 struct PostgresUserStore: UserStore {
     let database: any Database
 
-    func createUser(with identity: AuthIdentity) async throws -> UserID {
+    func createUser(with identity: AuthIdentity, displayName: String?) async throws -> UserID {
         let userID = UserID()
         try await mappingConflicts("That sign-in is already linked to an account.") {
             try await database.transaction { database in
                 let sql = try sqlDatabase(database)
-                try await sql.insert(into: "users").columns("id").values(SQLBind(userID.rawValue)).run()
+                try await sql.insert(into: "users").columns("id", "display_name")
+                    .values(SQLBind(userID.rawValue), SQLBind(displayName)).run()
                 try await sql.insert(into: "auth_identities")
                     .columns("id", "user_id", "provider", "provider_subject", "email")
                     .values(

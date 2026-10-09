@@ -31,6 +31,92 @@ paths:
                 $ref: '#/components/schemas/Health'
         default:
           $ref: '#/components/responses/Error'
+  /v1/auth/apple:
+    post:
+      operationId: signInWithApple
+      summary: Exchange a Sign in with Apple identity token for a session.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppleSignInRequest'
+      responses:
+        '200':
+          description: Signed in. The token is shown once.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/auth/email/link:
+    post:
+      operationId: requestMagicLink
+      summary: Email a one-time sign-in link. Same answer whether or not an account exists.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagicLinkRequest'
+      responses:
+        '202':
+          description: The link was sent (or would have been).
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/auth/email/verify:
+    post:
+      operationId: verifyMagicLink
+      summary: Exchange a magic-link token for a session. Creates the account on first use.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagicLinkVerifyRequest'
+      responses:
+        '200':
+          description: Signed in. The token is shown once.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/auth/session:
+    delete:
+      operationId: signOut
+      summary: End the current session.
+      responses:
+        '204':
+          description: Signed out.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me:
+    get:
+      operationId: getMe
+      summary: The signed-in account.
+      responses:
+        '200':
+          description: The account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteAccount
+      summary: Delete the account and everything that belongs to it.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -78,6 +164,58 @@ components:
       properties:
         nextCursor:
           type: [string, 'null']
+    AppleSignInRequest:
+      type: object
+      required: [identityToken, nonce]
+      properties:
+        identityToken:
+          type: string
+          description: The JWT from ASAuthorizationAppleIDCredential / Sign in with Apple JS.
+        nonce:
+          type: string
+          description: The raw nonce whose SHA-256 the client sent to Apple.
+        displayName:
+          type: string
+          description: Apple sends the name only on the first authorization; pass it then.
+    MagicLinkRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+    MagicLinkVerifyRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    Session:
+      type: object
+      required: [token, userId, expiresAt]
+      properties:
+        token:
+          type: string
+          description: "Bearer token, sent in the Authorization header as `Bearer <token>`."
+        userId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+    Me:
+      type: object
+      required: [userId, providers]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        providers:
+          type: array
+          items:
+            type: string
+            enum: [apple, email]
     Health:
       type: object
       required: [status]

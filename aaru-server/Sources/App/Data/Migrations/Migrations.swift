@@ -11,6 +11,7 @@ let allMigrations: [any Migration] = [
     CreateTitles(),
     CreateLibrary(),
     CreateImportJobs(),
+    CreateSessions(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {
@@ -201,4 +202,37 @@ struct CreateImportJobs: SQLMigration {
         "CREATE INDEX import_jobs_user_created ON import_jobs (user_id, created_at DESC)",
     ]
     let backward = ["DROP TABLE import_jobs"]
+}
+
+/// AUTH-001…003 · opaque sessions, magic links, and the display name Apple sends once.
+struct CreateSessions: SQLMigration {
+    let forward = [
+        "ALTER TABLE users ADD COLUMN display_name text",
+        """
+        CREATE TABLE sessions (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token_hash text NOT NULL UNIQUE,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            expires_at timestamptz NOT NULL
+        )
+        """,
+        "CREATE INDEX sessions_user_id ON sessions (user_id)",
+        """
+        CREATE TABLE magic_links (
+            id uuid PRIMARY KEY,
+            email text NOT NULL,
+            token_hash text NOT NULL UNIQUE,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            expires_at timestamptz NOT NULL,
+            used_at timestamptz
+        )
+        """,
+        "CREATE INDEX magic_links_email ON magic_links (email)",
+    ]
+    let backward = [
+        "DROP TABLE magic_links",
+        "DROP TABLE sessions",
+        "ALTER TABLE users DROP COLUMN display_name",
+    ]
 }

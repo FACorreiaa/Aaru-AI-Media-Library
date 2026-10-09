@@ -19,6 +19,10 @@ struct AppError: Error, Sendable {
         AppError(status: .conflict, code: "conflict", message: message)
     }
 
+    static func badRequest(_ message: String = "The request could not be read.") -> AppError {
+        AppError(status: .badRequest, code: "bad_request", message: message)
+    }
+
     static func unauthorized(_ message: String = "Sign in to continue.") -> AppError {
         AppError(status: .unauthorized, code: "unauthorized", message: message)
     }

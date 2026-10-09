@@ -496,9 +496,19 @@ protocol ModelProviding: Sendable {
 
 ## Auth
 
-- Sign in with Apple is the primary native path.
-- Email auth is for web and for users without Apple.
-- Server issues its own session. Provider tokens (Trakt) are stored separately and never sent to the client.
+- Sign in with Apple is the primary native path. The server verifies the identity token
+  against Apple's JWKS (signature, `iss`, `aud` ∈ `APPLE_AUDIENCES`, `exp`, and the nonce:
+  the client sends Apple `sha256(rawNonce)` and sends us `rawNonce`). Accounts are keyed on
+  Apple's `sub`, never on email. An unknown `kid` refreshes the key set once, then fails
+  closed — checked by Aaru, because jwt-kit silently falls back to its default key.
+- Email is a **magic link** (decided 2026-10-09): `POST /v1/auth/email/link` emails a one-time
+  link via Resend; `POST /v1/auth/email/verify` exchanges it. No passwords are stored. Links
+  live 15 minutes, are single-use (consumed in one `UPDATE … RETURNING`), and are rate-limited
+  per address (5/h) and per client (20/h). Without `RESEND_API_KEY` the route answers 503.
+- Sessions are **opaque bearer tokens** (decided 2026-10-09): 32 random bytes, shown once;
+  Postgres stores only the SHA-256 in `sessions`. 90-day lifetime. Revocation is a row delete.
+  `AuthMiddleware` resolves the token and refuses every `/v1` route except health and auth.
+- Provider tokens (Trakt) are stored separately and never sent to the client.
 
 ## Clients
 
