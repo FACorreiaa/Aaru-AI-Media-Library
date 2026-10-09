@@ -5,6 +5,7 @@ struct Services: Sendable {
     var library: LibraryService
     var lists: ListService
     var shelves: ShelfService
+    var schedule: ScheduleService
 
     static func make(stores: Stores, catalogs: CatalogProviders, auth: AuthService) -> Services {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
@@ -15,7 +16,8 @@ struct Services: Sendable {
             catalog: catalog,
             library: library,
             lists: ListService(stores: stores, resolver: resolver),
-            shelves: ShelfService(stores: stores, library: library)
+            shelves: ShelfService(stores: stores, library: library),
+            schedule: ScheduleService(stores: stores, catalog: catalog)
         )
     }
 }

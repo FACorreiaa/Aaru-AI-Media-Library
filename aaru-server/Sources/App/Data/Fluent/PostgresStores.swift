@@ -20,6 +20,7 @@ extension Stores {
             library: PostgresLibraryStore(database: database),
             lists: PostgresListStore(sql: sql),
             shelves: PostgresShelfStore(sql: sql),
+            schedule: PostgresScheduleStore(sql: sql),
             importJobs: PostgresImportJobStore(sql: sql)
         )
     }

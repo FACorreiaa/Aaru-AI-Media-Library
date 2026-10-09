@@ -61,7 +61,7 @@ func withMigratedStores<T>(_ body: (Stores) async throws -> T) async throws -> T
 
 /// A store that must not be touched by the test using it.
 struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, AnimeMappingStore, LibraryStore,
-    ListStore, ShelfStore, ImportJobStore
+    ListStore, ShelfStore, ScheduleStore, ImportJobStore
 {
     func find(ids _: ExternalIDs, type _: AaruCore.MediaType) async throws -> Title? {
         throw Touched()
@@ -188,6 +188,22 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
+    func calendar(userID _: UserID, from _: Date, until _: Date, now _: Date) async throws -> [CalendarEntry] {
+        throw Touched()
+    }
+
+    func continueWatching(userID _: UserID, now _: Date, limit _: Int) async throws -> [ContinueEntry] {
+        throw Touched()
+    }
+
+    func startWatching(userID _: UserID, limit _: Int) async throws -> [StartEntry] {
+        throw Touched()
+    }
+
+    func unhydratedTrackedShows(userID _: UserID, limit _: Int) async throws -> [TitleID] {
+        throw Touched()
+    }
+
     func shelves(userID _: UserID) async throws -> [Shelf] {
         throw Touched()
     }
@@ -241,6 +257,7 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         library: untouched,
         lists: untouched,
         shelves: untouched,
+        schedule: untouched,
         importJobs: untouched
     )
 }

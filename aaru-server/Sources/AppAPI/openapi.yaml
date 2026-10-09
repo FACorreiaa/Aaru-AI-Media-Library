@@ -490,6 +490,33 @@ paths:
               schema: {$ref: '#/components/schemas/LibraryPage'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/calendar:
+    get:
+      operationId: getCalendar
+      summary: Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+      parameters:
+        - {name: from, in: query, required: true, schema: {type: string, format: date-time}}
+        - {name: to, in: query, required: true, schema: {type: string, format: date-time}}
+      responses:
+        '200':
+          description: Episodes, by air time.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Calendar'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/up-next:
+    get:
+      operationId: getUpNext
+      summary: Continue Watching and Start Watching for the home screen, in one call.
+      responses:
+        '200':
+          description: Both rows.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UpNext'}
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -880,6 +907,61 @@ components:
         name: {type: string}
         filter: {$ref: '#/components/schemas/ShelfFilter'}
         isPinned: {type: boolean}
+    CalendarEntry:
+      type: object
+      required: [libraryItemId, title, season, number, airsAt, watched, kind]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        season: {type: integer}
+        number: {type: integer}
+        episodeName: {type: string}
+        airsAt: {type: string, format: date-time}
+        runtimeMinutes: {type: integer}
+        watched: {type: boolean}
+        kind:
+          type: string
+          enum: [premiere, finale, regular]
+    Calendar:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CalendarEntry'}
+    ContinueEntry:
+      type: object
+      required: [libraryItemId, title, next, remainingCount, remainingMinutes, isFinale]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        next: {$ref: '#/components/schemas/EpisodeRef'}
+        nextName: {type: string}
+        nextRuntimeMinutes: {type: integer}
+        remainingCount:
+          type: integer
+          description: Aired, unwatched episodes including the next one. Specials excluded.
+        remainingMinutes: {type: integer}
+        isFinale:
+          type: boolean
+          description: The next episode is the last of its season.
+    StartEntry:
+      type: object
+      required: [libraryItemId, title]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        runtimeMinutes: {type: integer}
+    UpNext:
+      type: object
+      required: [continueWatching, startWatching]
+      properties:
+        continueWatching:
+          type: array
+          items: {$ref: '#/components/schemas/ContinueEntry'}
+        startWatching:
+          type: array
+          items: {$ref: '#/components/schemas/StartEntry'}
     Health:
       type: object
       required: [status]

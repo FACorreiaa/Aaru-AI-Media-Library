@@ -57,6 +57,23 @@ So the real starting line is P0.
 | REL-005 | Image builds from the repo root and was smoke-tested locally (migrate, fail-fast, health 200); promote workflow written; infra draft PR LuminaVault/LuminaVaultInfra#292. Needs `TMDB_API_KEY` sealed, first image tag, `/data/pg-aaru` on the node, `INFRA_TOKEN`, and the domain. |
 | REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Needs Cloudflare secrets. |
 
+### P1 progress (2026-10-09, branch `p1-basics`, stacked on `p0-rails`, not pushed)
+
+Server side of P1 is built: 62 server tests and 37 core tests pass against local Postgres,
+with every provider stubbed.
+
+| Group | State |
+| --- | --- |
+| M2 Auth (AUTH-001…004) | Done. Email sign-in answers 503 until `RESEND_API_KEY` and a verified sending domain exist. |
+| M3 Catalog (CAT-001…009) | Done. CAT-010 (load the anime mapping dataset) is open: `anime_mappings` is empty until then. |
+| M4 Library + journal (LIB-001…004, AUD-001/002) | Done. Journal pruning (90 days / last 20) waits for JOB-001. |
+| M5 Progress (PROG-001…004) | Done. |
+| M6 Lists + shelves (LST-001/002, SHF-001/002) | Done. List writes are journaled and undoable. |
+| CAL-001, UPN-001 | Done. Network/platform is not shown: no provider field is stored for it yet. Shows hydrate when added; refreshing every tracked show on its staleness window needs a job (JOB-001). |
+
+**P1 gate** (works end to end against the production API on `maat`) is not met until P0's
+deploy steps are done.
+
 ---
 
 ## Phase map

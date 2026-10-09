@@ -170,5 +170,6 @@ struct Stores: Sendable {
     var library: any LibraryStore
     var lists: any ListStore
     var shelves: any ShelfStore
+    var schedule: any ScheduleStore
     var importJobs: any ImportJobStore
 }

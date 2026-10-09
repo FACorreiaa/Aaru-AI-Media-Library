@@ -65,6 +65,11 @@ struct LibraryService: Sendable {
                 .insertItem(snapshot), userID: userID, actor: .user, kind: "add",
                 summary: "Added \(title.title) to \(status.label)"
             )
+            if title.type == .show {
+                // Fetch episodes now so the calendar and Up Next have them. Best effort:
+                // a provider outage must not fail the add; the calendar retries.
+                _ = try? await catalog.detail(title.id)
+            }
             return try await entry(snapshot.id, userID: userID)
         } catch is StoreConflict {
             guard let winner = try await stores.library.item(userID: userID, titleID: title.id)
