@@ -1,0 +1,20 @@
+.DS_Store
+*.pkg
+
+# Xcode
+xcuserdata/
+DerivedData/
+aaru-ios/Config/Secrets.xcconfig
+
+# fastlane
+aaru-ios/fastlane/report.xml
+aaru-ios/fastlane/README.md
+aaru-ios/fastlane/test_output/
+aaru-ios/build/
+*.ipa
+*.dSYM.zip
+
+# Env
+.env
+.env.*
+!.env.example
