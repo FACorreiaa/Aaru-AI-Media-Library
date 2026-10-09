@@ -1,0 +1,19 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	// Beta web (REL-006). Deployed on every merge to main by "Web Deploy".
+	// Same API as production; see wrangler.jsonc.
+	"name": "aaru-client-staging",
+	"compatibility_date": "2026-09-27",
+	"compatibility_flags": ["nodejs_compat"],
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"workers_dev": true,
+	"preview_urls": true,
+	"vars": {
+		"PUBLIC_API_BASE_URL": "https://api.aaru.example",
+		"PUBLIC_CHANNEL": "beta"
+	}
+}

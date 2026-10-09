@@ -1,0 +1,78 @@
+# Swift CI for aaru-core and aaru-server (REL-001, SRV-009).
+# The server depends on ../aaru-core, so a change to either runs both.
+name: Swift CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "aaru-core/**"
+      - "aaru-server/**"
+      - ".github/workflows/ci-swift.yml"
+  pull_request:
+    paths:
+      - "aaru-core/**"
+      - "aaru-server/**"
+      - ".github/workflows/ci-swift.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-swift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: aaru-core tests
+    runs-on: ubuntu-latest
+    container: swift:6.3-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: swift test --package-path aaru-core
+
+  server:
+    name: aaru-server tests
+    runs-on: ubuntu-latest
+    container: swift:6.3-noble
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: aaru
+          POSTGRES_PASSWORD: aaru
+          POSTGRES_DB: aaru_test
+        options: >-
+          --health-cmd "pg_isready -U aaru"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: aaru
+      POSTGRES_PASSWORD: aaru
+      POSTGRES_DATABASE: aaru_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: aaru-server/.build
+          key: ${{ runner.os }}-server-${{ hashFiles('aaru-server/Package.resolved') }}
+          restore-keys: ${{ runner.os }}-server-
+      - name: Test (migrations run against the service database)
+        run: swift test --package-path aaru-server
+
+  lint:
+    name: swiftformat + swiftlint
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install swiftformat swiftlint
+      - name: Lint
+        run: |
+          set -euo pipefail
+          for pkg in aaru-core aaru-server; do
+            echo "== $pkg =="
+            (cd "$pkg" && swiftformat . --lint && swiftlint --strict --quiet)
+          done

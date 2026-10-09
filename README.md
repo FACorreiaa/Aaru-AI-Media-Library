@@ -1,6 +1,6 @@
 # Aaru
 
-Private-first library for the movies, shows, and books you care about.
+Private-first library for the movies, shows, anime, and books you care about.
 
 Aaru is named after the Field of Reeds — a quiet place where stories live. Track what
 you want, what you are in the middle of, and what you have finished. Import the history
@@ -28,12 +28,13 @@ are empty directories.
 - **Server**: Hummingbird 2 + PostgreSQL (Fluent) + background import jobs
 - **Shared**: `AaruCore` — models, IDs, validation
 - **Clients**: SwiftUI on iOS and Mac (prefer one multiplatform target)
-- **Web now**: marketing landing page (Hummingbird + Mustache or Elementary, Tailwind)
-- **Web later**: logged-in library against the same `/v1` API
-- **Catalog**: TMDB (movies, TV), Open Library (books)
-- **Imports**: Trakt OAuth, then IMDb / Letterboxd / Goodreads CSV, then CAT list or ICS
+- **Widgets**: iOS + macOS widgets, "Now watching" Live Activity, App Intents
+- **Web**: `aaru-client` — SvelteKit on Cloudflare Workers, landing + logged-in client on `/v1`
+- **Catalog**: TMDB (movies, TV), AniList (anime), Open Library (books)
+- **Imports**: Trakt OAuth, then IMDb / Letterboxd / Goodreads CSV, CAT list or ICS, TV Time, MAL, AniList
+- **Hosting**: API + Postgres on the `maat` cluster via `platform/infra`; beta and prod apps share one API
 
-Aaru is the source of truth after import. No two-way sync in v1. No scraping.
+Aaru is the source of truth after import. No two-way sync. No scraping.
 
 ## Repo layout
 
@@ -41,9 +42,8 @@ Aaru is the source of truth after import. No two-way sync in v1. No scraping.
 aaru/
   aaru-core/       AaruCore package — models, IDs, validation (shared by server and clients)
   aaru-server/     Hummingbird 2 API — auth, library, search, lists, import jobs
-  aaru-ios/        SwiftUI client, iPhone + Mac              (not scaffolded)
-  aaru-landing/    marketing landing page                     (not scaffolded)
-  aaru-site/       logged-in web client on /v1, after native launch (not scaffolded)
+  aaru-ios/        SwiftUI client, iPhone + Mac + widgets     (not scaffolded)
+  aaru-client/     SvelteKit web on Workers: landing + app    (template only)
   README.md
   CLAUDE.md
   ARCHITECTURE.md
@@ -93,11 +93,15 @@ You will need:
 Never commit provider secrets. Never run destructive database commands against a
 non-local database.
 
-## What v1 will not include
+## Phases
 
-Two-way sync, scrobbling, recommendations, friend feeds, public profiles,
-AniList/MAL/SIMKL live integrations, music/comics/games, or a full web clone of the
-native apps before those apps ship.
+Basics first (P0 rails, P1 API, P2 clients + widgets + imports). After that gate:
+scrobbling and Stremio/Plex/Jellyfin (P3), friends and activity (P4), points, streaks and
+badges (P5), encrypted DMs and watch-together rooms (P6), agent surfaces (P7). See
+[`BACKLOG.md`](BACKLOG.md).
+
+Never: two-way sync, a recommendations engine, a public feed or public profiles,
+music/comics/games, scraping.
 
 ## License
 

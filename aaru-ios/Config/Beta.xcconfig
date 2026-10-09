@@ -1,0 +1,9 @@
+#include "Base.xcconfig"
+
+// TestFlight. A separate app (bundle id + .beta) that talks to the production
+// API: beta is client-side only, there is one backend.
+APP_BUNDLE_ID = com.fernandocorreia.aaru.beta
+APP_DISPLAY_NAME = Aaru Beta
+APP_ICON_NAME = AppIconBeta
+// Placeholder until the domain exists (BACKLOG REL-005 OPEN).
+API_BASE_URL = https:/$()/api.aaru.example

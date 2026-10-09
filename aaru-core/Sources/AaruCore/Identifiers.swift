@@ -20,7 +20,9 @@ public struct AaruID<Scope: IDScope>: Hashable, Sendable, CustomStringConvertibl
         self.rawValue = uuid
     }
 
-    public var description: String { rawValue.uuidString }
+    public var description: String {
+        rawValue.uuidString
+    }
 }
 
 extension AaruID: Codable {

@@ -12,9 +12,10 @@ pipeline, and [`../aaru-core/README.md`](../aaru-core/README.md) for the shared 
 
 ## Status
 
-Skeleton. Configuration, logging, Postgres, OpenAPI wiring, and the test harness work.
-The only implemented route is the template `getHello`. Nothing in `ARCHITECTURE.md`'s
-route map is built yet.
+M1 foundation (`BACKLOG.md` SRV-001…SRV-009). The `/v1` spec skeleton with the shared
+`ErrorResponse` shape, the data layer (`Sources/App/Data`), migrations for users, titles,
+library, lists, and import jobs, fail-fast config, and `GET /v1/health`. No business routes
+yet — those start with M2 auth.
 
 ## Running it
 
@@ -27,22 +28,24 @@ swift test                    # needs the database up
 Migrations run as a separate invocation and exit — see `Sources/App/App+build.swift`:
 
 ```bash
-swift run aaru --db.migrate true
+swift run aaru --db-migrate
 ```
 
-There are no migrations registered yet, so today this is a no-op that exits 0.
+It is re-runnable: applied migrations are recorded in `_fluent_migrations`. It needs only
+the Postgres settings, not `TMDB_API_KEY`.
 
-Docker build for deployment:
+Docker build for deployment. The build context is the **repo root**, because the server
+depends on `../aaru-core`:
 
 ```bash
-docker build -t aaru-server .
+docker build -f aaru-server/Dockerfile -t aaru-server .
 ```
 
 ## Configuration
 
 `Sources/App/App.swift` reads settings in this order, first hit wins:
 
-1. Command line arguments — `--postgres.host 10.0.0.2`
+1. Command line arguments — `--postgres-host 10.0.0.2` (dots become dashes)
 2. Environment variables — `POSTGRES_HOST`
 3. `.env` in the working directory (optional)
 4. In-memory defaults
@@ -54,25 +57,31 @@ docker build -t aaru-server .
 | `postgres.user` | `POSTGRES_USER` | required |
 | `postgres.password` | `POSTGRES_PASSWORD` | required |
 | `postgres.database` | `POSTGRES_DATABASE` | required |
+| `tmdb.api.key` | `TMDB_API_KEY` | required to serve |
 | `log.level` | `LOG_LEVEL` | `info` |
 | `http.serverName` | — | `aaru-server` |
-| `db.migrate` | `DB_MIGRATE` | unset |
+| `db.migrate` | `DB_MIGRATE` (`--db-migrate`) | unset |
 
-The checked-in `.env` holds the local docker-compose credentials only. Real provider
-secrets — TMDB, Trakt — belong in the environment and must never be committed.
+A missing required key stops boot with `MissingConfigError` naming the environment
+variable. Keys are added with the ticket that reads them (Trakt with IMP-002, session
+signing with AUTH-001). `.env` is git-ignored and holds local docker-compose credentials
+only; real provider secrets live in the environment and are never committed.
 
 ## Layout
 
 ```text
 Sources/App/         executable target `aaru`
   App.swift                     entry point, configuration reader
-  App+build.swift               application, router, WebSocket router, Fluent setup
-  APIImplementation.swift       conformance to the generated APIProtocol
-  OpenAPIRequestContextMiddleware.swift   puts the request context in a TaskLocal
+  App+build.swift               application, router, Fluent setup, migrate mode
+  API/                          handlers (APIImplementation), AppError, ErrorMiddleware
+  Config/AppConfig.swift        typed config, fail-fast on missing keys
+  Data/Stores.swift             the data layer boundary: store protocols handlers depend on
+  Data/Fluent/                  Postgres implementations (the only SQL outside migrations)
+  Data/Migrations/              schema, raw SQL, in apply order
 Sources/AppAPI/      target `aaruAPI`
   openapi.yaml                  the API contract — routes start here
   openapi-generator-config.yaml types + server, package access
-Tests/AppTests/      swift-testing suite
+Tests/AppTests/      swift-testing suite (API contract with fake stores; Postgres-backed store tests)
 ```
 
 ## How a route gets added
@@ -82,7 +91,9 @@ Routes are generated from the OpenAPI document, not hand-registered.
 1. Describe the operation in `Sources/AppAPI/openapi.yaml`.
 2. Build — the generator plugin adds the requirement to `APIProtocol`.
 3. Implement it in `APIImplementation.swift`; the compiler tells you what is missing.
-4. Data access goes through the Fluent layer, never ad-hoc SQL in the handler.
+4. Data access goes through a protocol in `Data/Stores.swift`. No `Fluent`, `SQLKit`, or
+   `Database` symbol appears in a handler file. Throw `AppError` or an `AaruCore`
+   `ValidationError`; `ErrorMiddleware` renders the shared error shape.
 
 Generated types are `package`-access and cannot leave `aaruAPI`. Anything a client also
 needs is a hand-written type in `AaruCore`.
@@ -95,21 +106,10 @@ needs is a hand-written type in `AaruCore`.
 | hummingbird-fluent, fluent-kit, fluent-postgres-driver | Postgres access and migrations |
 | swift-configuration | Layered config (CLI → env → `.env` → defaults) |
 | swift-openapi-generator / -runtime / swift-openapi-hummingbird | Routes and DTOs from `openapi.yaml` |
-| hummingbird-websocket | Phase 3 only; currently template scaffolding |
 | `../aaru-core` | Shared domain types |
 
 `AaruCore` is a relative path dependency, so `aaru-core/` must stay a sibling of this
-directory. If this ever becomes a standalone git repository, `.github/workflows/ci.yml`
-will fail until AaruCore is published as a git dependency instead.
-
-## Template leftovers
-
-Scaffolding from the Hummingbird template, kept only until real routes land. Delete
-them then; do not build on them.
-
-- `getHello` — `GET /` returning `Hello!`, in `openapi.yaml` and `APIImplementation.swift`.
-- The `/ws` echo endpoint in `buildWebSocketRouter`. `ARCHITECTURE.md` puts WebSockets in
-  Phase 3, after shared lists are actually used.
+directory. CI lives at the repo root (`.github/workflows/ci.yml`).
 
 ## Planned routes
 

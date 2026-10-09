@@ -1,0 +1,36 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+# Playwright
+test-results
+# Paraglide
+src/lib/paraglide
+project.inlang/cache/
+
+# Agent tooling from `sv create` (Svelte MCP/plugins). Not adopted in this repo;
+# kept out of git rather than deleted.
+/.claude/
+/.cursor/
+/.github/
+/.vscode/mcp.json
+/AGENTS.md

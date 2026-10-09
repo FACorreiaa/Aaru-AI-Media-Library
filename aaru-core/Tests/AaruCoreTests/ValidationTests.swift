@@ -1,8 +1,6 @@
 import Testing
-
 @testable import AaruCore
 
-@Suite
 struct ValidationTests {
     @Test
     func titleRejectsBlankNamesAndImpossibleYears() {
@@ -43,7 +41,7 @@ struct ValidationTests {
             try EpisodeKey(season: 1, episode: 0)
         }
         #expect(throws: Never.self) {
-            try EpisodeKey(season: 0, episode: 1)  // specials
+            try EpisodeKey(season: 0, episode: 1) // specials
         }
     }
 
@@ -56,12 +54,12 @@ struct ValidationTests {
 
     @Test
     func showProgressReportsTheFurthestEpisode() throws {
-        let progress = ShowProgress(watched: [
-            try EpisodeKey(season: 1, episode: 9),
-            try EpisodeKey(season: 2, episode: 1),
-            try EpisodeKey(season: 1, episode: 10),
+        let progress = try ShowProgress(watched: [
+            EpisodeKey(season: 1, episode: 9),
+            EpisodeKey(season: 2, episode: 1),
+            EpisodeKey(season: 1, episode: 10),
         ])
         #expect(progress.watchedCount == 3)
-        #expect(progress.furthestWatched == (try EpisodeKey(season: 2, episode: 1)))
+        #expect(try progress.furthestWatched == EpisodeKey(season: 2, episode: 1))
     }
 }

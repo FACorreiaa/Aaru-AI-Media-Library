@@ -1,0 +1,135 @@
+# iOS + macOS release pipeline (REL-004).
+#   "Apple CI" green on main -> TestFlight build of Aaru Beta (beta lane)
+#   manual dispatch          -> App Store release or hotfix, gated by the
+#                               GitHub environment "app-store" (required reviewer)
+#
+# Required repo secrets:
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64 .p8)  — App Store Connect API key
+#   MATCH_PASSWORD                                       — password of the shared match repo
+#   MATCH_GIT_BASIC_AUTHORIZATION                        — base64 "x-access-token:<PAT>", PAT with
+#                                                          Contents:Read on NorthAIProject/north-ios-certificates
+#   SECRETS_XCCONFIG                                     — contents of Config/Secrets.xcconfig (optional)
+name: Apple Release
+
+on:
+  workflow_run:
+    workflows: ["Apple CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: Release lane
+        required: true
+        type: choice
+        options: [release, hotfix]
+        default: release
+      version:
+        description: Marketing version (e.g. 1.0) — empty keeps current
+        required: false
+        type: string
+
+concurrency:
+  group: apple-release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: aaru-ios
+
+jobs:
+  beta:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success'
+    name: TestFlight (Aaru Beta)
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      # Until the signing secrets exist, skip with a notice instead of failing
+      # every push to main.
+      - name: Check signing secrets
+        id: secrets
+        working-directory: .
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          if [ -n "$ASC_KEY_ID" ] && [ -n "$MATCH_PASSWORD" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::TestFlight upload skipped: ASC_KEY_ID and MATCH_PASSWORD are not set on this repository."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          xcode-version: latest-stable
+
+      - uses: ruby/setup-ruby@v1
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: aaru-ios
+
+      - name: Materialize Secrets.xcconfig
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          SECRETS_XCCONFIG: ${{ secrets.SECRETS_XCCONFIG }}
+        run: |
+          if [ -n "$SECRETS_XCCONFIG" ]; then
+            printf '%s\n' "$SECRETS_XCCONFIG" > Config/Secrets.xcconfig
+          fi
+
+      - name: Fastlane beta
+        if: steps.secrets.outputs.ready == 'true'
+        run: bundle exec fastlane beta
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+
+  release:
+    if: github.event_name == 'workflow_dispatch'
+    name: App Store (${{ inputs.lane }})
+    runs-on: macos-15
+    timeout-minutes: 120
+    environment: app-store # required reviewer = manual gate
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: aaru-ios
+
+      - name: Materialize Secrets.xcconfig
+        env:
+          SECRETS_XCCONFIG: ${{ secrets.SECRETS_XCCONFIG }}
+        run: |
+          if [ -n "$SECRETS_XCCONFIG" ]; then
+            printf '%s\n' "$SECRETS_XCCONFIG" > Config/Secrets.xcconfig
+          fi
+
+      - name: Fastlane ${{ inputs.lane }}
+        run: bundle exec fastlane ${{ inputs.lane }} ${{ inputs.version != '' && format('version:{0}', inputs.version) || '' }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}

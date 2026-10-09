@@ -6,7 +6,7 @@ import Foundation
 /// `LibraryItem` and must never appear here.
 public struct Title: Codable, Hashable, Sendable, Identifiable {
     /// Years Aaru accepts. Wide enough for early cinema and for announced titles.
-    public static let validYears: ClosedRange<Int> = 1870...2200
+    public static let validYears: ClosedRange<Int> = 1870 ... 2200
 
     public var id: TitleID
     public var type: MediaType

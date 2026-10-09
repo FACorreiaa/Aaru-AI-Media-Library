@@ -1,0 +1,39 @@
+# Web CI for aaru-client (REL-001). Deploys run from web-deploy.yml after this passes.
+name: Web CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "aaru-client/**"
+      - ".github/workflows/ci-web.yml"
+  pull_request:
+    paths:
+      - "aaru-client/**"
+      - ".github/workflows/ci-web.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: check, lint, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aaru-client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: aaru-client/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run check
+      - run: npm run lint
+      - run: npm run test:ci
+      - run: npm run build

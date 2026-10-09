@@ -1,0 +1,9 @@
+# Docker build context is the repo root (aaru-server/Dockerfile needs aaru-core).
+# Only the two Swift packages are sent.
+*
+!aaru-core/
+!aaru-server/
+**/.build
+**/.swiftpm
+**/.env
+**/.env.*

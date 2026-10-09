@@ -1,0 +1,66 @@
+# iOS + macOS build for aaru-ios (REL-001, REL-003). Release (fastlane beta)
+# runs after this workflow succeeds on main — see release-apple.yml.
+name: Apple CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "aaru-ios/**"
+      - "aaru-core/**"
+      - ".github/workflows/ci-apple.yml"
+  pull_request:
+    paths:
+      - "aaru-ios/**"
+      - "aaru-core/**"
+      - ".github/workflows/ci-apple.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-apple-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ["iOS Simulator", "macOS"]
+    defaults:
+      run:
+        working-directory: aaru-ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('aaru-core/Package.swift') }}
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project Aaru.xcodeproj \
+            -scheme Aaru \
+            -destination "generic/platform=${{ matrix.platform }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+
+  lint:
+    name: swiftformat + swiftlint
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: aaru-ios
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install swiftformat swiftlint
+      - run: swiftformat . --lint && swiftlint --strict --quiet

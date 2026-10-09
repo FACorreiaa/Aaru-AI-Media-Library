@@ -56,9 +56,17 @@ public struct Episode: Codable, Hashable, Sendable, Identifiable {
     /// TMDB episode id, when hydration supplied one.
     public var tmdbID: String?
 
-    public var id: EpisodeKey { key }
-    public var season: Int { key.season }
-    public var number: Int { key.episode }
+    public var id: EpisodeKey {
+        key
+    }
+
+    public var season: Int {
+        key.season
+    }
+
+    public var number: Int {
+        key.episode
+    }
 
     public init(key: EpisodeKey, name: String? = nil, airDate: Date? = nil, tmdbID: String? = nil) {
         self.key = key
@@ -74,7 +82,9 @@ public struct Season: Codable, Hashable, Sendable, Identifiable {
     public var name: String?
     public var episodes: [Episode]
 
-    public var id: Int { number }
+    public var id: Int {
+        number
+    }
 
     public init(number: Int, name: String? = nil, episodes: [Episode] = []) {
         self.number = number

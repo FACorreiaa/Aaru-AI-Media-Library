@@ -31,7 +31,9 @@ public struct MatchKey: Hashable, Sendable, CustomStringConvertible {
             locale: Locale(identifier: "en_US_POSIX")
         )
         let unpunctuated = folded.unicodeScalars.map { scalar -> Character in
-            if CharacterSet.alphanumerics.contains(scalar) { return Character(scalar) }
+            if CharacterSet.alphanumerics.contains(scalar) {
+                return Character(scalar)
+            }
             return " "
         }
         let collapsed = String(unpunctuated)
@@ -52,14 +54,16 @@ public struct MatchKey: Hashable, Sendable, CustomStringConvertible {
     }
 }
 
-extension MatchKey {
+public extension MatchKey {
     /// Whether two refs may describe the same work.
     ///
     /// External ids decide when either side has one in common. Name matching is the
     /// fallback and requires the same type; a missing year on one side is allowed,
     /// two different years are not.
-    public static func canMerge(_ lhs: MediaRef, _ rhs: MediaRef) -> Bool {
-        if lhs.ids.matches(rhs.ids) { return true }
+    static func canMerge(_ lhs: MediaRef, _ rhs: MediaRef) -> Bool {
+        if lhs.ids.matches(rhs.ids) {
+            return true
+        }
         guard lhs.type == rhs.type,
               let left = lhs.matchKey,
               let right = rhs.matchKey,
@@ -68,7 +72,7 @@ extension MatchKey {
         else { return false }
         switch (left.year, right.year) {
         case (nil, _), (_, nil): return true
-        case (let a?, let b?): return a == b
+        case let (a?, b?): return a == b
         }
     }
 }

@@ -1,0 +1,164 @@
+# Aaru release lanes (BACKLOG REL-004). One app, two platforms: every lane
+# builds and uploads iOS and macOS from the same multiplatform target.
+#
+#   beta         Beta config (bundle id + .beta) -> TestFlight, internal testers
+#   release      Release config -> App Store, phased, submitted for review
+#   hotfix       Release config -> App Store, not phased
+#   seed_signing one-time / on demand: create match profiles (iOS + macOS)
+#
+# Both Beta and Release talk to the production API; beta is client-side only.
+
+default_platform(:ios)
+
+PROJECT = "Aaru.xcodeproj"
+TEAM_ID = "84X9WYBF36"
+BUNDLE_ID = "com.fernandocorreia.aaru"
+BETA_BUNDLE_ID = "com.fernandocorreia.aaru.beta"
+SCHEMES = { "Beta" => "Aaru Beta", "Release" => "Aaru" }.freeze
+PLATFORMS = %w[ios macos].freeze
+
+platform :ios do
+  desc "Build the Beta configuration for iOS and macOS and upload both to TestFlight (internal)"
+  lane :beta do
+    api_key = asc_api_key
+    setup_ci if is_ci
+    bump_build_number(api_key: api_key, bundle_id: BETA_BUNDLE_ID)
+    PLATFORMS.each do |platform|
+      ship(platform: platform, config: "Beta", bundle_id: BETA_BUNDLE_ID, api_key: api_key)
+    end
+  end
+
+  desc "Release to the App Store (phased). Usage: fastlane release [version:1.1]"
+  lane :release do |options|
+    store_release(options.merge(phased: true))
+  end
+
+  desc "Hotfix release: no phased rollout. Usage: fastlane hotfix [version:1.0.1]"
+  lane :hotfix do |options|
+    store_release(options.merge(phased: false))
+  end
+
+  desc "Create signing certificates/profiles for every Aaru id, iOS and macOS, and push them to the match repo"
+  lane :seed_signing do
+    api_key = asc_api_key
+    setup_ci if is_ci
+    match(type: "appstore", platform: "ios", readonly: false, api_key: api_key)
+    match(
+      type: "appstore",
+      platform: "macos",
+      additional_cert_types: ["mac_installer_distribution"],
+      readonly: false,
+      api_key: api_key
+    )
+  end
+
+  # ---- helpers ----
+
+  private_lane :store_release do |options|
+    api_key = asc_api_key
+    setup_ci if is_ci
+    increment_version_number(version_number: options[:version], xcodeproj: PROJECT) if options[:version]
+    bump_build_number(api_key: api_key, bundle_id: BUNDLE_ID)
+
+    PLATFORMS.each do |platform|
+      ship(platform: platform, config: "Release", bundle_id: BUNDLE_ID, api_key: api_key, testflight: false)
+      upload_to_app_store(
+        api_key: api_key,
+        app_identifier: BUNDLE_ID,
+        platform: platform == "ios" ? "ios" : "osx",
+        pkg: platform == "macos" ? lane_context[SharedValues::PKG_OUTPUT_PATH] : nil,
+        submit_for_review: true,
+        automatic_release: true,
+        phased_release: options[:phased],
+        precheck_include_in_app_purchases: false,
+        force: true,
+        # Store copy and screenshots are edited in App Store Connect until
+        # metadata/ exists in this repo.
+        skip_metadata: !File.directory?("metadata"),
+        skip_screenshots: !File.directory?("screenshots")
+      )
+    end
+  end
+
+  # Signs, archives, and (for TestFlight) uploads one platform's build.
+  private_lane :ship do |options|
+    platform = options[:platform]
+    config = options[:config]
+    bundle_id = options[:bundle_id]
+    api_key = options[:api_key]
+    macos = platform == "macos"
+
+    match(
+      type: "appstore",
+      platform: platform,
+      additional_cert_types: macos ? ["mac_installer_distribution"] : nil,
+      readonly: is_ci,
+      api_key: api_key
+    )
+    pin_profiles(platform: platform, config: config, bundle_id: bundle_id)
+
+    build_app(
+      project: PROJECT,
+      scheme: SCHEMES.fetch(config),
+      configuration: config,
+      destination: macos ? "generic/platform=macOS" : "generic/platform=iOS",
+      export_method: "app-store",
+      installer_cert_name: macos ? "3rd Party Mac Developer Installer" : nil,
+      output_directory: "fastlane/build/#{platform}"
+    )
+
+    next if options[:testflight] == false
+
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: bundle_id,
+      app_platform: macos ? "osx" : "ios",
+      pkg: macos ? lane_context[SharedValues::PKG_OUTPUT_PATH] : nil,
+      skip_waiting_for_build_processing: macos, # wait once, on the iOS upload
+      distribute_external: false
+    )
+  end
+
+  # Local development uses automatic signing; archives pin the match profile for
+  # the app and for the widget extension (bundle id + ".widgets"), per platform.
+  private_lane :pin_profiles do |options|
+    bundle_id = options[:bundle_id]
+    suffix = options[:platform] == "macos" ? " macos" : ""
+    { "Aaru" => bundle_id, "AaruWidgetsExtension" => "#{bundle_id}.widgets" }.each do |target, id|
+      update_code_signing_settings(
+        path: PROJECT,
+        use_automatic_signing: false,
+        team_id: TEAM_ID,
+        code_sign_identity: "Apple Distribution",
+        profile_name: "match AppStore #{id}#{suffix}",
+        targets: [target],
+        build_configurations: [options[:config]]
+      )
+    end
+  end
+
+  private_lane :asc_api_key do
+    app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_P8"),
+      is_key_content_base64: true
+    )
+  end
+
+  # Builds share one number across iOS and macOS. A build uploaded minutes ago
+  # is missing from get_builds until processing finishes, so take the highest of
+  # the processed builds, TestFlight's latest, and the project's current number.
+  private_lane :bump_build_number do |options|
+    api_key = options[:api_key]
+    bundle_id = options[:bundle_id]
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+    app = Spaceship::ConnectAPI::App.find(bundle_id)
+    UI.user_error!("Could not find #{bundle_id} on App Store Connect. Create the app record first.") unless app
+
+    numbers = app.get_builds.map { |build| Integer(build.version, exception: false) }
+    numbers << Integer(latest_testflight_build_number(api_key: api_key, app_identifier: bundle_id, initial_build_number: 0).to_s, exception: false)
+    numbers << Integer(get_build_number(xcodeproj: PROJECT).to_s, exception: false)
+    increment_build_number(build_number: (numbers.compact.max || 0) + 1, xcodeproj: PROJECT)
+  end
+end

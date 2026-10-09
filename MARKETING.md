@@ -17,7 +17,8 @@ Verified against the repo on 2026-09-02. Unchanged since 2026-08-29:
 | `aaru-server` | Hummingbird skeleton. `openapi.yaml` is 18 lines. The only route is `getHello`. |
 | Persistence | No Fluent models, no migrations. |
 | Auth, search, library, lists, progress, imports, agent | Not started. |
-| `aaru-ios`, `aaru-landing`, `aaru-site` | Empty directories. |
+| `aaru-ios` | Empty directory. |
+| `aaru-client` | Fresh SvelteKit template (web + landing, Cloudflare Workers). No Aaru code. |
 
 **Strangers who have used Aaru: 0.** Every number in this plan is a target, not a forecast.
 
@@ -56,7 +57,7 @@ Everything that does not serve that sentence is post-launch.
 **Product surfaces that are not the mobile client and are still missing.**
 
 12. **Mac client.** A separate shipping surface even in one multiplatform target.
-13. **Landing page** (`aaru-landing`). No landing page, no launch.
+13. **Landing page** (route group in `aaru-client`, LAND-001). No landing page, no launch.
 14. **Export — CSV and JSON, free, no account tier.** This is the marketing message, not a feature. See §3, moat 1.
 15. **Account deletion + data export self-service.** Required for the App Store and required for the pitch to be honest.
 16. **First-run onboarding = the import.** Zero to a populated library in under two minutes, or the pitch dies on contact.
@@ -72,8 +73,13 @@ launch can happen without them; the money cannot.
 
 ### Deliberately not in the launch gate
 
-Social graph, recommendations, two-way sync, scrobbling, web client, music/comics/games.
-Already out of scope in `CLAUDE.md`. Keep it that way — the plan below sells the absence.
+Recommendations, two-way sync, music/comics/games. Still out of scope in `CLAUDE.md`.
+
+Friends, scrobbling, gamification, DMs and watch-together are no longer out of scope
+(decided 2026-10-09). They are later phases in `BACKLOG.md` (3–6) and start only after the
+Phase 2 "basics done" gate. They are not launch-gate items: the launch sells the shelf.
+The web client (`aaru-client`, SvelteKit on Cloudflare Workers) ships alongside the native
+apps in Phase 2.
 
 ---
 
@@ -90,16 +96,16 @@ Already out of scope in `CLAUDE.md`. Keep it that way — the plan below sells t
 - Nothing credible holds films, shows, *and* books in one place, privately, on Apple hardware,
   with an assistant that can do a whole migration or a whole season in one instruction.
 
-Aaru is the shelf, not the feed.
+Aaru is the shelf first. The feed, when it comes, is friends you invited.
 
 **Four messaging pillars.** Every asset uses one of these; never all four at once.
 
 1. **One shelf.** Films, shows, books. One search field, one library, one status vocabulary.
-2. **Private by default.** No profile, no followers, no activity feed. Nobody sees what you read.
+2. **Private by default, social when you invite it.** Nobody sees what you read unless you add them. Friends, streaks, watch-together and encrypted messages are opt-in and friends-only — never a public profile, never a global feed.
 3. **Easy in, easy out.** Import from Trakt, IMDb, Letterboxd, Goodreads, CAT. Export everything, any time, free. Anti-lock-in is the product.
 4. **It does the bookkeeping.** Say "mark season three watched" or "bring my Goodreads." See the plan, approve, undo if wrong. Native SwiftUI on iPhone and Mac, fast, offline-capable.
 
-**Do not say:** "the Letterboxd killer", "AI-powered", "social", "portfolio", "watchlist app",
+**Do not say:** "the Letterboxd killer", "AI-powered", "social network", "portfolio", "watchlist app",
 "chat with your library". Say what the agent *does*, never that it exists.
 Do not use vendor names as domain terms — that rule from `CLAUDE.md` applies to copy too.
 
@@ -134,7 +140,7 @@ by how hard it is to copy divided by how much it costs to build.
 | 5 | **Apple-native surfaces** — App Intents, Shortcuts, widgets, Siri, share sheet, offline | Web-first companies ship thin native shells; a real Mac client is rare in this category | No | 1 | None |
 | 6 | **Household** — two to five people, one private shared shelf, "watching together" progress | Letterboxd is a public graph; Trakt has no couples model; neither has a private two-person unit | Yes: the first genuine network effect that stays private-by-default | 2 | `ARCHITECTURE.md` phase 2 already allows it; needs `list_members` |
 | 7 | **Agent-reachable shelf** — App Intents and a per-user MCP endpoint, where an outside agent *proposes* and the user approves in Aaru | Their write paths have no plan step and no inverse, so third-party agent writes are unauditable for them and safe for Aaru | Yes, per user: the approval habit is what makes the shelf the trusted copy | 1.5 | Yes — done: `CLAUDE.md`, `ARCHITECTURE.md` §Outbound agent surfaces, M14 |
-| 8 | **Hub position** — Aaru writes *out* to Trakt, serves a Stremio catalog, accepts Plex/Jellyfin webhooks | Turns Aaru from a spoke into the centre once the library is real | Yes: each output makes leaving cost more *without* blocking export | post-v1 | Yes — `CLAUDE.md` out-of-scope list (MOAT-001..003 in `BACKLOG.md`) |
+| 8 | **Hub position** — Aaru writes *out* to Trakt, serves a Stremio catalog, accepts Plex/Jellyfin webhooks | Turns Aaru from a spoke into the centre once the library is real | Yes: each output makes leaving cost more *without* blocking export | post-v1 | No longer — `BACKLOG.md` Phase 3 (SCR-*, MOAT-001..003), after the basics gate |
 
 Moats 1, 4, and 5 are positioning. Moats 2, 3, 6, and 7 are the durable ones. Moat 8 is
 attractive and forbidden until there is a library to put at the centre.
@@ -196,7 +202,7 @@ front door.
 
 | Trakt strength | Aaru response |
 | --- | --- |
-| Scrobbling from Plex, Kodi, Infuse, Jellyfin, browser extensions | Do not compete in v1. Import Trakt history one-way, then in post-v1 accept webhooks (moat 7). Never build a scrobbler ecosystem. |
+| Scrobbling from Plex, Kodi, Infuse, Jellyfin, browser extensions | Not at launch. Import Trakt history one-way first; Phase 3 (`BACKLOG.md` SCR-*) accepts a Trakt-shaped scrobble endpoint, Plex/Jellyfin webhooks and a Stremio addon. Accept scrobbles; never build or maintain a scrobbler ecosystem of our own clients. |
 | Broad public API and a decade of third-party clients | Do not compete. Aaru ships **no public API** — no docs, no quotas, no third-party clients, no deprecation policy — until well past 1,000 strangers. Per-user token-scoped agent access (moat 7, M14) is a different thing: the credential belongs to one user, for their own agents, and dies when they delete it. Do not let the two blur in copy. |
 | Deep video metadata, calendars, comments, community | Take the calendar (Airs this week, from *your* library only). Skip comments and community entirely. |
 | VIP: stats, no ads, year in review, larger limits | Never paywall stats or the user's own data. This is the grievance Aaru harvests. |
@@ -206,6 +212,25 @@ front door.
 Trakt is not the enemy; it is the on-ramp. Trakt import is the first source, and "push my
 library back to Trakt" (MOAT-003) is the friendliest possible post-v1 move: a user who keeps
 Trakt for scrobbling and Aaru for the shelf is a user who never leaves either.
+
+### 3.5 Competitor notes (researched 2026-10-09, re-verify before quoting)
+
+- **TV Time** — Whip Media wound it down, shutting the service on 2025-07-15 after a peak of
+  roughly 20M registered users. Its founder announced a successor, "Bingers", promising TV Time
+  import. Those users are the largest homeless audience in the category. Opening: a TV Time
+  export import (IMP-012) and a "moving from TV Time" landing page.
+- **medialib.net** — the closest overlap. Anime, manga, TV, movies, books and games in one
+  library; imports from AniList, MAL, Goodreads, IMDb, Trakt, Letterboxd; auto-tracking from
+  Plex, Stremio, Jellyfin, Kodi and Steam. Web/PWA only, native apps planned for late 2026.
+  Aaru's answer is native iPhone + Mac + widgets now, and privacy by default.
+- **Trakt** — in Feb 2025 free accounts were capped (2 lists of 100 items, 100 watchlist /
+  collection items) and VIP doubled from ~$30 to ~$60/yr; grandfathered prices ended in May
+  2025. Users called it "low-key predatory." The resentment is the pitch: free stats, no list
+  caps on what is yours. Unconfirmed whether the caps still hold in 2026.
+- **Sequel** — the richest widget set in the category, including an interactive "mark
+  watched" Watch Next widget. That is the bar for Aaru's widgets (Phase 2, WID-*), plus what
+  Sequel lacks: a streak widget, a CAT-style week widget, a now-watching Live Activity, and
+  Mac widgets.
 
 ---
 
@@ -276,8 +301,8 @@ Rules:
   agent is cheap for Aaru; the write path is where the plan card and the support load are.
 - No free trial before there are 100 users; there is not enough signal to tune one. Import
   Pass is the trial.
-- App Store only for billing at launch. Family Sharing on. No web checkout until `aaru-site`
-  exists.
+- App Store only for billing at launch. Family Sharing on. No web checkout until the logged-in web
+  client (WEB-001) exists.
 - No ads, no data sale, no "anonymised insights" product. Write it in the privacy policy so it
   is a contract, not a promise.
 
@@ -359,8 +384,9 @@ if the agent (phase 1.5) has shipped; otherwise launch free + Founding and add P
 composer lands.
 
 **Phase D — 1,000 strangers.**
-Recap card, creator seeding, newsletter, Household. Only now reconsider the web client, the
-Trakt push-back job (MOAT-003), and the Stremio catalog (MOAT-001).
+Recap card, creator seeding, newsletter, Household. Only now market the Trakt push-back job
+(SCR-004, was MOAT-003) and the Stremio catalog (SCR-003, was MOAT-001). The web client already shipped with the native
+apps in Phase 2.
 
 ---
 
@@ -406,7 +432,7 @@ never optimised against; the day it is, the exit door is fake.
 5. **Outbound access as a support and blast-radius sink.** Every agent token is a credential one person has to reason about, and "some agent changed my library" feels bad no matter how well it is journalled. Mitigations, all in M14: read-only by default, no self-approval, every write named with its token, revoke from the app, central rate limiting. If the first ten strangers do not ask for it, deferring M14 is the honest call — the in-app agent (moat 2) is the paid product either way.
 6. **Provider terms.** TMDB attribution is mandatory. Trakt's API terms constrain how their name is used in marketing. Read both before writing the comparison table.
 7. **Indifference.** "Another tracker" is the default reaction. The counter is one specific promise — the exit door — not a longer feature list.
-8. **No viral loop.** Private by default means growth is earned, not compounding. Household is the only loop; accept slower growth; do not solve it by adding a feed.
+8. **No viral loop.** Private by default means growth is earned, not compounding. Friend invites, watch-together rooms and Household are the loops, all opt-in. Accept slower growth; do not solve it by making anything public by default.
 9. **Name collision.** "Aaru" competes in search with the Egyptian mythology term and at least one AI company. Monitoring item only — the standing rule is no renames before 10 strangers.
 10. **Solo support load.** One person, five importers, two platforms, one agent. Ship fewer sources well.
 11. **Copy risk on the wrong things.** Incumbents can copy cross-media search and a season grid in a quarter. They cannot cheaply copy a journaled agent or a private household model. Spend build time accordingly.
@@ -415,11 +441,12 @@ never optimised against; the day it is, the exit door is fake.
 
 ## 12. What not to do
 
-- Do not build the web client before the native apps ship.
-- Do not add a social feed to solve growth.
+- Do not let the web client run ahead of native. `aaru-client` (SvelteKit on Workers) ships alongside the native apps in Phase 2, on the same `/v1`, with no logic of its own.
+- Do not use social as a growth hack. Friends, feeds and points ship after the Phase 2 basics gate, opt-in and friends-only; never public by default, never a global feed.
 - Do not paywall export, statistics, or the user's own data.
 - Do not ship the agent without the plan card and the undo ribbon.
 - Do not put "AI" in the headline, the app name, or the first screenshot.
 - Do not launch publicly before ten strangers have imported successfully.
-- Do not start MOAT-001..003 before phase D; they need a library to be worth anything.
+- Do not *market* the tracking integrations (SCR-*, ex MOAT-001..003) before phase D. They are
+  built in `BACKLOG.md` P3, after the basics gate; they need a library to be worth anything.
 - Do not rebrand, rename, or re-architect. Measure first.

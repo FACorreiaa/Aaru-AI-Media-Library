@@ -10,18 +10,19 @@ RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get install -y libjemalloc-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set up a build area
+# Build context is the REPO ROOT (`docker build -f aaru-server/Dockerfile .`):
+# the server depends on ../aaru-core by path.
 WORKDIR /build
 
-# First just resolve dependencies.
-# This creates a cached layer that can be reused
-# as long as your Package.swift/Package.resolved
-# files do not change.
-COPY ./Package.* ./
+# First just resolve dependencies. This creates a cached layer that can be
+# reused as long as the manifests and aaru-core do not change.
+COPY ./aaru-core ./aaru-core
+COPY ./aaru-server/Package.* ./aaru-server/
+WORKDIR /build/aaru-server
 RUN swift package resolve
 
-# Copy entire repo into container
-COPY . .
+# Copy the server sources
+COPY ./aaru-server ./
 
 # Build the application, with optimizations, with static linking, and using jemalloc
 RUN swift build -c release \
@@ -33,17 +34,17 @@ RUN swift build -c release \
 WORKDIR /staging
 
 # Copy main executable to staging area
-RUN cp "$(swift build --package-path /build -c release --show-bin-path)/aaru" ./
+RUN cp "$(swift build --package-path /build/aaru-server -c release --show-bin-path)/aaru" ./
 
 # Copy static swift backtracer binary to staging area
 RUN cp "/usr/libexec/swift/linux/swift-backtrace-static" ./
 
 # Copy resources bundled by SPM to staging area
-RUN find -L "$(swift build --package-path /build -c release --show-bin-path)/" -regex '.*\.resources$' -exec cp -Ra {} ./ \;
+RUN find -L "$(swift build --package-path /build/aaru-server -c release --show-bin-path)/" -regex '.*\.resources$' -exec cp -Ra {} ./ \;
 
 # Copy any resouces from the public directory and views directory if the directories exist
 # Ensure that by default, neither the directory nor any of its contents are writable.
-RUN [ -d /build/public ] && { mv /build/public ./public && chmod -R a-w ./public; } || true
+RUN [ -d /build/aaru-server/public ] && { mv /build/aaru-server/public ./public && chmod -R a-w ./public; } || true
 
 # ================================
 # Run image

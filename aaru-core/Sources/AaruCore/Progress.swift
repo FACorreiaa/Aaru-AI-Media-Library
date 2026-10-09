@@ -15,10 +15,14 @@ public struct ShowProgress: Codable, Hashable, Sendable {
         self.currentEpisode = currentEpisode
     }
 
-    public var watchedCount: Int { watched.count }
+    public var watchedCount: Int {
+        watched.count
+    }
 
     /// The furthest episode ticked, by season then episode.
-    public var furthestWatched: EpisodeKey? { watched.max() }
+    public var furthestWatched: EpisodeKey? {
+        watched.max()
+    }
 }
 
 /// Optional reading position for a book.
@@ -27,8 +31,12 @@ public struct BookProgress: Codable, Hashable, Sendable {
     public var percent: Double?
 
     public init(page: Int? = nil, percent: Double? = nil) throws {
-        if let page, page < 0 { throw ValidationError.invalidBookProgress }
-        if let percent, !(0...100).contains(percent) { throw ValidationError.invalidBookProgress }
+        if let page, page < 0 {
+            throw ValidationError.invalidBookProgress
+        }
+        if let percent, !(0 ... 100).contains(percent) {
+            throw ValidationError.invalidBookProgress
+        }
         self.page = page
         self.percent = percent
     }
@@ -43,12 +51,16 @@ public enum Progress: Hashable, Sendable {
     case book(BookProgress)
 
     public var show: ShowProgress? {
-        if case .show(let progress) = self { return progress }
+        if case let .show(progress) = self {
+            return progress
+        }
         return nil
     }
 
     public var book: BookProgress? {
-        if case .book(let progress) = self { return progress }
+        if case let .book(progress) = self {
+            return progress
+        }
         return nil
     }
 }
@@ -66,19 +78,19 @@ extension Progress: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         switch try container.decode(Kind.self, forKey: .kind) {
         case .show:
-            self = .show(try container.decode(ShowProgress.self, forKey: .show))
+            self = try .show(container.decode(ShowProgress.self, forKey: .show))
         case .book:
-            self = .book(try container.decode(BookProgress.self, forKey: .book))
+            self = try .book(container.decode(BookProgress.self, forKey: .book))
         }
     }
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch self {
-        case .show(let progress):
+        case let .show(progress):
             try container.encode(Kind.show, forKey: .kind)
             try container.encode(progress, forKey: .show)
-        case .book(let progress):
+        case let .book(progress):
             try container.encode(Kind.book, forKey: .kind)
             try container.encode(progress, forKey: .book)
         }

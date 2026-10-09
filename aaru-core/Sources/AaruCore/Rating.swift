@@ -4,7 +4,7 @@
 /// stars divide by two.
 public struct Rating: Hashable, Sendable, Comparable, CustomStringConvertible {
     /// The only accepted range.
-    public static let scale: ClosedRange<Double> = 1.0...10.0
+    public static let scale: ClosedRange<Double> = 1.0 ... 10.0
     /// The only accepted increment.
     public static let step: Double = 0.5
 
@@ -23,7 +23,9 @@ public struct Rating: Hashable, Sendable, Comparable, CustomStringConvertible {
         self.value = steps * Rating.step
     }
 
-    public static func < (lhs: Rating, rhs: Rating) -> Bool { lhs.value < rhs.value }
+    public static func < (lhs: Rating, rhs: Rating) -> Bool {
+        lhs.value < rhs.value
+    }
 
     public var description: String {
         value == value.rounded() ? String(Int(value)) : String(value)

@@ -1,0 +1,24 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	// Production web (REL-006). Deployed only by manual dispatch of the
+	// "Web Deploy" workflow. Beta is wrangler.staging.jsonc.
+	"name": "aaru-client",
+	"compatibility_date": "2026-09-27",
+	// `nodejs_als` alone fails Worker uploads once anything imports
+	// `async_hooks` (LuminaVaultWebApp hit this); `nodejs_compat` supersedes it.
+	"compatibility_flags": ["nodejs_compat"],
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"workers_dev": true,
+	"preview_urls": true,
+	// `$env/dynamic/public` reads these at request time. Beta and prod both talk
+	// to the production API: beta is client-side only, there is one backend.
+	// Placeholder host until the domain exists (BACKLOG REL-005 OPEN).
+	"vars": {
+		"PUBLIC_API_BASE_URL": "https://api.aaru.example",
+		"PUBLIC_CHANNEL": "production"
+	}
+}

@@ -15,15 +15,15 @@ public enum ValidationError: Error, Hashable, Sendable, CustomStringConvertible 
         switch self {
         case .emptyTitle:
             "Title text must not be empty."
-        case .invalidYear(let year):
+        case let .invalidYear(year):
             "Year \(year) is outside \(Title.validYears.lowerBound)–\(Title.validYears.upperBound)."
-        case .ratingOutOfRange(let value):
+        case let .ratingOutOfRange(value):
             "Rating \(value) is outside \(Rating.scale.lowerBound)–\(Rating.scale.upperBound)."
-        case .ratingNotInHalfSteps(let value):
+        case let .ratingNotInHalfSteps(value):
             "Rating \(value) is not a multiple of \(Rating.step)."
         case .emptyListName:
             "List name must not be empty."
-        case .invalidEpisodeNumber(let season, let episode):
+        case let .invalidEpisodeNumber(season, episode):
             "Season \(season) episode \(episode) is not a valid episode reference."
         case .invalidBookProgress:
             "Book progress needs a non-negative page or a percent between 0 and 100."

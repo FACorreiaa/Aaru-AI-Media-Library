@@ -49,7 +49,9 @@ public struct ImportStats: Codable, Hashable, Sendable {
         self.unmatched = unmatched
     }
 
-    public var total: Int { created + updated + skipped + unmatched }
+    public var total: Int {
+        created + updated + skipped + unmatched
+    }
 }
 
 /// One run of a Trakt, CSV, or CAT ingest.

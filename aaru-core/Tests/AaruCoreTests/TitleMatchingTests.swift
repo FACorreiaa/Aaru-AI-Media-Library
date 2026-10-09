@@ -1,8 +1,6 @@
 import Testing
-
 @testable import AaruCore
 
-@Suite
 struct TitleMatchingTests {
     @Test
     func normalizeLowercasesFoldsAndCollapses() {

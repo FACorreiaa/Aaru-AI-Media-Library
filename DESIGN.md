@@ -181,6 +181,80 @@ carries its own inverse. The trust comes from the plumbing, not from a promise.
 The feeling to protect: **the buzz is a question, never a receipt.** The moment a notification
 tells you what an agent already did, Aaru is somebody else's app.
 
+## 13. Home rows (Phase 2)
+
+The Field's pinned artifacts take a concrete shape borrowed from Trakt's web home: horizontal
+rows of wide cards, one job per row.
+
+- **Continue watching** (`ContinueRow`) — backdrop card per in-progress show or movie. Overlay
+  carries runtime or time left ("1h 27m left"), a "Finale" dot when the next episode ends a
+  season, and "N left · Xh" for what remains. Title, `S1 · E8 · Episode name` under it, a check
+  to mark the next episode watched.
+- **Start watching** (`StartRow`) — poster cards for wishlist titles with runtime, so the row
+  answers "what can I start in two hours."
+- **Calendar** (`CalendarRow`) — the next few airings of tracked shows and anime, badged
+  `Today` / `New` / `In 3 hours` / `In 2 days`.
+
+Rows are the Field's artifacts, not new chrome. The composer still sits on top.
+
+## 14. Week grid (Phase 2)
+
+The `CalendarMonth` (§7) answers "what did I miss." The week grid answers "what is on this
+week," and it is the closest Aaru gets to copying Pogdesign CAT outright, because that page is
+right.
+
+- Seven dense day columns, today highlighted, previous / next day paging.
+- One cell per episode: banner art, show title, `S01E05`, episode name, network · local time.
+- A checkbox on every cell marks it watched in place.
+- State colours: watched (dimmed), premiere, finale, today, and new-season. Colours come from
+  the brand palette, not CAT's yellow and red.
+- Your shows only. No global schedule.
+
+On Mac and web the grid is the default calendar view. On iPhone it collapses to a day list with
+the same cells.
+
+## 15. Now playing (Phase 2, live in Phase 3)
+
+`NowPlayingCard`: art, `S1 · E8 · Episode`, a progress bar, "41m left", "Ends at 1:20 PM".
+Tapping the bar flips between time left and end time. Set by a manual check-in in Phase 2 and
+by scrobbles from Plex, Jellyfin or Stremio in Phase 3. The same data drives the Live Activity.
+
+## 16. Widgets (Phase 2)
+
+Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only
+interactive mark-watched widget seen in the category. Aaru matches that and adds what nobody
+ships.
+
+- **Up Next** (S / M / L) — next unwatched episode per show. M and L carry an interactive
+  "mark watched" button (App Intent, same write path as a tap).
+- **Airing countdown** + Lock Screen accessories — next airing of a tracked show or anime.
+- **Week** (L / XL) — the week grid in miniature, CAT style.
+- **Now watching** Live Activity — Lock Screen and Dynamic Island, progress plus "Ends at".
+- **Streak** (Phase 5) — current streak and this week's ticks.
+- **macOS** — the same widgets on the desktop and in Notification Center. Almost no tracker
+  ships Mac widgets.
+
+Widgets read a snapshot the app writes. They never become a second client with its own logic.
+
+## 17. Social surfaces (Phases 4–6)
+
+Private by default stays. Everything below is opt-in, friends-only by default, and does not
+ship before the Phase 2 gate.
+
+- **Friend stories** (`FriendStories`, Phase 4) — Trakt's "Today" pattern: a row of friend
+  avatars, tap into a full-height card per title a friend watched today ("Kevin · Watched S2 ·
+  E9 · 12:11 PM"), with a bookmark to add it to your wishlist.
+- **Profile and stats** (`StatsPanel`, Phase 5) — MAL-style numbers: days watched, episodes,
+  mean score, genre and format breakdown, Year in Review.
+- **Badges** (`BadgeShelf`, Phase 5) — discovery badges and milestone badges, tiered.
+- **Leaderboard** (Phase 5) — friends only, weekly, opt-in. Never global.
+- **Room** (`RoomPanel`, Phase 6) — watch together: countdown to "press play", who is in,
+  reactions, drift from scrobbles ("Ana is 2 min ahead"), shared check-off at the end.
+- **Conversations** (`ConversationView`, Phase 6) — end-to-end encrypted DMs. A lock and a
+  safety-number check live in the header, not in a settings screen.
+
+The feeling to protect: **social is a room you invite people into, not a feed you are fed.**
+
 ---
 
 ## Component catalog the agent may emit
@@ -198,6 +272,19 @@ Build these as SwiftUI views. The model only returns their names and props.
 | `CalendarMonth` | Your airings |
 | `MatchTable` | Import reconciliation |
 | `UndoRibbon` | Last agent write |
+| `WeekGrid` | Seven-day airing grid, check in place (Phase 2) |
+| `ContinueRow` | In-progress titles with time left (Phase 2) |
+| `StartRow` | Wishlist titles with runtime (Phase 2) |
+| `CalendarRow` | Next airings with relative badges (Phase 2) |
+| `NowPlayingCard` | Current watch, progress, ends at (Phase 2) |
+| `StreakBar` | Current streak and week ticks (Phase 5) |
+| `FriendStories` | Friends' watches today (Phase 4) |
+| `BadgeShelf` | Earned badges (Phase 5) |
+| `StatsPanel` | Profile numbers (Phase 5) |
+| `RoomPanel` | Watch-together room (Phase 6) |
+| `ConversationView` | E2E conversation (Phase 6) |
+
+`VIEWS.md` is the authoritative list, with props and the reason each one was added.
 
 If the model wants something else, refuse and pick the nearest catalog piece. That keeps Aaru
 looking like Aaru.
@@ -212,12 +299,19 @@ looking like Aaru.
 | Letterboxd | Diary as a feeling, lists as identity |
 | Serializd | Season/episode as the real unit |
 | Things 3 / Craft | Calm density, one obvious compose box |
-| Pogdesign CAT | Month-as-object, your shows only |
+| Pogdesign CAT | Month-as-object, your shows only; the dense week grid with a check per cell |
+| Trakt (web, 2025 redesign) | Continue / Start rows, time-left and "Finale" badges, streak bar, "Today" friend stories, now-playing card |
+| MyAnimeList / AniDB | Profile stats as identity; anime as its own catalog with precise episode data |
+| Sequel | Widget range, interactive mark-watched |
 | Cursor / Copilot canvases | Plan → work → artifact, not chat log |
 | Linear | Command palette as a peer of the mouse |
 
 Brand: teal → gold, paper-white or deep reed-green dark mode. The heron only as a quiet mark
 when the agent is working (breathing reed, not a bouncing dots spinner).
+
+Research basis (2026-10-09): the user's screenshots of Trakt web home, Trakt "Today" stories
+and the Pogdesign CAT weekly schedule, plus web research on tracker widgets and social
+features. ScreensDesign was not used: its research tools need a Pro plan (DSN-001).
 
 ---
 
@@ -233,6 +327,11 @@ when the agent is working (breathing reed, not a bouncing dots spinner).
   "done" instead of "may I" is the whole trust story, lost.
 - Let capture skip the `MatchTable`. Extracted rows are guesses and are shown as guesses,
   even when there is only one.
+- Ship social surfaces before the Phase 2 gate, or make any of them public by default. Private
+  stays the default; friends are invited, never inferred.
+- Build a global feed or a global leaderboard. Friends only.
+- Award points for anything a user can undo and redo for profit. Points follow the ledger,
+  not the tap.
 
 ---
 
