@@ -45,6 +45,18 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 So the real starting line is P0.
 
+### P0 progress (2026-10-09, branch `p0-rails`, not yet pushed)
+
+| Item | State |
+| --- | --- |
+| SRV-001…SRV-008 | Built; 13 server tests pass against local Postgres; `--db-migrate` verified from the CLI. |
+| SRV-009, REL-001 | Root workflows written (`ci-swift`, `ci-apple`, `ci-web`); all checks pass locally. Unverified on GitHub until pushed. |
+| REL-002 | Done. |
+| REL-003 | Project builds for iOS Simulator and macOS; Beta/Release settings resolve. Side-by-side install on a device needs App IDs registered and real icons. |
+| REL-004 | Lanes and workflows written. Needs ASC records, App IDs, secrets, and one Seed signing run. |
+| REL-005 | Image builds from the repo root and was smoke-tested locally (migrate, fail-fast, health 200); promote workflow written; infra draft PR LuminaVault/LuminaVaultInfra#292. Needs `TMDB_API_KEY` sealed, first image tag, `/data/pg-aaru` on the node, `INFRA_TOKEN`, and the domain. |
+| REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Needs Cloudflare secrets. |
+
 ---
 
 ## Phase map

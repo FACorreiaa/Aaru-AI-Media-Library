@@ -71,11 +71,16 @@ swift test --package-path aaru-core
 cd aaru-server && swift run
 cd aaru-server && swift test
 cd aaru-server && swift run aaru --db-migrate
+docker build -f aaru-server/Dockerfile -t aaru-server .   # from the repo root: needs aaru-core
 
 # Web
 cd aaru-client && npm run dev
 cd aaru-client && npm run check && npm run lint
-cd aaru-client && npm run test:unit -- --run
+cd aaru-client && npm run test:ci
+
+# Apple
+xcodebuild build -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+cd aaru-ios && bundle exec fastlane beta   # TestFlight, iOS + macOS
 
 # Format / lint (use whatever the repo actually configures)
 swiftformat .

@@ -1,0 +1,143 @@
+# Server delivery (REL-005): build the aaru-server image, push it to GHCR, and
+# open a promote PR against LuminaVault/LuminaVaultInfra. Merging that PR is the
+# deploy — ArgoCD syncs aaru-api-production in the horus namespace. Nothing in
+# this repository can put a new image in front of users on its own.
+#
+# Runs after "Swift CI" passes on main, or by hand.
+#
+# Required repo secret: INFRA_TOKEN — contents:write and pull-requests:write on
+# LuminaVault/LuminaVaultInfra. Without it the image is still pushed, and the
+# promote job FAILS (it does not skip green): a built-but-undeployed image that
+# reports success is how Loci shipped nothing for four days.
+name: Server Deploy
+
+on:
+  workflow_run:
+    workflows: ["Swift CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: server-deploy
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/facorreiaa/aaru-server
+
+jobs:
+  build:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Image tag
+        id: meta
+        run: echo "tag=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          # Repo root: the server depends on ../aaru-core.
+          context: .
+          file: ./aaru-server/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  promote:
+    name: Open promote PR against the infra repo
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check delivery is configured
+        id: gate
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        run: |
+          if [ -n "${INFRA_TOKEN}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout LuminaVaultInfra
+        if: steps.gate.outputs.configured == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: LuminaVault/LuminaVaultInfra
+          token: ${{ secrets.INFRA_TOKEN }}
+          ref: main
+
+      - name: Open pull request
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_TOKEN }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          set -euo pipefail
+          short="${TAG:0:7}"
+          branch="promote/aaru-${short}"
+          values=apps/aaru/api/values-production.yaml
+
+          # sed rather than yq: yq -i drops the blank lines between commented
+          # blocks, so every promote PR would carry whitespace churn.
+          sed -i -E "s|^( *tag: ).*|\1\"${TAG}\"|" "$values"
+
+          if git diff --quiet; then
+            echo "already at ${short}; nothing to promote"
+            exit 0
+          fi
+
+          git config user.name "aaru-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout -b "${branch}"
+          git add "$values"
+          git commit -m "chore(aaru): promote api image to ${short}"
+          git push origin "${branch}"
+
+          cat > /tmp/pr-body.md <<EOF
+          Promotes the Aaru API to \`${TAG}\`.
+
+          Built from ${{ github.repository }}@${TAG} by the Server Deploy workflow.
+          Merging this makes ArgoCD sync \`aaru-api-production\` in the \`horus\`
+          namespace; the PreSync hook dumps the database and runs migrations first.
+          EOF
+
+          gh pr create \
+            --repo LuminaVault/LuminaVaultInfra \
+            --base main \
+            --head "${branch}" \
+            --title "chore(aaru): promote api image to ${short}" \
+            --body-file /tmp/pr-body.md
+
+      - name: Report when delivery is not configured
+        if: steps.gate.outputs.configured == 'false'
+        run: |
+          echo "::error title=Not deployed::INFRA_TOKEN is not set, so no promote PR was opened. The image is pushed; nothing deploys until the secret exists (contents:write and pull-requests:write on LuminaVault/LuminaVaultInfra), or a promote PR is opened by hand."
+          exit 1
