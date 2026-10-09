@@ -1,0 +1,12 @@
+{
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"rewriteRelativeImportExtensions": true,
+		"checkJs": false,
+		"sourceMap": true,
+		"strict": true,
+		"types": ["./worker-configuration.d.ts", "$app/types"]
+	},
+	"include": ["src", "vite.config.ts"],
+	"exclude": ["src/lib/paraglide/**/*.js", "src/service-worker"]
+}

@@ -145,7 +145,7 @@ infra.
 ### REL-006 · Web Workers: beta and prod · S
 **Needs:** REL-001.
 `aaru-client/wrangler.jsonc` (prod) and `wrangler.staging.jsonc` (beta). Both point
-`PUBLIC_API_BASE_URL` at the production API. Deploy with `wrangler versions upload` from CI:
+`PUBLIC_API_BASE_URL` at the production API. Deploy with `wrangler deploy --config …` from CI:
 staging on every merge to `main`, prod on manual dispatch. Copy LuminaVaultWebApp's setup.
 
 **Done when:** a merge to `main` updates the beta Worker URL, and prod moves only on dispatch.
