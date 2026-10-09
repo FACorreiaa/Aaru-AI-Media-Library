@@ -5,9 +5,10 @@
 #
 # Required repo secrets:
 #   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64 .p8)  — App Store Connect API key
-#   MATCH_PASSWORD                                       — password of the shared match repo
+#   MATCH_PASSWORD                                       — password of Norviq's match repo
 #   MATCH_GIT_BASIC_AUTHORIZATION                        — base64 "x-access-token:<PAT>", PAT with
-#                                                          Contents:Read on NorthAIProject/north-ios-certificates
+#                                                          Contents:Read+Write on FinancePlanner/norviq-certificates
+#                                                          (the beta lane creates Aaru's profiles on first run)
 #   SECRETS_XCCONFIG                                     — contents of Config/Secrets.xcconfig (optional)
 name: Apple Release
 
