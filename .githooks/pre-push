@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # pre-push: check formatting and lint before code leaves this machine.
-# Runs swiftformat --lint (no rewrite) and swiftlint on the whole tree.
+# Runs swiftformat --lint (no rewrite) and swiftlint --strict in each Swift
+# package with that package's own config — the same checks CI runs. Linting
+# from the repo root would walk third-party sources under .build/.
 # Periphery is intentionally excluded — it requires a full build and is
-# too slow for a push gate. Run `make lint` / `scripts/lint.sh` on demand.
+# too slow for a push gate. Run `scripts/lint.sh` on demand.
 set -euo pipefail
 
 export PATH="$PATH:/opt/homebrew/bin"
 
 ROOT="$(git rev-parse --show-toplevel)"
-cd "$ROOT"
 
 fail_if_missing() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -20,10 +21,10 @@ fail_if_missing() {
 fail_if_missing swiftformat swiftformat
 fail_if_missing swiftlint swiftlint
 
-echo "pre-push: swiftformat --lint ."
-swiftformat . --lint
-
-echo "pre-push: swiftlint"
-swiftlint
+for pkg in aaru-core aaru-server aaru-ios; do
+  [ -d "$ROOT/$pkg" ] || continue
+  echo "pre-push: $pkg"
+  (cd "$ROOT/$pkg" && swiftformat . --lint --quiet && swiftlint --strict --quiet)
+done
 
 echo "pre-push: ok"
