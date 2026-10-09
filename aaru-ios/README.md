@@ -43,3 +43,28 @@ xcodebuild build -project Aaru.xcodeproj -scheme Aaru \
 Signing is automatic on team `84X9WYBF36`. Before the first signed build, register the
 App IDs (`com.fernandocorreia.aaru`, `.beta`, and their `.widgets`) and the App Groups in
 the Developer portal. Release signing goes through fastlane match (REL-004).
+
+## Releasing (fastlane)
+
+```bash
+cd aaru-ios && bundle install
+bundle exec fastlane beta          # iOS + macOS, Beta config -> TestFlight (internal)
+bundle exec fastlane release       # Release config -> App Store, phased
+bundle exec fastlane hotfix        # Release config -> App Store, not phased
+bundle exec fastlane seed_signing  # create match profiles, iOS + macOS
+```
+
+In CI, `Apple Release` runs `beta` after `Apple CI` passes on `main`; `release` and
+`hotfix` run only on manual dispatch behind the `app-store` environment. Until the
+secrets exist the beta job skips with a notice.
+
+One-time setup before the first upload:
+
+1. Register App IDs `com.fernandocorreia.aaru`, `.aaru.widgets`, `.aaru.beta`,
+   `.aaru.beta.widgets` with the App Groups and keychain sharing capabilities.
+2. Create App Store Connect app records for `com.fernandocorreia.aaru` and
+   `com.fernandocorreia.aaru.beta` (each with iOS and macOS platforms).
+3. Repo secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`, `MATCH_PASSWORD`,
+   `MATCH_GIT_BASIC_AUTHORIZATION` (the shared `north-ios-certificates` match repo).
+4. Dispatch **Seed signing** once (needs a write-capable token). macOS also needs a
+   Mac Installer Distribution certificate; match creates it if the team has room.

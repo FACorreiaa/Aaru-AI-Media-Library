@@ -1,0 +1,22 @@
+# Aaru signs with the team's existing match storage, shared with Khepri:
+# NorthAIProject/north-ios-certificates. The team (84X9WYBF36) is at Apple's
+# limit of distribution certificates, so Aaru does not mint one; it reuses the
+# certificate already in that repo (see Khepri's Matchfile for its renewal date).
+#
+# Consequences:
+#   - MATCH_PASSWORD is that repo's password (the same secret Khepri uses).
+#   - MATCH_GIT_BASIC_AUTHORIZATION (base64 "x-access-token:<PAT>") needs a PAT
+#     that can read the repo; seed_signing needs read AND write.
+#   - Profiles for every id below are created by `bundle exec fastlane seed_signing`
+#     (iOS and macOS). CI only ever reads (readonly).
+git_url("https://github.com/NorthAIProject/north-ios-certificates.git")
+git_branch("main")
+storage_mode("git")
+type("appstore")
+app_identifier([
+  "com.fernandocorreia.aaru",
+  "com.fernandocorreia.aaru.widgets",
+  "com.fernandocorreia.aaru.beta",
+  "com.fernandocorreia.aaru.beta.widgets"
+])
+team_id("84X9WYBF36")
