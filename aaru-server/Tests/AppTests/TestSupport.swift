@@ -60,9 +60,37 @@ func withMigratedStores<T>(_ body: (Stores) async throws -> T) async throws -> T
 }
 
 /// A store that must not be touched by the test using it.
-struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, LibraryStore, ListStore,
-    ImportJobStore
+struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, AnimeMappingStore, LibraryStore,
+    ListStore, ImportJobStore
 {
+    func find(ids _: ExternalIDs, type _: AaruCore.MediaType) async throws -> Title? {
+        throw Touched()
+    }
+
+    func fillIDs(_: TitleID, from _: ExternalIDs) async throws {
+        throw Touched()
+    }
+
+    func catalogState(_: TitleID) async throws -> TitleCatalogState? {
+        throw Touched()
+    }
+
+    func saveEpisodes(_: TitleID, _: [CatalogEpisode], status _: TitleStatus?, hydratedAt _: Date) async throws {
+        throw Touched()
+    }
+
+    func episodes(_: TitleID) async throws -> [CatalogEpisode] {
+        throw Touched()
+    }
+
+    func mapping(anilist _: String) async throws -> AnimeMapping? {
+        throw Touched()
+    }
+
+    func upsert(_: AnimeMapping) async throws {
+        throw Touched()
+    }
+
     struct Touched: Error {}
 
     func createUser(with _: AuthIdentity, displayName _: String?) async throws -> UserID {
@@ -102,7 +130,7 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Libr
         throw Touched()
     }
 
-    func insert(_: Title) async throws {
+    func insert(_: Title, status _: TitleStatus?, runtimeMinutes _: Int?) async throws {
         throw Touched()
     }
 
@@ -155,6 +183,7 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         sessions: untouched,
         magicLinks: untouched,
         titles: untouched,
+        animeMappings: untouched,
         library: untouched,
         lists: untouched,
         importJobs: untouched
@@ -178,7 +207,8 @@ func fakeRouter(databaseReachable: Bool = true) throws -> Router<AppRequestConte
     let stores = fakeStores(databaseReachable: databaseReachable)
     return try buildRouter(
         stores: stores,
-        auth: AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil)
+        auth: AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil),
+        catalog: CatalogService(stores: stores, catalogs: FakeCatalog.providers(FakeCatalog()))
     )
 }
 
@@ -248,4 +278,88 @@ func rowsReferencing(_ userID: UserID) async throws -> [String: Int] {
         }
         return counts
     }
+}
+
+/// A catalog provider with canned answers and call counts. Never reaches the network.
+final class FakeCatalog: CatalogSearching, EpisodeListing, @unchecked Sendable {
+    // @unchecked: test-only; `lock` guards every mutable field.
+    private let lock = NSLock()
+    private var searchResults: [String: [CatalogHit]] = [:]
+    private var titles: [CatalogTitle] = []
+    private var episodeLists: [String: CatalogEpisodes] = [:]
+    private var calls: [String: Int] = [:]
+    private var failure: (any Error)?
+
+    static func providers(_ catalog: FakeCatalog) -> CatalogProviders {
+        CatalogProviders(tmdb: catalog, anilist: catalog, openLibrary: catalog)
+    }
+
+    func fail(with error: (any Error)?) {
+        lock.withLock { failure = error }
+    }
+
+    func stubSearch(_ query: String, _ hits: [CatalogHit]) {
+        lock.withLock { searchResults[query] = hits }
+    }
+
+    func stubTitle(_ title: CatalogTitle) {
+        lock.withLock { titles.append(title) }
+    }
+
+    /// Keyed by the show's tmdb or anilist id.
+    func stubEpisodes(_ key: String, _ episodes: CatalogEpisodes) {
+        lock.withLock { episodeLists[key] = episodes }
+    }
+
+    func callCount(_ name: String) -> Int {
+        lock.withLock { calls[name, default: 0] }
+    }
+
+    private func record(_ name: String) throws {
+        try lock.withLock {
+            calls[name, default: 0] += 1
+            if let failure {
+                throw failure
+            }
+        }
+    }
+
+    func search(query: String, type _: AaruCore.MediaType) async throws -> [CatalogHit] {
+        try record("search")
+        return lock.withLock { searchResults[query] ?? [] }
+    }
+
+    func hydrate(ids: ExternalIDs, type: AaruCore.MediaType) async throws -> CatalogTitle? {
+        try record("hydrate")
+        // Simulate provider latency so concurrent resolutions overlap.
+        try await Task.sleep(for: .milliseconds(5))
+        return lock.withLock {
+            titles.first { $0.hit.type == type && $0.hit.ids.matches(ids) }
+        }
+    }
+
+    func episodes(ids: ExternalIDs) async throws -> CatalogEpisodes? {
+        try record("episodes")
+        return lock.withLock { ids.tmdb.flatMap { episodeLists[$0] } ?? ids.anilist.flatMap { episodeLists[$0] } }
+    }
+}
+
+/// A unique-per-test external id, so tests sharing one database never collide.
+func uniqueID(_ prefix: String = "t") -> String {
+    "\(prefix)-\(UUID().uuidString.prefix(12))"
+}
+
+/// A user with a live session in the test database, for HTTP tests behind auth.
+func signedInUser(_ stores: Stores) async throws -> (UserID, token: String) {
+    let user = try await stores.users.createUser(
+        with: AuthIdentity(provider: .email, subject: "\(UUID().uuidString)@test"),
+        displayName: nil
+    )
+    let token = OpaqueToken.generate()
+    try await stores.sessions.create(
+        userID: user,
+        tokenHash: OpaqueToken.hash(token),
+        expiresAt: Date().addingTimeInterval(3600)
+    )
+    return (user, token)
 }

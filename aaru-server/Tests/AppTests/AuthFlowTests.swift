@@ -49,7 +49,8 @@ struct AuthFlowTests {
                     URL(string: "https://aaru.test/auth/verify")!
                 )
             )
-            let app = try Application(router: buildRouter(stores: stores, auth: auth))
+            let catalog = CatalogService(stores: stores, catalogs: FakeCatalog.providers(FakeCatalog()))
+            let app = try Application(router: buildRouter(stores: stores, auth: auth, catalog: catalog))
             try await app.test(.router) { client in try await body(client, stores) }
         }
     }

@@ -59,8 +59,44 @@ protocol MagicLinkStore: Sendable {
 
 protocol TitleStore: Sendable {
     /// Throws `StoreConflict` when another title already holds one of its external ids.
-    func insert(_ title: Title) async throws
+    func insert(_ title: Title, status: TitleStatus?, runtimeMinutes: Int?) async throws
     func title(id: TitleID) async throws -> Title?
+    /// The title of this type holding any of these ids. TMDB/Trakt ids are type-scoped.
+    func find(ids: ExternalIDs, type: MediaType) async throws -> Title?
+    /// Fill-empty-only. An id another title already holds is skipped, never merged.
+    func fillIDs(_ id: TitleID, from ids: ExternalIDs) async throws
+    func catalogState(_ id: TitleID) async throws -> TitleCatalogState?
+    /// Upserts episodes by (season, episode) and records the show's status and when it
+    /// was hydrated. Never deletes: progress refers to episodes by number.
+    func saveEpisodes(_ id: TitleID, _ episodes: [CatalogEpisode], status: TitleStatus?, hydratedAt: Date) async throws
+    func episodes(_ id: TitleID) async throws -> [CatalogEpisode]
+}
+
+extension TitleStore {
+    func insert(_ title: Title) async throws {
+        try await insert(title, status: nil, runtimeMinutes: nil)
+    }
+}
+
+struct TitleCatalogState: Sendable, Equatable {
+    var status: TitleStatus?
+    var runtimeMinutes: Int?
+    var episodesHydratedAt: Date?
+}
+
+/// A community mapping from an AniList entry to TMDB (CAT-009). Catalog data, no user.
+struct AnimeMapping: Sendable, Equatable {
+    var anilist: String
+    var mal: String?
+    var anidb: String?
+    var tvdb: String?
+    var tmdb: String?
+    var tmdbSeason: Int?
+}
+
+protocol AnimeMappingStore: Sendable {
+    func mapping(anilist: String) async throws -> AnimeMapping?
+    func upsert(_ mapping: AnimeMapping) async throws
 }
 
 protocol LibraryStore: Sendable {
@@ -87,6 +123,7 @@ struct Stores: Sendable {
     var sessions: any SessionStore
     var magicLinks: any MagicLinkStore
     var titles: any TitleStore
+    var animeMappings: any AnimeMappingStore
     var library: any LibraryStore
     var lists: any ListStore
     var importJobs: any ImportJobStore

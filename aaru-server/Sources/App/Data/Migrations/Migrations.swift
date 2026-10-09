@@ -12,6 +12,7 @@ let allMigrations: [any Migration] = [
     CreateLibrary(),
     CreateImportJobs(),
     CreateSessions(),
+    AddCatalogDetail(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {
@@ -234,5 +235,40 @@ struct CreateSessions: SQLMigration {
         "DROP TABLE magic_links",
         "DROP TABLE sessions",
         "ALTER TABLE users DROP COLUMN display_name",
+    ]
+}
+
+/// CAT-006…009 · anime facet, show status and runtime, hydration time, anime mappings.
+struct AddCatalogDetail: SQLMigration {
+    let forward = [
+        "ALTER TABLE titles ADD COLUMN is_anime boolean NOT NULL DEFAULT false",
+        """
+        ALTER TABLE titles ADD COLUMN status text
+            CHECK (status IN ('upcoming', 'returning', 'ended', 'canceled'))
+        """,
+        "ALTER TABLE titles ADD COLUMN runtime_minutes integer",
+        "ALTER TABLE titles ADD COLUMN episodes_hydrated_at timestamptz",
+        "ALTER TABLE show_episodes ADD COLUMN runtime_minutes integer",
+        "CREATE INDEX show_episodes_airs_at ON show_episodes (airs_at) WHERE airs_at IS NOT NULL",
+        """
+        CREATE TABLE anime_mappings (
+            anilist text PRIMARY KEY,
+            mal text,
+            anidb text,
+            tvdb text,
+            tmdb text,
+            tmdb_season integer
+        )
+        """,
+        "CREATE INDEX anime_mappings_tmdb ON anime_mappings (tmdb) WHERE tmdb IS NOT NULL",
+    ]
+    let backward = [
+        "DROP TABLE anime_mappings",
+        "DROP INDEX show_episodes_airs_at",
+        "ALTER TABLE show_episodes DROP COLUMN runtime_minutes",
+        "ALTER TABLE titles DROP COLUMN episodes_hydrated_at",
+        "ALTER TABLE titles DROP COLUMN runtime_minutes",
+        "ALTER TABLE titles DROP COLUMN status",
+        "ALTER TABLE titles DROP COLUMN is_anime",
     ]
 }

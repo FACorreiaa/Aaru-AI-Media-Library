@@ -117,6 +117,52 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/search:
+    get:
+      operationId: searchCatalog
+      summary: Search the catalog. Results are catalog projections, never library rows.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          description: "`anime` searches AniList; `movie`/`show` TMDB; `book` Open Library."
+          schema:
+            type: string
+            enum: [movie, show, anime, book]
+      responses:
+        '200':
+          description: Matches, best first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/titles/{id}:
+    get:
+      operationId: getTitle
+      summary: A title from the catalog. Shows include their seasons and episodes.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The title.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleDetail'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -216,6 +262,82 @@ components:
           items:
             type: string
             enum: [apple, email]
+    ExternalIds:
+      type: object
+      description: Provider identifiers known for a title. Absent means unknown.
+      properties:
+        tmdb: {type: string}
+        imdb: {type: string}
+        trakt: {type: string}
+        tvdb: {type: string}
+        isbn: {type: string}
+        openLibrary: {type: string}
+        anilist: {type: string}
+        mal: {type: string}
+        anidb: {type: string}
+    MediaType:
+      type: string
+      enum: [movie, show, book]
+    CatalogHit:
+      type: object
+      required: [type, title, isAnime, ids]
+      properties:
+        type: {$ref: '#/components/schemas/MediaType'}
+        title: {type: string}
+        originalTitle: {type: string}
+        year: {type: integer}
+        posterUrl: {type: string}
+        overview: {type: string}
+        byline:
+          type: string
+          description: Authors, for books.
+        isAnime: {type: boolean}
+        ids: {$ref: '#/components/schemas/ExternalIds'}
+    SearchResults:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CatalogHit'}
+    Episode:
+      type: object
+      required: [season, number]
+      properties:
+        season: {type: integer}
+        number: {type: integer}
+        name: {type: string}
+        airsAt: {type: string, format: date-time}
+        runtimeMinutes: {type: integer}
+    Season:
+      type: object
+      required: [number, episodes]
+      properties:
+        number: {type: integer}
+        episodes:
+          type: array
+          items: {$ref: '#/components/schemas/Episode'}
+    TitleDetail:
+      type: object
+      required: [id, type, title, isAnime, ids]
+      properties:
+        id: {type: string, format: uuid}
+        type: {$ref: '#/components/schemas/MediaType'}
+        title: {type: string}
+        originalTitle: {type: string}
+        year: {type: integer}
+        synopsis: {type: string}
+        posterUrl: {type: string}
+        isAnime: {type: boolean}
+        ids: {$ref: '#/components/schemas/ExternalIds'}
+        status:
+          type: string
+          enum: [upcoming, returning, ended, canceled]
+        runtimeMinutes: {type: integer}
+        seasons:
+          type: array
+          description: Shows only.
+          items: {$ref: '#/components/schemas/Season'}
     Health:
       type: object
       required: [status]

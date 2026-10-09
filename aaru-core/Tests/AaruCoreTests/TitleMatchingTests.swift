@@ -51,3 +51,21 @@ struct TitleMatchingTests {
         #expect(MatchKey.canMerge(a, c))
     }
 }
+
+struct CrossTypeMatchingTests {
+    @Test
+    func aSharedTmdbNumberAcrossMovieAndShowIsNotAMatch() {
+        let movie = MediaRef(type: .movie, ids: ExternalIDs(tmdb: "1399"), title: "Game of Thrones", year: 2011)
+        let show = MediaRef(type: .show, ids: ExternalIDs(tmdb: "1399"), title: "Game of Thrones", year: 2011)
+        #expect(MatchKey.canMerge(movie, show) == false)
+    }
+
+    @Test
+    func animeIdsMatchAndFill() {
+        let fromAniList = ExternalIDs(anilist: "21", mal: "21")
+        let fromMAL = ExternalIDs(mal: "21", anidb: "69")
+        #expect(fromAniList.matches(fromMAL))
+        #expect(fromAniList.filling(from: fromMAL) == ExternalIDs(anilist: "21", mal: "21", anidb: "69"))
+        #expect(fromAniList.known.map(\.provider) == ["anilist", "mal"])
+    }
+}

@@ -400,6 +400,15 @@ cross-ID exists and keeps them as separate titles otherwise. Never merge on name
 **Done when:** a multi-cour series with a known TMDB mapping resolves to one `Title`, one
 without a mapping stays separate, and no two titles merge on title similarity alone.
 
+### CAT-010 · Load the anime mapping dataset · S
+**Needs:** CAT-009.
+`anime_mappings` is empty until filled. Load the community AniList → TMDB/TVDB/MAL/AniDB
+mapping (e.g. Fribb/anime-lists, MIT) with a one-shot `aaru --anime-mappings <file>` run, and
+refresh it monthly. Catalog data only: no user rows, no scraping.
+
+**Done when:** a mapped AniList id from the dataset resolves to its TMDB show in production,
+and re-running the load is idempotent.
+
 ---
 
 ## P1 · M4 — Library

@@ -311,7 +311,11 @@ Server resolves `MediaRef` → `Title` (find or hydrate) → `LibraryItem`.
 
 ## Provider adapters
 
-Each adapter lives in `Server` and implements a narrow protocol.
+Each adapter lives in `Server` (`Sources/App/Catalog`) and implements a narrow protocol. All
+outbound calls go through one `ProviderClient` per provider (X-002): a token-bucket pacer
+shared by every caller (TMDB 40/s, AniList 1.5/s, Open Library 3/s), retries with backoff on
+429/5xx and network errors, and cancellation from the calling task. Failures surface as 502
+`provider_unavailable`. Tests use a stub `HTTPTransport`; no test reaches a provider.
 
 ```swift
 protocol CatalogSearching: Sendable {
@@ -346,9 +350,12 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - Matching: exact AniList↔TMDB cross-ids first. Never merge an AniList entry and a TMDB entry
   on name alone. An AniList season that TMDB folds into one show stays a separate `Title`
   unless a cross-id says otherwise.
-- **OPEN:** model anime as `MediaType.anime` or as an `isAnime` facet on `show`/`movie`.
-  Recommendation: the facet. Progress, calendar, Up Next, and widgets then share one code path,
-  and an anime film is still a movie.
+- **Decided 2026-10-09:** anime is an `isAnime` facet on `show`/`movie`, not a fourth
+  `MediaType`. Progress, calendar, Up Next, and widgets share one code path, and an anime film
+  is still a movie. TMDB hits are flagged when they are Japanese animation.
+- Community AniList → TMDB mappings live in `anime_mappings` (CAT-009/010). A mapped AniList
+  entry resolves to the TMDB show; an unmapped one stays its own AniList-backed title, whose
+  episodes come from AniList's airing schedule (one season per entry).
 
 ### Trakt
 

@@ -16,6 +16,7 @@ extension Stores {
             sessions: PostgresSessionStore(sql: sql),
             magicLinks: PostgresMagicLinkStore(sql: sql),
             titles: PostgresTitleStore(sql: sql),
+            animeMappings: PostgresAnimeMappingStore(sql: sql),
             library: PostgresLibraryStore(sql: sql),
             lists: PostgresListStore(database: database, sql: sql),
             importJobs: PostgresImportJobStore(sql: sql)
@@ -77,68 +78,6 @@ struct PostgresUserStore: UserStore {
             .where("provider_subject", .equal, subject)
             .first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
         return row.map { UserID($0.userId) }
-    }
-}
-
-struct PostgresTitleStore: TitleStore {
-    let sql: any SQLDatabase
-
-    private struct Row: Codable {
-        let id: UUID
-        let type: String
-        let title: String
-        let originalTitle: String?
-        let year: Int?
-        let synopsis: String?
-        let posterUrl: String?
-        let tmdb, imdb, trakt, tvdb, isbn, openLibrary: String?
-    }
-
-    func insert(_ title: Title) async throws {
-        try title.validate()
-        let row = Row(
-            id: title.id.rawValue,
-            type: title.type.rawValue,
-            title: title.title,
-            originalTitle: title.originalTitle,
-            year: title.year,
-            synopsis: title.synopsis,
-            posterUrl: title.posterURL?.absoluteString,
-            tmdb: title.ids.tmdb,
-            imdb: title.ids.imdb,
-            trakt: title.ids.trakt,
-            tvdb: title.ids.tvdb,
-            isbn: title.ids.isbn,
-            openLibrary: title.ids.openLibrary
-        )
-        try await mappingConflicts("Another title already has one of these external ids.") {
-            try await sql.insert(into: "titles").model(row, keyEncodingStrategy: .convertToSnakeCase).run()
-        }
-    }
-
-    func title(id: TitleID) async throws -> Title? {
-        guard let row = try await sql.select().columns(SQLLiteral.all).from("titles")
-            .where("id", .equal, id.rawValue)
-            .first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
-        else { return nil }
-        guard let type = MediaType(rawValue: row.type) else { return nil }
-        return Title(
-            id: TitleID(row.id),
-            type: type,
-            title: row.title,
-            originalTitle: row.originalTitle,
-            year: row.year,
-            synopsis: row.synopsis,
-            posterURL: row.posterUrl.flatMap(URL.init(string:)),
-            ids: ExternalIDs(
-                tmdb: row.tmdb,
-                imdb: row.imdb,
-                trakt: row.trakt,
-                tvdb: row.tvdb,
-                isbn: row.isbn,
-                openLibrary: row.openLibrary
-            )
-        )
     }
 }
 

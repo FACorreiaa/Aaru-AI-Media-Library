@@ -17,6 +17,9 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
     /// Catalog URL. Aaru does not host provider artwork.
     public var posterURL: URL?
     public var ids: ExternalIDs
+    /// Anime is a facet on `movie`/`show`, not a fourth `MediaType`: an anime series
+    /// shares show progress, calendar, Up Next, and widgets with every other show.
+    public var isAnime: Bool
     /// Shows only. `nil` means "not loaded yet", `[]` means "loaded, none known".
     public var seasons: [Season]?
 
@@ -29,6 +32,7 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         synopsis: String? = nil,
         posterURL: URL? = nil,
         ids: ExternalIDs = ExternalIDs(),
+        isAnime: Bool = false,
         seasons: [Season]? = nil
     ) {
         self.id = id
@@ -39,6 +43,7 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         self.synopsis = synopsis
         self.posterURL = posterURL
         self.ids = ids
+        self.isAnime = isAnime
         self.seasons = seasons
     }
 

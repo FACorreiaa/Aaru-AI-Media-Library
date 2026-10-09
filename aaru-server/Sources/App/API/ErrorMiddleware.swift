@@ -2,6 +2,7 @@ import aaruAPI
 import AaruCore
 import Foundation
 import Hummingbird
+import Logging
 import OpenAPIRuntime
 
 /// Turns every thrown error into the shared `ErrorResponse` JSON shape.
@@ -20,7 +21,7 @@ struct ErrorMiddleware<Context: RequestContext>: RouterMiddleware {
         } catch {
             let appError = Self.appError(for: error)
             if appError.status.code >= 500 {
-                context.logger.error("Unhandled error", metadata: ["error": "\(String(reflecting: error))"])
+                context.logger.error("Request failed", metadata: Self.logMetadata(for: error, appError: appError))
             }
             return Self.response(for: appError)
         }
@@ -51,6 +52,24 @@ struct ErrorMiddleware<Context: RequestContext>: RouterMiddleware {
         default:
             return AppError(status: .internalServerError, code: "internal", message: "Something went wrong.")
         }
+    }
+
+    /// What may be logged about a failure. Never the request: OpenAPI's `ServerError`
+    /// carries the request headers (including `Authorization`) and its body, so it is
+    /// unwrapped to the operation id and the underlying error's type.
+    static func logMetadata(for error: any Error, appError: AppError) -> Logger.Metadata {
+        var metadata: Logger.Metadata = ["code": "\(appError.code)"]
+        var underlying = error
+        if let server = error as? ServerError {
+            metadata["operation"] = "\(server.operationID)"
+            underlying = server.underlyingError
+        }
+        metadata["errorType"] = "\(type(of: underlying))"
+        if let provider = underlying as? ProviderError {
+            metadata["provider"] = "\(provider.provider)"
+            metadata["providerFailure"] = "\(provider.kind)"
+        }
+        return metadata
     }
 
     static func response(for error: AppError) -> Response {

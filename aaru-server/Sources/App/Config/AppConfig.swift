@@ -48,6 +48,8 @@ struct AppConfig: Sendable {
     /// Nil when `RESEND_API_KEY` is unset: email sign-in answers 503 rather than
     /// blocking boot, because it needs a verified sending domain first.
     var email: EmailSettings?
+    /// Sent as Open Library's User-Agent; they ask API users to identify themselves.
+    var openLibraryUserAgent: String
 
     static func load(from reader: ConfigReader) throws -> AppConfig {
         let audiences = reader.string(forKey: "apple.audiences", default: defaultAppleAudiences)
@@ -55,7 +57,11 @@ struct AppConfig: Sendable {
             postgres: PostgresSettings.load(from: reader),
             tmdbAPIKey: required("tmdb.api.key", env: "TMDB_API_KEY", in: reader),
             appleAudiences: Set(audiences.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }),
-            email: emailSettings(from: reader)
+            email: emailSettings(from: reader),
+            openLibraryUserAgent: reader.string(
+                forKey: "open.library.user.agent",
+                default: "Aaru/0.1 (media library; contact: signin@aaru.example)"
+            )
         )
     }
 

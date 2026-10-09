@@ -7,6 +7,7 @@ import OpenAPIRuntime
 struct APIImplementation: APIProtocol {
     let stores: Stores
     let auth: AuthService
+    let catalog: CatalogService
 
     func getHealth(_: Operations.GetHealth.Input) async throws -> Operations.GetHealth.Output {
         if await stores.health.isReachable() {

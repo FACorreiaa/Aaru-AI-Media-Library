@@ -120,3 +120,17 @@ private struct ErrorBody: Decodable {
     let message: String
     let details: [String: String]?
 }
+
+@Suite("Error logging")
+struct ErrorLoggingTests {
+    @Test("A 5xx log line never carries the request or its Authorization header")
+    func noRequestInLogs() {
+        let metadata = ErrorMiddleware<AppRequestContext>.logMetadata(
+            for: ProviderError(provider: "tmdb", kind: .unavailable),
+            appError: AppError(ProviderError(provider: "tmdb", kind: .unavailable))
+        )
+        let rendered = metadata.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: " ")
+        #expect(rendered ==
+            "code=provider_unavailable errorType=ProviderError provider=tmdb providerFailure=unavailable")
+    }
+}
