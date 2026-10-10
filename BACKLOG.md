@@ -32,6 +32,13 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-10
+
+- More free catalog sources are scheduled in **P2 · Catalog sources** (PRV-001, CAT-011…CAT-017):
+  TVmaze air times, Google Books fallback, Wikidata cross-ids, TMDB watch providers, the
+  anime-offline-database, and — after the P2 gate — OMDb and Fanart.tv.
+- **Trakt API access is OPEN** (IMP-002): app creation reportedly became VIP-only in mid-2026.
+
 ## Status snapshot (verified 2026-10-09)
 
 | Area | State |
@@ -82,7 +89,7 @@ deploy steps are done.
 | --- | --- | --- |
 | **P0 — Rails** | REL, M1 server foundation | CI green from repo root; empty app builds to TestFlight beta; API image deploys to `maat` via promote PR; web Worker deploys |
 | **P1 — Basics (API)** | M2 auth, M3 catalog + anime, M4 library, M5 progress, M6 lists, Calendar + Up Next | A personal tracker works end to end over `/v1`: sign in, search movies/shows/anime/books, add, tick episodes, lists, calendar, up next |
-| **P2 — Clients, widgets, imports** | M7 iOS + Mac, Widgets, M10/M11 web, M8 Trakt, M9 file imports | **The "basics done" line.** TestFlight beta and the beta Worker are usable by a stranger end to end; widgets work; Trakt + CSV imports work |
+| **P2 — Clients, widgets, imports** | M7 iOS + Mac, Widgets, M10/M11 web, M8 Trakt, M9 file imports, catalog sources | **The "basics done" line.** TestFlight beta and the beta Worker are usable by a stranger end to end; widgets work; Trakt + CSV imports work |
 | **P3 — Tracking integrations** | Scrobble, Stremio, Plex/Jellyfin, outbound Trakt/MAL/AniList | A play in Plex, Jellyfin or Stremio moves Aaru progress without a tap |
 | **P4 — Social** | Profiles, friends, activity, push, shared lists | Two users can friend, see each other's activity, and block cleanly |
 | **P5 — Gamification** | Points ledger, levels, streaks, badges, leaderboard, stats | Points and streaks are idempotent and survive replays and undo |
@@ -420,8 +427,10 @@ without a mapping stays separate, and no two titles merge on title similarity al
 ### CAT-010 · Load the anime mapping dataset · S
 **Needs:** CAT-009.
 `anime_mappings` is empty until filled. Load the community AniList → TMDB/TVDB/MAL/AniDB
-mapping (e.g. Fribb/anime-lists, MIT) with a one-shot `aaru --anime-mappings <file>` run, and
-refresh it monthly. Catalog data only: no user rows, no scraping.
+mapping (Fribb/anime-lists, MIT: AniList, MAL, AniDB, TVDB, TMDB, IMDb ids) with a one-shot
+`aaru --anime-mappings <file>` run, and refresh it monthly. Where Fribb has no row, fill from
+manami-project/anime-offline-database (ODbL 1.0: attribution and share-alike on the derived
+table, recorded in PRV-001). Catalog data only: no user rows, no scraping. No key needed.
 
 **Done when:** a mapped AniList id from the dataset resolves to its TMDB show in production,
 and re-running the load is idempotent.
@@ -788,6 +797,11 @@ at rest, never sent to a client. State parameter checked. Refresh handled.
 callback rejects a mismatched `state`, and an expired token refreshes without user
 interaction.
 
+**OPEN (2026-10-10):** a third-party report says Trakt made API app creation VIP-only in
+mid-2026 and removed free accounts' apps. Not confirmed on trakt.tv. Before starting: check
+whether `trakt.tv/oauth/applications` lets this account create an app. If not, decide between
+a Trakt VIP subscription for the app owner and making the file imports (M9) the primary path.
+
 ### IMP-003 · Trakt import worker · L
 **Needs:** IMP-002, CAT-005.
 Pull watched history, watchlist, ratings, and lists. Page through the API respecting rate
@@ -905,6 +919,87 @@ MAL → AniList. `CLAUDE.md` and `ARCHITECTURE.md` carry the same order.
 
 ---
 
+## P2 · Catalog sources
+
+Free sources that close gaps TMDB, AniList and Open Library leave. Every one goes through the
+central rate limiter (CAT-001) and maps onto `ExternalIDs`; none is ever a library row. Free
+tiers are mostly **non-commercial** (TMDB, TVmaze): PRV-001 records the terms so a paid plan
+in `BUSINESS.md` cannot ship on a free key by accident.
+
+### PRV-001 · Provider register, keys, attribution · S
+**Needs:** nothing.
+`docs/providers.md`: one row per provider — key or none, where the secret lives (sealed for
+`horus`), rate limit, licence/terms (commercial use allowed or not), and the attribution the
+app must show. Covers TMDB, AniList, Open Library, Trakt, MyAnimeList, TVmaze, Google Books,
+Wikidata, Fribb anime-lists, anime-offline-database, OMDb, Fanart.tv. Register a free
+**MyAnimeList API client ID** now (needed by SCR-005; MAL XML import IMP-013 needs no key). The
+attribution list feeds LAND-003 and the app's About screen.
+
+**Done when:** every provider the server calls has a row, every row with a key names its
+sealed secret, and the About screen and privacy page show every required attribution (TMDB
+logo + notice, TVmaze CC BY-SA, ODbL).
+
+### CAT-011 · TVmaze air times and networks · M
+**Needs:** CAL-001, PRV-001.
+TMDB gives air *dates*; the week grid, "In 3 hours" badges and airing widgets need air
+*times*. Look shows up on TVmaze by `tvdb`/`imdb` id (`/lookup/shows`, no key), store
+`tvmaze` on `ExternalIDs`, and fill `show_episodes.airs_at` with the exact timestamp and
+`titles` with network / streaming platform (closes the network gap noted under CAL-001). TMDB
+stays the episode source; TVmaze only refines time and network. ~20 calls / 10 s per IP.
+
+**Done when:** a calendar row for a US network show carries the correct local air time and
+network, a show TVmaze does not know still appears with its TMDB date, and `CLAUDE.md` and
+`ARCHITECTURE.md` list TVmaze as a source.
+
+### CAT-012 · Google Books fallback · S
+**Needs:** CAT-003, PRV-001.
+When Open Library has no hit for an ISBN, or no cover, ask Google Books (free key, ~1,000
+requests/day). Same `book` `CatalogHit` shape; `isbn` stays the join key. Open Library is still
+asked first.
+
+**Done when:** an ISBN Open Library lacks resolves via Google Books, an ISBN both know
+resolves to one `Title`, and the daily quota running out degrades to "not found", not a 500.
+
+### CAT-013 · Wikidata cross-id fill · M
+**Needs:** CAT-005, JOB-001.
+A background job fills missing external ids (a movie with `tmdb` but no `imdb`, a book with
+`isbn` but no `openLibrary`, an anime with `anilist` but no `tmdb`) from Wikidata SPARQL (no
+key). Never on the request path. Never merges two `Title`s: a filled id that collides with
+another title's id is logged for review, not applied.
+
+**Done when:** a title missing one id gains it on the next job run, and a collision leaves both
+titles unchanged with one review log line.
+
+### CAT-014 · Where to watch · S
+**Needs:** CAT-006.
+TMDB `watch/providers` per title and region (same TMDB key; data from JustWatch, which TMDB
+requires be credited). Shown on the Title room. Cached with the title's staleness window.
+
+**Done when:** a title shows streaming/rent/buy providers for the caller's region with the
+JustWatch credit, and a region with no data shows nothing rather than an empty box.
+
+### CAT-015 · OMDb ratings · S · after the P2 gate
+**Needs:** PRV-001.
+IMDb and Rotten Tomatoes ratings by `imdb` id (free key, 1,000/day), cached 7 days. Display
+only; never written onto the user's rating.
+
+**Done when:** a title with an `imdb` id shows external ratings, and the daily cap is never
+exceeded under a 10,000-item import (ratings fetched lazily on view, not on import).
+
+### CAT-016 · Fanart.tv artwork · S · after the P2 gate
+**Needs:** PRV-001.
+Clear logos and backdrops for the Title room and widgets (free personal key). Referenced by
+URL like posters, never re-hosted.
+
+**Done when:** a title with Fanart.tv art shows its clear logo, and one without falls back to
+the TMDB backdrop with no layout change.
+
+### CAT-017 · MyAnimeList fallback search · S · Deferred
+Only if AniList misses titles users actually search for. MAL API v2 reads with the PRV-001
+client ID. Deferred until there is a measured miss rate; Jikan is out (it scrapes MAL).
+
+---
+
 ## P2 · Web (`aaru-client`)
 
 SvelteKit on Cloudflare Workers (adapter-cloudflare), a pure client of `/v1`. No database, no
@@ -1011,7 +1106,7 @@ back after the initial import.
 and nothing Aaru pushes is ever re-imported as a change.
 
 ### SCR-005 · Push progress to MAL and AniList · M
-**Needs:** CAT-009, SCR-001.
+**Needs:** CAT-009, SCR-001, PRV-001 (MAL client ID).
 One-way out per connected account: MAL API v2 (OAuth2 PKCE; `PATCH
 /v2/anime/{id}/my_list_status` with `num_watched_episodes`, `status`, `score`) and AniList
 (`SaveMediaListEntry`). Tokens encrypted at rest like IMP-002.
