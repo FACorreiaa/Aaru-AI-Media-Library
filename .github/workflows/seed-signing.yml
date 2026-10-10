@@ -1,7 +1,7 @@
-# On-demand seeding of match profiles for every Aaru bundle id (REL-004). The
-# beta lane already creates missing profiles, so this is only needed to refresh
-# them by hand, e.g. after an entitlement change. MATCH_GIT_BASIC_AUTHORIZATION's
-# token needs Contents: Read AND Write on FinancePlanner/norviq-certificates.
+# Seeding of match profiles for every Aaru bundle id (REL-004). Run once before
+# the first beta, and again after an entitlement change or a certificate
+# renewal: the beta lane only reads. MATCH_GIT_BASIC_AUTHORIZATION's token needs
+# Contents: Read AND Write on NorthAIProject/north-ios-certificates.
 name: Seed signing
 
 on:

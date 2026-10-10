@@ -58,9 +58,10 @@ In CI, `Apple Release` runs `beta` after `Apple CI` passes on `main`; `release` 
 run only on manual dispatch behind the `app-store` environment. Until the secrets exist the
 beta job skips with a notice.
 
-**Signing** reuses Norviq's match repo, `FinancePlanner/norviq-certificates` (team
-`84X9WYBF36`, distribution certificate `4AQ4Q8XM7Z`). The beta lane runs match in write mode,
-like Norviq's, so the first CI run creates Aaru's App Store profiles there.
+**Signing** reuses Khepri's match repo, `NorthAIProject/north-ios-certificates` (team
+`84X9WYBF36`, distribution certificate `BC73LRR48W`, expires 2027-09-23), as ScanIt does. The
+beta lane signs read-only; dispatch **Seed signing** once to create Aaru's profiles there, and
+again after an entitlement change or a certificate renewal.
 
 **macOS** builds in CI but does not upload yet: the Mac App Store also needs a Mac Installer
 Distribution certificate, which the match repo does not hold. Add one, then add `macos` to
