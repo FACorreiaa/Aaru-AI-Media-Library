@@ -68,8 +68,9 @@
 			</div>
 		</div>
 		<div class="rise order-1 flex justify-center md:order-2" style="--delay:120ms">
-			<div class="relative aspect-square w-[min(78vw,30rem)]">
-				<div class="absolute inset-[6%] rounded-full bg-medallion"></div>
+			<div
+				class="relative aspect-square w-[min(78vw,30rem)] overflow-hidden rounded-full bg-medallion"
+			>
 				<img
 					src={mascot}
 					srcset="{mascot} 1x, {mascot2x} 2x"
@@ -77,7 +78,7 @@
 					width="720"
 					height="794"
 					fetchpriority="high"
-					class="absolute inset-0 h-full w-full object-contain"
+					class="absolute inset-0 h-full w-full translate-y-[3%] object-contain"
 				/>
 			</div>
 		</div>

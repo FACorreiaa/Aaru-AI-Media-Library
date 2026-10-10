@@ -1,19 +1,19 @@
-import AaruCore
 import SwiftUI
 
-/// Placeholder root until APP-001 builds the real shell.
+/// Signed-out shell until APP-001/APP-002 add the API client and session.
 struct RootView: View {
+    @State private var showsSignInNotice = false
+
     var body: some View {
-        VStack(spacing: 12) {
-            Text("Aaru")
-                .font(.largeTitle.weight(.semibold))
-            Text(MediaType.allCases.map(\.rawValue).joined(separator: " · "))
-                .foregroundStyle(.secondary)
-            LabeledContent("Channel", value: AppEnvironment.channel)
-            LabeledContent("API", value: AppEnvironment.apiBaseURL?.absoluteString ?? "not set")
+        WelcomeView(
+            onSignInWithApple: { showsSignInNotice = true },
+            onContinueWithEmail: { showsSignInNotice = true }
+        )
+        .alert("Sign-in opens in the next beta", isPresented: $showsSignInNotice) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This build shows the welcome screen only. Thanks for testing Aaru.")
         }
-        .padding()
-        .frame(maxWidth: 420)
     }
 }
 

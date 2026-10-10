@@ -634,6 +634,8 @@ the user to sign-in exactly once (no retry storm).
 
 ### APP-002 · Sign in · M
 **Needs:** APP-001, AUTH-002.
+`WelcomeView` (DESIGN.md §0) already exists with both buttons; this item replaces its "next
+beta" notice with the real flow (and the system `SignInWithAppleButton`).
 Sign in with Apple, plus the email path. Token in Keychain, shared correctly on Mac.
 
 **Done when:** the session survives app relaunch on both platforms and sign-out clears the
@@ -1014,6 +1016,12 @@ and stock Storybook stories in the same change.
 
 **Done when:** the marketing routes prerender with no client JS required, `demo/` is gone, and
 Lighthouse shows no layout shift on the hero.
+
+**Progress 2026-10-10:** built on branch `landing-and-sources`. Hero, imports, bento, native
+apps, FAQ; en/es/pt prerendered at `/`, `/es`, `/pt` (Paraglide now `url` strategy first);
+`demo/` and stock stories removed; brand assets from `docs/brand/`. Open: the hero CTA only
+scrolls the page until LAND-002 adds the waitlist; Lighthouse not run; `og:image` uses the
+placeholder domain (`src/lib/site.ts`).
 
 ### LAND-002 · Waitlist · S
 **Needs:** LAND-001.
