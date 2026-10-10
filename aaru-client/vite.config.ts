@@ -38,7 +38,9 @@ export default defineConfig({
 		paraglideVitePlugin({
 			project: './project.inlang',
 			outdir: './src/lib/paraglide',
-			emitTsDeclarations: true
+			emitTsDeclarations: true,
+			// `url` first so prerendered marketing pages exist per locale (/, /es, /pt).
+			strategy: ['url', 'cookie', 'baseLocale']
 		})
 	],
 	test: {

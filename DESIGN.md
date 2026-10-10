@@ -16,6 +16,14 @@ Keep a **canvas** beside intent so work does not die in the scroll.
 
 ---
 
+## 0. Welcome (signed out)
+
+The app's landing screen, and the web landing page's twin. Mascot on its disc, wordmark, one
+serif headline, three plain pillars (one shelf, private by default, bring your history), then
+Sign in with Apple and Continue with email pinned to the bottom on iPhone. Side by side on iPad
+and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`,
+`src/routes/(marketing)` in `aaru-client`.
+
 ## 1. The Field (home)
 
 Open the app into a calm vertical canvas, not "Movies / Shows / Books" tabs.
@@ -306,7 +314,11 @@ looking like Aaru.
 | Cursor / Copilot canvases | Plan → work → artifact, not chat log |
 | Linear | Command palette as a peer of the mouse |
 
-Brand: teal → gold, paper-white or deep reed-green dark mode. The heron only as a quiet mark
+Brand: teal → gold, paper-white or deep reed-green dark mode. Assets and how they are made:
+`docs/brand/README.md`. Colour tokens (`Paper`, `Surface`, `Ink`, `Muted`, `Medallion`, accent
+teal) are the same names in the asset catalog and in `aaru-client/src/routes/layout.css`. The
+mascot (a small teal bird with books and a film reel) appears on signed-out surfaces only, always
+on a paper disc. The heron only as a quiet mark
 when the agent is working (breathing reed, not a bouncing dots spinner).
 
 Research basis (2026-10-09): the user's screenshots of Trakt web home, Trakt "Today" stories
