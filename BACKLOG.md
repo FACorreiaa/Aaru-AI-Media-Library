@@ -721,6 +721,17 @@ Status, rating, notes, owned toggle, and for shows the season/episode list with 
 **Done when:** an episode tick is optimistic in the UI, reconciles with the server response,
 and rolls back visibly on failure.
 
+**Progress 2026-10-15 (all three clients):** built. Status, 5-star rating (two points a star on
+the 1–10 scale), owned, notes, page for books, synopsis; for shows, seasons (specials last) with
+a tick per episode and "Mark watched" per season; unaired episodes cannot be ticked. Every write
+is optimistic, replaced by the server's answer, and rolled back with a message at the bottom
+of the screen on failure. Server: single-item responses (`GET` item, episode and season writes)
+now carry `watchedEpisodes`; lists and sync do not. AniList descriptions are cleaned to plain
+text. Verified on the web against a local API: a tick, a rating and a status change saved (the
+first tick also moved the status to In progress, and the page took the server's word for it),
+and with the API stopped a tick rolled back with "Aaru could not reach the server". The iOS
+screen builds and makes the same calls but was not driven in the simulator.
+
 ### APP-006 · Lists screen · M
 **Needs:** APP-003, LST-002.
 

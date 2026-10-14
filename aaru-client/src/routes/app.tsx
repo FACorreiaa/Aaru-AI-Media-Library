@@ -1,4 +1,5 @@
 import {
+  Link,
   createFileRoute,
   redirect,
   useNavigate,
@@ -204,28 +205,34 @@ function Library() {
               <ul class="mt-8 divide-y divide-line">
                 <For each={rows()}>
                   {(row) => (
-                    <li class="flex items-center gap-4 py-3">
-                      <Poster
-                        url={row.posterUrl}
-                        kind={row.kind}
-                        class="w-12 shrink-0"
-                      />
-                      <div class="min-w-0">
-                        <p class="line-clamp-2 font-medium">{row.title}</p>
-                        <p class="text-sm text-muted">
-                          {[
-                            row.year,
-                            KINDS.find((k) => k.kind === row.kind)?.label,
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </p>
-                        <p class="text-sm text-muted">
-                          {[statusLabel(row.status), row.detail]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </p>
-                      </div>
+                    <li>
+                      <Link
+                        to="/app/title/$id"
+                        params={{ id: row.id }}
+                        class="flex items-center gap-4 py-3"
+                      >
+                        <Poster
+                          url={row.posterUrl}
+                          kind={row.kind}
+                          class="w-12 shrink-0"
+                        />
+                        <div class="min-w-0">
+                          <p class="line-clamp-2 font-medium">{row.title}</p>
+                          <p class="text-sm text-muted">
+                            {[
+                              row.year,
+                              KINDS.find((k) => k.kind === row.kind)?.label,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </p>
+                          <p class="text-sm text-muted">
+                            {[statusLabel(row.status), row.detail]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </p>
+                        </div>
+                      </Link>
                     </li>
                   )}
                 </For>
@@ -236,13 +243,19 @@ function Library() {
               <For each={rows()}>
                 {(row) => (
                   <li>
-                    <Poster url={row.posterUrl} kind={row.kind} />
-                    <p class="mt-2 line-clamp-2 text-sm font-medium">
-                      {row.title}
-                    </p>
-                    <p class="truncate text-xs text-muted">
-                      {row.detail ?? statusLabel(row.status)}
-                    </p>
+                    <Link
+                      to="/app/title/$id"
+                      params={{ id: row.id }}
+                      class="block"
+                    >
+                      <Poster url={row.posterUrl} kind={row.kind} />
+                      <p class="mt-2 line-clamp-2 text-sm font-medium">
+                        {row.title}
+                      </p>
+                      <p class="truncate text-xs text-muted">
+                        {row.detail ?? statusLabel(row.status)}
+                      </p>
+                    </Link>
                   </li>
                 )}
               </For>
