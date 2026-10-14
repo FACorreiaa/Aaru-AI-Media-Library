@@ -1,7 +1,9 @@
+import AaruAPI
 import SwiftUI
 
 /// The signed-out landing screen. APP-002 connects both actions to `/v1/auth`.
 struct WelcomeView: View {
+    let api: Client?
     var onSignInWithApple: () -> Void
     var onContinueWithEmail: () -> Void
 
@@ -88,7 +90,7 @@ struct WelcomeView: View {
             Button("Continue with email", action: onContinueWithEmail)
                 .buttonStyle(CapsuleButtonStyle(prominent: false))
             #if DEBUG || BETA
-                Text("\(AppEnvironment.channel) · \(AppEnvironment.apiBaseURL?.host() ?? "no API")")
+                APIStatusLabel(api: api)
                     .font(.caption2)
                     .foregroundStyle(Color(.muted))
                     .padding(.top, 4)
@@ -158,10 +160,10 @@ private struct CapsuleButtonStyle: ButtonStyle {
 }
 
 #Preview("Light") {
-    WelcomeView(onSignInWithApple: {}, onContinueWithEmail: {})
+    WelcomeView(api: nil, onSignInWithApple: {}, onContinueWithEmail: {})
 }
 
 #Preview("Dark") {
-    WelcomeView(onSignInWithApple: {}, onContinueWithEmail: {})
+    WelcomeView(api: nil, onSignInWithApple: {}, onContinueWithEmail: {})
         .preferredColorScheme(.dark)
 }

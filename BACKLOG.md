@@ -332,6 +332,21 @@ lists, jobs, and stored provider tokens.
 **Done when:** after account delete no row anywhere references the user id, and the
 deletion is covered by a test that counts rows in every user-scoped table.
 
+### AUTH-005 · Sign in with Google · M · Deferred
+Not before the web client (WEB-001) is live. On Apple devices, Sign in with Apple already
+covers it (App Store 4.8 requires Apple sign-in whenever Google is offered, and Aaru has it),
+and email magic links cover everyone else. **Trigger:** sign-in funnel data from the web
+client shows Android/Windows visitors leaving at sign-in.
+
+When it starts: verify Google ID tokens server-side with the same JWKS verifier as Apple, add a
+Google OAuth client and consent-screen brand verification, and decide **account linking** first
+— Apple often hides the email behind a private relay, so the same person signing in with Apple
+then Google becomes two accounts unless identities can be linked from a signed-in session.
+
+**Done when:** a user who signed in with Apple can link Google from settings and then sign in
+with either into one account, and signing in with an unlinked Google account never merges
+into an existing account on email alone.
+
 ---
 
 ## P1 · M3 — Catalog and search (movies, shows, anime, books)
@@ -623,14 +638,20 @@ One multiplatform SwiftUI target. If a split ever happens, shared views go throu
 
 ### APP-001 · App skeleton and API client · L
 **Needs:** AUTH-002, SRV-002, REL-003.
-Builds on the REL-003 project in `aaru-ios/`, depends on `AaruCore`. `AaruCore` currently has no HTTP
-client — **OPEN:** add a generated OpenAPI client into `AaruCore`, or a thin URLSession
-client in the app? Recommendation: generated client in a separate `AaruAPI` module that
-depends on `AaruCore`, so `CLAUDE.md`'s "no HTTP client yet in core" holds and the DTOs
-still cannot fork.
+Builds on the REL-003 project in `aaru-ios/`, depends on `AaruCore`.
+**Decided 2026-10-14:** a generated client in its own package, `aaru-api/` (`AaruAPI`), not in
+`AaruCore`. The generator output is committed (no build plugin for Xcode or fastlane to trust)
+and CI fails when it drifts from `openapi.yaml`, so the DTOs cannot fork. `AaruAPI` gains an
+`AaruCore` dependency when the first screen maps wire types onto domain models.
 
 **Done when:** the app builds for iPhone and Mac from one target, and a 401 anywhere routes
 the user to sign-in exactly once (no retry storm).
+
+**Progress 2026-10-14:** done. `SessionMiddleware` attaches the bearer token and reports a
+rejected token once however many requests were in flight (tested with 12 concurrent 401s, no
+retries); `SessionStore` routes `RootView` back to the welcome screen. Debug and Beta builds
+show the API's health in the welcome footer; verified "API ok" against a local server in the
+iPhone 17 Pro simulator. The token lives in memory until APP-002 moves it to the Keychain.
 
 ### APP-002 · Sign in · M
 **Needs:** APP-001, AUTH-002.

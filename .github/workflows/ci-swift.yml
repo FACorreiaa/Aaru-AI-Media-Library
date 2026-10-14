@@ -1,5 +1,6 @@
-# Swift CI for aaru-core and aaru-server (REL-001, SRV-009).
-# The server depends on ../aaru-core, so a change to either runs both.
+# Swift CI for aaru-core, aaru-server and aaru-api (REL-001, SRV-009, APP-001).
+# The server depends on ../aaru-core, so a change to either runs both. aaru-api's client is
+# generated from the server's spec, so a spec change re-checks it.
 name: Swift CI
 
 on:
@@ -8,11 +9,15 @@ on:
     paths:
       - "aaru-core/**"
       - "aaru-server/**"
+      - "aaru-api/**"
+      - "scripts/generate-api-client.sh"
       - ".github/workflows/ci-swift.yml"
   pull_request:
     paths:
       - "aaru-core/**"
       - "aaru-server/**"
+      - "aaru-api/**"
+      - "scripts/generate-api-client.sh"
       - ".github/workflows/ci-swift.yml"
   workflow_dispatch:
 
@@ -62,6 +67,27 @@ jobs:
       - name: Test (migrations run against the service database)
         run: swift test --package-path aaru-server
 
+  api:
+    name: aaru-api client fresh + tests
+    runs-on: ubuntu-latest
+    container: swift:6.3-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: aaru-server/.build
+          key: ${{ runner.os }}-server-${{ hashFiles('aaru-server/Package.resolved') }}
+          restore-keys: ${{ runner.os }}-server-
+      - name: Generated client matches the spec
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          ./scripts/generate-api-client.sh
+          git diff --exit-code -- aaru-api/Sources/AaruAPI/Generated \
+            || { echo "::error::aaru-api is stale. Run scripts/generate-api-client.sh and commit."; exit 1; }
+      - name: Test
+        run: swift test --package-path aaru-api
+
   lint:
     name: swiftformat + swiftlint
     runs-on: macos-15
@@ -72,7 +98,7 @@ jobs:
       - name: Lint
         run: |
           set -euo pipefail
-          for pkg in aaru-core aaru-server; do
+          for pkg in aaru-core aaru-server aaru-api; do
             echo "== $pkg =="
             (cd "$pkg" && swiftformat . --lint && swiftlint --strict --quiet)
           done

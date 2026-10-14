@@ -8,11 +8,13 @@ on:
     paths:
       - "aaru-ios/**"
       - "aaru-core/**"
+      - "aaru-api/**"
       - ".github/workflows/ci-apple.yml"
   pull_request:
     paths:
       - "aaru-ios/**"
       - "aaru-core/**"
+      - "aaru-api/**"
       - ".github/workflows/ci-apple.yml"
   workflow_dispatch:
 
@@ -42,7 +44,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-swiftpm-${{ hashFiles('aaru-core/Package.swift') }}
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('aaru-core/Package.swift', 'aaru-api/Package.swift') }}
 
       - name: Build
         run: |

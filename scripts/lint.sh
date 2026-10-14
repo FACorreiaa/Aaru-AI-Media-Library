@@ -2,7 +2,7 @@
 # Check formatting, SwiftLint, and unused code. Does not rewrite files.
 set -eu
 root="$(cd "$(dirname "$0")/.." && pwd)"
-for pkg in aaru-core aaru-server; do
+for pkg in aaru-core aaru-server aaru-api; do
   echo "== $pkg =="
   (
     cd "$root/$pkg"
