@@ -29,7 +29,7 @@ are empty directories.
 - **Shared**: `AaruCore` — models, IDs, validation
 - **Clients**: SwiftUI on iOS and Mac (prefer one multiplatform target)
 - **Widgets**: iOS + macOS widgets, "Now watching" Live Activity, App Intents
-- **Web**: `aaru-client` — SvelteKit on Cloudflare Workers, landing + logged-in client on `/v1`
+- **Web**: `aaru-client` — SolidJS + TanStack Start on Cloudflare Workers, landing + the web app on `/v1`
 - **Catalog**: TMDB (movies, TV), AniList (anime), Open Library (books)
 - **Imports**: Trakt OAuth, then IMDb / Letterboxd / Goodreads CSV, CAT list or ICS, TV Time, MAL, AniList
 - **Hosting**: API + Postgres on the `maat` cluster via `platform/infra`; beta and prod apps share one API
@@ -43,7 +43,7 @@ aaru/
   aaru-core/       AaruCore package — models, IDs, validation (shared by server and clients)
   aaru-server/     Hummingbird 2 API — auth, library, search, lists, import jobs
   aaru-ios/        SwiftUI client, iPhone + Mac + widgets     (not scaffolded)
-  aaru-client/     SvelteKit web on Workers: landing + app    (template only)
+  aaru-client/     SolidJS + TanStack Start on Workers: landing + app
   README.md
   CLAUDE.md
   ARCHITECTURE.md

@@ -6,10 +6,12 @@ on:
     branches: [main]
     paths:
       - "aaru-client/**"
+      - "aaru-server/Sources/AppAPI/openapi.yaml"
       - ".github/workflows/ci-web.yml"
   pull_request:
     paths:
       - "aaru-client/**"
+      - "aaru-server/Sources/AppAPI/openapi.yaml"
       - ".github/workflows/ci-web.yml"
   workflow_dispatch:
 
@@ -32,8 +34,13 @@ jobs:
           cache: npm
           cache-dependency-path: aaru-client/package-lock.json
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
       - run: npm run check
       - run: npm run lint
-      - run: npm run test:ci
+      - run: npm run typecheck
+      - name: API types match the spec
+        run: |
+          npm run api:generate
+          git diff --exit-code -- src/lib/api/schema.d.ts \
+            || { echo "::error::API types are stale. Run npm run api:generate in aaru-client and commit."; exit 1; }
+      - run: npm test
       - run: npm run build

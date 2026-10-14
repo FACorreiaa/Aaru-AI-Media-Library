@@ -65,9 +65,10 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          WRANGLER_CONFIG: ${{ github.event_name == 'workflow_dispatch' && 'wrangler.jsonc' || 'wrangler.staging.jsonc' }}
+          # The Cloudflare Vite plugin bakes the chosen environment into the build output.
+          CLOUDFLARE_ENV: ${{ github.event_name == 'workflow_dispatch' && '' || 'staging' }}
         run: |
           set -euo pipefail
           npm ci
           npm run build
-          npx wrangler deploy --config "$WRANGLER_CONFIG"
+          npx wrangler deploy

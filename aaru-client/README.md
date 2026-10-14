@@ -1,37 +1,25 @@
 # aaru-client
 
-Aaru on the web: SvelteKit (Svelte 5, Kit 3) on Cloudflare Workers. A pure client of the
-`/v1` API — no database, no business logic, no web-only endpoint. The landing page will
-live here as a route group (`BACKLOG.md` LAND-001); the logged-in app is WEB-001.
-
-## Commands
+Aaru on the web: the landing page, sign-in, and the signed-in app. SolidJS + TanStack Start on
+Cloudflare Workers, a pure client of the `/v1` API with the same functionality as the Apple apps.
 
 ```bash
 npm install
-npm run dev          # local dev server
-npm run check        # svelte-kit sync + svelte-check
-npm run lint         # prettier --check + eslint
-npm run test:ci      # vitest: server, client (browser), storybook projects, one at a time
-npm run build        # production build (adapter-cloudflare)
-npm run gen          # regenerate worker-configuration.d.ts after editing wrangler.jsonc
+printf 'API_BASE_URL=http://localhost:8080\nCHANNEL=dev\n' > .dev.vars   # local API
+npm run dev            # http://localhost:3000
+
+npm run check && npm run lint && npm run typecheck && npm test && npm run build
+npm run api:generate   # after any change to aaru-server/Sources/AppAPI/openapi.yaml
+npm run cf:types       # after changing vars in wrangler.jsonc
 ```
 
-`wrangler types --check` is not part of `check` or `build`: its hash depends on the built
-Worker entrypoint, so it fails on every fresh checkout (same choice as LuminaVaultWebApp).
+- `src/routes/index.tsx`: the landing page. It never reads the session.
+- `src/routes/sign-in.tsx`, `src/routes/app.tsx`: sign-in and the signed-in app.
+- `src/lib/session/`: the session. The token sits in an HttpOnly cookie; server functions send
+  every `/v1` call with it, so page scripts never see it. A 401 clears it once.
+- `src/lib/api/`: the `/v1` client. `schema.d.ts` is generated from the server's spec, the same
+  spec the Apple apps' `AaruAPI` comes from; CI fails if it is stale.
 
-```bash
-
-```
-
-`npx playwright install chromium` once before running browser tests locally.
-
-## Channels
-
-| Channel | Config                   | Worker                | Deployed by                        |
-| ------- | ------------------------ | --------------------- | ---------------------------------- |
-| Beta    | `wrangler.staging.jsonc` | `aaru-client-staging` | every merge to `main` after Web CI |
-| Prod    | `wrangler.jsonc`         | `aaru-client`         | manual dispatch of Web Deploy      |
-
-Both read `PUBLIC_API_BASE_URL` from the Worker's `vars` at request time
-(`$app/env/public`) and point at the production API. The host is a placeholder until the
-domain exists (REL-005).
+Deploys (REL-006): every merge to `main` builds with `CLOUDFLARE_ENV=staging` and deploys the
+beta Worker; the production Worker deploys only on manual dispatch of "Web Deploy". Both use
+the production API.
