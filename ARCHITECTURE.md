@@ -40,6 +40,7 @@ as a route group and the logged-in library on `/v1`. It never touches Postgres.
 | --- | --- | --- |
 | `aaru-core` (`AaruCore`) | Shared DTOs, identifiers, status enums, title matching, lightweight validation | Persistence, HTTP server, TMDB secret handling |
 | `aaru-server` | HTTP, auth, Postgres, jobs, provider adapters | SwiftUI, store-kit, vendor JSON leaked to clients |
+| `aaru-api` (`AaruAPI`) | The `/v1` client for the Apple apps, generated from the server's `openapi.yaml` (committed, checked fresh in CI); bearer-token session middleware that reports a rejected session once | Hand-written DTOs, retries of a 401, business logic |
 | `aaru-ios` | iOS + macOS app, widget extension, Live Activity, App Intents, local cache, Sign in with Apple | Direct TMDB/Trakt/AniList calls (go through Aaru API) |
 | `aaru-client` | SvelteKit on Cloudflare Workers: landing route group + logged-in web client on `/v1` | Database access, business logic, forking DTO meaning from the native clients |
 

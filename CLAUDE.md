@@ -18,7 +18,8 @@ This file is the working contract for anyone — human or agent — changing the
 | Layer | Choice |
 | --- | --- |
 | API server | Hummingbird 2 (Swift, structured concurrency); routes generated from `aaru-server/Sources/AppAPI/openapi.yaml` |
-| Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation). No HTTP client yet |
+| Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation). No HTTP client in it |
+| API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
 | Web | `aaru-client/` — SvelteKit (Svelte 5) on Cloudflare Workers, a pure client of `/v1`. Landing pages are a route group in the same app. No DB access, no business logic |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
@@ -42,6 +43,7 @@ This file is the working contract for anyone — human or agent — changing the
 ```text
 aaru/
   aaru-core/             # AaruCore: models, IDs, validation. Shared by server and clients
+  aaru-api/              # AaruAPI: generated /v1 client for the Apple apps
   aaru-server/           # Hummingbird API
   aaru-ios/              # SwiftUI iPhone + Mac + widget extension (not scaffolded)
   aaru-client/           # SvelteKit web on Cloudflare Workers: landing + logged-in client on /v1
@@ -66,6 +68,10 @@ Adjust names if Package.swift targets differ. Do not invent new root targets wit
 ```bash
 # Shared package
 swift test --package-path aaru-core
+
+# Apple API client (after any openapi.yaml change)
+./scripts/generate-api-client.sh
+swift test --package-path aaru-api
 
 # Server (needs Postgres: cd aaru-server && docker compose up -d)
 cd aaru-server && swift run

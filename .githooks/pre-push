@@ -21,7 +21,7 @@ fail_if_missing() {
 fail_if_missing swiftformat swiftformat
 fail_if_missing swiftlint swiftlint
 
-for pkg in aaru-core aaru-server aaru-ios; do
+for pkg in aaru-core aaru-server aaru-api aaru-ios; do
   [ -d "$ROOT/$pkg" ] || continue
   echo "pre-push: $pkg"
   (cd "$ROOT/$pkg" && swiftformat . --lint --quiet && swiftlint --strict --quiet)
