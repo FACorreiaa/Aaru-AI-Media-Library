@@ -21,7 +21,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation). No HTTP client in it |
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
-| Web | `aaru-client/` — SvelteKit (Svelte 5) on Cloudflare Workers, a pure client of `/v1`. Landing pages are a route group in the same app. No DB access, no business logic |
+| Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). No DB access, no business logic |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB |
@@ -46,7 +46,7 @@ aaru/
   aaru-api/              # AaruAPI: generated /v1 client for the Apple apps
   aaru-server/           # Hummingbird API
   aaru-ios/              # SwiftUI iPhone + Mac + widget extension (not scaffolded)
-  aaru-client/           # SvelteKit web on Cloudflare Workers: landing + logged-in client on /v1
+  aaru-client/           # SolidJS + TanStack Start on Workers: landing + the web app on /v1
   README.md
   ARCHITECTURE.md
   DESIGN.md              # what Aaru feels like: surfaces, agentic rules
@@ -81,8 +81,9 @@ docker build -f aaru-server/Dockerfile -t aaru-server .   # from the repo root: 
 
 # Web
 cd aaru-client && npm run dev
-cd aaru-client && npm run check && npm run lint
-cd aaru-client && npm run test:ci
+cd aaru-client && npm run check && npm run lint && npm run typecheck
+cd aaru-client && npm test
+cd aaru-client && npm run api:generate   # after any openapi.yaml change
 
 # Apple
 xcodebuild build -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
@@ -101,7 +102,7 @@ One backend. **Beta is client-side only**, as in the other apps:
 
 | Channel | Apple | Web | API |
 | --- | --- | --- | --- |
-| Beta | TestFlight, bundle id + `.beta`, scheme "Aaru Beta", fastlane `beta` on every merge to `main` | `wrangler.staging.jsonc` Worker, deployed on every merge to `main` | production |
+| Beta | TestFlight, bundle id + `.beta`, scheme "Aaru Beta", fastlane `beta` on every merge to `main` | `env.staging` Worker in `wrangler.jsonc`, deployed on every merge to `main` | production |
 | Prod | App Store, fastlane `release` on manual dispatch | `wrangler.jsonc` Worker, manual dispatch | production |
 
 The API ships only through a merged promote PR in `~/Work/production/platform/infra`. Never
@@ -223,7 +224,8 @@ When you add a source, status, or client, update this file and `ARCHITECTURE.md`
   renaming a surface or component updates `DESIGN.md` and `VIEWS.md` too.
 - Do not introduce Vapor, a Node server, or a second backend. MCP, the Stremio addon, scrobble
   webhooks, and the WebSocket gateway are transports inside `aaru-server`, not services. The
-  SvelteKit Worker is a client: it may proxy the session cookie exchange, nothing else.
+  web Worker is a client: it holds the session in an HttpOnly cookie and forwards `/v1` calls
+  with it, nothing else. Every rule lives in `aaru-server`.
 - Third-party agent access is per-user and token-scoped, over the same tool layer a tap uses.
   An outside caller gets no capability a signed-in session lacks: single-item writes behave
   like a tap, anything larger becomes a plan the user approves inside Aaru. See X-009 in

@@ -32,6 +32,14 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-14
+
+- **The web client is SolidJS + TanStack Start** on Cloudflare Workers (replaces SvelteKit), and
+  it mirrors the Apple apps feature for feature: whatever ships on iPhone and Mac ships on the
+  web in the same phase. Paraglide i18n was dropped with SvelteKit; the apps are English-only
+  too, so translation returns for all clients together.
+- Sign in with Google is deferred (AUTH-005).
+
 ## Decisions recorded 2026-10-10
 
 - More free catalog sources are scheduled in **P2 · Catalog sources** (PRV-001, CAT-011…CAT-017):
@@ -180,9 +188,9 @@ infra.
 
 ### REL-006 · Web Workers: beta and prod · S
 **Needs:** REL-001.
-`aaru-client/wrangler.jsonc` (prod) and `wrangler.staging.jsonc` (beta). Both point
-`PUBLIC_API_BASE_URL` at the production API. Deploy with `wrangler deploy --config …` from CI:
-staging on every merge to `main`, prod on manual dispatch. Copy LuminaVaultWebApp's setup.
+`aaru-client/wrangler.jsonc`: the production Worker plus `env.staging` (beta). Both point
+`API_BASE_URL` at the production API. CI builds with `CLOUDFLARE_ENV=staging` for beta and
+deploys with `wrangler deploy`: staging on every merge to `main`, prod on manual dispatch.
 
 **Done when:** a merge to `main` updates the beta Worker URL, and prod moves only on dispatch.
 
@@ -1037,8 +1045,9 @@ client ID. Deferred until there is a measured miss rate; Jikan is out (it scrape
 
 ## P2 · Web (`aaru-client`)
 
-SvelteKit on Cloudflare Workers (adapter-cloudflare), a pure client of `/v1`. No database, no
-business logic, no web-only endpoint. Landing pages live in a route group in the same app.
+SolidJS + TanStack Start on Cloudflare Workers (since 2026-10-14), a pure client of `/v1` at
+parity with the Apple apps. No database, no business logic, no web-only endpoint. The landing
+page lives in the same app.
 `aaru-landing/` and `aaru-site/` are retired; M10 and M11 keep their IDs below.
 
 ### LAND-001 · Landing route group · M
@@ -1055,6 +1064,9 @@ apps, FAQ; en/es/pt prerendered at `/`, `/es`, `/pt` (Paraglide now `url` strate
 `demo/` and stock stories removed; brand assets from `docs/brand/`. Open: the hero CTA only
 scrolls the page until LAND-002 adds the waitlist; Lighthouse not run; `og:image` uses the
 placeholder domain (`src/lib/site.ts`).
+
+**2026-10-14:** ported to SolidJS (`src/routes/index.tsx`), English only (see the 2026-10-14
+decision). The hero CTA now goes to sign-in.
 
 ### LAND-002 · Waitlist · S
 **Needs:** LAND-001.
@@ -1074,14 +1086,21 @@ Trakt, Apple, Cloudflare) and matches what the code actually does.
 
 ### WEB-001 · Logged-in web on `/v1` · L
 **Needs:** APP-009 (shape parity), AUTH-002, AUTH-003, REL-006.
-`src/routes/(app)/`: sign in (email + Sign in with Apple JS), home rows, `WeekGrid`, search
-and add, title detail with episode ticks, lists, settings and imports. Session lives in an
-HttpOnly cookie set by a Kit server route that proxies the `/v1` token exchange; every other
-call goes to `/v1` unchanged. Paraglide en/es/pt stays.
+Sign in (email code + Sign in with Apple JS), home rows, `WeekGrid`, search and add, title
+detail with episode ticks, lists, settings and imports, shipped screen by screen alongside
+APP-002…APP-010. The session lives in an HttpOnly cookie; TanStack Start server functions send
+every `/v1` call with it, so page scripts never see the token.
 
 **Done when:** the web client uses the same `/v1` routes as the apps with no web-only
 endpoint, a token is never readable from page JS, and `ARCHITECTURE.md` lists it as a live
 client.
+
+**Progress 2026-10-14:** sign-in at parity with APP-002. `/sign-in` sends a code and verifies it
+(and shows Apple's own button once `APPLE_SERVICES_ID` is set; it needs a Services ID on a
+verified domain). `/app` is the signed-in shell with sign-out, matching the Apple apps'
+"Signed in" screen. Verified in Chrome against a local server: a wrong code shows the server's
+message, the right code signs in, a reload keeps the session, sign-out deletes the server
+session and the cookie, and `/app` redirects to `/sign-in` when signed out.
 
 **P2 gate (the "basics done" line):** the TestFlight Beta app (iOS + Mac) and the beta Worker
 are usable end to end by someone who is not the author — sign in, import from Trakt or a CSV,

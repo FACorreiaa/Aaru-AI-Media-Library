@@ -78,7 +78,7 @@ Recommendations, two-way sync, music/comics/games. Still out of scope in `CLAUDE
 Friends, scrobbling, gamification, DMs and watch-together are no longer out of scope
 (decided 2026-10-09). They are later phases in `BACKLOG.md` (3–6) and start only after the
 Phase 2 "basics done" gate. They are not launch-gate items: the launch sells the shelf.
-The web client (`aaru-client`, SvelteKit on Cloudflare Workers) ships alongside the native
+The web client (`aaru-client`, SolidJS + TanStack Start on Cloudflare Workers) ships alongside the native
 apps in Phase 2.
 
 ---
@@ -441,7 +441,7 @@ never optimised against; the day it is, the exit door is fake.
 
 ## 12. What not to do
 
-- Do not let the web client run ahead of native. `aaru-client` (SvelteKit on Workers) ships alongside the native apps in Phase 2, on the same `/v1`, with no logic of its own.
+- Do not let the web client run ahead of native. `aaru-client` (SolidJS + TanStack Start on Workers) ships alongside the native apps in Phase 2, on the same `/v1`, with no logic of its own.
 - Do not use social as a growth hack. Friends, feeds and points ship after the Phase 2 basics gate, opt-in and friends-only; never public by default, never a global feed.
 - Do not paywall export, statistics, or the user's own data.
 - Do not ship the agent without the plan card and the undo ribbon.

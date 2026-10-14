@@ -1,6 +1,6 @@
 # Aaru architecture
 
-Aaru is a private-first media library for movies, TV, anime, and books. Native clients are Swift; the web client is SvelteKit. The server is Hummingbird. Social, gamification, tracking integrations, and realtime are later phases (see "Phasing"). They must not leak into Phase 0–2 data-model or API design beyond nullable hooks that already exist (e.g. a `visibility` field defaulting to private).
+Aaru is a private-first media library for movies, TV, anime, and books. Native clients are Swift; the web client is SolidJS + TanStack Start. The server is Hummingbird. Social, gamification, tracking integrations, and realtime are later phases (see "Phasing"). They must not leak into Phase 0–2 data-model or API design beyond nullable hooks that already exist (e.g. a `visibility` field defaulting to private).
 
 ## Goals
 
@@ -31,8 +31,8 @@ Aaru is a private-first media library for movies, TV, anime, and books. Native c
                        └─────────────────────┘
 ```
 
-The web client (`aaru-client/`) is SvelteKit on Cloudflare Workers. It holds the landing pages
-as a route group and the logged-in library on `/v1`. It never touches Postgres.
+The web client (`aaru-client/`) is SolidJS + TanStack Start on Cloudflare Workers. It holds the
+landing page and the signed-in app on `/v1`, mirroring the Apple apps. It never touches Postgres.
 
 ## Process boundaries
 
@@ -42,7 +42,7 @@ as a route group and the logged-in library on `/v1`. It never touches Postgres.
 | `aaru-server` | HTTP, auth, Postgres, jobs, provider adapters | SwiftUI, store-kit, vendor JSON leaked to clients |
 | `aaru-api` (`AaruAPI`) | The `/v1` client for the Apple apps, generated from the server's `openapi.yaml` (committed, checked fresh in CI); bearer-token session middleware that reports a rejected session once | Hand-written DTOs, retries of a 401, business logic |
 | `aaru-ios` | iOS + macOS app, widget extension, Live Activity, App Intents, local cache, Sign in with Apple | Direct TMDB/Trakt/AniList calls (go through Aaru API) |
-| `aaru-client` | SvelteKit on Cloudflare Workers: landing route group + logged-in web client on `/v1` | Database access, business logic, forking DTO meaning from the native clients |
+| `aaru-client` | SolidJS + TanStack Start on Cloudflare Workers: landing page + the web app on `/v1`, at parity with the Apple apps. Holds the session in an HttpOnly cookie and forwards `/v1` calls with it | Database access, business logic, forking DTO meaning from the native clients |
 
 All clients talk only to Aaru. That keeps API keys, rate limits, and ID mapping on the server.
 
@@ -564,7 +564,13 @@ snapshot.
 
 ### Web (`aaru-client`)
 
-SvelteKit on Cloudflare Workers, Tailwind, Paraglide.
+SolidJS + TanStack Start on Cloudflare Workers, Tailwind 4. Decided 2026-10-14 (replaces the
+SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship.
+
+- Session: the token lives in an HttpOnly, Secure, SameSite=Lax cookie. Server functions send
+  `/v1` calls with it; page scripts never see the token. A 401 clears the cookie once.
+- API types come from the same `openapi.yaml` as the Apple apps' `AaruAPI` (`openapi-typescript`,
+  committed, checked fresh in CI).
 
 - The landing pages (product, waitlist, legal) are a route group in the same app, so there is no
   separate marketing site.
@@ -754,7 +760,7 @@ in-process); split the workers when imports block request latency.
 
 | Channel | Native | Web | API |
 | --- | --- | --- | --- |
-| Beta | TestFlight, `.beta` bundle id suffix, `Beta` build config, own App Group | staging Worker (`wrangler.staging.jsonc`) | **prod** |
+| Beta | TestFlight, `.beta` bundle id suffix, `Beta` build config, own App Group | staging Worker (`env.staging` in `wrangler.jsonc`) | **prod** |
 | Prod | App Store | prod Worker (`wrangler.jsonc`) | prod |
 
 - Beta is client-side only. There is no staging backend.
@@ -778,7 +784,7 @@ in-process); split the workers when imports block request latency.
 | Scraping | Forbidden |
 | Backend | Hummingbird only |
 | First clients | iOS and Mac, with widgets and a Live Activity |
-| Web | `aaru-client`: SvelteKit on Cloudflare Workers, pure `/v1` client, landing as a route group (2026-10-09) |
+| Web | `aaru-client`: SolidJS + TanStack Start on Cloudflare Workers, pure `/v1` client at parity with the Apple apps (2026-10-14; SvelteKit 2026-10-09 to 10-14) |
 | Beta | Client-side only: TestFlight `.beta` + staging Worker, both on the prod API. One backend (2026-10-09) |
 | Anime | First-class from Phase 1: AniList catalog, `anilist`/`mal`/`anidb` ids (2026-10-09) |
 | DMs | Signal-grade via libsignal; server stores ciphertext only. Licence and web are OPEN (2026-10-09) |
