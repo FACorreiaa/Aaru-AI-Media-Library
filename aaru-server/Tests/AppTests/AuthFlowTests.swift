@@ -16,17 +16,21 @@ struct AuthFlowTests {
         }
     }
 
-    /// Captures the links the server "emails".
+    /// Captures the links and codes the server "emails".
     final class Outbox: MagicLinkSending, @unchecked Sendable {
-        // @unchecked: test-only; `lock` guards `links`.
+        // @unchecked: test-only; `lock` guards `sent`.
         private let lock = NSLock()
-        private var links: [URL] = []
+        private var sent: [(link: URL, code: String)] = []
         var last: URL? {
-            lock.withLock { links.last }
+            lock.withLock { sent.last?.link }
         }
 
-        func send(to _: String, link: URL) async throws {
-            lock.withLock { links.append(link) }
+        var lastCode: String? {
+            lock.withLock { sent.last?.code }
+        }
+
+        func send(to _: String, link: URL, code: String) async throws {
+            lock.withLock { sent.append((link, code)) }
         }
     }
 
@@ -129,6 +133,7 @@ struct AuthFlowTests {
             try await stores.magicLinks.create(
                 email: "e@x.test",
                 tokenHash: OpaqueToken.hash(token),
+                codeHash: EmailCode.hash("000000", email: "e@x.test"),
                 expiresAt: Date().addingTimeInterval(-1)
             )
             #expect(try await stores.magicLinks.consume(tokenHash: OpaqueToken.hash(token), now: Date()) == nil)

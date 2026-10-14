@@ -291,7 +291,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Exchange a magic-link token for a session. Creates the account on first use.
+    /// Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use.
     ///
     /// - Remark: HTTP `POST /v1/auth/email/verify`.
     /// - Remark: Generated from `#/paths//v1/auth/email/verify/post(verifyMagicLink)`.

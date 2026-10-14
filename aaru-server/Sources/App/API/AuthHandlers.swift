@@ -24,7 +24,19 @@ extension APIImplementation {
 
     func verifyMagicLink(_ input: Operations.VerifyMagicLink.Input) async throws -> Operations.VerifyMagicLink.Output {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
-        let session = try await auth.verifyMagicLink(token: body.token)
+        let session: NewSession
+        if let token = body.token {
+            session = try await auth.verifyMagicLink(token: token)
+        } else if let email = body.email, let code = body.code {
+            session = try await auth.verifyEmailCode(email: email, code: code)
+        } else {
+            throw AppError(
+                status: .unprocessableContent,
+                code: "validation_failed",
+                message: "Send the link's token, or the email and its code.",
+                details: ["token": "Or email and code."]
+            )
+        }
         return .ok(.init(body: .json(.init(session))))
     }
 

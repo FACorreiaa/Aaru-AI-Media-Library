@@ -1,11 +1,17 @@
 import AaruAPI
+import AuthenticationServices
 import SwiftUI
 
-/// The signed-out landing screen. APP-002 connects both actions to `/v1/auth`.
+/// The signed-out landing screen (DESIGN.md §0).
 struct WelcomeView: View {
     let api: Client?
-    var onSignInWithApple: () -> Void
+    /// Apple's authorization and the raw nonce whose hash it carries.
+    var onAppleAuthorization: (ASAuthorization, String) -> Void
+    var onAppleError: (any Error) -> Void
     var onContinueWithEmail: () -> Void
+
+    @Environment(\.colorScheme) private var scheme
+    @State private var nonce = ""
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -83,12 +89,21 @@ struct WelcomeView: View {
 
     private var actions: some View {
         VStack(spacing: 12) {
-            Button(action: onSignInWithApple) {
-                Label("Sign in with Apple", systemImage: "apple.logo")
+            SignInWithAppleButton(.signIn) { request in
+                nonce = SignInNonce.make()
+                request.requestedScopes = [.fullName, .email]
+                request.nonce = SignInNonce.sha256(nonce)
+            } onCompletion: { result in
+                switch result {
+                case let .success(authorization): onAppleAuthorization(authorization, nonce)
+                case let .failure(error): onAppleError(error)
+                }
             }
-            .buttonStyle(CapsuleButtonStyle(prominent: true))
+            .signInWithAppleButtonStyle(scheme == .dark ? .white : .black)
+            .frame(height: 52)
+            .clipShape(Capsule())
             Button("Continue with email", action: onContinueWithEmail)
-                .buttonStyle(CapsuleButtonStyle(prominent: false))
+                .buttonStyle(OutlineCapsuleButtonStyle())
             #if DEBUG || BETA
                 APIStatusLabel(api: api)
                     .font(.caption2)
@@ -133,25 +148,14 @@ private struct Pillar: View {
     }
 }
 
-/// Full-width capsule. Prominent follows the Sign in with Apple contrast rule:
-/// black on light, white on dark.
-private struct CapsuleButtonStyle: ButtonStyle {
-    let prominent: Bool
-    @Environment(\.colorScheme) private var scheme
-
+/// Full-width outlined capsule, the quiet partner of the Sign in with Apple button.
+struct OutlineCapsuleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        let fill: Color = prominent ? (scheme == .dark ? .white : .black) : .clear
-        let text: Color = prominent ? (scheme == .dark ? .black : .white) : Color(.ink)
         configuration.label
             .font(.body.weight(.semibold))
             .frame(maxWidth: .infinity, minHeight: 52)
-            .foregroundStyle(text)
-            .background(fill, in: Capsule())
-            .overlay {
-                if !prominent {
-                    Capsule().strokeBorder(Color(.ink).opacity(0.25), lineWidth: 1)
-                }
-            }
+            .foregroundStyle(Color(.ink))
+            .overlay { Capsule().strokeBorder(Color(.ink).opacity(0.25), lineWidth: 1) }
             .contentShape(Capsule())
             .opacity(configuration.isPressed ? 0.75 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
@@ -160,10 +164,10 @@ private struct CapsuleButtonStyle: ButtonStyle {
 }
 
 #Preview("Light") {
-    WelcomeView(api: nil, onSignInWithApple: {}, onContinueWithEmail: {})
+    WelcomeView(api: nil, onAppleAuthorization: { _, _ in }, onAppleError: { _ in }, onContinueWithEmail: {})
 }
 
 #Preview("Dark") {
-    WelcomeView(api: nil, onSignInWithApple: {}, onContinueWithEmail: {})
+    WelcomeView(api: nil, onAppleAuthorization: { _, _ in }, onAppleError: { _ in }, onContinueWithEmail: {})
         .preferredColorScheme(.dark)
 }

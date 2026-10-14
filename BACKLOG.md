@@ -662,6 +662,18 @@ Sign in with Apple, plus the email path. Token in Keychain, shared correctly on 
 **Done when:** the session survives app relaunch on both platforms and sign-out clears the
 Keychain item.
 
+**Progress 2026-10-14:** built. The system Sign in with Apple button sends Apple's identity
+token and the raw nonce (its SHA-256 goes to Apple) to `/v1/auth/apple`. The email path works
+without a domain: every sign-in email now carries a 6-digit code next to the link, and
+`/v1/auth/email/verify` takes `{email, code}` as well as `{token}` (migration
+`AddMagicLinkCodes`; codes are stored hashed with their email, five wrong codes lock the link,
+and using either the code or the link kills both). The token lives in the Keychain (this
+device only, the iOS-style keychain on macOS too); sign-out ends the server session when it
+can and always clears the Keychain. The app gained the `com.apple.developer.applesignin`
+entitlement. **Not yet verified on a device:** relaunch persistence and a real Apple sign-in
+need a signed build, a live API (infra #292) and `RESEND_API_KEY` for email. Universal links for
+the emailed link wait for the domain.
+
 ### APP-003 · Library screen · L
 **Needs:** APP-001, LIB-002.
 Filter by type (movie / show / anime / book) and status. Poster grid and list modes. Last successful fetch is displayed

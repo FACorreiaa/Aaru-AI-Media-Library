@@ -19,6 +19,7 @@ struct EmailSettings: Sendable {
 struct AuthService: Sendable {
     static let sessionLifetime: TimeInterval = 90 * 24 * 60 * 60
     static let magicLinkLifetime: TimeInterval = 15 * 60
+    static let maxCodeAttempts = 5
 
     let stores: Stores
     let apple: any AppleIdentityVerifying
@@ -69,9 +70,11 @@ struct AuthService: Sendable {
             )
         }
         let token = OpaqueToken.generate()
+        let code = EmailCode.generate()
         try await stores.magicLinks.create(
             email: email,
             tokenHash: OpaqueToken.hash(token),
+            codeHash: EmailCode.hash(code, email: email),
             expiresAt: now().addingTimeInterval(Self.magicLinkLifetime)
         )
         var components = URLComponents(url: config.linkBaseURL, resolvingAgainstBaseURL: false)
@@ -80,12 +83,39 @@ struct AuthService: Sendable {
         guard let link = components?.url else {
             throw AppError(status: .internalServerError, code: "internal", message: "Something went wrong.")
         }
-        try await config.sender.send(to: email, link: link)
+        try await config.sender.send(to: email, link: link, code: code)
     }
 
     func verifyMagicLink(token: String) async throws -> NewSession {
         guard let email = try await stores.magicLinks.consume(tokenHash: OpaqueToken.hash(token), now: now()) else {
             throw AppError.unauthorized("This sign-in link is invalid, expired, or already used.")
+        }
+        let userID = try await findOrCreateUser(
+            AuthIdentity(provider: .email, subject: email, email: email),
+            displayName: nil
+        )
+        return try await issueSession(for: userID)
+    }
+
+    /// The app's path while the link cannot open it (APP-002): the email plus its 6-digit code.
+    func verifyEmailCode(email rawEmail: String, code rawCode: String) async throws -> NewSession {
+        let email = try Self.normalizedEmail(rawEmail)
+        guard let code = EmailCode.normalized(rawCode) else {
+            throw AppError(
+                status: .unprocessableContent,
+                code: "validation_failed",
+                message: "The code is six digits.",
+                details: ["code": "Six digits."]
+            )
+        }
+        let consumed = try await stores.magicLinks.consume(
+            email: email,
+            codeHash: EmailCode.hash(code, email: email),
+            maxAttempts: Self.maxCodeAttempts,
+            now: now()
+        )
+        guard consumed else {
+            throw AppError.unauthorized("This code is wrong, expired, or already used.")
         }
         let userID = try await findOrCreateUser(
             AuthIdentity(provider: .email, subject: email, email: email),

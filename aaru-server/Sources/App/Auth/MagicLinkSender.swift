@@ -1,7 +1,7 @@
 import Foundation
 
 protocol MagicLinkSending: Sendable {
-    func send(to email: String, link: URL) async throws
+    func send(to email: String, link: URL, code: String) async throws
 }
 
 /// Resend's `POST /emails` body.
@@ -25,17 +25,20 @@ struct ResendMagicLinkSender: MagicLinkSending {
     let apiKey: String
     let from: String
 
-    func send(to email: String, link: URL) async throws {
+    func send(to email: String, link: URL, code: String) async throws {
+        let spaced = "\(code.prefix(3)) \(code.suffix(3))"
         let payload = ResendEmail(
             from: from,
             recipients: [email],
-            subject: "Your Aaru sign-in link",
+            subject: "Your Aaru sign-in code: \(spaced)",
             text: """
-            Sign in to Aaru:
+            Your Aaru sign-in code is \(spaced)
+
+            Or open this link:
 
             \(link.absoluteString)
 
-            The link works once and expires in 15 minutes. If you did not ask for it, ignore this email.
+            Either works once and expires in 15 minutes. If you did not ask for it, ignore this email.
             """
         )
         let response = try await transport.send(OutboundRequest(

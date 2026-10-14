@@ -51,10 +51,13 @@ protocol SessionStore: Sendable {
 }
 
 protocol MagicLinkStore: Sendable {
-    func create(email: String, tokenHash: String, expiresAt: Date) async throws
+    func create(email: String, tokenHash: String, codeHash: String, expiresAt: Date) async throws
     /// Atomically marks the link used and returns its email. Nil when the link is
     /// unknown, expired, or already used — a link signs in once.
     func consume(tokenHash: String, now: Date) async throws -> String?
+    /// The same, by the emailed code. A wrong code counts against every live link for the
+    /// email; a link with `maxAttempts` wrong codes no longer accepts its code.
+    func consume(email: String, codeHash: String, maxAttempts: Int, now: Date) async throws -> Bool
 }
 
 protocol TitleStore: Sendable {

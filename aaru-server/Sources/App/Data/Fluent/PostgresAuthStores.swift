@@ -66,10 +66,10 @@ struct PostgresSessionStore: SessionStore {
 struct PostgresMagicLinkStore: MagicLinkStore {
     let sql: any SQLDatabase
 
-    func create(email: String, tokenHash: String, expiresAt: Date) async throws {
+    func create(email: String, tokenHash: String, codeHash: String, expiresAt: Date) async throws {
         try await sql.insert(into: "magic_links")
-            .columns("id", "email", "token_hash", "expires_at")
-            .values(SQLBind(UUID()), SQLBind(email), SQLBind(tokenHash), SQLBind(expiresAt))
+            .columns("id", "email", "token_hash", "code_hash", "expires_at")
+            .values(SQLBind(UUID()), SQLBind(email), SQLBind(tokenHash), SQLBind(codeHash), SQLBind(expiresAt))
             .run()
     }
 
@@ -81,5 +81,27 @@ struct PostgresMagicLinkStore: MagicLinkStore {
         WHERE token_hash = \(bind: tokenHash) AND used_at IS NULL AND expires_at > \(bind: now)
         RETURNING email
         """).first(decoding: Row.self)?.email
+    }
+
+    func consume(email: String, codeHash: String, maxAttempts: Int, now: Date) async throws -> Bool {
+        struct Row: Decodable { let email: String }
+        let live: SQLQueryString = """
+        email = \(bind: email) AND used_at IS NULL AND expires_at > \(bind: now)
+        """
+        let used = try await sql.raw("""
+        UPDATE magic_links SET used_at = \(bind: now)
+        WHERE id = (
+            SELECT id FROM magic_links
+            WHERE \(live) AND code_hash = \(bind: codeHash) AND failed_attempts < \(bind: maxAttempts)
+            ORDER BY created_at DESC LIMIT 1
+            FOR UPDATE
+        ) AND used_at IS NULL
+        RETURNING email
+        """).first(decoding: Row.self)
+        if used != nil {
+            return true
+        }
+        try await sql.raw("UPDATE magic_links SET failed_attempts = failed_attempts + 1 WHERE \(live)").run()
+        return false
     }
 }
