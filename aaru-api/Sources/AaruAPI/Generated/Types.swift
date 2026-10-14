@@ -26,7 +26,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/auth/email/link`.
     /// - Remark: Generated from `#/paths//v1/auth/email/link/post(requestMagicLink)`.
     func requestMagicLink(_ input: Operations.RequestMagicLink.Input) async throws -> Operations.RequestMagicLink.Output
-    /// Exchange a magic-link token for a session. Creates the account on first use.
+    /// Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use.
     ///
     /// - Remark: HTTP `POST /v1/auth/email/verify`.
     /// - Remark: Generated from `#/paths//v1/auth/email/verify/post(verifyMagicLink)`.
@@ -188,7 +188,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// Exchange a magic-link token for a session. Creates the account on first use.
+    /// Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use.
     ///
     /// - Remark: HTTP `POST /v1/auth/email/verify`.
     /// - Remark: Generated from `#/paths//v1/auth/email/verify/post(verifyMagicLink)`.
@@ -693,19 +693,37 @@ public enum Components {
                 case email
             }
         }
+        /// Either `token` (from the link) or `email` and `code` (from the same email).
+        ///
         /// - Remark: Generated from `#/components/schemas/MagicLinkVerifyRequest`.
         public struct MagicLinkVerifyRequest: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/MagicLinkVerifyRequest/token`.
-            public var token: Swift.String
+            public var token: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MagicLinkVerifyRequest/email`.
+            public var email: Swift.String?
+            /// Six digits; spaces and dashes are ignored.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MagicLinkVerifyRequest/code`.
+            public var code: Swift.String?
             /// Creates a new `MagicLinkVerifyRequest`.
             ///
             /// - Parameters:
             ///   - token:
-            public init(token: Swift.String) {
+            ///   - email:
+            ///   - code: Six digits; spaces and dashes are ignored.
+            public init(
+                token: Swift.String? = nil,
+                email: Swift.String? = nil,
+                code: Swift.String? = nil
+            ) {
                 self.token = token
+                self.email = email
+                self.code = code
             }
             public enum CodingKeys: String, CodingKey {
                 case token
+                case email
+                case code
             }
         }
         /// - Remark: Generated from `#/components/schemas/Session`.
@@ -2608,7 +2626,7 @@ public enum Operations {
             }
         }
     }
-    /// Exchange a magic-link token for a session. Creates the account on first use.
+    /// Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use.
     ///
     /// - Remark: HTTP `POST /v1/auth/email/verify`.
     /// - Remark: Generated from `#/paths//v1/auth/email/verify/post(verifyMagicLink)`.

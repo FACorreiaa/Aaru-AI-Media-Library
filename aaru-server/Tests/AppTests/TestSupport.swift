@@ -118,7 +118,11 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func create(email _: String, tokenHash _: String, expiresAt _: Date) async throws {
+    func create(email _: String, tokenHash _: String, codeHash _: String, expiresAt _: Date) async throws {
+        throw Touched()
+    }
+
+    func consume(email _: String, codeHash _: String, maxAttempts _: Int, now _: Date) async throws -> Bool {
         throw Touched()
     }
 

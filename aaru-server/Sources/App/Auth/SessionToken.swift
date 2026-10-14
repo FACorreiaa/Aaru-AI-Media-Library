@@ -19,6 +19,24 @@ enum OpaqueToken {
     }
 }
 
+/// The 6-digit code in a sign-in email. Hashed with its email, so a code alone matches nothing.
+enum EmailCode {
+    static func generate() -> String {
+        var generator = SystemRandomNumberGenerator()
+        return String(format: "%06d", Int.random(in: 0 ... 999_999, using: &generator))
+    }
+
+    static func hash(_ code: String, email: String) -> String {
+        sha256Hex("\(email):\(code)")
+    }
+
+    /// Digits only, so "123 456" and "123-456" both work. Nil unless exactly six digits remain.
+    static func normalized(_ raw: String) -> String? {
+        let digits = raw.filter(\.isNumber)
+        return digits.count == 6 && digits.allSatisfy(\.isASCII) ? digits : nil
+    }
+}
+
 func sha256Hex(_ string: String) -> String {
     SHA256.hash(data: Data(string.utf8)).map { String(format: "%02x", $0) }.joined()
 }

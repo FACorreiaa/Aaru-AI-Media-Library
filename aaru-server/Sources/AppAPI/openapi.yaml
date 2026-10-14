@@ -70,7 +70,7 @@ paths:
   /v1/auth/email/verify:
     post:
       operationId: verifyMagicLink
-      summary: Exchange a magic-link token for a session. Creates the account on first use.
+      summary: Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use.
       security: []
       requestBody:
         required: true
@@ -585,10 +585,15 @@ components:
           type: string
     MagicLinkVerifyRequest:
       type: object
-      required: [token]
+      description: Either `token` (from the link) or `email` and `code` (from the same email).
       properties:
         token:
           type: string
+        email:
+          type: string
+        code:
+          type: string
+          description: Six digits; spaces and dashes are ignored.
     Session:
       type: object
       required: [token, userId, expiresAt]
