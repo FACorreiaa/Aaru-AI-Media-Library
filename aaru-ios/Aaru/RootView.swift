@@ -5,6 +5,7 @@ import SwiftUI
 /// Routes on the session: welcome when signed out, the app when signed in.
 struct RootView: View {
     let api: Client?
+    let library: LibraryModel
     @Environment(SessionStore.self) private var session
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -16,13 +17,8 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isSignedIn {
-                // APP-003 replaces this with the library.
-                ContentUnavailableView {
-                    Label("Signed in", systemImage: "books.vertical")
-                } description: {
-                    Text("Your library is next.")
-                } actions: {
-                    Button("Sign out") { Task { await flow.signOut() } }
+                LibraryView(api: api, library: library) {
+                    Task { await flow.signOut() }
                 }
             } else {
                 WelcomeView(
@@ -41,6 +37,12 @@ struct RootView: View {
                 .sheet(isPresented: $showsEmailSignIn) {
                     EmailSignInSheet(flow: flow)
                 }
+            }
+        }
+        // A signed-out device keeps nothing of the last user's library.
+        .onChange(of: session.isSignedIn) { _, signedIn in
+            if !signedIn {
+                library.reset()
             }
         }
         .alert(
@@ -67,6 +69,6 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView(api: nil)
+    RootView(api: nil, library: LibraryModel())
         .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
 }
