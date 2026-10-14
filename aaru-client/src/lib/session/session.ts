@@ -20,14 +20,18 @@ export const getSession = createServerFn({ method: 'GET' }).handler(
   async (): Promise<Session> => {
     const token = getCookie(SESSION_COOKIE)
     if (!token) return { signedIn: false }
-    const { data, response } = await api(token).GET('/v1/me')
-    if (response.status === 401) {
-      // The server refused the session: back to signed out, once.
-      deleteCookie(SESSION_COOKIE, { path: '/' })
-      return { signedIn: false }
+    try {
+      const { data, response } = await api(token).GET('/v1/me')
+      if (response.status === 401) {
+        // The server refused the session: back to signed out, once.
+        deleteCookie(SESSION_COOKIE, { path: '/' })
+        return { signedIn: false }
+      }
+      return { signedIn: true, displayName: data?.displayName ?? null }
+    } catch {
+      // An unreachable API keeps the session; only a 401 ends it (as in the Apple apps).
+      return { signedIn: true, displayName: null }
     }
-    // An unreachable API keeps the session; only a 401 ends it.
-    return { signedIn: true, displayName: data?.displayName ?? null }
   },
 )
 

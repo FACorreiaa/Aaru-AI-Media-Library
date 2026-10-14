@@ -690,12 +690,29 @@ offline; no offline write queue in v1.
 **Done when:** launching in airplane mode shows the last library instead of an error
 screen, and 1,000 items scroll without image-loading jank.
 
+**Progress 2026-10-14 (all three clients):** built. The library comes from `/v1/library/sync`
+(everything the first time, then only changes) and is filtered on the device: All, Films,
+Shows, Anime, Books, plus status; poster grid or list (remembered). iOS/macOS cache the last
+sync on disk (cleared on sign-out) and show it with an "Offline" note when the server cannot be
+reached; posters stay in a 512 MB URL cache. Verified in the simulator: online sync, then the
+same shelf with the API down. The web reads the same sync on each visit (no offline mode: the
+page itself needs the Worker). **Not measured yet:** 1,000-item scrolling.
+
 ### APP-004 · Search and add · M
 **Needs:** APP-003, CAT-004, LIB-001.
 Type-scoped search, debounce, add with initial status.
 
 **Done when:** adding from search updates the library screen without a full refetch, and a
 double-tap on add does not create two items.
+
+**Progress 2026-10-14 (all three clients):** built. Films/Shows/Anime/Books scopes, 300 ms
+debounce (a new keystroke cancels the pending request), Add (Wishlist) or add as In progress /
+Finished. The added entry is inserted into the shelf directly, no refetch; hits already on the
+shelf show "On your shelf" by any shared provider id. A second tap while adding waits, and the
+server returns the existing item for a repeat add. Verified on the web against a local server
+(AniList and Open Library, which need no key): a double-click added one item, an In progress
+add kept its status, the shelf updated in place. The iOS search screen builds and shares the
+same calls but was not driven in the simulator.
 
 ### APP-005 · Title detail · L
 **Needs:** APP-003, LIB-003, PROG-003.
@@ -1101,6 +1118,10 @@ verified domain). `/app` is the signed-in shell with sign-out, matching the Appl
 "Signed in" screen. Verified in Chrome against a local server: a wrong code shows the server's
 message, the right code signs in, a reload keeps the session, sign-out deletes the server
 session and the cookie, and `/app` redirects to `/sign-in` when signed out.
+
+**Progress 2026-10-14 (2):** the library (APP-003) and search and add (APP-004) at parity. An
+unreachable API keeps the session (only a 401 ends it) and pages show a branded error with
+"Try again" instead of a stack trace.
 
 **P2 gate (the "basics done" line):** the TestFlight Beta app (iOS + Mac) and the beta Worker
 are usable end to end by someone who is not the author — sign in, import from Trakt or a CSV,

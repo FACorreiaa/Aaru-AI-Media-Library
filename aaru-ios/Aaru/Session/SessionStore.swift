@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 /// The signed-in session the UI routes on, kept in the Keychain (APP-002).
@@ -10,6 +11,12 @@ final class SessionStore {
     init(keychain: SessionKeychain = SessionKeychain()) {
         self.keychain = keychain
         token = keychain.read()
+        #if DEBUG
+            // Simulator checks without typing a code: `simctl launch … -AaruDebugSessionToken <token>`.
+            if let debugToken = UserDefaults.standard.string(forKey: "AaruDebugSessionToken") {
+                token = debugToken
+            }
+        #endif
     }
 
     var isSignedIn: Bool {

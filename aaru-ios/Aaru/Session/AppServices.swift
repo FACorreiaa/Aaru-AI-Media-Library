@@ -1,9 +1,11 @@
 import AaruAPI
 
-/// What the app shares with every screen: the session and the `/v1` client bound to it.
+/// What the app shares with every screen: the session, the `/v1` client bound to it, and the
+/// signed-in user's library.
 @MainActor
 final class AppServices {
     let session: SessionStore
+    let library = LibraryModel()
     /// `nil` only when the build has no API host configured.
     let api: Client?
 
