@@ -45,6 +45,9 @@ struct AppConfig: Sendable {
     var postgres: PostgresSettings
     var tmdbAPIKey: String
     var appleAudiences: Set<String>
+    /// The Google OAuth client ids (iOS and web), comma-separated in `GOOGLE_CLIENT_IDS`. Public.
+    /// Empty: Google sign-in answers 503.
+    var googleAudiences: Set<String>
     /// Nil when `RESEND_API_KEY` is unset: email sign-in answers 503 rather than
     /// blocking boot, because it needs a verified sending domain first.
     var email: EmailSettings?
@@ -61,6 +64,10 @@ struct AppConfig: Sendable {
             postgres: PostgresSettings.load(from: reader),
             tmdbAPIKey: required("tmdb.api.key", env: "TMDB_API_KEY", in: reader),
             appleAudiences: Set(audiences.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }),
+            googleAudiences: Set(
+                reader.string(forKey: "google.client.ids", default: "").split(separator: ",")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            ),
             email: emailSettings(from: reader),
             openLibraryUserAgent: reader.string(
                 forKey: "open.library.user.agent",

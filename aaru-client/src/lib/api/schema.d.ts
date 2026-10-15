@@ -38,6 +38,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/auth/google': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Exchange a Google ID token for a session. Creates the account on first use. */
+    post: operations['signInWithGoogle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/identities/google': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Link a Google account to the signed-in account. Refused if it belongs to another account. */
+    post: operations['linkGoogle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/auth/email/link': {
     parameters: {
       query?: never
@@ -721,6 +755,11 @@ export interface components {
       /** @description Push when a new episode of a show you are watching airs. */
       airing: boolean
     }
+    GoogleSignInRequest: {
+      idToken: string
+      /** @description The nonce sent with the Google sign-in, if any. Must come back in the token. */
+      nonce?: string
+    }
     Session: {
       /** @description Bearer token, sent in the Authorization header as `Bearer <token>`. */
       token: string
@@ -733,7 +772,7 @@ export interface components {
       /** Format: uuid */
       userId: string
       displayName?: string
-      providers: ('apple' | 'email')[]
+      providers: ('apple' | 'email' | 'google')[]
     }
     /** @description Provider identifiers known for a title. Absent means unknown. */
     ExternalIds: {
@@ -1077,6 +1116,56 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Session']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  signInWithGoogle: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GoogleSignInRequest']
+      }
+    }
+    responses: {
+      /** @description Signed in. The token is shown once. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Session']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  linkGoogle: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GoogleSignInRequest']
+      }
+    }
+    responses: {
+      /** @description Linked. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Me']
         }
       }
       default: components['responses']['Error']

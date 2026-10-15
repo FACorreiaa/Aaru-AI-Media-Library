@@ -25,6 +25,8 @@ struct AuthService: Sendable {
     let apple: any AppleIdentityVerifying
     /// Nil when email sign-in is not configured (no RESEND_API_KEY).
     let magicLinks: (sender: any MagicLinkSending, linkBaseURL: URL)?
+    /// Nil when Google sign-in is not configured (no GOOGLE_CLIENT_IDS).
+    var google: (any GoogleIdentityVerifying)?
     let perEmailLimiter = FixedWindowRateLimiter(limit: 5, window: 60 * 60)
     let perClientLimiter = FixedWindowRateLimiter(limit: 20, window: 60 * 60)
     var now: @Sendable () -> Date = { Date() }
@@ -45,6 +47,47 @@ struct AuthService: Sendable {
             displayName: displayName
         )
         return try await issueSession(for: userID)
+    }
+
+    // MARK: Google (AUTH-005)
+
+    func signInWithGoogle(idToken: String, nonce: String?) async throws -> NewSession {
+        let identity = try await verifyGoogle(idToken: idToken, nonce: nonce)
+        let userID = try await findOrCreateUser(
+            AuthIdentity(provider: .google, subject: identity.subject, email: identity.email),
+            displayName: identity.name
+        )
+        return try await issueSession(for: userID)
+    }
+
+    /// Adds Google to the signed-in account, so one person signing in with Apple and with Google
+    /// has one library. A Google account already on another Aaru account is refused, never merged.
+    func linkGoogle(userID: UserID, idToken: String, nonce: String?) async throws {
+        let identity = try await verifyGoogle(idToken: idToken, nonce: nonce)
+        if let owner = try await stores.users.user(for: .google, subject: identity.subject) {
+            guard owner != userID else { return }
+            throw AppError(
+                status: .conflict, code: "identity_taken",
+                message: "That Google account already signs in to a different Aaru account."
+            )
+        }
+        try await stores.users.addIdentity(
+            AuthIdentity(provider: .google, subject: identity.subject, email: identity.email), to: userID
+        )
+    }
+
+    private func verifyGoogle(idToken: String, nonce: String?) async throws -> GoogleIdentity {
+        guard let google else {
+            throw AppError(
+                status: .serviceUnavailable, code: "google_unavailable",
+                message: "Sign in with Google is not available yet."
+            )
+        }
+        do {
+            return try await google.verify(idToken: idToken, nonce: nonce)
+        } catch GoogleSignInError.invalidToken {
+            throw AppError.unauthorized("The Google sign-in could not be verified.")
+        }
     }
 
     // MARK: Email magic link (AUTH-003)

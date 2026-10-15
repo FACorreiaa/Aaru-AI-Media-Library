@@ -360,7 +360,7 @@ lists, jobs, and stored provider tokens.
 **Done when:** after account delete no row anywhere references the user id, and the
 deletion is covered by a test that counts rows in every user-scoped table.
 
-### AUTH-005 · Sign in with Google · M · Deferred
+### AUTH-005 · Sign in with Google · M
 Not before the web client (WEB-001) is live. On Apple devices, Sign in with Apple already
 covers it (App Store 4.8 requires Apple sign-in whenever Google is offered, and Aaru has it),
 and email magic links cover everyone else. **Trigger:** sign-in funnel data from the web
@@ -374,6 +374,15 @@ then Google becomes two accounts unless identities can be linked from a signed-i
 **Done when:** a user who signed in with Apple can link Google from settings and then sign in
 with either into one account, and signing in with an unlinked Google account never merges
 into an existing account on email alone.
+
+**Progress (2026-10-15):** server done. `POST /v1/auth/google {idToken, nonce?}` verifies the
+ID token against Google's JWKS (shared cache with Apple; `iss`, `aud` ∈ `GOOGLE_CLIENT_IDS`,
+`exp`, nonce when sent) and signs in or creates the account keyed on Google's `sub`; the email
+is kept only when Google marks it verified. `POST /v1/me/identities/google` links Google to the
+signed-in account; a Google account already on another user is a 409, never a merge. Without
+`GOOGLE_CLIENT_IDS` both routes answer 503. **Next:** the iOS/Mac and web buttons, once the owner
+creates the Google OAuth clients (iOS client for `com.fernandocorreia.aaru` and `.beta`; web
+client with the domain's origin).
 
 ---
 

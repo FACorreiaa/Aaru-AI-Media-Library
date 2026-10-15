@@ -134,6 +134,10 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
+    func addIdentity(_: AuthIdentity, to _: UserID) async throws {
+        throw Touched()
+    }
+
     func insert(_: Title, status _: TitleStatus?, runtimeMinutes _: Int?) async throws {
         throw Touched()
     }

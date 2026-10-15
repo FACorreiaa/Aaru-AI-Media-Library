@@ -75,6 +75,18 @@ struct PostgresUserStore: UserStore {
         return userID
     }
 
+    func addIdentity(_ identity: AuthIdentity, to user: UserID) async throws {
+        try await mappingConflicts("That sign-in is already linked to an account.") {
+            try await sqlDatabase(database).insert(into: "auth_identities")
+                .columns("id", "user_id", "provider", "provider_subject", "email")
+                .values(
+                    SQLBind(UUID()), SQLBind(user.rawValue), SQLBind(identity.provider.rawValue),
+                    SQLBind(identity.subject), SQLBind(identity.email)
+                )
+                .run()
+        }
+    }
+
     func user(for provider: AuthIdentity.Provider, subject: String) async throws -> UserID? {
         struct Row: Decodable { let userId: UUID }
         let row = try await sqlDatabase(database).select().column("user_id").from("auth_identities")

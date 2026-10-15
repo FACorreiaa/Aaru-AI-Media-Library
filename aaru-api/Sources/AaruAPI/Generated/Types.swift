@@ -21,6 +21,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/auth/apple`.
     /// - Remark: Generated from `#/paths//v1/auth/apple/post(signInWithApple)`.
     func signInWithApple(_ input: Operations.SignInWithApple.Input) async throws -> Operations.SignInWithApple.Output
+    /// Exchange a Google ID token for a session. Creates the account on first use.
+    ///
+    /// - Remark: HTTP `POST /v1/auth/google`.
+    /// - Remark: Generated from `#/paths//v1/auth/google/post(signInWithGoogle)`.
+    func signInWithGoogle(_ input: Operations.SignInWithGoogle.Input) async throws -> Operations.SignInWithGoogle.Output
+    /// Link a Google account to the signed-in account. Refused if it belongs to another account.
+    ///
+    /// - Remark: HTTP `POST /v1/me/identities/google`.
+    /// - Remark: Generated from `#/paths//v1/me/identities/google/post(linkGoogle)`.
+    func linkGoogle(_ input: Operations.LinkGoogle.Input) async throws -> Operations.LinkGoogle.Output
     /// Email a one-time sign-in link. Same answer whether or not an account exists.
     ///
     /// - Remark: HTTP `POST /v1/auth/email/link`.
@@ -228,6 +238,32 @@ extension APIProtocol {
         body: Operations.SignInWithApple.Input.Body
     ) async throws -> Operations.SignInWithApple.Output {
         try await signInWithApple(Operations.SignInWithApple.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Exchange a Google ID token for a session. Creates the account on first use.
+    ///
+    /// - Remark: HTTP `POST /v1/auth/google`.
+    /// - Remark: Generated from `#/paths//v1/auth/google/post(signInWithGoogle)`.
+    public func signInWithGoogle(
+        headers: Operations.SignInWithGoogle.Input.Headers = .init(),
+        body: Operations.SignInWithGoogle.Input.Body
+    ) async throws -> Operations.SignInWithGoogle.Output {
+        try await signInWithGoogle(Operations.SignInWithGoogle.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Link a Google account to the signed-in account. Refused if it belongs to another account.
+    ///
+    /// - Remark: HTTP `POST /v1/me/identities/google`.
+    /// - Remark: Generated from `#/paths//v1/me/identities/google/post(linkGoogle)`.
+    public func linkGoogle(
+        headers: Operations.LinkGoogle.Input.Headers = .init(),
+        body: Operations.LinkGoogle.Input.Body
+    ) async throws -> Operations.LinkGoogle.Output {
+        try await linkGoogle(Operations.LinkGoogle.Input(
             headers: headers,
             body: body
         ))
@@ -1279,6 +1315,31 @@ public enum Components {
                 case airing
             }
         }
+        /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest`.
+        public struct GoogleSignInRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest/idToken`.
+            public var idToken: Swift.String
+            /// The nonce sent with the Google sign-in, if any. Must come back in the token.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest/nonce`.
+            public var nonce: Swift.String?
+            /// Creates a new `GoogleSignInRequest`.
+            ///
+            /// - Parameters:
+            ///   - idToken:
+            ///   - nonce: The nonce sent with the Google sign-in, if any. Must come back in the token.
+            public init(
+                idToken: Swift.String,
+                nonce: Swift.String? = nil
+            ) {
+                self.idToken = idToken
+                self.nonce = nonce
+            }
+            public enum CodingKeys: String, CodingKey {
+                case idToken
+                case nonce
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/Session`.
         public struct Session: Codable, Hashable, Sendable {
             /// Bearer token, sent in the Authorization header as `Bearer <token>`.
@@ -1320,6 +1381,7 @@ public enum Components {
             @frozen public enum ProvidersPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case apple = "apple"
                 case email = "email"
+                case google = "google"
             }
             /// - Remark: Generated from `#/components/schemas/Me/providers`.
             public typealias ProvidersPayload = [Components.Schemas.Me.ProvidersPayloadPayload]
@@ -3018,6 +3080,286 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/auth/apple/post(signInWithApple)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Exchange a Google ID token for a session. Creates the account on first use.
+    ///
+    /// - Remark: HTTP `POST /v1/auth/google`.
+    /// - Remark: Generated from `#/paths//v1/auth/google/post(signInWithGoogle)`.
+    public enum SignInWithGoogle {
+        public static let id: Swift.String = "signInWithGoogle"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/auth/google/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SignInWithGoogle.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SignInWithGoogle.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SignInWithGoogle.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/auth/google/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/auth/google/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.GoogleSignInRequest)
+            }
+            public var body: Operations.SignInWithGoogle.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SignInWithGoogle.Input.Headers = .init(),
+                body: Operations.SignInWithGoogle.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/auth/google/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/auth/google/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Session)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Session {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SignInWithGoogle.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SignInWithGoogle.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Signed in. The token is shown once.
+            ///
+            /// - Remark: Generated from `#/paths//v1/auth/google/post(signInWithGoogle)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SignInWithGoogle.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SignInWithGoogle.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/auth/google/post(signInWithGoogle)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Link a Google account to the signed-in account. Refused if it belongs to another account.
+    ///
+    /// - Remark: HTTP `POST /v1/me/identities/google`.
+    /// - Remark: Generated from `#/paths//v1/me/identities/google/post(linkGoogle)`.
+    public enum LinkGoogle {
+        public static let id: Swift.String = "linkGoogle"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/identities/google/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.LinkGoogle.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.LinkGoogle.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.LinkGoogle.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/identities/google/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/identities/google/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.GoogleSignInRequest)
+            }
+            public var body: Operations.LinkGoogle.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.LinkGoogle.Input.Headers = .init(),
+                body: Operations.LinkGoogle.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/identities/google/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/identities/google/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Me)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Me {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.LinkGoogle.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.LinkGoogle.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Linked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/identities/google/post(linkGoogle)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.LinkGoogle.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.LinkGoogle.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/identities/google/post(linkGoogle)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

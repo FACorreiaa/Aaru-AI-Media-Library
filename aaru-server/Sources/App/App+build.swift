@@ -132,7 +132,11 @@ func makeAuthService(config: AppConfig, stores: Stores, transport: any HTTPTrans
                 ResendMagicLinkSender(transport: transport, apiKey: email.resendAPIKey, from: email.from),
                 email.linkBaseURL
             )
-        }
+        },
+        google: config.googleAudiences.isEmpty ? nil : GoogleIdentityVerifier(
+            audiences: config.googleAudiences,
+            jwks: AppleJWKSCache(transport: transport, url: GoogleIdentityVerifier.keysURL)
+        )
     )
 }
 

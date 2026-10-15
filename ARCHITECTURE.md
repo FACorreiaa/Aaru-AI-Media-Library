@@ -521,6 +521,12 @@ protocol ModelProviding: Sendable {
   the client sends Apple `sha256(rawNonce)` and sends us `rawNonce`). Accounts are keyed on
   Apple's `sub`, never on email. An unknown `kid` refreshes the key set once, then fails
   closed — checked by Aaru, because jwt-kit silently falls back to its default key.
+- Sign in with Google (AUTH-005) verifies Google ID tokens the same way, against Google's JWKS
+  through the same cache: `iss` is `accounts.google.com`, `aud` ∈ `GOOGLE_CLIENT_IDS` (the iOS
+  and web OAuth client ids, public), `exp`, and the nonce when the client sent one. Accounts are
+  keyed on Google's `sub`; an email is stored only when Google says it is verified. A signed-in
+  user links Google with `POST /v1/me/identities/google`. Two accounts are never merged on a
+  shared email; a Google account already on another user is a 409.
 - Email is a **magic link** (decided 2026-10-09): `POST /v1/auth/email/link` emails a one-time
   link via Resend; `POST /v1/auth/email/verify` exchanges it. No passwords are stored. Links
   live 15 minutes, are single-use (consumed in one `UPDATE … RETURNING`), and are rate-limited

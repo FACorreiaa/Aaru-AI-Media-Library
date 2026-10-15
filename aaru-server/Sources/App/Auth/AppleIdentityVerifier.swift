@@ -112,7 +112,7 @@ actor AppleJWKSCache {
             throw AppError(
                 status: .badGateway,
                 code: "provider_unavailable",
-                message: "Sign in with Apple is unavailable."
+                message: "This sign-in provider is unavailable right now."
             )
         }
         let collection = JWTKeyCollection()

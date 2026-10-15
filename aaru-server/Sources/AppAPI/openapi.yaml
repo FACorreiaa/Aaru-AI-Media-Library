@@ -51,6 +51,41 @@ paths:
                 $ref: '#/components/schemas/Session'
         default:
           $ref: '#/components/responses/Error'
+  /v1/auth/google:
+    post:
+      operationId: signInWithGoogle
+      summary: Exchange a Google ID token for a session. Creates the account on first use.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GoogleSignInRequest'}
+      responses:
+        '200':
+          description: Signed in. The token is shown once.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Session'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/identities/google:
+    post:
+      operationId: linkGoogle
+      summary: Link a Google account to the signed-in account. Refused if it belongs to another account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GoogleSignInRequest'}
+      responses:
+        '200':
+          description: Linked.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Me'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/auth/email/link:
     post:
       operationId: requestMagicLink
@@ -866,6 +901,14 @@ components:
         airing:
           type: boolean
           description: Push when a new episode of a show you are watching airs.
+    GoogleSignInRequest:
+      type: object
+      required: [idToken]
+      properties:
+        idToken: {type: string}
+        nonce:
+          type: string
+          description: The nonce sent with the Google sign-in, if any. Must come back in the token.
     Session:
       type: object
       required: [token, userId, expiresAt]
@@ -892,7 +935,7 @@ components:
           type: array
           items:
             type: string
-            enum: [apple, email]
+            enum: [apple, email, google]
     ExternalIds:
       type: object
       description: Provider identifiers known for a title. Absent means unknown.

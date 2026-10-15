@@ -15,6 +15,7 @@ struct AuthIdentity: Sendable, Hashable {
     enum Provider: String, Sendable {
         case apple
         case email
+        case google
     }
 
     var provider: Provider
@@ -31,6 +32,8 @@ protocol UserStore: Sendable {
     /// Creates a user with its first identity, or throws `StoreConflict` if the identity exists.
     func createUser(with identity: AuthIdentity, displayName: String?) async throws -> UserID
     func user(for provider: AuthIdentity.Provider, subject: String) async throws -> UserID?
+    /// Links another sign-in to an existing user. `StoreConflict` when it already belongs to someone.
+    func addIdentity(_ identity: AuthIdentity, to user: UserID) async throws
     func profile(_ id: UserID) async throws -> UserProfile?
     /// Deletes the user and, by cascade, every row that belongs to them, plus the
     /// magic links sent to their email identities (AUTH-004).
