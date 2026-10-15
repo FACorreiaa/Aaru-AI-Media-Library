@@ -28,8 +28,8 @@ The widget is `<app bundle id>.widgets`. App Group is `group.<app bundle id>` an
 keychain group is `<team prefix><app bundle id>`, so Beta and Release never share data and
 install side by side. Schemes: **Aaru** (archives Release) and **Aaru Beta** (archives Beta).
 
-The production API host is a placeholder (`api.aaru.example`) until the domain exists
-(`BACKLOG.md` REL-005).
+Beta and Release talk to the production API at `https://api.aaruapp.com`; Debug uses
+`http://localhost:8080`.
 
 ## Building
 
