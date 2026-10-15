@@ -67,3 +67,21 @@ struct CreateTraktConnections: SQLMigration {
     ]
     let backward = ["DROP TABLE trakt_auth_requests", "DROP TABLE trakt_connections"]
 }
+
+/// AUTH-005 · Google joins the sign-in providers.
+struct AddGoogleProvider: SQLMigration {
+    let forward = [
+        "ALTER TABLE auth_identities DROP CONSTRAINT auth_identities_provider_check",
+        """
+        ALTER TABLE auth_identities ADD CONSTRAINT auth_identities_provider_check
+            CHECK (provider IN ('apple', 'email', 'google'))
+        """,
+    ]
+    let backward = [
+        "ALTER TABLE auth_identities DROP CONSTRAINT auth_identities_provider_check",
+        """
+        ALTER TABLE auth_identities ADD CONSTRAINT auth_identities_provider_check
+            CHECK (provider IN ('apple', 'email'))
+        """,
+    ]
+}

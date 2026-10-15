@@ -18,6 +18,7 @@ let allMigrations: [any Migration] = [
     AddMagicLinkCodes(),
     AddImportPlans(),
     CreateTraktConnections(),
+    AddGoogleProvider(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

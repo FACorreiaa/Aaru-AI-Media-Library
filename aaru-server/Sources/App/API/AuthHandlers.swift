@@ -13,6 +13,26 @@ extension APIImplementation {
         return .ok(.init(body: .json(.init(session))))
     }
 
+    func signInWithGoogle(_ input: Operations.SignInWithGoogle.Input) async throws
+        -> Operations.SignInWithGoogle.Output
+    {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let session = try await auth.signInWithGoogle(idToken: body.idToken, nonce: body.nonce)
+        return .ok(.init(body: .json(.init(session))))
+    }
+
+    func linkGoogle(_ input: Operations.LinkGoogle.Input) async throws -> Operations.LinkGoogle.Output {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let userID = try currentUser()
+        try await auth.linkGoogle(userID: userID, idToken: body.idToken, nonce: body.nonce)
+        guard let profile = try await stores.users.profile(userID) else { throw AppError.unauthorized() }
+        return .ok(.init(body: .json(.init(
+            userId: profile.id.description,
+            displayName: profile.displayName,
+            providers: profile.providers.compactMap { .init(rawValue: $0.rawValue) }
+        ))))
+    }
+
     func requestMagicLink(_ input: Operations.RequestMagicLink.Input) async throws -> Operations.RequestMagicLink
         .Output
     {

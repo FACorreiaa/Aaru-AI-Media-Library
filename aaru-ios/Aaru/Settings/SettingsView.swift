@@ -140,7 +140,13 @@ struct SettingsView: View {
     }
 
     private var providers: String {
-        let names = (account?.providers ?? []).map { $0 == .apple ? "Apple" : "Email" }
+        let names = (account?.providers ?? []).map { provider in
+            switch provider {
+            case .apple: "Apple"
+            case .google: "Google"
+            case .email: "Email"
+            }
+        }
         return names.isEmpty ? "—" : names.joined(separator: ", ")
     }
 

@@ -18,6 +18,11 @@ import type { ImportJob } from '../lib/imports/server'
 import { getSession, signOut } from '../lib/session/session'
 
 // APP-007 on the web: account, imports, and the way out.
+const providerNames = {
+  apple: 'Apple',
+  email: 'Email',
+  google: 'Google',
+} as const
 export const Route = createFileRoute('/app_/settings')({
   head: () => ({ meta: [{ title: 'Settings · Aaru' }] }),
   beforeLoad: async () => {
@@ -44,7 +49,7 @@ function Settings() {
 
   const providers = () =>
     loaded()
-      .account.providers.map((p) => (p === 'apple' ? 'Apple' : 'Email'))
+      .account.providers.map((p) => providerNames[p])
       .join(', ') || '—'
 
   async function upload(source: FileSource, file: File) {
