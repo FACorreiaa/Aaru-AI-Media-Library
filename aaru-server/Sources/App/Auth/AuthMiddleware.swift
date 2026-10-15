@@ -11,6 +11,8 @@ struct AuthMiddleware: RouterMiddleware {
         "/v1/auth/apple",
         "/v1/auth/email/link",
         "/v1/auth/email/verify",
+        // Trakt's browser redirect: no session; the one-time `state` names the user.
+        "/v1/imports/trakt/callback",
     ]
 
     let sessions: any SessionStore

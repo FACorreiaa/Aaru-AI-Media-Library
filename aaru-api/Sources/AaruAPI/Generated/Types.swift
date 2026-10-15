@@ -134,6 +134,24 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/csv`.
     /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)`.
     func createCSVImport(_ input: Operations.CreateCSVImport.Input) async throws -> Operations.CreateCSVImport.Output
+    /// Import the connected Trakt account. Read and matched in the background, written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/trakt`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/post(createTraktImport)`.
+    func createTraktImport(_ input: Operations.CreateTraktImport.Input) async throws -> Operations.CreateTraktImport.Output
+    /// Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/trakt/connect`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connect/post(connectTrakt)`.
+    func connectTrakt(_ input: Operations.ConnectTrakt.Input) async throws -> Operations.ConnectTrakt.Output
+    /// - Remark: HTTP `GET /v1/imports/trakt/connection`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/get(getTraktConnection)`.
+    func getTraktConnection(_ input: Operations.GetTraktConnection.Input) async throws -> Operations.GetTraktConnection.Output
+    /// Forget the Trakt tokens. Imported items stay.
+    ///
+    /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
+    func disconnectTrakt(_ input: Operations.DisconnectTrakt.Input) async throws -> Operations.DisconnectTrakt.Output
     /// One import with every row and what its plan does with it.
     ///
     /// - Remark: HTTP `GET /v1/imports/{id}`.
@@ -511,6 +529,38 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Import the connected Trakt account. Read and matched in the background, written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/trakt`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/post(createTraktImport)`.
+    public func createTraktImport(headers: Operations.CreateTraktImport.Input.Headers = .init()) async throws -> Operations.CreateTraktImport.Output {
+        try await createTraktImport(Operations.CreateTraktImport.Input(headers: headers))
+    }
+    /// Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/trakt/connect`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connect/post(connectTrakt)`.
+    public func connectTrakt(
+        headers: Operations.ConnectTrakt.Input.Headers = .init(),
+        body: Operations.ConnectTrakt.Input.Body
+    ) async throws -> Operations.ConnectTrakt.Output {
+        try await connectTrakt(Operations.ConnectTrakt.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `GET /v1/imports/trakt/connection`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/get(getTraktConnection)`.
+    public func getTraktConnection(headers: Operations.GetTraktConnection.Input.Headers = .init()) async throws -> Operations.GetTraktConnection.Output {
+        try await getTraktConnection(Operations.GetTraktConnection.Input(headers: headers))
+    }
+    /// Forget the Trakt tokens. Imported items stay.
+    ///
+    /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
+    public func disconnectTrakt(headers: Operations.DisconnectTrakt.Input.Headers = .init()) async throws -> Operations.DisconnectTrakt.Output {
+        try await disconnectTrakt(Operations.DisconnectTrakt.Input(headers: headers))
+    }
     /// One import with every row and what its plan does with it.
     ///
     /// - Remark: HTTP `GET /v1/imports/{id}`.
@@ -810,6 +860,67 @@ public enum Components {
                 case token
                 case email
                 case code
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TraktConnectRequest`.
+        public struct TraktConnectRequest: Codable, Hashable, Sendable {
+            /// Where the browser goes after Trakt (the app's `aaru://` scheme or the web app). Must be allowed by the server.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TraktConnectRequest/returnTo`.
+            public var returnTo: Swift.String
+            /// Creates a new `TraktConnectRequest`.
+            ///
+            /// - Parameters:
+            ///   - returnTo: Where the browser goes after Trakt (the app's `aaru://` scheme or the web app). Must be allowed by the server.
+            public init(returnTo: Swift.String) {
+                self.returnTo = returnTo
+            }
+            public enum CodingKeys: String, CodingKey {
+                case returnTo
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TraktConnectStart`.
+        public struct TraktConnectStart: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TraktConnectStart/authorizeUrl`.
+            public var authorizeUrl: Swift.String
+            /// Creates a new `TraktConnectStart`.
+            ///
+            /// - Parameters:
+            ///   - authorizeUrl:
+            public init(authorizeUrl: Swift.String) {
+                self.authorizeUrl = authorizeUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case authorizeUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TraktConnection`.
+        public struct TraktConnection: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TraktConnection/connected`.
+            public var connected: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/TraktConnection/username`.
+            public var username: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TraktConnection/connectedAt`.
+            public var connectedAt: Foundation.Date?
+            /// Creates a new `TraktConnection`.
+            ///
+            /// - Parameters:
+            ///   - connected:
+            ///   - username:
+            ///   - connectedAt:
+            public init(
+                connected: Swift.Bool,
+                username: Swift.String? = nil,
+                connectedAt: Foundation.Date? = nil
+            ) {
+                self.connected = connected
+                self.username = username
+                self.connectedAt = connectedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case connected
+                case username
+                case connectedAt
             }
         }
         /// - Remark: Generated from `#/components/schemas/ImportJob`.
@@ -6690,6 +6801,515 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Import the connected Trakt account. Read and matched in the background, written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/trakt`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/post(createTraktImport)`.
+    public enum CreateTraktImport {
+        public static let id: Swift.String = "createTraktImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/trakt/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateTraktImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateTraktImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateTraktImport.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.CreateTraktImport.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/trakt/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/trakt/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateTraktImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateTraktImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/post(createTraktImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateTraktImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateTraktImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/post(createTraktImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/trakt/connect`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connect/post(connectTrakt)`.
+    public enum ConnectTrakt {
+        public static let id: Swift.String = "connectTrakt"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/trakt/connect/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ConnectTrakt.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ConnectTrakt.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ConnectTrakt.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/trakt/connect/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/trakt/connect/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.TraktConnectRequest)
+            }
+            public var body: Operations.ConnectTrakt.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ConnectTrakt.Input.Headers = .init(),
+                body: Operations.ConnectTrakt.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/trakt/connect/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/trakt/connect/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TraktConnectStart)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TraktConnectStart {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ConnectTrakt.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ConnectTrakt.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Where to send the browser.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/connect/post(connectTrakt)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ConnectTrakt.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ConnectTrakt.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/connect/post(connectTrakt)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `GET /v1/imports/trakt/connection`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/get(getTraktConnection)`.
+    public enum GetTraktConnection {
+        public static let id: Swift.String = "getTraktConnection"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/trakt/connection/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTraktConnection.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTraktConnection.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTraktConnection.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetTraktConnection.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/trakt/connection/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/trakt/connection/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TraktConnection)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TraktConnection {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTraktConnection.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTraktConnection.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Whether Trakt is connected.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/get(getTraktConnection)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTraktConnection.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTraktConnection.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/get(getTraktConnection)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Forget the Trakt tokens. Imported items stay.
+    ///
+    /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
+    /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
+    public enum DisconnectTrakt {
+        public static let id: Swift.String = "disconnectTrakt"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/trakt/connection/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DisconnectTrakt.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DisconnectTrakt.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DisconnectTrakt.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.DisconnectTrakt.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Disconnected.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DisconnectTrakt.Output.NoContent)
+            /// Disconnected.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DisconnectTrakt.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

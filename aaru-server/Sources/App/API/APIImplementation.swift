@@ -4,9 +4,34 @@ import OpenAPIRuntime
 
 /// Handlers for the generated `/v1` routes. Talks to the data layer only through
 /// `Stores` and to business rules through services.
+///
+/// The stores and services sit behind one reference: the generated `registerHandlers` copies
+/// this value into a closure per route in a single stack frame, and by value they overflowed a
+/// 512 KB cooperative-thread stack once the route count grew.
 struct APIImplementation: APIProtocol {
-    let stores: Stores
-    let services: Services
+    private let context: Context
+
+    init(stores: Stores, services: Services) {
+        context = Context(stores: stores, services: services)
+    }
+
+    private final class Context: Sendable {
+        let stores: Stores
+        let services: Services
+
+        init(stores: Stores, services: Services) {
+            self.stores = stores
+            self.services = services
+        }
+    }
+
+    var stores: Stores {
+        context.stores
+    }
+
+    var services: Services {
+        context.services
+    }
 
     var auth: AuthService {
         services.auth

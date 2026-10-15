@@ -907,6 +907,19 @@ mid-2026 and removed free accounts' apps. Not confirmed on trakt.tv. Before star
 whether `trakt.tv/oauth/applications` lets this account create an app. If not, decide between
 a Trakt VIP subscription for the app owner and making the file imports (M9) the primary path.
 
+**Resolved 2026-10-15:** the app exists (client id in hand). Trakt issues it **no client secret**:
+sign-in is PKCE only and redirect URIs must be `https://` on a host Aaru owns (no `oob`, no
+`localhost`, no custom schemes). **Progress:** built against a stubbed Trakt. `POST
+/v1/imports/trakt/connect {returnTo}` makes a PKCE pair (S256) and a one-time `state` (stored
+hashed, 10 minutes) and returns Trakt's authorize URL; Trakt redirects to `GET
+/v1/imports/trakt/callback` (a plain route outside `openapi.yaml`, so its `Location` is not
+percent-encoded), which exchanges the code with the verifier, seals both tokens with AES-GCM
+(`TRAKT_TOKEN_KEY`), and sends the browser to `returnTo?trakt=connected|denied|failed` (only `aaru://`
+and the web origin are allowed). Tokens refresh an hour before expiry. `GET`/`DELETE
+/v1/imports/trakt/connection`. Config: `TRAKT_CLIENT_ID` (public), `TRAKT_TOKEN_KEY` (secret, 32
+bytes), `TRAKT_REDIRECT_URI`, `TRAKT_RETURN_PREFIXES`. **Blocked on the domain** for production:
+the redirect URI must be `https://api.<domain>/v1/imports/trakt/callback`.
+
 ### IMP-003 · Trakt import worker · L
 **Needs:** IMP-002, CAT-005.
 Pull watched history, watchlist, ratings, and lists. Page through the API respecting rate
@@ -916,6 +929,15 @@ Apply episode progress and ratings.
 **Done when:** running the same import twice produces zero duplicates and a second run
 reports `updated`/`skipped` rather than `created`, and a 10,000-item history completes
 without exhausting the TMDB rate budget.
+
+**Progress 2026-10-15:** built against a stubbed Trakt. `POST /v1/imports/trakt` queues a job whose
+rows the worker reads from Trakt (watched movies and shows with every watched episode, watchlist,
+ratings, lists), keyed by Trakt id so one title is one row; then the same plan → approve → one
+undoable action as file imports. Watched shows are `in_progress` with their episodes ticked (an
+existing item only gains the ticks it lacks); a rating alone means watched; a title only on a
+Trakt list joins the Aaru list without joining the library. A revoked token fails the job at once
+and drops the dead connection. Re-runs are skip/update, never duplicates (the plan's existing
+rule). Not yet measured: a 10,000-item history.
 
 ### IMP-004 · Merge policy · M
 **Needs:** IMP-003.

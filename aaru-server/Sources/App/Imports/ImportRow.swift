@@ -21,6 +21,10 @@ struct ImportRow: Codable, Sendable, Equatable {
     var lists: [String]
     /// Set when the parser already knows the row cannot be imported (an IMDb episode row).
     var unsupported: String?
+    /// Watched episodes, for shows (Trakt history). Ticked on create; missing ones filled on update.
+    var watched: [EpisodeKey]?
+    /// On a source list only: joins that list, never the library.
+    var listOnly: Bool?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)

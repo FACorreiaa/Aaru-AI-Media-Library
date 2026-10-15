@@ -363,7 +363,9 @@ Anime is first-class from Phase 1 (CAT-007…009).
 
 ### Trakt
 
-- OAuth user token stored encrypted at rest
+- PKCE only: Trakt issues this app no client secret. The server holds the verifier; the browser
+  carries a one-time `state` and the `code`. Redirect URI `https://api.<domain>/v1/imports/trakt/callback`
+- OAuth user token stored encrypted at rest (AES-GCM, `TRAKT_TOKEN_KEY`), refreshed before expiry
 - Pull watched history, watchlist, ratings, lists
 - Map Trakt ids → TMDB/IMDb → `Title`
 - First importer in the merge order

@@ -50,6 +50,8 @@ struct AppConfig: Sendable {
     var email: EmailSettings?
     /// Sent as Open Library's User-Agent; they ask API users to identify themselves.
     var openLibraryUserAgent: String
+    /// Nil when `TRAKT_CLIENT_ID` is unset: Trakt connect answers 503, everything else works.
+    var trakt: TraktSettings?
 
     static func load(from reader: ConfigReader) throws -> AppConfig {
         let audiences = reader.string(forKey: "apple.audiences", default: defaultAppleAudiences)
@@ -61,7 +63,31 @@ struct AppConfig: Sendable {
             openLibraryUserAgent: reader.string(
                 forKey: "open.library.user.agent",
                 default: "Aaru/0.1 (media library; contact: signin@aaru.example)"
-            )
+            ),
+            trakt: traktSettings(from: reader)
+        )
+    }
+
+    /// `TRAKT_TOKEN_KEY` (base64, 32 bytes) is required once Trakt is on: tokens are never
+    /// stored in clear.
+    private static func traktSettings(from reader: ConfigReader) throws -> TraktSettings? {
+        guard let clientID = reader.string(forKey: "trakt.client.id"), !clientID.isEmpty else { return nil }
+        let redirect = reader.string(
+            forKey: "trakt.redirect.uri", default: "https://api.aaru.example/v1/imports/trakt/callback"
+        )
+        guard let redirectURI = URL(string: redirect) else {
+            throw MissingConfigError(environmentName: "TRAKT_REDIRECT_URI", key: "trakt.redirect.uri")
+        }
+        let key = try required("trakt.token.key", env: "TRAKT_TOKEN_KEY", in: reader)
+        guard let cipher = try? TokenCipher(base64Key: key) else {
+            throw MissingConfigError(environmentName: "TRAKT_TOKEN_KEY (32 bytes, base64)", key: "trakt.token.key")
+        }
+        let returns = reader.string(forKey: "trakt.return.prefixes", default: "aaru://,https://aaru.example/")
+        return TraktSettings(
+            clientID: clientID,
+            redirectURI: redirectURI,
+            returnPrefixes: returns.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) },
+            tokenCipher: cipher
         )
     }
 

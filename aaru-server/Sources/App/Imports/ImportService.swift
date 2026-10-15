@@ -12,6 +12,8 @@ struct ImportService: Sendable {
 
     let stores: Stores
     let resolver: TitleResolver
+    /// Trakt connect and its reader. Nil when Trakt is not configured.
+    var trakt: TraktImport?
     var now: @Sendable () -> Date = { Date() }
 
     // MARK: Requests
@@ -67,13 +69,21 @@ struct ImportService: Sendable {
 
     // MARK: The worker's step
 
-    /// Leases one job and plans it. Returns false when there was nothing to do.
+    /// Leases one job and plans it. Returns false when there was nothing to do. The worker passes
+    /// no user; tests pass theirs so parallel suites never take each other's jobs.
     @discardableResult
-    func runNext() async throws -> Bool {
-        guard let claimed = try await stores.importJobs.claimNext(now: now(), lease: Self.lease) else { return false }
+    func runNext(for userID: UserID? = nil) async throws -> Bool {
+        guard let claimed = try await stores.importJobs.claimNext(now: now(), lease: Self.lease, userID: userID)
+        else { return false }
         var job = claimed.job
         do {
-            let rows = try await plan(stores.importJobs.rows(jobID: job.id), userID: job.userID)
+            var stored = try await stores.importJobs.rows(jobID: job.id)
+            if job.source == .trakt, stored.isEmpty {
+                guard let fetched = try await fetchTrakt(&job) else { return true }
+                try await stores.importJobs.appendRows(fetched, jobID: job.id)
+                stored = try await stores.importJobs.rows(jobID: job.id)
+            }
+            let rows = try await plan(stored, userID: job.userID)
             job.state = .planned
             job.stats = Self.stats(rows)
             job.errorSummary = nil
@@ -116,9 +126,14 @@ struct ImportService: Sendable {
                     row.reason = "Repeats an earlier row."
                 } else {
                     seen.insert(title.id)
-                    let decision = try await decide(row.row, titleID: title.id, userID: userID)
-                    row.outcome = decision.outcome
-                    row.reason = decision.reason
+                    if row.row.listOnly == true {
+                        row.outcome = .skip
+                        row.reason = "On a list only; added to the list, not your library."
+                    } else {
+                        let decision = try await decide(row.row, titleID: title.id, userID: userID)
+                        row.outcome = decision.outcome
+                        row.reason = decision.reason
+                    }
                 }
             } catch ResolutionError.notFound {
                 row.outcome = .unmatched
@@ -139,7 +154,10 @@ struct ImportService: Sendable {
         var outcome: ImportOutcome
         var reason: String?
         var fields: ItemFields?
+        var fieldsChanged = false
         var itemID: LibraryItemID?
+        /// Episodes to tick: all of them on create, only the missing ones on update.
+        var watch: [EpisodeKey] = []
     }
 
     /// Fill-empty only (IMP-004): an import never overwrites a status, rating or date the
@@ -151,7 +169,7 @@ struct ImportService: Sendable {
                 status: status, rating: Self.rating(row.rating), notes: nil, isOwned: false,
                 finishedAt: status == .finished ? row.finishedAt : nil, bookPage: nil, bookPercent: nil
             )
-            return Decision(outcome: .create, fields: fields)
+            return Decision(outcome: .create, fields: fields, watch: row.watched ?? [])
         }
         guard let entry = try await stores.library.entry(id: item.id, userID: userID, now: now()) else {
             return Decision(outcome: .skip, reason: "Already on your shelf.")
@@ -169,11 +187,18 @@ struct ImportService: Sendable {
             fields.finishedAt = finished
             filled.append("finish date")
         }
+        let fieldsChanged = !filled.isEmpty
+        let ticked = try await stores.library.watched(itemID: item.id)
+        let missing = (row.watched ?? []).filter { !ticked.contains($0) }.sorted()
+        if !missing.isEmpty {
+            filled.append(missing.count == 1 ? "1 watched episode" : "\(missing.count) watched episodes")
+        }
         guard !filled.isEmpty else {
             return Decision(outcome: .skip, reason: "Already on your shelf; nothing new to add.")
         }
         return Decision(
-            outcome: .update, reason: "Adds the \(filled.joined(separator: " and ")).", fields: fields, itemID: item.id
+            outcome: .update, reason: "Adds the \(filled.joined(separator: " and ")).", fields: fields,
+            fieldsChanged: fieldsChanged, itemID: item.id, watch: missing
         )
     }
 
@@ -197,11 +222,10 @@ struct ImportService: Sendable {
             for list in rows[index].row.lists {
                 listMembers[list, default: []].append(titleID)
             }
-            // A repeat of an earlier row adds nothing (its list membership is already counted).
-            guard seen.insert(titleID).inserted else { continue }
-            if let write = try await write(for: &rows[index], titleID: titleID, userID: userID) {
-                ops.append(write)
-            }
+            // A repeat of an earlier row adds nothing (its list membership is already counted), and
+            // a list-only title joins its list without joining the library.
+            guard seen.insert(titleID).inserted, rows[index].row.listOnly != true else { continue }
+            ops += try await writes(for: &rows[index], titleID: titleID, userID: userID)
         }
         ops += try await listOps(listMembers, userID: userID)
         job.stats = Self.stats(rows)
@@ -217,29 +241,28 @@ struct ImportService: Sendable {
         return job
     }
 
-    /// Decides one row again (the library may have changed since the plan) and returns its write.
-    private func write(
+    /// Decides one row again (the library may have changed since the plan) and returns its writes.
+    private func writes(
         for row: inout PlannedRow,
         titleID: TitleID,
         userID: UserID
-    ) async throws -> LibraryOp? {
+    ) async throws -> [LibraryOp] {
         let decision = try await decide(row.row, titleID: titleID, userID: userID)
         row.outcome = decision.outcome
         row.reason = decision.reason
         switch (decision.outcome, decision.fields, decision.itemID) {
         case let (.create, fields?, _):
-            let snapshot = ItemSnapshot(
-                id: LibraryItemID(),
-                titleID: titleID,
-                fields: fields,
-                addedAt: now(),
-                watched: []
-            )
-            return .insertItem(snapshot)
+            return [.insertItem(ItemSnapshot(
+                id: LibraryItemID(), titleID: titleID, fields: fields, addedAt: now(), watched: decision.watch
+            ))]
         case let (.update, fields?, itemID?):
-            return .setFields(itemID, fields)
+            var ops: [LibraryOp] = decision.fieldsChanged ? [.setFields(itemID, fields)] : []
+            if !decision.watch.isEmpty {
+                ops.append(.setEpisodes(itemID, watch: decision.watch, unwatch: []))
+            }
+            return ops
         default:
-            return nil
+            return []
         }
     }
 
@@ -297,4 +320,46 @@ extension ImportService {
         }
         return "Matching stopped: \(String(describing: error).prefix(200))"
     }
+}
+
+// MARK: Trakt (IMP-003)
+
+extension ImportService {
+    /// A Trakt import job. Its rows are read from Trakt by the worker, not now.
+    func createTraktImport(userID: UserID) async throws -> ImportJob {
+        guard let trakt, try await trakt.connect.status(userID: userID).connected else {
+            throw AppError(status: .conflict, code: "trakt_not_connected", message: "Connect Trakt first.")
+        }
+        let job = ImportJob(userID: userID, source: .trakt, createdAt: now(), updatedAt: now())
+        try await stores.importJobs.insert(job, rows: [])
+        return job
+    }
+
+    /// Reads the user's Trakt library. A revoked connection fails the job at once (no retry) and
+    /// forgets the dead tokens, so Settings shows "Connect Trakt" again.
+    func fetchTrakt(_ job: inout ImportJob) async throws -> [ImportRow]? {
+        do {
+            guard let trakt, let token = try await trakt.connect.accessToken(userID: job.userID) else {
+                job.state = .failed
+                job.errorSummary = "Trakt is not connected. Connect it in Settings, then import again."
+                job.updatedAt = now()
+                try await stores.importJobs.update(job)
+                return nil
+            }
+            return try await trakt.importer.rows(token: token)
+        } catch let error as ProviderError where error.kind == .unauthorized {
+            try await stores.trakt.deleteConnection(userID: job.userID)
+            job.state = .failed
+            job.errorSummary = "Trakt access was revoked or expired. Connect Trakt again, then import."
+            job.updatedAt = now()
+            try await stores.importJobs.update(job)
+            return nil
+        }
+    }
+}
+
+/// What a Trakt import needs: the connection (for a fresh token) and the reader.
+struct TraktImport: Sendable {
+    var connect: TraktConnectService
+    var importer: TraktImporter
 }

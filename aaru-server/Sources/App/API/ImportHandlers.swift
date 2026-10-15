@@ -53,6 +53,32 @@ extension APIImplementation {
         return .ok(.init(body: .json(.init(job))))
     }
 
+    func createTraktImport(_: Operations.CreateTraktImport.Input) async throws -> Operations.CreateTraktImport
+        .Output
+    {
+        try await .accepted(.init(body: .json(.init(services.imports.createTraktImport(userID: currentUser())))))
+    }
+
+    func connectTrakt(_ input: Operations.ConnectTrakt.Input) async throws -> Operations.ConnectTrakt.Output {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let url = try await services.traktConnect.start(userID: currentUser(), returnTo: body.returnTo)
+        return .ok(.init(body: .json(.init(authorizeUrl: url.absoluteString))))
+    }
+
+    func getTraktConnection(_: Operations.GetTraktConnection.Input) async throws -> Operations.GetTraktConnection
+        .Output
+    {
+        let status = try await services.traktConnect.status(userID: currentUser())
+        return .ok(.init(body: .json(.init(
+            connected: status.connected, username: status.username, connectedAt: status.connectedAt
+        ))))
+    }
+
+    func disconnectTrakt(_: Operations.DisconnectTrakt.Input) async throws -> Operations.DisconnectTrakt.Output {
+        try await services.traktConnect.disconnect(userID: currentUser())
+        return .noContent(.init())
+    }
+
     private static var tooLarge: AppError {
         AppError(
             status: .contentTooLarge, code: "file_too_large",
