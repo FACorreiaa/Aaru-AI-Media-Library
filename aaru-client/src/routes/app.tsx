@@ -89,7 +89,7 @@ function Library() {
             Settings
           </Link>
           <Link to="/app/week" class="text-muted hover:text-ink">
-            This week
+            Calendar
           </Link>
           <Link to="/app/lists" class="text-muted hover:text-ink">
             Lists

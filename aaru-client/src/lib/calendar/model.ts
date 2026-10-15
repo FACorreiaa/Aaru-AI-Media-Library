@@ -1,7 +1,8 @@
 import type { components } from '../api/schema'
 
-// APP-010: the week grid's pure parts. Days are local calendar dates as "YYYY-MM-DD" keys,
-// computed in the browser: the Worker runs in UTC and must not decide what "today" is.
+// APP-010: the calendar's pure parts (week grid and month view). Days are local calendar dates
+// as "YYYY-MM-DD" keys, computed in the browser: the Worker runs in UTC and must not decide
+// what "today" is. Weeks start on Monday, like CAT and Stremio.
 
 export type CalendarEntry = components['schemas']['CalendarEntry']
 
@@ -44,7 +45,7 @@ export function daysFrom(start: string, count = 7): string[] {
 }
 
 /** The instants to ask `/v1/calendar` for so every day in [first, last] is complete. Two days
- * of padding on each side cover any UTC offset; the server allows 35 days. */
+ * of padding on each side cover any UTC offset. */
 export function fetchWindow(
   first: string,
   last: string,
@@ -54,6 +55,93 @@ export function fetchWindow(
     to: new Date(Date.parse(`${last}T00:00:00Z`) + 3 * DAY_MS).toISOString(),
   }
 }
+
+/** The longest range `/v1/calendar` serves in one request. */
+export const MAX_FETCH_DAYS = 42
+
+/** `fetchWindow` cut into back-to-back requests the server accepts. One for a week or a
+ * five-row month; a six-row month (42 days plus padding) takes two. */
+export function fetchWindows(
+  first: string,
+  last: string,
+): { from: string; to: string }[] {
+  const { from, to } = fetchWindow(first, last)
+  const end = Date.parse(to)
+  const windows: { from: string; to: string }[] = []
+  for (let cursor = Date.parse(from); cursor < end;) {
+    const next = Math.min(end, cursor + MAX_FETCH_DAYS * DAY_MS)
+    windows.push({
+      from: new Date(cursor).toISOString(),
+      to: new Date(next).toISOString(),
+    })
+    cursor = next
+  }
+  return windows
+}
+
+/** "YYYY-MM" of a day key. */
+export const monthOf = (key: string) => key.slice(0, 7)
+
+/** "YYYY-MM" plus or minus whole months, across years. */
+export function addMonths(month: string, delta: number): string {
+  const [year, mon] = month.split('-').map(Number)
+  const index = year * 12 + (mon - 1) + delta
+  const y = Math.floor(index / 12)
+  return `${String(y).padStart(4, '0')}-${String(index - y * 12 + 1).padStart(2, '0')}`
+}
+
+export function daysInMonth(month: string): number {
+  const [year, mon] = month.split('-').map(Number)
+  return new Date(Date.UTC(year, mon, 0)).getUTCDate()
+}
+
+/** The Monday-start weeks covering a month, as day keys: 28, 35 or 42 days (4 to 6 rows). */
+export function monthGrid(month: string): string[] {
+  const start = mondayOf(`${month}-01`)
+  const end = addDays(
+    mondayOf(`${month}-${String(daysInMonth(month)).padStart(2, '0')}`),
+    6,
+  )
+  const count =
+    Math.round(
+      (Date.parse(`${end}T12:00:00Z`) - Date.parse(`${start}T12:00:00Z`)) /
+        DAY_MS,
+    ) + 1
+  return daysFrom(start, count)
+}
+
+/** "October 2026", or "October" with `withYear: false`. */
+export function monthLabel(month: string, locale?: string, withYear = true) {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: 'UTC',
+    month: 'long',
+    ...(withYear ? { year: 'numeric' } : {}),
+  }).format(new Date(`${month}-15T12:00:00Z`))
+}
+
+/** "Mon 13 Oct": an agenda heading. */
+export function agendaDayLabel(key: string, locale?: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: 'UTC',
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date(`${key}T12:00:00Z`))
+}
+
+/** The agenda's days: from the selected day to the end of the visible range. */
+export function agendaDays(visible: string[], selected: string): string[] {
+  const from = visible.indexOf(selected)
+  return from < 0 ? visible : visible.slice(from)
+}
+
+/** One episode's identity across reloads and views. */
+export const entryKey = (entry: CalendarEntry) =>
+  `${entry.libraryItemId}:${entry.season}:${entry.number}`
+
+/** "S2 · E5": the agenda's compact episode code. */
+export const shortCode = (season: number, number: number) =>
+  `S${season} · E${number}`
 
 /** Entries by day for the given days, each day ordered by air time, then show title. */
 export function groupByDay(
@@ -107,6 +195,26 @@ export function metaLine(
   return [entry.title.network, airTime(entry, timeZone, locale)]
     .filter(Boolean)
     .join(' · ')
+}
+
+/** "Thursday 15 October, 9:00 PM on Netflix" — the time only when it is exact. */
+export function longWhen(entry: CalendarEntry, locale?: string): string {
+  const date = new Date(entry.airsAt)
+  const day = entry.airTimeKnown
+    ? new Intl.DateTimeFormat(locale, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(date)
+    : new Intl.DateTimeFormat(locale, {
+        timeZone: 'UTC',
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      }).format(date)
+  return entry.title.network ? `${day} on ${entry.title.network}` : day
 }
 
 /** Day number and weekday for a column header: { day: "15", weekday: "Thursday" }. */

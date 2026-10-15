@@ -1,7 +1,14 @@
 import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
-import { badge, dayParts, episodeCode, metaLine } from '../lib/calendar/model'
+import {
+  badge,
+  dayParts,
+  episodeCode,
+  longWhen,
+  metaLine,
+} from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
+import { WatchedCheckbox } from './WatchedCheckbox'
 
 // APP-010 · `WeekGrid` (DESIGN.md §14, VIEWS.md): Pogdesign CAT's dense week, in Aaru's palette.
 // Seven columns from 1280px, scroll-snapping columns below that, and a day pager on phones.
@@ -159,17 +166,7 @@ function EpisodeCell(props: {
         )}
       </Show>
       <div class="flex gap-2 p-2">
-        <input
-          type="checkbox"
-          class="mt-0.5 h-4 w-4 shrink-0 accent-accent"
-          checked={e().watched}
-          aria-label={`${e().title.title} ${code()} watched`}
-          onChange={(event) => {
-            // The parent owns the state; keep the box showing it until the write lands.
-            event.currentTarget.checked = e().watched
-            props.onToggle(e())
-          }}
-        />
+        <WatchedCheckbox entry={e()} onToggle={props.onToggle} class="mt-0.5" />
         <div class="min-w-0 text-xs leading-snug">
           <Link
             to="/app/title/$id"
@@ -199,6 +196,9 @@ function EpisodeCell(props: {
         <Show when={e().episodeName}>
           <p>{e().episodeName}</p>
         </Show>
+        <Show when={e().episodeOverview}>
+          <p class="mt-1 line-clamp-4 opacity-90">{e().episodeOverview}</p>
+        </Show>
         <p class="mt-1 opacity-80">
           {longWhen(e())}
           <Show when={e().runtimeMinutes}> · {e().runtimeMinutes} min</Show>
@@ -209,26 +209,6 @@ function EpisodeCell(props: {
       </div>
     </article>
   )
-}
-
-/** "Thursday 15 October, 9:00 PM on Netflix" — the time only when it is exact. */
-function longWhen(entry: CalendarEntry): string {
-  const date = new Date(entry.airsAt)
-  const day = entry.airTimeKnown
-    ? new Intl.DateTimeFormat(undefined, {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        hour: 'numeric',
-        minute: '2-digit',
-      }).format(date)
-    : new Intl.DateTimeFormat(undefined, {
-        timeZone: 'UTC',
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      }).format(date)
-  return entry.title.network ? `${day} on ${entry.title.network}` : day
 }
 
 /** Wide art: the backdrop, else the poster cropped, else a tinted block with the title. */
