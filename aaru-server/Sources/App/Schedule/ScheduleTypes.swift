@@ -18,6 +18,7 @@ struct CalendarEntry: Sendable, Equatable {
     /// False when the source gives only a date: `airsAt` is then midnight UTC of that date and
     /// clients show the day without a time.
     var airTimeKnown = false
+    var episodeOverview: String?
 }
 
 /// A show to continue (UPN-001): the next aired episode not yet watched.

@@ -28,6 +28,7 @@ extension Components.Schemas.CalendarEntry {
             season: entry.key.season,
             number: entry.key.episode,
             episodeName: entry.episodeName,
+            episodeOverview: entry.episodeOverview,
             airsAt: entry.airsAt,
             airTimeKnown: entry.airTimeKnown,
             runtimeMinutes: entry.runtimeMinutes,

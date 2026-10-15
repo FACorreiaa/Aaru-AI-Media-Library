@@ -208,7 +208,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/shelves/{id}/items`.
     /// - Remark: Generated from `#/paths//v1/shelves/{id}/items/get(listShelfItems)`.
     func listShelfItems(_ input: Operations.ListShelfItems.Input) async throws -> Operations.ListShelfItems.Output
-    /// Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+    /// Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
     ///
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.
@@ -745,7 +745,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+    /// Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
     ///
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.
@@ -2565,6 +2565,10 @@ public enum Components {
             public var number: Swift.Int
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/episodeName`.
             public var episodeName: Swift.String?
+            /// The episode's synopsis, when the catalog has one (TMDB; AniList has none).
+            ///
+            /// - Remark: Generated from `#/components/schemas/CalendarEntry/episodeOverview`.
+            public var episodeOverview: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/airsAt`.
             public var airsAt: Foundation.Date
             /// False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
@@ -2591,6 +2595,7 @@ public enum Components {
             ///   - season:
             ///   - number:
             ///   - episodeName:
+            ///   - episodeOverview: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
             ///   - airsAt:
             ///   - airTimeKnown: False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
             ///   - runtimeMinutes:
@@ -2602,6 +2607,7 @@ public enum Components {
                 season: Swift.Int,
                 number: Swift.Int,
                 episodeName: Swift.String? = nil,
+                episodeOverview: Swift.String? = nil,
                 airsAt: Foundation.Date,
                 airTimeKnown: Swift.Bool,
                 runtimeMinutes: Swift.Int? = nil,
@@ -2613,6 +2619,7 @@ public enum Components {
                 self.season = season
                 self.number = number
                 self.episodeName = episodeName
+                self.episodeOverview = episodeOverview
                 self.airsAt = airsAt
                 self.airTimeKnown = airTimeKnown
                 self.runtimeMinutes = runtimeMinutes
@@ -2625,6 +2632,7 @@ public enum Components {
                 case season
                 case number
                 case episodeName
+                case episodeOverview
                 case airsAt
                 case airTimeKnown
                 case runtimeMinutes
@@ -9497,7 +9505,7 @@ public enum Operations {
             }
         }
     }
-    /// Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+    /// Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
     ///
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.

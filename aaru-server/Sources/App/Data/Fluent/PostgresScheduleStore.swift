@@ -27,7 +27,7 @@ struct PostgresScheduleStore: ScheduleStore {
     func calendar(userID: UserID, from: Date, until: Date, now _: Date) async throws -> [CalendarEntry] {
         let query: SQLQueryString = """
         SELECT li.id AS item_id, \(Self.titleColumns), se.season, se.episode, se.name, se.airs_at, se.airs_at_exact,
-            se.runtime_minutes,
+            se.overview, se.runtime_minutes,
             NOT \(Self.unwatched) AS watched,
             (SELECT max(s2.episode) FROM show_episodes s2 WHERE s2.title_id = se.title_id AND s2.season = se.season)
                 AS season_last
@@ -47,7 +47,7 @@ struct PostgresScheduleStore: ScheduleStore {
                 return CalendarEntry(
                     libraryItemID: LibraryItemID(row.itemId), title: title, key: key, episodeName: row.name,
                     airsAt: row.airsAt, runtimeMinutes: row.runtimeMinutes, watched: row.watched, kind: kind,
-                    airTimeKnown: row.airsAtExact
+                    airTimeKnown: row.airsAtExact, episodeOverview: row.overview
                 )
             }
     }
@@ -155,6 +155,7 @@ private struct CalendarRow: Decodable {
     let name: String?
     let airsAt: Date
     let airsAtExact: Bool
+    let overview: String?
     let runtimeMinutes: Int?
     let watched: Bool
     let seasonLast: Int
@@ -167,6 +168,7 @@ private struct CalendarRow: Decodable {
         name = try container.decodeIfPresent(String.self, forKey: .name)
         airsAt = try container.decode(Date.self, forKey: .airsAt)
         airsAtExact = try container.decode(Bool.self, forKey: .airsAtExact)
+        overview = try container.decodeIfPresent(String.self, forKey: .overview)
         runtimeMinutes = try container.decodeIfPresent(Int.self, forKey: .runtimeMinutes)
         watched = try container.decode(Bool.self, forKey: .watched)
         seasonLast = try container.decode(Int.self, forKey: .seasonLast)
@@ -174,7 +176,7 @@ private struct CalendarRow: Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case itemId, season, episode, name, airsAt, airsAtExact, runtimeMinutes, watched, seasonLast
+        case itemId, season, episode, name, airsAt, airsAtExact, overview, runtimeMinutes, watched, seasonLast
     }
 }
 

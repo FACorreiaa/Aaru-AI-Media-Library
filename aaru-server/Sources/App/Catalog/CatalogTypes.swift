@@ -47,6 +47,7 @@ struct CatalogEpisode: Sendable, Equatable {
     /// True when `airsAt` is the exact broadcast time (AniList); false when the provider gives
     /// only a date (TMDB), stored as midnight UTC of that date.
     var airTimeKnown = false
+    var overview: String?
 }
 
 /// What a show's episode source returns: the show's status plus every known episode.

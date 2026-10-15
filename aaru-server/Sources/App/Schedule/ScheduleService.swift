@@ -4,7 +4,8 @@ import Foundation
 /// Calendar (CAL-001) and Up Next (UPN-001). Both are derived reads over the library;
 /// neither has a table of its own.
 struct ScheduleService: Sendable {
-    static let maxCalendarSpan: TimeInterval = 35 * 24 * 60 * 60
+    /// Six weeks: a month view's full grid, Monday before the 1st to Sunday after the last.
+    static let maxCalendarSpan: TimeInterval = 42 * 24 * 60 * 60
     /// Never-fetched shows hydrated per calendar request, so one call stays bounded.
     static let hydrationBudget = 10
 
@@ -16,8 +17,8 @@ struct ScheduleService: Sendable {
         guard until > from, until.timeIntervalSince(from) <= Self.maxCalendarSpan else {
             throw AppError(
                 status: .unprocessableContent, code: "validation_failed",
-                message: "The range must be positive and at most 35 days.",
-                details: ["to": "The range must be positive and at most 35 days."]
+                message: "The range must be positive and at most 42 days.",
+                details: ["to": "The range must be positive and at most 42 days."]
             )
         }
         try await hydrateNewShows(userID: userID)

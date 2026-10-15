@@ -706,7 +706,7 @@ paths:
   /v1/calendar:
     get:
       operationId: getCalendar
-      summary: Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+      summary: Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
       parameters:
         - {name: from, in: query, required: true, schema: {type: string, format: date-time}}
         - {name: to, in: query, required: true, schema: {type: string, format: date-time}}
@@ -1248,6 +1248,9 @@ components:
         season: {type: integer}
         number: {type: integer}
         episodeName: {type: string}
+        episodeOverview:
+          type: string
+          description: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
         airsAt: {type: string, format: date-time}
         airTimeKnown:
           type: boolean

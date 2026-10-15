@@ -58,7 +58,7 @@ struct ScheduleTests {
 
             let tooLong = try await env.send(
                 .get,
-                "/v1/calendar?from=\(iso(now))&to=\(iso(now.addingTimeInterval(40 * Self.day)))"
+                "/v1/calendar?from=\(iso(now))&to=\(iso(now.addingTimeInterval(43 * Self.day)))"
             )
             #expect(tooLong.status == .unprocessableContent)
         }
@@ -79,7 +79,8 @@ struct ScheduleTests {
                     ),
                     CatalogEpisode(
                         season: 1, episode: 2, name: "Two", airsAt: now.addingTimeInterval(2 * Self.day),
-                        runtimeMinutes: 50, tmdbEpisodeID: nil, airTimeKnown: true
+                        runtimeMinutes: 50, tmdbEpisodeID: nil, airTimeKnown: true,
+                        overview: "Cassian meets Luthen."
                     ),
                 ],
                 backdropURL: URL(string: "https://image.tmdb.org/t/p/w780/andor.jpg"),
@@ -93,6 +94,7 @@ struct ScheduleTests {
             )
             let items = try #require(try reply.json()["items"] as? [[String: Any]])
             #expect(items.compactMap { $0["airTimeKnown"] as? Bool } == [false, true])
+            #expect(items.last?["episodeOverview"] as? String == "Cassian meets Luthen.")
             let title = try #require(items.first?["title"] as? [String: Any])
             #expect(title["backdropUrl"] as? String == "https://image.tmdb.org/t/p/w780/andor.jpg")
             #expect(title["network"] as? String == "Disney+")

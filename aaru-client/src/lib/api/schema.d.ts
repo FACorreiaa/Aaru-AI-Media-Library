@@ -607,7 +607,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC. */
+    /** Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC. */
     get: operations['getCalendar']
     put?: never
     post?: never
@@ -1010,6 +1010,8 @@ export interface components {
       season: number
       number: number
       episodeName?: string
+      /** @description The episode's synopsis, when the catalog has one (TMDB; AniList has none). */
+      episodeOverview?: string
       /** Format: date-time */
       airsAt: string
       /** @description False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time. */

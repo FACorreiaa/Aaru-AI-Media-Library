@@ -96,7 +96,8 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing {
                             name: episode.name?.nilIfBlank,
                             airsAt: Date.catalogDay(episode.airDate),
                             runtimeMinutes: episode.runtime ?? show.episodeRunTime?.first,
-                            tmdbEpisodeID: episode.id.map(String.init)
+                            tmdbEpisodeID: episode.id.map(String.init),
+                            overview: episode.overview?.nilIfBlank
                         )
                     }
                 }
@@ -162,6 +163,7 @@ private struct SeasonBody: Decodable {
         let seasonNumber: Int
         let episodeNumber: Int
         let name: String?
+        let overview: String?
         let airDate: String?
         let runtime: Int?
     }

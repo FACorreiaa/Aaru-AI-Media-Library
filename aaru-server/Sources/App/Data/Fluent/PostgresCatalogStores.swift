@@ -130,12 +130,14 @@ struct PostgresTitleStore: TitleStore {
         for episode in fresh.episodes {
             try await sql.raw("""
             INSERT INTO show_episodes
-                (id, title_id, season, episode, name, airs_at, airs_at_exact, runtime_minutes, tmdb_episode_id)
+                (id, title_id, season, episode, name, overview, airs_at, airs_at_exact, runtime_minutes,
+                 tmdb_episode_id)
             VALUES (\(bind: UUID()), \(bind: id.rawValue), \(bind: episode.season), \(bind: episode.episode),
-                    \(bind: episode.name), \(bind: episode.airsAt), \(bind: episode.airTimeKnown),
-                    \(bind: episode.runtimeMinutes), \(bind: episode.tmdbEpisodeID))
+                    \(bind: episode.name), \(bind: episode.overview), \(bind: episode.airsAt),
+                    \(bind: episode.airTimeKnown), \(bind: episode.runtimeMinutes), \(bind: episode.tmdbEpisodeID))
             ON CONFLICT (title_id, season, episode) DO UPDATE SET
-                name = EXCLUDED.name, airs_at = EXCLUDED.airs_at, airs_at_exact = EXCLUDED.airs_at_exact,
+                name = EXCLUDED.name, overview = EXCLUDED.overview,
+                airs_at = EXCLUDED.airs_at, airs_at_exact = EXCLUDED.airs_at_exact,
                 runtime_minutes = EXCLUDED.runtime_minutes, tmdb_episode_id = EXCLUDED.tmdb_episode_id
             """).run()
         }
@@ -172,9 +174,13 @@ struct PostgresTitleStore: TitleStore {
             let airsAtExact: Bool
             let runtimeMinutes: Int?
             let tmdbEpisodeId: String?
+            let overview: String?
         }
         return try await sql.select()
-            .columns("season", "episode", "name", "airs_at", "airs_at_exact", "runtime_minutes", "tmdb_episode_id")
+            .columns(
+                "season", "episode", "name", "airs_at", "airs_at_exact", "runtime_minutes", "tmdb_episode_id",
+                "overview"
+            )
             .from("show_episodes")
             .where("title_id", .equal, id.rawValue)
             .orderBy("season").orderBy("episode")
@@ -183,7 +189,7 @@ struct PostgresTitleStore: TitleStore {
                 CatalogEpisode(
                     season: $0.season, episode: $0.episode, name: $0.name, airsAt: $0.airsAt,
                     runtimeMinutes: $0.runtimeMinutes, tmdbEpisodeID: $0.tmdbEpisodeId,
-                    airTimeKnown: $0.airsAtExact
+                    airTimeKnown: $0.airsAtExact, overview: $0.overview
                 )
             }
     }
