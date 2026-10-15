@@ -20,11 +20,20 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isSignedIn {
-                LibraryView(
-                    api: api, library: library, lists: lists, imports: imports,
-                    onSignOut: { Task { await flow.signOut() } },
-                    onDeleteAccount: { await flow.deleteAccount() }
-                )
+                // A sidebar on Mac and iPad, a tab bar on iPhone.
+                TabView {
+                    Tab("Library", systemImage: "books.vertical") {
+                        LibraryView(
+                            api: api, library: library, lists: lists, imports: imports,
+                            onSignOut: { Task { await flow.signOut() } },
+                            onDeleteAccount: { await flow.deleteAccount() }
+                        )
+                    }
+                    Tab("Calendar", systemImage: "calendar") {
+                        CalendarScreen(api: api, library: library, lists: lists)
+                    }
+                }
+                .tabViewStyle(.sidebarAdaptable)
             } else {
                 WelcomeView(
                     api: api,

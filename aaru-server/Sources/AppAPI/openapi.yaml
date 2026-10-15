@@ -706,7 +706,7 @@ paths:
   /v1/calendar:
     get:
       operationId: getCalendar
-      summary: Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+      summary: Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
       parameters:
         - {name: from, in: query, required: true, schema: {type: string, format: date-time}}
         - {name: to, in: query, required: true, schema: {type: string, format: date-time}}
@@ -1082,6 +1082,12 @@ components:
         originalTitle: {type: string}
         year: {type: integer}
         posterUrl: {type: string}
+        backdropUrl:
+          type: string
+          description: Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
+        network:
+          type: string
+          description: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
     LibraryEntry:
@@ -1235,14 +1241,22 @@ components:
         isPinned: {type: boolean}
     CalendarEntry:
       type: object
-      required: [libraryItemId, title, season, number, airsAt, watched, kind]
+      required: [libraryItemId, title, season, number, airsAt, airTimeKnown, watched, kind]
       properties:
         libraryItemId: {type: string, format: uuid}
         title: {$ref: '#/components/schemas/TitleSummary'}
         season: {type: integer}
         number: {type: integer}
         episodeName: {type: string}
+        episodeOverview:
+          type: string
+          description: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
         airsAt: {type: string, format: date-time}
+        airTimeKnown:
+          type: boolean
+          description: >-
+            False when the source gives only a date: airsAt is midnight UTC of that date, and
+            clients show the day (taken in UTC) without a time.
         runtimeMinutes: {type: integer}
         watched: {type: boolean}
         kind:

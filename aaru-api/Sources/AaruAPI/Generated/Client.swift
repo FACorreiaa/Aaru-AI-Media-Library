@@ -3754,7 +3754,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+    /// Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
     ///
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.

@@ -13,6 +13,8 @@ struct CatalogHit: Sendable, Equatable {
     var byline: String?
     var ids: ExternalIDs
     var isAnime: Bool
+    var backdropURL: URL?
+    var network: String?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)
@@ -42,12 +44,20 @@ struct CatalogEpisode: Sendable, Equatable {
     var airsAt: Date?
     var runtimeMinutes: Int?
     var tmdbEpisodeID: String?
+    /// True when `airsAt` is the exact broadcast time (AniList); false when the provider gives
+    /// only a date (TMDB), stored as midnight UTC of that date.
+    var airTimeKnown = false
+    var overview: String?
 }
 
 /// What a show's episode source returns: the show's status plus every known episode.
 struct CatalogEpisodes: Sendable, Equatable {
     var status: TitleStatus?
     var episodes: [CatalogEpisode]
+    /// The show's wide art and network as the episode source reports them now. Saved with the
+    /// episodes, so titles added before these existed fill in on their next refresh.
+    var backdropURL: URL?
+    var network: String?
 }
 
 protocol CatalogSearching: Sendable {

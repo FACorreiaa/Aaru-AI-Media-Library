@@ -58,9 +58,46 @@ struct ScheduleTests {
 
             let tooLong = try await env.send(
                 .get,
-                "/v1/calendar?from=\(iso(now))&to=\(iso(now.addingTimeInterval(40 * Self.day)))"
+                "/v1/calendar?from=\(iso(now))&to=\(iso(now.addingTimeInterval(43 * Self.day)))"
             )
             #expect(tooLong.status == .unprocessableContent)
+        }
+    }
+
+    @Test("APP-010: calendar rows carry the show's banner, network, and whether the time is exact")
+    func artworkAndAirTime() async throws {
+        try await LibraryHarness.run { env in
+            let tmdb = stubAiring(env, "Andor", days: [1, 2])
+            // The episode source refreshes the art; the second episode has an exact time.
+            let now = Date()
+            env.fake.stubEpisodes(tmdb, CatalogEpisodes(
+                status: .returning,
+                episodes: [
+                    CatalogEpisode(
+                        season: 1, episode: 1, name: "One", airsAt: now.addingTimeInterval(Self.day),
+                        runtimeMinutes: 50, tmdbEpisodeID: nil
+                    ),
+                    CatalogEpisode(
+                        season: 1, episode: 2, name: "Two", airsAt: now.addingTimeInterval(2 * Self.day),
+                        runtimeMinutes: 50, tmdbEpisodeID: nil, airTimeKnown: true,
+                        overview: "Cassian meets Luthen."
+                    ),
+                ],
+                backdropURL: URL(string: "https://image.tmdb.org/t/p/w780/andor.jpg"),
+                network: "Disney+"
+            ))
+            _ = try await env.add("show", tmdb: tmdb)
+
+            let reply = try await env.send(
+                .get,
+                "/v1/calendar?from=\(iso(now))&to=\(iso(now.addingTimeInterval(7 * Self.day)))"
+            )
+            let items = try #require(try reply.json()["items"] as? [[String: Any]])
+            #expect(items.compactMap { $0["airTimeKnown"] as? Bool } == [false, true])
+            #expect(items.last?["episodeOverview"] as? String == "Cassian meets Luthen.")
+            let title = try #require(items.first?["title"] as? [String: Any])
+            #expect(title["backdropUrl"] as? String == "https://image.tmdb.org/t/p/w780/andor.jpg")
+            #expect(title["network"] as? String == "Disney+")
         }
     }
 

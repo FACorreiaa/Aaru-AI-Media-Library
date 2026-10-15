@@ -115,8 +115,12 @@ spreadsheet.
 
 You came from Pogdesign CAT. Steal the *feeling*, not the site.
 
-Month canvas of **your** airings only. Agent highlight: "three premieres, one finale, you are
-behind on two." Tap a day → episode cards with a single "watched" check.
+Month canvas of **your** airings only, shaped like Stremio's calendar: a month switcher with the
+neighbouring months as buttons, poster thumbnails in each day (dots on iPhone and phone web), and
+an agenda beside the grid (below it on phones) grouped by date. Selecting an agenda row expands
+it: episode name, synopsis, network · time, badge, a single "watched" check, and "Open show".
+Week and Month are two modes of one Calendar destination; weeks start on Monday. Agent
+highlight later: "three premieres, one finale, you are behind on two."
 
 ICS import lands here first, then the agent offers to add the missing shows to the library.
 
@@ -216,6 +220,8 @@ right.
 - A checkbox on every cell marks it watched in place.
 - State colours: watched (dimmed), premiere, finale, today, and new-season. Colours come from
   the brand palette, not CAT's yellow and red.
+- Banner art is the show's backdrop (TMDB) or banner (AniList), then the poster, then a tint.
+  Date-only air dates (TMDB) show the day without a time; anime from AniList has exact times.
 - Your shows only. No global schedule.
 
 On Mac and web the grid is the default calendar view. On iPhone it collapses to a day list with

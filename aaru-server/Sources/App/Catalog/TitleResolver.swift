@@ -71,6 +71,8 @@ struct TitleResolver: Sendable {
             year: catalog.hit.year,
             synopsis: catalog.hit.overview,
             posterURL: catalog.hit.posterURL,
+            backdropURL: catalog.hit.backdropURL,
+            network: catalog.hit.network,
             ids: mergedIDs,
             isAnime: catalog.hit.isAnime
         )

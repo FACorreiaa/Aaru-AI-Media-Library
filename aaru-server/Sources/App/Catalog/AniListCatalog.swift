@@ -13,6 +13,8 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
     title { romaji english native }
     startDate { year }
     coverImage { large }
+    bannerImage
+    externalLinks { site type }
     description(asHtml: false)
     """
 
@@ -52,10 +54,13 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
                 name: nil,
                 airsAt: airsAt[number],
                 runtimeMinutes: media.duration,
-                tmdbEpisodeID: nil
+                tmdbEpisodeID: nil,
+                airTimeKnown: airsAt[number] != nil
             )
         }
-        return CatalogEpisodes(status: media.titleStatus, episodes: episodes)
+        return CatalogEpisodes(
+            status: media.titleStatus, episodes: episodes, backdropURL: media.backdropURL, network: media.network
+        )
     }
 
     // MARK: Plumbing
@@ -150,6 +155,11 @@ private struct Media: Decodable {
 
     struct StartDate: Decodable { let year: Int? }
     struct Cover: Decodable { let large: String? }
+    struct ExternalLink: Decodable {
+        let site: String
+        let type: String?
+    }
+
     struct Airing: Decodable {
         let episode: Int
         let airingAt: Int
@@ -166,6 +176,8 @@ private struct Media: Decodable {
     let title: Titles
     let startDate: StartDate?
     let coverImage: Cover?
+    let bannerImage: String?
+    let externalLinks: [ExternalLink]?
     let description: String?
     let airingSchedule: Schedule?
     let nextAiringEpisode: Airing?
@@ -181,8 +193,20 @@ private struct Media: Decodable {
             overview: description.map(AniListText.plain)?.nilIfBlank,
             byline: nil,
             ids: ExternalIDs(anilist: String(id), mal: idMal.map(String.init)),
-            isAnime: true
+            isAnime: true,
+            backdropURL: backdropURL,
+            network: network
         )
+    }
+
+    var backdropURL: URL? {
+        bannerImage.flatMap(URL.init(string:))
+    }
+
+    /// Anime has no broadcaster in AniList's model; the first streaming link is what a viewer
+    /// needs ("Crunchyroll").
+    var network: String? {
+        externalLinks?.first { $0.type == "STREAMING" }?.site.nilIfBlank
     }
 
     var titleStatus: TitleStatus? {

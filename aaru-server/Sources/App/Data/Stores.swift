@@ -74,7 +74,7 @@ protocol TitleStore: Sendable {
     func catalogState(_ id: TitleID) async throws -> TitleCatalogState?
     /// Upserts episodes by (season, episode) and records the show's status and when it
     /// was hydrated. Never deletes: progress refers to episodes by number.
-    func saveEpisodes(_ id: TitleID, _ episodes: [CatalogEpisode], status: TitleStatus?, hydratedAt: Date) async throws
+    func saveEpisodes(_ id: TitleID, _ fresh: CatalogEpisodes, hydratedAt: Date) async throws
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode]
     /// The titles with these ids, in the order given; unknown ids are skipped.
     func titles(ids: [TitleID]) async throws -> [Title]

@@ -208,7 +208,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/shelves/{id}/items`.
     /// - Remark: Generated from `#/paths//v1/shelves/{id}/items/get(listShelfItems)`.
     func listShelfItems(_ input: Operations.ListShelfItems.Input) async throws -> Operations.ListShelfItems.Output
-    /// Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+    /// Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
     ///
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.
@@ -745,7 +745,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+    /// Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
     ///
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.
@@ -1965,6 +1965,14 @@ public enum Components {
             public var year: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/posterUrl`.
             public var posterUrl: Swift.String?
+            /// Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/backdropUrl`.
+            public var backdropUrl: Swift.String?
+            /// Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/network`.
+            public var network: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/isAnime`.
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/TitleSummary/ids`.
@@ -1978,6 +1986,8 @@ public enum Components {
             ///   - originalTitle:
             ///   - year:
             ///   - posterUrl:
+            ///   - backdropUrl: Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
+            ///   - network: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
             ///   - isAnime:
             ///   - ids:
             public init(
@@ -1987,6 +1997,8 @@ public enum Components {
                 originalTitle: Swift.String? = nil,
                 year: Swift.Int? = nil,
                 posterUrl: Swift.String? = nil,
+                backdropUrl: Swift.String? = nil,
+                network: Swift.String? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds
             ) {
@@ -1996,6 +2008,8 @@ public enum Components {
                 self.originalTitle = originalTitle
                 self.year = year
                 self.posterUrl = posterUrl
+                self.backdropUrl = backdropUrl
+                self.network = network
                 self.isAnime = isAnime
                 self.ids = ids
             }
@@ -2006,6 +2020,8 @@ public enum Components {
                 case originalTitle
                 case year
                 case posterUrl
+                case backdropUrl
+                case network
                 case isAnime
                 case ids
             }
@@ -2549,8 +2565,16 @@ public enum Components {
             public var number: Swift.Int
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/episodeName`.
             public var episodeName: Swift.String?
+            /// The episode's synopsis, when the catalog has one (TMDB; AniList has none).
+            ///
+            /// - Remark: Generated from `#/components/schemas/CalendarEntry/episodeOverview`.
+            public var episodeOverview: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/airsAt`.
             public var airsAt: Foundation.Date
+            /// False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CalendarEntry/airTimeKnown`.
+            public var airTimeKnown: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/runtimeMinutes`.
             public var runtimeMinutes: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/watched`.
@@ -2571,7 +2595,9 @@ public enum Components {
             ///   - season:
             ///   - number:
             ///   - episodeName:
+            ///   - episodeOverview: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
             ///   - airsAt:
+            ///   - airTimeKnown: False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
             ///   - runtimeMinutes:
             ///   - watched:
             ///   - kind:
@@ -2581,7 +2607,9 @@ public enum Components {
                 season: Swift.Int,
                 number: Swift.Int,
                 episodeName: Swift.String? = nil,
+                episodeOverview: Swift.String? = nil,
                 airsAt: Foundation.Date,
+                airTimeKnown: Swift.Bool,
                 runtimeMinutes: Swift.Int? = nil,
                 watched: Swift.Bool,
                 kind: Components.Schemas.CalendarEntry.KindPayload
@@ -2591,7 +2619,9 @@ public enum Components {
                 self.season = season
                 self.number = number
                 self.episodeName = episodeName
+                self.episodeOverview = episodeOverview
                 self.airsAt = airsAt
+                self.airTimeKnown = airTimeKnown
                 self.runtimeMinutes = runtimeMinutes
                 self.watched = watched
                 self.kind = kind
@@ -2602,7 +2632,9 @@ public enum Components {
                 case season
                 case number
                 case episodeName
+                case episodeOverview
                 case airsAt
+                case airTimeKnown
                 case runtimeMinutes
                 case watched
                 case kind
@@ -9473,7 +9505,7 @@ public enum Operations {
             }
         }
     }
-    /// Episodes of tracked shows airing in [from, to), at most 35 days. Times are UTC.
+    /// Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
     ///
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.

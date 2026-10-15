@@ -121,3 +121,23 @@ struct AddGoogleProvider: SQLMigration {
         """,
     ]
 }
+
+/// APP-010 · the week grid's cell banner and network, whether an episode's air time is exact
+/// (AniList) or a date (TMDB), and the episode synopsis the calendar's detail panel shows. Shows are marked unhydrated
+/// so the next refresh fills the
+/// new columns for titles already in libraries.
+struct AddTitleArtwork: SQLMigration {
+    let forward = [
+        "ALTER TABLE titles ADD COLUMN backdrop_url text",
+        "ALTER TABLE titles ADD COLUMN network text",
+        "ALTER TABLE show_episodes ADD COLUMN airs_at_exact boolean NOT NULL DEFAULT false",
+        "ALTER TABLE show_episodes ADD COLUMN overview text",
+        "UPDATE titles SET episodes_hydrated_at = NULL WHERE type = 'show'",
+    ]
+    let backward = [
+        "ALTER TABLE show_episodes DROP COLUMN overview",
+        "ALTER TABLE show_episodes DROP COLUMN airs_at_exact",
+        "ALTER TABLE titles DROP COLUMN network",
+        "ALTER TABLE titles DROP COLUMN backdrop_url",
+    ]
+}

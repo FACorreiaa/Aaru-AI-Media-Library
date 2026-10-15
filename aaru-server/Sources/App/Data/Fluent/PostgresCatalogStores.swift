@@ -29,6 +29,8 @@ struct PostgresTitleStore: TitleStore {
         let year: Int?
         let synopsis: String?
         let posterUrl: String?
+        let backdropUrl: String?
+        let network: String?
         let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb: String?
         let isAnime: Bool
         let status: String?
@@ -45,6 +47,8 @@ struct PostgresTitleStore: TitleStore {
                 year: year,
                 synopsis: synopsis,
                 posterURL: posterUrl.flatMap(URL.init(string:)),
+                backdropURL: backdropUrl.flatMap(URL.init(string:)),
+                network: network,
                 ids: ExternalIDs(
                     tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
                     openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb
@@ -61,6 +65,7 @@ struct PostgresTitleStore: TitleStore {
             id: title.id.rawValue, type: title.type.rawValue, title: title.title,
             originalTitle: title.originalTitle, year: title.year, synopsis: title.synopsis,
             posterUrl: title.posterURL?.absoluteString,
+            backdropUrl: title.backdropURL?.absoluteString, network: title.network,
             tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb, isbn: ids.isbn,
             openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb,
             isAnime: title.isAnime, status: status?.rawValue, runtimeMinutes: runtimeMinutes,
@@ -121,23 +126,28 @@ struct PostgresTitleStore: TitleStore {
         )
     }
 
-    func saveEpisodes(
-        _ id: TitleID,
-        _ episodes: [CatalogEpisode],
-        status: TitleStatus?,
-        hydratedAt: Date
-    ) async throws {
-        for episode in episodes {
+    func saveEpisodes(_ id: TitleID, _ fresh: CatalogEpisodes, hydratedAt: Date) async throws {
+        for episode in fresh.episodes {
             try await sql.raw("""
-            INSERT INTO show_episodes (id, title_id, season, episode, name, airs_at, runtime_minutes, tmdb_episode_id)
+            INSERT INTO show_episodes
+                (id, title_id, season, episode, name, overview, airs_at, airs_at_exact, runtime_minutes,
+                 tmdb_episode_id)
             VALUES (\(bind: UUID()), \(bind: id.rawValue), \(bind: episode.season), \(bind: episode.episode),
-                    \(bind: episode.name), \(bind: episode.airsAt), \(bind: episode.runtimeMinutes),
-                    \(bind: episode.tmdbEpisodeID))
+                    \(bind: episode.name), \(bind: episode.overview), \(bind: episode.airsAt),
+                    \(bind: episode.airTimeKnown), \(bind: episode.runtimeMinutes), \(bind: episode.tmdbEpisodeID))
             ON CONFLICT (title_id, season, episode) DO UPDATE SET
-                name = EXCLUDED.name, airs_at = EXCLUDED.airs_at,
+                name = EXCLUDED.name, overview = EXCLUDED.overview,
+                airs_at = EXCLUDED.airs_at, airs_at_exact = EXCLUDED.airs_at_exact,
                 runtime_minutes = EXCLUDED.runtime_minutes, tmdb_episode_id = EXCLUDED.tmdb_episode_id
             """).run()
         }
+        let status = fresh.status
+        // A provider that drops its art does not erase ours.
+        try await sql.raw("""
+        UPDATE titles SET backdrop_url = coalesce(\(bind: fresh.backdropURL?.absoluteString), backdrop_url),
+            network = coalesce(\(bind: fresh.network), network)
+        WHERE id = \(bind: id.rawValue)
+        """).run()
         try await sql.update("titles")
             .set("episodes_hydrated_at", to: hydratedAt)
             .set("status", to: status?.rawValue)
@@ -161,11 +171,16 @@ struct PostgresTitleStore: TitleStore {
             let episode: Int
             let name: String?
             let airsAt: Date?
+            let airsAtExact: Bool
             let runtimeMinutes: Int?
             let tmdbEpisodeId: String?
+            let overview: String?
         }
         return try await sql.select()
-            .columns("season", "episode", "name", "airs_at", "runtime_minutes", "tmdb_episode_id")
+            .columns(
+                "season", "episode", "name", "airs_at", "airs_at_exact", "runtime_minutes", "tmdb_episode_id",
+                "overview"
+            )
             .from("show_episodes")
             .where("title_id", .equal, id.rawValue)
             .orderBy("season").orderBy("episode")
@@ -173,7 +188,8 @@ struct PostgresTitleStore: TitleStore {
             .map {
                 CatalogEpisode(
                     season: $0.season, episode: $0.episode, name: $0.name, airsAt: $0.airsAt,
-                    runtimeMinutes: $0.runtimeMinutes, tmdbEpisodeID: $0.tmdbEpisodeId
+                    runtimeMinutes: $0.runtimeMinutes, tmdbEpisodeID: $0.tmdbEpisodeId,
+                    airTimeKnown: $0.airsAtExact, overview: $0.overview
                 )
             }
     }

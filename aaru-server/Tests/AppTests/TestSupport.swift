@@ -75,7 +75,7 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func saveEpisodes(_: TitleID, _: [CatalogEpisode], status _: TitleStatus?, hydratedAt _: Date) async throws {
+    func saveEpisodes(_: TitleID, _: CatalogEpisodes, hydratedAt _: Date) async throws {
         throw Touched()
     }
 
