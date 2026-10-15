@@ -6,6 +6,10 @@ enum AppEnvironment {
     static let apiBaseURL: URL? = (Bundle.main.object(forInfoDictionaryKey: "AaruAPIBaseURL") as? String)
         .flatMap(URL.init(string:))
 
+    /// The Google OAuth client (iOS type) for this bundle id. Nil hides Sign in with Google.
+    static let googleClientID: String? = (Bundle.main.object(forInfoDictionaryKey: "AaruGoogleClientID") as? String)
+        .flatMap { $0.isEmpty ? nil : $0 }
+
     static var channel: String {
         #if DEBUG
             "Debug"

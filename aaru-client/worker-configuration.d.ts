@@ -5,6 +5,7 @@ interface __BaseEnv_Env {
   API_BASE_URL: string
   CHANNEL: string
   APPLE_SERVICES_ID: string
+  GOOGLE_CLIENT_ID: string
   VITE_SENTRY_DSN: string
 }
 declare namespace Cloudflare {
@@ -12,6 +13,7 @@ declare namespace Cloudflare {
     API_BASE_URL: string
     CHANNEL: string
     APPLE_SERVICES_ID: string
+    GOOGLE_CLIENT_ID: string
     VITE_SENTRY_DSN: string
   }
   interface Env extends __BaseEnv_Env {}
@@ -26,7 +28,7 @@ declare namespace NodeJS {
   interface ProcessEnv extends StringifyValues<
     Pick<
       Cloudflare.Env,
-      'API_BASE_URL' | 'CHANNEL' | 'APPLE_SERVICES_ID' | 'VITE_SENTRY_DSN'
+      'API_BASE_URL' | 'CHANNEL' | 'APPLE_SERVICES_ID' | 'GOOGLE_CLIENT_ID' | 'VITE_SENTRY_DSN'
     >
   > {}
 }

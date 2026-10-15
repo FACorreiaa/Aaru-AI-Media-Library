@@ -7,6 +7,7 @@ import {
 } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import { Wordmark } from '../components/Brand'
+import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
 import {
   deleteAccount,
@@ -15,7 +16,12 @@ import {
   uploadImport,
 } from '../lib/imports/server'
 import type { ImportJob } from '../lib/imports/server'
-import { getSession, signOut } from '../lib/session/session'
+import {
+  getSession,
+  getSignInConfig,
+  linkGoogle,
+  signOut,
+} from '../lib/session/session'
 
 // APP-007 on the web: account, imports, and the way out.
 const providerNames = {
@@ -30,8 +36,12 @@ export const Route = createFileRoute('/app_/settings')({
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
   },
   loader: async () => {
-    const [account, imports] = await Promise.all([getAccount(), listImports()])
-    return { account, imports }
+    const [account, imports, signIn] = await Promise.all([
+      getAccount(),
+      listImports(),
+      getSignInConfig(),
+    ])
+    return { account, imports, googleClientId: signIn.googleClientId }
   },
   component: Settings,
 })
@@ -47,10 +57,15 @@ function Settings() {
   const [problem, setProblem] = createSignal<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = createSignal(false)
 
+  const [account, setAccount] = createSignal(loaded().account)
   const providers = () =>
-    loaded()
-      .account.providers.map((p) => providerNames[p])
+    account()
+      .providers.map((p) => providerNames[p])
       .join(', ') || '—'
+  const canLinkGoogle = () =>
+    loaded().googleClientId && !account().providers.includes('google')
+      ? loaded().googleClientId
+      : null
 
   async function upload(source: FileSource, file: File) {
     setProblem(null)
@@ -123,10 +138,36 @@ function Settings() {
           <h2 class="font-display text-xl font-medium">Account</h2>
           <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
             <dt class="text-muted">Name</dt>
-            <dd>{loaded().account.displayName ?? 'Not set'}</dd>
+            <dd>{account().displayName ?? 'Not set'}</dd>
             <dt class="text-muted">Signed in with</dt>
             <dd>{providers()}</dd>
           </dl>
+          <Show when={canLinkGoogle()}>
+            {(clientId) => (
+              <div class="mt-4 max-w-xs">
+                <p class="mb-2 text-sm text-muted">
+                  Link Google to sign in with it too.
+                </p>
+                <GoogleSignInButton
+                  clientId={clientId()}
+                  text="signin_with"
+                  onCredential={(credential) => {
+                    setProblem(null)
+                    linkGoogle({ data: credential })
+                      .then(setAccount)
+                      .catch((err: unknown) =>
+                        setProblem(
+                          err instanceof Error
+                            ? err.message
+                            : 'Google was not linked.',
+                        ),
+                      )
+                  }}
+                  onError={setProblem}
+                />
+              </div>
+            )}
+          </Show>
           <button
             type="button"
             onClick={leave}
