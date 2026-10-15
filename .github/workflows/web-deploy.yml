@@ -65,10 +65,15 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # The Cloudflare Vite plugin bakes the chosen environment into the build output.
-          CLOUDFLARE_ENV: ${{ github.event_name == 'workflow_dispatch' && '' || 'staging' }}
+          # Not `cond && '' || 'staging'`: '' is falsy in expressions, so that always
+          # picked staging and the first production dispatch redeployed beta.
+          TARGET: ${{ github.event_name == 'workflow_dispatch' && 'production' || 'staging' }}
         run: |
           set -euo pipefail
+          # The Cloudflare Vite plugin bakes the chosen environment into the build output;
+          # unset means the top-level (production) Worker.
+          if [ "$TARGET" = staging ]; then export CLOUDFLARE_ENV=staging; fi
+          echo "Deploying the $TARGET Worker"
           npm ci
           npm run build
           npx wrangler deploy
