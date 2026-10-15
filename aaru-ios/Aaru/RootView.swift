@@ -29,8 +29,8 @@ struct RootView: View {
                             onDeleteAccount: { await flow.deleteAccount() }
                         )
                     }
-                    Tab("Week", systemImage: "calendar") {
-                        WeekView(api: api, library: library, lists: lists)
+                    Tab("Calendar", systemImage: "calendar") {
+                        CalendarScreen(api: api, library: library, lists: lists)
                     }
                 }
                 .tabViewStyle(.sidebarAdaptable)
