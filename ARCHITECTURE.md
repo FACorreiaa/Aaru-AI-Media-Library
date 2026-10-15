@@ -526,7 +526,9 @@ protocol ModelProviding: Sendable {
   and web OAuth client ids, public), `exp`, and the nonce when the client sent one. Accounts are
   keyed on Google's `sub`; an email is stored only when Google says it is verified. A signed-in
   user links Google with `POST /v1/me/identities/google`. Two accounts are never merged on a
-  shared email; a Google account already on another user is a 409.
+  shared email; a Google account already on another user is a 409. The Apple apps get the ID
+  token with the OAuth code flow + PKCE in `ASWebAuthenticationSession` (an iOS-type client has
+  no secret); the web uses Google Identity Services. Both pass a nonce Aaru checks.
 - Email is a **magic link** (decided 2026-10-09): `POST /v1/auth/email/link` emails a one-time
   link via Resend; `POST /v1/auth/email/verify` exchanges it. No passwords are stored. Links
   live 15 minutes, are single-use (consumed in one `UPDATE … RETURNING`), and are rate-limited

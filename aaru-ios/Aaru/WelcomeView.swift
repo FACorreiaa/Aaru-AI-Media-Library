@@ -9,6 +9,8 @@ struct WelcomeView: View {
     var onAppleAuthorization: (ASAuthorization, String) -> Void
     var onAppleError: (any Error) -> Void
     var onContinueWithEmail: () -> Void
+    /// Nil when this build has no Google client: the button is not shown.
+    var onContinueWithGoogle: (() -> Void)?
 
     @Environment(\.colorScheme) private var scheme
     @State private var nonce = ""
@@ -102,6 +104,10 @@ struct WelcomeView: View {
             .signInWithAppleButtonStyle(scheme == .dark ? .white : .black)
             .frame(height: 52)
             .clipShape(Capsule())
+            if let onContinueWithGoogle {
+                Button("Continue with Google", action: onContinueWithGoogle)
+                    .buttonStyle(OutlineCapsuleButtonStyle())
+            }
             Button("Continue with email", action: onContinueWithEmail)
                 .buttonStyle(OutlineCapsuleButtonStyle())
             #if DEBUG || BETA

@@ -36,7 +36,10 @@ export const getSession = createServerFn({ method: 'GET' }).handler(
 )
 
 export const getSignInConfig = createServerFn({ method: 'GET' }).handler(
-  async () => ({ appleServicesId: env.APPLE_SERVICES_ID || null }),
+  async () => ({
+    appleServicesId: env.APPLE_SERVICES_ID || null,
+    googleClientId: env.GOOGLE_CLIENT_ID || null,
+  }),
 )
 
 export const sendCode = createServerFn({ method: 'POST' })
@@ -78,6 +81,39 @@ export const signInWithApple = createServerFn({ method: 'POST' })
       )
     }
     setCookie(SESSION_COOKIE, session.token, sessionCookieOptions)
+  })
+
+const googleCredential = z.object({
+  idToken: z.string().min(1),
+  nonce: z.string().min(1),
+})
+
+export const signInWithGoogle = createServerFn({ method: 'POST' })
+  .validator(googleCredential)
+  .handler(async ({ data }) => {
+    const { data: session, error } = await api().POST('/v1/auth/google', {
+      body: data,
+    })
+    if (!session) {
+      throw new Error(
+        errorMessage(error, 'The Google sign-in could not be verified.'),
+      )
+    }
+    setCookie(SESSION_COOKIE, session.token, sessionCookieOptions)
+  })
+
+/** Adds Google to the signed-in account. Another account's Google is refused, never merged. */
+export const linkGoogle = createServerFn({ method: 'POST' })
+  .validator(googleCredential)
+  .handler(async ({ data }) => {
+    const token = getCookie(SESSION_COOKIE)
+    if (!token) throw new Error('Sign in again to link Google.')
+    const { data: me, error } = await api(token).POST(
+      '/v1/me/identities/google',
+      { body: data },
+    )
+    if (!me) throw new Error(errorMessage(error, 'Google was not linked.'))
+    return me
   })
 
 /** Ends the session on the server when it can, and always in this browser. */

@@ -6,5 +6,7 @@
 	<string>$(API_BASE_URL)</string>
 	<key>AaruAppGroupID</key>
 	<string>$(APP_GROUP_ID)</string>
+	<key>AaruGoogleClientID</key>
+	<string>$(GOOGLE_CLIENT_ID)</string>
 </dict>
 </plist>

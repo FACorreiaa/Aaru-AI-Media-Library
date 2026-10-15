@@ -16,6 +16,9 @@
     "CHANNEL": "production",
     // Sign in with Apple on the web needs a Services ID and a verified domain. Empty hides the button.
     "APPLE_SERVICES_ID": "",
+    // Sign in with Google: the web OAuth client id (public). Its origin list must hold this
+    // Worker's origin. Empty hides the button.
+    "GOOGLE_CLIENT_ID": "1021071971791-bi4c3f06bokufcrd612t4m1homqd8l2k.apps.googleusercontent.com",
   },
   "env": {
     "staging": {
@@ -24,6 +27,7 @@
         "API_BASE_URL": "https://api.aaru.example",
         "CHANNEL": "beta",
         "APPLE_SERVICES_ID": "",
+        "GOOGLE_CLIENT_ID": "1021071971791-bi4c3f06bokufcrd612t4m1homqd8l2k.apps.googleusercontent.com",
       },
     },
   },

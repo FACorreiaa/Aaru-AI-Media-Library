@@ -9,6 +9,7 @@ struct RootView: View {
     let lists: ListsModel
     let imports: ImportsModel
     @Environment(SessionStore.self) private var session
+    @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
 
@@ -36,7 +37,19 @@ struct RootView: View {
                             errorMessage = error.localizedDescription
                         }
                     },
-                    onContinueWithEmail: { showsEmailSignIn = true }
+                    onContinueWithEmail: { showsEmailSignIn = true },
+                    onContinueWithGoogle: AppEnvironment.googleClientID.map { clientID in
+                        {
+                            Task {
+                                await run {
+                                    let google = GoogleSignIn(clientID: clientID)
+                                    if let token = try await google.token(using: webAuthenticationSession) {
+                                        try await flow.signInWithGoogle(token)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 )
                 .sheet(isPresented: $showsEmailSignIn) {
                     EmailSignInSheet(flow: flow)

@@ -29,6 +29,24 @@ struct AuthFlow {
         }
     }
 
+    // MARK: Sign in with Google (AUTH-005)
+
+    func signInWithGoogle(_ token: GoogleSignIn.Token) async throws {
+        switch try await client().signInWithGoogle(body: .json(.init(idToken: token.idToken, nonce: token.nonce))) {
+        case let .ok(success): try session.signIn(token: success.body.json.token)
+        case let .default(_, error): throw try AuthFlowError(error.body.json.message)
+        }
+    }
+
+    /// Adds Google to the signed-in account. Refused when that Google account is already another
+    /// Aaru account's; the two are never merged.
+    func linkGoogle(_ token: GoogleSignIn.Token) async throws -> Components.Schemas.Me {
+        switch try await client().linkGoogle(body: .json(.init(idToken: token.idToken, nonce: token.nonce))) {
+        case let .ok(success): return try success.body.json
+        case let .default(_, error): throw try AuthFlowError(error.body.json.message)
+        }
+    }
+
     // MARK: Email code
 
     func sendCode(to email: String) async throws {

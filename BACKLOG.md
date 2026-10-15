@@ -380,9 +380,12 @@ ID token against Google's JWKS (shared cache with Apple; `iss`, `aud` ∈ `GOOGL
 `exp`, nonce when sent) and signs in or creates the account keyed on Google's `sub`; the email
 is kept only when Google marks it verified. `POST /v1/me/identities/google` links Google to the
 signed-in account; a Google account already on another user is a 409, never a merge. Without
-`GOOGLE_CLIENT_IDS` both routes answer 503. **Next:** the iOS/Mac and web buttons, once the owner
-creates the Google OAuth clients (iOS client for `com.fernandocorreia.aaru` and `.beta`; web
-client with the domain's origin).
+`GOOGLE_CLIENT_IDS` both routes answer 503. Clients: the Google OAuth clients exist (iOS for
+`com.fernandocorreia.aaru`, iOS for `.beta`, web). iOS/Mac sign in through the OAuth code flow
+with PKCE in the system sheet (no Google SDK; Debug/Beta use the beta client, Release the main
+one) and Settings offers "Link Google account"; the web uses Google Identity Services' button on
+sign-in and in Settings (`GOOGLE_CLIENT_ID` Worker var). Every deployed web origin must be listed
+on the web client.
 
 ---
 

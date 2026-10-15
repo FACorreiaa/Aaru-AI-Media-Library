@@ -7,6 +7,8 @@ import {
 import { Show, createSignal } from 'solid-js'
 import { AppleSignInButton } from '../components/AppleSignInButton'
 import type { AppleCredential } from '../components/AppleSignInButton'
+import { GoogleSignInButton } from '../components/GoogleSignInButton'
+import type { GoogleCredential } from '../components/GoogleSignInButton'
 import { MascotMedallion, Wordmark } from '../components/Brand'
 import {
   getSession,
@@ -14,6 +16,7 @@ import {
   sendCode,
   signInWithApple,
   signInWithCode,
+  signInWithGoogle,
 } from '../lib/session/session'
 
 // The web twin of the Apple apps' welcome screen and email sheet (DESIGN.md §0).
@@ -86,6 +89,12 @@ function SignIn() {
       await signedIn()
     })
 
+  const google = (credential: GoogleCredential) =>
+    void run(async () => {
+      await signInWithGoogle({ data: credential })
+      await signedIn()
+    })
+
   const field =
     'min-h-12 w-full rounded-[14px] border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none'
   const outline =
@@ -121,6 +130,15 @@ function SignIn() {
                 <AppleSignInButton
                   servicesId={servicesId()}
                   onCredential={apple}
+                  onError={setError}
+                />
+              )}
+            </Show>
+            <Show when={config().googleClientId}>
+              {(clientId) => (
+                <GoogleSignInButton
+                  clientId={clientId()}
+                  onCredential={google}
                   onError={setError}
                 />
               )}

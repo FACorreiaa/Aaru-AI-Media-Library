@@ -91,6 +91,9 @@ struct SettingsView: View {
         Section("Account") {
             LabeledContent("Name", value: account?.displayName ?? "Not set")
             LabeledContent("Signed in with", value: providers)
+            if let clientID = AppEnvironment.googleClientID, let account, !account.providers.contains(.google) {
+                LinkGoogleButton(api: api, clientID: clientID, account: $account)
+            }
             Button("Sign out", action: onSignOut)
         }
     }
