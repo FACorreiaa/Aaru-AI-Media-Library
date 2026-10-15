@@ -378,6 +378,57 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/trakt': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import the connected Trakt account. Read and matched in the background, written only after approval. */
+    post: operations['createTraktImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/trakt/connect': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`. */
+    post: operations['connectTrakt']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/trakt/connection': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['getTraktConnection']
+    put?: never
+    post?: never
+    /** Forget the Trakt tokens. Imported items stay. */
+    delete: operations['disconnectTrakt']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/{id}': {
     parameters: {
       query?: never
@@ -539,6 +590,19 @@ export interface components {
       email?: string
       /** @description Six digits; spaces and dashes are ignored. */
       code?: string
+    }
+    TraktConnectRequest: {
+      /** @description Where the browser goes after Trakt (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
+      returnTo: string
+    }
+    TraktConnectStart: {
+      authorizeUrl: string
+    }
+    TraktConnection: {
+      connected: boolean
+      username?: string
+      /** Format: date-time */
+      connectedAt?: string
     }
     ImportJob: {
       /** Format: uuid */
@@ -1599,6 +1663,92 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ImportJob']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createTraktImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Queued. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  connectTrakt: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TraktConnectRequest']
+      }
+    }
+    responses: {
+      /** @description Where to send the browser. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TraktConnectStart']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTraktConnection: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Whether Trakt is connected. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TraktConnection']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  disconnectTrakt: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Disconnected. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

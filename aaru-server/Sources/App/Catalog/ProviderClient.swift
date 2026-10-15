@@ -7,6 +7,8 @@ struct ProviderError: Error, Equatable {
         case notFound
         case unavailable
         case malformed
+        /// The provider refused our credentials (401/403): a revoked user token, never retried.
+        case unauthorized
     }
 
     let provider: String
@@ -74,6 +76,8 @@ struct ProviderClient: Sendable {
                     return response.body
                 case 404:
                     throw ProviderError(provider: name, kind: .notFound)
+                case 401, 403:
+                    throw ProviderError(provider: name, kind: .unauthorized)
                 case 429, 500 ..< 600:
                     retryable = true
                 default:

@@ -464,6 +464,57 @@ paths:
               schema: {$ref: '#/components/schemas/ImportJob'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/imports/trakt:
+    post:
+      operationId: createTraktImport
+      summary: Import the connected Trakt account. Read and matched in the background, written only after approval.
+      responses:
+        '202':
+          description: Queued.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/trakt/connect:
+    post:
+      operationId: connectTrakt
+      summary: >-
+        Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to
+        GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be
+        percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TraktConnectRequest'}
+      responses:
+        '200':
+          description: Where to send the browser.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TraktConnectStart'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/trakt/connection:
+    get:
+      operationId: getTraktConnection
+      responses:
+        '200':
+          description: Whether Trakt is connected.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TraktConnection'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: disconnectTrakt
+      summary: Forget the Trakt tokens. Imported items stay.
+      responses:
+        '204':
+          description: Disconnected.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/imports/{id}:
     parameters:
       - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -671,6 +722,25 @@ components:
         code:
           type: string
           description: Six digits; spaces and dashes are ignored.
+    TraktConnectRequest:
+      type: object
+      required: [returnTo]
+      properties:
+        returnTo:
+          type: string
+          description: Where the browser goes after Trakt (the app's `aaru://` scheme or the web app). Must be allowed by the server.
+    TraktConnectStart:
+      type: object
+      required: [authorizeUrl]
+      properties:
+        authorizeUrl: {type: string}
+    TraktConnection:
+      type: object
+      required: [connected]
+      properties:
+        connected: {type: boolean}
+        username: {type: string}
+        connectedAt: {type: string, format: date-time}
     ImportJob:
       type: object
       required: [id, source, state, stats, createdAt, updatedAt]

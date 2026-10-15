@@ -33,7 +33,16 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let transport = AsyncHTTPTransport(client: .shared)
     let auth = makeAuthService(config: config, stores: stores, transport: transport)
     let catalogs = makeCatalogProviders(config: config, transport: transport)
-    let services = Services.make(stores: stores, catalogs: catalogs, auth: auth)
+    let trakt = config.trakt.map { settings in
+        // Trakt allows 1000 calls per 5 minutes per user; stay well under it.
+        TraktAPI(
+            client: ProviderClient(
+                name: "trakt", transport: transport, pacer: RequestPacer(requestsPerSecond: 2, burst: 10)
+            ),
+            settings: settings
+        )
+    }
+    let services = Services.make(stores: stores, catalogs: catalogs, auth: auth, trakt: trakt)
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -77,6 +86,16 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         OpenAPIRequestContextMiddleware()
     }
     try APIImplementation(stores: stores, services: services).registerHandlers(on: router)
+    // Trakt's browser redirect (IMP-002). Plain, not generated: the generated server would
+    // percent-encode the `aaru://` Location.
+    router.get("/v1/imports/trakt/callback") { request, _ -> Response in
+        let query = request.uri.queryParameters
+        let next = try await services.traktConnect.callback(
+            code: query["code"].map(String.init), state: query["state"].map(String.init),
+            error: query["error"].map(String.init)
+        )
+        return Response(status: .found, headers: [.location: next.absoluteString])
+    }
     return router
 }
 

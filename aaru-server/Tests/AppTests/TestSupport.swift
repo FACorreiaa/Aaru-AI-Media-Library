@@ -61,7 +61,7 @@ func withMigratedStores<T>(_ body: (Stores) async throws -> T) async throws -> T
 
 /// A store that must not be touched by the test using it.
 struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, AnimeMappingStore, LibraryStore,
-    ListStore, ShelfStore, ScheduleStore, ImportJobStore
+    ListStore, ShelfStore, ScheduleStore, ImportJobStore, TraktStore
 {
     func find(ids _: ExternalIDs, type _: AaruCore.MediaType) async throws -> Title? {
         throw Touched()
@@ -248,7 +248,7 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func claimNext(now _: Date, lease _: TimeInterval) async throws -> ClaimedImportJob? {
+    func claimNext(now _: Date, lease _: TimeInterval, userID _: UserID?) async throws -> ClaimedImportJob? {
         throw Touched()
     }
 
@@ -265,6 +265,30 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
     }
 
     func delete(id _: ImportJobID, userID _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func appendRows(_: [ImportRow], jobID _: ImportJobID) async throws {
+        throw Touched()
+    }
+
+    func createAuthRequest(stateHash _: String, request _: TraktAuthRequest, expiresAt _: Date) async throws {
+        throw Touched()
+    }
+
+    func consumeAuthRequest(stateHash _: String, now _: Date) async throws -> TraktAuthRequest? {
+        throw Touched()
+    }
+
+    func saveConnection(_: TraktConnectionRecord, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func connection(userID _: UserID) async throws -> TraktConnectionRecord? {
+        throw Touched()
+    }
+
+    func deleteConnection(userID _: UserID) async throws {
         throw Touched()
     }
 }
@@ -290,7 +314,8 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         lists: untouched,
         shelves: untouched,
         schedule: untouched,
-        importJobs: untouched
+        importJobs: untouched,
+        trakt: untouched
     )
 }
 

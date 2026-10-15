@@ -40,7 +40,7 @@ struct ImportFlowTests {
             if state != "queued", state != "running" {
                 return job
             }
-            guard try await service.runNext() else { break }
+            guard try await service.runNext(for: env.userID) else { break }
         }
         return try await env.send(.get, "/v1/imports/\(id)").json()
     }
@@ -156,20 +156,24 @@ struct ImportFlowTests {
             let start = Date()
             // Lease every runnable job, as a worker would before crashing.
             var first: ClaimedImportJob?
-            while let claimed = try await env.stores.importJobs.claimNext(now: start, lease: 60) {
+            while let claimed = try await env.stores.importJobs.claimNext(now: start, lease: 60, userID: env.userID) {
                 if claimed.job.id == job.id {
                     first = claimed; break
                 }
             }
             #expect(first?.attempts == 1)
             #expect(
-                try await env.stores.importJobs.claimNext(now: start.addingTimeInterval(30), lease: 60)?.job.id
+                try await env.stores.importJobs.claimNext(
+                    now: start.addingTimeInterval(30),
+                    lease: 60,
+                    userID: env.userID
+                )?.job.id
                     != job.id,
                 "still leased"
             )
             var again: ClaimedImportJob?
             while let claimed = try await env.stores.importJobs
-                .claimNext(now: start.addingTimeInterval(61), lease: 60)
+                .claimNext(now: start.addingTimeInterval(61), lease: 60, userID: env.userID)
             {
                 if claimed.job.id == job.id {
                     again = claimed; break
@@ -189,7 +193,7 @@ struct ImportFlowTests {
             env.fake.fail(with: ProviderError(provider: "openlibrary", kind: .unavailable))
             var state: String?
             for _ in 0 ..< 60 {
-                _ = try await service.runNext()
+                _ = try await service.runNext(for: env.userID)
                 clock.advance(by: 120)
                 state = try await (env.send(.get, "/v1/imports/\(id)").json()["job"] as? [String: Any])?["state"]
                     as? String

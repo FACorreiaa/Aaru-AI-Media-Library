@@ -166,13 +166,16 @@ protocol ImportJobStore: Sendable {
     func insert(_ job: ImportJob) async throws
     /// A new job with its parsed rows, in one transaction.
     func insert(_ job: ImportJob, rows: [ImportRow]) async throws
+    /// Rows fetched by the worker (Trakt), for a job created without any.
+    func appendRows(_ rows: [ImportRow], jobID: ImportJobID) async throws
     func update(_ job: ImportJob) async throws
     func job(id: ImportJobID, userID: UserID) async throws -> ImportJob?
     /// Newest first.
     func jobs(userID: UserID, limit: Int) async throws -> [ImportJob]
     /// Leases the oldest runnable job (JOB-001): queued and due, or `running` with an expired
     /// lease because its worker died. Two workers never lease the same job.
-    func claimNext(now: Date, lease: TimeInterval) async throws -> ClaimedImportJob?
+    /// `userID` keeps the claim to one user's jobs (tests running in parallel use it).
+    func claimNext(now: Date, lease: TimeInterval, userID: UserID?) async throws -> ClaimedImportJob?
     /// Puts a failed attempt back in the queue, not before `notBefore`.
     func retry(_ id: ImportJobID, error: String, notBefore: Date, now: Date) async throws
     func rows(jobID: ImportJobID) async throws -> [PlannedRow]
@@ -180,6 +183,31 @@ protocol ImportJobStore: Sendable {
     func savePlan(_ job: ImportJob, rows: [PlannedRow]) async throws
     /// Removes a job and its rows. Library items it created stay; undo is the journal's job.
     func delete(id: ImportJobID, userID: UserID) async throws -> Bool
+}
+
+/// A user's Trakt connection, tokens still sealed.
+struct TraktConnectionRecord: Sendable, Equatable {
+    var sealedAccessToken: String
+    var sealedRefreshToken: String
+    var expiresAt: Date
+    var username: String?
+    var connectedAt: Date
+}
+
+/// One PKCE sign-in in flight.
+struct TraktAuthRequest: Sendable, Equatable {
+    var userID: UserID
+    var codeVerifier: String
+    var returnTo: String
+}
+
+protocol TraktStore: Sendable {
+    func createAuthRequest(stateHash: String, request: TraktAuthRequest, expiresAt: Date) async throws
+    /// Single use: returns the request and deletes it. Nil when unknown or expired.
+    func consumeAuthRequest(stateHash: String, now: Date) async throws -> TraktAuthRequest?
+    func saveConnection(_ connection: TraktConnectionRecord, userID: UserID) async throws
+    func connection(userID: UserID) async throws -> TraktConnectionRecord?
+    func deleteConnection(userID: UserID) async throws
 }
 
 /// Everything handlers may touch, injected once at boot.
@@ -195,4 +223,5 @@ struct Stores: Sendable {
     var shelves: any ShelfStore
     var schedule: any ScheduleStore
     var importJobs: any ImportJobStore
+    var trakt: any TraktStore
 }

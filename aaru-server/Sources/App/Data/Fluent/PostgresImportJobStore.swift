@@ -48,6 +48,17 @@ struct PostgresImportJobStore: ImportJobStore {
         }
     }
 
+    func appendRows(_ rows: [ImportRow], jobID: ImportJobID) async throws {
+        try await sql.transaction { sql in
+            for (index, row) in rows.enumerated() {
+                try await sql.raw("""
+                INSERT INTO import_rows (job_id, idx, row)
+                VALUES (\(bind: jobID.rawValue), \(bind: index), \(bind: row))
+                """).run()
+            }
+        }
+    }
+
     private func insert(_ job: ImportJob, on sql: any SQLDatabase) async throws {
         try await sql.raw("""
         INSERT INTO import_jobs (id, user_id, source, state, stats, error_summary, filename, created_at, updated_at)
@@ -78,15 +89,16 @@ struct PostgresImportJobStore: ImportJobStore {
         """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).compactMap(\.job)
     }
 
-    func claimNext(now: Date, lease: TimeInterval) async throws -> ClaimedImportJob? {
+    func claimNext(now: Date, lease: TimeInterval, userID: UserID?) async throws -> ClaimedImportJob? {
+        let owner: SQLQueryString = userID.map { "AND user_id = \(bind: $0.rawValue)" } ?? ""
         // One statement: SKIP LOCKED means two workers never lease the same job.
         guard let row = try await sql.raw("""
         UPDATE import_jobs SET state = 'running', attempts = attempts + 1,
             locked_until = \(bind: now.addingTimeInterval(lease)), updated_at = \(bind: now)
         WHERE id = (
             SELECT id FROM import_jobs
-            WHERE (state = 'queued' AND (locked_until IS NULL OR locked_until <= \(bind: now)))
-               OR (state = 'running' AND locked_until < \(bind: now))
+            WHERE ((state = 'queued' AND (locked_until IS NULL OR locked_until <= \(bind: now)))
+               OR (state = 'running' AND locked_until < \(bind: now))) \(owner)
             ORDER BY created_at
             FOR UPDATE SKIP LOCKED
             LIMIT 1
