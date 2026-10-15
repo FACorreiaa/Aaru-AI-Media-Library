@@ -24,7 +24,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Title room | `TitleCard`, `SeasonMap` (+ friends watching in 4) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
 | Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 |
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
-| Catch-up calendar | `CalendarMonth` | `GET /v1/calendar` | 2 · M9 |
+| Catch-up calendar | `CalendarMonth` + agenda | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7 |
 | Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage | 2 · M9 |
 | Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | 7 · M13 |
 | Undo ribbon | `UndoRibbon` | action journal + undo endpoint | 1 · M4 |
@@ -60,10 +60,10 @@ refuses and substitutes the nearest catalog piece.
 | `JobLedger` | Import or bulk progress | `importJobId`, step rows, `state`, `stats`, unmatched count |
 | `TonightStrip` | 1–3 next actions | ordered `libraryItemId` + reason + est. minutes |
 | `Shelf` | Filtered library page | `shelfId` or inline query, result page, `isPinned` |
-| `CalendarMonth` | Your airings | month, day → episode refs, agent highlight string |
+| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (dots on phones), selected day, agenda by date with an expandable row (episode name, synopsis, network · time, badge, watched check, open show); agent highlight string later |
 | `MatchTable` | Import reconciliation | `importJobId`, three buckets: matched / needs eyes / unknown |
 | `UndoRibbon` | Last agent write | `actionId`, human summary, expiry, `isUndoable` |
-| `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, network, local time, banner URL, state: watched / premiere / finale / today) |
+| `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, synopsis, network, local time or none when `airTimeKnown` is false, banner URL = `backdropUrl` → poster → tint, state: watched / premiere / new season / finale / today); Monday start |
 | `ContinueRow` | In-progress titles | ordered `libraryItemId`, next `EpisodeKey`, time left, remaining count + duration, `isFinale` |
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |

@@ -104,7 +104,8 @@ with every provider stubbed.
 | M4 Library + journal (LIB-001…004, AUD-001/002) | Done. Journal pruning (90 days / last 20) waits for JOB-001. |
 | M5 Progress (PROG-001…004) | Done. |
 | M6 Lists + shelves (LST-001/002, SHF-001/002) | Done. List writes are journaled and undoable. |
-| CAL-001, UPN-001 | Done. Network/platform is not shown: no provider field is stored for it yet. Shows hydrate when added; refreshing every tracked show on its staleness window needs a job (JOB-001). |
+| CAL-001, UPN-001 | Done. Network comes from TMDB's first network / AniList's first streaming link (2026-10-15); TMDB times are dates only until CAT-011. Shows hydrate when added; refreshing every tracked show on its staleness window needs a job (JOB-001). |
+| APP-010 + catch-up month | Built 2026-10-15 on iPhone, iPad, Mac and web: Calendar destination with Week (CAT grid / iPhone day pager) and Month (Stremio-style posters + agenda). Server adds `backdropUrl`, `network`, `airTimeKnown`, `episodeOverview`; range up to 42 days. Checked with sample data only. |
 
 **P1 gate** (works end to end against the production API on `maat`) is not met until P0's
 deploy steps are done.
