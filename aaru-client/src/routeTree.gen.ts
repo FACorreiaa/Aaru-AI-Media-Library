@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
+import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
 import { Route as AppListsIndexRouteImport } from './routes/app_.lists.index'
 import { Route as AppListsIdRouteImport } from './routes/app_.lists.$id'
@@ -36,6 +37,11 @@ const SignInRoute = SignInRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/app_/settings',
   path: '/app/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/auth/verify',
+  path: '/auth/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppImportsIdRoute = AppImportsIdRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
   '/app/settings': typeof AppSettingsRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
   '/app/settings': typeof AppSettingsRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
   '/app_/settings': typeof AppSettingsRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/app_/imports/$id': typeof AppImportsIdRoute
   '/app_/lists/$id': typeof AppListsIdRoute
   '/app_/title/$id': typeof AppTitleIdRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/sign-in'
     | '/app/settings'
+    | '/auth/verify'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/title/$id'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/sign-in'
     | '/app/settings'
+    | '/auth/verify'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/title/$id'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/sign-in'
     | '/app_/settings'
+    | '/auth/verify'
     | '/app_/imports/$id'
     | '/app_/lists/$id'
     | '/app_/title/$id'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   SignInRoute: typeof SignInRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AuthVerifyRoute: typeof AuthVerifyRoute
   AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
   AppTitleIdRoute: typeof AppTitleIdRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/settings'
       fullPath: '/app/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/verify': {
+      id: '/auth/verify'
+      path: '/auth/verify'
+      fullPath: '/auth/verify'
+      preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/imports/$id': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   SignInRoute: SignInRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AuthVerifyRoute: AuthVerifyRoute,
   AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,
   AppTitleIdRoute: AppTitleIdRoute,
@@ -208,3 +229,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/solid-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

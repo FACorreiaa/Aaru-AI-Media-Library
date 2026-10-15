@@ -71,7 +71,7 @@ struct AppConfig: Sendable {
             email: emailSettings(from: reader),
             openLibraryUserAgent: reader.string(
                 forKey: "open.library.user.agent",
-                default: "Aaru/0.1 (media library; contact: signin@aaru.example)"
+                default: "Aaru/0.1 (media library; contact: signin@aaruapp.com)"
             ),
             trakt: traktSettings(from: reader),
             push: pushSettings(from: reader)
@@ -92,7 +92,7 @@ struct AppConfig: Sendable {
     private static func traktSettings(from reader: ConfigReader) throws -> TraktSettings? {
         guard let clientID = reader.string(forKey: "trakt.client.id"), !clientID.isEmpty else { return nil }
         let redirect = reader.string(
-            forKey: "trakt.redirect.uri", default: "https://api.aaru.example/v1/imports/trakt/callback"
+            forKey: "trakt.redirect.uri", default: "https://api.aaruapp.com/v1/imports/trakt/callback"
         )
         guard let redirectURI = URL(string: redirect) else {
             throw MissingConfigError(environmentName: "TRAKT_REDIRECT_URI", key: "trakt.redirect.uri")
@@ -101,7 +101,10 @@ struct AppConfig: Sendable {
         guard let cipher = try? TokenCipher(base64Key: key) else {
             throw MissingConfigError(environmentName: "TRAKT_TOKEN_KEY (32 bytes, base64)", key: "trakt.token.key")
         }
-        let returns = reader.string(forKey: "trakt.return.prefixes", default: "aaru://,https://aaru.example/")
+        let returns = reader.string(
+            forKey: "trakt.return.prefixes",
+            default: "aaru://,https://aaruapp.com/,https://beta.aaruapp.com/"
+        )
         return TraktSettings(
             clientID: clientID,
             redirectURI: redirectURI,
@@ -112,13 +115,13 @@ struct AppConfig: Sendable {
 
     private static func emailSettings(from reader: ConfigReader) throws -> EmailSettings? {
         guard let apiKey = reader.string(forKey: "resend.api.key"), !apiKey.isEmpty else { return nil }
-        let base = reader.string(forKey: "magic.link.base.url", default: "https://aaru.example/auth/verify")
+        let base = reader.string(forKey: "magic.link.base.url", default: "https://aaruapp.com/auth/verify")
         guard let linkBaseURL = URL(string: base) else {
             throw MissingConfigError(environmentName: "MAGIC_LINK_BASE_URL", key: "magic.link.base.url")
         }
         return EmailSettings(
             resendAPIKey: apiKey,
-            from: reader.string(forKey: "email.from", default: "Aaru <signin@aaru.example>"),
+            from: reader.string(forKey: "email.from", default: "Aaru <signin@aaruapp.com>"),
             linkBaseURL: linkBaseURL
         )
     }

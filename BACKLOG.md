@@ -90,7 +90,7 @@ So the real starting line is P0.
 | REL-003 | Project builds for iOS Simulator and macOS; Beta/Release settings resolve. Side-by-side install on a device needs App IDs registered and real icons. |
 | REL-004 | Lanes and workflows written. Needs ASC records, App IDs, secrets, and one Seed signing run. |
 | REL-005 | Image builds from the repo root and was smoke-tested locally (migrate, fail-fast, health 200); promote workflow written; infra draft PR LuminaVault/LuminaVaultInfra#292. Needs `TMDB_API_KEY` sealed, first image tag, `/data/pg-aaru` on the node, `INFRA_TOKEN`, and the domain. |
-| REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Needs Cloudflare secrets. |
+| REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Domain `aaruapp.com` (Cloudflare, 2026-10-15): prod Worker on `aaruapp.com` (+ `www` → apex 301), beta on `beta.aaruapp.com`, no `workers.dev`; security headers in `src/start.ts`. Needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (token also needs Workers Routes + DNS edit on the zone for the custom domains). |
 
 ### P1 progress (2026-10-09, branch `p1-basics`, stacked on `p0-rails`, not pushed)
 

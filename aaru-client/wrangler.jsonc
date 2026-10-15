@@ -7,12 +7,15 @@
   "compatibility_date": "2026-09-27",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/solid-start/server-entry",
-  "workers_dev": true,
+  // Served only on aaruapp.com hosts: no second *.workers.dev origin to keep in Google's
+  // origin list or to split sessions across. Custom domains get their DNS record and an edge
+  // certificate from Cloudflare on deploy (the deploy token needs Workers Routes and DNS edit
+  // on the aaruapp.com zone).
+  "workers_dev": false,
   "preview_urls": true,
-  // Placeholder host until the domain exists (BACKLOG REL-005). Local dev overrides these in
-  // `.dev.vars` (API_BASE_URL=http://localhost:8080).
+  // Local dev overrides these in `.dev.vars` (API_BASE_URL=http://localhost:8080).
   "vars": {
-    "API_BASE_URL": "https://api.aaru.example",
+    "API_BASE_URL": "https://api.aaruapp.com",
     "CHANNEL": "production",
     // Sign in with Apple on the web needs a Services ID and a verified domain. Empty hides the button.
     "APPLE_SERVICES_ID": "",
@@ -20,15 +23,21 @@
     // Worker's origin. Empty hides the button.
     "GOOGLE_CLIENT_ID": "1021071971791-bi4c3f06bokufcrd612t4m1homqd8l2k.apps.googleusercontent.com",
   },
+  // www answers with a permanent redirect to the apex (src/start.ts).
+  "routes": [
+    { "pattern": "aaruapp.com", "custom_domain": true },
+    { "pattern": "www.aaruapp.com", "custom_domain": true },
+  ],
   "env": {
     "staging": {
       "name": "aaru-client-staging",
       "vars": {
-        "API_BASE_URL": "https://api.aaru.example",
+        "API_BASE_URL": "https://api.aaruapp.com",
         "CHANNEL": "beta",
         "APPLE_SERVICES_ID": "",
         "GOOGLE_CLIENT_ID": "1021071971791-bi4c3f06bokufcrd612t4m1homqd8l2k.apps.googleusercontent.com",
       },
+      "routes": [{ "pattern": "beta.aaruapp.com", "custom_domain": true }],
     },
   },
 }

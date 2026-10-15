@@ -83,6 +83,19 @@ export const signInWithApple = createServerFn({ method: 'POST' })
     setCookie(SESSION_COOKIE, session.token, sessionCookieOptions)
   })
 
+/** The link in the sign-in email. Consumed on a click, never on page load: mail scanners
+ * fetch links, and a GET that signs in would spend the one-time token before the user does. */
+export const signInWithEmailLink = createServerFn({ method: 'POST' })
+  .validator(z.object({ token: z.string().trim().min(1) }))
+  .handler(async ({ data }) => {
+    const { data: session, error } = await api().POST('/v1/auth/email/verify', {
+      body: { token: data.token },
+    })
+    if (!session)
+      throw new Error(errorMessage(error, 'That sign-in link did not work.'))
+    setCookie(SESSION_COOKIE, session.token, sessionCookieOptions)
+  })
+
 const googleCredential = z.object({
   idToken: z.string().min(1),
   nonce: z.string().min(1),
