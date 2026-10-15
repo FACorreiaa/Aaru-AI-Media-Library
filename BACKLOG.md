@@ -756,6 +756,17 @@ Connected sources, start an import, watch job state and stats, see unmatched row
 **Done when:** a running import shows live-ish progress by polling, and a `partial` job
 surfaces its unmatched count with a way to see the rows.
 
+**Progress 2026-10-15 (all three clients):** built for file imports; Trakt waits for IMP-002.
+Settings (from the library's More menu on Apple, a "Settings" link on the web): account name and
+sign-in providers, sign out, delete account (confirmed, cannot be undone), "Import from IMDb /
+Letterboxd / Goodreads" with a file picker, and every import with its state. An import's page
+polls every 2 s while matching, then shows the plan (new, filled in, already there, not matched,
+with each unmatched row's reason) with Approve or Discard; after approval it shows the result and
+a `partial` job keeps its unmatched rows listed. Verified on the web against a local API with a
+real Goodreads-format file matched through Open Library: progress then plan, title + author
+matched a book with no ISBN, approve added two books and turned a custom shelf into a list. The
+Apple screens build but were not driven in the simulator.
+
 ### APP-008 · Mac-specific pass · M
 **Needs:** APP-005.
 Keyboard navigation, multi-column layout, menu bar commands. Same target.

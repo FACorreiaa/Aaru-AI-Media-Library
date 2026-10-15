@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as AppSettingsRouteImport } from './routes/app_.settings'
+import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
 import { Route as AppListsIndexRouteImport } from './routes/app_.lists.index'
 import { Route as AppListsIdRouteImport } from './routes/app_.lists.$id'
 import { Route as AppTitleIdRouteImport } from './routes/app_.title.$id'
@@ -29,6 +31,16 @@ const AppRoute = AppRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/app_/settings',
+  path: '/app/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppImportsIdRoute = AppImportsIdRouteImport.update({
+  id: '/app_/imports/$id',
+  path: '/app/imports/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppListsIndexRoute = AppListsIndexRouteImport.update({
@@ -51,6 +63,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
   '/app/lists/': typeof AppListsIndexRoute
@@ -59,6 +73,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
   '/app/lists': typeof AppListsIndexRoute
@@ -68,6 +84,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app_/settings': typeof AppSettingsRoute
+  '/app_/imports/$id': typeof AppImportsIdRoute
   '/app_/lists/$id': typeof AppListsIdRoute
   '/app_/title/$id': typeof AppTitleIdRoute
   '/app_/lists/': typeof AppListsIndexRoute
@@ -78,6 +96,8 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/sign-in'
+    | '/app/settings'
+    | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/title/$id'
     | '/app/lists/'
@@ -86,6 +106,8 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/sign-in'
+    | '/app/settings'
+    | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/title/$id'
     | '/app/lists'
@@ -94,6 +116,8 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/sign-in'
+    | '/app_/settings'
+    | '/app_/imports/$id'
     | '/app_/lists/$id'
     | '/app_/title/$id'
     | '/app_/lists/'
@@ -103,6 +127,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRoute
   SignInRoute: typeof SignInRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
   AppTitleIdRoute: typeof AppTitleIdRoute
   AppListsIndexRoute: typeof AppListsIndexRoute
@@ -129,6 +155,20 @@ declare module '@tanstack/solid-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/settings': {
+      id: '/app_/settings'
+      path: '/app/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/imports/$id': {
+      id: '/app_/imports/$id'
+      path: '/app/imports/$id'
+      fullPath: '/app/imports/$id'
+      preLoaderRoute: typeof AppImportsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/lists/': {
@@ -159,6 +199,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRoute,
   SignInRoute: SignInRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,
   AppTitleIdRoute: AppTitleIdRoute,
   AppListsIndexRoute: AppListsIndexRoute,
@@ -166,3 +208,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/solid-start'
+declare module '@tanstack/solid-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
