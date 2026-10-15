@@ -23,6 +23,11 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 accountSection
+                #if os(iOS)
+                    if let push = PushRegistrar.current {
+                        NotificationsSection(push: push)
+                    }
+                #endif
                 importSection
                 if !imports.jobs.isEmpty {
                     jobsSection
@@ -266,3 +271,27 @@ struct ImportDetailView: View {
         }
     }
 }
+
+#if os(iOS)
+    /// Airing alerts: a new episode of a show you are watching.
+    private struct NotificationsSection: View {
+        let push: PushRegistrar
+
+        var body: some View {
+            Section {
+                Toggle(
+                    "New episodes",
+                    isOn: Binding(get: { push.airing }, set: { value in Task { await push.setAiring(value) } })
+                )
+                if let problem = push.problem {
+                    Text(problem).font(.footnote).foregroundStyle(.red)
+                }
+            } header: {
+                Text("Notifications")
+            } footer: {
+                Text("A notification when a new episode of a show you are watching comes out.")
+            }
+            .task { await push.loadSetting() }
+        }
+    }
+#endif

@@ -49,6 +49,9 @@ struct AuthFlow {
 
     /// Ends the session on the server when it can, and always on this device.
     func signOut() async {
+        #if os(iOS)
+            await PushRegistrar.current?.forgetDevice()
+        #endif
         _ = try? await api?.signOut()
         session.signOut()
     }
