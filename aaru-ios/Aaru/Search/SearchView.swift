@@ -5,8 +5,10 @@ import SwiftUI
 struct SearchView: View {
     let api: Client?
     let library: LibraryModel
+    let lists: ListsModel
 
     @Environment(\.dismiss) private var dismiss
+    @State private var listTarget: CatalogHit?
     @State private var query = ""
     @State private var kind = MediaKind.film
     @State private var hits: [CatalogHit] = []
@@ -42,6 +44,8 @@ struct SearchView: View {
                         isAdding: adding.contains(key(hit))
                     ) { status in
                         Task { await add(hit, status: status) }
+                    } onAddToList: {
+                        listTarget = hit
                     }
                     .listRowBackground(Color.clear)
                 }
@@ -59,6 +63,13 @@ struct SearchView: View {
             .navigationTitle("Search")
             .searchable(text: $query, prompt: kind == .book ? "Title, author or ISBN" : "Title")
             .task(id: SearchKey(query: query, kind: kind)) { await search() }
+            .sheet(item: $listTarget) { hit in
+                ListPickerSheet(
+                    ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
+                    titleName: hit.title,
+                    lists: lists
+                )
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -115,7 +126,7 @@ struct SearchView: View {
     }
 
     private func key(_ hit: CatalogHit) -> String {
-        hit.ids.keys.sorted().first ?? "\(hit.title)-\(hit.year ?? 0)"
+        hit.id
     }
 }
 
@@ -125,6 +136,7 @@ private struct SearchHitRow: View {
     let isOnShelf: Bool
     let isAdding: Bool
     let onAdd: (LibraryStatus) -> Void
+    let onAddToList: () -> Void
 
     var body: some View {
         HStack(spacing: 14) {
@@ -150,6 +162,8 @@ private struct SearchHitRow: View {
                     ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
                         Button(status.label) { onAdd(status) }
                     }
+                    Divider()
+                    Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
                 } label: {
                     Text("Add")
                         .font(.subheadline.weight(.semibold))

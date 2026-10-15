@@ -6,6 +6,7 @@ import AaruAPI
 final class AppServices {
     let session: SessionStore
     let library = LibraryModel()
+    let lists: ListsModel
     /// `nil` only when the build has no API host configured.
     let api: Client?
 
@@ -21,5 +22,6 @@ final class AppServices {
                 )
             )
         }
+        lists = ListsModel(api: api)
     }
 }

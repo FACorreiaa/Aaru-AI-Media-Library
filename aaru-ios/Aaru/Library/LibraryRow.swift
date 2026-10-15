@@ -107,3 +107,10 @@ extension Components.Schemas.ExternalIds {
         return Set(pairs.compactMap { name, value in value.map { "\(name):\($0)" } })
     }
 }
+
+extension CatalogHit: @retroactive Identifiable {
+    /// A provider key when there is one, so the same title from two searches is one hit.
+    public var id: String {
+        ids.keys.sorted().first ?? "\(title)-\(year ?? 0)"
+    }
+}

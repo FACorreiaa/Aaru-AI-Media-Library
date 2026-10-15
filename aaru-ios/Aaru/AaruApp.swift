@@ -12,7 +12,7 @@ struct AaruApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(api: services.api, library: services.library)
+            RootView(api: services.api, library: services.library, lists: services.lists)
                 .environment(services.session)
                 .task {
                     AppGroup.lastAppLaunch = .now

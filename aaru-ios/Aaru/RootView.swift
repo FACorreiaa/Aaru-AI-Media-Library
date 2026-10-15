@@ -6,6 +6,7 @@ import SwiftUI
 struct RootView: View {
     let api: Client?
     let library: LibraryModel
+    let lists: ListsModel
     @Environment(SessionStore.self) private var session
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -17,7 +18,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isSignedIn {
-                LibraryView(api: api, library: library) {
+                LibraryView(api: api, library: library, lists: lists) {
                     Task { await flow.signOut() }
                 }
             } else {
@@ -43,6 +44,7 @@ struct RootView: View {
         .onChange(of: session.isSignedIn) { _, signedIn in
             if !signedIn {
                 library.reset()
+                lists.reset()
             }
         }
         .alert(
@@ -69,6 +71,6 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView(api: nil, library: LibraryModel())
+    RootView(api: nil, library: LibraryModel(), lists: ListsModel(api: nil))
         .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
 }

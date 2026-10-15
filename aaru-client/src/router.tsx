@@ -1,6 +1,6 @@
 import { createRouter as createTanStackRouter } from '@tanstack/solid-router'
 import { routeTree } from './routeTree.gen'
-import { RouteError } from './components/RouteError'
+import { NotFound, RouteError } from './components/RouteError'
 
 import { getContext } from './integrations/tanstack-query/provider'
 
@@ -14,6 +14,7 @@ export function getRouter() {
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     defaultErrorComponent: RouteError,
+    defaultNotFoundComponent: NotFound,
   })
 
   return router
