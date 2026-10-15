@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
+import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
 import { Route as AppListsIndexRouteImport } from './routes/app_.lists.index'
@@ -37,6 +38,11 @@ const SignInRoute = SignInRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/app_/settings',
   path: '/app/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppWeekRoute = AppWeekRouteImport.update({
+  id: '/app_/week',
+  path: '/app/week',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
   '/app_/settings': typeof AppSettingsRoute
+  '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/app_/imports/$id': typeof AppImportsIdRoute
   '/app_/lists/$id': typeof AppListsIdRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/sign-in'
     | '/app/settings'
+    | '/app/week'
     | '/auth/verify'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/sign-in'
     | '/app/settings'
+    | '/app/week'
     | '/auth/verify'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/sign-in'
     | '/app_/settings'
+    | '/app_/week'
     | '/auth/verify'
     | '/app_/imports/$id'
     | '/app_/lists/$id'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   SignInRoute: typeof SignInRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppWeekRoute: typeof AppWeekRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
   AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
@@ -175,6 +188,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/settings'
       fullPath: '/app/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/week': {
+      id: '/app_/week'
+      path: '/app/week'
+      fullPath: '/app/week'
+      preLoaderRoute: typeof AppWeekRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/verify': {
@@ -220,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   SignInRoute: SignInRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppWeekRoute: AppWeekRoute,
   AuthVerifyRoute: AuthVerifyRoute,
   AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,
