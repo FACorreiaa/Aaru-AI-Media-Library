@@ -124,6 +124,31 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/lists/{id}/order`.
     /// - Remark: Generated from `#/paths//v1/lists/{id}/order/put(reorderList)`.
     func reorderList(_ input: Operations.ReorderList.Input) async throws -> Operations.ReorderList.Output
+    /// The user's imports, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/imports`.
+    /// - Remark: Generated from `#/paths//v1/imports/get(listImports)`.
+    func listImports(_ input: Operations.ListImports.Input) async throws -> Operations.ListImports.Output
+    /// Upload an export file. It is parsed now, matched in the background, and written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/csv`.
+    /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)`.
+    func createCSVImport(_ input: Operations.CreateCSVImport.Input) async throws -> Operations.CreateCSVImport.Output
+    /// One import with every row and what its plan does with it.
+    ///
+    /// - Remark: HTTP `GET /v1/imports/{id}`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/get(getImport)`.
+    func getImport(_ input: Operations.GetImport.Input) async throws -> Operations.GetImport.Output
+    /// Discard an import. Library items it already created stay; undo the import action for those.
+    ///
+    /// - Remark: HTTP `DELETE /v1/imports/{id}`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/delete(deleteImport)`.
+    func deleteImport(_ input: Operations.DeleteImport.Input) async throws -> Operations.DeleteImport.Output
+    /// Approve the plan. Writes it as one undoable action.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/apply`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)`.
+    func applyImport(_ input: Operations.ApplyImport.Input) async throws -> Operations.ApplyImport.Output
     /// - Remark: HTTP `GET /v1/shelves`.
     /// - Remark: Generated from `#/paths//v1/shelves/get(listShelves)`.
     func listShelves(_ input: Operations.ListShelves.Input) async throws -> Operations.ListShelves.Output
@@ -464,6 +489,67 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// The user's imports, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/imports`.
+    /// - Remark: Generated from `#/paths//v1/imports/get(listImports)`.
+    public func listImports(headers: Operations.ListImports.Input.Headers = .init()) async throws -> Operations.ListImports.Output {
+        try await listImports(Operations.ListImports.Input(headers: headers))
+    }
+    /// Upload an export file. It is parsed now, matched in the background, and written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/csv`.
+    /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)`.
+    public func createCSVImport(
+        query: Operations.CreateCSVImport.Input.Query,
+        headers: Operations.CreateCSVImport.Input.Headers = .init(),
+        body: Operations.CreateCSVImport.Input.Body
+    ) async throws -> Operations.CreateCSVImport.Output {
+        try await createCSVImport(Operations.CreateCSVImport.Input(
+            query: query,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// One import with every row and what its plan does with it.
+    ///
+    /// - Remark: HTTP `GET /v1/imports/{id}`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/get(getImport)`.
+    public func getImport(
+        path: Operations.GetImport.Input.Path,
+        headers: Operations.GetImport.Input.Headers = .init()
+    ) async throws -> Operations.GetImport.Output {
+        try await getImport(Operations.GetImport.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Discard an import. Library items it already created stay; undo the import action for those.
+    ///
+    /// - Remark: HTTP `DELETE /v1/imports/{id}`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/delete(deleteImport)`.
+    public func deleteImport(
+        path: Operations.DeleteImport.Input.Path,
+        headers: Operations.DeleteImport.Input.Headers = .init()
+    ) async throws -> Operations.DeleteImport.Output {
+        try await deleteImport(Operations.DeleteImport.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Approve the plan. Writes it as one undoable action.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/apply`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)`.
+    public func applyImport(
+        path: Operations.ApplyImport.Input.Path,
+        headers: Operations.ApplyImport.Input.Headers = .init()
+    ) async throws -> Operations.ApplyImport.Output {
+        try await applyImport(Operations.ApplyImport.Input(
+            path: path,
+            headers: headers
+        ))
+    }
     /// - Remark: HTTP `GET /v1/shelves`.
     /// - Remark: Generated from `#/paths//v1/shelves/get(listShelves)`.
     public func listShelves(headers: Operations.ListShelves.Input.Headers = .init()) async throws -> Operations.ListShelves.Output {
@@ -724,6 +810,251 @@ public enum Components {
                 case token
                 case email
                 case code
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ImportJob`.
+        public struct ImportJob: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ImportJob/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
+            @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case trakt = "trakt"
+                case imdbCsv = "imdb_csv"
+                case letterboxdCsv = "letterboxd_csv"
+                case goodreadsCsv = "goodreads_csv"
+                case catList = "cat_list"
+                case catIcs = "cat_ics"
+            }
+            /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
+            public var source: Components.Schemas.ImportJob.SourcePayload
+            /// `planned` waits for approval; nothing is written before it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportJob/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case queued = "queued"
+                case running = "running"
+                case planned = "planned"
+                case succeeded = "succeeded"
+                case failed = "failed"
+                case partial = "partial"
+            }
+            /// `planned` waits for approval; nothing is written before it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportJob/state`.
+            public var state: Components.Schemas.ImportJob.StatePayload
+            /// - Remark: Generated from `#/components/schemas/ImportJob/stats`.
+            public var stats: Components.Schemas.ImportStats
+            /// - Remark: Generated from `#/components/schemas/ImportJob/errorSummary`.
+            public var errorSummary: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ImportJob/filename`.
+            public var filename: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ImportJob/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/ImportJob/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `ImportJob`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - source:
+            ///   - state: `planned` waits for approval; nothing is written before it.
+            ///   - stats:
+            ///   - errorSummary:
+            ///   - filename:
+            ///   - createdAt:
+            ///   - updatedAt:
+            public init(
+                id: Swift.String,
+                source: Components.Schemas.ImportJob.SourcePayload,
+                state: Components.Schemas.ImportJob.StatePayload,
+                stats: Components.Schemas.ImportStats,
+                errorSummary: Swift.String? = nil,
+                filename: Swift.String? = nil,
+                createdAt: Foundation.Date,
+                updatedAt: Foundation.Date
+            ) {
+                self.id = id
+                self.source = source
+                self.state = state
+                self.stats = stats
+                self.errorSummary = errorSummary
+                self.filename = filename
+                self.createdAt = createdAt
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case source
+                case state
+                case stats
+                case errorSummary
+                case filename
+                case createdAt
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ImportStats`.
+        public struct ImportStats: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ImportStats/created`.
+            public var created: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ImportStats/updated`.
+            public var updated: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ImportStats/skipped`.
+            public var skipped: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ImportStats/unmatched`.
+            public var unmatched: Swift.Int
+            /// Creates a new `ImportStats`.
+            ///
+            /// - Parameters:
+            ///   - created:
+            ///   - updated:
+            ///   - skipped:
+            ///   - unmatched:
+            public init(
+                created: Swift.Int,
+                updated: Swift.Int,
+                skipped: Swift.Int,
+                unmatched: Swift.Int
+            ) {
+                self.created = created
+                self.updated = updated
+                self.skipped = skipped
+                self.unmatched = unmatched
+            }
+            public enum CodingKeys: String, CodingKey {
+                case created
+                case updated
+                case skipped
+                case unmatched
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ImportList`.
+        public struct ImportList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ImportList/items`.
+            public var items: [Components.Schemas.ImportJob]
+            /// Creates a new `ImportList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.ImportJob]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ImportRow`.
+        public struct ImportRow: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ImportRow/index`.
+            public var index: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ImportRow/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ImportRow/year`.
+            public var year: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ImportRow/author`.
+            public var author: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ImportRow/type`.
+            public var _type: Components.Schemas.MediaType
+            /// - Remark: Generated from `#/components/schemas/ImportRow/sourceKey`.
+            public var sourceKey: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ImportRow/ids`.
+            public var ids: Components.Schemas.ExternalIds?
+            /// - Remark: Generated from `#/components/schemas/ImportRow/status`.
+            public var status: Components.Schemas.LibraryStatus?
+            /// - Remark: Generated from `#/components/schemas/ImportRow/rating`.
+            public var rating: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ImportRow/outcome`.
+            @frozen public enum OutcomePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case pending = "pending"
+                case create = "create"
+                case update = "update"
+                case skip = "skip"
+                case unmatched = "unmatched"
+            }
+            /// - Remark: Generated from `#/components/schemas/ImportRow/outcome`.
+            public var outcome: Components.Schemas.ImportRow.OutcomePayload
+            /// - Remark: Generated from `#/components/schemas/ImportRow/reason`.
+            public var reason: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ImportRow/titleId`.
+            public var titleId: Swift.String?
+            /// Creates a new `ImportRow`.
+            ///
+            /// - Parameters:
+            ///   - index:
+            ///   - title:
+            ///   - year:
+            ///   - author:
+            ///   - _type:
+            ///   - sourceKey:
+            ///   - ids:
+            ///   - status:
+            ///   - rating:
+            ///   - outcome:
+            ///   - reason:
+            ///   - titleId:
+            public init(
+                index: Swift.Int,
+                title: Swift.String,
+                year: Swift.Int? = nil,
+                author: Swift.String? = nil,
+                _type: Components.Schemas.MediaType,
+                sourceKey: Swift.String? = nil,
+                ids: Components.Schemas.ExternalIds? = nil,
+                status: Components.Schemas.LibraryStatus? = nil,
+                rating: Swift.Double? = nil,
+                outcome: Components.Schemas.ImportRow.OutcomePayload,
+                reason: Swift.String? = nil,
+                titleId: Swift.String? = nil
+            ) {
+                self.index = index
+                self.title = title
+                self.year = year
+                self.author = author
+                self._type = _type
+                self.sourceKey = sourceKey
+                self.ids = ids
+                self.status = status
+                self.rating = rating
+                self.outcome = outcome
+                self.reason = reason
+                self.titleId = titleId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case index
+                case title
+                case year
+                case author
+                case _type = "type"
+                case sourceKey
+                case ids
+                case status
+                case rating
+                case outcome
+                case reason
+                case titleId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ImportDetail`.
+        public struct ImportDetail: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ImportDetail/job`.
+            public var job: Components.Schemas.ImportJob
+            /// - Remark: Generated from `#/components/schemas/ImportDetail/rows`.
+            public var rows: [Components.Schemas.ImportRow]
+            /// Creates a new `ImportDetail`.
+            ///
+            /// - Parameters:
+            ///   - job:
+            ///   - rows:
+            public init(
+                job: Components.Schemas.ImportJob,
+                rows: [Components.Schemas.ImportRow]
+            ) {
+                self.job = job
+                self.rows = rows
+            }
+            public enum CodingKeys: String, CodingKey {
+                case job
+                case rows
             }
         }
         /// - Remark: Generated from `#/components/schemas/Session`.
@@ -6059,6 +6390,731 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/lists/{id}/order/put(reorderList)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The user's imports, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/imports`.
+    /// - Remark: Generated from `#/paths//v1/imports/get(listImports)`.
+    public enum ListImports {
+        public static let id: Swift.String = "listImports"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListImports.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListImports.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListImports.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListImports.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ImportList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListImports.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListImports.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Up to 50 imports.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/get(listImports)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListImports.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListImports.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/get(listImports)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Upload an export file. It is parsed now, matched in the background, and written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/csv`.
+    /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)`.
+    public enum CreateCSVImport {
+        public static let id: Swift.String = "createCSVImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
+                @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case imdb = "imdb"
+                    case letterboxd = "letterboxd"
+                    case goodreads = "goodreads"
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
+                public var source: Operations.CreateCSVImport.Input.Query.SourcePayload
+                /// The file's name. Letterboxd's watchlist export is told apart by it.
+                ///
+                /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/filename`.
+                public var filename: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - source:
+                ///   - filename: The file's name. Letterboxd's watchlist export is told apart by it.
+                public init(
+                    source: Operations.CreateCSVImport.Input.Query.SourcePayload,
+                    filename: Swift.String? = nil
+                ) {
+                    self.source = source
+                    self.filename = filename
+                }
+            }
+            public var query: Operations.CreateCSVImport.Input.Query
+            /// - Remark: Generated from `#/paths/v1/imports/csv/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCSVImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCSVImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateCSVImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/csv/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/csv/POST/requestBody/content/text\/csv`.
+                case csv(OpenAPIRuntime.HTTPBody)
+            }
+            public var body: Operations.CreateCSVImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            ///   - body:
+            public init(
+                query: Operations.CreateCSVImport.Input.Query,
+                headers: Operations.CreateCSVImport.Input.Headers = .init(),
+                body: Operations.CreateCSVImport.Input.Body
+            ) {
+                self.query = query
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/csv/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/csv/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateCSVImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateCSVImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued for matching.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateCSVImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateCSVImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// One import with every row and what its plan does with it.
+    ///
+    /// - Remark: HTTP `GET /v1/imports/{id}`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/get(getImport)`.
+    public enum GetImport {
+        public static let id: Swift.String = "getImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetImport.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetImport.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetImport.Input.Path,
+                headers: Operations.GetImport.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ImportDetail)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportDetail {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetImport.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetImport.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The import.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/get(getImport)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetImport.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetImport.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/get(getImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Discard an import. Library items it already created stay; undo the import action for those.
+    ///
+    /// - Remark: HTTP `DELETE /v1/imports/{id}`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/delete(deleteImport)`.
+    public enum DeleteImport {
+        public static let id: Swift.String = "deleteImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DeleteImport.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteImport.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeleteImport.Input.Path,
+                headers: Operations.DeleteImport.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Discarded.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/delete(deleteImport)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteImport.Output.NoContent)
+            /// Discarded.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/delete(deleteImport)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteImport.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/delete(deleteImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Approve the plan. Writes it as one undoable action.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/apply`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)`.
+    public enum ApplyImport {
+        public static let id: Swift.String = "applyImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/apply/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/apply/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.ApplyImport.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/apply/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApplyImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApplyImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ApplyImport.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.ApplyImport.Input.Path,
+                headers: Operations.ApplyImport.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/apply/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/apply/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ApplyImport.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ApplyImport.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Applied.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ApplyImport.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ApplyImport.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

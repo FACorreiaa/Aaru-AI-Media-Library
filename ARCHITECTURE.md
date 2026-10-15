@@ -118,7 +118,8 @@ Phases 0–2 do not need continuous scrobble positions. Scrobbles arrive in Phas
 
 - `id`, `userId`
 - `source` — `trakt` | `imdb_csv` | `letterboxd_csv` | `goodreads_csv` | `cat_list` | `cat_ics`
-- `state` — `queued` | `running` | `succeeded` | `failed` | `partial`
+- `state` — `queued` | `running` | `planned` | `succeeded` | `failed` | `partial` (`planned` waits
+  for the user's approval; nothing is written before it)
 - `stats` — created / updated / skipped / unmatched
 - `errorSummary`
 
@@ -254,7 +255,9 @@ POST   /v1/actions/{id}/undo
 GET    /v1/imports
 POST   /v1/imports/trakt/connect          # start OAuth
 GET    /v1/imports/trakt/callback
-POST   /v1/imports/csv                    # multipart, source=imdb|letterboxd|goodreads
+POST   /v1/imports/csv                    # text/csv body; ?source=imdb|letterboxd|goodreads&filename=
+POST   /v1/imports/{id}/apply             # approve the plan: one journaled, undoable action
+DELETE /v1/imports/{id}                   # discard
 POST   /v1/imports/cat                    # text list or ics
 POST   /v1/imports/capture                # one-shot capture: text | image | url
 GET    /v1/imports/{id}
@@ -385,16 +388,23 @@ Unmatched rows are counted and listed on the job; they are not silently dropped 
 ## Import pipeline
 
 ```text
-POST /imports/*  →  row in import_jobs (queued)
-                 →  worker
-                      1. fetch or parse source
-                      2. map each row to MediaRef (exact ids → match_aliases → title+year+type)
-                      3. hydrate Title (IDs + TMDB/Open Library)
-                      4. upsert LibraryItem
-                      5. apply progress/ratings if present
-                      6. mark job succeeded / partial / failed
-                      7. after the job: promote confirmed corrections into match_aliases
+POST /imports/*  →  parse the file (bounded, 5 MB) into import_rows; the file is not kept
+                 →  row in import_jobs (queued)
+                 →  worker (leased: a job whose worker died runs again when the lease ends;
+                    3 attempts with backoff, then failed with an errorSummary)
+                      1. map each row to MediaRef (exact ids → title+year+type; match_aliases later)
+                      2. hydrate Title (IDs + TMDB/Open Library)
+                      3. decide each row: create / update (fill-empty) / skip / unmatched
+                      4. job → planned (nothing written yet)
+POST /imports/{id}/apply  →  decide again against the current library, then write every
+                    create, update and list membership as ONE journaled batch action, so the
+                    whole import undoes in one tap → succeeded / partial
 ```
+
+File imports are a raw `text/csv` body rather than multipart: one file per request, and the
+`filename` query parameter is all the extra the parsers need (Letterboxd's watchlist and watched
+exports share columns). IMDb episode rows are listed as unmatched with a reason rather than
+rolled up to their show (decided for IMP-006).
 
 Merge when the same user imports several sources, in order:
 

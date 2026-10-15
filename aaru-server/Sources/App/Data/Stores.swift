@@ -156,10 +156,30 @@ protocol ShelfStore: Sendable {
     func delete(id: UUID, userID: UserID) async throws -> Bool
 }
 
+/// A job the worker leased, and how many times it has been tried (this attempt included).
+struct ClaimedImportJob: Sendable {
+    var job: ImportJob
+    var attempts: Int
+}
+
 protocol ImportJobStore: Sendable {
     func insert(_ job: ImportJob) async throws
+    /// A new job with its parsed rows, in one transaction.
+    func insert(_ job: ImportJob, rows: [ImportRow]) async throws
     func update(_ job: ImportJob) async throws
     func job(id: ImportJobID, userID: UserID) async throws -> ImportJob?
+    /// Newest first.
+    func jobs(userID: UserID, limit: Int) async throws -> [ImportJob]
+    /// Leases the oldest runnable job (JOB-001): queued and due, or `running` with an expired
+    /// lease because its worker died. Two workers never lease the same job.
+    func claimNext(now: Date, lease: TimeInterval) async throws -> ClaimedImportJob?
+    /// Puts a failed attempt back in the queue, not before `notBefore`.
+    func retry(_ id: ImportJobID, error: String, notBefore: Date, now: Date) async throws
+    func rows(jobID: ImportJobID) async throws -> [PlannedRow]
+    /// Stores each row's outcome and the job's new state and stats, and releases the lease.
+    func savePlan(_ job: ImportJob, rows: [PlannedRow]) async throws
+    /// Removes a job and its rows. Library items it created stay; undo is the journal's job.
+    func delete(id: ImportJobID, userID: UserID) async throws -> Bool
 }
 
 /// Everything handlers may touch, injected once at boot.

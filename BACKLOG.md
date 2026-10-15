@@ -862,6 +862,12 @@ backoff, a dead-letter state, and cancellation.
 **Done when:** killing the process mid-job leaves the job re-runnable rather than stuck in
 `running`, and a job that throws lands in `failed` with an `errorSummary`.
 
+**Progress 2026-10-15:** built for imports (`ImportWorker`, a ServiceLifecycle service in the
+same binary). Jobs are leased with `FOR UPDATE SKIP LOCKED`; an expired lease makes a dead
+worker's job runnable again; 3 attempts with 30 s/60 s backoff, then `failed` with a summary.
+Both done-when conditions are tests. Generalise when a second job kind (show refresh, journal
+pruning) arrives.
+
 ### IMP-001 · Import job contract · M
 **Needs:** JOB-001.
 `GET /v1/imports`, `GET /v1/imports/{id}`. Every importer reports
@@ -870,6 +876,11 @@ dropped.
 
 **Done when:** a job with 3 unmatched rows returns those 3 rows with enough detail (source
 title, year, source ids) for a human to fix them by hand.
+
+**Progress 2026-10-15:** built, with a plan step: `GET /v1/imports`, `GET /v1/imports/{id}`
+(every row with its outcome and reason), `POST /v1/imports/{id}/apply`, `DELETE /v1/imports/{id}`.
+New state `planned`: nothing touches the library until the user approves, and the approval is one
+undoable action.
 
 ### IMP-002 · Trakt OAuth connect · M
 **Needs:** IMP-001, AUTH-001.
@@ -904,6 +915,10 @@ permits skipping the "newer wins" rule in v1.
 **Done when:** importing Letterboxd after Trakt leaves every Trakt rating intact, and a
 test asserts that on a title present in both.
 
+**Progress 2026-10-15:** fill-empty-only is built and tested across any two sources (an existing
+rating survives, an empty one is filled, a status is never overwritten). The Trakt half waits for
+IMP-002/003.
+
 ---
 
 ## P2 · M9 — File imports
@@ -919,6 +934,11 @@ dumps long-term.
 not match the declared source fails with a readable error, and no uploaded file survives
 job completion.
 
+**Progress 2026-10-15:** built as `POST /v1/imports/csv?source=&filename=` with a `text/csv` body
+(not multipart; see ARCHITECTURE.md). 5 MB cap checked from the declared length, then by reading
+at most 5 MB; the file is parsed into rows at once and never stored. Tested: oversize is 413,
+wrong columns are 422 naming the source and the missing column.
+
 ### IMP-006 · IMDb CSV parser · M
 **Needs:** IMP-005, IMP-004.
 Columns: title, year, title type, `tconst`, rating, date. `tconst` is a hard external ID,
@@ -927,6 +947,10 @@ so match confidence is high.
 **Done when:** an IMDb export with TV episodes as rows is handled (episodes roll up to the
 show or are counted as unmatched — decide once and document), and ratings map onto the
 Aaru 1–10 / 0.5 scale without drift.
+
+**Progress 2026-10-15:** built. Decided: episode rows are unmatched with a reason ("add the show
+instead"). Ratings and watchlist exports both read; ratings are already 1–10. Matching needs the
+real TMDB key (IMDb ids resolve through TMDB find).
 
 ### IMP-007 · Letterboxd CSV parser · M
 **Needs:** IMP-006.
@@ -937,6 +961,10 @@ resolution goes through TMDB search + year via `TitleMatching`.
 unmatched rather than guessed, and Letterboxd's 0.5–5 star scale is doubled onto Aaru's
 1–10.
 
+**Progress 2026-10-15:** built. Ambiguity is the resolver's existing rule (unmatched, never
+guessed); stars are doubled; the watchlist export is told apart by its file name. Needs the real
+TMDB key to match.
+
 ### IMP-008 · Goodreads CSV parser · M
 **Needs:** IMP-005, CAT-003.
 Columns: Title, Author, ISBN, My Rating, Exclusive Shelf, Date Read. Shelf maps to status:
@@ -945,6 +973,10 @@ shelves become lists.
 
 **Done when:** rows with an empty or `=""`-wrapped ISBN (Goodreads does this) still resolve
 by title + author, and a custom shelf produces one Aaru list, not one per row.
+
+**Progress 2026-10-15:** built and tested end to end (Open Library needs no key, so it also works
+locally): `=""` ISBNs, title + author fallback, custom shelves become one list each (an existing
+list of that name is reused).
 
 ### IMP-009 · CAT show list · M
 **Needs:** IMP-005, CAT-002.

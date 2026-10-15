@@ -22,6 +22,8 @@ public enum ImportSource: String, Codable, Hashable, Sendable, CaseIterable {
 public enum ImportJobState: String, Codable, Hashable, Sendable, CaseIterable {
     case queued
     case running
+    /// Rows are matched and a plan is ready; nothing is written until the user approves it.
+    case planned
     case succeeded
     case failed
     /// Finished, but some rows could not be matched.
@@ -29,7 +31,7 @@ public enum ImportJobState: String, Codable, Hashable, Sendable, CaseIterable {
 
     public var isTerminal: Bool {
         switch self {
-        case .queued, .running: false
+        case .queued, .running, .planned: false
         case .succeeded, .failed, .partial: true
         }
     }
@@ -65,6 +67,8 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
     public var state: ImportJobState
     public var stats: ImportStats
     public var errorSummary: String?
+    /// The uploaded file's name, for file imports. The file itself is never kept.
+    public var filename: String?
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -75,6 +79,7 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
         state: ImportJobState = .queued,
         stats: ImportStats = ImportStats(),
         errorSummary: String? = nil,
+        filename: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -84,6 +89,7 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
         self.state = state
         self.stats = stats
         self.errorSummary = errorSummary
+        self.filename = filename
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
