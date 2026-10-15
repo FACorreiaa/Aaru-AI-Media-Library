@@ -213,6 +213,45 @@ protocol TraktStore: Sendable {
     func deleteConnection(userID: UserID) async throws
 }
 
+/// Which APNs gateway a device's token belongs to.
+enum PushEnvironment: String, Codable, Sendable {
+    case sandbox
+    case production
+}
+
+struct PushDevice: Sendable, Equatable {
+    var token: String
+    var environment: PushEnvironment
+    /// The app's bundle id: Release and Beta are separate topics.
+    var topic: String
+}
+
+/// An episode that aired for a user who asked to hear about it, not yet announced.
+struct DueAiring: Sendable, Equatable {
+    var userID: UserID
+    var titleID: TitleID
+    var title: String
+    var season: Int
+    var episode: Int
+    var episodeName: String?
+}
+
+protocol PushStore: Sendable {
+    /// A token belongs to one user: registering it again moves it.
+    func register(_ device: PushDevice, userID: UserID) async throws
+    func unregister(token: String, userID: UserID) async throws
+    /// Apple said the token is dead (uninstalled app, revoked permission).
+    func forget(token: String) async throws
+    func devices(userID: UserID) async throws -> [PushDevice]
+    func airingEnabled(userID: UserID) async throws -> Bool
+    /// Turning it on records when, so only episodes airing afterwards are announced.
+    func setAiring(_ enabled: Bool, userID: UserID, now: Date) async throws
+    /// Aired in `(since, now]`, for in-progress shows, not watched, not announced, user opted in.
+    func dueAirings(now: Date, since: Date) async throws -> [DueAiring]
+    /// Claims an announcement. False when another run already sent it.
+    func claim(_ airing: DueAiring) async throws -> Bool
+}
+
 /// Everything handlers may touch, injected once at boot.
 struct Stores: Sendable {
     var health: any DatabaseHealth
@@ -227,4 +266,5 @@ struct Stores: Sendable {
     var schedule: any ScheduleStore
     var importJobs: any ImportJobStore
     var trakt: any TraktStore
+    var push: any PushStore
 }

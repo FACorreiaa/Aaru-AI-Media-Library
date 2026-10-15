@@ -32,6 +32,26 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-15
+
+- **Airing-episode push notifications move into P2** (by the owner's call; was SOC-005 in P4): an
+  APNs key, `apns_devices` with environment (beta/sandbox and release/production share one API),
+  a notifications setting, and a scheduled job that sends "New episode of X" once per episode for
+  shows the user follows. Web push is not part of it.
+  **Progress:** built. Server: `PUT /v1/devices`, `DELETE /v1/devices/{token}`, `GET`/`PUT
+  /v1/me/notifications`; an in-process job every 10 minutes announces each newly aired episode of an
+  `in_progress` show once (claimed in Postgres first), skipping watched episodes and anything that
+  aired before the user turned alerts on; dead tokens are forgotten. Config `APNS_KEY_ID`,
+  `APNS_PRIVATE_KEY` (sealed), `APNS_TEAM_ID`. iOS: a "New episodes" switch in Settings asks
+  permission, registers the token (Debug → sandbox, TestFlight/App Store → production), and
+  sign-out forgets the device. Mac push is not on yet (it needs its own entitlement key).
+  Episodes come from what is already hydrated; a scheduled show refresh is still JOB-001 work.
+- **Sign in with Google is un-deferred** (AUTH-005, by the owner's call): iOS, Mac and web, Google ID
+  tokens verified server-side against Google's JWKS, identities keyed on Google's `sub`, never
+  merged on email; linking Google to an existing account from Settings.
+- **Sign in with Apple on the web** needs an Apple Services ID on a verified domain: waits for the
+  domain. The iOS/Mac apps already have it.
+
 ## Decisions recorded 2026-10-14
 
 - **The web client is SolidJS + TanStack Start** on Cloudflare Workers (replaces SvelteKit), and

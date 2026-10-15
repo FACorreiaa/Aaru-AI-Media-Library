@@ -28,6 +28,7 @@ let package = Package(
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.33.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
         .package(url: "https://github.com/apple/swift-http-types.git", from: "1.3.0"),
+        .package(url: "https://github.com/swift-server-community/APNSwift.git", from: "6.0.0"),
     ],
     targets: [
         .executableTarget(
@@ -49,6 +50,7 @@ let package = Package(
                 .byName(name: "aaruAPI"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "OpenAPIHummingbird", package: "swift-openapi-hummingbird"),
+                .product(name: "APNS", package: "APNSwift"),
             ],
             path: "Sources/App"
         ),

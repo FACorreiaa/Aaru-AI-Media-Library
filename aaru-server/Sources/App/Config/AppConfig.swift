@@ -55,6 +55,8 @@ struct AppConfig: Sendable {
     var openLibraryUserAgent: String
     /// Nil when `TRAKT_CLIENT_ID` is unset: Trakt connect answers 503, everything else works.
     var trakt: TraktSettings?
+    /// Nil when `APNS_PRIVATE_KEY` is unset: devices still register, no push is sent.
+    var push: PushSettings?
 
     static func load(from reader: ConfigReader) throws -> AppConfig {
         let audiences = reader.string(forKey: "apple.audiences", default: defaultAppleAudiences)
@@ -71,7 +73,17 @@ struct AppConfig: Sendable {
                 forKey: "open.library.user.agent",
                 default: "Aaru/0.1 (media library; contact: signin@aaru.example)"
             ),
-            trakt: traktSettings(from: reader)
+            trakt: traktSettings(from: reader),
+            push: pushSettings(from: reader)
+        )
+    }
+
+    private static func pushSettings(from reader: ConfigReader) throws -> PushSettings? {
+        guard let key = reader.string(forKey: "apns.private.key"), !key.isEmpty else { return nil }
+        return try PushSettings(
+            keyID: required("apns.key.id", env: "APNS_KEY_ID", in: reader),
+            teamID: reader.string(forKey: "apns.team.id", default: "84X9WYBF36"),
+            privateKeyPEM: key
         )
     }
 

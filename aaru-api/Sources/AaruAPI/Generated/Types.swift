@@ -56,6 +56,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
     func deleteAccount(_ input: Operations.DeleteAccount.Input) async throws -> Operations.DeleteAccount.Output
+    /// Register this device for pushes. A token registered again moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/devices`.
+    /// - Remark: Generated from `#/paths//v1/devices/put(registerDevice)`.
+    func registerDevice(_ input: Operations.RegisterDevice.Input) async throws -> Operations.RegisterDevice.Output
+    /// - Remark: HTTP `DELETE /v1/devices/{token}`.
+    /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)`.
+    func unregisterDevice(_ input: Operations.UnregisterDevice.Input) async throws -> Operations.UnregisterDevice.Output
+    /// - Remark: HTTP `GET /v1/me/notifications`.
+    /// - Remark: Generated from `#/paths//v1/me/notifications/get(getNotificationSettings)`.
+    func getNotificationSettings(_ input: Operations.GetNotificationSettings.Input) async throws -> Operations.GetNotificationSettings.Output
+    /// - Remark: HTTP `PUT /v1/me/notifications`.
+    /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
+    func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
     /// Search the catalog. Results are catalog projections, never library rows.
     ///
     /// - Remark: HTTP `GET /v1/search`.
@@ -300,6 +314,46 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
     public func deleteAccount(headers: Operations.DeleteAccount.Input.Headers = .init()) async throws -> Operations.DeleteAccount.Output {
         try await deleteAccount(Operations.DeleteAccount.Input(headers: headers))
+    }
+    /// Register this device for pushes. A token registered again moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/devices`.
+    /// - Remark: Generated from `#/paths//v1/devices/put(registerDevice)`.
+    public func registerDevice(
+        headers: Operations.RegisterDevice.Input.Headers = .init(),
+        body: Operations.RegisterDevice.Input.Body
+    ) async throws -> Operations.RegisterDevice.Output {
+        try await registerDevice(Operations.RegisterDevice.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /v1/devices/{token}`.
+    /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)`.
+    public func unregisterDevice(
+        path: Operations.UnregisterDevice.Input.Path,
+        headers: Operations.UnregisterDevice.Input.Headers = .init()
+    ) async throws -> Operations.UnregisterDevice.Output {
+        try await unregisterDevice(Operations.UnregisterDevice.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `GET /v1/me/notifications`.
+    /// - Remark: Generated from `#/paths//v1/me/notifications/get(getNotificationSettings)`.
+    public func getNotificationSettings(headers: Operations.GetNotificationSettings.Input.Headers = .init()) async throws -> Operations.GetNotificationSettings.Output {
+        try await getNotificationSettings(Operations.GetNotificationSettings.Input(headers: headers))
+    }
+    /// - Remark: HTTP `PUT /v1/me/notifications`.
+    /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
+    public func updateNotificationSettings(
+        headers: Operations.UpdateNotificationSettings.Input.Headers = .init(),
+        body: Operations.UpdateNotificationSettings.Input.Body
+    ) async throws -> Operations.UpdateNotificationSettings.Output {
+        try await updateNotificationSettings(Operations.UpdateNotificationSettings.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// Search the catalog. Results are catalog projections, never library rows.
     ///
@@ -1202,6 +1256,63 @@ public enum Components {
             public enum CodingKeys: String, CodingKey {
                 case job
                 case rows
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DeviceRegistration`.
+        public struct DeviceRegistration: Codable, Hashable, Sendable {
+            /// The APNs device token
+            ///
+            /// - Remark: Generated from `#/components/schemas/DeviceRegistration/token`.
+            public var token: Swift.String
+            /// `sandbox` for Xcode builds; `production` for TestFlight and the App Store.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DeviceRegistration/environment`.
+            @frozen public enum EnvironmentPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case sandbox = "sandbox"
+                case production = "production"
+            }
+            /// `sandbox` for Xcode builds; `production` for TestFlight and the App Store.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DeviceRegistration/environment`.
+            public var environment: Components.Schemas.DeviceRegistration.EnvironmentPayload
+            /// - Remark: Generated from `#/components/schemas/DeviceRegistration/bundleId`.
+            public var bundleId: Swift.String
+            /// Creates a new `DeviceRegistration`.
+            ///
+            /// - Parameters:
+            ///   - token: The APNs device token
+            ///   - environment: `sandbox` for Xcode builds; `production` for TestFlight and the App Store.
+            ///   - bundleId:
+            public init(
+                token: Swift.String,
+                environment: Components.Schemas.DeviceRegistration.EnvironmentPayload,
+                bundleId: Swift.String
+            ) {
+                self.token = token
+                self.environment = environment
+                self.bundleId = bundleId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case token
+                case environment
+                case bundleId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/NotificationSettings`.
+        public struct NotificationSettings: Codable, Hashable, Sendable {
+            /// Push when a new episode of a show you are watching airs.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NotificationSettings/airing`.
+            public var airing: Swift.Bool
+            /// Creates a new `NotificationSettings`.
+            ///
+            /// - Parameters:
+            ///   - airing: Push when a new episode of a show you are watching airs.
+            public init(airing: Swift.Bool) {
+                self.airing = airing
+            }
+            public enum CodingKeys: String, CodingKey {
+                case airing
             }
         }
         /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest`.
@@ -3868,6 +3979,524 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Register this device for pushes. A token registered again moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/devices`.
+    /// - Remark: Generated from `#/paths//v1/devices/put(registerDevice)`.
+    public enum RegisterDevice {
+        public static let id: Swift.String = "registerDevice"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/devices/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RegisterDevice.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RegisterDevice.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RegisterDevice.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/devices/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/devices/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.DeviceRegistration)
+            }
+            public var body: Operations.RegisterDevice.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.RegisterDevice.Input.Headers = .init(),
+                body: Operations.RegisterDevice.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Registered.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/put(registerDevice)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RegisterDevice.Output.NoContent)
+            /// Registered.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/put(registerDevice)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RegisterDevice.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/put(registerDevice)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `DELETE /v1/devices/{token}`.
+    /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)`.
+    public enum UnregisterDevice {
+        public static let id: Swift.String = "unregisterDevice"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/devices/{token}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/devices/{token}/DELETE/path/token`.
+                public var token: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - token:
+                public init(token: Swift.String) {
+                    self.token = token
+                }
+            }
+            public var path: Operations.UnregisterDevice.Input.Path
+            /// - Remark: Generated from `#/paths/v1/devices/{token}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UnregisterDevice.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UnregisterDevice.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UnregisterDevice.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.UnregisterDevice.Input.Path,
+                headers: Operations.UnregisterDevice.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Forgotten.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.UnregisterDevice.Output.NoContent)
+            /// Forgotten.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.UnregisterDevice.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `GET /v1/me/notifications`.
+    /// - Remark: Generated from `#/paths//v1/me/notifications/get(getNotificationSettings)`.
+    public enum GetNotificationSettings {
+        public static let id: Swift.String = "getNotificationSettings"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/notifications/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetNotificationSettings.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetNotificationSettings.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetNotificationSettings.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetNotificationSettings.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/notifications/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/notifications/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.NotificationSettings)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.NotificationSettings {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetNotificationSettings.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetNotificationSettings.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The user's notification choices.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/notifications/get(getNotificationSettings)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetNotificationSettings.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetNotificationSettings.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/notifications/get(getNotificationSettings)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `PUT /v1/me/notifications`.
+    /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
+    public enum UpdateNotificationSettings {
+        public static let id: Swift.String = "updateNotificationSettings"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateNotificationSettings.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateNotificationSettings.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateNotificationSettings.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.NotificationSettings)
+            }
+            public var body: Operations.UpdateNotificationSettings.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.UpdateNotificationSettings.Input.Headers = .init(),
+                body: Operations.UpdateNotificationSettings.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.NotificationSettings)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.NotificationSettings {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateNotificationSettings.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateNotificationSettings.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateNotificationSettings.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateNotificationSettings.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

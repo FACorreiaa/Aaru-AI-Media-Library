@@ -50,9 +50,30 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     return Application(
         router: router,
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        services: [fluent, ImportWorker(imports: services.imports, logger: logger)],
+        services: [
+            fluent,
+            ImportWorker(imports: services.imports, logger: logger),
+            AiringNotifierService(
+                notifier: AiringNotifier(stores: stores, sender: makePushSender(config.push, logger: logger)),
+                logger: logger
+            ),
+        ],
         logger: logger
     )
+}
+
+/// The APNs sender, or nil (with a notice) when no key is configured or the key does not parse.
+func makePushSender(_ settings: PushSettings?, logger: Logger) -> (any PushSending)? {
+    guard let settings else {
+        logger.notice("Push disabled: APNS_PRIVATE_KEY is not set")
+        return nil
+    }
+    do {
+        return try APNSPushSender(settings: settings)
+    } catch {
+        logger.error("Push disabled: APNS_PRIVATE_KEY is not a valid .p8 key")
+        return nil
+    }
 }
 
 /// A Fluent instance on Postgres with every migration registered.

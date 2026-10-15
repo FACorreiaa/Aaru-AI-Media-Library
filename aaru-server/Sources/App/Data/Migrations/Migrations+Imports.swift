@@ -68,6 +68,42 @@ struct CreateTraktConnections: SQLMigration {
     let backward = ["DROP TABLE trakt_auth_requests", "DROP TABLE trakt_connections"]
 }
 
+/// Airing-episode pushes (2026-10-15 decision): devices with their APNs environment (TestFlight and
+/// App Store builds are `production`, Xcode runs are `sandbox`), the opt-in, and one row per
+/// episode already announced so nobody hears about an episode twice.
+struct CreatePush: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE apns_devices (
+            token text PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            environment text NOT NULL CHECK (environment IN ('sandbox', 'production')),
+            topic text NOT NULL,
+            updated_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+        "CREATE INDEX apns_devices_user ON apns_devices (user_id)",
+        """
+        CREATE TABLE notification_settings (
+            user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            airing boolean NOT NULL DEFAULT false,
+            airing_since timestamptz
+        )
+        """,
+        """
+        CREATE TABLE notifications_sent (
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title_id uuid NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+            season integer NOT NULL,
+            episode integer NOT NULL,
+            sent_at timestamptz NOT NULL DEFAULT now(),
+            PRIMARY KEY (user_id, title_id, season, episode)
+        )
+        """,
+    ]
+    let backward = ["DROP TABLE notifications_sent", "DROP TABLE notification_settings", "DROP TABLE apns_devices"]
+}
+
 /// AUTH-005 · Google joins the sign-in providers.
 struct AddGoogleProvider: SQLMigration {
     let forward = [

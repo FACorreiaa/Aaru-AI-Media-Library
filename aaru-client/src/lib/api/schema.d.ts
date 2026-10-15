@@ -141,6 +141,55 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/devices': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Register this device for pushes. A token registered again moves to this user. */
+    put: operations['registerDevice']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/devices/{token}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['unregisterDevice']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/notifications': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['getNotificationSettings']
+    put: operations['updateNotificationSettings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/search': {
     parameters: {
       query?: never
@@ -692,6 +741,20 @@ export interface components {
       job: components['schemas']['ImportJob']
       rows: components['schemas']['ImportRow'][]
     }
+    DeviceRegistration: {
+      /** @description The APNs device token */
+      token: string
+      /**
+       * @description `sandbox` for Xcode builds; `production` for TestFlight and the App Store.
+       * @enum {string}
+       */
+      environment: 'sandbox' | 'production'
+      bundleId: string
+    }
+    NotificationSettings: {
+      /** @description Push when a new episode of a show you are watching airs. */
+      airing: boolean
+    }
     GoogleSignInRequest: {
       idToken: string
       /** @description The nonce sent with the Google sign-in, if any. Must come back in the token. */
@@ -1211,6 +1274,96 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  registerDevice: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DeviceRegistration']
+      }
+    }
+    responses: {
+      /** @description Registered. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  unregisterDevice: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        token: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Forgotten. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getNotificationSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The user's notification choices. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NotificationSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateNotificationSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['NotificationSettings']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NotificationSettings']
+        }
       }
       default: components['responses']['Error']
     }

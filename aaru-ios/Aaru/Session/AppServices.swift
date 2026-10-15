@@ -8,6 +8,9 @@ final class AppServices {
     let library = LibraryModel()
     let lists: ListsModel
     let imports: ImportsModel
+    #if os(iOS)
+        let push: PushRegistrar
+    #endif
     /// `nil` only when the build has no API host configured.
     let api: Client?
 
@@ -25,5 +28,9 @@ final class AppServices {
         }
         lists = ListsModel(api: api)
         imports = ImportsModel(api: api)
+        #if os(iOS)
+            push = PushRegistrar(api: api)
+            PushRegistrar.current = push
+        #endif
     }
 }

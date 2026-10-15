@@ -152,6 +152,56 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/devices:
+    put:
+      operationId: registerDevice
+      summary: Register this device for pushes. A token registered again moves to this user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DeviceRegistration'}
+      responses:
+        '204':
+          description: Registered.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/devices/{token}:
+    delete:
+      operationId: unregisterDevice
+      parameters:
+        - {name: token, in: path, required: true, schema: {type: string}}
+      responses:
+        '204':
+          description: Forgotten.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/notifications:
+    get:
+      operationId: getNotificationSettings
+      responses:
+        '200':
+          description: The user's notification choices.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NotificationSettings'}
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: updateNotificationSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NotificationSettings'}
+      responses:
+        '200':
+          description: Saved.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NotificationSettings'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/search:
     get:
       operationId: searchCatalog
@@ -834,6 +884,23 @@ components:
         rows:
           type: array
           items: {$ref: '#/components/schemas/ImportRow'}
+    DeviceRegistration:
+      type: object
+      required: [token, environment, bundleId]
+      properties:
+        token: {type: string, description: The APNs device token, hex.}
+        environment:
+          type: string
+          enum: [sandbox, production]
+          description: "`sandbox` for Xcode builds; `production` for TestFlight and the App Store."
+        bundleId: {type: string}
+    NotificationSettings:
+      type: object
+      required: [airing]
+      properties:
+        airing:
+          type: boolean
+          description: Push when a new episode of a show you are watching airs.
     GoogleSignInRequest:
       type: object
       required: [idToken]
