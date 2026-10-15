@@ -6,3 +6,7 @@ APP_BUNDLE_ID = com.fernandocorreia.aaru.beta
 APP_DISPLAY_NAME = Aaru Dev
 APP_ICON_NAME = AppIconBeta
 API_BASE_URL = http:/$()/localhost:8080
+
+// APNs gateway this build registers with: Xcode runs use development (sandbox); TestFlight
+// and the App Store use production.
+APS_ENVIRONMENT = development

@@ -4,6 +4,9 @@ import WidgetKit
 @main
 struct AaruApp: App {
     @State private var services = AppServices()
+    #if os(iOS)
+        @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+    #endif
 
     init() {
         // Posters are referenced by catalog URL, never re-hosted; keep them warm on disk.

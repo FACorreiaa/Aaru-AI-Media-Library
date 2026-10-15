@@ -6,3 +6,7 @@ APP_DISPLAY_NAME = Aaru
 APP_ICON_NAME = AppIcon
 // Placeholder until the domain exists (BACKLOG REL-005 OPEN).
 API_BASE_URL = https:/$()/api.aaru.example
+
+// APNs gateway this build registers with: Xcode runs use development (sandbox); TestFlight
+// and the App Store use production.
+APS_ENVIRONMENT = production
