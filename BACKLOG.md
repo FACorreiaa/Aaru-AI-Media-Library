@@ -59,6 +59,14 @@ library layer stay separate, external IDs stored whenever known, no second backe
   comics and games as candidates. Each new kind is a `MediaType` in `AaruCore`, a catalog
   adapter, a status vocabulary that still maps onto the four statuses, and an entry in
   `CLAUDE.md`'s stack table. Music stays out of the calendar and episode progress.
+- **Connectors the owner wants, all already scheduled** (recorded so they are not lost):
+  **Trakt** — import in P2 (IMP-002 connect, IMP-003 worker), one-way history push out in P3
+  (SCR-004, MOAT-003); never two-way. **Stremio** — the catalogs-only addon in P3 (SCR-003,
+  MOAT-001), no `stream` resource. **Claude** — OUT-004's `/v1/mcp` endpoint, added to Claude
+  as a custom connector. A remote connector in Claude authenticates with OAuth per the MCP
+  authorization spec (authorization-server metadata, dynamic client registration, PKCE), so
+  OUT-004 also needs an OAuth front door that mints the same scoped agent tokens as OUT-001;
+  a pasted bearer token alone is not enough for claude.ai.
 
 ## Decisions recorded 2026-10-14
 
