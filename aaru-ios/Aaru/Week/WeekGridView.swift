@@ -13,18 +13,18 @@ struct WeekGridView: View {
             let available = proxy.size.width - 32
             let width = max(Self.minColumnWidth, (available - Self.spacing * 6) / 7)
             let fits = width * 7 + Self.spacing * 6 <= available + 0.5
-            ScrollView(fits ? [] : .horizontal) {
-                ScrollView(.vertical) {
-                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                        Section {
-                            columns(width: width)
-                        } header: {
-                            headers(width: width)
-                        }
+            // One scroll view: nesting a second one (even with no axes) applied the navigation
+            // bar's safe-area inset twice and left an empty band above the day headers on iPad.
+            ScrollView(fits ? .vertical : [.vertical, .horizontal]) {
+                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        columns(width: width)
+                    } header: {
+                        headers(width: width)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
             }
         }
     }

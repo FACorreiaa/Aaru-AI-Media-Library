@@ -126,7 +126,7 @@ private struct WeekTick: View {
     }
 }
 
-private struct WeekBadge: View {
+struct WeekBadge: View {
     let badge: CalendarEntry.Badge
 
     var body: some View {
