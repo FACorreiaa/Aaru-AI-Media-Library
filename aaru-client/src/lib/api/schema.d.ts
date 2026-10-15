@@ -883,6 +883,10 @@ export interface components {
       originalTitle?: string
       year?: number
       posterUrl?: string
+      /** @description Wide art (TMDB backdrop, AniList banner), for banners such as the week grid. */
+      backdropUrl?: string
+      /** @description Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll"). */
+      network?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
     }
@@ -1008,6 +1012,8 @@ export interface components {
       episodeName?: string
       /** Format: date-time */
       airsAt: string
+      /** @description False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time. */
+      airTimeKnown: boolean
       runtimeMinutes?: number
       watched: boolean
       /** @enum {string} */

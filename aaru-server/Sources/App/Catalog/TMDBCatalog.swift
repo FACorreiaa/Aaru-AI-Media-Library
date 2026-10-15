@@ -7,6 +7,8 @@ import Foundation
 struct TMDBCatalog: CatalogSearching, EpisodeListing {
     static let baseURL = URL(string: "https://api.themoviedb.org/3")!
     static let imageBase = "https://image.tmdb.org/t/p/w500"
+    /// Backdrops render as wide banners, never full-screen: w780 is enough at 3x.
+    static let backdropBase = "https://image.tmdb.org/t/p/w780"
     /// Search results are enriched with IMDb ids up to this many hits.
     static let enrichLimit = 10
 
@@ -105,7 +107,9 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing {
             }
             return all.sorted { ($0.season, $0.episode) < ($1.season, $1.episode) }
         }
-        return CatalogEpisodes(status: show.titleStatus, episodes: episodes)
+        return CatalogEpisodes(
+            status: show.titleStatus, episodes: episodes, backdropURL: show.backdropURL, network: show.network
+        )
     }
 
     // MARK: Plumbing
@@ -177,6 +181,8 @@ private struct Detail: Decodable {
     let releaseDate: String?
     let firstAirDate: String?
     let posterPath: String?
+    let backdropPath: String?
+    let networks: [Network]?
     let overview: String?
     let genreIds: [Int]?
     let genres: [Genre]?
@@ -189,6 +195,16 @@ private struct Detail: Decodable {
     let imdbId: String?
 
     struct Genre: Decodable { let id: Int }
+    struct Network: Decodable { let name: String }
+
+    var backdropURL: URL? {
+        backdropPath.flatMap { URL(string: TMDBCatalog.backdropBase + $0) }
+    }
+
+    /// The first network TMDB lists is the original broadcaster or streamer.
+    var network: String? {
+        networks?.first?.name.nilIfBlank
+    }
 
     func hit(type: MediaType) -> CatalogHit? {
         guard let display = (title ?? name)?.nilIfBlank else { return nil }
@@ -207,7 +223,9 @@ private struct Detail: Decodable {
                 tvdb: externalIds?.tvdbId.map(String.init)
             ),
             // Japanese animation. AniList is the anime catalog; this flags TMDB hits.
-            isAnime: genreIDs.contains(16) && originalLanguage == "ja"
+            isAnime: genreIDs.contains(16) && originalLanguage == "ja",
+            backdropURL: backdropURL,
+            network: network
         )
     }
 

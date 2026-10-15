@@ -16,6 +16,10 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
     public var synopsis: String?
     /// Catalog URL. Aaru does not host provider artwork.
     public var posterURL: URL?
+    /// Wide art (TMDB backdrop, AniList banner): the week grid's cell banner. Catalog URL.
+    public var backdropURL: URL?
+    /// Network or streaming service, for shows: "HBO", "Netflix", "Crunchyroll".
+    public var network: String?
     public var ids: ExternalIDs
     /// Anime is a facet on `movie`/`show`, not a fourth `MediaType`: an anime series
     /// shares show progress, calendar, Up Next, and widgets with every other show.
@@ -31,6 +35,8 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         year: Int? = nil,
         synopsis: String? = nil,
         posterURL: URL? = nil,
+        backdropURL: URL? = nil,
+        network: String? = nil,
         ids: ExternalIDs = ExternalIDs(),
         isAnime: Bool = false,
         seasons: [Season]? = nil
@@ -42,6 +48,8 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         self.year = year
         self.synopsis = synopsis
         self.posterURL = posterURL
+        self.backdropURL = backdropURL
+        self.network = network
         self.ids = ids
         self.isAnime = isAnime
         self.seasons = seasons

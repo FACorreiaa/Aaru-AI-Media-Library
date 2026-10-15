@@ -57,7 +57,7 @@ struct CatalogService: Sendable {
         if needsHydration(state: state, episodes: episodes) {
             let source: any EpisodeListing = title.isAnime && title.ids.tmdb == nil ? catalogs.anilist : catalogs.tmdb
             if let fresh = try await source.episodes(ids: title.ids) {
-                try await stores.titles.saveEpisodes(id, fresh.episodes, status: fresh.status, hydratedAt: now())
+                try await stores.titles.saveEpisodes(id, fresh, hydratedAt: now())
                 episodes = try await stores.titles.episodes(id)
                 status = fresh.status
             }

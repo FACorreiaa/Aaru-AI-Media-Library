@@ -123,7 +123,7 @@ extension PostgresLibraryStore {
         SELECT li.id, li.title_id, li.status, li.rating, li.notes, li.is_owned, li.added_at, li.updated_at,
             li.finished_at, li.book_page, li.book_percent,
             (extract(epoch FROM li.updated_at) * 1000000)::bigint AS updated_micros,
-            t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.is_anime,
+            t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.backdrop_url, t.network, t.is_anime,
             t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn, t.open_library, t.anilist, t.mal, t.anidb,
             (SELECT count(*)::int FROM episode_progress ep WHERE ep.library_item_id = li.id AND ep.season > 0)
                 AS watched_count,
@@ -165,6 +165,8 @@ private struct EntryRow: Decodable {
     let year: Int?
     let synopsis: String?
     let posterUrl: String?
+    let backdropUrl: String?
+    let network: String?
     let isAnime: Bool
     let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb: String?
     let watchedCount: Int
@@ -189,6 +191,7 @@ private struct EntryRow: Decodable {
         let title = Title(
             id: TitleID(titleId), type: type, title: self.title, originalTitle: originalTitle, year: year,
             synopsis: synopsis, posterURL: posterUrl.flatMap(URL.init(string:)),
+            backdropURL: backdropUrl.flatMap(URL.init(string:)), network: network,
             ids: ExternalIDs(
                 tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
                 openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb

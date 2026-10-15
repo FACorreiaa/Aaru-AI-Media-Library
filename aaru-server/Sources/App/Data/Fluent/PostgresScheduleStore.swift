@@ -9,7 +9,8 @@ struct PostgresScheduleStore: ScheduleStore {
 
     /// Title columns every query here selects, decoded by `TitleColumns`.
     private static let titleColumns: SQLQueryString = """
-    t.id AS title_id, t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.is_anime,
+    t.id AS title_id, t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.backdrop_url,
+    t.network, t.is_anime,
     t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn, t.open_library, t.anilist, t.mal, t.anidb
     """
 
@@ -25,7 +26,8 @@ struct PostgresScheduleStore: ScheduleStore {
 
     func calendar(userID: UserID, from: Date, until: Date, now _: Date) async throws -> [CalendarEntry] {
         let query: SQLQueryString = """
-        SELECT li.id AS item_id, \(Self.titleColumns), se.season, se.episode, se.name, se.airs_at, se.runtime_minutes,
+        SELECT li.id AS item_id, \(Self.titleColumns), se.season, se.episode, se.name, se.airs_at, se.airs_at_exact,
+            se.runtime_minutes,
             NOT \(Self.unwatched) AS watched,
             (SELECT max(s2.episode) FROM show_episodes s2 WHERE s2.title_id = se.title_id AND s2.season = se.season)
                 AS season_last
@@ -44,7 +46,8 @@ struct PostgresScheduleStore: ScheduleStore {
                     .seasonLast ? .finale : .regular
                 return CalendarEntry(
                     libraryItemID: LibraryItemID(row.itemId), title: title, key: key, episodeName: row.name,
-                    airsAt: row.airsAt, runtimeMinutes: row.runtimeMinutes, watched: row.watched, kind: kind
+                    airsAt: row.airsAt, runtimeMinutes: row.runtimeMinutes, watched: row.watched, kind: kind,
+                    airTimeKnown: row.airsAtExact
                 )
             }
     }
@@ -123,6 +126,8 @@ private struct TitleColumns: Decodable {
     let year: Int?
     let synopsis: String?
     let posterUrl: String?
+    let backdropUrl: String?
+    let network: String?
     let isAnime: Bool
     let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb: String?
 
@@ -131,6 +136,7 @@ private struct TitleColumns: Decodable {
             Title(
                 id: TitleID(titleId), type: $0, title: self.title, originalTitle: originalTitle, year: year,
                 synopsis: synopsis, posterURL: posterUrl.flatMap(URL.init(string:)),
+                backdropURL: backdropUrl.flatMap(URL.init(string:)), network: network,
                 ids: ExternalIDs(
                     tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
                     openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb
@@ -148,6 +154,7 @@ private struct CalendarRow: Decodable {
     let episode: Int
     let name: String?
     let airsAt: Date
+    let airsAtExact: Bool
     let runtimeMinutes: Int?
     let watched: Bool
     let seasonLast: Int
@@ -159,6 +166,7 @@ private struct CalendarRow: Decodable {
         episode = try container.decode(Int.self, forKey: .episode)
         name = try container.decodeIfPresent(String.self, forKey: .name)
         airsAt = try container.decode(Date.self, forKey: .airsAt)
+        airsAtExact = try container.decode(Bool.self, forKey: .airsAtExact)
         runtimeMinutes = try container.decodeIfPresent(Int.self, forKey: .runtimeMinutes)
         watched = try container.decode(Bool.self, forKey: .watched)
         seasonLast = try container.decode(Int.self, forKey: .seasonLast)
@@ -166,7 +174,7 @@ private struct CalendarRow: Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case itemId, season, episode, name, airsAt, runtimeMinutes, watched, seasonLast
+        case itemId, season, episode, name, airsAt, airsAtExact, runtimeMinutes, watched, seasonLast
     }
 }
 

@@ -178,6 +178,7 @@ extension Components.Schemas.TitleSummary {
         self.init(
             id: title.id.description, _type: .init(title.type), title: title.title,
             originalTitle: title.originalTitle, year: title.year, posterUrl: title.posterURL?.absoluteString,
+            backdropUrl: title.backdropURL?.absoluteString, network: title.network,
             isAnime: title.isAnime, ids: .init(title.ids)
         )
     }

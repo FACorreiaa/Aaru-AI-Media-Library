@@ -1965,6 +1965,14 @@ public enum Components {
             public var year: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/posterUrl`.
             public var posterUrl: Swift.String?
+            /// Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/backdropUrl`.
+            public var backdropUrl: Swift.String?
+            /// Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/network`.
+            public var network: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/isAnime`.
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/TitleSummary/ids`.
@@ -1978,6 +1986,8 @@ public enum Components {
             ///   - originalTitle:
             ///   - year:
             ///   - posterUrl:
+            ///   - backdropUrl: Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
+            ///   - network: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
             ///   - isAnime:
             ///   - ids:
             public init(
@@ -1987,6 +1997,8 @@ public enum Components {
                 originalTitle: Swift.String? = nil,
                 year: Swift.Int? = nil,
                 posterUrl: Swift.String? = nil,
+                backdropUrl: Swift.String? = nil,
+                network: Swift.String? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds
             ) {
@@ -1996,6 +2008,8 @@ public enum Components {
                 self.originalTitle = originalTitle
                 self.year = year
                 self.posterUrl = posterUrl
+                self.backdropUrl = backdropUrl
+                self.network = network
                 self.isAnime = isAnime
                 self.ids = ids
             }
@@ -2006,6 +2020,8 @@ public enum Components {
                 case originalTitle
                 case year
                 case posterUrl
+                case backdropUrl
+                case network
                 case isAnime
                 case ids
             }
@@ -2551,6 +2567,10 @@ public enum Components {
             public var episodeName: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/airsAt`.
             public var airsAt: Foundation.Date
+            /// False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CalendarEntry/airTimeKnown`.
+            public var airTimeKnown: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/runtimeMinutes`.
             public var runtimeMinutes: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/watched`.
@@ -2572,6 +2592,7 @@ public enum Components {
             ///   - number:
             ///   - episodeName:
             ///   - airsAt:
+            ///   - airTimeKnown: False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
             ///   - runtimeMinutes:
             ///   - watched:
             ///   - kind:
@@ -2582,6 +2603,7 @@ public enum Components {
                 number: Swift.Int,
                 episodeName: Swift.String? = nil,
                 airsAt: Foundation.Date,
+                airTimeKnown: Swift.Bool,
                 runtimeMinutes: Swift.Int? = nil,
                 watched: Swift.Bool,
                 kind: Components.Schemas.CalendarEntry.KindPayload
@@ -2592,6 +2614,7 @@ public enum Components {
                 self.number = number
                 self.episodeName = episodeName
                 self.airsAt = airsAt
+                self.airTimeKnown = airTimeKnown
                 self.runtimeMinutes = runtimeMinutes
                 self.watched = watched
                 self.kind = kind
@@ -2603,6 +2626,7 @@ public enum Components {
                 case number
                 case episodeName
                 case airsAt
+                case airTimeKnown
                 case runtimeMinutes
                 case watched
                 case kind

@@ -29,6 +29,7 @@ extension Components.Schemas.CalendarEntry {
             number: entry.key.episode,
             episodeName: entry.episodeName,
             airsAt: entry.airsAt,
+            airTimeKnown: entry.airTimeKnown,
             runtimeMinutes: entry.runtimeMinutes,
             watched: entry.watched,
             kind: .init(rawValue: entry.kind.rawValue) ?? .regular
