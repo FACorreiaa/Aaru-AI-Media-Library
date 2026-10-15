@@ -88,6 +88,9 @@ function Library() {
           <Link to="/app/settings" class="text-muted hover:text-ink">
             Settings
           </Link>
+          <Link to="/app/week" class="text-muted hover:text-ink">
+            This week
+          </Link>
           <Link to="/app/lists" class="text-muted hover:text-ink">
             Lists
           </Link>
