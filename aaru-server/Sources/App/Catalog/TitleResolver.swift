@@ -37,7 +37,8 @@ struct TitleResolver: Sendable {
     let stores: Stores
     let catalogs: CatalogProviders
 
-    func resolve(_ ref: MediaRef) async throws -> Title {
+    /// `searchHint` (an author, for books) narrows a title search; it never loosens the match.
+    func resolve(_ ref: MediaRef, searchHint: String? = nil) async throws -> Title {
         try ref.validate()
         if let titleID = ref.titleID {
             guard let title = try await stores.titles.title(id: titleID) else { throw ResolutionError.notFound }
@@ -46,7 +47,7 @@ struct TitleResolver: Sendable {
         if !ref.ids.isEmpty {
             return try await resolve(ids: ref.ids, type: ref.type)
         }
-        return try await resolveByTitle(ref)
+        return try await resolveByTitle(ref, hint: searchHint)
     }
 
     // MARK: By ids
@@ -116,9 +117,10 @@ struct TitleResolver: Sendable {
 
     // MARK: By title + year
 
-    private func resolveByTitle(_ ref: MediaRef) async throws -> Title {
-        guard let query = ref.title else { throw ResolutionError.notFound }
+    private func resolveByTitle(_ ref: MediaRef, hint: String?) async throws -> Title {
+        guard let title = ref.title else { throw ResolutionError.notFound }
         let provider: any CatalogSearching = ref.type == .book ? catalogs.openLibrary : catalogs.tmdb
+        let query = [title, hint].compactMap(\.self).joined(separator: " ")
         let hits = try await provider.search(query: query, type: ref.type)
         let matches = hits.filter { hit in
             hit.year != nil && MatchKey.canMerge(

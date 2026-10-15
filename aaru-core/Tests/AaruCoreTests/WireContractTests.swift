@@ -40,6 +40,7 @@ struct WireContractTests {
     func onlyFinishedStatesAreTerminal() {
         #expect(ImportJobState.queued.isTerminal == false)
         #expect(ImportJobState.running.isTerminal == false)
+        #expect(ImportJobState.planned.isTerminal == false, "a plan waits for the user's approval")
         #expect(ImportJobState.succeeded.isTerminal)
         #expect(ImportJobState.failed.isTerminal)
         #expect(ImportJobState.partial.isTerminal)

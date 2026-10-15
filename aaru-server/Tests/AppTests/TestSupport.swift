@@ -239,6 +239,34 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
     func job(id _: ImportJobID, userID _: UserID) async throws -> ImportJob? {
         throw Touched()
     }
+
+    func insert(_: ImportJob, rows _: [ImportRow]) async throws {
+        throw Touched()
+    }
+
+    func jobs(userID _: UserID, limit _: Int) async throws -> [ImportJob] {
+        throw Touched()
+    }
+
+    func claimNext(now _: Date, lease _: TimeInterval) async throws -> ClaimedImportJob? {
+        throw Touched()
+    }
+
+    func retry(_: ImportJobID, error _: String, notBefore _: Date, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func rows(jobID _: ImportJobID) async throws -> [PlannedRow] {
+        throw Touched()
+    }
+
+    func savePlan(_: ImportJob, rows _: [PlannedRow]) async throws {
+        throw Touched()
+    }
+
+    func delete(id _: ImportJobID, userID _: UserID) async throws -> Bool {
+        throw Touched()
+    }
 }
 
 struct FixedHealth: DatabaseHealth {

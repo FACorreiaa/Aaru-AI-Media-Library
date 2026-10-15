@@ -1,0 +1,105 @@
+import aaruAPI
+import AaruCore
+import Foundation
+import OpenAPIRuntime
+
+extension APIImplementation {
+    func listImports(_: Operations.ListImports.Input) async throws -> Operations.ListImports.Output {
+        try await .ok(.init(body: .json(.init(
+            items: services.imports.jobs(userID: currentUser()).map(Components.Schemas.ImportJob.init)
+        ))))
+    }
+
+    func createCSVImport(_ input: Operations.CreateCSVImport.Input) async throws -> Operations.CreateCSVImport
+        .Output
+    {
+        guard case let .csv(body) = input.body else { throw AppError.badRequest() }
+        // Refuse an oversized upload from its declared length, before reading a byte of it.
+        if case let .known(length) = body.length, length > ImportService.maxUploadBytes {
+            throw Self.tooLarge
+        }
+        let text: String
+        do {
+            text = try await String(collecting: body, upTo: ImportService.maxUploadBytes)
+        } catch {
+            throw Self.tooLarge
+        }
+        let source: ImportSource = switch input.query.source {
+        case .imdb: .imdbCSV
+        case .letterboxd: .letterboxdCSV
+        case .goodreads: .goodreadsCSV
+        }
+        let job = try await services.imports.createCSVImport(
+            userID: currentUser(), source: source, filename: input.query.filename, text: text
+        )
+        return .accepted(.init(body: .json(.init(job))))
+    }
+
+    func getImport(_ input: Operations.GetImport.Input) async throws -> Operations.GetImport.Output {
+        let detail = try await services.imports.detail(importID(input.path.id), userID: currentUser())
+        return .ok(.init(body: .json(.init(
+            job: .init(detail.job),
+            rows: detail.rows.map(Components.Schemas.ImportRow.init)
+        ))))
+    }
+
+    func deleteImport(_ input: Operations.DeleteImport.Input) async throws -> Operations.DeleteImport.Output {
+        try await services.imports.delete(importID(input.path.id), userID: currentUser())
+        return .noContent(.init())
+    }
+
+    func applyImport(_ input: Operations.ApplyImport.Input) async throws -> Operations.ApplyImport.Output {
+        let job = try await services.imports.apply(importID(input.path.id), userID: currentUser())
+        return .ok(.init(body: .json(.init(job))))
+    }
+
+    private static var tooLarge: AppError {
+        AppError(
+            status: .contentTooLarge, code: "file_too_large",
+            message: "That file is larger than 5 MB. Exports are usually much smaller; check it is the right file."
+        )
+    }
+
+    private func importID(_ raw: String) throws -> ImportJobID {
+        guard let id = ImportJobID(uuidString: raw) else { throw AppError.notFound() }
+        return id
+    }
+}
+
+extension Components.Schemas.ImportJob {
+    init(_ job: ImportJob) {
+        self.init(
+            id: job.id.description,
+            source: .init(rawValue: job.source.rawValue) ?? .trakt,
+            state: .init(rawValue: job.state.rawValue) ?? .queued,
+            stats: .init(
+                created: job.stats.created, updated: job.stats.updated,
+                skipped: job.stats.skipped, unmatched: job.stats.unmatched
+            ),
+            errorSummary: job.errorSummary,
+            filename: job.filename,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt
+        )
+    }
+}
+
+extension Components.Schemas.ImportRow {
+    init(_ planned: PlannedRow) {
+        let row = planned.row
+        self.init(
+            index: planned.index,
+            title: row.title,
+            year: row.year,
+            author: row.author,
+            _type: .init(row.type),
+            sourceKey: row.sourceKey,
+            ids: .init(row.ids),
+            status: row.status.map(Components.Schemas.LibraryStatus.init),
+            rating: row.rating,
+            outcome: .init(rawValue: planned.outcome.rawValue) ?? .pending,
+            reason: planned.reason,
+            titleId: planned.titleID?.description
+        )
+    }
+}

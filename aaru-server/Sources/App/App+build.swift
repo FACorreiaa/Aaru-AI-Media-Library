@@ -41,7 +41,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     return Application(
         router: router,
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        services: [fluent],
+        services: [fluent, ImportWorker(imports: services.imports, logger: logger)],
         logger: logger
     )
 }

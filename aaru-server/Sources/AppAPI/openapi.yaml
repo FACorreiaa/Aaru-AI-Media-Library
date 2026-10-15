@@ -423,6 +423,83 @@ paths:
               schema: {$ref: '#/components/schemas/ListDetail'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/imports:
+    get:
+      operationId: listImports
+      summary: The user's imports, newest first.
+      responses:
+        '200':
+          description: Up to 50 imports.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/csv:
+    post:
+      operationId: createCSVImport
+      summary: Upload an export file. It is parsed now, matched in the background, and written only after approval.
+      parameters:
+        - name: source
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [imdb, letterboxd, goodreads]
+        - name: filename
+          in: query
+          required: false
+          description: The file's name. Letterboxd's watchlist export is told apart by it.
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema: {type: string, format: binary}
+      responses:
+        '202':
+          description: Queued for matching.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getImport
+      summary: One import with every row and what its plan does with it.
+      responses:
+        '200':
+          description: The import.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteImport
+      summary: Discard an import. Library items it already created stay; undo the import action for those.
+      responses:
+        '204':
+          description: Discarded.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/{id}/apply:
+    post:
+      operationId: applyImport
+      summary: Approve the plan. Writes it as one undoable action.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Applied.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/shelves:
     get:
       operationId: listShelves
@@ -594,6 +671,64 @@ components:
         code:
           type: string
           description: Six digits; spaces and dashes are ignored.
+    ImportJob:
+      type: object
+      required: [id, source, state, stats, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        source:
+          type: string
+          enum: [trakt, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics]
+        state:
+          type: string
+          enum: [queued, running, planned, succeeded, failed, partial]
+          description: "`planned` waits for approval; nothing is written before it."
+        stats: {$ref: '#/components/schemas/ImportStats'}
+        errorSummary: {type: string}
+        filename: {type: string}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    ImportStats:
+      type: object
+      required: [created, updated, skipped, unmatched]
+      properties:
+        created: {type: integer}
+        updated: {type: integer}
+        skipped: {type: integer}
+        unmatched: {type: integer}
+    ImportList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ImportJob'}
+    ImportRow:
+      type: object
+      required: [index, title, type, outcome]
+      properties:
+        index: {type: integer}
+        title: {type: string}
+        year: {type: integer}
+        author: {type: string}
+        type: {$ref: '#/components/schemas/MediaType'}
+        sourceKey: {type: string}
+        ids: {$ref: '#/components/schemas/ExternalIds'}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+        rating: {type: number}
+        outcome:
+          type: string
+          enum: [pending, create, update, skip, unmatched]
+        reason: {type: string}
+        titleId: {type: string, format: uuid}
+    ImportDetail:
+      type: object
+      required: [job, rows]
+      properties:
+        job: {$ref: '#/components/schemas/ImportJob'}
+        rows:
+          type: array
+          items: {$ref: '#/components/schemas/ImportRow'}
     Session:
       type: object
       required: [token, userId, expiresAt]

@@ -344,6 +344,77 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The user's imports, newest first. */
+    get: operations['listImports']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/csv': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Upload an export file. It is parsed now, matched in the background, and written only after approval. */
+    post: operations['createCSVImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    /** One import with every row and what its plan does with it. */
+    get: operations['getImport']
+    put?: never
+    post?: never
+    /** Discard an import. Library items it already created stay; undo the import action for those. */
+    delete: operations['deleteImport']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/{id}/apply': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Approve the plan. Writes it as one undoable action. */
+    post: operations['applyImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/shelves': {
     parameters: {
       query?: never
@@ -468,6 +539,60 @@ export interface components {
       email?: string
       /** @description Six digits; spaces and dashes are ignored. */
       code?: string
+    }
+    ImportJob: {
+      /** Format: uuid */
+      id: string
+      /** @enum {string} */
+      source:
+        | 'trakt'
+        | 'imdb_csv'
+        | 'letterboxd_csv'
+        | 'goodreads_csv'
+        | 'cat_list'
+        | 'cat_ics'
+      /**
+       * @description `planned` waits for approval; nothing is written before it.
+       * @enum {string}
+       */
+      state:
+        'queued' | 'running' | 'planned' | 'succeeded' | 'failed' | 'partial'
+      stats: components['schemas']['ImportStats']
+      errorSummary?: string
+      filename?: string
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+    }
+    ImportStats: {
+      created: number
+      updated: number
+      skipped: number
+      unmatched: number
+    }
+    ImportList: {
+      items: components['schemas']['ImportJob'][]
+    }
+    ImportRow: {
+      index: number
+      title: string
+      year?: number
+      author?: string
+      type: components['schemas']['MediaType']
+      sourceKey?: string
+      ids?: components['schemas']['ExternalIds']
+      status?: components['schemas']['LibraryStatus']
+      rating?: number
+      /** @enum {string} */
+      outcome: 'pending' | 'create' | 'update' | 'skip' | 'unmatched'
+      reason?: string
+      /** Format: uuid */
+      titleId?: string
+    }
+    ImportDetail: {
+      job: components['schemas']['ImportJob']
+      rows: components['schemas']['ImportRow'][]
     }
     Session: {
       /** @description Bearer token, sent in the Authorization header as `Bearer <token>`. */
@@ -1423,6 +1548,123 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ListDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listImports: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Up to 50 imports. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createCSVImport: {
+    parameters: {
+      query: {
+        source: 'imdb' | 'letterboxd' | 'goodreads'
+        /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
+        filename?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'text/csv': string
+      }
+    }
+    responses: {
+      /** @description Queued for matching. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The import. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Discarded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  applyImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Applied. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
         }
       }
       default: components['responses']['Error']
