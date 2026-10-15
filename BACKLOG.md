@@ -51,6 +51,14 @@ library layer stay separate, external IDs stored whenever known, no second backe
   merged on email; linking Google to an existing account from Settings.
 - **Sign in with Apple on the web** needs an Apple Services ID on a verified domain: waits for the
   domain. The iOS/Mac apps already have it.
+- **Media scope widens** (by the owner's call): Aaru should track as many kinds of media as it
+  can, not only movies, shows, anime and books. Scheduled after the P2 gate, in this order:
+  **manga** (cheapest: AniList already serves it, books-style progress by chapter/volume),
+  **music** (albums as the tracked unit; MusicBrainz + Cover Art Archive as the catalog, no key,
+  1 req/s with a contact User-Agent; ListenBrainz/Last.fm history as an import source), then
+  comics and games as candidates. Each new kind is a `MediaType` in `AaruCore`, a catalog
+  adapter, a status vocabulary that still maps onto the four statuses, and an entry in
+  `CLAUDE.md`'s stack table. Music stays out of the calendar and episode progress.
 
 ## Decisions recorded 2026-10-14
 
@@ -1791,11 +1799,14 @@ Now **SCR-004** (P3): user-triggered push with a dry-run diff, one-way out.
 ## Explicitly not doing
 
 Two-way sync · conflict engine · recommendations engine · a global or public activity feed ·
-public profile pages indexed by search engines · music, comics, games · scraping any site
+public profile pages indexed by search engines · scraping any site
 without an official export (Pogdesign, IMDb pages, AniDB) · a Stremio `stream` resource or any
 stream source · hosting TMDB, Open Library or AniList artwork · a second backend · a documented
 public API with third-party clients (M14's agent access and P3's scrobble tokens are per-user
 and token-scoped, which is a different thing).
+
+Moved out of this list on 2026-10-15 and scheduled after the P2 gate: music, manga, comics and
+games (see the 2026-10-15 decisions).
 
 Moved out of this list on 2026-10-09 and scheduled after the P2 gate: scrobbling (P3), MAL /
 AniList (P1 catalog, P3 push), friend graph and activity (P4), shared lists (P4), gamification

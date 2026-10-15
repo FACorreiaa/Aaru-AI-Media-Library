@@ -184,7 +184,8 @@ Do not write code for a later phase before the P2 gate, and do not add empty abs
 - Recommendations engine
 - A global or public activity feed; public profile pages indexed by search engines
 - Serializd / SIMKL integrations
-- Music, comics, games
+- Music, manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`
+  decisions 2026-10-15)
 - Scraping Pogdesign, IMDb pages, AniDB, or any site without an official export/API
 - Any Stremio `stream` resource or stream source
 
