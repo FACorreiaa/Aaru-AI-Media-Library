@@ -85,6 +85,9 @@ function Library() {
       <header class="mx-auto flex h-18 max-w-6xl items-center justify-between gap-4 px-5 md:px-8">
         <Wordmark />
         <div class="flex items-center gap-5 text-sm font-medium">
+          <Link to="/app/settings" class="text-muted hover:text-ink">
+            Settings
+          </Link>
           <Link to="/app/lists" class="text-muted hover:text-ink">
             Lists
           </Link>

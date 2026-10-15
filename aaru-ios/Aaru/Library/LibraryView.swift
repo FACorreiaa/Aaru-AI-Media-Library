@@ -6,12 +6,15 @@ struct LibraryView: View {
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
+    let imports: ImportsModel
     var onSignOut: () -> Void
+    var onDeleteAccount: () async -> String?
 
     @AppStorage("library.layout") private var layout = Layout.grid
     @State private var kind: MediaKind?
     @State private var status: LibraryStatus?
     @State private var showsSearch = false
+    @State private var showsSettings = false
 
     enum Layout: String {
         case grid, list
@@ -33,6 +36,12 @@ struct LibraryView: View {
                     if let entry = library.entry(id) {
                         TitleDetailView(entry: entry, api: api, library: library, lists: lists)
                     }
+                }
+                .sheet(isPresented: $showsSettings) {
+                    SettingsView(
+                        api: api, imports: imports, library: library, lists: lists,
+                        onSignOut: onSignOut, onDeleteAccount: onDeleteAccount
+                    )
                 }
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library, lists: lists)
@@ -141,6 +150,7 @@ struct LibraryView: View {
                     Label("List", systemImage: "list.bullet").tag(Layout.list)
                 }
                 Divider()
+                Button("Settings and imports", systemImage: "gearshape") { showsSettings = true }
                 Button("Sign out", role: .destructive, action: onSignOut)
             }
         }

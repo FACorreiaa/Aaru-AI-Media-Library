@@ -7,6 +7,7 @@ struct RootView: View {
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
+    let imports: ImportsModel
     @Environment(SessionStore.self) private var session
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -18,9 +19,11 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isSignedIn {
-                LibraryView(api: api, library: library, lists: lists) {
-                    Task { await flow.signOut() }
-                }
+                LibraryView(
+                    api: api, library: library, lists: lists, imports: imports,
+                    onSignOut: { Task { await flow.signOut() } },
+                    onDeleteAccount: { await flow.deleteAccount() }
+                )
             } else {
                 WelcomeView(
                     api: api,
@@ -45,6 +48,7 @@ struct RootView: View {
             if !signedIn {
                 library.reset()
                 lists.reset()
+                imports.reset()
             }
         }
         .alert(
@@ -71,6 +75,6 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView(api: nil, library: LibraryModel(), lists: ListsModel(api: nil))
+    RootView(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil))
         .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
 }

@@ -53,6 +53,22 @@ struct AuthFlow {
         session.signOut()
     }
 
+    /// Deletes the account on the server, then signs out here. Returns a message on failure.
+    func deleteAccount() async -> String? {
+        guard let api else { return "This build has no server configured." }
+        do {
+            switch try await api.deleteAccount() {
+            case .noContent:
+                session.signOut()
+                return nil
+            case let .default(_, error):
+                return (try? error.body.json.message) ?? "The account was not deleted."
+            }
+        } catch {
+            return "The account was not deleted. Aaru could not reach the server."
+        }
+    }
+
     private func client() throws -> Client {
         guard let api else { throw AuthFlowError("This build has no server configured.") }
         return api
