@@ -1,5 +1,6 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
+import { AddToListDialog } from '../components/AddToListDialog'
 import { Wordmark } from '../components/Brand'
 import { Poster } from '../components/Poster'
 import { KINDS, STATUSES, kindOf } from '../lib/library/model'
@@ -43,6 +44,7 @@ function TitleRoom() {
   const [watched, setWatched] = createSignal(watchedSet(page().entry))
   const [pending, setPending] = createSignal<Set<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [picking, setPicking] = createSignal(false)
   const [notes, setNotes] = createSignal(page().entry.notes ?? '')
   const [pageNumber, setPageNumber] = createSignal(
     page().entry.bookProgress?.page?.toString() ?? '',
@@ -161,6 +163,15 @@ function TitleRoom() {
               {entry().title.title}
             </h1>
             <p class="mt-2 text-muted">{meta()}</p>
+            <button
+              type="button"
+
+              class="mt-4 rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold hover:bg-surface"
+
+              onClick={() => setPicking(true)}
+            >
+              Add to list
+            </button>
             <Show when={entry().progress && entry().progress!.airedCount > 0}>
               <div class="mt-4 max-w-xs">
                 <div class="h-1.5 overflow-hidden rounded-full bg-surface">
@@ -203,7 +214,16 @@ function TitleRoom() {
               }}
             >
               <For each={STATUSES}>
-                {(s) => <option value={s.status}>{s.label}</option>}
+                {(s) => (
+                  // `selected` on the option, not `value` on the select: the value would be
+                  // applied before the options exist and show the first one.
+                  <option
+                    value={s.status}
+                    selected={s.status === entry().status}
+                  >
+                    {s.label}
+                  </option>
+                )}
               </For>
             </select>
           </label>
@@ -322,6 +342,13 @@ function TitleRoom() {
               )}
             </For>
           </section>
+        </Show>
+        <Show when={picking()}>
+          <AddToListDialog
+            mediaRef={{ titleId: entry().title.id, type: entry().title.type }}
+            titleName={entry().title.title}
+            onClose={() => setPicking(false)}
+          />
         </Show>
       </main>
     </div>

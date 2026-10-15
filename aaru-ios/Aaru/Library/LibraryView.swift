@@ -5,6 +5,7 @@ import SwiftUI
 struct LibraryView: View {
     let api: Client?
     let library: LibraryModel
+    let lists: ListsModel
     var onSignOut: () -> Void
 
     @AppStorage("library.layout") private var layout = Layout.grid
@@ -30,11 +31,11 @@ struct LibraryView: View {
                 .task { await library.sync(api: api) }
                 .navigationDestination(for: String.self) { id in
                     if let entry = library.entry(id) {
-                        TitleDetailView(entry: entry, api: api, library: library)
+                        TitleDetailView(entry: entry, api: api, library: library, lists: lists)
                     }
                 }
                 .sheet(isPresented: $showsSearch) {
-                    SearchView(api: api, library: library)
+                    SearchView(api: api, library: library, lists: lists)
                 }
                 .background(Color(.paper))
         }
@@ -122,6 +123,13 @@ struct LibraryView: View {
     }
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            NavigationLink {
+                ListsView(lists: lists, library: library, api: api)
+            } label: {
+                Label("Lists", systemImage: "list.bullet.rectangle")
+            }
+        }
         ToolbarItem(placement: .primaryAction) {
             Button("Search", systemImage: "magnifyingglass") { showsSearch = true }
                 .keyboardShortcut("f", modifiers: .command)

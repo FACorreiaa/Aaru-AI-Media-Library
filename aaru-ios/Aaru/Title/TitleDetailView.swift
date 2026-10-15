@@ -6,9 +6,12 @@ struct TitleDetailView: View {
     @State private var model: TitleDetailModel
     @State private var notes = ""
     @State private var page = ""
+    @State private var showsListPicker = false
+    private let lists: ListsModel
 
-    init(entry: LibraryEntry, api: Client?, library: LibraryModel) {
+    init(entry: LibraryEntry, api: Client?, library: LibraryModel, lists: ListsModel) {
         _model = State(initialValue: TitleDetailModel(entry: entry, api: api, library: library))
+        self.lists = lists
     }
 
     private var entry: LibraryEntry {
@@ -62,20 +65,18 @@ struct TitleDetailView: View {
         }
         .formStyle(.grouped)
         // The rollback message sits where the tap was: at the bottom, not above a long season list.
-        .safeAreaInset(edge: .bottom) {
-            if let problem = model.problem {
-                Label(problem, systemImage: "exclamationmark.arrow.circlepath")
-                    .font(.callout)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.red.opacity(0.9), in: RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                    .onTapGesture { model.problem = nil }
-                    .accessibilityAddTraits(.isStaticText)
+        .safeAreaInset(edge: .bottom) { ProblemBanner(message: model.problem) { model.problem = nil } }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Add to list", systemImage: "text.badge.plus") { showsListPicker = true }
             }
+        }
+        .sheet(isPresented: $showsListPicker) {
+            ListPickerSheet(
+                ref: .init(titleId: entry.title.id, _type: entry.title._type),
+                titleName: entry.title.title,
+                lists: lists
+            )
         }
         .scrollContentBackground(.hidden)
         .background(Color(.paper))

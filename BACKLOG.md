@@ -737,6 +737,18 @@ screen builds and makes the same calls but was not driven in the simulator.
 
 **Done when:** a title can be added to a list from title detail and from search results.
 
+**Progress 2026-10-15 (all three clients):** built. A Lists screen (create, rename, delete; reached
+from the library toolbar on Apple, a "Lists" link on the web), a list screen (its titles in
+order; remove; reorder by drag on Apple, up/down on the web; a title already on the shelf opens
+its Title room), and an "Add to list" picker on the title screen and on every search result,
+where a new list can be made on the spot. Titles need not be in the library to be on a list; a
+repeat add changes nothing (server rule). Verified on the web against a local API: a list made
+from Frieren's title page, The Hobbit added from search without adding it to the library, a
+reorder and a remove that both survived a reload. Also fixed on the web: the title page's
+status menu showed the first option instead of the saved one, and unknown addresses now get a
+branded "Nothing lives here" page. The Apple screens build but were not driven in the
+simulator.
+
 ### APP-007 · Settings, sources, import status · M
 **Needs:** APP-001, IMP-002.
 Connected sources, start an import, watch job state and stats, see unmatched rows.

@@ -14,6 +14,7 @@ import type {
   MediaKind,
 } from '../lib/library/model'
 import { Poster } from './Poster'
+import { AddToListDialog } from './AddToListDialog'
 
 /** APP-004 on the web: type-scoped search, debounced, with add and an initial status. */
 export function SearchPanel(props: {
@@ -28,6 +29,7 @@ export function SearchPanel(props: {
   const [problem, setProblem] = createSignal<string | null>(null)
   // Hits being added right now: a second click waits instead of adding twice.
   const [adding, setAdding] = createSignal<Set<string>>(new Set())
+  const [listTarget, setListTarget] = createSignal<CatalogHit | null>(null)
   let latest = 0
 
   createEffect(() => {
@@ -177,6 +179,15 @@ export function SearchPanel(props: {
                     {[hit.year, hit.byline].filter(Boolean).join(' · ')}
                   </p>
                 </div>
+                <button
+                  type="button"
+
+                  class="text-sm font-medium text-muted hover:text-ink"
+
+                  onClick={() => setListTarget(hit)}
+                >
+                  List…
+                </button>
                 <Show
                   when={!isOnShelf(hit, props.entries)}
                   fallback={
@@ -226,6 +237,20 @@ export function SearchPanel(props: {
           }}
         </For>
       </ul>
+      <Show when={listTarget()}>
+        {(hit) => (
+          <AddToListDialog
+            mediaRef={{
+              type: hit().type,
+              ids: hit().ids,
+              title: hit().title,
+              year: hit().year,
+            }}
+            titleName={hit().title}
+            onClose={() => setListTarget(null)}
+          />
+        )}
+      </Show>
     </div>
   )
 }
