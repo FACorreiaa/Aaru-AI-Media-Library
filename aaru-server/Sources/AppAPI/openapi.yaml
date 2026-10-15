@@ -784,6 +784,12 @@ components:
         finishedAt: {type: string, format: date-time}
         progress: {$ref: '#/components/schemas/ShowProgress'}
         bookProgress: {$ref: '#/components/schemas/BookProgress'}
+        watchedEpisodes:
+          type: array
+          description: |
+            Every watched episode of a show, in order. Only on single-item responses (the item,
+            and episode and season writes); lists and sync leave it out.
+          items: {$ref: '#/components/schemas/EpisodeRef'}
     LibraryPage:
       type: object
       required: [items, page]

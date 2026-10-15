@@ -1419,6 +1419,12 @@ public enum Components {
             public var progress: Components.Schemas.ShowProgress?
             /// - Remark: Generated from `#/components/schemas/LibraryEntry/bookProgress`.
             public var bookProgress: Components.Schemas.BookProgress?
+            /// Every watched episode of a show, in order. Only on single-item responses (the item,
+            /// and episode and season writes); lists and sync leave it out.
+            ///
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/watchedEpisodes`.
+            public var watchedEpisodes: [Components.Schemas.EpisodeRef]?
             /// Creates a new `LibraryEntry`.
             ///
             /// - Parameters:
@@ -1433,6 +1439,7 @@ public enum Components {
             ///   - finishedAt:
             ///   - progress:
             ///   - bookProgress:
+            ///   - watchedEpisodes: Every watched episode of a show, in order. Only on single-item responses (the item,
             public init(
                 id: Swift.String,
                 title: Components.Schemas.TitleSummary,
@@ -1444,7 +1451,8 @@ public enum Components {
                 updatedAt: Foundation.Date,
                 finishedAt: Foundation.Date? = nil,
                 progress: Components.Schemas.ShowProgress? = nil,
-                bookProgress: Components.Schemas.BookProgress? = nil
+                bookProgress: Components.Schemas.BookProgress? = nil,
+                watchedEpisodes: [Components.Schemas.EpisodeRef]? = nil
             ) {
                 self.id = id
                 self.title = title
@@ -1457,6 +1465,7 @@ public enum Components {
                 self.finishedAt = finishedAt
                 self.progress = progress
                 self.bookProgress = bookProgress
+                self.watchedEpisodes = watchedEpisodes
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -1470,6 +1479,7 @@ public enum Components {
                 case finishedAt
                 case progress
                 case bookProgress
+                case watchedEpisodes
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.

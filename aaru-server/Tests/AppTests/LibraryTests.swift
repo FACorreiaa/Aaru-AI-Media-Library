@@ -164,6 +164,24 @@ struct ProgressTests {
         }
     }
 
+    @Test("APP-005: single-item responses list watched episodes; lists and sync do not")
+    func watchedEpisodesOnSingleItem() async throws {
+        try await LibraryHarness.run { env in
+            let id = try await env.add("show", tmdb: env.stubShow("Severance", status: .ended))
+            let tick = try await env.send(.put, "/v1/library/items/\(id)/episodes/1/2", json: ["watched": true])
+                .json()
+            let ticked = tick["watchedEpisodes"] as? [[String: Int]]
+            #expect(ticked == [["season": 1, "number": 2]])
+            let item = try await env.send(.get, "/v1/library/items/\(id)").json()
+            #expect((item["watchedEpisodes"] as? [[String: Int]])?.count == 1)
+            let season = try await env.send(.post, "/v1/library/items/\(id)/seasons/1/watched").json()
+            #expect((season["watchedEpisodes"] as? [[String: Int]])?.count == 3)
+            let synced = try await env.send(.get, "/v1/library/sync").json()
+            let first = try #require((synced["items"] as? [[String: Any]])?.first)
+            #expect(first["watchedEpisodes"] == nil, "sync stays lean")
+        }
+    }
+
     @Test("PROG-002: a season mark leaves unaired episodes alone")
     func seasonSkipsUnaired() async throws {
         try await LibraryHarness.run { env in

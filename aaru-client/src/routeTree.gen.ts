@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as AppTitleIdRouteImport } from './routes/app_.title.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppTitleIdRoute = AppTitleIdRouteImport.update({
+  id: '/app_/title/$id',
+  path: '/app/title/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app/title/$id': typeof AppTitleIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app/title/$id': typeof AppTitleIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app_/title/$id': typeof AppTitleIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/sign-in'
+  fullPaths: '/' | '/app' | '/sign-in' | '/app/title/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/sign-in'
-  id: '__root__' | '/' | '/app' | '/sign-in'
+  to: '/' | '/app' | '/sign-in' | '/app/title/$id'
+  id: '__root__' | '/' | '/app' | '/sign-in' | '/app_/title/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRoute
   SignInRoute: typeof SignInRoute
+  AppTitleIdRoute: typeof AppTitleIdRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app_/title/$id': {
+      id: '/app_/title/$id'
+      path: '/app/title/$id'
+      fullPath: '/app/title/$id'
+      preLoaderRoute: typeof AppTitleIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRoute,
   SignInRoute: SignInRoute,
+  AppTitleIdRoute: AppTitleIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

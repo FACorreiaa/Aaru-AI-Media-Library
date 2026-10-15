@@ -611,6 +611,11 @@ export interface components {
       finishedAt?: string
       progress?: components['schemas']['ShowProgress']
       bookProgress?: components['schemas']['BookProgress']
+      /**
+       * @description Every watched episode of a show, in order. Only on single-item responses (the item,
+       *     and episode and season writes); lists and sync leave it out.
+       */
+      watchedEpisodes?: components['schemas']['EpisodeRef'][]
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]

@@ -28,6 +28,11 @@ struct LibraryView: View {
                 .toolbar { toolbar }
                 .refreshable { await library.sync(api: api) }
                 .task { await library.sync(api: api) }
+                .navigationDestination(for: String.self) { id in
+                    if let entry = library.entry(id) {
+                        TitleDetailView(entry: entry, api: api, library: library)
+                    }
+                }
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library)
                 }
@@ -61,15 +66,21 @@ struct LibraryView: View {
                     columns: [GridItem(.adaptive(minimum: 108, maximum: 160), spacing: 16, alignment: .top)],
                     spacing: 20
                 ) {
-                    ForEach(rows) { PosterCard(row: $0) }
+                    ForEach(rows) { row in
+                        NavigationLink(value: row.id) { PosterCard(row: row) }
+                            .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }
         } else {
-            List(rows) { LibraryListRow(row: $0) }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
+            List(rows) { row in
+                NavigationLink(value: row.id) { LibraryListRow(row: row) }
+                    .listRowBackground(Color.clear)
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
     }
 

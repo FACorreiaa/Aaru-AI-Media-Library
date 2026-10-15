@@ -35,7 +35,7 @@ extension APIImplementation {
     }
 
     func getLibraryItem(_ input: Operations.GetLibraryItem.Input) async throws -> Operations.GetLibraryItem.Output {
-        try await .ok(.init(body: .json(.init(library.entry(itemID(input.path.id), userID: currentUser())))))
+        try await .ok(.init(body: .json(withWatched(library.entry(itemID(input.path.id), userID: currentUser())))))
     }
 
     func updateLibraryItem(_ input: Operations.UpdateLibraryItem.Input) async throws -> Operations.UpdateLibraryItem
@@ -70,7 +70,7 @@ extension APIImplementation {
         let entry = try await library.setEpisode(
             itemID(input.path.id), userID: currentUser(), key: key, watched: body.watched
         )
-        return .ok(.init(body: .json(.init(entry))))
+        return try await .ok(.init(body: .json(withWatched(entry))))
     }
 
     func markSeasonWatched(_ input: Operations.MarkSeasonWatched.Input) async throws -> Operations.MarkSeasonWatched
@@ -79,7 +79,18 @@ extension APIImplementation {
         let entry = try await library.markSeasonWatched(
             itemID(input.path.id), userID: currentUser(), season: input.path.season
         )
-        return .ok(.init(body: .json(.init(entry))))
+        return try await .ok(.init(body: .json(withWatched(entry))))
+    }
+
+    /// A single-item response: the entry plus every watched episode, so a client can draw ticks.
+    private func withWatched(_ entry: LibraryEntry) async throws -> Components.Schemas.LibraryEntry {
+        var response = Components.Schemas.LibraryEntry(entry)
+        if entry.title.type == .show {
+            response.watchedEpisodes = try await stores.library.watched(itemID: entry.item.id)
+                .sorted()
+                .map { .init(season: $0.season, number: $0.episode) }
+        }
+        return response
     }
 
     func syncLibrary(_ input: Operations.SyncLibrary.Input) async throws -> Operations.SyncLibrary.Output {

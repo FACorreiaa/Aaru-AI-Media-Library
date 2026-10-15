@@ -112,6 +112,13 @@ struct CatalogAdapterTests {
         #expect(stub.requests.first?.method == "POST")
     }
 
+    @Test("AniList descriptions reach clients as plain text")
+    func aniListPlainText() {
+        let html = "An elf mage <i>outlives</i> her party.<br><br>\n(Source: Crunchyroll &amp; others)"
+        let expected = "An elf mage outlives her party.\n\n(Source: Crunchyroll & others)"
+        #expect(AniListText.plain(html) == expected)
+    }
+
     @Test("AniList episodes come from the schedule plus the next airing episode")
     func aniListEpisodes() async throws {
         let stub = transport(["": #"""

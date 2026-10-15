@@ -26,6 +26,10 @@ final class LibraryModel {
         }
     }
 
+    func entry(_ id: String) -> LibraryEntry? {
+        entries[id]
+    }
+
     func rows(kind: MediaKind?, status: LibraryStatus?) -> [LibraryRow] {
         rows.filter { (kind == nil || $0.kind == kind) && (status == nil || $0.status == status) }
     }
