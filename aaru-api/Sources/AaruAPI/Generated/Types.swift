@@ -158,6 +158,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/csv`.
     /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)`.
     func createCSVImport(_ input: Operations.CreateCSVImport.Input) async throws -> Operations.CreateCSVImport.Output
+    /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/anilist`.
+    /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
+    func createAniListImport(_ input: Operations.CreateAniListImport.Input) async throws -> Operations.CreateAniListImport.Output
     /// Import the connected Trakt account. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/trakt`.
@@ -619,6 +624,19 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/anilist`.
+    /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
+    public func createAniListImport(
+        headers: Operations.CreateAniListImport.Input.Headers = .init(),
+        body: Operations.CreateAniListImport.Input.Body
+    ) async throws -> Operations.CreateAniListImport.Output {
+        try await createAniListImport(Operations.CreateAniListImport.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// Import the connected Trakt account. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/trakt`.
@@ -1025,6 +1043,8 @@ public enum Components {
                 case goodreadsCsv = "goodreads_csv"
                 case catList = "cat_list"
                 case catIcs = "cat_ics"
+                case malXml = "mal_xml"
+                case anilist = "anilist"
             }
             /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
             public var source: Components.Schemas.ImportJob.SourcePayload
@@ -1047,6 +1067,8 @@ public enum Components {
             public var stats: Components.Schemas.ImportStats
             /// - Remark: Generated from `#/components/schemas/ImportJob/errorSummary`.
             public var errorSummary: Swift.String?
+            /// The uploaded file's name, or the AniList username for an `anilist` import.
+            ///
             /// - Remark: Generated from `#/components/schemas/ImportJob/filename`.
             public var filename: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ImportJob/createdAt`.
@@ -1061,7 +1083,7 @@ public enum Components {
             ///   - state: `planned` waits for approval; nothing is written before it.
             ///   - stats:
             ///   - errorSummary:
-            ///   - filename:
+            ///   - filename: The uploaded file's name, or the AniList username for an `anilist` import.
             ///   - createdAt:
             ///   - updatedAt:
             public init(
@@ -7694,6 +7716,7 @@ public enum Operations {
                     case imdb = "imdb"
                     case letterboxd = "letterboxd"
                     case goodreads = "goodreads"
+                    case mal = "mal"
                 }
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
                 public var source: Operations.CreateCSVImport.Input.Query.SourcePayload
@@ -7731,6 +7754,8 @@ public enum Operations {
             @frozen public enum Body: Sendable, Hashable {
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/requestBody/content/text\/csv`.
                 case csv(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/imports/csv/POST/requestBody/content/application\/xml`.
+                case xml(OpenAPIRuntime.HTTPBody)
             }
             public var body: Operations.CreateCSVImport.Input.Body
             /// Creates a new `Input`.
@@ -7804,6 +7829,163 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/anilist`.
+    /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
+    public enum CreateAniListImport {
+        public static let id: Swift.String = "createAniListImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/anilist/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateAniListImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateAniListImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateAniListImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/anilist/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/anilist/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// AniList username: 2–20 letters, digits or underscores.
+                    ///
+                    /// - Remark: Generated from `#/paths/v1/imports/anilist/POST/requestBody/json/username`.
+                    public var username: Swift.String
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - username: AniList username: 2–20 letters, digits or underscores.
+                    public init(username: Swift.String) {
+                        self.username = username
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case username
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/anilist/POST/requestBody/content/application\/json`.
+                case json(Operations.CreateAniListImport.Input.Body.JsonPayload)
+            }
+            public var body: Operations.CreateAniListImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateAniListImport.Input.Headers = .init(),
+                body: Operations.CreateAniListImport.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/anilist/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/anilist/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateAniListImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateAniListImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateAniListImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateAniListImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

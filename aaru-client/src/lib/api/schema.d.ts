@@ -461,6 +461,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/anilist': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import a public AniList anime list by username. Read and matched in the background, written only after approval. */
+    post: operations['createAniListImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/trakt': {
     parameters: {
       query?: never
@@ -698,6 +715,8 @@ export interface components {
         | 'goodreads_csv'
         | 'cat_list'
         | 'cat_ics'
+        | 'mal_xml'
+        | 'anilist'
       /**
        * @description `planned` waits for approval; nothing is written before it.
        * @enum {string}
@@ -706,6 +725,7 @@ export interface components {
         'queued' | 'running' | 'planned' | 'succeeded' | 'failed' | 'partial'
       stats: components['schemas']['ImportStats']
       errorSummary?: string
+      /** @description The uploaded file's name, or the AniList username for an `anilist` import. */
       filename?: string
       /** Format: date-time */
       createdAt: string
@@ -1891,7 +1911,7 @@ export interface operations {
   createCSVImport: {
     parameters: {
       query: {
-        source: 'imdb' | 'letterboxd' | 'goodreads'
+        source: 'imdb' | 'letterboxd' | 'goodreads' | 'mal'
         /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
         filename?: string
       }
@@ -1902,10 +1922,39 @@ export interface operations {
     requestBody: {
       content: {
         'text/csv': string
+        'application/xml': string
       }
     }
     responses: {
       /** @description Queued for matching. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createAniListImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description AniList username: 2–20 letters, digits or underscores. */
+          username: string
+        }
+      }
+    }
+    responses: {
+      /** @description Queued. */
       202: {
         headers: {
           [name: string]: unknown

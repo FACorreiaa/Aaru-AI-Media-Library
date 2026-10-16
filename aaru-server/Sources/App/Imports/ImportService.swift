@@ -14,6 +14,8 @@ struct ImportService: Sendable {
     let resolver: TitleResolver
     /// Trakt connect and its reader. Nil when Trakt is not configured.
     var trakt: TraktImport?
+    /// Public AniList lists (IMP-014). Nil when the catalog is a test fake.
+    var anilistLists: (any AniListListReading)?
     var now: @Sendable () -> Date = { Date() }
 
     // MARK: Requests
@@ -27,7 +29,7 @@ struct ImportService: Sendable {
     ) async throws -> ImportJob {
         let rows: [ImportRow]
         do {
-            rows = try CSVImportParser.parse(text, source: source, filename: filename)
+            rows = try Self.parse(text, source: source, filename: filename)
         } catch let error as ImportFormatError {
             throw AppError(
                 status: .unprocessableContent, code: "validation_failed", message: error.message,
@@ -78,8 +80,9 @@ struct ImportService: Sendable {
         var job = claimed.job
         do {
             var stored = try await stores.importJobs.rows(jobID: job.id)
-            if job.source == .trakt, stored.isEmpty {
-                guard let fetched = try await fetchTrakt(&job) else { return true }
+            if stored.isEmpty, job.source == .trakt || job.source == .anilist {
+                let fetched = job.source == .trakt ? try await fetchTrakt(&job) : try await fetchAniList(&job)
+                guard let fetched else { return true }
                 try await stores.importJobs.appendRows(fetched, jobID: job.id)
                 stored = try await stores.importJobs.rows(jobID: job.id)
             }
@@ -310,6 +313,8 @@ extension ImportService {
         case .goodreadsCSV: "Goodreads"
         case .trakt: "Trakt"
         case .catList, .catICS: "Pogdesign CAT"
+        case .malXML: "MyAnimeList"
+        case .anilist: "AniList"
         }
         return "Imported \(stats.created) new and updated \(stats.updated) from \(name)"
     }

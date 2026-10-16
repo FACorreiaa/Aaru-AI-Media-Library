@@ -11,6 +11,10 @@ public enum ImportSource: String, Codable, Hashable, Sendable, CaseIterable {
     case goodreadsCSV = "goodreads_csv"
     case catList = "cat_list"
     case catICS = "cat_ics"
+    /// MyAnimeList's XML list export (IMP-013). TV Time (IMP-012) slots in before it.
+    case malXML = "mal_xml"
+    /// A public AniList list, read by username (IMP-014).
+    case anilist
 
     /// Position in the merge order, lowest first.
     public var mergeRank: Int {

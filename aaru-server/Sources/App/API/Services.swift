@@ -28,7 +28,8 @@ struct Services: Sendable {
             schedule: ScheduleService(stores: stores, catalog: catalog),
             imports: ImportService(
                 stores: stores, resolver: resolver,
-                trakt: trakt.map { TraktImport(connect: traktConnect(stores, $0), importer: TraktImporter(api: $0)) }
+                trakt: trakt.map { TraktImport(connect: traktConnect(stores, $0), importer: TraktImporter(api: $0)) },
+                anilistLists: catalogs.anilist as? any AniListListReading
             ),
             traktConnect: traktConnect(stores, trakt)
         )

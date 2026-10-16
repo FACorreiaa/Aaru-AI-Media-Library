@@ -530,7 +530,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [imdb, letterboxd, goodreads]
+            enum: [imdb, letterboxd, goodreads, mal]
         - name: filename
           in: query
           required: false
@@ -541,9 +541,33 @@ paths:
         content:
           text/csv:
             schema: {type: string, format: binary}
+          # MyAnimeList's list export, decompressed (source=mal).
+          application/xml:
+            schema: {type: string, format: binary}
       responses:
         '202':
           description: Queued for matching.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/anilist:
+    post:
+      operationId: createAniListImport
+      summary: Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username: {type: string, description: "AniList username: 2–20 letters, digits or underscores."}
+      responses:
+        '202':
+          description: Queued.
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ImportJob'}
@@ -833,14 +857,16 @@ components:
         id: {type: string, format: uuid}
         source:
           type: string
-          enum: [trakt, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics]
+          enum: [trakt, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, mal_xml, anilist]
         state:
           type: string
           enum: [queued, running, planned, succeeded, failed, partial]
           description: "`planned` waits for approval; nothing is written before it."
         stats: {$ref: '#/components/schemas/ImportStats'}
         errorSummary: {type: string}
-        filename: {type: string}
+        filename:
+          type: string
+          description: The uploaded file's name, or the AniList username for an `anilist` import.
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
     ImportStats:

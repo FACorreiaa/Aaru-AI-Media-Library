@@ -10,7 +10,7 @@ enum CSVImportParser {
         case .imdbCSV: return try imdb(table)
         case .letterboxdCSV: return try letterboxd(table, filename: filename)
         case .goodreadsCSV: return try goodreads(table)
-        case .trakt, .catList, .catICS:
+        case .trakt, .catList, .catICS, .malXML, .anilist:
             throw ImportFormatError(message: "\(source.rawValue) is not a CSV import.")
         }
     }
