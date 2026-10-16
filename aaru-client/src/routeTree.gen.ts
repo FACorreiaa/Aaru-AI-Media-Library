@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as AppLibraryRouteImport } from './routes/app_.library'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
@@ -33,6 +34,11 @@ const AppRoute = AppRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppLibraryRoute = AppLibraryRouteImport.update({
+  id: '/app_/library',
+  path: '/app/library',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app/library': typeof AppLibraryRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app/library': typeof AppLibraryRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/sign-in': typeof SignInRoute
+  '/app_/library': typeof AppLibraryRoute
   '/app_/settings': typeof AppSettingsRoute
   '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/sign-in'
+    | '/app/library'
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/sign-in'
+    | '/app/library'
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/sign-in'
+    | '/app_/library'
     | '/app_/settings'
     | '/app_/week'
     | '/auth/verify'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRoute
   SignInRoute: typeof SignInRoute
+  AppLibraryRoute: typeof AppLibraryRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppWeekRoute: typeof AppWeekRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/solid-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/library': {
+      id: '/app_/library'
+      path: '/app/library'
+      fullPath: '/app/library'
+      preLoaderRoute: typeof AppLibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/settings': {
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRoute,
   SignInRoute: SignInRoute,
+  AppLibraryRoute: AppLibraryRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppWeekRoute: AppWeekRoute,
   AuthVerifyRoute: AuthVerifyRoute,
@@ -250,13 +271,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/solid-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

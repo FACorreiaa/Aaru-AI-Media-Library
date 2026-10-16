@@ -146,7 +146,10 @@ function TitleRoom() {
     <div class="min-h-[100dvh]">
       <header class="mx-auto flex h-18 max-w-4xl items-center justify-between px-5 md:px-8">
         <Wordmark />
-        <Link to="/app" class="text-sm font-medium text-muted hover:text-ink">
+        <Link
+          to="/app/library"
+          class="text-sm font-medium text-muted hover:text-ink"
+        >
           Library
         </Link>
       </header>

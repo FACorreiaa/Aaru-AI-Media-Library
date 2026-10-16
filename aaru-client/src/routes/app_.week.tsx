@@ -16,7 +16,7 @@ import {
   onMount,
 } from 'solid-js'
 import { z } from 'zod'
-import { Wordmark } from '../components/Brand'
+import { AppHeader } from '../components/AppHeader'
 import { MonthCalendar } from '../components/MonthCalendar'
 import { WeekGrid } from '../components/WeekGrid'
 import {
@@ -280,12 +280,7 @@ function Calendar() {
 
   return (
     <div class="min-h-[100dvh]">
-      <header class="mx-auto flex h-18 max-w-[1600px] items-center justify-between px-4 md:px-8">
-        <Wordmark />
-        <Link to="/app" class="text-sm font-medium text-muted hover:text-ink">
-          Library
-        </Link>
-      </header>
+      <AppHeader class="max-w-[1600px]" />
 
       <main class="mx-auto max-w-[1600px] px-4 pb-16 md:px-8">
         <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
@@ -384,7 +379,8 @@ function Calendar() {
               air.
             </p>
             <Link
-              to="/app"
+              to="/app/library"
+              search={{ search: true }}
               class="mt-4 inline-block rounded-full bg-accent px-4 py-2 text-sm font-semibold text-on-accent"
             >
               Find shows to add

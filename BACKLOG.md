@@ -121,6 +121,7 @@ with every provider stubbed.
 | M5 Progress (PROG-001…004) | Done. |
 | M6 Lists + shelves (LST-001/002, SHF-001/002) | Done. List writes are journaled and undoable. |
 | CAL-001, UPN-001 | Done. Network comes from TMDB's first network / AniList's first streaming link (2026-10-15); TVmaze (CAT-011, built 2026-10-16) refines TMDB dates to exact times and the network; its CC BY-SA credit still needs the About screen (PRV-001). Shows hydrate when added; refreshing every tracked show on its staleness window needs a job (JOB-001). |
+| APP-009 Home rows | Built 2026-10-16 on iPhone, iPad, Mac and web: Home is the first destination (Home · Library · Calendar; web library moved to `/app/library`). Continue watching (one-tap check advances optimistically), Airing soon / Coming up (badges from `airTimeKnown`), Start watching. Apple renders from a disk cache first; the web has no offline cache yet. In-progress movies are not in Continue watching (server returns shows only). Checked with sample data only. |
 | APP-010 + catch-up month | Built 2026-10-15 on iPhone, iPad, Mac and web: Calendar destination with Week (CAT grid / iPhone day pager) and Month (Stremio-style posters + agenda). Server adds `backdropUrl`, `network`, `airTimeKnown`, `episodeOverview`; range up to 42 days. Checked with sample data only. |
 
 **P1 gate** (works end to end against the production API on `maat`) is not met until P0's
