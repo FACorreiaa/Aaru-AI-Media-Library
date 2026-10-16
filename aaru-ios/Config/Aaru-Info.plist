@@ -4,9 +4,30 @@
 <dict>
 	<key>AaruAPIBaseURL</key>
 	<string>$(API_BASE_URL)</string>
+	<key>AaruAppBundleID</key>
+	<string>$(APP_BUNDLE_ID)</string>
 	<key>AaruAppGroupID</key>
 	<string>$(APP_GROUP_ID)</string>
 	<key>AaruGoogleClientID</key>
 	<string>$(GOOGLE_CLIENT_ID)</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>$(APP_BUNDLE_ID).widget-refresh</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(APP_BUNDLE_ID)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>aaru</string>
+			</array>
+		</dict>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

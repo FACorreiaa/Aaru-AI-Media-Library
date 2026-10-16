@@ -1,6 +1,7 @@
 import AaruAPI
 import AuthenticationServices
 import SwiftUI
+import WidgetKit
 
 /// Routes on the session: welcome when signed out, the app when signed in.
 struct RootView: View {
@@ -13,6 +14,8 @@ struct RootView: View {
     @State private var showsEmailSignIn = false
     @State private var tab: AppTab = .home
     @State private var errorMessage: String?
+    /// A title a widget asked to open (`aaru://title/{id}`).
+    @State private var linkedTitle: LinkedTitle?
 
     private var flow: AuthFlow {
         AuthFlow(api: api, session: session)
@@ -38,6 +41,16 @@ struct RootView: View {
                     }
                 }
                 .tabViewStyle(.sidebarAdaptable)
+                .sheet(item: $linkedTitle) { link in
+                    NavigationStack {
+                        LibraryEntryDestination(id: link.id, api: api, library: library, lists: lists)
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Done") { linkedTitle = nil }
+                                }
+                            }
+                    }
+                }
             } else {
                 WelcomeView(
                     api: api,
@@ -76,8 +89,15 @@ struct RootView: View {
                 lists.reset()
                 imports.reset()
                 HomeCache().clear()
+                WidgetSnapshotStore.clear()
+                WidgetCenter.shared.reloadAllTimelines()
                 tab = .home
+                linkedTitle = nil
             }
+        }
+        .onOpenURL { url in
+            guard session.isSignedIn, let id = WidgetLink.libraryItemId(in: url) else { return }
+            linkedTitle = LinkedTitle(id: id)
         }
         .alert(
             "Could not sign in",
@@ -95,6 +115,10 @@ struct RootView: View {
 
     enum AppTab: Hashable {
         case home, library, calendar
+    }
+
+    struct LinkedTitle: Identifiable {
+        let id: String
     }
 
     private func run(_ action: () async throws -> Void) async {

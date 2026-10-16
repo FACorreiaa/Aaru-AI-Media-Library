@@ -76,7 +76,10 @@ final class TitleDetailModel {
                 body: .json(.init(watched: watch))
             )
             switch output {
-            case let .ok(response): try commit(response.body.json)
+            case let .ok(response):
+                try commit(response.body.json)
+                // The widgets' up next and week follow every tick (WID-001).
+                Task { try? await WidgetSync.refresh(api: api) }
             case let .default(_, error):
                 rollback(key, to: !watch, message: (try? error.body.json.message))
             }

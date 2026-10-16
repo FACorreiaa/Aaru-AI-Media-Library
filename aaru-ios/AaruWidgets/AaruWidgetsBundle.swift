@@ -4,6 +4,8 @@ import WidgetKit
 @main
 struct AaruWidgetsBundle: WidgetBundle {
     var body: some Widget {
-        StatusWidget()
+        UpNextWidget()
+        CountdownWidget()
+        WeekWidget()
     }
 }
