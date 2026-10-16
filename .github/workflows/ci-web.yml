@@ -7,11 +7,15 @@ on:
     paths:
       - "aaru-client/**"
       - "aaru-server/Sources/AppAPI/openapi.yaml"
+      # /privacy is rendered from this file at build time.
+      - "docs/privacy.md"
       - ".github/workflows/ci-web.yml"
   pull_request:
     paths:
       - "aaru-client/**"
       - "aaru-server/Sources/AppAPI/openapi.yaml"
+      # /privacy is rendered from this file at build time.
+      - "docs/privacy.md"
       - ".github/workflows/ci-web.yml"
   workflow_dispatch:
 
