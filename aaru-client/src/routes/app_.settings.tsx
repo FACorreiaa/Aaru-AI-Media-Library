@@ -7,6 +7,7 @@ import {
 } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
+import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
 import {
@@ -236,6 +237,19 @@ function Settings() {
             </ul>
           </section>
         </Show>
+
+        <section class="mt-10 rounded-[20px] bg-surface p-5">
+          <h2 class="font-display text-xl font-medium">About Aaru</h2>
+          <p class="mt-2 text-sm text-muted">{TMDB_NOTICE}</p>
+          <div class="mt-4 flex gap-4 text-sm font-semibold">
+            <Link to="/about" class="text-accent hover:underline">
+              About and credits
+            </Link>
+            <Link to="/privacy" class="text-accent hover:underline">
+              Privacy policy
+            </Link>
+          </div>
+        </section>
 
         <section class="mt-12 rounded-[20px] border border-danger/30 p-5">
           <h2 class="font-display text-xl font-medium">Delete account</h2>
