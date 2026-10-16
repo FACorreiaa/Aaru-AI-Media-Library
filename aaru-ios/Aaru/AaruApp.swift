@@ -6,6 +6,7 @@ struct AaruApp: App {
     @State private var services = AppServices()
     #if os(iOS)
         @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+        @Environment(\.scenePhase) private var scenePhase
     #endif
 
     init() {
@@ -14,13 +15,23 @@ struct AaruApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        let scene = WindowGroup {
             RootView(api: services.api, library: services.library, lists: services.lists, imports: services.imports)
                 .environment(services.session)
-                .task {
-                    AppGroup.lastAppLaunch = .now
-                    WidgetCenter.shared.reloadAllTimelines()
-                }
+                .task { WidgetCenter.shared.reloadAllTimelines() }
         }
+        #if os(iOS)
+            return scene
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .background {
+                        WidgetRefresh.schedule()
+                    }
+                }
+                .backgroundTask(.appRefresh(WidgetRefresh.taskID)) {
+                    await WidgetRefresh.run()
+                }
+        #else
+            return scene
+        #endif
     }
 }

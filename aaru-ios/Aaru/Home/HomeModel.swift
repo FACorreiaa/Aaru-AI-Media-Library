@@ -26,8 +26,6 @@ final class HomeModel {
     @ObservationIgnored let calendar: Calendar
     @ObservationIgnored private let now: () -> Date
 
-    /// How far ahead the Calendar row looks.
-    nonisolated static let horizon: TimeInterval = 14 * 86400
     /// Cards in the Calendar row; the full list is one tap away.
     nonisolated static let upcomingLimit = 12
 
@@ -71,10 +69,9 @@ final class HomeModel {
         guard let api, !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
-        let today = calendar.startOfDay(for: now())
-        // A date-only air date is midnight UTC, which is "yesterday" west of Greenwich: start a
-        // day early and keep only what falls on today or later.
-        let window = today.addingTimeInterval(-86400) ..< today.addingTimeInterval(Self.horizon)
+        // The widgets' window: from this week's Monday (or yesterday — a date-only air date is
+        // midnight UTC, "yesterday" west of Greenwich) to two weeks out. Home keeps only today on.
+        let window = WidgetSync.window(now: now(), calendar: calendar)
         do {
             async let upNextOutput = api.getUpNext()
             async let calendarOutput = api.getCalendar(query: .init(from: window.lowerBound, to: window.upperBound))
@@ -88,7 +85,11 @@ final class HomeModel {
                 airing: airingResponse.body.json.items
             )
             apply(snapshot)
-            cache?.save(snapshot)
+            if let cache {
+                cache.save(snapshot)
+                // Previews pass no cache; only the real Home feeds the widgets (WID-001).
+                WidgetSync.publish(WidgetSync.snapshot(upNext: snapshot.upNext, airing: snapshot.airing, now: now()))
+            }
             hasLoaded = true
             problem = nil
         } catch {

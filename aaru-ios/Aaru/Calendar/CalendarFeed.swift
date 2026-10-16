@@ -1,6 +1,7 @@
 import AaruAPI
 import Foundation
 import Observation
+import WidgetKit
 
 typealias CalendarEntry = Components.Schemas.CalendarEntry
 
@@ -158,6 +159,12 @@ final class CalendarFeed {
                 var forShelf = try response.body.json
                 forShelf.watchedEpisodes = nil
                 library?.upsert(forShelf)
+                // Widgets agree at once, then catch up on up next from the server (WID-001).
+                WidgetSnapshotStore.setWatched(
+                    libraryItemId: entry.libraryItemId, season: entry.season, number: entry.number, watched: watch
+                )
+                WidgetCenter.shared.reloadAllTimelines()
+                Task { try? await WidgetSync.refresh(api: api) }
             case let .default(_, error):
                 setWatched(id, !watch)
                 problem = (try? error.body.json.message) ?? Self.notSaved(entry)
