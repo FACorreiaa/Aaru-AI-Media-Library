@@ -32,6 +32,9 @@ struct SettingsView: View {
                 if !imports.jobs.isEmpty {
                     jobsSection
                 }
+                Section {
+                    NavigationLink("About Aaru") { AboutView() }
+                }
                 deleteSection
             }
             .formStyle(.grouped)
@@ -76,7 +79,7 @@ struct SettingsView: View {
                     Task { deleteProblem = await onDeleteAccount() }
                 }
             } message: {
-                Text("This cannot be undone. Export first if you want to keep anything.")
+                Text("This cannot be undone.")
             }
             .task {
                 await imports.load()
