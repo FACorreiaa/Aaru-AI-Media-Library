@@ -4,19 +4,35 @@ type ImportJob = components['schemas']['ImportJob']
 
 export const FILE_SOURCES = [
   {
+    source: 'auto',
+    label: 'Any site',
+    hint: 'A CSV from any site (Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML (MyAnimeList, Kitsu, AniList). Aaru reads the columns.',
+    accept:
+      '.csv,.xml,.gz,text/csv,text/plain,application/xml,text/xml,application/gzip',
+  },
+  {
     source: 'imdb',
     label: 'IMDb',
     hint: 'Your ratings or watchlist export (CSV).',
+    accept: '.csv,text/csv,text/plain',
   },
   {
     source: 'letterboxd',
     label: 'Letterboxd',
     hint: 'diary.csv, ratings.csv, watched.csv or watchlist.csv from your export.',
+    accept: '.csv,text/csv,text/plain',
   },
   {
     source: 'goodreads',
     label: 'Goodreads',
     hint: 'goodreads_library_export.csv. Custom shelves become lists.',
+    accept: '.csv,text/csv,text/plain',
+  },
+  {
+    source: 'mal',
+    label: 'MyAnimeList',
+    hint: 'MAL → Profile → Export → Anime list. The .xml.gz file as downloaded.',
+    accept: '.xml,.gz,application/xml,text/xml,application/gzip',
   },
 ] as const
 
@@ -27,6 +43,9 @@ const SOURCE_LABELS: Record<ImportJob['source'], string> = {
   trakt: 'Trakt',
   cat_list: 'Pogdesign CAT',
   cat_ics: 'Pogdesign CAT',
+  mal_xml: 'MyAnimeList',
+  anilist: 'AniList',
+  csv: 'CSV',
 }
 
 export const sourceLabel = (job: ImportJob) => SOURCE_LABELS[job.source]

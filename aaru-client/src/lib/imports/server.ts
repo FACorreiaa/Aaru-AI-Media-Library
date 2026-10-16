@@ -59,7 +59,7 @@ export const listImports = createServerFn({ method: 'GET' }).handler(
 export const uploadImport = createServerFn({ method: 'POST' })
   .validator(
     z.object({
-      source: z.enum(['imdb', 'letterboxd', 'goodreads']),
+      source: z.enum(['auto', 'imdb', 'letterboxd', 'goodreads', 'mal']),
       filename: z.string().max(255),
       text: z.string().max(MAX_BYTES, 'That file is larger than 5 MB.'),
     }),
@@ -70,9 +70,27 @@ export const uploadImport = createServerFn({ method: 'POST' })
         params: { query: { source: data.source, filename: data.filename } },
         body: data.text as never,
         bodySerializer: (body: unknown) => body as string,
-        headers: { 'Content-Type': 'text/csv' },
+        headers: {
+          // `auto` is sniffed by the server; the type only says which body this is.
+          'Content-Type':
+            data.source === 'mal' || data.text.trimStart().startsWith('<')
+              ? 'application/xml'
+              : 'text/csv',
+        },
       }),
       'That file could not be imported.',
+    ),
+  )
+
+/** IMP-014: a public AniList anime list, read by the server in the background. */
+export const startAniListImport = createServerFn({ method: 'POST' })
+  .validator(z.object({ username: z.string().trim().min(1).max(40) }))
+  .handler(async ({ data }): Promise<ImportJob> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/anilist', {
+        body: { username: data.username },
+      }),
+      'That AniList import could not be started.',
     ),
   )
 

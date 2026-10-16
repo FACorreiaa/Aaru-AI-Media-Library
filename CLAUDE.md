@@ -29,7 +29,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient) |
 | User import — primary | Trakt OAuth |
-| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL XML, AniList list |
+| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs only) |
 | Realtime (P6) | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server` |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
@@ -202,6 +202,7 @@ When implementing multi-source import for one account, apply in this order and s
 6. TV Time export
 7. MyAnimeList XML
 8. AniList list
+9. Any other CSV (generic, by column names): fills gaps only
 
 Capture is **not** in this order. It is a user-triggered one-shot, applied when the user asks
 and never as part of reconciling an account's connected sources.

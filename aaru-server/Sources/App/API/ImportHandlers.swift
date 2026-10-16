@@ -13,7 +13,9 @@ extension APIImplementation {
     func createCSVImport(_ input: Operations.CreateCSVImport.Input) async throws -> Operations.CreateCSVImport
         .Output
     {
-        guard case let .csv(body) = input.body else { throw AppError.badRequest() }
+        let body: HTTPBody = switch input.body {
+        case let .csv(body), let .xml(body): body
+        }
         // Refuse an oversized upload from its declared length, before reading a byte of it.
         if case let .known(length) = body.length, length > ImportService.maxUploadBytes {
             throw Self.tooLarge
@@ -24,10 +26,22 @@ extension APIImplementation {
         } catch {
             throw Self.tooLarge
         }
-        let source: ImportSource = switch input.query.source {
-        case .imdb: .imdbCSV
-        case .letterboxd: .letterboxdCSV
-        case .goodreads: .goodreadsCSV
+        let source: ImportSource
+        switch input.query.source {
+        case .imdb: source = .imdbCSV
+        case .letterboxd: source = .letterboxdCSV
+        case .goodreads: source = .goodreadsCSV
+        case .mal: source = .malXML
+        case .csv: source = .genericCSV
+        case .auto:
+            do {
+                source = try ImportFormatDetector.detect(text)
+            } catch let error as ImportFormatError {
+                throw AppError(
+                    status: .unprocessableContent, code: "validation_failed", message: error.message,
+                    details: ["file": error.message]
+                )
+            }
         }
         let job = try await services.imports.createCSVImport(
             userID: currentUser(), source: source, filename: input.query.filename, text: text
@@ -51,6 +65,14 @@ extension APIImplementation {
     func applyImport(_ input: Operations.ApplyImport.Input) async throws -> Operations.ApplyImport.Output {
         let job = try await services.imports.apply(importID(input.path.id), userID: currentUser())
         return .ok(.init(body: .json(.init(job))))
+    }
+
+    func createAniListImport(_ input: Operations.CreateAniListImport.Input) async throws
+        -> Operations.CreateAniListImport.Output
+    {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let job = try await services.imports.createAniListImport(userID: currentUser(), username: body.username)
+        return .accepted(.init(body: .json(.init(job))))
     }
 
     func createTraktImport(_: Operations.CreateTraktImport.Input) async throws -> Operations.CreateTraktImport

@@ -10,10 +10,12 @@ import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
+import { readImportFile } from '../lib/imports/file'
 import {
   deleteAccount,
   getAccount,
   listImports,
+  startAniListImport,
   uploadImport,
 } from '../lib/imports/server'
 import type { ImportJob } from '../lib/imports/server'
@@ -57,6 +59,9 @@ function Settings() {
   const [uploading, setUploading] = createSignal<FileSource | null>(null)
   const [problem, setProblem] = createSignal<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = createSignal(false)
+  const [anilistName, setAnilistName] = createSignal('')
+  const [anilistBusy, setAnilistBusy] = createSignal(false)
+  const [anilistProblem, setAnilistProblem] = createSignal<string | null>(null)
 
   const [account, setAccount] = createSignal(loaded().account)
   const providers = () =>
@@ -70,15 +75,12 @@ function Settings() {
 
   async function upload(source: FileSource, file: File) {
     setProblem(null)
-    if (file.size > 5 * 1024 * 1024) {
-      setProblem('That file is larger than 5 MB. Check it is the right export.')
-      return
-    }
     setUploading(source)
     try {
-      const job = await uploadImport({
-        data: { source, filename: file.name, text: await file.text() },
-      })
+      // MyAnimeList's export is gzipped; it is inflated here, the server takes XML.
+      const text = await readImportFile(file)
+      const filename = file.name.replace(/\.gz$/i, '')
+      const job = await uploadImport({ data: { source, filename, text } })
       setJobs([job, ...jobs()])
       await navigate({ to: '/app/imports/$id', params: { id: job.id } })
     } catch (error) {
@@ -89,6 +91,29 @@ function Settings() {
       )
     } finally {
       setUploading(null)
+    }
+  }
+
+  async function importAniList(event: SubmitEvent) {
+    event.preventDefault()
+    if (anilistBusy()) return
+    setAnilistProblem(null)
+    setAnilistBusy(true)
+    try {
+      const job = await startAniListImport({
+        data: { username: anilistName() },
+      })
+      setJobs([job, ...jobs()])
+      setAnilistName('')
+      await navigate({ to: '/app/imports/$id', params: { id: job.id } })
+    } catch (error) {
+      setAnilistProblem(
+        error instanceof Error
+          ? error.message
+          : 'That AniList import could not be started.',
+      )
+    } finally {
+      setAnilistBusy(false)
     }
   }
 
@@ -179,7 +204,7 @@ function Settings() {
             Aaru matches every row first and shows you the plan. Nothing changes
             until you approve it, and an import undoes in one step.
           </p>
-          <div class="mt-5 grid gap-3 sm:grid-cols-3">
+          <div class="mt-5 grid gap-3 sm:grid-cols-2">
             <For each={FILE_SOURCES}>
               {(option) => (
                 <label class="flex cursor-pointer flex-col gap-1 rounded-[20px] border border-line p-4 hover:bg-surface">
@@ -191,7 +216,7 @@ function Settings() {
                   <span class="text-xs text-muted">{option.hint}</span>
                   <input
                     type="file"
-                    accept=".csv,text/csv,text/plain"
+                    accept={option.accept}
                     class="sr-only"
                     disabled={uploading() !== null}
                     onChange={(e) => {
@@ -203,6 +228,51 @@ function Settings() {
                 </label>
               )}
             </For>
+            <form
+              class="flex flex-col gap-2 rounded-[20px] border border-line p-4 sm:col-span-2"
+              onSubmit={importAniList}
+            >
+              <label for="anilist-username" class="font-medium">
+                Import from AniList
+              </label>
+              <span class="text-xs text-muted">
+                Your username. The anime list must be public.
+              </span>
+              <div class="flex flex-wrap gap-2">
+                <input
+                  id="anilist-username"
+                  name="username"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck={false}
+                  placeholder="username"
+                  class="min-h-11 min-w-0 flex-1 rounded-[14px] border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
+                  value={anilistName()}
+                  onInput={(e) => setAnilistName(e.currentTarget.value)}
+                  aria-describedby={
+                    anilistProblem() ? 'anilist-problem' : undefined
+                  }
+                />
+                <button
+                  type="submit"
+                  class="min-h-11 rounded-full border border-ink/25 px-5 text-sm font-semibold disabled:opacity-50"
+                  disabled={anilistBusy() || anilistName().trim() === ''}
+                >
+                  {anilistBusy() ? 'Starting…' : 'Import'}
+                </button>
+              </div>
+              <Show when={anilistProblem()}>
+                {(message) => (
+                  <p
+                    id="anilist-problem"
+                    role="alert"
+                    class="text-sm text-danger"
+                  >
+                    {message()}
+                  </p>
+                )}
+              </Show>
+            </form>
           </div>
         </section>
 
