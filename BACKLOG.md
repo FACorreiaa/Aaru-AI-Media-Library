@@ -82,6 +82,8 @@ library layer stay separate, external IDs stored whenever known, no second backe
   TVmaze air times, Google Books fallback, Wikidata cross-ids, TMDB watch providers, the
   anime-offline-database, and — after the P2 gate — OMDb and Fanart.tv.
 - **Trakt API access is OPEN** (IMP-002): app creation reportedly became VIP-only in mid-2026.
+  **Resolved 2026-10-16:** the owner created the "Aaru" Trakt app (no VIP needed); its Client ID
+  is configured on `maat` with PKCE and no client secret. First real connect is the proof.
 
 ## Status snapshot (verified 2026-10-09)
 
@@ -1097,7 +1099,8 @@ rows resolve through TVDB ids (TV Time was TVDB-based) → TMDB.
 listed, and re-running it creates nothing new.
 
 **OPEN:** export format varies by request date. Collect two real exports before writing the
-parser.
+parser. **Parked 2026-10-16 by the owner** (never used TV Time, no export to build from): build it
+only when a user who has an export asks.
 
 ### IMP-013 · MyAnimeList XML import · M
 **Needs:** IMP-005, CAT-009.
