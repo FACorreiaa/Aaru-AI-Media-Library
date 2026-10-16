@@ -1,6 +1,6 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
-import { Wordmark } from '../components/Brand'
+import { AppHeader } from '../components/AppHeader'
 import {
   createList,
   deleteList,
@@ -55,12 +55,7 @@ function Lists() {
 
   return (
     <div class="min-h-[100dvh]">
-      <header class="mx-auto flex h-18 max-w-3xl items-center justify-between px-5 md:px-8">
-        <Wordmark />
-        <Link to="/app" class="text-sm font-medium text-muted hover:text-ink">
-          Library
-        </Link>
-      </header>
+      <AppHeader class="max-w-3xl" />
       <main class="mx-auto max-w-3xl px-5 pb-20 md:px-8">
         <h1 class="mt-4 font-display text-4xl font-medium tracking-tight">
           Lists

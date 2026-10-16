@@ -1,293 +1,222 @@
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useNavigate,
-  useRouter,
-} from '@tanstack/solid-router'
+import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
-import { Wordmark } from '../components/Brand'
-import { Poster } from '../components/Poster'
-import { SearchPanel } from '../components/SearchPanel'
-import { getLibrary } from '../lib/library/server'
+import { AppHeader } from '../components/AppHeader'
 import {
-  KINDS,
-  STATUSES,
-  shelf,
-  statusLabel,
-  upsert,
-} from '../lib/library/model'
-import type {
-  LibraryEntry,
-  LibraryStatus,
-  MediaKind,
-} from '../lib/library/model'
-import { getSession, signOut } from '../lib/session/session'
+  AiringCard,
+  ContinueCard,
+  Row,
+  StartCard,
+} from '../components/HomeRows'
+import {
+  addDays,
+  fetchWindow,
+  localDayKey,
+  withWatched,
+} from '../lib/calendar/model'
+import type { CalendarEntry } from '../lib/calendar/model'
+import { getCalendar } from '../lib/calendar/server'
+import { AIRING_DAYS, advance, airingBadge, upcoming } from '../lib/home/model'
+import type { ContinueEntry } from '../lib/home/model'
+import { getUpNext } from '../lib/home/server'
+import { getSession } from '../lib/session/session'
+import { setEpisode } from '../lib/title/server'
 
-// APP-003 on the web: the shelf, at parity with the Apple apps' `LibraryView`.
+// APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
+// watching come with the page; the calendar row loads in the browser, which knows the
+// viewer's "today".
 export const Route = createFileRoute('/app')({
-  head: () => ({ meta: [{ title: 'Library · Aaru' }] }),
+  head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
   beforeLoad: async () => {
     const session = await getSession()
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
     return { session }
   },
-  loader: () => getLibrary(),
-  component: Library,
+  loader: () => getUpNext(),
+  component: Home,
 })
 
-type Layout = 'grid' | 'list'
-
-function readLayout(): Layout {
-  try {
-    return localStorage.getItem('library.layout') === 'list' ? 'list' : 'grid'
-  } catch {
-    return 'grid'
-  }
-}
-
-function Library() {
+function Home() {
   const loaded = Route.useLoaderData()
-  const router = useRouter()
-  const navigate = useNavigate()
-  const [entries, setEntries] = createSignal<LibraryEntry[]>(loaded())
-  const [kind, setKind] = createSignal<MediaKind | null>(null)
-  const [status, setStatus] = createSignal<LibraryStatus | null>(null)
-  const [layout, setLayout] = createSignal<Layout>('grid')
-  let dialog: HTMLDialogElement | undefined
+  const [continuing, setContinuing] = createSignal(loaded().continueWatching)
+  const [starting, setStarting] = createSignal(loaded().startWatching)
+  const [airings, setAirings] = createSignal<CalendarEntry[]>([])
+  const [now, setNow] = createSignal<Date | null>(null)
+  const [airingsReady, setAiringsReady] = createSignal(false)
+  const [busy, setBusy] = createSignal<ReadonlySet<string>>(new Set())
+  const [problem, setProblem] = createSignal<string | null>(null)
 
-  onMount(() => setLayout(readLayout()))
-
-  const rows = createMemo(() => shelf(entries(), kind(), status()))
-
-  function chooseLayout(next: Layout) {
-    setLayout(next)
+  onMount(async () => {
+    const current = new Date()
+    setNow(current)
+    const today = localDayKey(current)
     try {
-      localStorage.setItem('library.layout', next)
+      setAirings(
+        await getCalendar({
+          data: fetchWindow(today, addDays(today, AIRING_DAYS - 1)),
+        }),
+      )
+    } catch (err) {
+      setProblem(
+        err instanceof Error
+          ? err.message
+          : 'The calendar could not be loaded.',
+      )
+    } finally {
+      setAiringsReady(true)
+    }
+  })
+
+  const nextAirings = createMemo(() => {
+    const current = now()
+    return current ? upcoming(airings(), current) : []
+  })
+
+  const badgeFor = (entry: CalendarEntry) => {
+    const current = now()
+    return current ? airingBadge(entry, current) : null
+  }
+
+  const empty = () =>
+    continuing().length === 0 &&
+    starting().length === 0 &&
+    airingsReady() &&
+    nextAirings().length === 0
+
+  function setBusyFor(id: string, on: boolean) {
+    setBusy((current) => {
+      const next = new Set(current)
+      if (on) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  /** Marks the card's next episode watched: the card advances at once, the server's answer
+   * then replaces the guess, and a failed write puts the card back where it was. */
+  async function markWatched(entry: ContinueEntry) {
+    const id = entry.libraryItemId
+    if (busy().has(id)) return
+    const index = continuing().findIndex((r) => r.libraryItemId === id)
+    setBusyFor(id, true)
+    setProblem(null)
+    setContinuing((rows) => advance(rows, entry))
+    try {
+      await setEpisode({
+        data: {
+          id,
+          season: entry.next.season,
+          episode: entry.next.number,
+          watched: true,
+        },
+      })
+    } catch (err) {
+      setContinuing((rows) => {
+        const rest = rows.filter((r) => r.libraryItemId !== id)
+        rest.splice(Math.max(0, index), 0, entry)
+        return rest
+      })
+      setProblem(
+        err instanceof Error ? err.message : 'The episode was not marked.',
+      )
+      setBusyFor(id, false)
+      return
+    }
+    const match = airings().find(
+      (a) =>
+        a.libraryItemId === id &&
+        a.season === entry.next.season &&
+        a.number === entry.next.number,
+    )
+    if (match) setAirings((rows) => withWatched(rows, match, true))
+    try {
+      const fresh = await getUpNext()
+      setContinuing(fresh.continueWatching)
+      setStarting(fresh.startWatching)
     } catch {
-      // Private windows may refuse storage; the choice just does not stick.
+      // The write landed; the optimistic card stands until the next visit.
+    } finally {
+      setBusyFor(id, false)
     }
   }
 
-  async function leave() {
-    await signOut()
-    await router.invalidate()
-    await navigate({ to: '/' })
-  }
-
-  const chip = (on: boolean) =>
-    on
-      ? 'rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-paper'
-      : 'rounded-full border border-line px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface'
-
   return (
     <div class="min-h-[100dvh]">
-      <header class="mx-auto flex h-18 max-w-6xl items-center justify-between gap-4 px-5 md:px-8">
-        <Wordmark />
-        <div class="flex items-center gap-5 text-sm font-medium">
-          <Link to="/app/settings" class="text-muted hover:text-ink">
-            Settings
-          </Link>
-          <Link to="/app/week" class="text-muted hover:text-ink">
-            Calendar
-          </Link>
-          <Link to="/app/lists" class="text-muted hover:text-ink">
-            Lists
-          </Link>
-          <button
-            type="button"
-            onClick={() => dialog?.showModal()}
-            class="rounded-full bg-accent px-4 py-2 font-semibold text-on-accent active:scale-[0.98]"
-          >
-            Search
-          </button>
-          <button
-            type="button"
-            onClick={leave}
-            class="text-muted hover:text-ink"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
-
-      <main class="mx-auto max-w-6xl px-5 pb-16 md:px-8">
-        <h1 class="mt-4 font-display text-4xl font-medium tracking-tight">
-          Library
+      <AppHeader />
+      <main class="mx-auto max-w-6xl px-4 pb-16 md:px-8">
+        <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
+          Home
         </h1>
 
-        <div class="mt-6 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            class={chip(kind() === null)}
-            onClick={() => setKind(null)}
-          >
-            All
-          </button>
-          <For each={KINDS}>
-            {(option) => (
-              <button
-                type="button"
-                class={chip(kind() === option.kind)}
-                aria-pressed={kind() === option.kind}
-                onClick={() => setKind(option.kind)}
-              >
-                {option.label}
-              </button>
-            )}
-          </For>
-          <label class="sr-only" for="status-filter">
-            Status
-          </label>
-          <select
-            id="status-filter"
-            class="rounded-full border border-line bg-transparent py-1.5 pr-8 pl-4 text-sm font-medium text-ink focus:ring-2 focus:ring-accent"
-            value={status() ?? ''}
-            onChange={(e) =>
-              setStatus((e.currentTarget.value || null) as LibraryStatus | null)
-            }
-          >
-            <option value="">Any status</option>
-            <For each={STATUSES}>
-              {(s) => <option value={s.status}>{s.label}</option>}
-            </For>
-          </select>
-          <div class="ml-auto flex overflow-hidden rounded-full border border-line text-sm">
-            <button
-              type="button"
-              aria-pressed={layout() === 'grid'}
-              class="px-3 py-1.5"
-              classList={{ 'bg-surface font-semibold': layout() === 'grid' }}
-              onClick={() => chooseLayout('grid')}
+        <Show when={problem()}>
+          {(message) => (
+            <p
+              role="alert"
+              class="mt-4 rounded-[14px] bg-danger/10 px-4 py-3 text-sm text-danger"
             >
-              Grid
-            </button>
-            <button
-              type="button"
-              aria-pressed={layout() === 'list'}
-              class="px-3 py-1.5"
-              classList={{ 'bg-surface font-semibold': layout() === 'list' }}
-              onClick={() => chooseLayout('list')}
-            >
-              List
-            </button>
-          </div>
-        </div>
+              {message()}
+            </p>
+          )}
+        </Show>
 
-        <Show
-          when={rows().length > 0}
-          fallback={
-            <div class="mx-auto mt-24 max-w-sm text-center">
-              <Show
-                when={entries().length === 0}
-                fallback={
-                  <>
-                    <h2 class="font-display text-2xl font-medium">
-                      Nothing here
-                    </h2>
-                    <p class="mt-2 text-muted">
-                      No titles match these filters.
-                    </p>
-                  </>
-                }
+        <Show when={continuing().length > 0}>
+          <Row title="Continue watching">
+            <For each={continuing()}>
+              {(entry) => (
+                <ContinueCard
+                  entry={entry}
+                  busy={busy().has(entry.libraryItemId)}
+                  onWatched={markWatched}
+                />
+              )}
+            </For>
+          </Row>
+        </Show>
+
+        <Show when={nextAirings().length > 0}>
+          <Row
+            title="Coming up"
+            action={
+              <Link
+                to="/app/week"
+                class="text-sm font-medium text-accent hover:underline"
               >
-                <h2 class="font-display text-2xl font-medium">
-                  Your shelf is empty
-                </h2>
-                <p class="mt-2 text-muted">
-                  Search for a film, show, anime or book to start.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => dialog?.showModal()}
-                  class="mt-6 rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
-                >
-                  Search
-                </button>
-              </Show>
-            </div>
-          }
-        >
-          <Show
-            when={layout() === 'grid'}
-            fallback={
-              <ul class="mt-8 divide-y divide-line">
-                <For each={rows()}>
-                  {(row) => (
-                    <li>
-                      <Link
-                        to="/app/title/$id"
-                        params={{ id: row.id }}
-                        class="flex items-center gap-4 py-3"
-                      >
-                        <Poster
-                          url={row.posterUrl}
-                          kind={row.kind}
-                          class="w-12 shrink-0"
-                        />
-                        <div class="min-w-0">
-                          <p class="line-clamp-2 font-medium">{row.title}</p>
-                          <p class="text-sm text-muted">
-                            {[
-                              row.year,
-                              KINDS.find((k) => k.kind === row.kind)?.label,
-                            ]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                          <p class="text-sm text-muted">
-                            {[statusLabel(row.status), row.detail]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                  )}
-                </For>
-              </ul>
+                See calendar
+              </Link>
             }
           >
-            <ul class="mt-8 grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-x-4 gap-y-6">
-              <For each={rows()}>
-                {(row) => (
-                  <li>
-                    <Link
-                      to="/app/title/$id"
-                      params={{ id: row.id }}
-                      class="block"
-                    >
-                      <Poster url={row.posterUrl} kind={row.kind} />
-                      <p class="mt-2 line-clamp-2 text-sm font-medium">
-                        {row.title}
-                      </p>
-                      <p class="truncate text-xs text-muted">
-                        {row.detail ?? statusLabel(row.status)}
-                      </p>
-                    </Link>
-                  </li>
-                )}
-              </For>
-            </ul>
-          </Show>
+            <For each={nextAirings()}>
+              {(entry) => <AiringCard entry={entry} when={badgeFor(entry)} />}
+            </For>
+          </Row>
+        </Show>
+
+        <Show when={starting().length > 0}>
+          <Row title="Start watching">
+            <For each={starting()}>
+              {(entry) => <StartCard entry={entry} />}
+            </For>
+          </Row>
+        </Show>
+
+        <Show when={empty()}>
+          <div class="mx-auto mt-24 max-w-sm text-center">
+            <h2 class="font-display text-2xl font-medium">
+              Add a show to see what’s next
+            </h2>
+            <p class="mt-2 text-muted">
+              Shows you are watching, what you want to start, and what airs this
+              week land here.
+            </p>
+            <Link
+              to="/app/library"
+              search={{ search: true }}
+              class="mt-6 inline-block rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
+            >
+              Search
+            </Link>
+          </div>
         </Show>
       </main>
-
-      <dialog
-        ref={dialog}
-        aria-label="Search"
-        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
-        onClick={(e) => {
-          // A click on the backdrop closes it.
-          if (e.target === dialog) dialog.close()
-        }}
-      >
-        <SearchPanel
-          entries={entries()}
-          onAdded={(entry) => setEntries(upsert(entries(), entry))}
-          onClose={() => dialog?.close()}
-        />
-      </dialog>
     </div>
   )
 }
