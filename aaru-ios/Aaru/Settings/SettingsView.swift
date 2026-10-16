@@ -18,9 +18,12 @@ struct SettingsView: View {
     @State private var confirmsDelete = false
     @State private var deleteProblem: String?
     @State private var openedJob: ImportJob?
+    @State private var path: [String] = []
+    @State private var asksAniListName = false
+    @State private var aniListName = ""
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Form {
                 accountSection
                 #if os(iOS)
@@ -62,13 +65,25 @@ struct SettingsView: View {
                         pickingFor = nil
                     }
                 }),
-                allowedContentTypes: [.commaSeparatedText, .plainText, .text]
+                allowedContentTypes: [.commaSeparatedText, .plainText, .text, .xml, .gzip]
             ) { result in
                 guard let source = pickingFor else { return }
                 pickingFor = nil
                 if case let .success(url) = result {
                     Task { await upload(url, source: source) }
                 }
+            }
+            .alert("Import from AniList", isPresented: $asksAniListName) {
+                TextField("Username", text: $aniListName)
+                    .autocorrectionDisabled()
+                #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                #endif
+                Button("Import") { Task { await importAniList() } }
+                    .disabled(aniListName.trimmingCharacters(in: .whitespaces).isEmpty)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your AniList anime list must be public.")
             }
             .confirmationDialog(
                 "Delete your Aaru account?",
@@ -114,6 +129,16 @@ struct SettingsView: View {
                 }
                 .disabled(uploading)
             }
+            Button {
+                aniListName = ""
+                asksAniListName = true
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Import from AniList").foregroundStyle(Color(.ink))
+                    Text("Your public anime list, by username.").font(.caption).foregroundStyle(Color(.muted))
+                }
+            }
+            .disabled(uploading)
         } header: {
             Text("Bring your history")
         } footer: {
@@ -170,11 +195,35 @@ struct SettingsView: View {
                 url.stopAccessingSecurityScopedResource()
             }
         }
-        guard let data = try? Data(contentsOf: url) else {
+        guard var data = try? Data(contentsOf: url) else {
             imports.problem = "That file could not be read."
             return
         }
-        _ = await imports.upload(data, filename: url.lastPathComponent, source: source)
+        var filename = url.lastPathComponent
+        // MyAnimeList's export downloads gzipped; the server takes the XML inside.
+        if Gunzip.isGzip(data) {
+            do {
+                data = try Gunzip.decompress(data, limit: Self.maxUploadBytes)
+                filename = filename.hasSuffix(".gz") ? String(filename.dropLast(3)) : filename
+            } catch Gunzip.Failure.tooLarge {
+                imports.problem = "That file is larger than 5 MB unpacked. Check it is the right export."
+                return
+            } catch {
+                imports.problem = "That file could not be unpacked. Upload the .xml file instead."
+                return
+            }
+        }
+        _ = await imports.upload(data, filename: filename, source: source)
+    }
+
+    /// The server's upload limit (`ImportService.maxUploadBytes`).
+    private static let maxUploadBytes = 5 * 1024 * 1024
+
+    private func importAniList() async {
+        let name = aniListName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let job = await imports.importAniList(username: name) {
+            path.append(job.id)
+        }
     }
 }
 

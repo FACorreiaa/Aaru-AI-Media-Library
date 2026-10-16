@@ -17,6 +17,7 @@ extension ImportFileSource: @retroactive Identifiable {
         case .imdb: "IMDb"
         case .letterboxd: "Letterboxd"
         case .goodreads: "Goodreads"
+        case .mal: "MyAnimeList"
         }
     }
 
@@ -25,6 +26,7 @@ extension ImportFileSource: @retroactive Identifiable {
         case .imdb: "Your ratings or watchlist export (CSV)."
         case .letterboxd: "diary.csv, ratings.csv, watched.csv or watchlist.csv from your export."
         case .goodreads: "goodreads_library_export.csv. Custom shelves become lists."
+        case .mal: "On MyAnimeList: Profile → Export → Anime list. The .xml or .xml.gz file."
         }
     }
 }
@@ -37,6 +39,8 @@ extension ImportJob {
         case .goodreadsCsv: "Goodreads"
         case .trakt: "Trakt"
         case .catList, .catIcs: "Pogdesign CAT"
+        case .malXml: "MyAnimeList"
+        case .anilist: "AniList"
         }
     }
 
@@ -88,7 +92,7 @@ final class ImportsModel {
         do {
             let output = try await api.createCSVImport(
                 query: .init(source: source, filename: filename),
-                body: .csv(HTTPBody(data))
+                body: source == .mal ? .xml(HTTPBody(data)) : .csv(HTTPBody(data))
             )
             switch output {
             case let .accepted(response):
@@ -100,6 +104,26 @@ final class ImportsModel {
             }
         } catch {
             problem = "That file could not be uploaded. Aaru could not reach the server."
+        }
+        return nil
+    }
+
+    /// A public AniList anime list (IMP-014). The server reads it in the background; the job's
+    /// `filename` is the username.
+    func importAniList(username: String) async -> ImportJob? {
+        guard let api else { return nil }
+        problem = nil
+        do {
+            switch try await api.createAniListImport(body: .json(.init(username: username))) {
+            case let .accepted(response):
+                let job = try response.body.json
+                jobs.insert(job, at: 0)
+                return job
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "That AniList list could not be imported."
+            }
+        } catch {
+            problem = "The import did not start. Aaru could not reach the server."
         }
         return nil
     }
