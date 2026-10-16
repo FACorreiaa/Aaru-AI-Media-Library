@@ -55,9 +55,7 @@ struct HomeScreen: View {
                 .task { await model.loadIfNeeded() }
                 .refreshable { await model.load() }
                 .navigationDestination(for: String.self) { id in
-                    if let entry = library.entry(id) {
-                        TitleDetailView(entry: entry, api: api, library: library, lists: lists)
-                    }
+                    LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library, lists: lists)
