@@ -25,13 +25,16 @@ const securityHeaders = createMiddleware().server(async ({ request, next }) => {
     return Response.redirect(url.toString(), 301)
   }
   const result = await next()
+  // A copy, because some responses have immutable headers (`Response.redirect`, fetched
+  // upstream responses) and setting one on them throws, turning the page into a 500.
+  const response = new Response(result.response.body, result.response)
   // Plain http (local dev) must not pin HSTS on localhost.
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     if (name === 'Strict-Transport-Security' && url.protocol !== 'https:')
       continue
-    result.response.headers.set(name, value)
+    response.headers.set(name, value)
   }
-  return result
+  return { ...result, response }
 })
 
 export const startInstance = createStart(() => ({
