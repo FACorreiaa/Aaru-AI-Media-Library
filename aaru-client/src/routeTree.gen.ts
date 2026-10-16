@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as AppExportRouteImport } from './routes/app_.export'
 import { Route as AppLibraryRouteImport } from './routes/app_.library'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
@@ -46,6 +47,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppExportRoute = AppExportRouteImport.update({
+  id: '/app_/export',
+  path: '/app/export',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppLibraryRoute = AppLibraryRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/app/export': typeof AppExportRoute
   '/app/library': typeof AppLibraryRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/app/export': typeof AppExportRoute
   '/app/library': typeof AppLibraryRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/app_/export': typeof AppExportRoute
   '/app_/library': typeof AppLibraryRoute
   '/app_/settings': typeof AppSettingsRoute
   '/app_/week': typeof AppWeekRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/app/export'
     | '/app/library'
     | '/app/settings'
     | '/app/week'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/app/export'
     | '/app/library'
     | '/app/settings'
     | '/app/week'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/app_/export'
     | '/app_/library'
     | '/app_/settings'
     | '/app_/week'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
+  AppExportRoute: typeof AppExportRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppWeekRoute: typeof AppWeekRoute
@@ -234,6 +247,13 @@ declare module '@tanstack/solid-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/export': {
+      id: '/app_/export'
+      path: '/app/export'
+      fullPath: '/app/export'
+      preLoaderRoute: typeof AppExportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/library': {
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
+  AppExportRoute: AppExportRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppWeekRoute: AppWeekRoute,
