@@ -33,7 +33,7 @@ export async function proxyExport(
   const url = new URL(request.url)
   const token = sessionFromCookie(request.headers.get('Cookie'))
   const signIn = new URL('/sign-in', url).toString()
-  if (!token) return Response.redirect(signIn, 302)
+  if (!token) return redirect(signIn)
 
   let upstream: Response
   try {
@@ -44,7 +44,7 @@ export async function proxyExport(
   } catch {
     return plain(502, 'Aaru could not reach the server. Try again in a moment.')
   }
-  if (upstream.status === 401) return Response.redirect(signIn, 302)
+  if (upstream.status === 401) return redirect(signIn)
   if (!upstream.ok) {
     return plain(
       502,
@@ -58,6 +58,14 @@ export async function proxyExport(
     if (value) headers.set(name, value)
   }
   return new Response(upstream.body, { status: 200, headers })
+}
+
+/** A redirect with ordinary (mutable) headers, unlike `Response.redirect`. */
+function redirect(location: string): Response {
+  return new Response(null, {
+    status: 302,
+    headers: { Location: location, 'Cache-Control': 'no-store' },
+  })
 }
 
 function plain(status: number, message: string): Response {
