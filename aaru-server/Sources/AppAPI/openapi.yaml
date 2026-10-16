@@ -520,6 +520,35 @@ paths:
               schema: {$ref: '#/components/schemas/ImportList'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/export:
+    get:
+      operationId: exportAccount
+      summary: Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
+      description: >-
+        `json` (default) is complete: account, every library item with ratings, notes and every
+        watched episode, lists and shelves. `csv` is one row per library item in the column layout
+        Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
+      parameters:
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [json, csv]
+            default: json
+      responses:
+        '200':
+          description: The export, as a download.
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AccountExport'}
+            text/csv:
+              schema: {type: string}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/imports/csv:
     post:
       operationId: createCSVImport
@@ -1140,6 +1169,30 @@ components:
             Every watched episode of a show, in order. Only on single-item responses (the item,
             and episode and season writes); lists and sync leave it out.
           items: {$ref: '#/components/schemas/EpisodeRef'}
+    AccountExport:
+      type: object
+      required: [exportedAt, account, library, lists, shelves]
+      properties:
+        exportedAt: {type: string, format: date-time}
+        account: {$ref: '#/components/schemas/Me'}
+        library:
+          type: array
+          description: Every library item; shows carry `watchedEpisodes`.
+          items: {$ref: '#/components/schemas/LibraryEntry'}
+        lists:
+          type: array
+          items:
+            type: object
+            required: [name, createdAt, items]
+            properties:
+              name: {type: string}
+              createdAt: {type: string, format: date-time}
+              items:
+                type: array
+                items: {$ref: '#/components/schemas/TitleSummary'}
+        shelves:
+          type: array
+          items: {$ref: '#/components/schemas/Shelf'}
     LibraryPage:
       type: object
       required: [items, page]

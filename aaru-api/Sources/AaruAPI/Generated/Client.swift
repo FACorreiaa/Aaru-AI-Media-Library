@@ -2747,6 +2747,109 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
+    ///
+    /// `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
+    ///
+    /// - Remark: HTTP `GET /v1/me/export`.
+    /// - Remark: Generated from `#/paths//v1/me/export/get(exportAccount)`.
+    public func exportAccount(_ input: Operations.ExportAccount.Input) async throws -> Operations.ExportAccount.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ExportAccount.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/me/export",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "format",
+                    value: input.query.format
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let headers: Operations.ExportAccount.Output.Ok.Headers = .init(contentDisposition: try converter.getOptionalHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "Content-Disposition",
+                        as: Swift.String.self
+                    ))
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ExportAccount.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json",
+                            "text/csv"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AccountExport.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    case "text/csv":
+                        body = try converter.getResponseBodyAsBinary(
+                            OpenAPIRuntime.HTTPBody.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .csv(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(
+                        headers: headers,
+                        body: body
+                    ))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Upload an export file. It is parsed now, matched in the background, and written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/csv`.

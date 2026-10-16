@@ -444,6 +444,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/export': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
+     * @description `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
+     */
+    get: operations['exportAccount']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/csv': {
     parameters: {
       query?: never
@@ -932,6 +952,20 @@ export interface components {
        *     and episode and season writes); lists and sync leave it out.
        */
       watchedEpisodes?: components['schemas']['EpisodeRef'][]
+    }
+    AccountExport: {
+      /** Format: date-time */
+      exportedAt: string
+      account: components['schemas']['Me']
+      /** @description Every library item; shows carry `watchedEpisodes`. */
+      library: components['schemas']['LibraryEntry'][]
+      lists: {
+        name: string
+        /** Format: date-time */
+        createdAt: string
+        items: components['schemas']['TitleSummary'][]
+      }[]
+      shelves: components['schemas']['Shelf'][]
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]
@@ -1904,6 +1938,31 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ImportList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  exportAccount: {
+    parameters: {
+      query?: {
+        format?: 'json' | 'csv'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The export, as a download. */
+      200: {
+        headers: {
+          'Content-Disposition'?: string
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountExport']
+          'text/csv': string
         }
       }
       default: components['responses']['Error']
