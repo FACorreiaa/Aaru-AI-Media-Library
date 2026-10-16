@@ -15,6 +15,8 @@ public enum ImportSource: String, Codable, Hashable, Sendable, CaseIterable {
     case malXML = "mal_xml"
     /// A public AniList list, read by username (IMP-014).
     case anilist
+    /// Any other site's CSV, read by its column names. Last in the merge order: it fills gaps only.
+    case genericCSV = "csv"
 
     /// Position in the merge order, lowest first.
     public var mergeRank: Int {

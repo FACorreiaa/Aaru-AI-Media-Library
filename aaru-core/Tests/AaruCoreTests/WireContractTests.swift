@@ -22,7 +22,8 @@ struct WireContractTests {
     func importSourceRawValuesAreStable() {
         #expect(
             ImportSource.allCases.map(\.rawValue) == [
-                "trakt", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics",
+                "trakt", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics", "mal_xml",
+                "anilist", "csv",
             ]
         )
     }

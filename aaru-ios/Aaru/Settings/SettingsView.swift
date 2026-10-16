@@ -118,7 +118,7 @@ struct SettingsView: View {
 
     private var importSection: some View {
         Section {
-            ForEach(ImportFileSource.allCases) { source in
+            ForEach(ImportFileSource.offered) { source in
                 Button {
                     pickingFor = source
                 } label: {

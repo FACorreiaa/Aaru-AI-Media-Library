@@ -4,6 +4,13 @@ type ImportJob = components['schemas']['ImportJob']
 
 export const FILE_SOURCES = [
   {
+    source: 'auto',
+    label: 'Any site',
+    hint: 'A CSV from any site (Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML (MyAnimeList, Kitsu, AniList). Aaru reads the columns.',
+    accept:
+      '.csv,.xml,.gz,text/csv,text/plain,application/xml,text/xml,application/gzip',
+  },
+  {
     source: 'imdb',
     label: 'IMDb',
     hint: 'Your ratings or watchlist export (CSV).',
@@ -38,6 +45,7 @@ const SOURCE_LABELS: Record<ImportJob['source'], string> = {
   cat_ics: 'Pogdesign CAT',
   mal_xml: 'MyAnimeList',
   anilist: 'AniList',
+  csv: 'CSV',
 }
 
 export const sourceLabel = (job: ImportJob) => SOURCE_LABELS[job.source]

@@ -717,6 +717,7 @@ export interface components {
         | 'cat_ics'
         | 'mal_xml'
         | 'anilist'
+        | 'csv'
       /**
        * @description `planned` waits for approval; nothing is written before it.
        * @enum {string}
@@ -1911,7 +1912,8 @@ export interface operations {
   createCSVImport: {
     parameters: {
       query: {
-        source: 'imdb' | 'letterboxd' | 'goodreads' | 'mal'
+        /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`). */
+        source: 'auto' | 'imdb' | 'letterboxd' | 'goodreads' | 'mal' | 'csv'
         /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
         filename?: string
       }

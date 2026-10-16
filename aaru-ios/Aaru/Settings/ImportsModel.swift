@@ -12,8 +12,13 @@ extension ImportFileSource: @retroactive Identifiable {
         rawValue
     }
 
+    /// What Settings offers. `csv` is reached through `auto`, which detects every format.
+    static let offered: [ImportFileSource] = [.auto, .imdb, .letterboxd, .goodreads, .mal]
+
     var label: String {
         switch self {
+        case .auto: "Any site"
+        case .csv: "CSV"
         case .imdb: "IMDb"
         case .letterboxd: "Letterboxd"
         case .goodreads: "Goodreads"
@@ -23,6 +28,9 @@ extension ImportFileSource: @retroactive Identifiable {
 
     var hint: String {
         switch self {
+        case .auto, .csv:
+            "A CSV from any site (Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML "
+                + "(MyAnimeList, Kitsu, AniList). Aaru reads the columns."
         case .imdb: "Your ratings or watchlist export (CSV)."
         case .letterboxd: "diary.csv, ratings.csv, watched.csv or watchlist.csv from your export."
         case .goodreads: "goodreads_library_export.csv. Custom shelves become lists."
@@ -41,6 +49,7 @@ extension ImportJob {
         case .catList, .catIcs: "Pogdesign CAT"
         case .malXml: "MyAnimeList"
         case .anilist: "AniList"
+        case .csv: "CSV"
         }
     }
 
@@ -92,7 +101,8 @@ final class ImportsModel {
         do {
             let output = try await api.createCSVImport(
                 query: .init(source: source, filename: filename),
-                body: source == .mal ? .xml(HTTPBody(data)) : .csv(HTTPBody(data))
+                // `auto` is sniffed by the server; the type only says which body this is.
+                body: source == .mal || data.first == UInt8(ascii: "<") ? .xml(HTTPBody(data)) : .csv(HTTPBody(data))
             )
             switch output {
             case let .accepted(response):

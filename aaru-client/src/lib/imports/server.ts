@@ -59,7 +59,7 @@ export const listImports = createServerFn({ method: 'GET' }).handler(
 export const uploadImport = createServerFn({ method: 'POST' })
   .validator(
     z.object({
-      source: z.enum(['imdb', 'letterboxd', 'goodreads', 'mal']),
+      source: z.enum(['auto', 'imdb', 'letterboxd', 'goodreads', 'mal']),
       filename: z.string().max(255),
       text: z.string().max(MAX_BYTES, 'That file is larger than 5 MB.'),
     }),
@@ -71,8 +71,11 @@ export const uploadImport = createServerFn({ method: 'POST' })
         body: data.text as never,
         bodySerializer: (body: unknown) => body as string,
         headers: {
+          // `auto` is sniffed by the server; the type only says which body this is.
           'Content-Type':
-            data.source === 'mal' ? 'application/xml' : 'text/csv',
+            data.source === 'mal' || data.text.trimStart().startsWith('<')
+              ? 'application/xml'
+              : 'text/csv',
         },
       }),
       'That file could not be imported.',

@@ -315,6 +315,7 @@ extension ImportService {
         case .catList, .catICS: "Pogdesign CAT"
         case .malXML: "MyAnimeList"
         case .anilist: "AniList"
+        case .genericCSV: "CSV"
         }
         return "Imported \(stats.created) new and updated \(stats.updated) from \(name)"
     }

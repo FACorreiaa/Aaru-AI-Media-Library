@@ -530,7 +530,10 @@ paths:
           required: true
           schema:
             type: string
-            enum: [imdb, letterboxd, goodreads, mal]
+            enum: [auto, imdb, letterboxd, goodreads, mal, csv]
+          description: >-
+            `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList),
+            an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
         - name: filename
           in: query
           required: false
@@ -857,7 +860,7 @@ components:
         id: {type: string, format: uuid}
         source:
           type: string
-          enum: [trakt, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, mal_xml, anilist]
+          enum: [trakt, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, mal_xml, anilist, csv]
         state:
           type: string
           enum: [queued, running, planned, succeeded, failed, partial]

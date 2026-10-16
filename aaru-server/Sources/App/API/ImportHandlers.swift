@@ -26,11 +26,22 @@ extension APIImplementation {
         } catch {
             throw Self.tooLarge
         }
-        let source: ImportSource = switch input.query.source {
-        case .imdb: .imdbCSV
-        case .letterboxd: .letterboxdCSV
-        case .goodreads: .goodreadsCSV
-        case .mal: .malXML
+        let source: ImportSource
+        switch input.query.source {
+        case .imdb: source = .imdbCSV
+        case .letterboxd: source = .letterboxdCSV
+        case .goodreads: source = .goodreadsCSV
+        case .mal: source = .malXML
+        case .csv: source = .genericCSV
+        case .auto:
+            do {
+                source = try ImportFormatDetector.detect(text)
+            } catch let error as ImportFormatError {
+                throw AppError(
+                    status: .unprocessableContent, code: "validation_failed", message: error.message,
+                    details: ["file": error.message]
+                )
+            }
         }
         let job = try await services.imports.createCSVImport(
             userID: currentUser(), source: source, filename: input.query.filename, text: text

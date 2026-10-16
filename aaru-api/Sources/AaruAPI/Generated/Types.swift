@@ -1045,6 +1045,7 @@ public enum Components {
                 case catIcs = "cat_ics"
                 case malXml = "mal_xml"
                 case anilist = "anilist"
+                case csv = "csv"
             }
             /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
             public var source: Components.Schemas.ImportJob.SourcePayload
@@ -7713,11 +7714,15 @@ public enum Operations {
             public struct Query: Sendable, Hashable {
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
                 @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case auto = "auto"
                     case imdb = "imdb"
                     case letterboxd = "letterboxd"
                     case goodreads = "goodreads"
                     case mal = "mal"
+                    case csv = "csv"
                 }
+                /// `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+                ///
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
                 public var source: Operations.CreateCSVImport.Input.Query.SourcePayload
                 /// The file's name. Letterboxd's watchlist export is told apart by it.
@@ -7727,7 +7732,7 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - source:
+                ///   - source: `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
                 ///   - filename: The file's name. Letterboxd's watchlist export is told apart by it.
                 public init(
                     source: Operations.CreateCSVImport.Input.Query.SourcePayload,
