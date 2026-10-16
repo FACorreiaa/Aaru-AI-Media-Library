@@ -77,6 +77,9 @@ struct CatalogProviders: Sendable {
     var tmdb: any CatalogSearching & EpisodeListing
     var anilist: any CatalogSearching & EpisodeListing
     var openLibrary: any CatalogSearching
+    /// Exact air times for TMDB's date-only episodes (TVmaze, CAT-011). Optional: without it the
+    /// calendar shows dates.
+    var airTimes: (any AirTimeRefining)?
 }
 
 extension Date {

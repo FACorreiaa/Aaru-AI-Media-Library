@@ -166,6 +166,14 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
                 pacer: RequestPacer(requestsPerSecond: 3, burst: 3)
             ),
             userAgent: config.openLibraryUserAgent
+        ),
+        airTimes: TVmazeAirTimes(
+            // TVmaze allows ~20 calls per 10 seconds per IP.
+            client: ProviderClient(
+                name: "tvmaze",
+                transport: transport,
+                pacer: RequestPacer(requestsPerSecond: 1.8, burst: 5)
+            )
         )
     )
 }
