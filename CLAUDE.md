@@ -26,6 +26,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB |
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1 |
+| Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient) |
 | User import — primary | Trakt OAuth |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL XML, AniList list |

@@ -55,8 +55,15 @@ struct CatalogService: Sendable {
         var episodes = try await stores.titles.episodes(id)
         var status = state.status
         if needsHydration(state: state, episodes: episodes) {
-            let source: any EpisodeListing = title.isAnime && title.ids.tmdb == nil ? catalogs.anilist : catalogs.tmdb
-            if let fresh = try await source.episodes(ids: title.ids) {
+            let fromAniList = title.isAnime && title.ids.tmdb == nil
+            let source: any EpisodeListing = fromAniList ? catalogs.anilist : catalogs.tmdb
+            if var fresh = try await source.episodes(ids: title.ids) {
+                // AniList times are already exact. TVmaze failing never fails the hydration.
+                if !fromAniList, let airTimes = catalogs.airTimes,
+                   let refined = try? await airTimes.refine(fresh, ids: title.ids)
+                {
+                    fresh = refined
+                }
                 try await stores.titles.saveEpisodes(id, fresh, hydratedAt: now())
                 episodes = try await stores.titles.episodes(id)
                 status = fresh.status
