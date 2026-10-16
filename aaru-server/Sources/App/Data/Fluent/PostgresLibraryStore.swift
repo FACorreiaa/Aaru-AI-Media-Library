@@ -20,6 +20,9 @@ struct PostgresLibraryStore: LibraryStore {
             return try await database.transaction { database in
                 let sql = try sqlDatabase(database)
                 let inverse = try await Self.run(op, userID: userID, sql: sql)
+                if kind == "import" {
+                    try await Self.markImportedTicks(op.itemIDs, sql: sql)
+                }
                 let entry = JournalEntry(
                     inverse: inverse, itemIDs: op.itemIDs, actor: actor, kind: kind, summary: summary, undoOf: nil
                 )
@@ -144,8 +147,8 @@ struct PostgresLibraryStore: LibraryStore {
         """).run()
         for key in snapshot.watched {
             try await sql.raw("""
-            INSERT INTO episode_progress (id, library_item_id, season, episode)
-            VALUES (\(bind: UUID()), \(bind: snapshot.id.rawValue), \(bind: key.season), \(bind: key.episode))
+            INSERT INTO episode_progress (id, library_item_id, season, episode, watched_at_known)
+            VALUES (\(bind: UUID()), \(bind: snapshot.id.rawValue), \(bind: key.season), \(bind: key.episode), false)
             """).run()
         }
         try await sql.raw("""
@@ -193,6 +196,16 @@ struct PostgresLibraryStore: LibraryStore {
             let fields = row.fields
         else { throw AppError.notFound() }
         return fields
+    }
+
+    /// An import's ticks were not watched today: `now()` is the transaction's start, so it picks
+    /// out exactly the rows this import wrote. A snapshot insert already writes them unknown.
+    private static func markImportedTicks(_ itemIDs: [LibraryItemID], sql: any SQLDatabase) async throws {
+        guard !itemIDs.isEmpty else { return }
+        try await sql.raw("""
+        UPDATE episode_progress SET watched_at_known = false
+        WHERE library_item_id = ANY(\(bind: itemIDs.map(\.rawValue))) AND watched_at = now()
+        """).run()
     }
 
     static func watchedKeys(_ id: LibraryItemID, sql: any SQLDatabase) async throws -> Set<EpisodeKey> {

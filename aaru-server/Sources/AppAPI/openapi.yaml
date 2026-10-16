@@ -202,6 +202,30 @@ paths:
               schema: {$ref: '#/components/schemas/NotificationSettings'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/stats:
+    get:
+      operationId: getStats
+      summary: >-
+        What the user watched and read in one calendar year or month of their time zone (GAM-006a).
+        Derived only from their own library. Imported history counts only where it carries a real date.
+      parameters:
+        - {name: year, in: query, required: true, schema: {type: integer}}
+        - name: month
+          in: query
+          description: 1–12. Absent means the whole year.
+          schema: {type: integer}
+        - name: tz
+          in: query
+          description: IANA time zone for day and month boundaries. Absent means UTC.
+          schema: {type: string}
+      responses:
+        '200':
+          description: The period's stats.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Stats'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/search:
     get:
       operationId: searchCatalog
@@ -1384,6 +1408,86 @@ components:
         startWatching:
           type: array
           items: {$ref: '#/components/schemas/StartEntry'}
+    Stats:
+      type: object
+      required: [year, timeZone, isPartial, totals, buckets, topTitles, ratings]
+      properties:
+        year: {type: integer}
+        month: {type: integer}
+        timeZone: {type: string}
+        isPartial:
+          type: boolean
+          description: The period is not over yet in the user's time zone.
+        totals: {$ref: '#/components/schemas/StatsTotals'}
+        buckets:
+          type: array
+          description: One per month of the year, or one per day of the month, in order.
+          items: {$ref: '#/components/schemas/StatsBucket'}
+        busiest: {$ref: '#/components/schemas/StatsBucket'}
+        longestRun: {$ref: '#/components/schemas/StatsRun'}
+        topTitles:
+          type: array
+          description: Most time spent, at most five.
+          items: {$ref: '#/components/schemas/StatsTitle'}
+        ratings: {$ref: '#/components/schemas/StatsRatings'}
+        first: {$ref: '#/components/schemas/StatsMoment'}
+        last: {$ref: '#/components/schemas/StatsMoment'}
+    StatsTotals:
+      type: object
+      required: [episodesWatched, minutesWatched, activeDays, moviesFinished, showsFinished, animeFinished,
+        booksFinished]
+      properties:
+        episodesWatched: {type: integer}
+        minutesWatched:
+          type: integer
+          description: Episode runtimes plus finished movies. Books have no minutes.
+        activeDays: {type: integer}
+        moviesFinished: {type: integer}
+        showsFinished: {type: integer}
+        animeFinished:
+          type: integer
+          description: Anime shows and films. Not counted again as shows or movies.
+        booksFinished: {type: integer}
+    StatsBucket:
+      type: object
+      required: [start, episodes, minutes, finished]
+      properties:
+        start:
+          type: string
+          description: First local day of the bucket, YYYY-MM-DD.
+        episodes: {type: integer}
+        minutes: {type: integer}
+        finished: {type: integer}
+    StatsRun:
+      type: object
+      required: [days, start, end]
+      properties:
+        days: {type: integer}
+        start: {type: string, description: 'YYYY-MM-DD'}
+        end: {type: string, description: 'YYYY-MM-DD, inclusive.'}
+    StatsTitle:
+      type: object
+      required: [title, episodes, minutes]
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        episodes: {type: integer}
+        minutes: {type: integer}
+    StatsRatings:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+          description: Titles finished in the period that have a rating.
+        mean: {type: number}
+        highest: {$ref: '#/components/schemas/TitleSummary'}
+        highestRating: {type: number}
+    StatsMoment:
+      type: object
+      required: [title, at]
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        at: {type: string, format: date-time}
     Health:
       type: object
       required: [status]

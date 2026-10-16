@@ -18,6 +18,7 @@ import { getCalendar } from '../lib/calendar/server'
 import { AIRING_DAYS, advance, airingBadge, upcoming } from '../lib/home/model'
 import type { ContinueEntry } from '../lib/home/model'
 import { getUpNext } from '../lib/home/server'
+import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
 
@@ -69,6 +70,11 @@ function Home() {
   const nextAirings = createMemo(() => {
     const current = now()
     return current ? upcoming(airings(), current) : []
+  })
+
+  const recap = createMemo(() => {
+    const current = now()
+    return current ? offeredRecap(current) : null
   })
 
   const badgeFor = (entry: CalendarEntry) => {
@@ -155,6 +161,30 @@ function Home() {
             >
               {message()}
             </p>
+          )}
+        </Show>
+
+        <Show when={recap()}>
+          {(period) => (
+            <Link
+              to="/app/recap"
+              search={period()}
+              class="rise mt-6 flex items-center justify-between gap-4 rounded-[20px] bg-ink p-5 text-paper"
+            >
+              <span>
+                <span class="block text-sm opacity-80">
+                  Your recap is ready
+                </span>
+                <span class="font-display text-2xl font-medium">
+                  {period().month
+                    ? periodLabel(period())
+                    : `${period().year} in Aaru`}
+                </span>
+              </span>
+              <span class="shrink-0 rounded-full bg-paper px-4 py-2 text-sm font-semibold text-ink">
+                Play
+              </span>
+            </Link>
           )}
         </Show>
 

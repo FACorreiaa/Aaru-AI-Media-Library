@@ -148,6 +148,8 @@ Use these words in code, APIs, and UI:
   Never a counter
 - **Streak** — consecutive local days with at least one progress write
 - **Badge** — an award derived from points events, defined in code
+- **Recap** — a read-only summary of one month or year (`/v1/me/stats`), played as a story.
+  Derived only from the user's own library; imported or restored ticks are not activity
 - **Room** — a watch-together session: invite, countdown, reactions, shared check-off. Aaru
   does not control anyone's player
 - **Conversation / Message** — an end-to-end encrypted DM thread. The server only ever holds

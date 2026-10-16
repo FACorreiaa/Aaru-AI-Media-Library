@@ -21,6 +21,7 @@ extension Stores {
             lists: PostgresListStore(sql: sql),
             shelves: PostgresShelfStore(sql: sql),
             schedule: PostgresScheduleStore(sql: sql),
+            stats: PostgresStatsStore(sql: sql),
             importJobs: PostgresImportJobStore(sql: sql),
             trakt: PostgresTraktStore(sql: sql),
             push: PostgresPushStore(sql: sql)

@@ -15,6 +15,7 @@ struct LibraryView: View {
     @State private var status: LibraryStatus?
     @State private var showsSearch = false
     @State private var showsSettings = false
+    @State private var recap: RecapPeriod?
 
     enum Layout: String {
         case grid, list
@@ -46,6 +47,7 @@ struct LibraryView: View {
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library, lists: lists)
                 }
+                .recapStory($recap, api: api)
                 .background(Color(.paper))
         }
     }
@@ -150,6 +152,11 @@ struct LibraryView: View {
                     Label("List", systemImage: "list.bullet").tag(Layout.list)
                 }
                 Divider()
+                Menu("Recaps", systemImage: "sparkles") {
+                    ForEach(RecapPeriod.shortcuts(now: .now, calendar: .aaru)) { period in
+                        Button(period.label) { recap = period }
+                    }
+                }
                 Button("Settings and imports", systemImage: "gearshape") { showsSettings = true }
                 Button("Sign out", role: .destructive, action: onSignOut)
             }
