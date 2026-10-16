@@ -321,6 +321,31 @@ function Settings() {
           </div>
         </section>
 
+        <section class="mt-10 rounded-[20px] bg-surface p-5">
+          <h2 class="font-display text-xl font-medium">Export your data</h2>
+          <p class="mt-2 text-sm text-muted">
+            Everything Aaru holds for you. The spreadsheet opens anywhere and
+            imports back into Aaru.
+          </p>
+          {/* Plain links, not router links: the Worker answers with a download. */}
+          <div class="mt-4 flex flex-wrap gap-3">
+            <a
+              href="/app/export?format=json"
+              download=""
+              class="rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold"
+            >
+              Everything (JSON)
+            </a>
+            <a
+              href="/app/export?format=csv"
+              download=""
+              class="rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold"
+            >
+              Library spreadsheet (CSV)
+            </a>
+          </div>
+        </section>
+
         <section class="mt-12 rounded-[20px] border border-danger/30 p-5">
           <h2 class="font-display text-xl font-medium">Delete account</h2>
           <p class="mt-2 text-sm text-muted">
@@ -340,7 +365,10 @@ function Settings() {
             }
           >
             <div class="mt-4 flex flex-wrap items-center gap-3">
-              <span class="text-sm font-medium">This cannot be undone.</span>
+              <span class="text-sm font-medium">
+                This cannot be undone. Export your data first if you want to
+                keep it.
+              </span>
               <button
                 type="button"
                 onClick={remove}

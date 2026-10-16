@@ -57,7 +57,8 @@ within a year.
 ## Your choices
 
 - **Delete your account:** Settings → Delete account, in the app or on the web.
-- **Export:** ask us and we will send you your data.
+- **Export:** Settings → Export your data, in the app or on the web. JSON has everything; CSV
+  opens in a spreadsheet and imports back into Aaru.
 - **Questions or requests:** privacy@aaruapp.com.
 
 Aaru is run by an individual developer based in the European Union. You have the rights the

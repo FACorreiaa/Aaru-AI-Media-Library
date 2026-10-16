@@ -153,6 +153,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/imports`.
     /// - Remark: Generated from `#/paths//v1/imports/get(listImports)`.
     func listImports(_ input: Operations.ListImports.Input) async throws -> Operations.ListImports.Output
+    /// Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
+    ///
+    /// `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
+    ///
+    /// - Remark: HTTP `GET /v1/me/export`.
+    /// - Remark: Generated from `#/paths//v1/me/export/get(exportAccount)`.
+    func exportAccount(_ input: Operations.ExportAccount.Input) async throws -> Operations.ExportAccount.Output
     /// Upload an export file. It is parsed now, matched in the background, and written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/csv`.
@@ -608,6 +615,21 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/imports/get(listImports)`.
     public func listImports(headers: Operations.ListImports.Input.Headers = .init()) async throws -> Operations.ListImports.Output {
         try await listImports(Operations.ListImports.Input(headers: headers))
+    }
+    /// Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
+    ///
+    /// `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
+    ///
+    /// - Remark: HTTP `GET /v1/me/export`.
+    /// - Remark: Generated from `#/paths//v1/me/export/get(exportAccount)`.
+    public func exportAccount(
+        query: Operations.ExportAccount.Input.Query = .init(),
+        headers: Operations.ExportAccount.Input.Headers = .init()
+    ) async throws -> Operations.ExportAccount.Output {
+        try await exportAccount(Operations.ExportAccount.Input(
+            query: query,
+            headers: headers
+        ))
     }
     /// Upload an export file. It is parsed now, matched in the background, and written only after approval.
     ///
@@ -2134,6 +2156,80 @@ public enum Components {
                 case progress
                 case bookProgress
                 case watchedEpisodes
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AccountExport`.
+        public struct AccountExport: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AccountExport/exportedAt`.
+            public var exportedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/AccountExport/account`.
+            public var account: Components.Schemas.Me
+            /// Every library item; shows carry `watchedEpisodes`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountExport/library`.
+            public var library: [Components.Schemas.LibraryEntry]
+            /// - Remark: Generated from `#/components/schemas/AccountExport/ListsPayload`.
+            public struct ListsPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AccountExport/ListsPayload/name`.
+                public var name: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AccountExport/ListsPayload/createdAt`.
+                public var createdAt: Foundation.Date
+                /// - Remark: Generated from `#/components/schemas/AccountExport/ListsPayload/items`.
+                public var items: [Components.Schemas.TitleSummary]
+                /// Creates a new `ListsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - name:
+                ///   - createdAt:
+                ///   - items:
+                public init(
+                    name: Swift.String,
+                    createdAt: Foundation.Date,
+                    items: [Components.Schemas.TitleSummary]
+                ) {
+                    self.name = name
+                    self.createdAt = createdAt
+                    self.items = items
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case name
+                    case createdAt
+                    case items
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AccountExport/lists`.
+            public typealias ListsPayload = [Components.Schemas.AccountExport.ListsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/AccountExport/lists`.
+            public var lists: Components.Schemas.AccountExport.ListsPayload
+            /// - Remark: Generated from `#/components/schemas/AccountExport/shelves`.
+            public var shelves: [Components.Schemas.Shelf]
+            /// Creates a new `AccountExport`.
+            ///
+            /// - Parameters:
+            ///   - exportedAt:
+            ///   - account:
+            ///   - library: Every library item; shows carry `watchedEpisodes`.
+            ///   - lists:
+            ///   - shelves:
+            public init(
+                exportedAt: Foundation.Date,
+                account: Components.Schemas.Me,
+                library: [Components.Schemas.LibraryEntry],
+                lists: Components.Schemas.AccountExport.ListsPayload,
+                shelves: [Components.Schemas.Shelf]
+            ) {
+                self.exportedAt = exportedAt
+                self.account = account
+                self.library = library
+                self.lists = lists
+                self.shelves = shelves
+            }
+            public enum CodingKeys: String, CodingKey {
+                case exportedAt
+                case account
+                case library
+                case lists
+                case shelves
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.
@@ -7699,6 +7795,209 @@ public enum Operations {
             public static var allCases: [Self] {
                 [
                     .json
+                ]
+            }
+        }
+    }
+    /// Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
+    ///
+    /// `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
+    ///
+    /// - Remark: HTTP `GET /v1/me/export`.
+    /// - Remark: Generated from `#/paths//v1/me/export/get(exportAccount)`.
+    public enum ExportAccount {
+        public static let id: Swift.String = "exportAccount"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/export/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/export/GET/query/format`.
+                @frozen public enum FormatPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case json = "json"
+                    case csv = "csv"
+                }
+                /// - Remark: Generated from `#/paths/v1/me/export/GET/query/format`.
+                public var format: Operations.ExportAccount.Input.Query.FormatPayload?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - format:
+                public init(format: Operations.ExportAccount.Input.Query.FormatPayload? = nil) {
+                    self.format = format
+                }
+            }
+            public var query: Operations.ExportAccount.Input.Query
+            /// - Remark: Generated from `#/paths/v1/me/export/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ExportAccount.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ExportAccount.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ExportAccount.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ExportAccount.Input.Query = .init(),
+                headers: Operations.ExportAccount.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/export/GET/responses/200/headers`.
+                public struct Headers: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/export/GET/responses/200/headers/Content-Disposition`.
+                    public var contentDisposition: Swift.String?
+                    /// Creates a new `Headers`.
+                    ///
+                    /// - Parameters:
+                    ///   - contentDisposition:
+                    public init(contentDisposition: Swift.String? = nil) {
+                        self.contentDisposition = contentDisposition
+                    }
+                }
+                /// Received HTTP response headers
+                public var headers: Operations.ExportAccount.Output.Ok.Headers
+                /// - Remark: Generated from `#/paths/v1/me/export/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/export/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AccountExport)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AccountExport {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            default:
+                                try throwUnexpectedResponseBody(
+                                    expectedContent: "application/json",
+                                    body: self
+                                )
+                            }
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/me/export/GET/responses/200/content/text\/csv`.
+                    case csv(OpenAPIRuntime.HTTPBody)
+                    /// The associated value of the enum case if `self` is `.csv`.
+                    ///
+                    /// - Throws: An error if `self` is not `.csv`.
+                    /// - SeeAlso: `.csv`.
+                    public var csv: OpenAPIRuntime.HTTPBody {
+                        get throws {
+                            switch self {
+                            case let .csv(body):
+                                return body
+                            default:
+                                try throwUnexpectedResponseBody(
+                                    expectedContent: "text/csv",
+                                    body: self
+                                )
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ExportAccount.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - headers: Received HTTP response headers
+                ///   - body: Received HTTP response body
+                public init(
+                    headers: Operations.ExportAccount.Output.Ok.Headers = .init(),
+                    body: Operations.ExportAccount.Output.Ok.Body
+                ) {
+                    self.headers = headers
+                    self.body = body
+                }
+            }
+            /// The export, as a download.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/export/get(exportAccount)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ExportAccount.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ExportAccount.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/export/get(exportAccount)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case csv
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                case "text/csv":
+                    self = .csv
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                case .csv:
+                    return "text/csv"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json,
+                    .csv
                 ]
             }
         }

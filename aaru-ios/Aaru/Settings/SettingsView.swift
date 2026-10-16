@@ -35,6 +35,7 @@ struct SettingsView: View {
                 if !imports.jobs.isEmpty {
                     jobsSection
                 }
+                ExportDataSection(api: api) { imports.problem = $0 }
                 Section {
                     NavigationLink("About Aaru") { AboutView() }
                 }
@@ -94,7 +95,7 @@ struct SettingsView: View {
                     Task { deleteProblem = await onDeleteAccount() }
                 }
             } message: {
-                Text("This cannot be undone.")
+                Text("This cannot be undone. Export your data first if you want to keep it.")
             }
             .task {
                 await imports.load()

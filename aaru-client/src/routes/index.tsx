@@ -36,7 +36,7 @@ const faqs: Array<[string, string]> = [
   ],
   [
     'Can I take my data out?',
-    'Yes. Until self-serve export ships, ask and we will send you your whole library. Export will never be a paid feature.',
+    'Yes. Export your whole library any time from Settings, as JSON or a CSV spreadsheet that imports back into Aaru. Export will never be a paid feature.',
   ],
   [
     'Where can I import from?',
