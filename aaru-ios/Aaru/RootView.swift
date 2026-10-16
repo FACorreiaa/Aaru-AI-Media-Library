@@ -11,6 +11,7 @@ struct RootView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
+    @State private var tab: AppTab = .home
     @State private var errorMessage: String?
 
     private var flow: AuthFlow {
@@ -21,15 +22,18 @@ struct RootView: View {
         Group {
             if session.isSignedIn {
                 // A sidebar on Mac and iPad, a tab bar on iPhone.
-                TabView {
-                    Tab("Library", systemImage: "books.vertical") {
+                TabView(selection: $tab) {
+                    Tab("Home", systemImage: "house", value: AppTab.home) {
+                        HomeScreen(api: api, library: library, lists: lists) { tab = .calendar }
+                    }
+                    Tab("Library", systemImage: "books.vertical", value: AppTab.library) {
                         LibraryView(
                             api: api, library: library, lists: lists, imports: imports,
                             onSignOut: { Task { await flow.signOut() } },
                             onDeleteAccount: { await flow.deleteAccount() }
                         )
                     }
-                    Tab("Calendar", systemImage: "calendar") {
+                    Tab("Calendar", systemImage: "calendar", value: AppTab.calendar) {
                         CalendarScreen(api: api, library: library, lists: lists)
                     }
                 }
@@ -71,6 +75,8 @@ struct RootView: View {
                 library.reset()
                 lists.reset()
                 imports.reset()
+                HomeCache().clear()
+                tab = .home
             }
         }
         .alert(
@@ -85,6 +91,10 @@ struct RootView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+
+    enum AppTab: Hashable {
+        case home, library, calendar
     }
 
     private func run(_ action: () async throws -> Void) async {
