@@ -259,7 +259,7 @@ ship before the Phase 2 gate.
   avatars, tap into a full-height card per title a friend watched today ("Kevin · Watched S2 ·
   E9 · 12:11 PM"), with a bookmark to add it to your wishlist.
 - **Profile and stats** (`StatsPanel`, Phase 5) — MAL-style numbers: days watched, episodes,
-  mean score, genre and format breakdown, Year in Review.
+  mean score, genre and format breakdown. The Year in Review shipped early as the Recap (below).
 - **Badges** (`BadgeShelf`, Phase 5) — discovery badges and milestone badges, tiered.
 - **Leaderboard** (Phase 5) — friends only, weekly, opt-in. Never global.
 - **Room** (`RoomPanel`, Phase 6) — watch together: countdown to "press play", who is in,
@@ -268,6 +268,24 @@ ship before the Phase 2 gate.
   safety-number check live in the header, not in a settings screen.
 
 The feeling to protect: **social is a room you invite people into, not a feed you are fed.**
+
+### Recap (`RecapStory`, GAM-006a, pulled forward 2026-10-16)
+
+Spotify Wrapped's shape, Aaru's calm. One full-screen card at a time: intro, time watched,
+episodes with a month (or day) bar chart, the top title, the top five, what was finished, the
+longest run of days, ratings, the first and last title, and a summary that shares an image.
+A card with nothing to say is left out, and an empty period gets a sentence, not a story.
+Backdrops cycle Ink, accent and Surface; type is the serif display face.
+
+Motion rules (the first written ones; they hold for any later surface):
+- Entrances only. Elements rise in once on a short stagger, numbers count up once, bars grow
+  from the baseline once. Nothing loops, pulses or bounces after it lands.
+- Cards advance on their own every 6 s; a hold pauses, a tap on the left third goes back.
+  Keyboard: arrows, space, Esc.
+- **Reduce Motion** (iOS setting, `prefers-reduced-motion` on the web): no count-up, no growth,
+  no auto-advance; cards cross-fade and wait for a tap.
+- The share image carries only the user's own numbers and the brand, no posters, so the web
+  canvas and the Apple renderer draw the same card. Nothing is shared without a tap.
 
 ---
 
@@ -295,6 +313,7 @@ Build these as SwiftUI views. The model only returns their names and props.
 | `FriendStories` | Friends' watches today (Phase 4) |
 | `BadgeShelf` | Earned badges (Phase 5) |
 | `StatsPanel` | Profile numbers (Phase 5) |
+| `RecapStory` | A month or year as a story (GAM-006a) |
 | `RoomPanel` | Watch-together room (Phase 6) |
 | `ConversationView` | E2E conversation (Phase 6) |
 
@@ -322,7 +341,7 @@ looking like Aaru.
 
 Brand: teal → gold, paper-white or deep reed-green dark mode. Assets and how they are made:
 `docs/brand/README.md`. Colour tokens (`Paper`, `Surface`, `Ink`, `Muted`, `Medallion`, accent
-teal) are the same names in the asset catalog and in `aaru-client/src/routes/layout.css`. The
+teal) are the same names in the asset catalog and in `aaru-client/src/styles.css`. The
 mascot (a small teal bird with books and a film reel) appears on signed-out surfaces only, always
 on a paper disc. The heron only as a quiet mark
 when the agent is working (breathing reed, not a bouncing dots spinner).

@@ -264,6 +264,7 @@ struct Stores: Sendable {
     var lists: any ListStore
     var shelves: any ShelfStore
     var schedule: any ScheduleStore
+    var stats: any StatsStore
     var importJobs: any ImportJobStore
     var trakt: any TraktStore
     var push: any PushStore

@@ -12,6 +12,7 @@ struct HomeScreen: View {
 
     @State private var model: HomeModel
     @State private var showsSearch = false
+    @State private var recap: RecapPeriod?
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -60,6 +61,7 @@ struct HomeScreen: View {
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library, lists: lists)
                 }
+                .recapStory($recap, api: api)
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: model.problem) { model.problem = nil }
                 }
@@ -84,6 +86,10 @@ struct HomeScreen: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
+                    if let offered = RecapPeriod.offered(now: .now, calendar: model.calendar) {
+                        RecapBanner(period: offered) { recap = offered }
+                            .padding(.horizontal, 16)
+                    }
                     if !model.continueWatching.isEmpty {
                         HomeRow(title: "Continue watching") {
                             ForEach(model.continueWatching, id: \.libraryItemId) { entry in

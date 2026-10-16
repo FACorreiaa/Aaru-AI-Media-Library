@@ -350,6 +350,7 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         lists: untouched,
         shelves: untouched,
         schedule: untouched,
+        stats: untouched,
         importJobs: untouched,
         trakt: untouched,
         push: untouched

@@ -32,6 +32,17 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-16
+
+- **The Recap (GAM-006a) is built before the P2 gate**, by the owner's call, with 0 strangers.
+  It is a Spotify Wrapped-style story for a month or a year, on iPhone, Mac and the web
+  together. It reads the library, not the points ledger, so it no longer needs GAM-001. Profile
+  stats, genres and badges (GAM-006b) stay in P5.
+- **Imported history is not activity.** An episode tick written by an import or restored by an
+  undo has no real watch date (`episode_progress.watched_at_known = false`), so the Recap leaves
+  it out. A dated finish from an import (Letterboxd, Goodreads, MAL, Trakt movies) counts on its
+  day.
+
 ## Decisions recorded 2026-10-15
 
 - **Airing-episode push notifications move into P2** (by the owner's call; was SOC-005 in P4): an
@@ -1474,13 +1485,38 @@ board.
 **Done when:** a user who has not opted in never appears on anyone's board, including their
 friends'.
 
-### GAM-006 · Stats and Year in Review · M
-**Needs:** GAM-001, PROG-003.
-MAL-style profile stats: days watched, episodes, movies, books, mean score, genre/network
-breakdowns, per-type split (anime vs TV). Year in Review card shareable as an image.
+### GAM-006a · Recap: month and Year in Review · M · pulled forward 2026-10-16
+**Needs:** PROG-003.
+`GET /v1/me/stats?year=&month=&tz=`: episodes, minutes, active days, finished titles by kind
+(anime counted once), month or day buckets, the busiest one, the longest run of days, the top
+five titles by time, mean and highest rating, and the first and last title of the period. Day
+and month edges are the user's time zone; a date-only finish (00:00 UTC) keeps its day
+everywhere. Clients play it as a story of animated cards (`RecapStory`) that ends in a share
+image. Home offers the year from Dec 1 to Jan 15 and last month in a month's first week;
+Settings (web) and the Library menu (Apple) open any of this year, last month and last year.
 
-**Done when:** stats are derived only from the user's own library and journal, and the
-review image contains no other user's data.
+**Progress 2026-10-16:** built on the server, the web and the Apple apps. All server tests
+(Postgres included) and web tests pass; the web story was run locally against seeded data, with
+and without reduced motion, and its share image checked. Still to do: run the Apple story on a
+device or simulator, with Reduce Motion on and off.
+
+**Done when:** stats are derived only from the user's own library, imported and restored
+ticks never count as activity, a tick at 23:30 UTC on Dec 31 lands in the next year east of
+UTC, and the share image contains no other user's data.
+
+### GAM-006b · Profile stats and genres · M
+**Needs:** GAM-001, GAM-006a, CAT-018.
+MAL-style all-time stats on a profile (`StatsPanel`): days watched, mean score, genre and
+network breakdowns, anime vs TV. A genre card joins the Recap once genres are stored.
+
+**Done when:** every number matches `/v1/me/stats` summed over the same years.
+
+### CAT-018 · Store genres · S
+TMDB `genres` and AniList `genres` are decoded today but only used to compute `isAnime`. Store
+them as `titles.genres text[]` at hydration, and backfill titles already in libraries.
+
+**Done when:** a hydrated movie, show and anime each carry their provider's genres, and the
+backfill leaves no tracked title without them where the provider has some.
 
 ---
 

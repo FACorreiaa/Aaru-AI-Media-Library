@@ -190,6 +190,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/stats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date. */
+    get: operations['getStats']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/search': {
     parameters: {
       query?: never
@@ -1102,6 +1119,65 @@ export interface components {
       continueWatching: components['schemas']['ContinueEntry'][]
       startWatching: components['schemas']['StartEntry'][]
     }
+    Stats: {
+      year: number
+      month?: number
+      timeZone: string
+      /** @description The period is not over yet in the user's time zone. */
+      isPartial: boolean
+      totals: components['schemas']['StatsTotals']
+      /** @description One per month of the year, or one per day of the month, in order. */
+      buckets: components['schemas']['StatsBucket'][]
+      busiest?: components['schemas']['StatsBucket']
+      longestRun?: components['schemas']['StatsRun']
+      /** @description Most time spent, at most five. */
+      topTitles: components['schemas']['StatsTitle'][]
+      ratings: components['schemas']['StatsRatings']
+      first?: components['schemas']['StatsMoment']
+      last?: components['schemas']['StatsMoment']
+    }
+    StatsTotals: {
+      episodesWatched: number
+      /** @description Episode runtimes plus finished movies. Books have no minutes. */
+      minutesWatched: number
+      activeDays: number
+      moviesFinished: number
+      showsFinished: number
+      /** @description Anime shows and films. Not counted again as shows or movies. */
+      animeFinished: number
+      booksFinished: number
+    }
+    StatsBucket: {
+      /** @description First local day of the bucket, YYYY-MM-DD. */
+      start: string
+      episodes: number
+      minutes: number
+      finished: number
+    }
+    StatsRun: {
+      days: number
+      /** @description YYYY-MM-DD */
+      start: string
+      /** @description YYYY-MM-DD, inclusive. */
+      end: string
+    }
+    StatsTitle: {
+      title: components['schemas']['TitleSummary']
+      episodes: number
+      minutes: number
+    }
+    StatsRatings: {
+      /** @description Titles finished in the period that have a rating. */
+      count: number
+      mean?: number
+      highest?: components['schemas']['TitleSummary']
+      highestRating?: number
+    }
+    StatsMoment: {
+      title: components['schemas']['TitleSummary']
+      /** Format: date-time */
+      at: string
+    }
     Health: {
       /** @enum {string} */
       status: 'ok' | 'unavailable'
@@ -1426,6 +1502,33 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['NotificationSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getStats: {
+    parameters: {
+      query: {
+        year: number
+        /** @description 1–12. Absent means the whole year. */
+        month?: number
+        /** @description IANA time zone for day and month boundaries. Absent means UTC. */
+        tz?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The period's stats. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Stats']
         }
       }
       default: components['responses']['Error']

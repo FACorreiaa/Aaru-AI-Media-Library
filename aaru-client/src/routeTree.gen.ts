@@ -16,6 +16,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppExportRouteImport } from './routes/app_.export'
 import { Route as AppLibraryRouteImport } from './routes/app_.library'
+import { Route as AppRecapRouteImport } from './routes/app_.recap'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
@@ -57,6 +58,11 @@ const AppExportRoute = AppExportRouteImport.update({
 const AppLibraryRoute = AppLibraryRouteImport.update({
   id: '/app_/library',
   path: '/app/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRecapRoute = AppRecapRouteImport.update({
+  id: '/app_/recap',
+  path: '/app/recap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/app/export': typeof AppExportRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/recap': typeof AppRecapRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/app/export': typeof AppExportRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/recap': typeof AppRecapRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/app_/export': typeof AppExportRoute
   '/app_/library': typeof AppLibraryRoute
+  '/app_/recap': typeof AppRecapRoute
   '/app_/settings': typeof AppSettingsRoute
   '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/app/export'
     | '/app/library'
+    | '/app/recap'
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/app/export'
     | '/app/library'
+    | '/app/recap'
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/app_/export'
     | '/app_/library'
+    | '/app_/recap'
     | '/app_/settings'
     | '/app_/week'
     | '/auth/verify'
@@ -203,6 +215,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   AppExportRoute: typeof AppExportRoute
   AppLibraryRoute: typeof AppLibraryRoute
+  AppRecapRoute: typeof AppRecapRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppWeekRoute: typeof AppWeekRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
@@ -261,6 +274,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/library'
       fullPath: '/app/library'
       preLoaderRoute: typeof AppLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/recap': {
+      id: '/app_/recap'
+      path: '/app/recap'
+      fullPath: '/app/recap'
+      preLoaderRoute: typeof AppRecapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/settings': {
@@ -323,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   AppExportRoute: AppExportRoute,
   AppLibraryRoute: AppLibraryRoute,
+  AppRecapRoute: AppRecapRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppWeekRoute: AppWeekRoute,
   AuthVerifyRoute: AuthVerifyRoute,

@@ -132,7 +132,8 @@ PostgreSQL. Suggested tables:
 - `titles` (unique indexes on each external id where not null)
 - `show_episodes` (title_id, season, episode, optional air time + `airs_at_exact`, optional overview, optional tmdb episode id)
 - `library_items` (unique `(user_id, title_id)`)
-- `episode_progress` (unique `(library_item_id, season, episode)`)
+- `episode_progress` (unique `(library_item_id, season, episode)`; `watched_at_known` is false
+  for ticks an import or an undo wrote, whose `watched_at` is the write, not the watch)
 - `lists`, `list_items`
 - `saved_queries` (shelves — a stored filter, never membership rows)
 - `import_jobs`, `import_job_events` (optional log lines)
@@ -252,6 +253,8 @@ GET    /v1/shelves/{id}/items             # same DTO as GET /v1/library/items
 GET    /v1/actions?limit=                 # action journal, newest first
 POST   /v1/actions/{id}/undo
 
+GET    /v1/me/stats?year=&month=&tz=      # GAM-006a: one year or month, in the user's time zone
+
 GET    /v1/imports
 POST   /v1/imports/trakt/connect          # start OAuth
 GET    /v1/imports/trakt/callback
@@ -280,8 +283,22 @@ Search hits are catalog projections, not library items. The client calls `POST /
 
 Later-phase route groups, each added with its phase and never before:
 `/v1/scrobble/*` and `/v1/webhooks/{plex|jellyfin}` (3), `/v1/stremio/*` (3), `/v1/social/*`
-and `/v1/devices/apns` (4), `/v1/me/points|badges|stats|streak` (5), `/v1/ws`,
+and `/v1/devices/apns` (4), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
+with GAM-006a), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*`, `/v1/rooms/*` (6).
+
+### Recap stats (GAM-006a)
+
+`/v1/me/stats` is a derived read with no table of its own (`StatsService` over `StatsStore`, the
+same shape as Calendar). One query unions episode ticks whose `watched_at_known` is true with
+finished items that have a `finished_at`, buckets them by local day in the caller's `tz`, and
+the service derives totals, buckets, the longest run and the top titles in Swift. The journal is
+not a source: it stores inverses, collapses an import into one row, and is pruned.
+
+An import's ticks are marked in the same transaction (`now()` is the transaction's start, so
+`watched_at = now()` picks out exactly the rows it wrote); a snapshot insert (undoing a delete)
+writes them unknown. A finish at exactly 00:00 UTC is a date-only import and keeps its UTC day
+in every time zone.
 
 ### Calendar and Up Next
 

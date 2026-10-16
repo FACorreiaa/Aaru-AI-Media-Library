@@ -70,6 +70,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    ///
+    /// - Remark: HTTP `GET /v1/me/stats`.
+    /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
+    func getStats(_ input: Operations.GetStats.Input) async throws -> Operations.GetStats.Output
     /// Search the catalog. Results are catalog projections, never library rows.
     ///
     /// - Remark: HTTP `GET /v1/search`.
@@ -365,6 +370,19 @@ extension APIProtocol {
         try await updateNotificationSettings(Operations.UpdateNotificationSettings.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    ///
+    /// - Remark: HTTP `GET /v1/me/stats`.
+    /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
+    public func getStats(
+        query: Operations.GetStats.Input.Query,
+        headers: Operations.GetStats.Input.Headers = .init()
+    ) async throws -> Operations.GetStats.Output {
+        try await getStats(Operations.GetStats.Input(
+            query: query,
+            headers: headers
         ))
     }
     /// Search the catalog. Results are catalog projections, never library rows.
@@ -2889,6 +2907,311 @@ public enum Components {
                 case startWatching
             }
         }
+        /// - Remark: Generated from `#/components/schemas/Stats`.
+        public struct Stats: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Stats/year`.
+            public var year: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Stats/month`.
+            public var month: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/Stats/timeZone`.
+            public var timeZone: Swift.String
+            /// The period is not over yet in the user's time zone.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/isPartial`.
+            public var isPartial: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Stats/totals`.
+            public var totals: Components.Schemas.StatsTotals
+            /// One per month of the year, or one per day of the month, in order.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/buckets`.
+            public var buckets: [Components.Schemas.StatsBucket]
+            /// - Remark: Generated from `#/components/schemas/Stats/busiest`.
+            public var busiest: Components.Schemas.StatsBucket?
+            /// - Remark: Generated from `#/components/schemas/Stats/longestRun`.
+            public var longestRun: Components.Schemas.StatsRun?
+            /// Most time spent, at most five.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/topTitles`.
+            public var topTitles: [Components.Schemas.StatsTitle]
+            /// - Remark: Generated from `#/components/schemas/Stats/ratings`.
+            public var ratings: Components.Schemas.StatsRatings
+            /// - Remark: Generated from `#/components/schemas/Stats/first`.
+            public var first: Components.Schemas.StatsMoment?
+            /// - Remark: Generated from `#/components/schemas/Stats/last`.
+            public var last: Components.Schemas.StatsMoment?
+            /// Creates a new `Stats`.
+            ///
+            /// - Parameters:
+            ///   - year:
+            ///   - month:
+            ///   - timeZone:
+            ///   - isPartial: The period is not over yet in the user's time zone.
+            ///   - totals:
+            ///   - buckets: One per month of the year, or one per day of the month, in order.
+            ///   - busiest:
+            ///   - longestRun:
+            ///   - topTitles: Most time spent, at most five.
+            ///   - ratings:
+            ///   - first:
+            ///   - last:
+            public init(
+                year: Swift.Int,
+                month: Swift.Int? = nil,
+                timeZone: Swift.String,
+                isPartial: Swift.Bool,
+                totals: Components.Schemas.StatsTotals,
+                buckets: [Components.Schemas.StatsBucket],
+                busiest: Components.Schemas.StatsBucket? = nil,
+                longestRun: Components.Schemas.StatsRun? = nil,
+                topTitles: [Components.Schemas.StatsTitle],
+                ratings: Components.Schemas.StatsRatings,
+                first: Components.Schemas.StatsMoment? = nil,
+                last: Components.Schemas.StatsMoment? = nil
+            ) {
+                self.year = year
+                self.month = month
+                self.timeZone = timeZone
+                self.isPartial = isPartial
+                self.totals = totals
+                self.buckets = buckets
+                self.busiest = busiest
+                self.longestRun = longestRun
+                self.topTitles = topTitles
+                self.ratings = ratings
+                self.first = first
+                self.last = last
+            }
+            public enum CodingKeys: String, CodingKey {
+                case year
+                case month
+                case timeZone
+                case isPartial
+                case totals
+                case buckets
+                case busiest
+                case longestRun
+                case topTitles
+                case ratings
+                case first
+                case last
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsTotals`.
+        public struct StatsTotals: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/episodesWatched`.
+            public var episodesWatched: Swift.Int
+            /// Episode runtimes plus finished movies. Books have no minutes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/minutesWatched`.
+            public var minutesWatched: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/activeDays`.
+            public var activeDays: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/moviesFinished`.
+            public var moviesFinished: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/showsFinished`.
+            public var showsFinished: Swift.Int
+            /// Anime shows and films. Not counted again as shows or movies.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/animeFinished`.
+            public var animeFinished: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/booksFinished`.
+            public var booksFinished: Swift.Int
+            /// Creates a new `StatsTotals`.
+            ///
+            /// - Parameters:
+            ///   - episodesWatched:
+            ///   - minutesWatched: Episode runtimes plus finished movies. Books have no minutes.
+            ///   - activeDays:
+            ///   - moviesFinished:
+            ///   - showsFinished:
+            ///   - animeFinished: Anime shows and films. Not counted again as shows or movies.
+            ///   - booksFinished:
+            public init(
+                episodesWatched: Swift.Int,
+                minutesWatched: Swift.Int,
+                activeDays: Swift.Int,
+                moviesFinished: Swift.Int,
+                showsFinished: Swift.Int,
+                animeFinished: Swift.Int,
+                booksFinished: Swift.Int
+            ) {
+                self.episodesWatched = episodesWatched
+                self.minutesWatched = minutesWatched
+                self.activeDays = activeDays
+                self.moviesFinished = moviesFinished
+                self.showsFinished = showsFinished
+                self.animeFinished = animeFinished
+                self.booksFinished = booksFinished
+            }
+            public enum CodingKeys: String, CodingKey {
+                case episodesWatched
+                case minutesWatched
+                case activeDays
+                case moviesFinished
+                case showsFinished
+                case animeFinished
+                case booksFinished
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsBucket`.
+        public struct StatsBucket: Codable, Hashable, Sendable {
+            /// First local day of the bucket, YYYY-MM-DD.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsBucket/start`.
+            public var start: Swift.String
+            /// - Remark: Generated from `#/components/schemas/StatsBucket/episodes`.
+            public var episodes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsBucket/minutes`.
+            public var minutes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsBucket/finished`.
+            public var finished: Swift.Int
+            /// Creates a new `StatsBucket`.
+            ///
+            /// - Parameters:
+            ///   - start: First local day of the bucket, YYYY-MM-DD.
+            ///   - episodes:
+            ///   - minutes:
+            ///   - finished:
+            public init(
+                start: Swift.String,
+                episodes: Swift.Int,
+                minutes: Swift.Int,
+                finished: Swift.Int
+            ) {
+                self.start = start
+                self.episodes = episodes
+                self.minutes = minutes
+                self.finished = finished
+            }
+            public enum CodingKeys: String, CodingKey {
+                case start
+                case episodes
+                case minutes
+                case finished
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsRun`.
+        public struct StatsRun: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsRun/days`.
+            public var days: Swift.Int
+            /// YYYY-MM-DD
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsRun/start`.
+            public var start: Swift.String
+            /// YYYY-MM-DD, inclusive.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsRun/end`.
+            public var end: Swift.String
+            /// Creates a new `StatsRun`.
+            ///
+            /// - Parameters:
+            ///   - days:
+            ///   - start: YYYY-MM-DD
+            ///   - end: YYYY-MM-DD, inclusive.
+            public init(
+                days: Swift.Int,
+                start: Swift.String,
+                end: Swift.String
+            ) {
+                self.days = days
+                self.start = start
+                self.end = end
+            }
+            public enum CodingKeys: String, CodingKey {
+                case days
+                case start
+                case end
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsTitle`.
+        public struct StatsTitle: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsTitle/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/StatsTitle/episodes`.
+            public var episodes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsTitle/minutes`.
+            public var minutes: Swift.Int
+            /// Creates a new `StatsTitle`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - episodes:
+            ///   - minutes:
+            public init(
+                title: Components.Schemas.TitleSummary,
+                episodes: Swift.Int,
+                minutes: Swift.Int
+            ) {
+                self.title = title
+                self.episodes = episodes
+                self.minutes = minutes
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case episodes
+                case minutes
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsRatings`.
+        public struct StatsRatings: Codable, Hashable, Sendable {
+            /// Titles finished in the period that have a rating.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsRatings/count`.
+            public var count: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsRatings/mean`.
+            public var mean: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/StatsRatings/highest`.
+            public var highest: Components.Schemas.TitleSummary?
+            /// - Remark: Generated from `#/components/schemas/StatsRatings/highestRating`.
+            public var highestRating: Swift.Double?
+            /// Creates a new `StatsRatings`.
+            ///
+            /// - Parameters:
+            ///   - count: Titles finished in the period that have a rating.
+            ///   - mean:
+            ///   - highest:
+            ///   - highestRating:
+            public init(
+                count: Swift.Int,
+                mean: Swift.Double? = nil,
+                highest: Components.Schemas.TitleSummary? = nil,
+                highestRating: Swift.Double? = nil
+            ) {
+                self.count = count
+                self.mean = mean
+                self.highest = highest
+                self.highestRating = highestRating
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case mean
+                case highest
+                case highestRating
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsMoment`.
+        public struct StatsMoment: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsMoment/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/StatsMoment/at`.
+            public var at: Foundation.Date
+            /// Creates a new `StatsMoment`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - at:
+            public init(
+                title: Components.Schemas.TitleSummary,
+                at: Foundation.Date
+            ) {
+                self.title = title
+                self.at = at
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case at
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/Health`.
         public struct Health: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/Health/status`.
@@ -4648,6 +4971,169 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    ///
+    /// - Remark: HTTP `GET /v1/me/stats`.
+    /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
+    public enum GetStats {
+        public static let id: Swift.String = "getStats"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/stats/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/year`.
+                public var year: Swift.Int
+                /// 1–12. Absent means the whole year.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/month`.
+                public var month: Swift.Int?
+                /// IANA time zone for day and month boundaries. Absent means UTC.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/tz`.
+                public var tz: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - year:
+                ///   - month: 1–12. Absent means the whole year.
+                ///   - tz: IANA time zone for day and month boundaries. Absent means UTC.
+                public init(
+                    year: Swift.Int,
+                    month: Swift.Int? = nil,
+                    tz: Swift.String? = nil
+                ) {
+                    self.year = year
+                    self.month = month
+                    self.tz = tz
+                }
+            }
+            public var query: Operations.GetStats.Input.Query
+            /// - Remark: Generated from `#/paths/v1/me/stats/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetStats.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetStats.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetStats.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetStats.Input.Query,
+                headers: Operations.GetStats.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/stats/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/stats/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Stats)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Stats {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetStats.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetStats.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The period's stats.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetStats.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetStats.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

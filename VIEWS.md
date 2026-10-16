@@ -29,11 +29,12 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | 7 · M13 |
 | Undo ribbon | `UndoRibbon` | action journal + undo endpoint | 1 · M4 |
 | Mac companion | sidebar + inspector over the same components | same `/v1` | 2 · M7 |
-| Web (`aaru-client`) | same components as Svelte views | same `/v1` | 2 · WEB-001 |
+| Web (`aaru-client`) | same components as SolidJS views | same `/v1` | 2 · WEB-001 |
 | Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
 | Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3) | 2–3 |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
-| Profile and stats | `StatsPanel`, `BadgeShelf` | stats + badges routes | 5 · GAM-004/006 |
+| Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
+| Profile and stats | `StatsPanel`, `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
 | Leaderboard | `Shelf`-like ranked list, friends only | leaderboard route | 5 · GAM-005 |
 | Room | `RoomPanel` | rooms routes + `/v1/ws` | 6 · ROOM-001 |
 | Conversations | `ConversationView` | ciphertext message routes + `/v1/ws` | 6 · DM-* |
@@ -72,6 +73,7 @@ refuses and substitutes the nearest catalog piece.
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
 | `BadgeShelf` | Earned badges | badge ids, tier, earned at |
 | `StatsPanel` | Profile numbers | days watched, episodes, mean score, breakdowns |
+| `RecapStory` | A month or year as a story | `year`, optional `month`; the deck is built on the device from `/v1/me/stats` |
 | `RoomPanel` | Watch-together room | `roomId`, title / episode, members + drift, countdown, state |
 | `ConversationView` | E2E conversation | `conversationId`, participants; message bodies decrypt on device only |
 
@@ -90,6 +92,9 @@ The eleven new components add product, not agent reach, and each has a reason:
 - `FriendStories` (Phase 4) — the only social read surface on Home.
 - `StreakBar`, `BadgeShelf`, `StatsPanel` (Phase 5) — gamification has no home in the nine.
 - `RoomPanel`, `ConversationView` (Phase 6) — realtime and E2E messaging are new objects.
+- `RecapStory` (GAM-006a, the twenty-first, added 2026-10-16) — the Recap is a full-screen,
+  tap-through story with a share image; no grid or row of the twenty can play a sequence. It is
+  read-only, so the agent may open it ("show me my October") but it writes nothing.
 
 The agent may emit the read-only social components but never initiates a friend request, a
 message, or a room invite: those are user acts with no agent write path. A twenty-first
@@ -158,7 +163,7 @@ Client work follows the server, per `CLAUDE.md`: table, then DTO, then screen.
    schema from the start. `CAL-001` and `UPN-001` give the rows and the grid their data.
 3. **Phase 2 · M7** — `TitleCard`, `SeasonMap`, `Shelf`, `UndoRibbon`, `ContinueRow`,
    `StartRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` as plain SwiftUI views driven by
-   direct user input, the same set in `aaru-client` (Svelte), then widgets from the same
+   direct user input, the same set in `aaru-client` (SolidJS), then widgets from the same
    snapshot. No agent yet. This proves the components before the model touches them.
 4. **Phase 2 · M8/M9** — `JobLedger`, `MatchTable`, `CalendarMonth` with real import data.
    **Gate:** basics done. Nothing below starts before it.

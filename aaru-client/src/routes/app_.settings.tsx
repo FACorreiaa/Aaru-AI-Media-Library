@@ -10,6 +10,7 @@ import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
+import { periodLabel, recapShortcuts } from '../lib/recap/model'
 import { readImportFile } from '../lib/imports/file'
 import {
   deleteAccount,
@@ -307,6 +308,26 @@ function Settings() {
             </ul>
           </section>
         </Show>
+
+        <section class="mt-10">
+          <h2 class="font-display text-2xl font-medium">Recaps</h2>
+          <p class="mt-1 text-sm text-muted">
+            What you watched and read, as a story you can share.
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <For each={recapShortcuts(new Date())}>
+              {(period) => (
+                <Link
+                  to="/app/recap"
+                  search={period}
+                  class="rounded-full bg-surface px-4 py-2 text-sm font-medium hover:text-accent"
+                >
+                  {periodLabel(period)}
+                </Link>
+              )}
+            </For>
+          </div>
+        </section>
 
         <section class="mt-10 rounded-[20px] bg-surface p-5">
           <h2 class="font-display text-xl font-medium">About Aaru</h2>

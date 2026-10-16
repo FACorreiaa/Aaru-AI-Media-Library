@@ -21,6 +21,7 @@ let allMigrations: [any Migration] = [
     CreatePush(),
     AddGoogleProvider(),
     AddTitleArtwork(),
+    AddEpisodeWatchDateKnown(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

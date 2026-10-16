@@ -141,3 +141,24 @@ struct AddTitleArtwork: SQLMigration {
         "ALTER TABLE titles DROP COLUMN backdrop_url",
     ]
 }
+
+/// GAM-006a · whether an episode tick's `watched_at` is when the user watched it. Imports and
+/// restores (undoing a delete) re-create ticks at write time, so they are marked unknown and
+/// the recap leaves them out. Rows written before this migration are backfilled by matching
+/// their `watched_at` to the import or undo action of the same transaction: both are `now()`.
+struct AddEpisodeWatchDateKnown: SQLMigration {
+    let forward = [
+        "ALTER TABLE episode_progress ADD COLUMN watched_at_known boolean NOT NULL DEFAULT true",
+        """
+        UPDATE episode_progress ep SET watched_at_known = false
+        FROM library_items li, actions a
+        WHERE li.id = ep.library_item_id AND a.user_id = li.user_id
+          AND a.kind IN ('import', 'undo') AND a.created_at = ep.watched_at
+        """,
+        "CREATE INDEX episode_progress_item_watched ON episode_progress (library_item_id, watched_at)",
+    ]
+    let backward = [
+        "DROP INDEX episode_progress_item_watched",
+        "ALTER TABLE episode_progress DROP COLUMN watched_at_known",
+    ]
+}

@@ -6,6 +6,7 @@ struct Services: Sendable {
     var lists: ListService
     var shelves: ShelfService
     var schedule: ScheduleService
+    var stats: StatsService
     var imports: ImportService
     var traktConnect: TraktConnectService
 
@@ -26,6 +27,7 @@ struct Services: Sendable {
             lists: ListService(stores: stores, resolver: resolver),
             shelves: ShelfService(stores: stores, library: library),
             schedule: ScheduleService(stores: stores, catalog: catalog),
+            stats: StatsService(stores: stores),
             imports: ImportService(
                 stores: stores, resolver: resolver,
                 trakt: trakt.map { TraktImport(connect: traktConnect(stores, $0), importer: TraktImporter(api: $0)) },
