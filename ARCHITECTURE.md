@@ -130,7 +130,7 @@ PostgreSQL. Suggested tables:
 - `users`
 - `auth_identities` (Apple, email)
 - `titles` (unique indexes on each external id where not null)
-- `show_episodes` (title_id, season, episode, optional air date, optional tmdb episode id)
+- `show_episodes` (title_id, season, episode, optional air time + `airs_at_exact`, optional overview, optional tmdb episode id)
 - `library_items` (unique `(user_id, title_id)`)
 - `episode_progress` (unique `(library_item_id, season, episode)`)
 - `lists`, `list_items`
@@ -288,8 +288,11 @@ and `/v1/devices/apns` (4), `/v1/me/points|badges|stats|streak` (5), `/v1/ws`,
 Both are derived reads over the user's library. Neither has its own table.
 
 - **CAL-001 `GET /v1/calendar?from=&to=`** joins tracked shows (`in_progress` or `wishlist`)
-  to `show_episodes` air dates. Air dates come from TMDB for shows and from AniList
-  `airingSchedule` for anime; where both exist for one title, AniList wins for anime episodes.
+  to `show_episodes` air times. Episodes come from TMDB for shows (dates only), refined to the
+  exact broadcast instant and network by TVmaze (CAT-011) when it knows the show by TVDB or
+  IMDb id and its date agrees within two days; anime comes from AniList `airingSchedule`
+  (exact). `airTimeKnown` tells clients which. Where both exist for one title, AniList wins for
+  anime episodes.
   Returns episodes with watched state, so the `WeekGrid` checkbox and the week widget read one
   DTO. Times are UTC on the wire; clients localize.
 - **UPN-001 `GET /v1/up-next`** returns, per `in_progress` show, the next unwatched aired
@@ -317,7 +320,7 @@ Server resolves `MediaRef` → `Title` (find or hydrate) → `LibraryItem`.
 
 Each adapter lives in `Server` (`Sources/App/Catalog`) and implements a narrow protocol. All
 outbound calls go through one `ProviderClient` per provider (X-002): a token-bucket pacer
-shared by every caller (TMDB 40/s, AniList 1.5/s, Open Library 3/s), retries with backoff on
+shared by every caller (TMDB 40/s, AniList 1.5/s, Open Library 3/s, TVmaze 1.8/s), retries with backoff on
 429/5xx and network errors, and cancellation from the calling task. Failures surface as 502
 `provider_unavailable`. Tests use a stub `HTTPTransport`; no test reaches a provider.
 
