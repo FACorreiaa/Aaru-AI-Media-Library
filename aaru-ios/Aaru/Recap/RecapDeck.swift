@@ -98,7 +98,7 @@ enum RecapDeck {
             deck.append(.time(minutes: totals.minutesWatched, caption: timeCaption(totals.minutesWatched)))
         }
         if totals.episodesWatched > 0 {
-            deck.append(.episodes(count: totals.episodesWatched, bars: bars(stats), busiest: busiestLabel(stats)))
+            deck.append(.episodes(count: totals.episodesWatched, bars: bars(stats), busiest: busiestLine(stats)))
         }
         if let top = stats.topTitles.first {
             deck.append(.top(top))
@@ -141,31 +141,40 @@ enum RecapDeck {
         return "That's about \(days.formatted(.number.precision(.fractionLength(0 ... 1)))) days, end to end."
     }
 
+    /// The bucket with the most episodes; the earliest among equals. Nil when no episodes.
+    static func mostEpisodes(_ stats: Stats) -> Components.Schemas.StatsBucket? {
+        stats.buckets.reduce(nil) { best, bucket in
+            bucket.episodes > (best?.episodes ?? 0) ? bucket : best
+        }
+    }
+
+    /// Episodes per bucket; the one with the most is marked. The server's `busiest` is by time,
+    /// which a long film can win, so the episodes card does not use it.
     static func bars(_ stats: Stats) -> [RecapCard.Bar] {
-        let tallest = max(1, stats.buckets.map(weight).max() ?? 1)
+        let tallest = max(1, stats.buckets.map(\.episodes).max() ?? 1)
+        let top = mostEpisodes(stats)
         return stats.buckets.map { bucket in
             let parts = bucket.start.split(separator: "-").compactMap { Int($0) }
             let label = stats.month == nil ? String(months[(
                 parts[safe: 1] ?? 1
             ) - 1].prefix(1)) : "\(parts[safe: 2] ?? 1)"
             return RecapCard.Bar(
-                label: label, height: Double(weight(bucket)) / Double(tallest),
-                busiest: bucket.start == stats.busiest?.start
+                label: label, height: Double(bucket.episodes) / Double(tallest),
+                busiest: bucket.start == top?.start
             )
         }
     }
 
-    private static func weight(_ bucket: Components.Schemas.StatsBucket) -> Int {
-        bucket.minutes > 0 ? bucket.minutes : bucket.episodes + bucket.finished
-    }
-
-    private static func busiestLabel(_ stats: Stats) -> String? {
-        guard let busiest = stats.busiest else { return nil }
+    /// "Most episodes in June." / "on Apr 3." Nil when the top is shared: a tie says nothing.
+    private static func busiestLine(_ stats: Stats) -> String? {
+        guard let top = mostEpisodes(stats),
+              stats.buckets.filter({ $0.episodes == top.episodes }).count == 1
+        else { return nil }
         if stats.month != nil {
-            return dayLabel(busiest.start)
+            return "Most episodes on \(dayLabel(top.start))."
         }
-        let month = busiest.start.split(separator: "-").compactMap { Int($0) }[safe: 1] ?? 1
-        return months[month - 1]
+        let month = top.start.split(separator: "-").compactMap { Int($0) }[safe: 1] ?? 1
+        return "Most episodes in \(months[month - 1])."
     }
 
     /// "Mar 10" from a local `YYYY-MM-DD`.

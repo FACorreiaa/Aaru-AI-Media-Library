@@ -1495,9 +1495,10 @@ everywhere. Clients play it as a story of animated cards (`RecapStory`) that end
 image. Home offers the year from Dec 1 to Jan 15 and last month in a month's first week;
 Settings (web) and the Library menu (Apple) open any of this year, last month and last year.
 
-**Progress 2026-10-16:** built on the server, the web and the Apple apps. Server pure tests and
-web tests pass. The Postgres-backed tests (`StatsTests`) and a device run with Reduce Motion
-on and off are still to do.
+**Progress 2026-10-16:** built on the server, the web and the Apple apps. All server tests
+(Postgres included) and web tests pass; the web story was run locally against seeded data, with
+and without reduced motion, and its share image checked. Still to do: run the Apple story on a
+device or simulator, with Reduce Motion on and off.
 
 **Done when:** stats are derived only from the user's own library, imported and restored
 ticks never count as activity, a tick at 23:30 UTC on Dec 31 lands in the next year east of

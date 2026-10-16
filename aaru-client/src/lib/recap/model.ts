@@ -82,28 +82,38 @@ export function timeCaption(minutes: number): string {
   return `That's about ${days} days, end to end.`
 }
 
-/** One bar per bucket; the busiest one is marked. Months read "J F M…", days "1 2 3…". */
+/** The bucket with the most episodes; the earliest among equals. None when no episodes. */
+export function mostEpisodes(stats: Stats): StatsBucket | undefined {
+  return stats.buckets.reduce<StatsBucket | undefined>(
+    (best, bucket) => (bucket.episodes > (best?.episodes ?? 0) ? bucket : best),
+    undefined,
+  )
+}
+
+/** Episodes per bucket; the one with the most is marked. Months read "J F M…", days "1 2 3…". */
 export function bars(stats: Stats): Bar[] {
-  const tallest = Math.max(1, ...stats.buckets.map(weight))
+  const tallest = Math.max(1, ...stats.buckets.map((b) => b.episodes))
+  const top = mostEpisodes(stats)
   return stats.buckets.map((bucket) => {
     const [, month, day] = bucket.start.split('-').map(Number)
     return {
       label: stats.month ? `${day}` : MONTHS[month - 1].slice(0, 1),
-      height: weight(bucket) / tallest,
-      busiest: bucket.start === stats.busiest?.start,
+      height: bucket.episodes / tallest,
+      busiest: bucket.start === top?.start,
     }
   })
 }
 
-function weight(bucket: StatsBucket): number {
-  return bucket.minutes || bucket.episodes + bucket.finished
-}
-
-function busiestLabel(stats: Stats): string | undefined {
-  const busiest = stats.busiest
-  if (!busiest) return undefined
-  const [, month] = busiest.start.split('-').map(Number)
-  return stats.month ? dayLabel(busiest.start) : MONTHS[month - 1]
+/** "Most episodes in June." / "on Apr 3." Nothing when the top is shared: a tie says nothing. */
+function busiestLine(stats: Stats): string | undefined {
+  const top = mostEpisodes(stats)
+  if (!top) return undefined
+  if (stats.buckets.filter((b) => b.episodes === top.episodes).length > 1)
+    return undefined
+  const [, month] = top.start.split('-').map(Number)
+  return stats.month
+    ? `Most episodes on ${dayLabel(top.start)}.`
+    : `Most episodes in ${MONTHS[month - 1]}.`
 }
 
 /** Nothing tracked in the period: no deck, an empty state instead. */
@@ -135,7 +145,7 @@ export function cards(stats: Stats): RecapCard[] {
       kind: 'episodes',
       episodes: t.episodesWatched,
       bars: bars(stats),
-      busiest: busiestLabel(stats),
+      busiest: busiestLine(stats),
     })
   if (stats.topTitles.length > 0)
     deck.push({ kind: 'top', entry: stats.topTitles[0] })

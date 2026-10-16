@@ -61,7 +61,7 @@ function TopRow(props: { entry: StatsTitle; rank: number }) {
       <Poster
         url={props.entry.title.posterUrl}
         kind={titleKind(props.entry.title)}
-        class="w-12 shrink-0"
+        class="w-12 shrink-0 ring-1 ring-current/20"
       />
       <span class="min-w-0">
         <span class="block truncate font-display text-xl">
@@ -148,9 +148,7 @@ export function RecapCardView(props: {
               </For>
             </div>
             <Show when={card().busiest}>
-              {(busiest) => (
-                <Line delay={700}>{busiest()} was your busiest.</Line>
-              )}
+              {(busiest) => <Line delay={700}>{busiest()}</Line>}
             </Show>
           </>
         )}
@@ -166,6 +164,7 @@ export function RecapCardView(props: {
               <Poster
                 url={card().entry.title.posterUrl}
                 kind={titleKind(card().entry.title)}
+                class="ring-1 ring-current/20"
               />
             </div>
             <h2
@@ -245,7 +244,7 @@ export function RecapCardView(props: {
                   <Poster
                     url={highest().posterUrl}
                     kind={titleKind(highest())}
-                    class="w-14 shrink-0"
+                    class="w-14 shrink-0 ring-1 ring-current/20"
                   />
                   <p>
                     <span class="block text-sm opacity-75">Rated highest</span>
@@ -283,7 +282,7 @@ export function RecapCardView(props: {
                     <Poster
                       url={item.moment.title.posterUrl}
                       kind={titleKind(item.moment.title)}
-                      class="w-16 shrink-0"
+                      class="w-16 shrink-0 ring-1 ring-current/20"
                     />
                     <p>
                       <span class="block text-sm opacity-75">
@@ -306,7 +305,9 @@ export function RecapCardView(props: {
           class="recap-rise mt-4 font-display text-5xl leading-tight font-medium tracking-tight"
           style={{ '--delay': '120ms' }}
         >
-          That was your {props.stats.month ? 'month' : 'year'} in Aaru.
+          {props.stats.isPartial
+            ? `That's your ${props.stats.month ? 'month' : 'year'} in Aaru so far.`
+            : `That was your ${props.stats.month ? 'month' : 'year'} in Aaru.`}
         </h2>
         <div class="recap-rise mt-10" style={{ '--delay': '320ms' }}>
           {props.share}

@@ -40,10 +40,12 @@ export function RecapStory(props: {
 
   onMount(() => {
     const timer = setInterval(() => {
-      if (still || held() || index() >= last()) return
+      if (still || held()) return
       const next = elapsed() + TICK_MS
-      if (next >= CARD_MS) go(index() + 1)
-      else setElapsed(next)
+      // The last card fills its bar, then stays.
+      if (next < CARD_MS) setElapsed(next)
+      else if (index() < last()) go(index() + 1)
+      else setElapsed(CARD_MS)
     }, TICK_MS)
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'ArrowRight' || event.key === ' ') {

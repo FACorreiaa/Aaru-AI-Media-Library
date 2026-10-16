@@ -113,12 +113,32 @@ describe('cards', () => {
 })
 
 describe('bars', () => {
-  it('scales to the busiest bucket and marks it', () => {
-    const result = bars(stats())
+  it('counts episodes and marks the month with the most, whatever had the most minutes', () => {
+    const base = stats()
+    // The server's busiest is by time (a long film can win it); the episodes card is not.
+    const result = bars({ ...base, busiest: base.buckets[6] })
     expect(result).toHaveLength(12)
     expect(result[2]).toEqual({ label: 'M', height: 1, busiest: true })
-    expect(result[6].height).toBe(0.25)
+    expect(result[6]).toEqual({ label: 'J', height: 0.25, busiest: false })
     expect(result[0].height).toBe(0)
+  })
+
+  it('says nothing about a busiest day when the top is a tie', () => {
+    const buckets = Array.from({ length: 30 }, (_, i) => ({
+      start: `2026-04-${String(i + 1).padStart(2, '0')}`,
+      episodes: i < 3 ? 1 : 0,
+      minutes: i < 3 ? 45 : 0,
+      finished: 0,
+    }))
+    const card = cards(stats({ month: 4, buckets })).find(
+      (c) => c.kind === 'episodes',
+    )
+    expect(card).toMatchObject({ busiest: undefined })
+  })
+
+  it('names the month with the most episodes on the card', () => {
+    const card = cards(stats()).find((c) => c.kind === 'episodes')
+    expect(card).toMatchObject({ busiest: 'Most episodes in March.' })
   })
 })
 

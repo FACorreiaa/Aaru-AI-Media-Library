@@ -27,11 +27,11 @@ struct RecapCardView: View {
                 Big { CountUp(value: count) }
                 BarChart(bars: bars).padding(.top, 32)
                 if let busiest {
-                    Line(text: "\(busiest) was your busiest.", delay: 0.7)
+                    Line(text: busiest, delay: 0.7)
                 }
             case let .top(entry):
                 Eyebrow(text: "Most time with")
-                PosterView(url: entry.title.posterURL, kind: entry.title.mediaKind)
+                OutlinedPoster(url: entry.title.posterURL, kind: entry.title.mediaKind)
                     .frame(width: 168)
                     .padding(.top, 24)
                     .pop(0.12)
@@ -70,7 +70,7 @@ struct RecapCardView: View {
                 Line(text: "Across \(count) finished \(count == 1 ? "title" : "titles").", delay: 0.24)
                 if let highest {
                     HStack(spacing: 16) {
-                        PosterView(url: highest.posterURL, kind: highest.mediaKind).frame(width: 56)
+                        OutlinedPoster(url: highest.posterURL, kind: highest.mediaKind).frame(width: 56)
                         VStack(alignment: .leading) {
                             Text("Rated highest").font(.subheadline).opacity(0.75)
                             HStack(alignment: .firstTextBaseline) {
@@ -93,7 +93,9 @@ struct RecapCardView: View {
                 .padding(.top, 24)
             case .summary:
                 Eyebrow(text: RecapPeriod(year: stats.year, month: stats.month).label)
-                Text("That was your \(stats.month == nil ? "year" : "month") in Aaru.")
+                Text(stats.isPartial
+                    ? "That's your \(stats.month == nil ? "year" : "month") in Aaru so far."
+                    : "That was your \(stats.month == nil ? "year" : "month") in Aaru.")
                     .font(.system(size: 40, weight: .medium, design: .serif))
                     .padding(.top, 16)
                     .rise(0.12)
@@ -161,7 +163,7 @@ private struct TopRow: View {
                 .monospacedDigit()
                 .opacity(0.7)
                 .frame(width: 24, alignment: .leading)
-            PosterView(url: entry.title.posterURL, kind: entry.title.mediaKind).frame(width: 48)
+            OutlinedPoster(url: entry.title.posterURL, kind: entry.title.mediaKind).frame(width: 48)
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title.title).font(.system(.title3, design: .serif)).lineLimit(1)
                 Text(entry.episodes > 0 ? "\(entry.episodes) episodes" : "\(entry.minutes) minutes")
@@ -178,7 +180,7 @@ private struct Moment: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            PosterView(url: moment.title.posterURL, kind: moment.title.mediaKind).frame(width: 64)
+            OutlinedPoster(url: moment.title.posterURL, kind: moment.title.mediaKind).frame(width: 64)
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(label) · \(moment.at.formatted(.dateTime.month(.abbreviated).day()))")
                     .font(.subheadline)
@@ -277,5 +279,17 @@ private extension View {
     /// Springs in from slightly small and tilted.
     func pop(_ delay: Double) -> some View {
         modifier(Entrance(delay: delay, pop: true))
+    }
+}
+
+/// A poster with a hairline in the card's ink: the placeholder is Surface, which is also one of
+/// the story's backdrops.
+private struct OutlinedPoster: View {
+    let url: URL?
+    let kind: MediaKind
+
+    var body: some View {
+        PosterView(url: url, kind: kind)
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(.primary.opacity(0.2), lineWidth: 1))
     }
 }

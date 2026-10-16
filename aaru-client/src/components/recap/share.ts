@@ -42,7 +42,8 @@ export async function drawShareImage(stats: Stats): Promise<Blob> {
   let y = 500
   for (const line of shareLines(stats)) {
     ctx.font = `500 64px ${display}`
-    y = wrap(ctx, line, 96, y, WIDTH - 192, 76) + 48
+    // Next line: one line's leading, plus a gap between lines.
+    y = wrap(ctx, line, 96, y, WIDTH - 192, 76) + 76 + 40
   }
 
   ctx.font = `600 44px ${display}`

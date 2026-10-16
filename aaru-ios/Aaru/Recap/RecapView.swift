@@ -161,10 +161,14 @@ struct RecapView: View {
     private func autoAdvance() async {
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(Self.tick))
-            guard !Task.isCancelled, !reduceMotion, !held, !deck.isEmpty, index < deck.count - 1 else { continue }
-            elapsed += Self.tick
-            if elapsed >= Self.cardSeconds {
+            guard !Task.isCancelled, !reduceMotion, !held, !deck.isEmpty else { continue }
+            if elapsed + Self.tick < Self.cardSeconds {
+                elapsed += Self.tick
+            } else if index < deck.count - 1 {
                 go(index + 1)
+            } else {
+                // The last card fills its bar, then stays.
+                elapsed = Self.cardSeconds
             }
         }
     }
