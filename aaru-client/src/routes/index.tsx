@@ -2,13 +2,14 @@ import { Link, createFileRoute } from '@tanstack/solid-router'
 import { For } from 'solid-js'
 import { MascotMedallion, Wordmark } from '../components/Brand'
 import { ImportSources } from '../components/ImportSources'
+import { LegalLinks } from '../components/LegalPage'
 import { SITE_URL } from '../lib/site'
 import reedMark from '../assets/brand/reed-mark.webp'
 import appIcon from '../assets/brand/app-icon.webp'
 
 const title = 'Aaru · A private shelf for films, shows, anime and books'
 const description =
-  'Track films, shows, anime and books in one private library. Import from Trakt, IMDb, Letterboxd and Goodreads. Export any time.'
+  'Track films, shows, anime and books in one private library. Import from Trakt, IMDb, Letterboxd and Goodreads. No ads, no tracking.'
 
 // LAND-001: static marketing page. It never reads the session.
 export const Route = createFileRoute('/')({
@@ -35,7 +36,7 @@ const faqs: Array<[string, string]> = [
   ],
   [
     'Can I take my data out?',
-    'Yes. You can export your whole library as CSV or JSON at any time, and export will never be a paid feature.',
+    'Yes. Until self-serve export ships, ask and we will send you your whole library. Export will never be a paid feature.',
   ],
   [
     'Where can I import from?',
@@ -246,7 +247,10 @@ function Landing() {
             />
             <span>A calm place where stories live.</span>
           </div>
-          <span>© {new Date().getFullYear()} Aaru</span>
+          <div class="flex items-center gap-4">
+            <LegalLinks />
+            <span>© {new Date().getFullYear()} Aaru</span>
+          </div>
         </div>
       </footer>
     </>

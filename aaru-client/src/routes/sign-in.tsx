@@ -10,6 +10,7 @@ import type { AppleCredential } from '../components/AppleSignInButton'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import type { GoogleCredential } from '../components/GoogleSignInButton'
 import { MascotMedallion, Wordmark } from '../components/Brand'
+import { LegalLinks } from '../components/LegalPage'
 import {
   getSession,
   getSignInConfig,
@@ -239,6 +240,7 @@ function SignIn() {
             )}
           </Show>
         </div>
+        <LegalLinks class="mt-12 flex gap-4 text-sm text-muted" />
       </div>
     </main>
   )
