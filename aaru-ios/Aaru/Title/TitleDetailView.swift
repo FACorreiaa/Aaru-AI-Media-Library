@@ -260,8 +260,17 @@ private struct EpisodeRow: View {
         }
         .buttonStyle(.plain)
         .disabled(!hasAired && !isWatched)
-        .accessibilityLabel("Episode \(episode.number), \(episode.name ?? "")")
-        .accessibilityValue(isWatched ? "Watched" : "Not watched")
+        #if os(iOS)
+            .contextMenu {
+                if hasAired, !isWatched {
+                    Button("Start watching", systemImage: "play.circle") {
+                        Task { await model.startWatching(episode) }
+                    }
+                }
+            }
+        #endif
+            .accessibilityLabel("Episode \(episode.number), \(episode.name ?? "")")
+            .accessibilityValue(isWatched ? "Watched" : "Not watched")
     }
 }
 

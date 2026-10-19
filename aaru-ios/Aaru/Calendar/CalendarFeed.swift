@@ -165,6 +165,13 @@ final class CalendarFeed {
                 )
                 WidgetCenter.shared.reloadAllTimelines()
                 Task { try? await WidgetSync.refresh(api: api) }
+                #if os(iOS)
+                    if watch {
+                        await NowWatching.episodeWatched(
+                            libraryItemId: entry.libraryItemId, season: entry.season, episode: entry.number
+                        )
+                    }
+                #endif
             case let .default(_, error):
                 setWatched(id, !watch)
                 problem = (try? error.body.json.message) ?? Self.notSaved(entry)

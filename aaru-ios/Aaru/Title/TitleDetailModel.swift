@@ -80,6 +80,13 @@ final class TitleDetailModel {
                 try commit(response.body.json)
                 // The widgets' up next and week follow every tick (WID-001).
                 Task { try? await WidgetSync.refresh(api: api) }
+                #if os(iOS)
+                    if watch {
+                        await NowWatching.episodeWatched(
+                            libraryItemId: entry.id, season: key.season, episode: key.number
+                        )
+                    }
+                #endif
             case let .default(_, error):
                 rollback(key, to: !watch, message: (try? error.body.json.message))
             }
@@ -87,6 +94,17 @@ final class TitleDetailModel {
             rollback(key, to: !watch, message: nil)
         }
     }
+
+    #if os(iOS)
+        /// Starts the "Now watching" Live Activity for one episode (WID-005).
+        func startWatching(_ episode: Components.Schemas.Episode) async {
+            problem = await NowWatchingStart.start(NowWatchingAttributes(
+                libraryItemId: entry.id, title: entry.title.title, season: episode.season, episode: episode.number,
+                episodeName: episode.name, posterURL: entry.title.posterUrl,
+                runtimeMinutes: NowWatchingStart.runtime(episode.runtimeMinutes ?? title?.runtimeMinutes)
+            ))
+        }
+    #endif
 
     func markSeasonWatched(_ season: Int) async {
         guard let api else { return }
@@ -98,7 +116,11 @@ final class TitleDetailModel {
         defer { pending.subtract(aired) }
         do {
             switch try await api.markSeasonWatched(path: .init(id: entry.id, season: season)) {
-            case let .ok(response): try commit(response.body.json)
+            case let .ok(response):
+                try commit(response.body.json)
+                #if os(iOS)
+                    await NowWatching.seasonWatched(libraryItemId: entry.id, season: season)
+                #endif
             case let .default(_, error):
                 watched = before
                 problem = (try? error.body.json.message) ?? "Season \(season) could not be marked. Try again."
