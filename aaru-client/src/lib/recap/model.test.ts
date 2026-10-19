@@ -47,6 +47,7 @@ function stats(overrides: Partial<Stats> = {}): Stats {
     },
     buckets,
     busiest: buckets[2],
+    mostEpisodes: buckets[2],
     longestRun: { days: 2, start: '2026-03-10', end: '2026-03-11' },
     topTitles: [
       { title: title('Severance'), episodes: 4, minutes: 180 },
@@ -113,9 +114,9 @@ describe('cards', () => {
 })
 
 describe('bars', () => {
-  it('counts episodes and marks the month with the most, whatever had the most minutes', () => {
+  it("counts episodes and marks the server's mostEpisodes, not its busiest-by-time", () => {
     const base = stats()
-    // The server's busiest is by time (a long film can win it); the episodes card is not.
+    // A long film can win `busiest`; the episodes card follows `mostEpisodes`.
     const result = bars({ ...base, busiest: base.buckets[6] })
     expect(result).toHaveLength(12)
     expect(result[2]).toEqual({ label: 'M', height: 1, busiest: true })
@@ -123,17 +124,29 @@ describe('bars', () => {
     expect(result[0].height).toBe(0)
   })
 
-  it('says nothing about a busiest day when the top is a tie', () => {
+  it('marks nothing and says nothing when the server names no winner (a tie)', () => {
+    const tie = stats({ mostEpisodes: undefined })
+    expect(bars(tie).some((bar) => bar.busiest)).toBe(false)
+    const card = cards(tie).find((c) => c.kind === 'episodes')
+    expect(card).toMatchObject({ busiest: undefined })
+  })
+
+  it('names a day in a month recap', () => {
     const buckets = Array.from({ length: 30 }, (_, i) => ({
       start: `2026-04-${String(i + 1).padStart(2, '0')}`,
-      episodes: i < 3 ? 1 : 0,
-      minutes: i < 3 ? 45 : 0,
+      episodes: i === 2 ? 3 : 0,
+      minutes: i === 2 ? 135 : 0,
       finished: 0,
     }))
-    const card = cards(stats({ month: 4, buckets })).find(
-      (c) => c.kind === 'episodes',
-    )
-    expect(card).toMatchObject({ busiest: undefined })
+    const card = cards(
+      stats({
+        month: 4,
+        buckets,
+        busiest: buckets[2],
+        mostEpisodes: buckets[2],
+      }),
+    ).find((c) => c.kind === 'episodes')
+    expect(card).toMatchObject({ busiest: 'Most episodes on Apr 3.' })
   })
 
   it('names the month with the most episodes on the card', () => {

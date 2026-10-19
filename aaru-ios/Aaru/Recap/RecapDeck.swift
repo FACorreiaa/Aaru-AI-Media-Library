@@ -141,18 +141,11 @@ enum RecapDeck {
         return "That's about \(days.formatted(.number.precision(.fractionLength(0 ... 1)))) days, end to end."
     }
 
-    /// The bucket with the most episodes; the earliest among equals. Nil when no episodes.
-    static func mostEpisodes(_ stats: Stats) -> Components.Schemas.StatsBucket? {
-        stats.buckets.reduce(nil) { best, bucket in
-            bucket.episodes > (best?.episodes ?? 0) ? bucket : best
-        }
-    }
-
-    /// Episodes per bucket; the one with the most is marked. The server's `busiest` is by time,
-    /// which a long film can win, so the episodes card does not use it.
+    /// Episodes per bucket; the server's `mostEpisodes` is marked (none on a tie). Its `busiest` is
+    /// by time, which a long film can win, so the episodes card does not use it.
     static func bars(_ stats: Stats) -> [RecapCard.Bar] {
         let tallest = max(1, stats.buckets.map(\.episodes).max() ?? 1)
-        let top = mostEpisodes(stats)
+        let top = stats.mostEpisodes
         return stats.buckets.map { bucket in
             let parts = bucket.start.split(separator: "-").compactMap { Int($0) }
             let label = stats.month == nil ? String(months[(
@@ -167,9 +160,8 @@ enum RecapDeck {
 
     /// "Most episodes in June." / "on Apr 3." Nil when the top is shared: a tie says nothing.
     private static func busiestLine(_ stats: Stats) -> String? {
-        guard let top = mostEpisodes(stats),
-              stats.buckets.filter({ $0.episodes == top.episodes }).count == 1
-        else { return nil }
+        // The server leaves `mostEpisodes` out on a tie: a shared top says nothing.
+        guard let top = stats.mostEpisodes else { return nil }
         if stats.month != nil {
             return "Most episodes on \(dayLabel(top.start))."
         }
