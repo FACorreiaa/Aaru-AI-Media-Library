@@ -1,4 +1,5 @@
 import AaruAPI
+import Algorithms
 import Foundation
 import Observation
 
@@ -21,7 +22,7 @@ final class LibraryModel {
         self.cache = cache
         if let snapshot = cache.load() {
             token = snapshot.token
-            entries = Dictionary(snapshot.entries.map { ($0.id, $0) }, uniquingKeysWith: { $1 })
+            entries = snapshot.entries.keyed(by: \.id)
             publish()
         }
     }

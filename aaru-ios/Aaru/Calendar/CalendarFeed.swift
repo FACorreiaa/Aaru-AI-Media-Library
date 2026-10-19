@@ -1,4 +1,5 @@
 import AaruAPI
+import Algorithms
 import Foundation
 import Observation
 import WidgetKit
@@ -126,8 +127,7 @@ final class CalendarFeed {
                 }
                 from = until
             }
-            var seen: Set<String> = []
-            entries = collected.filter { seen.insert($0.cellID).inserted }
+            entries = collected.uniqued(on: \.cellID)
             loaded = window
             hasLoaded = true
             problem = nil

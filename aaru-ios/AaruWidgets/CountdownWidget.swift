@@ -1,3 +1,4 @@
+import Algorithms
 import SwiftUI
 import WidgetKit
 
@@ -51,8 +52,8 @@ struct CountdownProvider: TimelineProvider {
             midnight = calendar.date(byAdding: .day, value: 1, to: midnight) ?? midnight
             dates.insert(midnight)
         }
-        let entries = dates.sorted().prefix(24).map { SnapshotEntry(date: $0, snapshot: snapshot) }
-        completion(Timeline(entries: Array(entries), policy: .atEnd))
+        let entries = dates.min(count: 24).map { SnapshotEntry(date: $0, snapshot: snapshot) }
+        completion(Timeline(entries: entries, policy: .atEnd))
     }
 }
 

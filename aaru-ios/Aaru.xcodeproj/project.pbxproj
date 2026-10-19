@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		148312EA5709D4B6E4A345E8 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 5A0109ADE2B6A8D6051B8BAB /* Algorithms */; };
+		1679430B770CD4703C9A3B6D /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 05726FC0D059FD69C81C609A /* Algorithms */; };
 		D1441AE34AB8E59F88832A89 /* AaruCore in Frameworks */ = {isa = PBXBuildFile; productRef = 048087FB864B2ACFF0B1D915 /* AaruCore */; };
 		A11CE0A1A0E5A0A1A2A3A4A5 /* AaruAPI in Frameworks */ = {isa = PBXBuildFile; productRef = A11CE0A3C0E5A0A1A2A3A4A5 /* AaruAPI */; };
 		B22DF1B2B1F6B1B2B3B4B5B6 /* AaruAPI in Frameworks */ = {isa = PBXBuildFile; productRef = B22DF1B4D1F6B1B2B3B4B5B6 /* AaruAPI */; };
@@ -75,6 +77,7 @@
 			files = (
 				D1441AE34AB8E59F88832A89 /* AaruCore in Frameworks */,
 				A11CE0A1A0E5A0A1A2A3A4A5 /* AaruAPI in Frameworks */,
+				1679430B770CD4703C9A3B6D /* Algorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,6 +86,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B22DF1B2B1F6B1B2B3B4B5B6 /* AaruAPI in Frameworks */,
+				148312EA5709D4B6E4A345E8 /* Algorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -149,6 +153,7 @@
 			packageProductDependencies = (
 				048087FB864B2ACFF0B1D915,
 				A11CE0A3C0E5A0A1A2A3A4A5,
+				05726FC0D059FD69C81C609A /* Algorithms */,
 			);
 			productName = Aaru;
 			productReference = B438239B7918397D234D0DB3;
@@ -173,6 +178,7 @@
 			name = AaruWidgetsExtension;
 			packageProductDependencies = (
 				B22DF1B4D1F6B1B2B3B4B5B6 /* AaruAPI */,
+				5A0109ADE2B6A8D6051B8BAB /* Algorithms */,
 			);
 			productName = AaruWidgetsExtension;
 			productReference = F2FB93092DCBE26A9A52E5F1;
@@ -208,6 +214,7 @@
 			packageReferences = (
 				17FAC586158D07F905E8A2E1 /* XCLocalSwiftPackageReference "../aaru-core" */,
 				A11CE0A2B0E5A0A1A2A3A4A5 /* XCLocalSwiftPackageReference "../aaru-api" */,
+				72A2D1DAA90691A1593DE094 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FEBEDFD35D7162AB5AB1F949 /* Products */;
@@ -664,7 +671,28 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		72A2D1DAA90691A1593DE094 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-algorithms";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		5A0109ADE2B6A8D6051B8BAB /* Algorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 72A2D1DAA90691A1593DE094 /* XCRemoteSwiftPackageReference "swift-algorithms" */;
+			productName = Algorithms;
+		};
+		05726FC0D059FD69C81C609A /* Algorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 72A2D1DAA90691A1593DE094 /* XCRemoteSwiftPackageReference "swift-algorithms" */;
+			productName = Algorithms;
+		};
 		048087FB864B2ACFF0B1D915 /* AaruCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AaruCore;
