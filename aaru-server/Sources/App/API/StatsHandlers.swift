@@ -28,6 +28,7 @@ extension Components.Schemas.Stats {
             ),
             buckets: stats.buckets.map(Components.Schemas.StatsBucket.init),
             busiest: stats.busiest.map(Components.Schemas.StatsBucket.init),
+            mostEpisodes: stats.mostEpisodes.map(Components.Schemas.StatsBucket.init),
             longestRun: stats.longestRun.map {
                 .init(days: $0.days, start: $0.start.description, end: $0.end.description)
             },

@@ -1,21 +1,22 @@
 # aaru-server
 
-The Aaru API. Hummingbird 2, Swift 6, PostgreSQL. It owns auth, the user's library,
-catalog search, lists, and import jobs — everything the iOS and Mac clients are not
-allowed to do themselves.
+The Aaru API. Hummingbird 2, Swift 6, PostgreSQL. It owns every rule: auth, the user's
+library and progress, catalog search, lists and shelves, imports, the calendar and Up Next,
+stats, and the action journal with undo.
 
-Native apps talk only to this server. TMDB and Trakt keys, rate limits, and provider ID
-mapping stay here.
+The iOS and Mac apps and the web Worker (`aaru-client`) talk only to this server, through the
+same `/v1` routes. The Worker's `createServerFn` functions are adapters that attach the session
+and call `/v1`; they hold no business logic. TMDB, AniList, Open Library, TVmaze and Trakt keys,
+rate limits, and provider ID mapping stay here.
 
 See [`../ARCHITECTURE.md`](../ARCHITECTURE.md) for the data model and the import
 pipeline, and [`../aaru-core/README.md`](../aaru-core/README.md) for the shared types.
 
 ## Status
 
-M1 foundation (`BACKLOG.md` SRV-001…SRV-009). The `/v1` spec skeleton with the shared
-`ErrorResponse` shape, the data layer (`Sources/App/Data`), migrations for users, titles,
-library, lists, and import jobs, fail-fast config, and `GET /v1/health`. No business routes
-yet — those start with M2 auth.
+In production at `api.aaruapp.com` (deployed through `platform/infra`, see `../CLAUDE.md`).
+52 operations in `Sources/AppAPI/openapi.yaml`, listed under [Routes](#routes); `BACKLOG.md`
+tracks what each ticket added.
 
 ## Running it
 
@@ -62,6 +63,14 @@ docker build -f aaru-server/Dockerfile -t aaru-server .
 | `resend.api.key` | `RESEND_API_KEY` | unset → email sign-in answers 503 |
 | `email.from` | `EMAIL_FROM` | `Aaru <signin@aaruapp.com>` |
 | `magic.link.base.url` | `MAGIC_LINK_BASE_URL` | `https://aaruapp.com/auth/verify` |
+| `google.client.ids` | `GOOGLE_CLIENT_IDS` | empty → Google sign-in refused (comma-separated OAuth client ids) |
+| `apns.private.key` | `APNS_PRIVATE_KEY` | unset → no pushes |
+| `apns.key.id` | `APNS_KEY_ID` | required when the private key is set |
+| `apns.team.id` | `APNS_TEAM_ID` | `84X9WYBF36` |
+| `trakt.client.id` | `TRAKT_CLIENT_ID` | unset → Trakt connect answers 503 |
+| `trakt.token.key` | `TRAKT_TOKEN_KEY` | required with Trakt: 32 bytes, base64, encrypts tokens at rest |
+| `trakt.redirect.uri` | `TRAKT_REDIRECT_URI` | `https://api.aaruapp.com/v1/imports/trakt/callback` |
+| `open.library.user.agent` | `OPEN_LIBRARY_USER_AGENT` | `Aaru/0.1 (media library; contact: signin@aaruapp.com)` |
 | `log.level` | `LOG_LEVEL` | `info` |
 | `http.serverName` | — | `aaru-server` |
 | `db.migrate` | `DB_MIGRATE` (`--db-migrate`) | unset |
@@ -77,7 +86,14 @@ only; real provider secrets live in the environment and are never committed.
 Sources/App/         executable target `aaru`
   App.swift                     entry point, configuration reader
   App+build.swift               application, router, Fluent setup, migrate mode
-  API/                          handlers (APIImplementation), AppError, ErrorMiddleware
+  API/                          handlers (APIImplementation + one *Handlers.swift per area)
+  Auth/                         Apple, Google, email sign-in; sessions
+  Catalog/                      TMDB, AniList, Open Library, TVmaze; title resolution
+  Library/                      library and list services; LibraryOp, the journaled write
+  Schedule/                     calendar and Up Next
+  Stats/                        period stats for the Recap
+  Imports/, Trakt/              import parsing, plans, jobs; Trakt OAuth
+  Export/, Push/, HTTP/         account export; APNs; outbound HTTP
   Config/AppConfig.swift        typed config, fail-fast on missing keys
   Data/Stores.swift             the data layer boundary: store protocols handlers depend on
   Data/Fluent/                  Postgres implementations (the only SQL outside migrations)
@@ -115,26 +131,47 @@ needs is a hand-written type in `AaruCore`.
 `AaruCore` is a relative path dependency, so `aaru-core/` must stay a sibling of this
 directory. CI lives at the repo root (`.github/workflows/ci.yml`).
 
-## Planned routes
+## Routes
 
-From `ARCHITECTURE.md`. None are implemented yet; the prefix is `/v1`.
+`Sources/AppAPI/openapi.yaml` is the source of truth; this list is a map of it.
 
 ```text
-POST   /v1/auth/apple                 POST   /v1/library/items
-POST   /v1/auth/email/...             GET    /v1/library/items/{id}
-DELETE /v1/auth/session               PATCH  /v1/library/items/{id}
-                                      DELETE /v1/library/items/{id}
-GET    /v1/search?q=&type=            PUT    /v1/library/items/{id}/episodes/{season}/{episode}
-GET    /v1/titles/{id}                POST   /v1/library/items/{id}/seasons/{season}/watched
-GET    /v1/library/items
+GET    /v1/health
 
-GET    /v1/lists                      GET    /v1/imports
-POST   /v1/lists                      POST   /v1/imports/trakt/connect
-POST   /v1/lists/{id}/items           GET    /v1/imports/trakt/callback
-DELETE /v1/lists/{id}/items/{itemId}  POST   /v1/imports/csv
-                                      POST   /v1/imports/cat
-                                      GET    /v1/imports/{id}
+POST   /v1/auth/apple                       GET    /v1/me
+POST   /v1/auth/google                      DELETE /v1/me
+POST   /v1/auth/email/link                  GET    /v1/me/export          # JSON or CSV
+POST   /v1/auth/email/verify                GET    /v1/me/stats           # Recap: ?year=&month=&tz=
+DELETE /v1/auth/session                     GET    /v1/me/notifications
+POST   /v1/me/identities/google             PUT    /v1/me/notifications
+PUT    /v1/devices                          DELETE /v1/devices/{token}
+
+GET    /v1/search?q=&type=                  GET    /v1/titles/{id}
+
+GET    /v1/library/items                    PUT    /v1/library/items/{id}/episodes/{season}/{episode}
+POST   /v1/library/items                    POST   /v1/library/items/{id}/seasons/{season}/watched
+GET    /v1/library/items/{id}               GET    /v1/library/sync
+PATCH  /v1/library/items/{id}               GET    /v1/actions
+DELETE /v1/library/items/{id}               POST   /v1/actions/{id}/undo
+
+GET    /v1/lists                            POST   /v1/lists/{id}/items
+POST   /v1/lists                            DELETE /v1/lists/{id}/items/{titleId}
+GET    /v1/lists/{id}                       PUT    /v1/lists/{id}/order
+PATCH  /v1/lists/{id}                       DELETE /v1/lists/{id}
+
+GET    /v1/shelves                          DELETE /v1/shelves/{id}
+POST   /v1/shelves                          GET    /v1/shelves/{id}/items
+PATCH  /v1/shelves/{id}
+
+GET    /v1/imports                          POST   /v1/imports/trakt
+POST   /v1/imports/csv                      POST   /v1/imports/trakt/connect
+POST   /v1/imports/anilist                  GET    /v1/imports/trakt/connection
+GET    /v1/imports/{id}                     DELETE /v1/imports/trakt/connection
+DELETE /v1/imports/{id}                     GET    /v1/imports/trakt/callback  # plain router, not OpenAPI
+POST   /v1/imports/{id}/apply
+
+GET    /v1/calendar?from=&to=               GET    /v1/up-next
 ```
 
 Imports are jobs. An import endpoint enqueues work and returns a job id; it never parses
-a CSV on the request path.
+a file on the request path. Applying a plan is one journaled, undoable action.

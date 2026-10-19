@@ -1410,6 +1410,10 @@ components:
           items: {$ref: '#/components/schemas/StartEntry'}
     Stats:
       type: object
+      description: >-
+        `busiest` is the bucket with the most time (minutes, then episodes, then finishes).
+        `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were
+        watched or the top count is shared, so a tie names no winner.
       required: [year, timeZone, isPartial, totals, buckets, topTitles, ratings]
       properties:
         year: {type: integer}
@@ -1424,6 +1428,7 @@ components:
           description: One per month of the year, or one per day of the month, in order.
           items: {$ref: '#/components/schemas/StatsBucket'}
         busiest: {$ref: '#/components/schemas/StatsBucket'}
+        mostEpisodes: {$ref: '#/components/schemas/StatsBucket'}
         longestRun: {$ref: '#/components/schemas/StatsRun'}
         topTitles:
           type: array
