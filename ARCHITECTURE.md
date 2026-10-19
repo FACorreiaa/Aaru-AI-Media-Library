@@ -282,7 +282,9 @@ POST   /v1/mcp                            # streamable HTTP, exposes the tool la
 Search hits are catalog projections, not library items. The client calls `POST /library/items` with a `MediaRef` (Aaru title id or provider id + type).
 
 Later-phase route groups, each added with its phase and never before:
-`/v1/scrobble/*` and `/v1/webhooks/{plex|jellyfin}` (3), `/v1/stremio/*` (3), `/v1/social/*`
+`/v1/scrobble/*` and `/v1/webhooks/{plex|jellyfin}` (3), `/v1/agent/tokens` and the Stremio
+addon at `/stremio/{token}/*` (3, pulled forward 2026-10-19; outside `/v1` because the Stremio
+protocol fixes the paths), `/v1/social/*`
 and `/v1/devices/apns` (4), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
 with GAM-006a), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*`, `/v1/rooms/*` (6).
@@ -367,8 +369,8 @@ protocol UserLibraryImporting: Sendable {
 
 Anime is first-class from Phase 1 (CAT-007…009).
 
-- AniList GraphQL is the anime catalog. Reads need no key. Jikan supplies MAL ids where
-  AniList lacks them.
+- AniList GraphQL is the anime catalog. Reads need no key. Jikan is not used (it scrapes MAL);
+  missing MAL ids stay missing until the anime mapping fills them.
 - Every anime title stores `anilist`, `mal`, and `anidb` ids when known, plus `tmdb` when a
   cross-id exists.
 - Matching: exact AniList↔TMDB cross-ids first. Never merge an AniList entry and a TMDB entry
@@ -494,7 +496,11 @@ deprecation policy remains out of scope until there are real users. See `MARKETI
 | `library:read` | `read_library`, `search_titles`, `list_airs` |
 | `library:write` | `apply_library_patch` for a single item; plan proposal for anything larger |
 | `imports:write` | `plan_import`, including capture. Never an apply |
-| `scrobble:write` | `/v1/scrobble/*`, webhooks, and the Stremio addon only (Phase 3). The addon's catalogs (Watchlist, Continue Watching, Calendar) are its only reads |
+| `scrobble:write` | `/v1/scrobble/*`, webhooks, and the Stremio addon's `player` events and `watched` marks (Phase 3). Never an untick, add, or remove |
+
+A Stremio token (`kind = stremio`) gets `library:read` (its catalogs) and `scrobble:write` by
+default. `library:write` is an opt-in at connect time and only lets Stremio's `unwatched` and
+`libraryAdd` events through.
 
 ### Remote approval
 
@@ -637,10 +643,13 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
 - **Webhooks:** `POST /v1/webhooks/plex` (`media.play`, `media.stop`, `media.scrobble`) and
   `/v1/webhooks/jellyfin` translate into the same scrobble calls. Jellyfin `PlaybackStop`
   counts only past the threshold, never on its played flag.
-- **Stremio:** an addon served by `aaru-server` under `/v1/stremio/{token}/manifest.json`. It
-  exposes catalogs (Watchlist, Continue Watching, Calendar) and a configure page that holds the
-  token. It serves no streams. **OPEN:** scrobble capture from Stremio. Addons get no playback
-  events, so Aaru would have to infer them from meta requests (as Simkl does), or skip it.
+- **Stremio:** an addon served by `aaru-server` under `/stremio/{token}/manifest.json`, outside
+  `/v1` because the protocol fixes the paths. It exposes catalogs (Continue watching, Next 7 days,
+  Watchlist), `meta` for titles without an IMDb id, and receives Stremio's `player` and `library`
+  events (stremio-core PR #1070, core-web v0.64, Stremio Web and Stremio 5 desktop). Player events
+  feed the scrobble service; `library` `watched` marks tick episodes; `libraryRemove` is always
+  ignored. The token is minted in Settings. It serves no streams, ever. No subtitles-request
+  inference.
 
 ### Outbound sync
 
@@ -767,7 +776,8 @@ Phase 7 keeps its existing scope and spec
 journal and saved queries from Phase 1, so it may be pulled forward after the Phase 2 gate.
 
 **Gate rule:** no social, gamification, realtime, messaging, or scrobble code is written
-before the Phase 2 gate. That includes WebSocket handlers, follow graphs, and points tables
+before the Phase 2 gate. Exception by the owner's call (2026-10-19): agent tokens for Stremio,
+the scrobble service, and the Stremio addon. That includes WebSocket handlers, follow graphs, and points tables
 added "to save time later". Nullable hooks that already exist (such as `visibility`) are
 the only allowance.
 

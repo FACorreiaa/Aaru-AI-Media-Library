@@ -32,6 +32,27 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-19
+
+- **Episodes and Stremio are built before the P2 gate**, by the owner's call, with 0 strangers
+  (flagged; the owner chose). Episodes first: stills and synopses on title detail, real anime
+  episode names (CAT-010), a scheduled show refresh that also loads imported shows (JOB-001's
+  second kind), and the title room (`SeasonMap` + an episode sheet) on iOS, Mac and the web.
+- **Un-deferred for Stremio:** OUT-001 (minimal: `kind = stremio` tokens only, no AG-001 tool
+  layer, no OAuth), OUT-002 (minimal: the token named on journal rows), SCR-001 as a service
+  only, and SCR-003. `POST /v1/scrobble/*` HTTP routes wait for SCR-002 or the first bridge.
+- **Stremio sends playback events now.** stremio-core PR #1070 (merged 2026-10-02, core-web
+  v0.64) lets an addon declare `player` and `library` resources and receive plain GETs:
+  `player/{type}/{videoId}/action=start|pause|stop&currentTime=ms&duration=ms.json` and
+  `library/{type}/{metaId}/action=libraryAdd|libraryRemove|watched|unwatched[&videoId=…].json`.
+  Confirmed on Stremio Web and Stremio 5 desktop; Android and iOS unverified. This closes
+  SCR-003's OPEN item: the addon serves catalogs plus `player` and `library` events. No
+  subtitles-request inference, no Trakt re-read (that is two-way sync), and **no `stream`
+  resource, ever**.
+- The addon lives at `/stremio/{token}/…` outside `/v1` (the protocol fixes the paths). Its
+  token has `library:read` + `scrobble:write`; `library:write` is opt-in and only admits
+  `unwatched` and `libraryAdd`. `libraryRemove` is always ignored: Aaru is the source of truth.
+
 ## Decisions recorded 2026-10-16
 
 - **The Recap (GAM-006a) is built before the P2 gate**, by the owner's call, with 0 strangers.
@@ -1320,18 +1341,19 @@ test, and an unknown guid lands as an unmatched scrobble the user can resolve.
 
 ### SCR-003 · Stremio addon · L
 **Needs:** UPN-001, OUT-001. Promotes MOAT-001.
-Served by `aaru-server` under `/stremio/{token}/` (manifest, `catalog`, `meta`), not a second
-service. Catalogs: Watchlist, Continue Watching, This week (CAL-001). Configure page in
-`aaru-client` mints a read-scoped token and shows the install URL. **No `stream` resource,
-ever** — Aaru does not touch stream sources.
+Served by `aaru-server` under `/stremio/{token}/` (manifest, `catalog`, `meta`, `player`,
+`library`), not a second service. Catalogs: Continue watching, Next 7 days (CAL-001), Watchlist.
+Settings in `aaru-client` and the Apple app mint a `kind = stremio` token (`library:read` +
+`scrobble:write`, opt-in `library:write`) and show the install URL. `player` events go to the
+SCR-001 service; `library` `watched` marks tick; `libraryRemove` is ignored. **No `stream`
+resource, ever** — Aaru does not touch stream sources.
 
 **Done when:** installing the addon in Stremio shows the user's Continue Watching catalog, the
 manifest declares no `stream` resource, and revoking the token empties the catalogs.
 
-**OPEN:** scrobbling from Stremio. Addons receive no playback events; Simkl-style inference
-from `meta` requests marks "watched" on open, which is wrong more often than right.
-Recommendation: catalogs only for now. Do **not** route Stremio → Trakt → Aaru by re-reading
-Trakt — that is two-way sync. Revisit after SCR-001 ships.
+**Resolved 2026-10-19:** Stremio core 0.64 sends `player` and `library` events to addons
+that declare them (see the decisions above). Do **not** route Stremio → Trakt → Aaru by
+re-reading Trakt — that is two-way sync.
 
 ### SCR-004 · Push history to Trakt · M
 **Needs:** IMP-002, SCR-001. Promotes MOAT-003.
