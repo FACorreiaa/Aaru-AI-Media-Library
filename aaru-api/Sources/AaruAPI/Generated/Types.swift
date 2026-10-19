@@ -2907,6 +2907,8 @@ public enum Components {
                 case startWatching
             }
         }
+        /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner.
+        ///
         /// - Remark: Generated from `#/components/schemas/Stats`.
         public struct Stats: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/Stats/year`.
@@ -2927,6 +2929,8 @@ public enum Components {
             public var buckets: [Components.Schemas.StatsBucket]
             /// - Remark: Generated from `#/components/schemas/Stats/busiest`.
             public var busiest: Components.Schemas.StatsBucket?
+            /// - Remark: Generated from `#/components/schemas/Stats/mostEpisodes`.
+            public var mostEpisodes: Components.Schemas.StatsBucket?
             /// - Remark: Generated from `#/components/schemas/Stats/longestRun`.
             public var longestRun: Components.Schemas.StatsRun?
             /// Most time spent, at most five.
@@ -2949,6 +2953,7 @@ public enum Components {
             ///   - totals:
             ///   - buckets: One per month of the year, or one per day of the month, in order.
             ///   - busiest:
+            ///   - mostEpisodes:
             ///   - longestRun:
             ///   - topTitles: Most time spent, at most five.
             ///   - ratings:
@@ -2962,6 +2967,7 @@ public enum Components {
                 totals: Components.Schemas.StatsTotals,
                 buckets: [Components.Schemas.StatsBucket],
                 busiest: Components.Schemas.StatsBucket? = nil,
+                mostEpisodes: Components.Schemas.StatsBucket? = nil,
                 longestRun: Components.Schemas.StatsRun? = nil,
                 topTitles: [Components.Schemas.StatsTitle],
                 ratings: Components.Schemas.StatsRatings,
@@ -2975,6 +2981,7 @@ public enum Components {
                 self.totals = totals
                 self.buckets = buckets
                 self.busiest = busiest
+                self.mostEpisodes = mostEpisodes
                 self.longestRun = longestRun
                 self.topTitles = topTitles
                 self.ratings = ratings
@@ -2989,6 +2996,7 @@ public enum Components {
                 case totals
                 case buckets
                 case busiest
+                case mostEpisodes
                 case longestRun
                 case topTitles
                 case ratings

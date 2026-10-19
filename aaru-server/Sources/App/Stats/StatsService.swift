@@ -126,6 +126,14 @@ struct StatsDigest {
         }
     }
 
+    /// The one bucket with the most episodes. A shared top count names no winner.
+    static func mostEpisodes(_ buckets: [PeriodStats.Bucket]) -> PeriodStats.Bucket? {
+        guard let top = buckets.max(by: { $0.episodes < $1.episodes }), top.episodes > 0,
+              buckets.count(where: { $0.episodes == top.episodes }) == 1
+        else { return nil }
+        return top
+    }
+
     /// The longest stretch of consecutive active days; the earliest among equals.
     static func longestRun(_ days: Set<LocalDay>) -> PeriodStats.Run? {
         var best: PeriodStats.Run?
@@ -160,6 +168,7 @@ struct StatsDigest {
             busiest: buckets.filter { !$0.isEmpty }.max {
                 ($0.minutes, $0.episodes, $0.finished) < ($1.minutes, $1.episodes, $1.finished)
             },
+            mostEpisodes: Self.mostEpisodes(buckets),
             longestRun: longestRun,
             topTitles: topTitles.compactMap { entry in
                 titles[entry.titleID].map {

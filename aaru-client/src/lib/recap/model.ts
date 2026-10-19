@@ -82,18 +82,11 @@ export function timeCaption(minutes: number): string {
   return `That's about ${days} days, end to end.`
 }
 
-/** The bucket with the most episodes; the earliest among equals. None when no episodes. */
-export function mostEpisodes(stats: Stats): StatsBucket | undefined {
-  return stats.buckets.reduce<StatsBucket | undefined>(
-    (best, bucket) => (bucket.episodes > (best?.episodes ?? 0) ? bucket : best),
-    undefined,
-  )
-}
-
-/** Episodes per bucket; the one with the most is marked. Months read "J F M…", days "1 2 3…". */
+/** Episodes per bucket; the server's `mostEpisodes` is marked (none on a tie). Months read
+ * "J F M…", days "1 2 3…". */
 export function bars(stats: Stats): Bar[] {
   const tallest = Math.max(1, ...stats.buckets.map((b) => b.episodes))
-  const top = mostEpisodes(stats)
+  const top = stats.mostEpisodes
   return stats.buckets.map((bucket) => {
     const [, month, day] = bucket.start.split('-').map(Number)
     return {
@@ -104,12 +97,10 @@ export function bars(stats: Stats): Bar[] {
   })
 }
 
-/** "Most episodes in June." / "on Apr 3." Nothing when the top is shared: a tie says nothing. */
+/** "Most episodes in June." / "on Apr 3." The server leaves `mostEpisodes` out on a tie. */
 function busiestLine(stats: Stats): string | undefined {
-  const top = mostEpisodes(stats)
+  const top = stats.mostEpisodes
   if (!top) return undefined
-  if (stats.buckets.filter((b) => b.episodes === top.episodes).length > 1)
-    return undefined
   const [, month] = top.start.split('-').map(Number)
   return stats.month
     ? `Most episodes on ${dayLabel(top.start)}.`

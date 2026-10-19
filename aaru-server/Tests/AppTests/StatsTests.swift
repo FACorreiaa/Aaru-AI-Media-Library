@@ -83,6 +83,7 @@ struct StatsDigestTests {
         })
         let stats = digest.stats(titles: titles)
         #expect(stats.busiest?.start == day("2026-03-01")) // 162 minutes beat July's 120
+        #expect(stats.mostEpisodes?.start == day("2026-03-01"))
         #expect(stats.buckets[6].finished == 2)
         #expect(stats.longestRun?.days == 2)
 
@@ -93,6 +94,20 @@ struct StatsDigestTests {
         )
         #expect(!finishedYear.isPartial)
         #expect(finishedYear.stats(titles: [:]).busiest == nil)
+        #expect(finishedYear.stats(titles: [:]).mostEpisodes == nil)
+    }
+
+    @Test("GAM-006a: the most-episodes bucket is unique; a shared top count names no winner")
+    func mostEpisodes() {
+        func bucket(_ text: String, _ episodes: Int, minutes: Int = 0) -> PeriodStats.Bucket {
+            PeriodStats.Bucket(start: day(text), episodes: episodes, minutes: minutes)
+        }
+        // Time and episodes disagree: a 166-minute film month loses on episodes.
+        let film = bucket("2026-02-01", 1, minutes: 166)
+        let binge = bucket("2026-06-01", 6, minutes: 144)
+        #expect(StatsDigest.mostEpisodes([film, binge]) == binge)
+        #expect(StatsDigest.mostEpisodes([bucket("2026-04-03", 1), bucket("2026-04-04", 1)]) == nil)
+        #expect(StatsDigest.mostEpisodes([bucket("2026-04-03", 0)]) == nil)
     }
 
     struct BadPeriod {
@@ -190,6 +205,8 @@ struct StatsTests {
             // June's 100-minute film beats March's two episodes.
             #expect((body["busiest"] as? [String: Any])?["start"] as? String == "2026-06-01")
             #expect((body["longestRun"] as? [String: Any])?["days"] as? Int == 2)
+            // By episodes, March (two) beats June's film and December's one.
+            #expect((body["mostEpisodes"] as? [String: Any])?["start"] as? String == "2026-03-01")
         }
     }
 

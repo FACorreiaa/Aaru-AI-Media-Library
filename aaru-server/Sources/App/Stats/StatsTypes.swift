@@ -154,6 +154,8 @@ struct PeriodStats: Sendable, Equatable {
     var totals: Totals
     var buckets: [Bucket]
     var busiest: Bucket?
+    /// Most episodes; nil when none, or when the top count is shared.
+    var mostEpisodes: Bucket?
     var longestRun: Run?
     var topTitles: [TitleTime]
     var ratings: Ratings

@@ -1488,7 +1488,8 @@ friends'.
 ### GAM-006a · Recap: month and Year in Review · M · pulled forward 2026-10-16
 **Needs:** PROG-003.
 `GET /v1/me/stats?year=&month=&tz=`: episodes, minutes, active days, finished titles by kind
-(anime counted once), month or day buckets, the busiest one, the longest run of days, the top
+(anime counted once), month or day buckets, the busiest by time and the one with the most
+episodes (none on a tie), the longest run of days, the top
 five titles by time, mean and highest rating, and the first and last title of the period. Day
 and month edges are the user's time zone; a date-only finish (00:00 UTC) keeps its day
 everywhere. Clients play it as a story of animated cards (`RecapStory`) that ends in a share
