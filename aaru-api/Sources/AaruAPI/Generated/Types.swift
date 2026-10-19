@@ -1634,8 +1634,20 @@ public enum Components {
             public var number: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Episode/name`.
             public var name: Swift.String?
+            /// The episode's synopsis, when the catalog has one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Episode/overview`.
+            public var overview: Swift.String?
+            /// A frame from the episode (TMDB, referenced, never hosted).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Episode/stillUrl`.
+            public var stillUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Episode/airsAt`.
             public var airsAt: Foundation.Date?
+            /// True when `airsAt` is the exact broadcast time; false when only the date is known.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Episode/airTimeKnown`.
+            public var airTimeKnown: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/Episode/runtimeMinutes`.
             public var runtimeMinutes: Swift.Int?
             /// Creates a new `Episode`.
@@ -1644,26 +1656,38 @@ public enum Components {
             ///   - season:
             ///   - number:
             ///   - name:
+            ///   - overview: The episode's synopsis, when the catalog has one.
+            ///   - stillUrl: A frame from the episode (TMDB, referenced, never hosted).
             ///   - airsAt:
+            ///   - airTimeKnown: True when `airsAt` is the exact broadcast time; false when only the date is known.
             ///   - runtimeMinutes:
             public init(
                 season: Swift.Int,
                 number: Swift.Int,
                 name: Swift.String? = nil,
+                overview: Swift.String? = nil,
+                stillUrl: Swift.String? = nil,
                 airsAt: Foundation.Date? = nil,
+                airTimeKnown: Swift.Bool,
                 runtimeMinutes: Swift.Int? = nil
             ) {
                 self.season = season
                 self.number = number
                 self.name = name
+                self.overview = overview
+                self.stillUrl = stillUrl
                 self.airsAt = airsAt
+                self.airTimeKnown = airTimeKnown
                 self.runtimeMinutes = runtimeMinutes
             }
             public enum CodingKeys: String, CodingKey {
                 case season
                 case number
                 case name
+                case overview
+                case stillUrl
                 case airsAt
+                case airTimeKnown
                 case runtimeMinutes
             }
         }

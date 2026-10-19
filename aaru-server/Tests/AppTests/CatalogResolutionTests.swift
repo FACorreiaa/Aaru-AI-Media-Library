@@ -153,7 +153,9 @@ struct CatalogResolutionTests {
                     name: "Pilot",
                     airsAt: longAgo,
                     runtimeMinutes: 50,
-                    tmdbEpisodeID: nil
+                    tmdbEpisodeID: nil,
+                    overview: "It begins.",
+                    stillURL: URL(string: "https://image.tmdb.org/t/p/w300/pilot.jpg")
                 ),
             ]))
             let clock = TestClock(Date())
@@ -163,6 +165,9 @@ struct CatalogResolutionTests {
             #expect(try await service.detail(show.id).episodes?.count == 1)
             #expect(try await service.detail(show.id).episodes?.count == 1)
             #expect(fake.callCount("episodes") == 1, "second request served from Postgres")
+            let stored = try #require(try await service.detail(show.id).episodes?.first)
+            #expect(stored.overview == "It begins.")
+            #expect(stored.stillURL?.absoluteString == "https://image.tmdb.org/t/p/w300/pilot.jpg")
 
             fake.stubEpisodes(tmdb, CatalogEpisodes(status: .returning, episodes: [
                 CatalogEpisode(

@@ -131,14 +131,16 @@ struct PostgresTitleStore: TitleStore {
             try await sql.raw("""
             INSERT INTO show_episodes
                 (id, title_id, season, episode, name, overview, airs_at, airs_at_exact, runtime_minutes,
-                 tmdb_episode_id)
+                 tmdb_episode_id, still_url)
             VALUES (\(bind: UUID()), \(bind: id.rawValue), \(bind: episode.season), \(bind: episode.episode),
                     \(bind: episode.name), \(bind: episode.overview), \(bind: episode.airsAt),
-                    \(bind: episode.airTimeKnown), \(bind: episode.runtimeMinutes), \(bind: episode.tmdbEpisodeID))
+                    \(bind: episode.airTimeKnown), \(bind: episode.runtimeMinutes), \(bind: episode.tmdbEpisodeID),
+                    \(bind: episode.stillURL?.absoluteString))
             ON CONFLICT (title_id, season, episode) DO UPDATE SET
                 name = EXCLUDED.name, overview = EXCLUDED.overview,
                 airs_at = EXCLUDED.airs_at, airs_at_exact = EXCLUDED.airs_at_exact,
-                runtime_minutes = EXCLUDED.runtime_minutes, tmdb_episode_id = EXCLUDED.tmdb_episode_id
+                runtime_minutes = EXCLUDED.runtime_minutes, tmdb_episode_id = EXCLUDED.tmdb_episode_id,
+                still_url = EXCLUDED.still_url
             """).run()
         }
         let status = fresh.status
@@ -175,11 +177,12 @@ struct PostgresTitleStore: TitleStore {
             let runtimeMinutes: Int?
             let tmdbEpisodeId: String?
             let overview: String?
+            let stillUrl: String?
         }
         return try await sql.select()
             .columns(
                 "season", "episode", "name", "airs_at", "airs_at_exact", "runtime_minutes", "tmdb_episode_id",
-                "overview"
+                "overview", "still_url"
             )
             .from("show_episodes")
             .where("title_id", .equal, id.rawValue)
@@ -189,7 +192,8 @@ struct PostgresTitleStore: TitleStore {
                 CatalogEpisode(
                     season: $0.season, episode: $0.episode, name: $0.name, airsAt: $0.airsAt,
                     runtimeMinutes: $0.runtimeMinutes, tmdbEpisodeID: $0.tmdbEpisodeId,
-                    airTimeKnown: $0.airsAtExact, overview: $0.overview
+                    airTimeKnown: $0.airsAtExact, overview: $0.overview,
+                    stillURL: $0.stillUrl.flatMap(URL.init(string:))
                 )
             }
     }

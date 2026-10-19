@@ -1058,12 +1058,21 @@ components:
           items: {$ref: '#/components/schemas/CatalogHit'}
     Episode:
       type: object
-      required: [season, number]
+      required: [season, number, airTimeKnown]
       properties:
         season: {type: integer}
         number: {type: integer}
         name: {type: string}
+        overview:
+          type: string
+          description: The episode's synopsis, when the catalog has one.
+        stillUrl:
+          type: string
+          description: A frame from the episode (TMDB, referenced, never hosted).
         airsAt: {type: string, format: date-time}
+        airTimeKnown:
+          type: boolean
+          description: True when `airsAt` is the exact broadcast time; false when only the date is known.
         runtimeMinutes: {type: integer}
     Season:
       type: object

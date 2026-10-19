@@ -64,7 +64,8 @@ struct CatalogAdapterTests {
             """#,
             "/tv/1399/season/1": #"""
             {"episodes":[{"id":1,"season_number":1,"episode_number":1,"name":"Winter Is Coming",
-              "air_date":"2011-04-17","runtime":62}]}
+              "air_date":"2011-04-17","runtime":62,"overview":"Lord Stark is troubled.",
+              "still_path":"/still.jpg"}]}
             """#,
             "/tv/1399/season/2": #"""
             {"episodes":[{"id":2,"season_number":2,"episode_number":1,"name":"The North Remembers",
@@ -76,6 +77,9 @@ struct CatalogAdapterTests {
         #expect(result.status == .ended)
         #expect(result.episodes.map { "\($0.season)x\($0.episode)" } == ["1x1", "2x1"])
         #expect(result.episodes[1].runtimeMinutes == 60, "falls back to the show's episode run time")
+        #expect(result.episodes[0].overview == "Lord Stark is troubled.")
+        #expect(result.episodes[0].stillURL?.absoluteString == "https://image.tmdb.org/t/p/w300/still.jpg")
+        #expect(result.episodes[1].stillURL == nil)
     }
 
     @Test("Open Library search normalizes ISBNs to ISBN-13 and keeps the work id")

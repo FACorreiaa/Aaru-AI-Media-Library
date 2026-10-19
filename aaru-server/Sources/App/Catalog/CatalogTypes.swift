@@ -48,6 +48,7 @@ struct CatalogEpisode: Sendable, Equatable {
     /// only a date (TMDB), stored as midnight UTC of that date.
     var airTimeKnown = false
     var overview: String?
+    var stillURL: URL?
 }
 
 /// What a show's episode source returns: the show's status plus every known episode.

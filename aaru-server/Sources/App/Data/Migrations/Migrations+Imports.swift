@@ -162,3 +162,21 @@ struct AddEpisodeWatchDateKnown: SQLMigration {
         "ALTER TABLE episode_progress DROP COLUMN watched_at_known",
     ]
 }
+
+/// A1 · episode stills (TMDB, referenced by URL, never hosted) and when a show's episode
+/// refresh last failed, so the refresh loop backs off. Shows with a TMDB id are backdated to
+/// stale, not cleared: the refresh loop serves never-loaded shows first, then fills stills.
+struct AddEpisodeDetail: SQLMigration {
+    let forward = [
+        "ALTER TABLE show_episodes ADD COLUMN still_url text",
+        "ALTER TABLE titles ADD COLUMN episodes_attempted_at timestamptz",
+        """
+        UPDATE titles SET episodes_hydrated_at = timestamptz '1970-01-01 00:00:00+00'
+        WHERE type = 'show' AND episodes_hydrated_at IS NOT NULL AND tmdb IS NOT NULL
+        """,
+    ]
+    let backward = [
+        "ALTER TABLE titles DROP COLUMN episodes_attempted_at",
+        "ALTER TABLE show_episodes DROP COLUMN still_url",
+    ]
+}

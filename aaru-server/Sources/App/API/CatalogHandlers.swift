@@ -63,7 +63,10 @@ extension Components.Schemas.TitleDetail {
                             season: $0.season,
                             number: $0.episode,
                             name: $0.name,
+                            overview: $0.overview,
+                            stillUrl: $0.stillURL?.absoluteString,
                             airsAt: $0.airsAt,
+                            airTimeKnown: $0.airTimeKnown,
                             runtimeMinutes: $0.runtimeMinutes
                         )
                     })

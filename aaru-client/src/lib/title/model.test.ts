@@ -9,13 +9,13 @@ const title: TitleDetail = {
   isAnime: false,
   ids: {},
   seasons: [
-    { number: 0, episodes: [{ season: 0, number: 1 }] },
+    { number: 0, episodes: [{ season: 0, number: 1, airTimeKnown: false }] },
     {
       number: 1,
       episodes: [
-        { season: 1, number: 1, airsAt: '2026-01-01T00:00:00Z' },
-        { season: 1, number: 2, airsAt: '2099-01-01T00:00:00Z' },
-        { season: 1, number: 3 },
+        { season: 1, number: 1, airTimeKnown: false, airsAt: '2026-01-01T00:00:00Z' },
+        { season: 1, number: 2, airTimeKnown: false, airsAt: '2099-01-01T00:00:00Z' },
+        { season: 1, number: 3, airTimeKnown: false },
       ],
     },
   ],

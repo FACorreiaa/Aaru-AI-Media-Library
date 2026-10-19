@@ -130,7 +130,7 @@ PostgreSQL. Suggested tables:
 - `users`
 - `auth_identities` (Apple, email)
 - `titles` (unique indexes on each external id where not null)
-- `show_episodes` (title_id, season, episode, optional air time + `airs_at_exact`, optional overview, optional tmdb episode id)
+- `show_episodes` (title_id, season, episode, optional air time + `airs_at_exact`, optional overview, optional still URL (TMDB, referenced), optional tmdb episode id). Title detail returns all of them per episode
 - `library_items` (unique `(user_id, title_id)`)
 - `episode_progress` (unique `(library_item_id, season, episode)`; `watched_at_known` is false
   for ticks an import or an undo wrote, whose `watched_at` is the write, not the watch)
