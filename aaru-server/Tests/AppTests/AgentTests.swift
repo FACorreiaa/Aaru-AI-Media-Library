@@ -52,6 +52,8 @@ struct AgentTests {
     /// The queue is shared by every test run on this database: settle anything left behind so a
     /// test claims only its own mentions.
     func clearQueue() async throws {
+        // On a fresh database this can run before any test migrated it.
+        try await TestMigrations.shared.ensureMigrated()
         try await withSQL { sql in
             try await sql.raw("UPDATE agent_replies SET state = 'skipped' WHERE state IN ('queued', 'running')").run()
         }
