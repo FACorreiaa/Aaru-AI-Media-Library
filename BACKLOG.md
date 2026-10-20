@@ -256,6 +256,7 @@ account or a stranger that has not happened yet.
 | PROG-004 | Done | #2; ValidationTests percent | |
 | LST-001 | Done | #2; ListShelfTests visibility | |
 | LST-002 | Done | #2; `/v1/lists/{id}/items`, `/order` | |
+| LST-003 | Built, unverified | ListShelfTests LST-003, CatalogRefreshTests | iOS not checked on TestFlight yet |
 | SHF-001 | Done | #2; `saved_queries` | API-only by decision |
 | SHF-002 | Done | #2; `/v1/shelves/{id}/items` | |
 | CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
@@ -912,6 +913,19 @@ user has no status for. `DELETE /v1/lists/{id}/items/{itemId}`. Manual ordering.
 
 **Done when:** adding a title not in the library succeeds without creating a library item,
 and reordering survives a round trip.
+
+### LST-003 · Fill a list from inside it; rows that say what is airing · M
+**Needs:** LST-002, APP-006, CAT-006.
+A list was easy to make and hard to fill: "Add to list" lived only on a title page, a search
+hit and a Discover card. Now "Add titles" inside a list opens search aimed at it (one tap adds,
+"On this list" after), and every library row offers "Add to list". `GET /v1/lists/{id}` returns
+`items`, one `ListItem` per member in order: the title, the caller's `LibraryEntry` when there
+is one, and for shows `showStatus` and `nextAiring` (the first episode not aired yet). `titles`
+stays for clients that predate it. A show only on a list has its episodes loaded on add and
+refreshed by `CatalogRefresher` like a tracked one; Calendar and Up Next stay library-only.
+
+**Done when:** a title can be added from inside a list on web and iOS, and a list row shows
+status, progress, show status and next airing, including for a show not in the library.
 
 ### SHF-001 · Saved queries (shelves) · M
 **Needs:** LIB-002, LST-001.

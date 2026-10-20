@@ -1544,15 +1544,45 @@ components:
           items: {$ref: '#/components/schemas/ListSummary'}
     ListDetail:
       type: object
-      required: [id, name, titles, createdAt, updatedAt]
+      required: [id, name, titles, items, createdAt, updatedAt]
       properties:
         id: {type: string, format: uuid}
         name: {type: string}
         titles:
           type: array
+          description: Superseded by `items`; kept for clients that predate it.
           items: {$ref: '#/components/schemas/TitleSummary'}
+        items:
+          type: array
+          description: The members in list order.
+          items: {$ref: '#/components/schemas/ListItem'}
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+    ListItem:
+      type: object
+      description: >-
+        One list member. `entry` is the caller's library row when the title is in the library.
+        Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their
+        episodes are loaded.
+      required: [title]
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        entry: {$ref: '#/components/schemas/LibraryEntry'}
+        showStatus:
+          type: string
+          enum: [upcoming, returning, ended, canceled]
+        nextAiring: {$ref: '#/components/schemas/UpcomingEpisode'}
+    UpcomingEpisode:
+      type: object
+      required: [season, number, airsAt, airTimeKnown]
+      properties:
+        season: {type: integer}
+        number: {type: integer}
+        episodeName: {type: string}
+        airsAt: {type: string, format: date-time}
+        airTimeKnown:
+          type: boolean
+          description: False when the source gives only a date, as on CalendarEntry.
     CreateList:
       type: object
       required: [name]

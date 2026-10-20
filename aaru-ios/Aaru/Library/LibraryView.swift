@@ -18,6 +18,8 @@ struct LibraryView: View {
     @State private var showsSearch = false
     @State private var showsInsights = false
     @State private var recap: RecapPeriod?
+    /// The row whose "Add to list…" was chosen.
+    @State private var listTarget: LibraryRow?
 
     enum Layout: String {
         case grid, list
@@ -42,6 +44,15 @@ struct LibraryView: View {
                 }
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library, lists: lists)
+                }
+                .sheet(item: $listTarget) { row in
+                    if let entry = library.entry(row.id) {
+                        ListPickerSheet(
+                            ref: .init(titleId: entry.title.id, _type: entry.title._type),
+                            titleName: entry.title.title,
+                            lists: lists
+                        )
+                    }
                 }
                 .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api) }
                 .recapStory($recap, api: api)
@@ -78,6 +89,7 @@ struct LibraryView: View {
                     ForEach(rows) { row in
                         NavigationLink(value: row.id) { PosterCard(row: row) }
                             .buttonStyle(.plain)
+                            .contextMenu { addToListButton(row) }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -87,10 +99,15 @@ struct LibraryView: View {
             List(rows) { row in
                 NavigationLink(value: row.id) { LibraryListRow(row: row) }
                     .listRowBackground(Color.clear)
+                    .contextMenu { addToListButton(row) }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
         }
+    }
+
+    private func addToListButton(_ row: LibraryRow) -> some View {
+        Button("Add to list…", systemImage: "text.badge.plus") { listTarget = row }
     }
 
     private var filters: some View {

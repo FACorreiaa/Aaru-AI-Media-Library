@@ -2951,8 +2951,14 @@ public enum Components {
             public var id: Swift.String
             /// - Remark: Generated from `#/components/schemas/ListDetail/name`.
             public var name: Swift.String
+            /// Superseded by `items`; kept for clients that predate it.
+            ///
             /// - Remark: Generated from `#/components/schemas/ListDetail/titles`.
             public var titles: [Components.Schemas.TitleSummary]
+            /// The members in list order.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListDetail/items`.
+            public var items: [Components.Schemas.ListItem]
             /// - Remark: Generated from `#/components/schemas/ListDetail/createdAt`.
             public var createdAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/ListDetail/updatedAt`.
@@ -2962,19 +2968,22 @@ public enum Components {
             /// - Parameters:
             ///   - id:
             ///   - name:
-            ///   - titles:
+            ///   - titles: Superseded by `items`; kept for clients that predate it.
+            ///   - items: The members in list order.
             ///   - createdAt:
             ///   - updatedAt:
             public init(
                 id: Swift.String,
                 name: Swift.String,
                 titles: [Components.Schemas.TitleSummary],
+                items: [Components.Schemas.ListItem],
                 createdAt: Foundation.Date,
                 updatedAt: Foundation.Date
             ) {
                 self.id = id
                 self.name = name
                 self.titles = titles
+                self.items = items
                 self.createdAt = createdAt
                 self.updatedAt = updatedAt
             }
@@ -2982,8 +2991,96 @@ public enum Components {
                 case id
                 case name
                 case titles
+                case items
                 case createdAt
                 case updatedAt
+            }
+        }
+        /// One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ListItem`.
+        public struct ListItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListItem/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/ListItem/entry`.
+            public var entry: Components.Schemas.LibraryEntry?
+            /// - Remark: Generated from `#/components/schemas/ListItem/showStatus`.
+            @frozen public enum ShowStatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case upcoming = "upcoming"
+                case returning = "returning"
+                case ended = "ended"
+                case canceled = "canceled"
+            }
+            /// - Remark: Generated from `#/components/schemas/ListItem/showStatus`.
+            public var showStatus: Components.Schemas.ListItem.ShowStatusPayload?
+            /// - Remark: Generated from `#/components/schemas/ListItem/nextAiring`.
+            public var nextAiring: Components.Schemas.UpcomingEpisode?
+            /// Creates a new `ListItem`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - entry:
+            ///   - showStatus:
+            ///   - nextAiring:
+            public init(
+                title: Components.Schemas.TitleSummary,
+                entry: Components.Schemas.LibraryEntry? = nil,
+                showStatus: Components.Schemas.ListItem.ShowStatusPayload? = nil,
+                nextAiring: Components.Schemas.UpcomingEpisode? = nil
+            ) {
+                self.title = title
+                self.entry = entry
+                self.showStatus = showStatus
+                self.nextAiring = nextAiring
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case entry
+                case showStatus
+                case nextAiring
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpcomingEpisode`.
+        public struct UpcomingEpisode: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/season`.
+            public var season: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/number`.
+            public var number: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/episodeName`.
+            public var episodeName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/airsAt`.
+            public var airsAt: Foundation.Date
+            /// False when the source gives only a date, as on CalendarEntry.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/airTimeKnown`.
+            public var airTimeKnown: Swift.Bool
+            /// Creates a new `UpcomingEpisode`.
+            ///
+            /// - Parameters:
+            ///   - season:
+            ///   - number:
+            ///   - episodeName:
+            ///   - airsAt:
+            ///   - airTimeKnown: False when the source gives only a date, as on CalendarEntry.
+            public init(
+                season: Swift.Int,
+                number: Swift.Int,
+                episodeName: Swift.String? = nil,
+                airsAt: Foundation.Date,
+                airTimeKnown: Swift.Bool
+            ) {
+                self.season = season
+                self.number = number
+                self.episodeName = episodeName
+                self.airsAt = airsAt
+                self.airTimeKnown = airTimeKnown
+            }
+            public enum CodingKeys: String, CodingKey {
+                case season
+                case number
+                case episodeName
+                case airsAt
+                case airTimeKnown
             }
         }
         /// - Remark: Generated from `#/components/schemas/CreateList`.
