@@ -88,6 +88,14 @@ One title is a room, not a settings form.
 The agent is allowed to drop extra cards into the room: cast you actually care about,
 "you left off S02E04", "book pairings."
 
+**Built 2026-10-20 (iPhone, iPad, Mac, web):** the season map is a grid with one cell per
+episode in four states (watched, up next, aired, not aired yet); a tap ticks through the same
+optimistic write as the list. Below it each season's list shows a still, the name, the air date
+(with a time only when the catalog knows it) and a synopsis line. Tapping an episode opens the
+**episode sheet**: still, `S1 · E8`, name, air date, runtime, synopsis, the tick, and
+previous/next. Only the season holding the next episode starts open. A title that fails to load
+says so with a retry, never an endless spinner.
+
 ## 5. Tonight
 
 A nightly composed view. Not recommendations-as-a-product — a **short plan**.
