@@ -116,3 +116,33 @@ extension UntouchedStore {
         throw Touched()
     }
 }
+
+extension UntouchedStore: PlanStore {
+    func create(_: AgentPlan, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func plans(userID _: UserID, pendingOnly _: Bool, now _: Date, limit _: Int) async throws -> [AgentPlan] {
+        throw Touched()
+    }
+
+    func plan(id _: UUID, userID _: UserID) async throws -> AgentPlan? {
+        throw Touched()
+    }
+
+    func pendingCount(agentTokenID _: UUID, now _: Date) async throws -> Int {
+        throw Touched()
+    }
+
+    func itemVersions(_: [LibraryItemID], userID _: UserID) async throws -> [String: Int64] {
+        throw Touched()
+    }
+
+    func approve(id _: UUID, userID _: UserID, now _: Date) async throws -> PlanDecision? {
+        throw Touched()
+    }
+
+    func deny(id _: UUID, userID _: UserID, now _: Date) async throws -> PlanDecision? {
+        throw Touched()
+    }
+}

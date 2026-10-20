@@ -362,7 +362,7 @@ account or a stranger that has not happened yet.
 | ROOM-004 | Open | none | |
 | AG-001 | Partial | Agent/AgentTools.swift | Four tools; `plan_import` waits for `imports:write` |
 | AG-002 | Open | none | |
-| AG-003 | Open | none | Import plan/apply exists, not the agent one |
+| AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
 | AG-005 | Open | none | |
 | AG-006 | Open | none | |
@@ -370,7 +370,7 @@ account or a stranger that has not happened yet.
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
-| OUT-004 | Partial | Sources/App/MCP, `POST /v1/mcp` | Single-item writes only; no plans or OAuth yet |
+| OUT-004 | Partial | Sources/App/MCP, `POST /v1/mcp`, `/v1/plans` | No OAuth front door yet |
 | OUT-005 | Open | none | |
 | MOAT-001 | Dropped (promoted) | now SCR-003 | SCR-003 built |
 | MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
@@ -2138,6 +2138,15 @@ by the server, and echoed on the plan. The model does not select it.
 **Done when:** applying a plan whose underlying library changed since the dry run is rejected
 rather than silently re-planned, and first-run imports cannot be applied without a plan.
 
+**Progress 2026-10-20 (remote plans, for OUT-004):** every library write is split into a dry
+run (`LibraryService+Prepare.swift`, `PreparedWrite`) and a commit; a tap still does both at
+once. An outside agent's change bigger than a tap is stored as an `agent_plans` row holding the
+exact `LibraryOp` batch and a basis (each touched item's `updated_at` in microseconds, and the
+titles it adds). Approval runs in one transaction: status, expiry (24 h) and basis are checked
+again, then the op is applied and journaled as one `external_agent` action, undoable. A moved
+item or a title added meanwhile makes the plan `stale` and nothing is written. No autonomy dial:
+remote plans are always "ask me".
+
 ### AG-004 · Composer and The Field · L
 **Needs:** AG-002, APP-003.
 Home becomes the vertical canvas: composer on top, pinned artifacts below (Now, Airs this
@@ -2280,6 +2289,16 @@ caller with `library:write` applies one change to one item (at most one episode,
 removal) at once, journaled as the token; anything larger is refused until plans land.
 `GET /v1/agent/setup/{kind}` serves each client's setup (Claude Code, Codex, Hermes, Gemini CLI,
 other) so web and Apple show the same steps.
+
+**Progress 2026-10-20 (remote approval):** anything bigger than a tap, and any removal, now
+becomes a plan (AG-003): the tool answers `applied: false` with a `planId`, and the user gets a
+push ("Laptop wants to change your library"). `GET /v1/plans`, `GET /v1/plans/{id}`,
+`POST /v1/plans/{id}/approve` and `/deny` take a session only, so an agent token gets 401 and no
+caller approves its own plan. A token has at most 20 plans waiting; revoking it expires them.
+Pending plans pin to the top of Home on web and Apple ("Waiting for you"), and the push opens
+the plan. **Denials are recorded on the plan row** (`status = denied`, `decided_at`, the token),
+not as an `actions` row: the action journal holds only undoable writes, and `agent_plans` is the
+ledger of what each token asked for.
 
 ### OUT-005 · Agent-readable digest · S
 **Needs:** LIB-002, SHF-002, OUT-001.

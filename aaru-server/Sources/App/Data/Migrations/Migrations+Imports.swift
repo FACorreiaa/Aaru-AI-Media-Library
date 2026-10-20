@@ -326,3 +326,33 @@ struct AddAgentTokenKinds: SQLMigration {
         "ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_kind_check CHECK (kind IN ('stremio'))",
     ]
 }
+
+/// AG-003 / OUT-004 · an outside agent's change that waits for the user. `op` is the exact
+/// library write, worked out when the plan was made; `basis` is what the library looked like
+/// then, so approval rejects a plan whose items moved. A denied or expired plan stays as the
+/// record of what the token asked for.
+struct CreateAgentPlans: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE agent_plans (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            agent_token_id uuid REFERENCES agent_tokens(id) ON DELETE SET NULL,
+            agent_name text NOT NULL,
+            status text NOT NULL CHECK (status IN ('pending', 'applied', 'denied', 'stale', 'expired')),
+            summary text NOT NULL,
+            changes jsonb NOT NULL,
+            counts jsonb NOT NULL,
+            op jsonb NOT NULL,
+            basis jsonb NOT NULL,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            expires_at timestamptz NOT NULL,
+            decided_at timestamptz,
+            action_id uuid REFERENCES actions(id) ON DELETE SET NULL
+        )
+        """,
+        "CREATE INDEX agent_plans_user ON agent_plans (user_id, created_at DESC)",
+        "CREATE INDEX agent_plans_pending_token ON agent_plans (agent_token_id) WHERE status = 'pending'",
+    ]
+    let backward = ["DROP TABLE agent_plans"]
+}

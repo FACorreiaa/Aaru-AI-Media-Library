@@ -212,6 +212,12 @@ tap from gone.
 Nothing else in this category can do this, and the reason is boring: every write already
 carries its own inverse. The trust comes from the plumbing, not from a promise.
 
+**Built 2026-10-20.** Until The Field exists, waiting requests pin to the top of Home as
+"Waiting for you", on web and Apple: the caller's name, the summary, a counts line ending
+"nothing changes until you approve", the changes when there are several, then **Approve** and
+**Not this**. The push reads "Laptop wants to change your library" and opens the request. A
+request whose library moved meanwhile says so and applies nothing; ask the agent again.
+
 The feeling to protect: **the buzz is a question, never a receipt.** The moment a notification
 tells you what an agent already did, Aaru is somebody else's app.
 

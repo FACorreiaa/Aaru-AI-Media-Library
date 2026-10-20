@@ -43,6 +43,8 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         publicBaseURL: config.publicBaseURL
     )
     services.webPush = webPush
+    let pushSender = makePushSender(config.push, logger: logger)
+    services.plans.push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -51,9 +53,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         fluent,
         ImportWorker(imports: services.imports, logger: logger),
         AiringNotifierService(
-            notifier: AiringNotifier(
-                stores: stores, sender: makePushSender(config.push, logger: logger), webPush: webPush
-            ),
+            notifier: AiringNotifier(stores: stores, sender: pushSender, webPush: webPush),
             logger: logger
         ),
         CatalogRefreshService(

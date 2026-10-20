@@ -349,7 +349,8 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         trakt: untouched,
         push: untouched,
         agentTokens: untouched,
-        watchEvents: untouched
+        watchEvents: untouched,
+        plans: untouched
     )
 }
 

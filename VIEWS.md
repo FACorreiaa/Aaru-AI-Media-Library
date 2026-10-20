@@ -44,7 +44,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Leaderboard | `Shelf`-like ranked list, friends only | leaderboard route | 5 · GAM-005 |
 | Room | `RoomPanel` | rooms routes + `/v1/ws` | 6 · ROOM-001 |
 | Conversations | `ConversationView` | ciphertext message routes + `/v1/ws` | 6 · DM-* |
-| Approvals | `PlanCard` | `POST /v1/plans/{id}/approve`, `/deny` | 7 · M14 |
+| Approvals | `PlanCard`, pinned at the top of Home ("Waiting for you") until The Field exists; a push opens one | `GET /v1/plans`, `GET /v1/plans/{id}`, `POST /v1/plans/{id}/approve`, `/deny` | 7 · OUT-004 (built 2026-10-20) |
 | Shortcuts / App Intents | `TitleCard`, `TonightStrip` as intent snippets | agent tool layer | 7 · M14 |
 | MCP | none — headless, no rendering | `POST /v1/mcp` | 7 · OUT-004 (built 2026-10-20) |
 

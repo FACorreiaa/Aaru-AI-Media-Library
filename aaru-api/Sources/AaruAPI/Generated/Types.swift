@@ -87,6 +87,24 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/agent/tokens`.
     /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)`.
     func createAgentToken(_ input: Operations.CreateAgentToken.Input) async throws -> Operations.CreateAgentToken.Output
+    /// Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does.
+    ///
+    /// - Remark: HTTP `GET /v1/plans`.
+    /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)`.
+    func listPlans(_ input: Operations.ListPlans.Input) async throws -> Operations.ListPlans.Output
+    /// - Remark: HTTP `GET /v1/plans/{id}`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)`.
+    func getPlan(_ input: Operations.GetPlan.Input) async throws -> Operations.GetPlan.Output
+    /// Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)`.
+    func approvePlan(_ input: Operations.ApprovePlan.Input) async throws -> Operations.ApprovePlan.Output
+    /// Refuse the plan. Nothing is written; the plan stays as the record of what was asked.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)`.
+    func denyPlan(_ input: Operations.DenyPlan.Input) async throws -> Operations.DenyPlan.Output
     /// How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists.
     ///
     /// - Remark: HTTP `GET /v1/agent/setup/{kind}`.
@@ -461,6 +479,56 @@ extension APIProtocol {
         try await createAgentToken(Operations.CreateAgentToken.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does.
+    ///
+    /// - Remark: HTTP `GET /v1/plans`.
+    /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)`.
+    public func listPlans(
+        query: Operations.ListPlans.Input.Query = .init(),
+        headers: Operations.ListPlans.Input.Headers = .init()
+    ) async throws -> Operations.ListPlans.Output {
+        try await listPlans(Operations.ListPlans.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `GET /v1/plans/{id}`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)`.
+    public func getPlan(
+        path: Operations.GetPlan.Input.Path,
+        headers: Operations.GetPlan.Input.Headers = .init()
+    ) async throws -> Operations.GetPlan.Output {
+        try await getPlan(Operations.GetPlan.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)`.
+    public func approvePlan(
+        path: Operations.ApprovePlan.Input.Path,
+        headers: Operations.ApprovePlan.Input.Headers = .init()
+    ) async throws -> Operations.ApprovePlan.Output {
+        try await approvePlan(Operations.ApprovePlan.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Refuse the plan. Nothing is written; the plan stays as the record of what was asked.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)`.
+    public func denyPlan(
+        path: Operations.DenyPlan.Input.Path,
+        headers: Operations.DenyPlan.Input.Headers = .init()
+    ) async throws -> Operations.DenyPlan.Output {
+        try await denyPlan(Operations.DenyPlan.Input(
+            path: path,
+            headers: headers
         ))
     }
     /// How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists.
@@ -1099,6 +1167,175 @@ public enum Components {
                 case kind
                 case name
                 case allowLibraryWrites
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AgentPlan`.
+        public struct AgentPlan: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/status`.
+            @frozen public enum StatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case pending = "pending"
+                case applied = "applied"
+                case denied = "denied"
+                case stale = "stale"
+                case expired = "expired"
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/status`.
+            public var status: Components.Schemas.AgentPlan.StatusPayload
+            /// The connection that asked, as the user named it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/agentName`.
+            public var agentName: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/summary`.
+            public var summary: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload`.
+            public struct ChangesPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/text`.
+                public var text: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/titleId`.
+                public var titleId: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/title`.
+                public var title: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/type`.
+                public var _type: Components.Schemas.MediaType
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/posterUrl`.
+                public var posterUrl: Swift.String?
+                /// Absent when the change adds the title.
+                ///
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/libraryItemId`.
+                public var libraryItemId: Swift.String?
+                /// Creates a new `ChangesPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - text:
+                ///   - titleId:
+                ///   - title:
+                ///   - _type:
+                ///   - posterUrl:
+                ///   - libraryItemId: Absent when the change adds the title.
+                public init(
+                    text: Swift.String,
+                    titleId: Swift.String,
+                    title: Swift.String,
+                    _type: Components.Schemas.MediaType,
+                    posterUrl: Swift.String? = nil,
+                    libraryItemId: Swift.String? = nil
+                ) {
+                    self.text = text
+                    self.titleId = titleId
+                    self.title = title
+                    self._type = _type
+                    self.posterUrl = posterUrl
+                    self.libraryItemId = libraryItemId
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case text
+                    case titleId
+                    case title
+                    case _type = "type"
+                    case posterUrl
+                    case libraryItemId
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/changes`.
+            public typealias ChangesPayload = [Components.Schemas.AgentPlan.ChangesPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/changes`.
+            public var changes: Components.Schemas.AgentPlan.ChangesPayload
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/counts`.
+            public struct CountsPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/counts/adds`.
+                public var adds: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/counts/updates`.
+                public var updates: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/counts/removes`.
+                public var removes: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/counts/episodes`.
+                public var episodes: Swift.Int
+                /// Creates a new `CountsPayload`.
+                ///
+                /// - Parameters:
+                ///   - adds:
+                ///   - updates:
+                ///   - removes:
+                ///   - episodes:
+                public init(
+                    adds: Swift.Int,
+                    updates: Swift.Int,
+                    removes: Swift.Int,
+                    episodes: Swift.Int
+                ) {
+                    self.adds = adds
+                    self.updates = updates
+                    self.removes = removes
+                    self.episodes = episodes
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case adds
+                    case updates
+                    case removes
+                    case episodes
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/counts`.
+            public var counts: Components.Schemas.AgentPlan.CountsPayload
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/decidedAt`.
+            public var decidedAt: Foundation.Date?
+            /// The journaled action, once applied; undo it like any other.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/actionId`.
+            public var actionId: Swift.String?
+            /// Creates a new `AgentPlan`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - status:
+            ///   - agentName: The connection that asked, as the user named it.
+            ///   - summary:
+            ///   - changes:
+            ///   - counts:
+            ///   - createdAt:
+            ///   - expiresAt:
+            ///   - decidedAt:
+            ///   - actionId: The journaled action, once applied; undo it like any other.
+            public init(
+                id: Swift.String,
+                status: Components.Schemas.AgentPlan.StatusPayload,
+                agentName: Swift.String,
+                summary: Swift.String,
+                changes: Components.Schemas.AgentPlan.ChangesPayload,
+                counts: Components.Schemas.AgentPlan.CountsPayload,
+                createdAt: Foundation.Date,
+                expiresAt: Foundation.Date,
+                decidedAt: Foundation.Date? = nil,
+                actionId: Swift.String? = nil
+            ) {
+                self.id = id
+                self.status = status
+                self.agentName = agentName
+                self.summary = summary
+                self.changes = changes
+                self.counts = counts
+                self.createdAt = createdAt
+                self.expiresAt = expiresAt
+                self.decidedAt = decidedAt
+                self.actionId = actionId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case status
+                case agentName
+                case summary
+                case changes
+                case counts
+                case createdAt
+                case expiresAt
+                case decidedAt
+                case actionId
             }
         }
         /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
@@ -6325,6 +6562,637 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does.
+    ///
+    /// - Remark: HTTP `GET /v1/plans`.
+    /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)`.
+    public enum ListPlans {
+        public static let id: Swift.String = "listPlans"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/plans/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/GET/query/status`.
+                @frozen public enum StatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case pending = "pending"
+                    case all = "all"
+                }
+                /// `pending` (default) leaves out decided and expired plans.
+                ///
+                /// - Remark: Generated from `#/paths/v1/plans/GET/query/status`.
+                public var status: Operations.ListPlans.Input.Query.StatusPayload?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - status: `pending` (default) leaves out decided and expired plans.
+                public init(status: Operations.ListPlans.Input.Query.StatusPayload? = nil) {
+                    self.status = status
+                }
+            }
+            public var query: Operations.ListPlans.Input.Query
+            /// - Remark: Generated from `#/paths/v1/plans/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListPlans.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListPlans.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListPlans.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListPlans.Input.Query = .init(),
+                headers: Operations.ListPlans.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/plans/GET/responses/200/content/json`.
+                    public struct JsonPayload: Codable, Hashable, Sendable {
+                        /// - Remark: Generated from `#/paths/v1/plans/GET/responses/200/content/json/items`.
+                        public var items: [Components.Schemas.AgentPlan]
+                        /// Creates a new `JsonPayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - items:
+                        public init(items: [Components.Schemas.AgentPlan]) {
+                            self.items = items
+                        }
+                        public enum CodingKeys: String, CodingKey {
+                            case items
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/plans/GET/responses/200/content/application\/json`.
+                    case json(Operations.ListPlans.Output.Ok.Body.JsonPayload)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Operations.ListPlans.Output.Ok.Body.JsonPayload {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListPlans.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListPlans.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Plans.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListPlans.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListPlans.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `GET /v1/plans/{id}`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)`.
+    public enum GetPlan {
+        public static let id: Swift.String = "getPlan"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetPlan.Input.Path
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetPlan.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetPlan.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetPlan.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetPlan.Input.Path,
+                headers: Operations.GetPlan.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AgentPlan)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AgentPlan {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetPlan.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetPlan.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The plan.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetPlan.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetPlan.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)`.
+    public enum ApprovePlan {
+        public static let id: Swift.String = "approvePlan"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.ApprovePlan.Input.Path
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApprovePlan.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApprovePlan.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ApprovePlan.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.ApprovePlan.Input.Path,
+                headers: Operations.ApprovePlan.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content/json`.
+                    public struct JsonPayload: Codable, Hashable, Sendable {
+                        /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content/json/plan`.
+                        public var plan: Components.Schemas.AgentPlan
+                        /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content/json/action`.
+                        public var action: Components.Schemas.Action
+                        /// Creates a new `JsonPayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - plan:
+                        ///   - action:
+                        public init(
+                            plan: Components.Schemas.AgentPlan,
+                            action: Components.Schemas.Action
+                        ) {
+                            self.plan = plan
+                            self.action = action
+                        }
+                        public enum CodingKeys: String, CodingKey {
+                            case plan
+                            case action
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content/application\/json`.
+                    case json(Operations.ApprovePlan.Output.Ok.Body.JsonPayload)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Operations.ApprovePlan.Output.Ok.Body.JsonPayload {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ApprovePlan.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ApprovePlan.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Applied.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ApprovePlan.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ApprovePlan.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Refuse the plan. Nothing is written; the plan stays as the record of what was asked.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)`.
+    public enum DenyPlan {
+        public static let id: Swift.String = "denyPlan"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DenyPlan.Input.Path
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DenyPlan.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DenyPlan.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DenyPlan.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DenyPlan.Input.Path,
+                headers: Operations.DenyPlan.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AgentPlan)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AgentPlan {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.DenyPlan.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.DenyPlan.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Denied.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.DenyPlan.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.DenyPlan.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

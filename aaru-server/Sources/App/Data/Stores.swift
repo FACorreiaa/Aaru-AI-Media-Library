@@ -401,4 +401,5 @@ struct Stores: Sendable {
     var push: any PushStore
     var agentTokens: any AgentTokenStore
     var watchEvents: any WatchEventStore
+    var plans: any PlanStore
 }

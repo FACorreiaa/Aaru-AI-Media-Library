@@ -86,6 +86,42 @@ struct APNSPushSender: PushSending {
     }
 }
 
+/// Sends one message to every device and browser a user registered.
+struct UserPush: Sendable {
+    let stores: Stores
+    let sender: (any PushSending)?
+    var webPush: (any WebPushSending)?
+
+    /// Best effort, for callers that must not fail on a push outage.
+    func send(_ message: PushMessage, userID: UserID) async {
+        _ = try? await deliver(message, userID: userID)
+    }
+
+    /// One failing device or browser never stops the others. Returns how many went out.
+    func deliver(_ message: PushMessage, userID: UserID) async throws -> Int {
+        var sent = 0
+        if let sender {
+            for device in try await stores.push.devices(userID: userID) {
+                switch try? await sender.send(message, to: device) {
+                case .sent?: sent += 1
+                case .deadToken?: try await stores.push.forget(token: device.token)
+                case nil: continue
+                }
+            }
+        }
+        if let webPush {
+            for subscription in try await stores.push.webPushSubscriptions(userID: userID) {
+                switch try? await webPush.send(message, to: subscription) {
+                case .sent?: sent += 1
+                case .deadToken?: try await stores.push.forgetWebPush(endpoint: subscription.endpoint)
+                case nil: continue
+                }
+            }
+        }
+        return sent
+    }
+}
+
 /// Announces newly aired episodes of shows a user is watching (2026-10-15 decision). Each episode
 /// is claimed in Postgres before it is sent, so two replicas or a restart never send it twice.
 struct AiringNotifier: Sendable {
@@ -105,37 +141,9 @@ struct AiringNotifier: Sendable {
         guard sender != nil || webPush != nil else { return 0 }
         let due = try await stores.push.dueAirings(now: now(), since: now().addingTimeInterval(-Self.window))
         var sent = 0
+        let push = UserPush(stores: stores, sender: sender, webPush: webPush)
         for airing in due where try await stores.push.claim(airing) {
-            let message = Self.message(airing)
-            sent += try await sendToDevices(message, userID: airing.userID)
-            sent += try await sendToBrowsers(message, userID: airing.userID)
-        }
-        return sent
-    }
-
-    /// One failing device or browser never stops the others.
-    private func sendToDevices(_ message: PushMessage, userID: UserID) async throws -> Int {
-        guard let sender else { return 0 }
-        var sent = 0
-        for device in try await stores.push.devices(userID: userID) {
-            switch try? await sender.send(message, to: device) {
-            case .sent?: sent += 1
-            case .deadToken?: try await stores.push.forget(token: device.token)
-            case nil: continue
-            }
-        }
-        return sent
-    }
-
-    private func sendToBrowsers(_ message: PushMessage, userID: UserID) async throws -> Int {
-        guard let webPush else { return 0 }
-        var sent = 0
-        for subscription in try await stores.push.webPushSubscriptions(userID: userID) {
-            switch try? await webPush.send(message, to: subscription) {
-            case .sent?: sent += 1
-            case .deadToken?: try await stores.push.forgetWebPush(endpoint: subscription.endpoint)
-            case nil: continue
-            }
+            sent += try await push.deliver(Self.message(airing), userID: airing.userID)
         }
         return sent
     }
