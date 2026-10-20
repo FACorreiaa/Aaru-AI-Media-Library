@@ -19,6 +19,8 @@ final class ChannelModel {
     private(set) var firstUnreadID: String?
     /// Who is typing, until when. A typing frame lasts five seconds unless renewed.
     private(set) var typing: [String: (user: SocialUser, until: Date)] = [:]
+    /// Mentions `@aaru` is answering, until when (GRP-011).
+    var thinking: [String: Date] = [:]
     var problem: String?
 
     @ObservationIgnored private let api: Client?
@@ -226,16 +228,15 @@ final class ChannelModel {
             if let id = event.messageId {
                 markDeleted(id)
             }
-        case .typing:
-            if let user = event.user, user.userId != myUserID {
-                startedTyping(user)
-            }
+        case .typing, .agent_thinking:
+            presence(event)
         default:
             break
         }
     }
 
     private func received(_ message: GroupMessage, isNew: Bool) {
+        answered(message)
         if let author = message.author?.userId {
             typing[author] = nil
             // My own message, echoed before the send's response: the server returns my nonce on
@@ -295,6 +296,15 @@ final class ChannelModel {
 }
 
 private extension ChannelModel {
+    /// Who is typing, and whether Aaru is working on an answer.
+    func presence(_ event: RealtimeEvent) {
+        if event._type == .agent_thinking, let mention = event.messageId {
+            noteThinking(mention)
+        } else if let user = event.user, user.userId != myUserID {
+            startedTyping(user)
+        }
+    }
+
     func merge(_ incoming: [GroupMessage]) {
         guard !incoming.isEmpty else { return }
         // One row per id, the newer copy winning, in the order rows arrived (the server's order).

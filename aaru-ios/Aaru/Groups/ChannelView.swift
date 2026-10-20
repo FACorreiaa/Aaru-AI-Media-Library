@@ -57,6 +57,9 @@ struct ChannelView: View {
                     channelStart
                     messageRows
                     outboxRows
+                    if !model.thinking.isEmpty {
+                        AgentThinkingRow()
+                    }
                     Color.clear.frame(height: 8).id(Self.bottomID)
                 }
             }
@@ -110,6 +113,7 @@ struct ChannelView: View {
                     channelName: channel.name,
                     editing: editing,
                     members: (detail?.members ?? []).filter { $0.user.userId != groups.myUserID },
+                    agent: detail?.agent ?? false,
                     spoiler: channel.kind == .title ? $spoiler : nil,
                     focused: $composerFocused,
                     onSend: submit,
@@ -168,76 +172,6 @@ struct ChannelView: View {
 
     private static let bottomID = "bottom"
 
-    @ViewBuilder
-    private var channelStart: some View {
-        if model.reachedStart {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("#\(channel.name)").font(.title2.weight(.semibold))
-                Text(channel.isDefault ? "The start of the group." : "The start of #\(channel.name).")
-                    .foregroundStyle(Color(.muted))
-            }
-            .padding(16)
-        } else if model.hasLoaded {
-            Button(model.loadingOlder ? "Loading…" : "Load earlier messages") {
-                Task { await model.loadOlder() }
-            }
-            .buttonStyle(.borderless)
-            .disabled(model.loadingOlder)
-            .frame(maxWidth: .infinity)
-            .padding(12)
-        } else {
-            ProgressView().frame(maxWidth: .infinity).padding(24)
-        }
-    }
-
-    private var messageRows: some View {
-        ForEach(MessageLine.lines(model.messages, firstUnreadID: model.firstUnreadID)) { line in
-            if let day = line.day {
-                DayDivider(day: day)
-            }
-            if line.isFirstUnread {
-                NewDivider()
-            }
-            MessageRow(line: line, myUserID: groups.myUserID, myHandle: groups.myHandle)
-                .id(line.id)
-                .contextMenu { actions(for: line.message) }
-                .onAppear {
-                    if line.id == model.messages.last?.id {
-                        markRead()
-                    }
-                }
-        }
-    }
-
-    private var outboxRows: some View {
-        ForEach(Array(model.outbox.enumerated()), id: \.element.id) { index, outgoing in
-            OutgoingRow(
-                outgoing: outgoing,
-                startsRun: index == 0 && model.messages.last?.author?.userId != groups.myUserID,
-                sender: myself,
-                onRetry: { Task { await model.retry(outgoing) } },
-                onDiscard: { model.discard(outgoing) }
-            )
-        }
-    }
-
-    @ViewBuilder
-    private func actions(for message: GroupMessage) -> some View {
-        if !message.deleted {
-            Button("Copy text", systemImage: "doc.on.doc") { Clipboard.copy(message.body) }
-            if message.author?.userId == groups.myUserID {
-                Button("Edit", systemImage: "pencil") {
-                    editing = message
-                    draft = message.body
-                    composerFocused = true
-                }
-            }
-            if message.author?.userId == groups.myUserID || canModerate {
-                Button("Delete", systemImage: "trash", role: .destructive) { deleting = message }
-            }
-        }
-    }
-
     private func submit() {
         let text = draft
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -270,6 +204,90 @@ struct ChannelView: View {
             proxy.scrollTo(Self.bottomID, anchor: .bottom)
         } else {
             withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(Self.bottomID, anchor: .bottom) }
+        }
+    }
+}
+
+extension ChannelView {
+    @ViewBuilder
+    private var channelStart: some View {
+        if model.reachedStart {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("#\(channel.name)").font(.title2.weight(.semibold))
+                Text(channel.isDefault ? "The start of the group." : "The start of #\(channel.name).")
+                    .foregroundStyle(Color(.muted))
+            }
+            .padding(16)
+        } else if model.hasLoaded {
+            Button(model.loadingOlder ? "Loading…" : "Load earlier messages") {
+                Task { await model.loadOlder() }
+            }
+            .buttonStyle(.borderless)
+            .disabled(model.loadingOlder)
+            .frame(maxWidth: .infinity)
+            .padding(12)
+        } else {
+            ProgressView().frame(maxWidth: .infinity).padding(24)
+        }
+    }
+
+    private var messageRows: some View {
+        ForEach(MessageLine.lines(model.messages, firstUnreadID: model.firstUnreadID)) { line in
+            if let day = line.day {
+                DayDivider(day: day)
+            }
+            if line.isFirstUnread {
+                NewDivider()
+            }
+            row(line)
+                .id(line.id)
+                .contextMenu { actions(for: line.message) }
+                .onAppear {
+                    if line.id == model.messages.last?.id {
+                        markRead()
+                    }
+                }
+        }
+    }
+
+    @ViewBuilder
+    private func row(_ line: MessageLine) -> some View {
+        if line.message.fromAgent {
+            AgentMessageRow(
+                message: line.message, answering: model.messages.first { $0.id == line.message.replyTo },
+                myHandle: groups.myHandle, api: groups.api
+            )
+        } else {
+            MessageRow(line: line, myUserID: groups.myUserID, myHandle: groups.myHandle)
+        }
+    }
+
+    private var outboxRows: some View {
+        ForEach(Array(model.outbox.enumerated()), id: \.element.id) { index, outgoing in
+            OutgoingRow(
+                outgoing: outgoing,
+                startsRun: index == 0 && model.messages.last?.author?.userId != groups.myUserID,
+                sender: myself,
+                onRetry: { Task { await model.retry(outgoing) } },
+                onDiscard: { model.discard(outgoing) }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func actions(for message: GroupMessage) -> some View {
+        if !message.deleted {
+            Button("Copy text", systemImage: "doc.on.doc") { Clipboard.copy(message.body) }
+            if message.author?.userId == groups.myUserID {
+                Button("Edit", systemImage: "pencil") {
+                    editing = message
+                    draft = message.body
+                    composerFocused = true
+                }
+            }
+            if message.author?.userId == groups.myUserID || canModerate {
+                Button("Delete", systemImage: "trash", role: .destructive) { deleting = message }
+            }
         }
     }
 }

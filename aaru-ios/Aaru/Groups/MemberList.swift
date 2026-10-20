@@ -2,7 +2,7 @@ import AaruAPI
 import SwiftUI
 
 /// Owner, admins, members and pending invites. The owner changes roles and transfers; admins
-/// remove members. Aaru joins this list in M5.
+/// remove members. Aaru leads the list when it answers in this group.
 struct MemberList: View {
     let groups: GroupsModel
     let groupID: String
@@ -25,6 +25,9 @@ struct MemberList: View {
 
     var body: some View {
         List {
+            if detail?.agent == true {
+                Section("Assistant") { AaruMemberRow() }
+            }
             section("Owner", members(.owner))
             section("Admins", members(.admin))
             section("Members", members(.member))

@@ -8,6 +8,8 @@ struct Composer: View {
     let channelName: String
     let editing: GroupMessage?
     let members: [GroupMember]
+    /// `@aaru` answers here, so it leads the suggestions.
+    var agent = false
     /// Title channels only: how the message is marked for spoilers.
     var spoiler: Binding<SpoilerChoice>?
     var focused: FocusState<Bool>.Binding
@@ -25,9 +27,11 @@ struct Composer: View {
         return String(word.dropFirst()).lowercased()
     }
 
-    private var suggestions: [GroupMember] {
+    /// Handles to suggest: Aaru first when it answers here, then members.
+    private var suggestions: [String] {
         guard let prefix = mentionPrefix else { return [] }
-        return Array(members.filter { $0.user.handle.hasPrefix(prefix) }.prefix(5))
+        let agentHandle = agent && "aaru".hasPrefix(prefix) ? ["aaru"] : []
+        return agentHandle + members.map(\.user.handle).filter { $0.hasPrefix(prefix) }.prefix(5)
     }
 
     var body: some View {
@@ -46,11 +50,11 @@ struct Composer: View {
             if !suggestions.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(suggestions, id: \.user.userId) { member in
+                        ForEach(suggestions, id: \.self) { handle in
                             Button {
-                                complete(member.user.handle)
+                                complete(handle)
                             } label: {
-                                Label("@\(member.user.handle)", systemImage: "at")
+                                Label("@\(handle)", systemImage: handle == "aaru" ? "bird" : "at")
                                     .font(.callout)
                             }
                             .buttonStyle(.bordered)

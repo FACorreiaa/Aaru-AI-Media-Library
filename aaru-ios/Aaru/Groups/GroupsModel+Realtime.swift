@@ -31,7 +31,7 @@ extension GroupsModel {
             }
         case .invites_changed:
             await loadInvites()
-        case .typing, .shelf_updated, .watch_updated, .watch_reaction:
+        case .typing, .shelf_updated, .watch_updated, .watch_reaction, .agent_thinking:
             // The open channel's own views follow these.
             break
         }
