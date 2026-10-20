@@ -32,6 +32,34 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-20
+
+- **Discover, Insights and a fuller Home are built before the P2 gate**, by the owner's call,
+  with 0 strangers (flagged; the owner chose). Prompted by the owner's own first run: a search
+  for "Mobland" from Home found nothing and an empty library left Home, Library and Calendar
+  blank. Items: CAT-019, CAT-020, UPN-002, GAM-006c, APP-011…APP-015.
+- **Search defaults to All** (CAT-019): `type=all` is TMDB `search/multi` (films and shows,
+  people dropped) plus AniList, in parallel, merged on the server, each row keeping its kind.
+  **Books stay out of All** (Open Library is the slowest and noisiest provider); All ends with
+  a "Search Books for 'x'" row. A TMDB show is dropped only when `anime_mappings` links it to an
+  AniList hit in the same results. Nothing is merged on a name.
+- **Discover is catalog data, not a recommendations engine** (CAT-020, APP-012): trending,
+  upcoming films, new shows, airing this week, anime this season and next. The same lists for
+  every user, no personalisation, no cross-user data; the server cache holds no user data and
+  "On your shelf" is decided by the client.
+- **Insights (GAM-006c) pulls part of GAM-006b forward**: all time, by kind, a ratings
+  histogram, on `/v1/me/stats`. Genres (CAT-018), networks, badges and the profile placement
+  stay in P5.
+- **Status labels are per kind; stored values do not change** (APP-014). `wishlist |
+  in_progress | finished | dropped` stay the wire and domain words. Films, shows and anime read
+  Plan to watch / Watching / Watched / Dropped; books read Plan to read / Reading / Read /
+  Dropped; with no kind, Planned / In progress / Finished / Dropped.
+- **"Multiple watchlists" are Lists** (APP-015): Lists become a top-level destination and
+  Discover cards get Add to list. There is no starter "Watchlist" list; the `wishlist` status
+  already means that. Shelves stay API-only.
+- **The iPhone tab bar stops at five**: Home · Discover · Library · Calendar · Lists. Insights
+  is not a tab; it opens from Home's stats strip and next to Recap.
+
 ## Decisions recorded 2026-10-19
 
 - **Episodes and Stremio are built before the P2 gate**, by the owner's call, with 0 strangers
@@ -162,6 +190,7 @@ with every provider stubbed.
 | WID-001…004, WID-006 | Built 2026-10-16 (iOS + macOS, one extension): App Group snapshot (`Shared/WidgetSnapshot.swift`) written after every Home load and tick, an hourly `BGAppRefreshTask` on iOS, cleared on sign-out. Up Next (small/medium/large) with an interactive "mark watched" App Intent that calls the same PUT with the shared Keychain token, advances optimistically and restores on failure; Next Episode countdown (small + Lock Screen accessories on iOS; entries at each air time flip to "Out now"); This Week (large/extra large, Monday-first, deep links `aaru://title/{id}`). Not yet seen on a device; no undo ribbon for widget ticks; the large Up Next has no progress bar (the snapshot has no episode totals). WID-005 (Live Activity) is next. |
 | WID-005 | Built 2026-10-19 (iOS only, client-side; no server change): "Start watching" from an aired episode's context menu in title detail and from Home's Continue watching card starts a `NowWatchingAttributes` Live Activity (one at a time; poster downsampled into the App Group). Lock Screen + Dynamic Island: poster, `S1 · E8 · Name`, progress bar, "Ends at" ↔ "Nm left" via `ToggleEndTimeIntent`, "Mark watched" via `MarkNowWatchingIntent` (same PUT and widget path as the Up Next check). Stale after end + 30 min ("Did you finish?"), ended on app foreground and in the background refresh; ticking that episode anywhere ends it with a brief "Watched". Started by check-in only; scrobble start is P3. Not yet run on a device. |
 | APP-010 + catch-up month | Built 2026-10-15 on iPhone, iPad, Mac and web: Calendar destination with Week (CAT grid / iPhone day pager) and Month (Stremio-style posters + agenda). Server adds `backdropUrl`, `network`, `airTimeKnown`, `episodeOverview`; range up to 42 days. Checked with sample data only. |
+| CAT-019, CAT-020, UPN-002, GAM-006c, APP-014 (server) | Built 2026-10-20 on `feat/discover-insights`, tests against stubs only: `type=all` search, `GET /v1/discover` with its 6 h user-free cache, Up Next `counts` + `unfinished`, `/v1/me/stats?span=all` with `byKind` and the ratings distribution, per-kind labels in journal summaries and the Stremio catalog name. Clients (APP-011…APP-015: Discover, Insights, Home additions, Lists tab) are being built. |
 
 **P1 gate** (works end to end against the production API on `maat`) is not met until P0's
 deploy steps are done.
@@ -1249,6 +1278,86 @@ the TMDB backdrop with no layout change.
 ### CAT-017 · MyAnimeList fallback search · S · Deferred
 Only if AniList misses titles users actually search for. MAL API v2 reads with the PRV-001
 client ID. Deferred until there is a measured miss rate; Jikan is out (it scrapes MAL).
+
+---
+
+## P2 · Discover, Insights, Home (pulled forward 2026-10-20)
+
+See the 2026-10-20 decisions. No new tables.
+
+### CAT-019 · All-kinds search · S
+**Needs:** CAT-001, CAT-002.
+`GET /v1/search?type=all`: TMDB `search/multi` (movie and tv; person and adult dropped) and
+AniList in parallel, AniList with a short deadline. One provider failing returns the other's
+hits with `incomplete: true`; both failing is a 502. A TMDB show is dropped only when an
+`anime_mappings` row links it to an AniList hit in the same results. Hits carry `releaseDate`.
+
+**Done when:** "Mobland" with `type=all` returns the TMDB show, a mapped anime appears once,
+two same-named titles with no shared id both stay, and Open Library is never called.
+
+### CAT-020 · Discover feed · M
+**Needs:** CAT-001, CAT-002.
+`GET /v1/discover[?section=]`: trending (TMDB `trending/all/week`), upcoming films
+(`discover/movie`, next 60 days), new shows (`discover/tv`, first aired −7…+30 days), airing
+this week (`tv/on_the_air`), anime this season and next (AniList by season, popularity). A
+per-process cache: 6 h TTL, stale-if-error up to 24 h, single-flight. December is WINTER of the
+next year.
+
+**Done when:** a second request within 6 h makes no provider call, the payload holds no user
+data, and one section failing leaves the others served.
+
+### UPN-002 · Library counts and Unfinished business · S
+**Needs:** UPN-001.
+`GET /v1/up-next` gains `counts` (items per status) and `unfinished`: every `dropped` item and
+every `in_progress` item untouched for 30 days, newest change first, never one already in
+Continue watching. Shows carry their next unwatched aired episode.
+
+**Done when:** a dropped show and a 31-day-old book appear, a 29-day-old book does not, and no
+title is in both Continue watching and Unfinished business.
+
+### GAM-006c · Insights · M
+**Needs:** GAM-006a.
+`/v1/me/stats?span=all` (one bucket per year from the first active year), `byKind`, and a
+10-bin ratings `distribution`. A browsable Insights view on iPhone, Mac and web: month, year or
+all time; totals, buckets, by kind, top titles, ratings, longest run. Static, no motion.
+
+**Done when:** all-time totals equal the yearly stats summed, and imported ticks are still left
+out.
+
+### APP-011 · Search defaults to All; Home refreshes after an add · S
+**Needs:** CAT-019.
+Search opens on All on every client, each row labelled with its kind. An add from search shows
+on Home without a manual refresh. On the web, Search opens in place on Home.
+
+**Done when:** searching "Mobland" from Home and adding it puts it in Start watching on iPhone,
+Mac and web without reloading.
+
+### APP-012 · Discover screen · M
+**Needs:** CAT-020.
+Discover on iPhone, Mac and web: rows of posters per section with a kind and date badge,
+"On your shelf" for titles already tracked, else Add (with status) and Add to list. TMDB and
+AniList credits in the footer.
+
+**Done when:** a title can be added, and added to a list, from Discover on all three clients.
+
+### APP-013 · Home stats, counts, Unfinished business, Discover teaser, lists · M
+**Needs:** UPN-002, CAT-020, GAM-006c.
+Home adds a this-month stats strip (opens Insights), status count chips, an Unfinished business
+row, a "New shows" Discover teaser and list chips. The empty state leads to Discover.
+
+**Done when:** a new account's Home shows the Discover teaser instead of a blank page.
+
+### APP-014 · Status labels per kind · S
+Clients and server journal summaries label statuses per kind (see 2026-10-20). Stored values,
+ids and the Stremio catalog ids do not change.
+
+**Done when:** no client shows "Wishlist", and the API still sends `wishlist`.
+
+### APP-015 · Lists as a top-level destination · S
+**Needs:** APP-006.
+Lists is a tab on iPhone and a sidebar entry on iPad and Mac; Home shows list chips.
+
+**Done when:** Lists is one tap from anywhere on iPhone and Mac.
 
 ---
 

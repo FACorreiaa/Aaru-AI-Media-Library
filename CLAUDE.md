@@ -127,7 +127,10 @@ Use these words in code, APIs, and UI:
 
 - **Title** — a movie, show, anime, or book in the catalog
 - **Library item** — a user’s relationship to a title
-- **Status** — consumption only: `wishlist` | `in_progress` | `finished` | `dropped`
+- **Status** — consumption only: `wishlist` | `in_progress` | `finished` | `dropped`. These
+  stored values never change; UI labels are per kind: films, shows and anime read Plan to
+  watch / Watching / Watched / Dropped, books Plan to read / Reading / Read / Dropped, no kind
+  Planned / In progress / Finished / Dropped
 - **Owned** — separate `isOwned` flag; do not overload status
 - **Progress** — episode ticks for TV; page/percentage optional for books
 - **List** — user-curated collection of library items, stored as membership rows
@@ -137,6 +140,8 @@ Use these words in code, APIs, and UI:
 - **Import job** — one run of Trakt or a CSV/list ingest
 - **Capture** — one-shot intake of pasted text, an image, or a URL. It is an *import source*,
   not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never writes unplanned
+- **Discover** — catalog-wide, non-personalised lists (trending, upcoming, new, airing, anime
+  this season). Catalog data like search, never a recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer
 - **Approval** — the user's yes to a plan an agent proposed. Approval happens inside Aaru; no
@@ -180,13 +185,13 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 
 Do not write code for a later phase before the P2 gate, and do not add empty abstractions for it.
 Owner's exceptions are recorded in `BACKLOG.md` decisions (Recap 2026-10-16; Stremio tokens,
-scrobble service and addon 2026-10-19).
+scrobble service and addon 2026-10-19; Discover, Insights and Home stats 2026-10-20).
 
 ## Out of scope (do not add unless asked)
 
 - Two-way sync with any provider, or a conflict engine
 - A documented public API with third-party clients, quotas, and a deprecation policy
-- Recommendations engine
+- Recommendations engine (Discover is not one; see `BACKLOG.md` decisions 2026-10-20)
 - A global or public activity feed; public profile pages indexed by search engines
 - Serializd / SIMKL integrations
 - Music, manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`
