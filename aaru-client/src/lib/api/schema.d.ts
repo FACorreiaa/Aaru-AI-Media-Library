@@ -174,6 +174,41 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/agent/tokens': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The user's live agent tokens (OUT-001), newest first. Secrets are never returned. */
+    get: operations['listAgentTokens']
+    put?: never
+    /** Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once. */
+    post: operations['createAgentToken']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/agent/tokens/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Revoke a token. Its addon stops answering at once. */
+    delete: operations['revokeAgentToken']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/notifications': {
     parameters: {
       query?: never
@@ -692,6 +727,39 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    AgentToken: {
+      /** Format: uuid */
+      id: string
+      name: string
+      /** @enum {string} */
+      kind: 'stremio'
+      scopes: ('library:read' | 'library:write' | 'scrobble:write')[]
+      /** Format: date-time */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Recorded at most once an hour.
+       */
+      lastUsedAt?: string
+    }
+    AgentTokenCreate: {
+      /** @enum {string} */
+      kind: 'stremio'
+      name?: string
+      /** @description Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by default; removing from Stremio's library never deletes anything in Aaru. */
+      allowLibraryWrites?: boolean
+    }
+    AgentTokenCreated: {
+      token: components['schemas']['AgentToken']
+      /** @description Shown once. Anyone holding it, or the install links, can use the token. */
+      secret: string
+      stremio: {
+        manifestUrl: string
+        /** @description The `stremio://` link that opens the Stremio app. */
+        installUrl: string
+        webInstallUrl: string
+      }
+    }
     /** @description The one error shape every route returns. */
     ErrorResponse: {
       /** @description Stable machine-readable code, e.g. `not_found`, `validation_failed`. */
@@ -865,8 +933,14 @@ export interface components {
       season: number
       number: number
       name?: string
+      /** @description The episode's synopsis, when the catalog has one. */
+      overview?: string
+      /** @description A frame from the episode (TMDB, referenced, never hosted). */
+      stillUrl?: string
       /** Format: date-time */
       airsAt?: string
+      /** @description True when `airsAt` is the exact broadcast time; false when only the date is known. */
+      airTimeKnown: boolean
       runtimeMinutes?: number
     }
     Season: {
@@ -1007,6 +1081,8 @@ export interface components {
       undoneAt?: string
       /** Format: uuid */
       undoOf?: string
+      /** @description The connected app that made it (an agent token's name); absent for your own writes. */
+      agentName?: string
     }
     ActionList: {
       items: components['schemas']['Action'][]
@@ -1454,6 +1530,75 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Forgotten. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listAgentTokens: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Live tokens. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            items: components['schemas']['AgentToken'][]
+          }
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createAgentToken: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AgentTokenCreate']
+      }
+    }
+    responses: {
+      /** @description Minted. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AgentTokenCreated']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  revokeAgentToken: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Revoked. */
       204: {
         headers: {
           [name: string]: unknown

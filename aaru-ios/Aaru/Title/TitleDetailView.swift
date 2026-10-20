@@ -1,12 +1,15 @@
 import AaruAPI
 import SwiftUI
 
-/// APP-005: the Title room. Status, rating, notes, owned; for shows, seasons with episode ticks.
+/// APP-005: the Title room. Status, rating, notes, owned; for shows, the season map (A4) and
+/// seasons with episode ticks. Only the season holding the next episode starts expanded.
 struct TitleDetailView: View {
     @State private var model: TitleDetailModel
     @State private var notes = ""
     @State private var page = ""
     @State private var showsListPicker = false
+    @State private var openEpisode: EpisodeKey?
+    @State private var expandedSeasons: Set<Int> = []
     private let lists: ListsModel
 
     init(entry: LibraryEntry, api: Client?, library: LibraryModel, lists: ListsModel) {
@@ -78,6 +81,9 @@ struct TitleDetailView: View {
                 lists: lists
             )
         }
+        .sheet(item: $openEpisode) { key in
+            EpisodeSheet(key: key, model: model)
+        }
         .scrollContentBackground(.hidden)
         .background(Color(.paper))
         .navigationTitle(entry.title.title)
@@ -87,7 +93,7 @@ struct TitleDetailView: View {
             .task {
                 notes = entry.notes ?? ""
                 page = entry.bookProgress?.page.map(String.init) ?? ""
-                await model.load()
+                await load()
             }
     }
 
@@ -131,16 +137,44 @@ struct TitleDetailView: View {
     // MARK: Seasons
 
     @ViewBuilder private var seasons: some View {
-        if let seasons = model.title?.seasons {
-            ForEach(
-                seasons.sorted { ($0.number == 0 ? Int.max : $0.number) < ($1.number == 0 ? Int.max : $1.number) },
-                id: \.number
-            ) { season in
-                SeasonSection(season: season, model: model)
+        if model.title != nil {
+            if !model.orderedSeasons.isEmpty {
+                SeasonMap(model: model) { openEpisode = $0 }
+                ForEach(model.orderedSeasons, id: \.number) { season in
+                    SeasonSection(season: season, model: model, isExpanded: expansion(of: season.number)) {
+                        openEpisode = $0
+                    }
+                }
+            }
+        } else if model.loadFailed {
+            Section {
+                ContentUnavailableView {
+                    Label("Episodes did not load", systemImage: "exclamationmark.arrow.circlepath")
+                } description: {
+                    Text("Aaru could not reach the server.")
+                } actions: {
+                    Button("Retry") { Task { await load() } }
+                        .buttonStyle(.borderedProminent)
+                }
             }
         } else {
             Section { ProgressView().frame(maxWidth: .infinity) }
         }
+    }
+
+    private func expansion(of season: Int) -> Binding<Bool> {
+        Binding(get: { expandedSeasons.contains(season) }, set: { isExpanded in
+            if isExpanded {
+                expandedSeasons.insert(season)
+            } else {
+                expandedSeasons.remove(season)
+            }
+        })
+    }
+
+    private func load() async {
+        await model.load()
+        expandedSeasons = Set(model.nextEpisode.map { [$0.season] } ?? [])
     }
 
     // MARK: Writes
@@ -186,55 +220,55 @@ struct TitleDetailView: View {
     }
 }
 
-/// One season: a header with "Mark watched" and a tick per episode. Unaired episodes cannot be ticked.
+/// One season's episode list, collapsed behind its header. "Mark watched" lives on the season map.
 private struct SeasonSection: View {
     let season: Components.Schemas.Season
     let model: TitleDetailModel
-
-    private var keys: [EpisodeKey] {
-        season.episodes.map { EpisodeKey(season: $0.season, number: $0.number) }
-    }
+    @Binding var isExpanded: Bool
+    let onOpen: (EpisodeKey) -> Void
 
     var body: some View {
         Section {
-            ForEach(season.episodes, id: \.number) { episode in
-                EpisodeRow(episode: episode, model: model)
-            }
-        } header: {
-            HStack {
-                Text(season.number == 0 ? "Specials" : "Season \(season.number)")
-                Spacer()
-                let watched = keys.count(where: model.watched.contains)
-                Text("\(watched) of \(keys.count)")
-                    .foregroundStyle(Color(.muted))
-                if season.number > 0, !model.airedEpisodes(in: season.number).isSubset(of: model.watched) {
-                    Button("Mark watched") { Task { await model.markSeasonWatched(season.number) } }
-                        .font(.footnote.weight(.semibold))
-                        .textCase(nil)
+            if isExpanded {
+                ForEach(season.episodes, id: \.number) { episode in
+                    EpisodeRow(episode: episode, model: model) { onOpen(EpisodeKey(episode)) }
                 }
             }
+        } header: {
+            Button {
+                withAnimation { isExpanded.toggle() }
+            } label: {
+                HStack {
+                    Text(season.number == 0 ? "Specials" : "Season \(season.number)")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
         }
     }
 }
 
+/// The tick ticks; the rest of the row opens the episode sheet. Unaired episodes cannot be ticked.
 private struct EpisodeRow: View {
-    let episode: Components.Schemas.Episode
+    let episode: Episode
     let model: TitleDetailModel
+    let onOpen: () -> Void
 
     private var key: EpisodeKey {
-        EpisodeKey(season: episode.season, number: episode.number)
-    }
-
-    private var hasAired: Bool {
-        (episode.airsAt ?? .distantPast) <= Date()
+        EpisodeKey(episode)
     }
 
     var body: some View {
         let isWatched = model.watched.contains(key)
-        Button {
-            Task { await model.toggle(key) }
-        } label: {
-            HStack(spacing: 12) {
+        HStack(spacing: 12) {
+            Button {
+                Task { await model.toggle(key) }
+            } label: {
                 ZStack {
                     if model.pending.contains(key) {
                         ProgressView().controlSize(.small)
@@ -245,32 +279,51 @@ private struct EpisodeRow: View {
                     }
                 }
                 .frame(width: 26)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(episode.number). \(episode.name ?? "Episode \(episode.number)")")
-                        .foregroundStyle(Color(.ink))
-                        .lineLimit(2)
-                    if let airsAt = episode.airsAt {
-                        Text(hasAired ? airsAt.formatted(date: .abbreviated, time: .omitted)
-                            : "Airs \(airsAt.formatted(date: .abbreviated, time: .shortened))")
-                            .font(.caption)
-                            .foregroundStyle(Color(.muted))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(!model.canToggle(episode))
+            .accessibilityLabel("Episode \(episode.number), \(episode.name ?? "")")
+            .accessibilityValue(isWatched ? "Watched" : "Not watched")
+
+            Button(action: onOpen) {
+                HStack(spacing: 12) {
+                    EpisodeStill(url: episode.stillUrl.flatMap(URL.init(string:)), cornerRadius: 4)
+                        .frame(width: 64)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(episode.number). \(episode.name ?? "Episode \(episode.number)")")
+                            .foregroundStyle(Color(.ink))
+                            .lineLimit(2)
+                        if let airsAt = episode.airsAt {
+                            Text(airDate(airsAt))
+                                .font(.caption)
+                                .foregroundStyle(Color(.muted))
+                        }
                     }
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(episode.name ?? "Episode \(episode.number)") details")
+        }
+        #if os(iOS)
+        .contextMenu {
+            if model.hasAired(episode), !isWatched {
+                Button("Start watching", systemImage: "play.circle") {
+                    Task { await model.startWatching(episode) }
                 }
             }
         }
-        .buttonStyle(.plain)
-        .disabled(!hasAired && !isWatched)
-        #if os(iOS)
-            .contextMenu {
-                if hasAired, !isWatched {
-                    Button("Start watching", systemImage: "play.circle") {
-                        Task { await model.startWatching(episode) }
-                    }
-                }
-            }
         #endif
-            .accessibilityLabel("Episode \(episode.number), \(episode.name ?? "")")
-            .accessibilityValue(isWatched ? "Watched" : "Not watched")
+    }
+
+    /// Aired: the date. Upcoming: "Airs …", with the time only when the source knows it.
+    private func airDate(_ airsAt: Date) -> String {
+        if model.hasAired(episode) {
+            return airsAt.formatted(date: .abbreviated, time: .omitted)
+        }
+        return "Airs \(airsAt.formatted(date: .abbreviated, time: episode.airTimeKnown ? .shortened : .omitted))"
     }
 }
 

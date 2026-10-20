@@ -130,7 +130,7 @@ PostgreSQL. Suggested tables:
 - `users`
 - `auth_identities` (Apple, email)
 - `titles` (unique indexes on each external id where not null)
-- `show_episodes` (title_id, season, episode, optional air time + `airs_at_exact`, optional overview, optional tmdb episode id)
+- `show_episodes` (title_id, season, episode, optional air time + `airs_at_exact`, optional overview, optional still URL (TMDB, referenced), optional tmdb episode id). Title detail returns all of them per episode
 - `library_items` (unique `(user_id, title_id)`)
 - `episode_progress` (unique `(library_item_id, season, episode)`; `watched_at_known` is false
   for ticks an import or an undo wrote, whose `watched_at` is the write, not the watch)
@@ -139,7 +139,8 @@ PostgreSQL. Suggested tables:
 - `import_jobs`, `import_job_events` (optional log lines)
 - `actions` (action journal: one row per mutating library write, with its inverse)
 - `match_aliases` (match ledger: aggregate crosswalk from a source row key to an external id)
-- `agent_tokens` (per-user agent access: hashed secret, scopes, `lastUsedAt`, revocation)
+- `watch_events` (one playback session per user, source and player id: state, position, longest known duration, `title_id` null when unmatched; built 2026-10-20 for Stremio)
+- `agent_tokens` (per-user agent access: `kind` (`stremio` for now), hashed secret, scopes, `lastUsedAt`, revocation)
 - `agent_usage` (model spend per user per day: tokens in and out, cost in cents)
 
 Later-phase tables, listed so nobody invents a parallel shape. None is created before its
@@ -282,7 +283,9 @@ POST   /v1/mcp                            # streamable HTTP, exposes the tool la
 Search hits are catalog projections, not library items. The client calls `POST /library/items` with a `MediaRef` (Aaru title id or provider id + type).
 
 Later-phase route groups, each added with its phase and never before:
-`/v1/scrobble/*` and `/v1/webhooks/{plex|jellyfin}` (3), `/v1/stremio/*` (3), `/v1/social/*`
+`/v1/scrobble/*` and `/v1/webhooks/{plex|jellyfin}` (3), `/v1/agent/tokens` and the Stremio
+addon at `/stremio/{token}/*` (3, pulled forward 2026-10-19; outside `/v1` because the Stremio
+protocol fixes the paths), `/v1/social/*`
 and `/v1/devices/apns` (4), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
 with GAM-006a), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*`, `/v1/rooms/*` (6).
@@ -367,8 +370,8 @@ protocol UserLibraryImporting: Sendable {
 
 Anime is first-class from Phase 1 (CAT-007…009).
 
-- AniList GraphQL is the anime catalog. Reads need no key. Jikan supplies MAL ids where
-  AniList lacks them.
+- AniList GraphQL is the anime catalog. Reads need no key. Jikan is not used (it scrapes MAL);
+  missing MAL ids stay missing until the anime mapping fills them.
 - Every anime title stores `anilist`, `mal`, and `anidb` ids when known, plus `tmdb` when a
   cross-id exists.
 - Matching: exact AniList↔TMDB cross-ids first. Never merge an AniList entry and a TMDB entry
@@ -379,7 +382,13 @@ Anime is first-class from Phase 1 (CAT-007…009).
   is still a movie. TMDB hits are flagged when they are Japanese animation.
 - Community AniList → TMDB mappings live in `anime_mappings` (CAT-009/010). A mapped AniList
   entry resolves to the TMDB show; an unmapped one stays its own AniList-backed title, whose
-  episodes come from AniList's airing schedule (one season per entry).
+  episodes come from AniList's airing schedule (one season per entry), named from AniList's
+  streaming links ("Episode 3 - Name") when it has them, and "Episode N" otherwise.
+- The mappings come from Fribb/anime-lists (MIT), loaded by `aaru --anime-mappings
+  <path|url|default>` (CAT-010) and refreshed monthly by a CronJob. Only a TMDB **TV** id is
+  kept: a film's TMDB movie id would attach it to whichever show shares the number. Anime
+  titles created before a mapping existed keep their AniList episodes; they are found by their
+  AniList id first and are never merged into the TMDB show.
 
 ### Trakt
 
@@ -494,7 +503,11 @@ deprecation policy remains out of scope until there are real users. See `MARKETI
 | `library:read` | `read_library`, `search_titles`, `list_airs` |
 | `library:write` | `apply_library_patch` for a single item; plan proposal for anything larger |
 | `imports:write` | `plan_import`, including capture. Never an apply |
-| `scrobble:write` | `/v1/scrobble/*`, webhooks, and the Stremio addon only (Phase 3). The addon's catalogs (Watchlist, Continue Watching, Calendar) are its only reads |
+| `scrobble:write` | `/v1/scrobble/*`, webhooks, and the Stremio addon's `player` events and `watched` marks (Phase 3). Never an untick, add, or remove |
+
+A Stremio token (`kind = stremio`) gets `library:read` (its catalogs) and `scrobble:write` by
+default. `library:write` is an opt-in at connect time and only lets Stremio's `unwatched` and
+`libraryAdd` events through.
 
 ### Remote approval
 
@@ -637,10 +650,13 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
 - **Webhooks:** `POST /v1/webhooks/plex` (`media.play`, `media.stop`, `media.scrobble`) and
   `/v1/webhooks/jellyfin` translate into the same scrobble calls. Jellyfin `PlaybackStop`
   counts only past the threshold, never on its played flag.
-- **Stremio:** an addon served by `aaru-server` under `/v1/stremio/{token}/manifest.json`. It
-  exposes catalogs (Watchlist, Continue Watching, Calendar) and a configure page that holds the
-  token. It serves no streams. **OPEN:** scrobble capture from Stremio. Addons get no playback
-  events, so Aaru would have to infer them from meta requests (as Simkl does), or skip it.
+- **Stremio:** an addon served by `aaru-server` under `/stremio/{token}/manifest.json`, outside
+  `/v1` because the protocol fixes the paths. It exposes catalogs (Continue watching, Next 7 days,
+  Wishlist), `meta` for titles without an IMDb id, and receives Stremio's `player` and `library`
+  events (stremio-core PR #1070, core-web v0.64, Stremio Web and Stremio 5 desktop). Player events
+  feed the scrobble service; `library` `watched` marks tick episodes; `libraryRemove` is always
+  ignored. The token is minted in Settings. It serves no streams, ever. No subtitles-request
+  inference.
 
 ### Outbound sync
 
@@ -769,12 +785,16 @@ journal and saved queries from Phase 1, so it may be pulled forward after the Ph
 **Gate rule:** no social, gamification, realtime, messaging, or scrobble code is written
 before the Phase 2 gate. That includes WebSocket handlers, follow graphs, and points tables
 added "to save time later". Nullable hooks that already exist (such as `visibility`) are
-the only allowance.
+the only allowance. Exception by the owner's call (2026-10-19): agent tokens for Stremio, the
+scrobble service, and the Stremio addon.
 
 ## Deployment
 
 One backend. API and workers run as one binary at first (`Application` + job consumer
-in-process); split the workers when imports block request latency.
+in-process); split the workers when imports block request latency. Background services in the
+same process: `ImportWorker`, the airing notifier (every 10 minutes) and `CatalogRefreshService`
+(every 5 minutes: up to 40 tracked shows per pass, never-loaded first, then past their CAT-006
+window; an attempt is stamped on `titles.episodes_attempted_at` and not retried for an hour).
 
 ### Infra
 

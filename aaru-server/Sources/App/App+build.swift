@@ -19,13 +19,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         return logger
     }()
 
-    if reader.bool(forKey: "db.migrate") == true {
-        let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
-        logger.info("Running database migrations")
-        try await fluent.migrate()
-        try await fluent.shutdown()
-        exit(0)
-    }
+    try await runOneShotModes(reader: reader, logger: logger)
 
     let config = try AppConfig.load(from: reader)
     let fluent = try await makeFluent(config.postgres, logger: logger)
@@ -42,7 +36,9 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             settings: settings
         )
     }
-    let services = Services.make(stores: stores, catalogs: catalogs, auth: auth, trakt: trakt)
+    let services = Services.make(
+        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, publicBaseURL: config.publicBaseURL
+    )
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -57,9 +53,49 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
                 notifier: AiringNotifier(stores: stores, sender: makePushSender(config.push, logger: logger)),
                 logger: logger
             ),
+            CatalogRefreshService(
+                refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
+                logger: logger
+            ),
         ],
         logger: logger
     )
+}
+
+/// `db.migrate` and `anime.mappings` do their one job and exit without serving; both need only
+/// Postgres settings.
+func runOneShotModes(reader: ConfigReader, logger: Logger) async throws {
+    if reader.bool(forKey: "db.migrate") == true {
+        let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
+        logger.info("Running database migrations")
+        try await fluent.migrate()
+        try await fluent.shutdown()
+        exit(0)
+    }
+    if let source = reader.string(forKey: "anime.mappings") {
+        try await loadAnimeMappings(from: source, reader: reader, logger: logger)
+        exit(0)
+    }
+}
+
+/// CAT-010 · `aaru --anime-mappings <path|url|default>` loads Fribb's anime list into
+/// `anime_mappings` and exits. Needs only Postgres settings, like `db.migrate`.
+func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger) async throws {
+    let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
+    do {
+        let resolved = source == "default" || source.isEmpty ? AnimeMappingLoader.defaultSource : source
+        var transport = AsyncHTTPTransport(client: .shared)
+        transport.maxBodyBytes = 64 * 1024 * 1024
+        let mappings = try await AnimeMappingLoader.parse(AnimeMappingLoader.load(from: resolved, transport: transport))
+        try await Stores.postgres(fluent.db()).animeMappings.upsertMany(mappings)
+        logger.info("Anime mappings loaded", metadata: [
+            "count": "\(mappings.count)", "withTMDB": "\(mappings.count { $0.tmdb != nil })",
+        ])
+        try await fluent.shutdown()
+    } catch {
+        try? await fluent.shutdown()
+        throw error
+    }
 }
 
 /// The APNs sender, or nil (with a notice) when no key is configured or the key does not parse.
@@ -100,7 +136,7 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
 func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
-        LogRequestsMiddleware(.info)
+        RedactedLogRequestsMiddleware(.info)
         ErrorMiddleware()
         AuthMiddleware(sessions: stores.sessions)
         // store request context in TaskLocal; must be last
@@ -117,6 +153,13 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         )
         return Response(status: .found, headers: [.location: next.absoluteString])
     }
+    StremioRoutes(
+        service: StremioService(
+            library: services.library, schedule: services.schedule, catalog: services.catalog,
+            scrobble: services.scrobble
+        ),
+        tokens: services.agentTokens
+    ).register(on: router)
     return router
 }
 

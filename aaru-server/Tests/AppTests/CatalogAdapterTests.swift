@@ -64,7 +64,8 @@ struct CatalogAdapterTests {
             """#,
             "/tv/1399/season/1": #"""
             {"episodes":[{"id":1,"season_number":1,"episode_number":1,"name":"Winter Is Coming",
-              "air_date":"2011-04-17","runtime":62}]}
+              "air_date":"2011-04-17","runtime":62,"overview":"Lord Stark is troubled.",
+              "still_path":"/still.jpg"}]}
             """#,
             "/tv/1399/season/2": #"""
             {"episodes":[{"id":2,"season_number":2,"episode_number":1,"name":"The North Remembers",
@@ -76,6 +77,9 @@ struct CatalogAdapterTests {
         #expect(result.status == .ended)
         #expect(result.episodes.map { "\($0.season)x\($0.episode)" } == ["1x1", "2x1"])
         #expect(result.episodes[1].runtimeMinutes == 60, "falls back to the show's episode run time")
+        #expect(result.episodes[0].overview == "Lord Stark is troubled.")
+        #expect(result.episodes[0].stillURL?.absoluteString == "https://image.tmdb.org/t/p/w300/still.jpg")
+        #expect(result.episodes[1].stillURL == nil)
     }
 
     @Test("Open Library search normalizes ISBNs to ISBN-13 and keeps the work id")
@@ -126,12 +130,15 @@ struct CatalogAdapterTests {
           "title":{"romaji":"X","english":null,"native":null},"startDate":{"year":2026},
           "coverImage":null,"description":null,
           "airingSchedule":{"nodes":[{"episode":1,"airingAt":1790000000},{"episode":2,"airingAt":1790604800}]},
-          "nextAiringEpisode":{"episode":3,"airingAt":1791209600}}}}
+          "nextAiringEpisode":{"episode":3,"airingAt":1791209600},
+          "streamingEpisodes":[{"title":"Episode 2 - The Second One"},{"title":"Episode 1 - Pilot"},
+            {"title":"Episode 9 - Out of Range"},{"title":"Recap Special"}]}}}
         """#])
         let result = try #require(try await AniListCatalog(client: client(stub, "anilist"))
             .episodes(ids: ExternalIDs(anilist: "1")))
         #expect(result.status == .returning)
         #expect(result.episodes.map(\.episode) == [1, 2, 3])
         #expect(result.episodes.allSatisfy { $0.season == 1 && $0.airsAt != nil })
+        #expect(result.episodes.map(\.name) == ["Pilot", "The Second One", nil], "named from streaming links")
     }
 }

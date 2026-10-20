@@ -12,7 +12,7 @@ struct PostgresLibraryStore: LibraryStore {
     func apply(
         _ op: LibraryOp,
         userID: UserID,
-        actor: Actor,
+        caller: Caller,
         kind: String,
         summary: String
     ) async throws -> ActionRecord {
@@ -24,7 +24,8 @@ struct PostgresLibraryStore: LibraryStore {
                     try await Self.markImportedTicks(op.itemIDs, sql: sql)
                 }
                 let entry = JournalEntry(
-                    inverse: inverse, itemIDs: op.itemIDs, actor: actor, kind: kind, summary: summary, undoOf: nil
+                    inverse: inverse, itemIDs: op.itemIDs, actor: caller.actor, kind: kind, summary: summary,
+                    undoOf: nil, agentTokenID: caller.agentTokenID
                 )
                 return try await Self.journal(entry, userID: userID, sql: sql)
             }
@@ -227,6 +228,7 @@ struct PostgresLibraryStore: LibraryStore {
         var kind: String
         var summary: String
         var undoOf: UUID?
+        var agentTokenID: UUID?
     }
 
     private static func journal(
@@ -236,10 +238,10 @@ struct PostgresLibraryStore: LibraryStore {
     ) async throws -> ActionRecord {
         let id = UUID()
         let row = try await sql.raw("""
-        INSERT INTO actions (id, user_id, actor, kind, summary, item_ids, inverse, undo_of)
+        INSERT INTO actions (id, user_id, actor, kind, summary, item_ids, inverse, undo_of, agent_token_id)
         VALUES (\(bind: id), \(bind: userID.rawValue), \(bind: entry.actor.rawValue), \(bind: entry.kind),
             \(bind: entry.summary), \(bind: entry.itemIDs.map(\.rawValue)), \(bind: entry.inverse),
-            \(bind: entry.undoOf))
+            \(bind: entry.undoOf), \(bind: entry.agentTokenID))
         RETURNING created_at
         """).first(decoding: CreatedRow.self, keyDecodingStrategy: .convertFromSnakeCase)
         return ActionRecord(

@@ -53,6 +53,24 @@ enum Actor: String, Codable, Sendable {
     case externalAgent = "external_agent"
 }
 
+/// Who made a write and, for an outside caller, through which agent token (OUT-002). Its
+/// name prefixes the journal summary, so the ribbon says "Stremio: marked S1E2 … watched".
+struct Caller: Sendable, Equatable {
+    var actor: Actor
+    var agentTokenID: UUID?
+    var agentName: String?
+
+    static let user = Caller(actor: .user)
+
+    static func agent(_ token: AgentToken) -> Caller {
+        Caller(actor: .externalAgent, agentTokenID: token.id, agentName: token.name)
+    }
+
+    func summary(_ text: String) -> String {
+        agentName.map { "\($0): \(text.prefix(1).lowercased())\(text.dropFirst())" } ?? text
+    }
+}
+
 /// One row of the action journal, as the ribbon reads it.
 struct ActionRecord: Sendable, Equatable {
     var id: UUID
@@ -63,6 +81,8 @@ struct ActionRecord: Sendable, Equatable {
     var createdAt: Date
     var undoneAt: Date?
     var undoOf: UUID?
+    /// The agent token that made it, by its name at read time; nil for the user's own writes.
+    var agentName: String?
 }
 
 /// An action cannot be undone (twice, or its target changed out from under it).

@@ -218,6 +218,13 @@ struct AuthFlowTests {
                 userID: userID
             )
             try await stores.importJobs.insert(ImportJob(userID: userID, source: .trakt))
+            try await stores.agentTokens.create(
+                AgentToken(
+                    id: UUID(), name: "Stremio", kind: .stremio, scopes: [.libraryRead],
+                    createdAt: Date(), lastUsedAt: nil
+                ),
+                tokenHash: OpaqueToken.hash(UUID().uuidString), userID: userID
+            )
 
             try await client.execute(
                 uri: "/v1/me",

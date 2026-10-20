@@ -88,6 +88,14 @@ One title is a room, not a settings form.
 The agent is allowed to drop extra cards into the room: cast you actually care about,
 "you left off S02E04", "book pairings."
 
+**Built 2026-10-20 (iPhone, iPad, Mac, web):** the season map is a grid with one cell per
+episode in four states (watched, up next, aired, not aired yet); a tap ticks through the same
+optimistic write as the list. Below it each season's list shows a still, the name, the air date
+(with a time only when the catalog knows it) and a synopsis line. Tapping an episode opens the
+**episode sheet**: still, `S1 · E8`, name, air date, runtime, synopsis, the tick, and
+previous/next. Only the season holding the next episode starts open. A title that fails to load
+says so with a retry, never an endless spinner.
+
 ## 5. Tonight
 
 A nightly composed view. Not recommendations-as-a-product — a **short plan**.
@@ -232,6 +240,13 @@ the same cells.
 `NowPlayingCard`: art, `S1 · E8 · Episode`, a progress bar, "41m left", "Ends at 1:20 PM".
 Tapping the bar flips between time left and end time. Set by a manual check-in in Phase 2 and
 by scrobbles from Plex, Jellyfin or Stremio in Phase 3. The same data drives the Live Activity.
+
+**Stremio, built 2026-10-20.** Settings has a Stremio section on web, iPhone and Mac: connect,
+then the install links (Open in Stremio, Install on Stremio Web, Copy) show once, because they
+carry the secret. Live links list their last use and a Revoke. Writing back to the library
+beyond "watched" is an opt-in at connect time. Stremio's events land as journaled actions
+named "Stremio: …", so the undo ribbon and history treat them like a tap. The card itself is
+not built yet; `watch_events` holds what it will read.
 
 ## 16. Widgets (Phase 2)
 

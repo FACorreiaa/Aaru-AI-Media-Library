@@ -9,6 +9,7 @@ import { For, Show, createSignal } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
+import { StremioSection } from '../components/StremioSection'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
 import { readImportFile } from '../lib/imports/file'
@@ -26,8 +27,9 @@ import {
   linkGoogle,
   signOut,
 } from '../lib/session/session'
+import { listStremio } from '../lib/stremio/server'
 
-// APP-007 on the web: account, imports, and the way out.
+// APP-007 on the web: account, imports, connected apps, and the way out.
 const providerNames = {
   apple: 'Apple',
   email: 'Email',
@@ -40,12 +42,18 @@ export const Route = createFileRoute('/app_/settings')({
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
   },
   loader: async () => {
-    const [account, imports, signIn] = await Promise.all([
+    const [account, imports, signIn, stremio] = await Promise.all([
       getAccount(),
       listImports(),
       getSignInConfig(),
+      listStremio(),
     ])
-    return { account, imports, googleClientId: signIn.googleClientId }
+    return {
+      account,
+      imports,
+      stremio,
+      googleClientId: signIn.googleClientId,
+    }
   },
   component: Settings,
 })
@@ -308,6 +316,8 @@ function Settings() {
             </ul>
           </section>
         </Show>
+
+        <StremioSection links={loaded().stremio} />
 
         <section class="mt-10">
           <h2 class="font-display text-2xl font-medium">Recaps</h2>

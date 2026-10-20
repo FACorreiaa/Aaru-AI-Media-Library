@@ -9,6 +9,8 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing {
     static let imageBase = "https://image.tmdb.org/t/p/w500"
     /// Backdrops render as wide banners, never full-screen: w780 is enough at 3x.
     static let backdropBase = "https://image.tmdb.org/t/p/w780"
+    /// Episode stills render as row thumbnails and in the episode sheet: w300 covers both.
+    static let stillBase = "https://image.tmdb.org/t/p/w300"
     /// Search results are enriched with IMDb ids up to this many hits.
     static let enrichLimit = 10
 
@@ -97,7 +99,8 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing {
                             airsAt: Date.catalogDay(episode.airDate),
                             runtimeMinutes: episode.runtime ?? show.episodeRunTime?.first,
                             tmdbEpisodeID: episode.id.map(String.init),
-                            overview: episode.overview?.nilIfBlank
+                            overview: episode.overview?.nilIfBlank,
+                            stillURL: episode.stillPath.flatMap { URL(string: TMDBCatalog.stillBase + $0) }
                         )
                     }
                 }
@@ -166,6 +169,7 @@ private struct SeasonBody: Decodable {
         let overview: String?
         let airDate: String?
         let runtime: Int?
+        let stillPath: String?
     }
 
     let episodes: [Episode]

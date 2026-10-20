@@ -47,7 +47,12 @@ struct LibraryService: Sendable {
 
     /// Adds a title, or returns the existing item: posting the same `MediaRef` twice is
     /// idempotent, never a duplicate and never a 500 from the unique index.
-    func add(_ ref: MediaRef, status: LibraryStatus?, userID: UserID) async throws -> LibraryEntry {
+    func add(
+        _ ref: MediaRef,
+        status: LibraryStatus?,
+        userID: UserID,
+        by caller: Caller = .user
+    ) async throws -> LibraryEntry {
         let title = try await resolver.resolve(ref)
         if let existing = try await stores.library.item(userID: userID, titleID: title.id) {
             return try await entry(existing.id, userID: userID)
@@ -62,8 +67,8 @@ struct LibraryService: Sendable {
         )
         do {
             try await stores.library.apply(
-                .insertItem(snapshot), userID: userID, actor: .user, kind: "add",
-                summary: "Added \(title.title) to \(status.label)"
+                .insertItem(snapshot), userID: userID, caller: caller, kind: "add",
+                summary: caller.summary("Added \(title.title) to \(status.label)")
             )
             if title.type == .show {
                 // Fetch episodes now so the calendar and Up Next have them. Best effort:
@@ -106,7 +111,12 @@ struct LibraryService: Sendable {
         return (page.entries, page.next?.token)
     }
 
-    func patch(_ id: LibraryItemID, userID: UserID, patch: ItemPatch) async throws -> LibraryEntry {
+    func patch(
+        _ id: LibraryItemID,
+        userID: UserID,
+        patch: ItemPatch,
+        by caller: Caller = .user
+    ) async throws -> LibraryEntry {
         let current = try await entry(id, userID: userID)
         var fields = current.fields
         if let status = patch.status, status != fields.status {
@@ -129,8 +139,8 @@ struct LibraryService: Sendable {
         try applyBookProgress(patch, to: &fields, type: current.title.type)
         guard fields != current.fields else { return current }
         try await stores.library.apply(
-            .setFields(id, fields), userID: userID, actor: .user, kind: "update",
-            summary: Self.updateSummary(current: current, fields: fields)
+            .setFields(id, fields), userID: userID, caller: caller, kind: "update",
+            summary: caller.summary(Self.updateSummary(current: current, fields: fields))
         )
         return try await entry(id, userID: userID)
     }
@@ -167,7 +177,8 @@ struct LibraryService: Sendable {
         _ id: LibraryItemID,
         userID: UserID,
         key: EpisodeKey,
-        watched: Bool
+        watched: Bool,
+        by caller: Caller = .user
     ) async throws -> LibraryEntry {
         let show = try await showContext(id, userID: userID)
         guard show.episodes.contains(where: { $0.season == key.season && $0.episode == key.episode }) else {
@@ -175,8 +186,35 @@ struct LibraryService: Sendable {
         }
         let verb = watched ? "watched" : "unwatched"
         return try await applyProgress(
-            watch: watched ? [key] : [], unwatch: watched ? [] : [key], show: show, userID: userID,
-            journal: ("episode", "Marked \(key) of \(show.entry.title.title) \(verb)")
+            watch: watched ? [key] : [], unwatch: watched ? [] : [key], show: show,
+            journal: ("episode", caller.summary("Marked \(key) of \(show.entry.title.title) \(verb)")), caller: caller
+        )
+    }
+
+    /// Ticks or unticks several episodes of one show as one action, for outside callers
+    /// (Stremio's player and library events). Episodes the show does not have are skipped, and
+    /// episodes already in the asked state are left alone; with nothing left to change there is
+    /// no write and no journal row, so a repeated event is a no-op. Returns nil when nothing changed.
+    @discardableResult
+    func setEpisodes(
+        _ id: LibraryItemID,
+        userID: UserID,
+        keys: [EpisodeKey],
+        watched: Bool,
+        by caller: Caller
+    ) async throws -> LibraryEntry? {
+        let show = try await showContext(id, userID: userID)
+        let known = Set(show.episodes.compactMap { try? EpisodeKey(season: $0.season, episode: $0.episode) })
+        let current = try await stores.library.watched(itemID: id)
+        let changing = Array(Set(keys)).filter { known.contains($0) && current.contains($0) != watched }
+            .sorted { ($0.season, $0.episode) < ($1.season, $1.episode) }
+        guard !changing.isEmpty else { return nil }
+        let verb = watched ? "watched" : "unwatched"
+        let what = changing.count == 1 ? "\(changing[0])" : "\(changing.count) episodes"
+        return try await applyProgress(
+            watch: watched ? changing : [], unwatch: watched ? [] : changing, show: show,
+            journal: ("episode", caller.summary("Marked \(what) of \(show.entry.title.title) \(verb)")),
+            caller: caller
         )
     }
 
@@ -189,7 +227,7 @@ struct LibraryService: Sendable {
             .compactMap { try? EpisodeKey(season: $0.season, episode: $0.episode) }
         let summary = "Marked season \(season) of \(show.entry.title.title) watched (\(aired.count) episodes)"
         return try await applyProgress(
-            watch: aired, unwatch: [], show: show, userID: userID, journal: ("season", summary)
+            watch: aired, unwatch: [], show: show, journal: ("season", summary), caller: .user
         )
     }
 
@@ -200,10 +238,11 @@ struct LibraryService: Sendable {
         watch: [EpisodeKey],
         unwatch: [EpisodeKey],
         show: ShowContext,
-        userID: UserID,
-        journal: (kind: String, summary: String)
+        journal: (kind: String, summary: String),
+        caller: Caller
     ) async throws -> LibraryEntry {
         let current = show.entry
+        let userID = current.item.userID
         let id = current.item.id
         let titleStatus = show.status
         let op = LibraryOp.setEpisodes(id, watch: watch, unwatch: unwatch)
@@ -228,7 +267,7 @@ struct LibraryService: Sendable {
         }
         let ops: [LibraryOp] = fields == current.fields ? [op] : [op, .setFields(id, fields)]
         try await stores.library.apply(
-            .batch(ops), userID: userID, actor: .user, kind: journal.kind, summary: journal.summary
+            .batch(ops), userID: userID, caller: caller, kind: journal.kind, summary: journal.summary
         )
         return try await entry(id, userID: userID)
     }
@@ -253,6 +292,17 @@ struct LibraryService: Sendable {
         return titleStatus == .ended || titleStatus == .canceled
     }
 
+    func actions(userID: UserID, limit: Int) async throws -> [ActionRecord] {
+        try await stores.library.actions(userID: userID, limit: limit)
+    }
+
+    func undo(_ actionID: UUID, userID: UserID) async throws -> ActionRecord {
+        try await stores.library.undo(actionID: actionID, userID: userID)
+    }
+}
+
+/// Field validation and journal wording for `patch`.
+extension LibraryService {
     /// PROG-004: page or percent, never both; each validated by `AaruCore.BookProgress`.
     private func applyBookProgress(_ patch: ItemPatch, to fields: inout ItemFields, type: MediaType) throws {
         let touchesBook = patch.bookPage != nil || patch.bookPercent != nil || patch.clear.contains(.bookProgress)
@@ -301,14 +351,6 @@ struct LibraryService: Sendable {
     }
 
     // MARK: Journal (AUD-002)
-
-    func actions(userID: UserID, limit: Int) async throws -> [ActionRecord] {
-        try await stores.library.actions(userID: userID, limit: limit)
-    }
-
-    func undo(_ actionID: UUID, userID: UserID) async throws -> ActionRecord {
-        try await stores.library.undo(actionID: actionID, userID: userID)
-    }
 }
 
 extension LibraryEntry {

@@ -1,8 +1,15 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createSignal } from 'solid-js'
+import {
+  Link,
+  createFileRoute,
+  redirect,
+  useRouter,
+} from '@tanstack/solid-router'
+import { For, Show, createMemo, createSignal } from 'solid-js'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { Wordmark } from '../components/Brand'
+import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
+import { SeasonMap } from '../components/SeasonMap'
 import { KINDS, STATUSES, kindOf } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
 import { getSession } from '../lib/session/session'
@@ -13,13 +20,16 @@ import {
   updateItem,
 } from '../lib/title/server'
 import {
+  airLabel,
   airedKeys,
   episodeKey,
   hasAired,
+  neighbours,
+  nextEpisode,
   nextRating,
   orderedSeasons,
 } from '../lib/title/model'
-import type { LibraryItemPatch, Season } from '../lib/title/model'
+import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
 
 // APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`.
 export const Route = createFileRoute('/app_/title/$id')({
@@ -39,6 +49,7 @@ const watchedSet = (entry: LibraryEntry) =>
 
 function TitleRoom() {
   const page = Route.useLoaderData()
+  const router = useRouter()
   const title = () => page().title ?? undefined
   const [entry, setEntry] = createSignal<LibraryEntry>(page().entry)
   const [watched, setWatched] = createSignal(watchedSet(page().entry))
@@ -50,7 +61,23 @@ function TitleRoom() {
     page().entry.bookProgress?.page?.toString() ?? '',
   )
 
+  const [opened, setOpened] = createSignal<Episode | null>(null)
+  const [retrying, setRetrying] = createSignal(false)
+
   const kind = () => kindOf(entry().title.type, entry().title.isAnime)
+  const seasons = createMemo(() => orderedSeasons(title()))
+  const upNext = createMemo(() => nextEpisode(title(), watched()))
+  /** The season to open first: the one holding the next episode, else the first. */
+  const openSeason = () => upNext()?.season ?? seasons()[0]?.number
+
+  async function retry() {
+    setRetrying(true)
+    try {
+      await router.invalidate()
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   /** The server's answer is the truth: it replaces the optimistic state. */
   function commit(response: LibraryEntry) {
@@ -329,22 +356,72 @@ function TitleRoom() {
         </Show>
 
         <Show when={entry().title.type === 'show'}>
-          <section class="mt-10 flex flex-col gap-4">
-            <For each={orderedSeasons(title())}>
-              {(season) => (
-                <SeasonBlock
-                  season={season}
+          <Show when={page().titleError}>
+            {(message) => (
+              <section class="mt-10 flex items-center gap-4 rounded-[20px] bg-surface p-5">
+                <p class="text-sm text-muted">{message()}</p>
+                <button
+                  type="button"
+                  class="ml-auto rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold disabled:opacity-40"
+                  disabled={retrying()}
+                  onClick={() => void retry()}
+                >
+                  Try again
+                </button>
+              </section>
+            )}
+          </Show>
+          <Show when={title() && seasons().length === 0}>
+            <p class="mt-10 text-sm text-muted">
+              No episodes are listed for this show yet.
+            </p>
+          </Show>
+          <Show when={seasons().length > 0}>
+            <section class="mt-10">
+              <h2 class="font-display text-xl font-medium">Episodes</h2>
+              <div class="mt-3">
+                <SeasonMap
+                  seasons={seasons()}
                   watched={watched()}
                   pending={pending()}
-                  canMarkAll={airedKeys(title(), season.number).some(
-                    (k) => !watched().has(k),
-                  )}
+                  next={upNext()}
                   onToggle={toggle}
-                  onMarkAll={markAll}
                 />
-              )}
-            </For>
-          </section>
+              </div>
+            </section>
+            <section class="mt-4 flex flex-col gap-4">
+              <For each={seasons()}>
+                {(season) => (
+                  <SeasonBlock
+                    season={season}
+                    open={season.number === openSeason()}
+                    watched={watched()}
+                    pending={pending()}
+                    canMarkAll={airedKeys(title(), season.number).some(
+                      (k) => !watched().has(k),
+                    )}
+                    onToggle={toggle}
+                    onMarkAll={markAll}
+                    onOpen={setOpened}
+                  />
+                )}
+              </For>
+            </section>
+          </Show>
+        </Show>
+        <Show when={opened()}>
+          {(episode) => (
+            <EpisodeSheet
+              showTitle={entry().title.title}
+              episode={episode()}
+              {...neighbours(title(), episode().season, episode().number)}
+              watched={watched()}
+              pending={pending()}
+              onToggle={toggle}
+              onSelect={setOpened}
+              onClose={() => setOpened(null)}
+            />
+          )}
         </Show>
         <Show when={picking()}>
           <AddToListDialog
@@ -360,21 +437,20 @@ function TitleRoom() {
 
 function SeasonBlock(props: {
   season: Season
+  open: boolean
   watched: Set<string>
   pending: Set<string>
   canMarkAll: boolean
   onToggle: (season: number, number: number) => void
   onMarkAll: (season: number) => void
+  onOpen: (episode: Episode) => void
 }) {
   const count = () =>
     props.season.episodes.filter((e) =>
       props.watched.has(episodeKey(e.season, e.number)),
     ).length
   return (
-    <details
-      class="group rounded-[20px] bg-surface"
-      open={props.season.number === 1}
-    >
+    <details class="group rounded-[20px] bg-surface" open={props.open}>
       <summary class="flex cursor-pointer list-none items-center gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
         <span class="font-medium">
           {props.season.number === 0
@@ -404,44 +480,63 @@ function SeasonBlock(props: {
             const isWatched = () => props.watched.has(key())
             const aired = hasAired(episode)
             return (
-              <li>
-                <label
-                  class="flex cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2 hover:bg-paper/60"
-                  classList={{
-                    'cursor-not-allowed opacity-60': !aired && !isWatched(),
-                  }}
+              <li
+                class="flex items-center gap-3 rounded-[12px] px-3 py-2 hover:bg-paper/60"
+                classList={{ 'opacity-60': !aired && !isWatched() }}
+              >
+                <input
+                  type="checkbox"
+                  class="h-5 w-5 shrink-0 rounded-full text-accent focus:ring-accent disabled:cursor-not-allowed"
+                  aria-label={`Episode ${episode.number} watched`}
+                  checked={isWatched()}
+                  disabled={
+                    (!aired && !isWatched()) || props.pending.has(key())
+                  }
+                  onChange={() =>
+                    props.onToggle(episode.season, episode.number)
+                  }
+                />
+                <button
+                  type="button"
+                  class="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  onClick={() => props.onOpen(episode)}
                 >
-                  <input
-                    type="checkbox"
-                    class="h-5 w-5 rounded-full text-accent focus:ring-accent"
-                    checked={isWatched()}
-                    disabled={
-                      (!aired && !isWatched()) || props.pending.has(key())
+                  <Show
+                    when={episode.stillUrl}
+                    fallback={
+                      <span
+                        class="hidden aspect-video w-20 shrink-0 rounded-[8px] bg-paper sm:block"
+                        aria-hidden="true"
+                      />
                     }
-                    onChange={() =>
-                      props.onToggle(episode.season, episode.number)
-                    }
-                  />
+                  >
+                    {(url) => (
+                      <img
+                        src={url()}
+                        alt=""
+                        loading="lazy"
+                        class="aspect-video w-20 shrink-0 rounded-[8px] bg-paper object-cover"
+                      />
+                    )}
+                  </Show>
                   <span class="min-w-0 flex-1">
                     <span class="line-clamp-1">
                       {episode.number}.{' '}
                       {episode.name ?? `Episode ${episode.number}`}
                     </span>
-                    <Show when={episode.airsAt}>
+                    <Show when={airLabel(episode)}>
                       <span class="block text-xs text-muted">
                         {aired ? '' : 'Airs '}
-                        {new Date(episode.airsAt!).toLocaleDateString(
-                          undefined,
-                          {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          },
-                        )}
+                        {airLabel(episode)}
+                      </span>
+                    </Show>
+                    <Show when={episode.overview}>
+                      <span class="mt-0.5 line-clamp-1 block text-xs text-muted">
+                        {episode.overview}
                       </span>
                     </Show>
                   </span>
-                </label>
+                </button>
               </li>
             )
           }}

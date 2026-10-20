@@ -35,6 +35,7 @@ struct SettingsView: View {
                 if !imports.jobs.isEmpty {
                     jobsSection
                 }
+                StremioSection(api: api) { imports.problem = $0 }
                 ExportDataSection(api: api) { imports.problem = $0 }
                 Section {
                     NavigationLink("About Aaru") { AboutView() }

@@ -28,6 +28,12 @@ export const CREDITS: Credit[] = [
   },
   { lead: 'Anime data from ', name: 'AniList', href: 'https://anilist.co' },
   {
+    lead: 'Anime id mappings from ',
+    name: 'Fribb/anime-lists',
+    href: 'https://github.com/Fribb/anime-lists',
+    licence: { name: 'MIT', href: 'https://opensource.org/license/mit' },
+  },
+  {
     lead: 'Book data from ',
     name: 'Open Library',
     href: 'https://openlibrary.org',
