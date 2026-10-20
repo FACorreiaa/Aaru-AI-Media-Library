@@ -284,12 +284,52 @@ ship before the Phase 2 gate.
   mean score, genre and format breakdown. The Year in Review shipped early as the Recap (below).
 - **Badges** (`BadgeShelf`, Phase 5) — discovery badges and milestone badges, tiered.
 - **Leaderboard** (Phase 5) — friends only, weekly, opt-in. Never global.
-- **Room** (`RoomPanel`, Phase 6) — watch together: countdown to "press play", who is in,
-  reactions, drift from scrobbles ("Ana is 2 min ahead"), shared check-off at the end.
+- **Watch channel** (`WatchPanel`, with groups since 2026-10-20; was the Phase 6 Room) — watch
+  together inside a group: countdown to "press play", who is in, reactions, drift from
+  scrobbles ("Ana is 2 min ahead"), and "Mark watched for me" at the end.
 - **Conversations** (`ConversationView`, Phase 6) — end-to-end encrypted DMs. A lock and a
   safety-number check live in the header, not in a settings screen.
 
 The feeling to protect: **social is a room you invite people into, not a feed you are fed.**
+
+### Groups (GRP-004/005, pulled forward 2026-10-20)
+
+A group is a small, private place where friends talk about what they watch and read. It is
+shaped like a Discord server, with Aaru's calm: a few people, a few channels, and titles as the
+thing being talked about.
+
+**Layout.**
+- **Desktop web and Mac:** four columns. `GroupRail` (monogram circles, an unread dot, a
+  mention count, `+` to create), `ChannelList` (group name with its menu: invite, settings,
+  leave; channels grouped by kind), the channel (`MessageList` with its composer), and
+  `MemberList`, which folds away.
+- **Tablet web and iPad:** the rail and channels share one sidebar or drawer.
+- **iPhone and phone web:** a stack, groups → channels → chat. Members open as a sheet from the
+  header.
+
+**The channel.**
+- The header carries the name, the topic and a quiet "Not end-to-end" chip. Never hide it.
+- Messages are flat rows, not bubbles. A run by one author within five minutes shares one
+  name and monogram. Days get dividers, and a thin accent line marks where you stopped reading.
+  Scroll stays pinned to the bottom, and "Jump to present" appears when you scroll up.
+- Each kind has its own header. `title` shows the `TitleCard` and, for members who opted in,
+  where they are. `shelf` shows the shared list. `watch` shows the `WatchPanel`. `text` shows
+  only the topic.
+- A message the reader is not caught up to sits under a `SpoilerVeil`: blurred, with "S2 · E5"
+  and a tap to reveal. It never shows a spoiler by default.
+
+**Composer.** One box, auto-growing. Enter sends and Shift+Enter adds a line. `@` suggests
+members, with Aaru first, wearing the medallion. A sent message appears at once, dimmed until
+the server confirms, and gets a retry if it fails.
+
+**Aaru in a group.** Aaru speaks only when tagged, as a member row with the medallion. While
+it works, the heron breathes in its row ("Aaru is thinking…"), never bouncing dots. Its answer
+is short text plus catalog cards (`TitleCard`, `CalendarRow`, `Shelf`). Every button on a card
+acts for whoever taps it. Aaru never adds anything for the group on its own.
+
+**Empty and first run.** No groups yet: one sentence, "Make a place to talk with friends,"
+plus Create, plus any pending invites. A new group opens on `#general` with an invite prompt
+in the channel.
 
 ### Recap (`RecapStory`, GAM-006a, pulled forward 2026-10-16)
 
@@ -336,7 +376,7 @@ Build these as SwiftUI views. The model only returns their names and props.
 | `BadgeShelf` | Earned badges (Phase 5) |
 | `StatsPanel` | Profile numbers (Phase 5) |
 | `RecapStory` | A month or year as a story (GAM-006a) |
-| `RoomPanel` | Watch-together room (Phase 6) |
+| `WatchPanel` | Watch-together session in a group (was `RoomPanel`) |
 | `ConversationView` | E2E conversation (Phase 6) |
 
 `VIEWS.md` is the authoritative list, with props and the reason each one was added.
@@ -386,8 +426,11 @@ features. ScreensDesign was not used: its research tools need a Pro plan (DSN-00
   "done" instead of "may I" is the whole trust story, lost.
 - Let capture skip the `MatchTable`. Extracted rows are guesses and are shown as guesses,
   even when there is only one.
-- Ship social surfaces before the Phase 2 gate, or make any of them public by default. Private
-  stays the default; friends are invited, never inferred.
+- Ship social surfaces before the Phase 2 gate without a recorded owner's exception, or make
+  any of them public by default. Private stays the default; friends are invited, never
+  inferred. Groups have no invite links and no directory.
+- Let Aaru speak in a group without being tagged, or blur a group message (server-visible)
+  with a DM (end-to-end) in copy, icons or code.
 - Build a global feed or a global leaderboard. Friends only.
 - Award points for anything a user can undo and redo for profit. Points follow the ledger,
   not the tap.

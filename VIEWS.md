@@ -5,7 +5,8 @@ says what gets built, what each surface is allowed to emit, and which server rou
 
 Rules from `CLAUDE.md` bound everything here: private by default, catalog layer and library
 layer stay separate, no vendor JSON across the API boundary, imports are one-way jobs. Social
-surfaces are opt-in, friends-only, and wait for the Phase 2 gate.
+surfaces are opt-in, friends-only, and wait for the Phase 2 gate, except where `BACKLOG.md`
+records an owner's exception (groups, 2026-10-20).
 
 ---
 
@@ -37,7 +38,8 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
 | Profile and stats | `StatsPanel`, `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
 | Leaderboard | `Shelf`-like ranked list, friends only | leaderboard route | 5 · GAM-005 |
-| Room | `RoomPanel` | rooms routes + `/v1/ws` | 6 · ROOM-001 |
+| Groups | `GroupRail`, `ChannelList`, `MessageList`, `MemberList`, `SpoilerVeil`; agent replies inside `MessageList` carry `TitleCard`, `CalendarRow`, `Shelf` | `/v1/groups/*`, `/v1/group-invites/*`, `/v1/realtime/ticket`, `/v1/ws` | 4 · GRP-001…GRP-012 (pulled forward 2026-10-20) |
+| Watch channel | `WatchPanel` above the channel's `MessageList` | `/v1/groups/{id}/channels/{cid}/session` + `/v1/ws` | 4 · GRP-009 (absorbs ROOM-001) |
 | Conversations | `ConversationView` | ciphertext message routes + `/v1/ws` | 6 · DM-* |
 | Approvals | `PlanCard` | `POST /v1/plans/{id}/approve`, `/deny` | 7 · M14 |
 | Shortcuts / App Intents | `TitleCard`, `TonightStrip` as intent snippets | agent tool layer | 7 · M14 |
@@ -76,7 +78,12 @@ refuses and substitutes the nearest catalog piece.
 | `BadgeShelf` | Earned badges | badge ids, tier, earned at |
 | `StatsPanel` | Profile numbers | days watched, episodes, mean score, breakdowns |
 | `RecapStory` | A month or year as a story | `year`, optional `month`; the deck is built on the device from `/v1/me/stats` |
-| `RoomPanel` | Watch-together room | `roomId`, title / episode, members + drift, countdown, state |
+| `GroupRail` | The groups you are in | group ids, names, monogram, unread flag, mention count, selected group |
+| `ChannelList` | A group's channels | group id, channels by kind (`text` / `title` / `watch` / `shelf`) with name, title poster for `title`, unread flag, mention count; `#general` first |
+| `MessageList` | A channel's conversation and its composer | channel id, kind, "not end-to-end" label, messages (author or Aaru, body, `components`, reply, mentions, spoiler stamp, edited / deleted / from a blocked member), last-read marker, typing names; composer with `@` suggestions |
+| `MemberList` | Who is in a group | members by role, Aaru as a member with its medallion, `share_progress` per member |
+| `SpoilerVeil` | Hides a message the reader is not caught up to | message id, stamped `EpisodeKey`, reader's progress; tap to reveal |
+| `WatchPanel` | Watch-together session in a `watch` channel (was `RoomPanel`) | channel id, title / episode, ready members + drift, countdown from server time, reactions, state, "Mark watched for me" |
 | `ConversationView` | E2E conversation | `conversationId`, participants; message bodies decrypt on device only |
 
 `PlanCard`, `JobLedger`, `MatchTable`, and `UndoRibbon` are the four that make agent writes
@@ -94,6 +101,7 @@ The eleven new components add product, not agent reach, and each has a reason:
 - `FriendStories` (Phase 4) — the only social read surface on Home.
 - `StreakBar`, `BadgeShelf`, `StatsPanel` (Phase 5) — gamification has no home in the nine.
 - `RoomPanel`, `ConversationView` (Phase 6) — realtime and E2E messaging are new objects.
+  `RoomPanel` became `WatchPanel` on 2026-10-20, when rooms moved into groups.
 - `RecapStory` (GAM-006a, the twenty-first, added 2026-10-16) — the Recap is a full-screen,
   tap-through story with a share image; no grid or row of the twenty can play a sequence. It is
   read-only, so the agent may open it ("show me my October") but it writes nothing.
@@ -101,9 +109,18 @@ The eleven new components add product, not agent reach, and each has a reason:
   nothing to show; these are public catalog rows (trending, this season), the same for
   everyone. Home renders them; the agent does not emit them, since it would be recommending.
 
-The agent may emit the read-only social components but never initiates a friend request, a
-message, or a room invite: those are user acts with no agent write path. A twenty-first
-component still needs a paragraph here.
+- `GroupRail`, `ChannelList`, `MessageList`, `MemberList`, `SpoilerVeil` (GRP-004/005/007, the
+  twenty-third to twenty-seventh, added 2026-10-20) — groups are a new object: a place where
+  friends talk, with channels. No existing piece can hold a conversation (`ConversationView` is
+  E2E and one-to-one), and a spoiler guard needs its own renderer so every surface veils the
+  same way. The composer lives inside `MessageList`; it is not the agent's Composer surface.
+  These are app chrome: the agent never emits them.
+
+The agent may emit the read-only social components. It posts in a group channel only as a
+reply to an explicit `@aaru` mention, and only with catalog components whose buttons are the
+viewer's own taps. It never starts a thread, never sends a DM, and never sends a friend request,
+a group invite or a room invite: those are user acts with no agent write path. A
+twenty-eighth component still needs a paragraph here.
 
 ---
 
@@ -173,9 +190,12 @@ Client work follows the server, per `CLAUDE.md`: table, then DTO, then screen.
 4. **Phase 2 · M8/M9** — `JobLedger`, `MatchTable`, `CalendarMonth` with real import data.
    **Gate:** basics done. Nothing below starts before it.
 5. **Phase 3** — `NowPlayingCard` fed by scrobbles. No new component.
-6. **Phase 4** — `FriendStories`, friends watching on the Title room.
+6. **Phase 4** — `FriendStories`, friends watching on the Title room. Groups (pulled forward
+   2026-10-20): `GroupRail`, `ChannelList`, `MessageList`, `MemberList` by hand first, then
+   `SpoilerVeil` and `WatchPanel` with the channel kinds, then `@aaru` replies rendering
+   `TitleCard`, `CalendarRow` and `Shelf` in `MessageList`.
 7. **Phase 5** — `StreakBar`, `BadgeShelf`, `StatsPanel`, streak widget.
-8. **Phase 6** — `RoomPanel`, `ConversationView` on the WebSocket gateway.
+8. **Phase 6** — `ConversationView` on the WebSocket gateway (`WatchPanel` shipped with groups).
 9. **Phase 7 · M13** — composer, `PlanCard`, `TonightStrip`, and the tool layer
    (`search_titles`, `read_library`, `plan_import`, `apply_library_patch`, `list_airs`) on top
    of components that already work by hand. Then Capture, which is an import source reusing

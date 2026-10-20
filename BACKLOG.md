@@ -40,6 +40,22 @@ library layer stay separate, external IDs stored whenever known, no second backe
   the same for every user and read no per-user signal, so they are **not** the out-of-scope
   recommendations engine; nothing personalised ("because you watched…") is allowed under this
   item. Posters stay hotlinked catalog URLs.
+- **Groups are built before the P2 gate**, by the owner's call, with 0 strangers (flagged; the
+  owner chose). A group is a friends-only space with channels and a default `#general`, where
+  members chat and can tag `@aaru`. Section `P4 · Groups` (GRP-001…GRP-012). Pulled forward with
+  it: SOC-001 and SOC-002 in minimal form (handles, friends by handle, blocks, reports; no
+  `social_settings`, invite links or email hash yet) and the groups subset of RT-001.
+- **Group chat is server-visible**, labelled "not end-to-end" in every channel header, so the
+  agent can read a channel when someone tags it. DMs stay E2E (DM-001…DM-005, unchanged). This
+  resolves ROOM-002's OPEN item as "plain, clearly labelled".
+- **Membership is friends-only.** You can invite only an accepted friend, and neither side may
+  have blocked the other. There are no invite links to groups and no public or discoverable
+  groups.
+- **Channel kinds:** `text`, `title` (a thread about one title, with a spoiler guard), `watch`
+  (absorbs ROOM-001) and `shelf` (a group list; absorbs SHR-001's collaborative editing).
+- **The agent posts in a group only as a reply to an explicit `@aaru` mention.** It uses
+  read-only tools and catalog components, reads only the tagger's own library, and has no write
+  path. It never starts a thread, DMs, or sends friend requests or invites (`VIEWS.md`).
 
 ## Decisions recorded 2026-10-19
 
@@ -186,13 +202,14 @@ deploy steps are done.
 | **P1 — Basics (API)** | M2 auth, M3 catalog + anime, M4 library, M5 progress, M6 lists, Calendar + Up Next | A personal tracker works end to end over `/v1`: sign in, search movies/shows/anime/books, add, tick episodes, lists, calendar, up next |
 | **P2 — Clients, widgets, imports** | M7 iOS + Mac, Widgets, M10/M11 web, M8 Trakt, M9 file imports, catalog sources | **The "basics done" line.** TestFlight beta and the beta Worker are usable by a stranger end to end; widgets work; Trakt + CSV imports work |
 | **P3 — Tracking integrations** | Scrobble, Stremio, Plex/Jellyfin, outbound Trakt/MAL/AniList | A play in Plex, Jellyfin or Stremio moves Aaru progress without a tap |
-| **P4 — Social** | Profiles, friends, activity, push, shared lists | Two users can friend, see each other's activity, and block cleanly |
+| **P4 — Social** | Profiles, friends, activity, push, shared lists, groups | Two users can friend, see each other's activity, and block cleanly; friends chat in a group |
 | **P5 — Gamification** | Points ledger, levels, streaks, badges, leaderboard, stats | Points and streaks are idempotent and survive replays and undo |
 | **P6 — Realtime, DMs, watch together** | WebSocket gateway, libsignal DMs, rooms, SharePlay | E2E DMs between two devices; a room counts down and checks off together |
 | **P7 — Agent surfaces** | M13 agent, M14 outbound agent | As written in M13/M14 |
 
 **Hard rule:** no P3–P6 code before the P2 gate. Social and gamification on a library nobody
-has used is supply-side polish.
+has used is supply-side polish. Exceptions by the owner's call are listed in the decisions
+above (Recap, Episodes and Stremio, Discover, Groups).
 
 Native clients (M7) come before importers (M8) per the build order in `CLAUDE.md`: a
 library you cannot see is not testable. M8 can start in parallel if two people are
@@ -1472,6 +1489,9 @@ Norviq (`apps/norviq/norviq-backend/Sources/StockPlanBackend/Social/`,
 
 ### SOC-001 · Profile and social settings · M
 **Needs:** AUTH-001.
+**Pulled forward 2026-10-20 for groups, minimal:** `profiles` (`handle`, display name) and
+`GET/PUT /v1/me/profile` only. Avatars are generated monograms. `social_settings` waits for
+SOC-003.
 `profiles` (`handle` unique, display name, avatar URL) and `social_settings` (`visibility`
 `private` | `friends`, `show_activity`, `show_points`, `show_streaks`, `leaderboard_opt_in`,
 `discoverable_by_email_hash`). Defaults: `private`, everything off.
@@ -1481,6 +1501,9 @@ and no route exposes a profile to an unauthenticated caller.
 
 ### SOC-002 · Friends, requests, blocks, invites · L
 **Needs:** SOC-001.
+**Pulled forward 2026-10-20 for groups, minimal:** requests, friendships, blocks and reports,
+added by handle only. `social_invites`, invite links (they need universal links) and the
+contact email hash stay here for later.
 Tables `social_friend_requests` (pending/accepted/declined/cancelled), `social_friendships`,
 `social_blocks`, `social_reports`, `social_invites` (short code, expiry). Add by handle, by
 invite link, or by contact email hash (opt-in). A blocked user gets **404** on everything about
@@ -1518,10 +1541,152 @@ request push, and turning a category off stops it on every device.
 ### SHR-001 · Shared lists · M
 **Needs:** SOC-002, LST-002.
 Was M12+. Share a list with friends, read-only first (`list_members`, `lists.visibility`
-gains `friends`). Collaborative editing waits for RT-001.
+gains `friends`). Collaborative editing moved to `shelf` channels (GRP-008) on 2026-10-20.
 
 **Done when:** a friend can open a shared list and add its titles to their own library, and a
 non-friend gets 404.
+
+## P4 · Groups (pulled forward 2026-10-20)
+
+A **group** is a friends-only space with channels, like a small Discord server. Creating one
+creates `#general`. Group messages are **server-visible** and every channel header says so; DMs
+stay E2E. A non-member gets **404** on everything about a group. Caps: 50 members, 20 channels,
+4,000 characters per message. No presence, attachments or invite links in v1.
+
+`docs/privacy.md` changes in the same PR as the behaviour, never ahead of it: handles,
+friends and blocks with SOC-001/002; group messages being server-visible, readable by members
+and kept until deleted with GRP-003; Anthropic as a processor that sees a channel's recent
+messages when `@aaru` is tagged with GRP-011.
+
+### GRP-001 · Groups, members, `#general` · M
+**Needs:** SOC-001, SOC-002.
+Tables `groups` (name, owner, `deleted_at`) and `group_members` (role `owner` | `admin` |
+`member`, `muted`, `joined_at`). Creating a group inserts the owner and a `#general` text channel
+(`is_default`) in one transaction. `#general` can be renamed, never deleted or archived. The
+owner can't leave without transferring ownership or deleting the group. Owner and admins manage
+channels and members. Account delete removes the user's memberships and hands owned groups to
+the oldest admin, or deletes them when there is none (extends AUTH-004).
+
+**Done when:** a new group has exactly one member and one channel, `#general`; a non-member gets
+404 for the group, its channels and its messages; and the owner's leave is refused.
+
+### GRP-002 · Group invites, friends only · S
+**Needs:** GRP-001.
+`group_invites` (inviter, invitee, status `pending` | `accepted` | `declined` | `revoked`). Insert
+only when inviter and invitee are friends and neither has blocked the other. `GET
+/v1/me/group-invites` is the invitee's inbox. Accepting adds a `member` row.
+
+**Done when:** inviting a non-friend returns 422, inviting someone who blocked you returns the
+same 422 with no hint of the block, and accepting adds the member once (a double accept is a
+no-op).
+
+### GRP-003 · Text channels and group messages · M
+**Needs:** GRP-001.
+`group_channels` (`kind` `text` | `title` | `watch` | `shelf`, name, topic, position) and
+`group_messages` (author kind `user` | `agent`, body, `components`, `reply_to`, `mentions`,
+`mentions_agent`, spoiler stamp, `client_nonce`, `edited_at`, `deleted_at`).
+`group_read_state` holds each member's last read message and unread mention count. Cursor
+pagination by `(created_at, id)`. A retried post with the same `client_nonce` returns the first
+message. Mentions are parsed on the server from `@handle` and checked against members. A delete
+wipes the body and keeps the row. A blocked member's messages arrive flagged so the client
+collapses them.
+
+**Done when:** pagination returns every message exactly once across pages, a duplicate nonce
+creates no second row, and a mention of a non-member is dropped.
+
+### GRP-004 · Web groups surface · L
+**Needs:** GRP-003, WEB-001.
+`app_.groups` layout route. Desktop: `GroupRail`, `ChannelList`, `MessageList`, collapsible
+`MemberList`. Tablet: rail and channels move into a drawer. Phone: stacked groups → channels →
+chat. `Composer` with `@` autocomplete for members and Aaru, optimistic send and retry. Dialogs
+to create a group, create a channel and invite friends. The open channel polls every 5 s while
+visible until GRP-006 lands.
+
+**Done when:** two friends on two browser profiles can create a group, invite, accept and
+chat, and the layout works at 375 px with no horizontal scroll.
+
+### GRP-005 · Apple groups surface · L
+**Needs:** GRP-003, APP-001.
+`AppTab.groups`. iPhone: `NavigationStack`, groups → channels → chat, members in a sheet.
+iPad and Mac: `NavigationSplitView` inside the tab, members in `.inspector`. `GroupsModel` is
+injected through `AppServices` and reset on sign-out.
+
+**Done when:** the same flow as GRP-004 works between an iPhone simulator and a Mac, and
+sign-out leaves no group data on screen.
+
+### GRP-006 · Realtime for groups · L
+**Needs:** GRP-003.
+The groups subset of RT-001: `/v1/ws` (`hummingbird-websocket`), an in-process `RealtimeHub`
+actor (LuminaVault's `ConnectionManager` is the template), envelopes `message.*`, `typing`,
+`read`, `member.*`, `channel.*`, `invite.received`. Writes stay on REST; the socket only
+announces. The web gets a 60 s single-use ticket from `POST /v1/realtime/ticket` because its
+session token is cookie-only. Origin is checked. Presence stays in RT-001.
+
+**Done when:** a message appears on the other client within two seconds, a reconnect fills the
+gap from REST with no duplicates, a used or expired ticket is refused, and a non-member's
+socket receives nothing for the group.
+
+### GRP-007 · Title channels and the spoiler guard · M
+**Needs:** GRP-006, PROG-001.
+A `title` channel is bound to one title, created from search or "Discuss in group…" on the
+Title page. Its header is a `TitleCard`. A message is stamped with the author's current season
+and episode, or a hand-set one. A reader whose progress is behind sees `SpoilerVeil`.
+Members' progress shows in the header only for members who switch on `share_progress` for that
+group (default off).
+
+**Done when:** a reader at S1E3 sees a message stamped S1E5 veiled, a reader at S2E1 does not,
+and a member with `share_progress` off never appears in the header.
+
+### GRP-008 · Shelf channels · M
+**Needs:** GRP-006.
+`group_channel_items` (title, `added_by`, position). Separate from `lists`, which stay
+single-owner; they share a renderer. Any member adds or removes titles. "Add to my library" is
+a normal tap through the library data layer, journaled with the user as actor.
+
+**Done when:** two members edit the same shelf live, and "Add to my library" writes one
+journaled, undoable action for the tapper only.
+
+### GRP-009 · Watch channels · L
+**Needs:** GRP-006, PROG-001.
+Absorbs ROOM-001. `watch_sessions` (title, season, episode, `starts_at`, state `lobby` |
+`countdown` | `live` | `ended`). `WatchPanel`: ready list, a countdown driven by server time,
+ephemeral reactions over the socket, and "Mark watched for me", which ticks only the tapper's
+progress.
+
+**Done when:** members on web, iOS and Mac see the same countdown within 500 ms, and ending the
+session ticks the episode only for members who tap.
+
+### GRP-010 · Model provider, minimal · M
+**Needs:** none.
+The groups subset of AG-007: `ModelProviding` plus an adapter for the Anthropic Messages API
+with `claude-haiku-5-5`. It sends no `temperature`, `top_p`, `top_k` or assistant prefill (see
+`platform/infra/docs/llm-haiku-trial.md`). The key is a sealed secret in `platform/infra`.
+Metering in `agent_usage` (user, day, requests, tokens). No user keys yet.
+
+**Done when:** tests against a stub server pass, a request body never contains `temperature`,
+and usage rows add up per user and day.
+
+### GRP-011 · `@aaru` replies in channels · L
+**Needs:** GRP-003, GRP-010.
+A message with `mentions_agent` enqueues an `agent_replies` row, claimed with the
+`FOR UPDATE SKIP LOCKED` lease used by imports. Context: the channel's last 30 messages, the
+channel's title, session or shelf, and **the tagger's own** library, read-only. Tools:
+`search_titles`, `title_details`, `list_airs`, `read_my_library`. The reply is a group message
+with author kind `agent`, `reply_to` the mention, and catalog components only. Its card
+buttons are the viewer's own taps. Caps: 30 mentions per user per day, 10 per group per hour;
+over the cap Aaru says once that it is resting, without calling the model.
+
+**Done when:** a tagged question gets one reply, the model's context never contains another
+member's library, the cap reply makes no model call, and no tool can write.
+
+### GRP-012 · Group push and tap routing · M
+**Needs:** GRP-002, GRP-003, the airing push (decision 2026-10-15).
+`group_mentions` and `group_invites` toggles in notification settings, plus per-group mute. The
+payload carries no message text: "{name} mentioned you in #{channel}" and
+`aaru://group/{g}/channel/{c}`. iOS routes a tap to the channel.
+
+**Done when:** a muted group sends nothing, a mention push opens the right channel from a cold
+start, and no push payload contains message text.
 
 ---
 
@@ -1634,7 +1799,8 @@ Was M12+ ("list updates and presence"). `/v1/ws` behind the same auth, one conne
 device, typed envelopes (`presence`, `activity`, `dm`, `room.*`, `list.updated`). In-process
 `ConnectionManager` actor as in `LuminaVaultServer/Sources/App/WebSockets/ConnectionManager.swift`.
 Single replica is documented; Valkey pub/sub is the scale-out path, not built now.
-Presence is friends-only and respects `show_activity`.
+Presence is friends-only and respects `show_activity`. The gateway, hub and group envelopes
+ship early with GRP-006 (2026-10-20); this item adds presence, activity and DM delivery.
 
 **Done when:** a friend's "watching now" appears within two seconds, a blocked user receives
 nothing, and a dropped connection resumes without duplicate events.
@@ -1699,6 +1865,8 @@ Aaru does not own a player, so "together" means a shared moment, not playback co
 
 ### ROOM-001 · Watch-together rooms · L
 **Needs:** RT-001, SOC-002.
+**Folded into GRP-009 on 2026-10-20:** a room is a `watch` channel inside a group. Kept for its
+done-when.
 Create a room from a title or episode, invite friends, a lobby with who's ready, a synced
 countdown to "press play" in your own player, reactions on a shared timeline, and a shared
 check-off at the end (each member's own PROG write, journaled as their tap). Awards
@@ -1709,11 +1877,11 @@ ending the room ticks the episode for each member who confirms — never for one
 
 ### ROOM-002 · Room chat · M
 **Needs:** ROOM-001.
-**OPEN:** E2E room chat via libsignal sender keys, or plain server-visible room chat in v1.
-Recommendation: plain, clearly labelled, deleted when the room ends; E2E stays for DMs.
+**Resolved 2026-10-20:** plain and server-visible, clearly labelled; E2E stays for DMs. Room
+chat is the `watch` channel's own messages (GRP-003, GRP-009) and lives as long as the channel,
+not only the session.
 
-**Done when:** the decision is recorded and room chat is deleted from the server when the room
-closes.
+**Done when:** closed by GRP-009.
 
 ### ROOM-003 · SharePlay · M
 **Needs:** ROOM-001.

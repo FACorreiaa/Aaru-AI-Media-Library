@@ -204,7 +204,7 @@ front door.
 | --- | --- |
 | Scrobbling from Plex, Kodi, Infuse, Jellyfin, browser extensions | Not at launch. Import Trakt history one-way first; Phase 3 (`BACKLOG.md` SCR-*) accepts a Trakt-shaped scrobble endpoint, Plex/Jellyfin webhooks and a Stremio addon. Accept scrobbles; never build or maintain a scrobbler ecosystem of our own clients. |
 | Broad public API and a decade of third-party clients | Do not compete. Aaru ships **no public API** — no docs, no quotas, no third-party clients, no deprecation policy — until well past 1,000 strangers. Per-user token-scoped agent access (moat 7, M14) is a different thing: the credential belongs to one user, for their own agents, and dies when they delete it. Do not let the two blur in copy. |
-| Deep video metadata, calendars, comments, community | Take the calendar (Airs this week, from *your* library only). Skip comments and community entirely. |
+| Deep video metadata, calendars, comments, community | Take the calendar (Airs this week, from *your* library only). Skip public comments and community entirely. Groups (2026-10-20) are not community: friends only, no directory, no public threads, no invite links. |
 | VIP: stats, no ads, year in review, larger limits | Never paywall stats or the user's own data. This is the grievance Aaru harvests. |
 | Video only | Books. One shelf. |
 | Web + apps, form-driven | Native + agent. Plan, approve, undo. |
@@ -353,7 +353,7 @@ Ignore everyone else until 1,000 users.
 **Tier 2 — after 100 users.**
 
 6. **Year in review / shareable recap card.** User-initiated share only, no auto-posting, no profile. Free, not Plus — it is the growth loop.
-7. **Household invites.** The only in-product invite Aaru will ever have. One person invites one person to one private shelf. Phase 2.
+7. **Household invites.** One person invites one person to one private shelf. Phase 2. Since 2026-10-20 friend requests and group invites exist too. Every invite is friends-only and opt-in, and none is a link a stranger can follow. A group with a `shelf` channel may turn out to *be* Household; decide before building it.
 8. **BookTok and film-diet creators.** Small accounts, free Founding tier, no scripts.
 9. **A single owned newsletter.** Monthly, about what shipped. It is the only channel nobody can take away.
 
