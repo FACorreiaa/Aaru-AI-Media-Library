@@ -34,6 +34,7 @@ const EVENT_TYPES = new Set<RealtimeEvent['type']>([
   'shelf.updated',
   'watch.updated',
   'watch.reaction',
+  'agent.thinking',
 ])
 
 /**

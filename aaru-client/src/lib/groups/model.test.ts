@@ -41,6 +41,7 @@ function message(
     fromBlocked: false,
     deleted: false,
     veiled: false,
+    fromAgent: false,
     createdAt: at,
     ...extra,
   }

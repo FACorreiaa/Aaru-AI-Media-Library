@@ -50,6 +50,20 @@ import { SpoilerControl, SpoilerVeil } from './Spoilers'
 import { AUTO_SPOILER, spoilerFields, stampLabel } from '../../lib/groups/kinds'
 import type { SpoilerChoice } from '../../lib/groups/kinds'
 import { Composer } from './Composer'
+import {
+  agentCards,
+  noteThinking,
+  replySnippet,
+  settleThinking,
+} from '../../lib/groups/agent'
+import type { Thinking } from '../../lib/groups/agent'
+import {
+  AaruAvatar,
+  AgentCards,
+  AssistantTag,
+  ReplyLine,
+  ThinkingRow,
+} from './AgentParts'
 import { Monogram, useGroup, useShell, useVisiblePoll } from './shell'
 
 export const PAGE_SIZE = 50
@@ -97,6 +111,10 @@ export function MessageList(props: {
   )
   let pruneTimer: number | undefined
   onCleanup(() => window.clearTimeout(pruneTimer))
+  // GRP-011: mentions Aaru is answering in this channel, until its reply lands or time runs out.
+  const [thinking, setThinking] = createSignal<Thinking[]>([])
+  let thinkingTimer: number | undefined
+  onCleanup(() => window.clearTimeout(thinkingTimer))
   let scroller: HTMLDivElement | undefined
   let markedId: string | null = null
 
@@ -188,6 +206,7 @@ export function MessageList(props: {
     const fresh = page.filter((m) => !messages().some((x) => x.id === m.id))
     setMessages(mergeMessages(messages(), page))
     for (const message of fresh) setPending((list) => settleEcho(list, message))
+    settleAaru(fresh)
     if (!atBottom()) setMissed(missed() + fresh.length)
     void markRead()
   }
@@ -205,12 +224,34 @@ export function MessageList(props: {
     )
   }
 
+  /** Clears "Aaru is thinking…" for answers that arrived, and for any that ran out of time. */
+  function settleAaru(arrived: GroupMessage[]) {
+    setThinking((list) => settleThinking(list, arrived, Date.now()))
+    window.clearTimeout(thinkingTimer)
+    const next = Math.min(...thinking().map((t) => t.until))
+    if (!Number.isFinite(next)) return
+    thinkingTimer = window.setTimeout(
+      () => settleAaru([]),
+      Math.max(0, next - Date.now()) + 50,
+    )
+  }
+
   useRealtime((event) => {
     if (event.type === 'ready') {
       void catchUp().catch(() => {})
       return
     }
     if (event.channelId !== props.channel.id) return
+    if (event.type === 'agent.thinking') {
+      if (!event.messageId) return
+      // An answer that beat its own "thinking" frame here is already on screen.
+      if (messages().some((m) => m.fromAgent && m.replyTo === event.messageId))
+        return
+      setThinking(noteThinking(thinking(), event.messageId, Date.now()))
+      settleAaru([])
+      if (atBottom()) requestAnimationFrame(() => scrollToBottom())
+      return
+    }
     if (event.type === 'typing') {
       if (!event.user || event.user.userId === meId()) return
       setTypists(noteTyping(typists(), event.user, Date.now()))
@@ -222,6 +263,7 @@ export function MessageList(props: {
     const added = event.type === 'message.created' ? event.message : undefined
     setMessages(next)
     if (added) {
+      settleAaru([added])
       setPending((list) => settleEcho(list, added))
       setTypists((list) => pruneTyping(list, Date.now(), added.author?.userId))
       if (!atBottom() && added.author?.userId !== meId())
@@ -337,6 +379,7 @@ export function MessageList(props: {
   }
 
   function authorName(message: GroupMessage) {
+    if (message.fromAgent) return 'Aaru'
     const author = message.author
     if (!author) return 'Deleted account'
     return author.displayName ?? `@${author.handle}`
@@ -362,13 +405,21 @@ export function MessageList(props: {
     )
   }
 
-  function Header(headerProps: { starts: boolean; name: string; at: string }) {
+  function Header(headerProps: {
+    starts: boolean
+    name: string
+    at: string
+    agent?: boolean
+  }) {
     return (
       <Show when={headerProps.starts}>
         <div class="flex items-baseline gap-2">
           <span class="truncate text-[15px] font-semibold">
             {headerProps.name}
           </span>
+          <Show when={headerProps.agent}>
+            <AssistantTag />
+          </Show>
           <time
             datetime={headerProps.at}
             title={new Date(headerProps.at).toLocaleString()}
@@ -487,7 +538,12 @@ export function MessageList(props: {
                               </time>
                             }
                           >
-                            <Monogram text={authorMonogram(m())} />
+                            <Show
+                              when={m().fromAgent}
+                              fallback={<Monogram text={authorMonogram(m())} />}
+                            >
+                              <AaruAvatar />
+                            </Show>
                           </Show>
                         </div>
                         <div class="min-w-0 flex-1 pb-0.5">
@@ -495,11 +551,29 @@ export function MessageList(props: {
                             starts={row().startsRun}
                             name={authorName(m())}
                             at={m().createdAt}
+                            agent={m().fromAgent}
                           />
+                          <Show
+                            when={
+                              m().fromAgent &&
+                              !m().deleted &&
+                              replySnippet(m().replyTo, messages())
+                            }
+                          >
+                            {(snippet) => (
+                              <ReplyLine
+                                who={snippet().who}
+                                text={snippet().text}
+                              />
+                            )}
+                          </Show>
                           <Switch
                             fallback={
                               <>
                                 <Body text={m().body} />
+                                <Show when={agentCards(m()).length > 0}>
+                                  <AgentCards cards={agentCards(m())} />
+                                </Show>
                                 <Show when={m().editedAt}>
                                   <span class="text-[11px] text-muted">
                                     (edited)
@@ -676,6 +750,9 @@ export function MessageList(props: {
               </Switch>
             )}
           </For>
+          <Show when={thinking().length > 0}>
+            <ThinkingRow />
+          </Show>
           <div class="h-2" />
         </div>
         <Show when={!atBottom()}>
@@ -705,6 +782,7 @@ export function MessageList(props: {
       <Composer
         channelName={props.channel.name}
         members={scope.detail().members}
+        agent={scope.detail().agent}
         meId={meId()}
         onSend={send}
         onTyping={() => sendTyping(groupId(), props.channel.id)}

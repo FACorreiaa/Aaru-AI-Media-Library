@@ -7,6 +7,7 @@ import {
 } from '../../lib/groups/server'
 import type { GroupMember } from '../../lib/groups/server'
 import { monogram } from '../../lib/social/model'
+import { AaruAvatar } from './AgentParts'
 import { ConfirmDialog } from './dialogs'
 import { Menu, MenuItem, Monogram, useGroup, useShell } from './shell'
 
@@ -16,7 +17,7 @@ type Pending =
 
 /**
  * MemberList (GRP-004): who is in the group, by role. The owner makes admins, transfers and
- * removes anyone; admins remove members. Aaru joins this list with M5.
+ * removes anyone; admins remove members. Aaru is listed first when it answers in this group.
  */
 export function MemberList(props: { class?: string }) {
   const shell = useShell()
@@ -63,6 +64,32 @@ export function MemberList(props: { class?: string }) {
             {text()}
           </p>
         )}
+      </Show>
+      <Show when={scope.detail().agent}>
+        <section class="px-2 pt-4">
+          <h3 class="px-2 pb-1 text-xs font-semibold tracking-wide text-muted uppercase">
+            Assistant
+          </h3>
+          <details class="group/aaru rounded-lg px-2 py-1.5 hover:bg-surface open:bg-surface">
+            <summary
+              title="Aaru reads this channel's recent messages, and your own library when it helps. It can't change anything."
+              class="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden"
+            >
+              <AaruAvatar size="sm" />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-medium">Aaru</span>
+                <span class="block truncate text-xs text-muted">
+                  Answers when tagged
+                </span>
+              </span>
+            </summary>
+            <p class="mt-2 pb-1 text-xs leading-relaxed text-muted">
+              Tag @aaru to ask about films, shows, anime and books. It reads
+              this channel's recent messages, and your own library when it
+              helps, never anyone else's. It can't change anything.
+            </p>
+          </details>
+        </section>
       </Show>
       <For each={sections()}>
         {(section) => (

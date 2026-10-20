@@ -33,6 +33,7 @@ function message(
     fromBlocked: false,
     deleted: false,
     veiled: false,
+    fromAgent: false,
     createdAt,
     ...overrides,
   }
@@ -71,6 +72,14 @@ describe('parseEvent', () => {
     expect(parseEvent('{"type":"watch.reaction","emoji":"🔥"}')?.emoji).toBe(
       '🔥',
     )
+  })
+
+  it('reads the frame that says Aaru is answering a mention', () => {
+    const frame = parseEvent(
+      '{"type":"agent.thinking","channelId":"c","messageId":"m"}',
+    )
+    expect(frame?.type).toBe('agent.thinking')
+    expect(frame?.messageId).toBe('m')
   })
 })
 

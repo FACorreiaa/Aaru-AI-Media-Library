@@ -1,23 +1,27 @@
 import { For, Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
+import { suggestMentions, suggestionHandle } from '../../lib/groups/agent'
+import type { MentionSuggestion } from '../../lib/groups/agent'
 import {
   MAX_MESSAGE_LENGTH,
   applyMention,
-  matchMembers,
   mentionQuery,
   remainingLabel,
 } from '../../lib/groups/model'
 import type { GroupMember } from '../../lib/groups/server'
 import { monogram } from '../../lib/social/model'
+import { AaruAvatar, AssistantTag } from './AgentParts'
 import { Monogram } from './shell'
 
 /**
  * The channel's composer: one box that grows, Enter sends and Shift+Enter adds a line, `@`
- * suggests members. Aaru joins the suggestions with M5; typing `@aaru` by hand already tags it.
+ * suggests members, with Aaru first, wearing the medallion, when it answers in this group.
  */
 export function Composer(props: {
   channelName: string
   members: GroupMember[]
+  /** Whether @aaru answers in this group (GroupDetail.agent). */
+  agent: boolean
   meId: string
   onSend: (body: string) => void
   /** Called as the user types; the socket throttles what it sends. */
@@ -35,7 +39,9 @@ export function Composer(props: {
 
   const suggestions = () => {
     const q = query()
-    return q ? matchMembers(props.members, q.query, props.meId) : []
+    return q
+      ? suggestMentions(props.members, q.query, props.meId, props.agent)
+      : []
   }
   const remaining = () => remainingLabel(text())
   const tooLong = () => text().length > MAX_MESSAGE_LENGTH
@@ -54,14 +60,14 @@ export function Composer(props: {
     resize()
   }
 
-  function pick(member: GroupMember) {
+  function pick(suggestion: MentionSuggestion) {
     const q = query()
     if (!q || !box) return
     const next = applyMention(
       text(),
       q.start,
       box.selectionStart,
-      member.user.handle,
+      suggestionHandle(suggestion),
     )
     setText(next.text)
     setQuery(null)
@@ -115,27 +121,44 @@ export function Composer(props: {
       <Show when={suggestions().length > 0}>
         <ul
           role="listbox"
-          aria-label="Members to tag"
+          aria-label="Who to tag"
           class="group-pop absolute right-3 bottom-full left-3 mb-1 overflow-hidden rounded-2xl border border-line bg-paper py-1 shadow-xl md:right-4 md:left-4"
         >
           <For each={suggestions()}>
-            {(member, index) => (
+            {(suggestion, index) => (
               <li
                 role="option"
                 aria-selected={index() === highlight()}
                 onPointerDown={(e) => {
                   e.preventDefault()
-                  pick(member)
+                  pick(suggestion)
                 }}
                 onPointerEnter={() => setHighlight(index())}
                 class={`flex cursor-pointer items-center gap-3 px-3 py-2 text-sm ${index() === highlight() ? 'bg-surface' : ''}`}
               >
-                <Monogram text={monogram(member.user)} size="sm" />
-                <span class="font-medium">
-                  {member.user.displayName ?? `@${member.user.handle}`}
-                </span>
-                <Show when={member.user.displayName}>
-                  <span class="text-muted">@{member.user.handle}</span>
+                <Show
+                  when={suggestion.kind === 'member' && suggestion.member}
+                  fallback={
+                    <>
+                      <AaruAvatar size="sm" />
+                      <span class="font-medium">Aaru</span>
+                      <span class="text-muted">@aaru</span>
+                      <AssistantTag />
+                    </>
+                  }
+                >
+                  {(member) => (
+                    <>
+                      <Monogram text={monogram(member().user)} size="sm" />
+                      <span class="font-medium">
+                        {member().user.displayName ??
+                          `@${member().user.handle}`}
+                      </span>
+                      <Show when={member().user.displayName}>
+                        <span class="text-muted">@{member().user.handle}</span>
+                      </Show>
+                    </>
+                  )}
                 </Show>
               </li>
             )}

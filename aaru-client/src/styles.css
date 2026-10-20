@@ -187,3 +187,22 @@ body {
     }
   }
 }
+
+/* GRP-011: while Aaru answers, its medallion breathes in the "Aaru is thinking…" row. Never
+   bouncing dots; with reduced motion it holds still. */
+@media (prefers-reduced-motion: no-preference) {
+  .aaru-breathe {
+    animation: aaru-breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes aaru-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.85;
+    }
+    50% {
+      transform: scale(1.06);
+      opacity: 1;
+    }
+  }
+}
