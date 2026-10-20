@@ -37,7 +37,7 @@ export function TitlePicker(props: {
       try {
         const results = await searchCatalog({ data: { q: text, type: scope } })
         if (ticket === latest) {
-          setHits(results.slice(0, 8))
+          setHits(results.items.slice(0, 8))
           setProblem(null)
         }
       } catch (error) {

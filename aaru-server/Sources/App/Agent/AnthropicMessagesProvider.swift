@@ -43,8 +43,8 @@ struct AnthropicMessagesProvider: ModelProviding {
     }
 
     /// The request body. Deliberately no sampling fields and no prefill.
-    static func body(_ request: ModelRequest, model: String, effort: String?) -> JSONValue {
-        var body: [String: JSONValue] = [
+    static func body(_ request: ModelRequest, model: String, effort: String?) -> ModelJSON {
+        var body: [String: ModelJSON] = [
             "model": .string(model),
             "max_tokens": .number(Double(request.maxTokens)),
             "system": .string(request.system),
@@ -66,7 +66,7 @@ struct AnthropicMessagesProvider: ModelProviding {
     }
 
     static func parse(_ data: Data) throws -> ModelResponse {
-        let json = try JSONDecoder().decode(JSONValue.self, from: data)
+        let json = try JSONDecoder().decode(ModelJSON.self, from: data)
         guard case let .array(content)? = json["content"] else {
             throw ModelProviderError(status: 200, outOfCredit: false)
         }

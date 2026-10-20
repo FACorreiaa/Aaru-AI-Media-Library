@@ -2,13 +2,13 @@ import Foundation
 
 /// Any JSON value. Model content blocks travel as this so a block the adapter does not know
 /// (thinking, and whatever the API adds later) is replayed unchanged.
-enum JSONValue: Codable, Sendable, Equatable {
+enum ModelJSON: Codable, Sendable, Equatable {
     case null
     case bool(Bool)
     case number(Double)
     case string(String)
-    case array([JSONValue])
-    case object([String: JSONValue])
+    case array([ModelJSON])
+    case object([String: ModelJSON])
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
@@ -20,10 +20,10 @@ enum JSONValue: Codable, Sendable, Equatable {
             self = .number(value)
         } else if let value = try? container.decode(String.self) {
             self = .string(value)
-        } else if let value = try? container.decode([JSONValue].self) {
+        } else if let value = try? container.decode([ModelJSON].self) {
             self = .array(value)
         } else {
-            self = try .object(container.decode([String: JSONValue].self))
+            self = try .object(container.decode([String: ModelJSON].self))
         }
     }
 
@@ -39,7 +39,7 @@ enum JSONValue: Codable, Sendable, Equatable {
         }
     }
 
-    subscript(key: String) -> JSONValue? {
+    subscript(key: String) -> ModelJSON? {
         if case let .object(object) = self {
             return object[key]
         }
@@ -59,14 +59,14 @@ struct ModelTool: Sendable, Equatable {
     var name: String
     var description: String
     /// JSON Schema for the input.
-    var inputSchema: JSONValue
+    var inputSchema: ModelJSON
 }
 
 /// One turn of the transcript. Content is raw blocks so replies round-trip unchanged.
 struct ModelTurn: Sendable, Equatable {
     enum Role: String, Sendable { case user, assistant }
     var role: Role
-    var content: [JSONValue]
+    var content: [ModelJSON]
 
     static func user(_ text: String) -> ModelTurn {
         ModelTurn(role: .user, content: [.object(["type": .string("text"), "text": .string(text)])])
@@ -90,7 +90,7 @@ struct ModelResponse: Sendable, Equatable {
     }
 
     /// The assistant's blocks, to append to the transcript as they are.
-    var content: [JSONValue]
+    var content: [ModelJSON]
     var stop: Stop
     var inputTokens: Int
     var outputTokens: Int
@@ -104,7 +104,7 @@ struct ModelResponse: Sendable, Equatable {
     struct ToolCall: Sendable, Equatable {
         var id: String
         var name: String
-        var input: JSONValue
+        var input: ModelJSON
     }
 
     /// The `tool_use` blocks.

@@ -187,7 +187,7 @@ extension MemberProgress {
         if let season, let episode {
             return "S\(season)E\(episode)"
         }
-        return status?.label ?? "Not started"
+        return status?.label(for: nil) ?? "Not started"
     }
 }
 

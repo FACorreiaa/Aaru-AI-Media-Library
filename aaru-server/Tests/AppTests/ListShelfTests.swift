@@ -76,6 +76,42 @@ struct ListShelfTests {
         }
     }
 
+    @Test("LST-003: list rows carry the library entry and, for shows, status and next airing")
+    func richRows() async throws {
+        try await LibraryHarness.run { env in
+            let id = try #require(try await env.send(.post, "/v1/lists", json: ["name": "Tonight"])
+                .json()["id"] as? String)
+            let tracked = env.stubShow("Severance", status: .returning, unaired: true)
+            let item = try await env.add("show", tmdb: tracked, status: "in_progress")
+            _ = try await env.send(.put, "/v1/library/items/\(item)/episodes/1/1", json: ["watched": true])
+            let listOnly = env.stubShow("Slow Horses", status: .returning, unaired: true)
+            let movie = env.stubMovie("Heat")
+            for (type, tmdb) in [("show", tracked), ("show", listOnly), ("movie", movie)] {
+                let reply = try await env.send(
+                    .post, "/v1/lists/\(id)/items", json: ["mediaRef": ["type": type, "ids": ["tmdb": tmdb]]]
+                )
+                #expect(reply.status == .ok)
+            }
+
+            let items = try #require(try await env.send(.get, "/v1/lists/\(id)").json()["items"] as? [[String: Any]])
+            #expect(items.compactMap { ($0["title"] as? [String: Any])?["title"] as? String }
+                == ["Severance", "Slow Horses", "Heat"])
+
+            let entry = try #require(items[0]["entry"] as? [String: Any])
+            #expect(entry["id"] as? String == item)
+            #expect((entry["progress"] as? [String: Any])?["watchedCount"] as? Int == 1)
+            #expect(items[0]["showStatus"] as? String == "returning")
+
+            #expect(items[1]["entry"] == nil, "on the list, not in the library")
+            #expect(items[1]["showStatus"] as? String == "returning", "episodes load when the show is added")
+            let next = try #require(items[1]["nextAiring"] as? [String: Any])
+            #expect(next["season"] as? Int == 2 && next["number"] as? Int == 3)
+            #expect(next["airTimeKnown"] as? Bool == false)
+
+            #expect(items[2]["entry"] == nil && items[2]["showStatus"] == nil && items[2]["nextAiring"] == nil)
+        }
+    }
+
     @Test("SHF-001: a shelf is a query — a new matching title appears without writing the shelf")
     func shelfIsAQuery() async throws {
         try await LibraryHarness.run { env in

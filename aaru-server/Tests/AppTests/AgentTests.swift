@@ -22,13 +22,13 @@ actor ScriptedModel: ModelProviding {
     /// Everything the model was shown, as one string, for "never saw X" checks.
     var everythingSeen: String {
         requests.map { request in
-            let turns = (try? JSONEncoder().encode(request.turns.map { JSONValue.array($0.content) }))
+            let turns = (try? JSONEncoder().encode(request.turns.map { ModelJSON.array($0.content) }))
                 .flatMap { String(bytes: $0, encoding: .utf8) } ?? ""
             return request.system + turns
         }.joined()
     }
 
-    static func tool(_ name: String, _ input: [String: JSONValue] = [:], id: String = "call") -> ModelResponse {
+    static func tool(_ name: String, _ input: [String: ModelJSON] = [:], id: String = "call") -> ModelResponse {
         ModelResponse(
             content: [.object([
                 "type": .string("tool_use"), "id": .string(id), "name": .string(name), "input": .object(input),

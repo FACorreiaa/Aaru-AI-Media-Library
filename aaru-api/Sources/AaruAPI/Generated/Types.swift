@@ -280,6 +280,19 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/devices/{token}`.
     /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)`.
     func unregisterDevice(_ input: Operations.UnregisterDevice.Input) async throws -> Operations.UnregisterDevice.Output
+    /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
+    ///
+    /// - Remark: HTTP `GET /v1/web-push/key`.
+    /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)`.
+    func getWebPushKey(_ input: Operations.GetWebPushKey.Input) async throws -> Operations.GetWebPushKey.Output
+    /// Save this browser's push subscription. Saved again, it moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)`.
+    func saveWebPushSubscription(_ input: Operations.SaveWebPushSubscription.Input) async throws -> Operations.SaveWebPushSubscription.Output
+    /// - Remark: HTTP `DELETE /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)`.
+    func deleteWebPushSubscription(_ input: Operations.DeleteWebPushSubscription.Input) async throws -> Operations.DeleteWebPushSubscription.Output
     /// The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
     ///
     /// - Remark: HTTP `GET /v1/agent/tokens`.
@@ -301,7 +314,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -413,6 +426,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/anilist`.
     /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
     func createAniListImport(_ input: Operations.CreateAniListImport.Input) async throws -> Operations.CreateAniListImport.Output
+    /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)`.
+    func startStremioLink(_ input: Operations.StartStremioLink.Input) async throws -> Operations.StartStremioLink.Output
+    /// Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link/{code}`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)`.
+    func pollStremioLink(_ input: Operations.PollStremioLink.Input) async throws -> Operations.PollStremioLink.Output
     /// Import the connected Trakt account. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/trakt`.
@@ -468,7 +491,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.
     func getCalendar(_ input: Operations.GetCalendar.Input) async throws -> Operations.GetCalendar.Output
-    /// Continue Watching and Start Watching for the home screen, in one call.
+    /// Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
     ///
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
@@ -1156,6 +1179,37 @@ extension APIProtocol {
             headers: headers
         ))
     }
+    /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
+    ///
+    /// - Remark: HTTP `GET /v1/web-push/key`.
+    /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)`.
+    public func getWebPushKey(headers: Operations.GetWebPushKey.Input.Headers = .init()) async throws -> Operations.GetWebPushKey.Output {
+        try await getWebPushKey(Operations.GetWebPushKey.Input(headers: headers))
+    }
+    /// Save this browser's push subscription. Saved again, it moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)`.
+    public func saveWebPushSubscription(
+        headers: Operations.SaveWebPushSubscription.Input.Headers = .init(),
+        body: Operations.SaveWebPushSubscription.Input.Body
+    ) async throws -> Operations.SaveWebPushSubscription.Output {
+        try await saveWebPushSubscription(Operations.SaveWebPushSubscription.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)`.
+    public func deleteWebPushSubscription(
+        query: Operations.DeleteWebPushSubscription.Input.Query,
+        headers: Operations.DeleteWebPushSubscription.Input.Headers = .init()
+    ) async throws -> Operations.DeleteWebPushSubscription.Output {
+        try await deleteWebPushSubscription(Operations.DeleteWebPushSubscription.Input(
+            query: query,
+            headers: headers
+        ))
+    }
     /// The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
     ///
     /// - Remark: HTTP `GET /v1/agent/tokens`.
@@ -1205,12 +1259,12 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
     public func getStats(
-        query: Operations.GetStats.Input.Query,
+        query: Operations.GetStats.Input.Query = .init(),
         headers: Operations.GetStats.Input.Headers = .init()
     ) async throws -> Operations.GetStats.Output {
         try await getStats(Operations.GetStats.Input(
@@ -1519,6 +1573,26 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)`.
+    public func startStremioLink(headers: Operations.StartStremioLink.Input.Headers = .init()) async throws -> Operations.StartStremioLink.Output {
+        try await startStremioLink(Operations.StartStremioLink.Input(headers: headers))
+    }
+    /// Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link/{code}`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)`.
+    public func pollStremioLink(
+        path: Operations.PollStremioLink.Input.Path,
+        headers: Operations.PollStremioLink.Input.Headers = .init()
+    ) async throws -> Operations.PollStremioLink.Output {
+        try await pollStremioLink(Operations.PollStremioLink.Input(
+            path: path,
+            headers: headers
+        ))
+    }
     /// Import the connected Trakt account. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/trakt`.
@@ -1658,7 +1732,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Continue Watching and Start Watching for the home screen, in one call.
+    /// Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
     ///
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
@@ -2071,6 +2145,45 @@ public enum Components {
                 case connectedAt
             }
         }
+        /// - Remark: Generated from `#/components/schemas/StremioLink`.
+        public struct StremioLink: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StremioLink/code`.
+            public var code: Swift.String
+            /// The stremio.com page where the user approves the code.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StremioLink/link`.
+            public var link: Swift.String
+            /// A QR image of `link`, for scanning with a phone.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StremioLink/qrcode`.
+            public var qrcode: Swift.String
+            /// - Remark: Generated from `#/components/schemas/StremioLink/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// Creates a new `StremioLink`.
+            ///
+            /// - Parameters:
+            ///   - code:
+            ///   - link: The stremio.com page where the user approves the code.
+            ///   - qrcode: A QR image of `link`, for scanning with a phone.
+            ///   - expiresAt:
+            public init(
+                code: Swift.String,
+                link: Swift.String,
+                qrcode: Swift.String,
+                expiresAt: Foundation.Date
+            ) {
+                self.code = code
+                self.link = link
+                self.qrcode = qrcode
+                self.expiresAt = expiresAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case code
+                case link
+                case qrcode
+                case expiresAt
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ImportJob`.
         public struct ImportJob: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ImportJob/id`.
@@ -2078,6 +2191,7 @@ public enum Components {
             /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
             @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case trakt = "trakt"
+                case stremio = "stremio"
                 case imdbCsv = "imdb_csv"
                 case letterboxdCsv = "letterboxd_csv"
                 case goodreadsCsv = "goodreads_csv"
@@ -2359,6 +2473,71 @@ public enum Components {
                 case token
                 case environment
                 case bundleId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WebPushKey`.
+        public struct WebPushKey: Codable, Hashable, Sendable {
+            /// VAPID public key, base64url: the browser's applicationServerKey.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WebPushKey/publicKey`.
+            public var publicKey: Swift.String
+            /// Creates a new `WebPushKey`.
+            ///
+            /// - Parameters:
+            ///   - publicKey: VAPID public key, base64url: the browser's applicationServerKey.
+            public init(publicKey: Swift.String) {
+                self.publicKey = publicKey
+            }
+            public enum CodingKeys: String, CodingKey {
+                case publicKey
+            }
+        }
+        /// `PushSubscription.toJSON()` as the browser gives it.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WebPushSubscription`.
+        public struct WebPushSubscription: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WebPushSubscription/endpoint`.
+            public var endpoint: Swift.String
+            /// - Remark: Generated from `#/components/schemas/WebPushSubscription/keys`.
+            public struct KeysPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/WebPushSubscription/keys/p256dh`.
+                public var p256dh: Swift.String
+                /// - Remark: Generated from `#/components/schemas/WebPushSubscription/keys/auth`.
+                public var auth: Swift.String
+                /// Creates a new `KeysPayload`.
+                ///
+                /// - Parameters:
+                ///   - p256dh:
+                ///   - auth:
+                public init(
+                    p256dh: Swift.String,
+                    auth: Swift.String
+                ) {
+                    self.p256dh = p256dh
+                    self.auth = auth
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case p256dh
+                    case auth
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/WebPushSubscription/keys`.
+            public var keys: Components.Schemas.WebPushSubscription.KeysPayload
+            /// Creates a new `WebPushSubscription`.
+            ///
+            /// - Parameters:
+            ///   - endpoint:
+            ///   - keys:
+            public init(
+                endpoint: Swift.String,
+                keys: Components.Schemas.WebPushSubscription.KeysPayload
+            ) {
+                self.endpoint = endpoint
+                self.keys = keys
+            }
+            public enum CodingKeys: String, CodingKey {
+                case endpoint
+                case keys
             }
         }
         /// - Remark: Generated from `#/components/schemas/NotificationSettings`.
@@ -3932,6 +4111,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/CatalogHit/libraryItemId`.
             public var libraryItemId: Swift.String?
+            /// YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CatalogHit/releaseDate`.
+            public var releaseDate: Swift.String?
             /// Creates a new `CatalogHit`.
             ///
             /// - Parameters:
@@ -3945,6 +4128,7 @@ public enum Components {
             ///   - isAnime:
             ///   - ids:
             ///   - libraryItemId: The caller's library item for this title, when they have one. Discover only.
+            ///   - releaseDate: YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date.
             public init(
                 _type: Components.Schemas.MediaType,
                 title: Swift.String,
@@ -3955,7 +4139,8 @@ public enum Components {
                 byline: Swift.String? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds,
-                libraryItemId: Swift.String? = nil
+                libraryItemId: Swift.String? = nil,
+                releaseDate: Swift.String? = nil
             ) {
                 self._type = _type
                 self.title = title
@@ -3967,6 +4152,7 @@ public enum Components {
                 self.isAnime = isAnime
                 self.ids = ids
                 self.libraryItemId = libraryItemId
+                self.releaseDate = releaseDate
             }
             public enum CodingKeys: String, CodingKey {
                 case _type = "type"
@@ -3979,21 +4165,32 @@ public enum Components {
                 case isAnime
                 case ids
                 case libraryItemId
+                case releaseDate
             }
         }
         /// - Remark: Generated from `#/components/schemas/SearchResults`.
         public struct SearchResults: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/SearchResults/items`.
             public var items: [Components.Schemas.CatalogHit]
+            /// True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchResults/incomplete`.
+            public var incomplete: Swift.Bool
             /// Creates a new `SearchResults`.
             ///
             /// - Parameters:
             ///   - items:
-            public init(items: [Components.Schemas.CatalogHit]) {
+            ///   - incomplete: True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search.
+            public init(
+                items: [Components.Schemas.CatalogHit],
+                incomplete: Swift.Bool
+            ) {
                 self.items = items
+                self.incomplete = incomplete
             }
             public enum CodingKeys: String, CodingKey {
                 case items
+                case incomplete
             }
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
@@ -4984,8 +5181,14 @@ public enum Components {
             public var id: Swift.String
             /// - Remark: Generated from `#/components/schemas/ListDetail/name`.
             public var name: Swift.String
+            /// Superseded by `items`; kept for clients that predate it.
+            ///
             /// - Remark: Generated from `#/components/schemas/ListDetail/titles`.
             public var titles: [Components.Schemas.TitleSummary]
+            /// The members in list order.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListDetail/items`.
+            public var items: [Components.Schemas.ListItem]
             /// - Remark: Generated from `#/components/schemas/ListDetail/createdAt`.
             public var createdAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/ListDetail/updatedAt`.
@@ -4995,19 +5198,22 @@ public enum Components {
             /// - Parameters:
             ///   - id:
             ///   - name:
-            ///   - titles:
+            ///   - titles: Superseded by `items`; kept for clients that predate it.
+            ///   - items: The members in list order.
             ///   - createdAt:
             ///   - updatedAt:
             public init(
                 id: Swift.String,
                 name: Swift.String,
                 titles: [Components.Schemas.TitleSummary],
+                items: [Components.Schemas.ListItem],
                 createdAt: Foundation.Date,
                 updatedAt: Foundation.Date
             ) {
                 self.id = id
                 self.name = name
                 self.titles = titles
+                self.items = items
                 self.createdAt = createdAt
                 self.updatedAt = updatedAt
             }
@@ -5015,8 +5221,96 @@ public enum Components {
                 case id
                 case name
                 case titles
+                case items
                 case createdAt
                 case updatedAt
+            }
+        }
+        /// One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ListItem`.
+        public struct ListItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListItem/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/ListItem/entry`.
+            public var entry: Components.Schemas.LibraryEntry?
+            /// - Remark: Generated from `#/components/schemas/ListItem/showStatus`.
+            @frozen public enum ShowStatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case upcoming = "upcoming"
+                case returning = "returning"
+                case ended = "ended"
+                case canceled = "canceled"
+            }
+            /// - Remark: Generated from `#/components/schemas/ListItem/showStatus`.
+            public var showStatus: Components.Schemas.ListItem.ShowStatusPayload?
+            /// - Remark: Generated from `#/components/schemas/ListItem/nextAiring`.
+            public var nextAiring: Components.Schemas.UpcomingEpisode?
+            /// Creates a new `ListItem`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - entry:
+            ///   - showStatus:
+            ///   - nextAiring:
+            public init(
+                title: Components.Schemas.TitleSummary,
+                entry: Components.Schemas.LibraryEntry? = nil,
+                showStatus: Components.Schemas.ListItem.ShowStatusPayload? = nil,
+                nextAiring: Components.Schemas.UpcomingEpisode? = nil
+            ) {
+                self.title = title
+                self.entry = entry
+                self.showStatus = showStatus
+                self.nextAiring = nextAiring
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case entry
+                case showStatus
+                case nextAiring
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpcomingEpisode`.
+        public struct UpcomingEpisode: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/season`.
+            public var season: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/number`.
+            public var number: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/episodeName`.
+            public var episodeName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/airsAt`.
+            public var airsAt: Foundation.Date
+            /// False when the source gives only a date, as on CalendarEntry.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpcomingEpisode/airTimeKnown`.
+            public var airTimeKnown: Swift.Bool
+            /// Creates a new `UpcomingEpisode`.
+            ///
+            /// - Parameters:
+            ///   - season:
+            ///   - number:
+            ///   - episodeName:
+            ///   - airsAt:
+            ///   - airTimeKnown: False when the source gives only a date, as on CalendarEntry.
+            public init(
+                season: Swift.Int,
+                number: Swift.Int,
+                episodeName: Swift.String? = nil,
+                airsAt: Foundation.Date,
+                airTimeKnown: Swift.Bool
+            ) {
+                self.season = season
+                self.number = number
+                self.episodeName = episodeName
+                self.airsAt = airsAt
+                self.airTimeKnown = airTimeKnown
+            }
+            public enum CodingKeys: String, CodingKey {
+                case season
+                case number
+                case episodeName
+                case airsAt
+                case airTimeKnown
             }
         }
         /// - Remark: Generated from `#/components/schemas/CreateList`.
@@ -5430,40 +5724,157 @@ public enum Components {
             public var continueWatching: [Components.Schemas.ContinueEntry]
             /// - Remark: Generated from `#/components/schemas/UpNext/startWatching`.
             public var startWatching: [Components.Schemas.StartEntry]
+            /// - Remark: Generated from `#/components/schemas/UpNext/counts`.
+            public var counts: Components.Schemas.LibraryCounts?
+            /// Unfinished business (UPN-002): every dropped item, and every in-progress item last changed 30 or more days ago that is not in `continueWatching`. Newest change first, at most 20.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpNext/unfinished`.
+            public var unfinished: [Components.Schemas.UnfinishedEntry]?
             /// Creates a new `UpNext`.
             ///
             /// - Parameters:
             ///   - continueWatching:
             ///   - startWatching:
+            ///   - counts:
+            ///   - unfinished: Unfinished business (UPN-002): every dropped item, and every in-progress item last changed 30 or more days ago that is not in `continueWatching`. Newest change first, at most 20.
             public init(
                 continueWatching: [Components.Schemas.ContinueEntry],
-                startWatching: [Components.Schemas.StartEntry]
+                startWatching: [Components.Schemas.StartEntry],
+                counts: Components.Schemas.LibraryCounts? = nil,
+                unfinished: [Components.Schemas.UnfinishedEntry]? = nil
             ) {
                 self.continueWatching = continueWatching
                 self.startWatching = startWatching
+                self.counts = counts
+                self.unfinished = unfinished
             }
             public enum CodingKeys: String, CodingKey {
                 case continueWatching
                 case startWatching
+                case counts
+                case unfinished
+            }
+        }
+        /// The user's library items per status.
+        ///
+        /// - Remark: Generated from `#/components/schemas/LibraryCounts`.
+        public struct LibraryCounts: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/wishlist`.
+            public var wishlist: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/inProgress`.
+            public var inProgress: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/finished`.
+            public var finished: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/dropped`.
+            public var dropped: Swift.Int
+            /// Creates a new `LibraryCounts`.
+            ///
+            /// - Parameters:
+            ///   - wishlist:
+            ///   - inProgress:
+            ///   - finished:
+            ///   - dropped:
+            public init(
+                wishlist: Swift.Int,
+                inProgress: Swift.Int,
+                finished: Swift.Int,
+                dropped: Swift.Int
+            ) {
+                self.wishlist = wishlist
+                self.inProgress = inProgress
+                self.finished = finished
+                self.dropped = dropped
+            }
+            public enum CodingKeys: String, CodingKey {
+                case wishlist
+                case inProgress
+                case finished
+                case dropped
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UnfinishedEntry`.
+        public struct UnfinishedEntry: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/libraryItemId`.
+            public var libraryItemId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/reason`.
+            @frozen public enum ReasonPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case dropped = "dropped"
+                case stalled = "stalled"
+            }
+            /// `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/reason`.
+            public var reason: Components.Schemas.UnfinishedEntry.ReasonPayload
+            /// The item's last change.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/since`.
+            public var since: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/next`.
+            public var next: Components.Schemas.EpisodeRef?
+            /// Creates a new `UnfinishedEntry`.
+            ///
+            /// - Parameters:
+            ///   - libraryItemId:
+            ///   - title:
+            ///   - reason: `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+            ///   - since: The item's last change.
+            ///   - next:
+            public init(
+                libraryItemId: Swift.String,
+                title: Components.Schemas.TitleSummary,
+                reason: Components.Schemas.UnfinishedEntry.ReasonPayload,
+                since: Foundation.Date,
+                next: Components.Schemas.EpisodeRef? = nil
+            ) {
+                self.libraryItemId = libraryItemId
+                self.title = title
+                self.reason = reason
+                self.since = since
+                self.next = next
+            }
+            public enum CodingKeys: String, CodingKey {
+                case libraryItemId
+                case title
+                case reason
+                case since
+                case next
             }
         }
         /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner.
         ///
         /// - Remark: Generated from `#/components/schemas/Stats`.
         public struct Stats: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Stats/span`.
+            @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case month = "month"
+                case year = "year"
+                case all = "all"
+            }
+            /// - Remark: Generated from `#/components/schemas/Stats/span`.
+            public var span: Components.Schemas.Stats.SpanPayload
+            /// The last year the period touches; for `all`, the current year.
+            ///
             /// - Remark: Generated from `#/components/schemas/Stats/year`.
             public var year: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Stats/month`.
             public var month: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/Stats/timeZone`.
             public var timeZone: Swift.String
-            /// The period is not over yet in the user's time zone.
+            /// The period is not over yet in the user's time zone (always true for `all`).
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/isPartial`.
             public var isPartial: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/Stats/totals`.
             public var totals: Components.Schemas.StatsTotals
-            /// One per month of the year, or one per day of the month, in order.
+            /// Movie, show, anime and book, always all four in that order; they sum to `totals`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/byKind`.
+            public var byKind: [Components.Schemas.StatsKind]
+            /// One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/buckets`.
             public var buckets: [Components.Schemas.StatsBucket]
@@ -5486,12 +5897,14 @@ public enum Components {
             /// Creates a new `Stats`.
             ///
             /// - Parameters:
-            ///   - year:
+            ///   - span:
+            ///   - year: The last year the period touches; for `all`, the current year.
             ///   - month:
             ///   - timeZone:
-            ///   - isPartial: The period is not over yet in the user's time zone.
+            ///   - isPartial: The period is not over yet in the user's time zone (always true for `all`).
             ///   - totals:
-            ///   - buckets: One per month of the year, or one per day of the month, in order.
+            ///   - byKind: Movie, show, anime and book, always all four in that order; they sum to `totals`.
+            ///   - buckets: One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order.
             ///   - busiest:
             ///   - mostEpisodes:
             ///   - longestRun:
@@ -5500,11 +5913,13 @@ public enum Components {
             ///   - first:
             ///   - last:
             public init(
+                span: Components.Schemas.Stats.SpanPayload,
                 year: Swift.Int,
                 month: Swift.Int? = nil,
                 timeZone: Swift.String,
                 isPartial: Swift.Bool,
                 totals: Components.Schemas.StatsTotals,
+                byKind: [Components.Schemas.StatsKind],
                 buckets: [Components.Schemas.StatsBucket],
                 busiest: Components.Schemas.StatsBucket? = nil,
                 mostEpisodes: Components.Schemas.StatsBucket? = nil,
@@ -5514,11 +5929,13 @@ public enum Components {
                 first: Components.Schemas.StatsMoment? = nil,
                 last: Components.Schemas.StatsMoment? = nil
             ) {
+                self.span = span
                 self.year = year
                 self.month = month
                 self.timeZone = timeZone
                 self.isPartial = isPartial
                 self.totals = totals
+                self.byKind = byKind
                 self.buckets = buckets
                 self.busiest = busiest
                 self.mostEpisodes = mostEpisodes
@@ -5529,11 +5946,13 @@ public enum Components {
                 self.last = last
             }
             public enum CodingKeys: String, CodingKey {
+                case span
                 case year
                 case month
                 case timeZone
                 case isPartial
                 case totals
+                case byKind
                 case buckets
                 case busiest
                 case mostEpisodes
@@ -5599,6 +6018,52 @@ public enum Components {
                 case showsFinished
                 case animeFinished
                 case booksFinished
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsKind`.
+        public struct StatsKind: Codable, Hashable, Sendable {
+            /// Anime is its own kind, films and shows alike; never counted again as either.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsKind/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case movie = "movie"
+                case show = "show"
+                case anime = "anime"
+                case book = "book"
+            }
+            /// Anime is its own kind, films and shows alike; never counted again as either.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsKind/kind`.
+            public var kind: Components.Schemas.StatsKind.KindPayload
+            /// - Remark: Generated from `#/components/schemas/StatsKind/episodes`.
+            public var episodes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsKind/minutes`.
+            public var minutes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsKind/finished`.
+            public var finished: Swift.Int
+            /// Creates a new `StatsKind`.
+            ///
+            /// - Parameters:
+            ///   - kind: Anime is its own kind, films and shows alike; never counted again as either.
+            ///   - episodes:
+            ///   - minutes:
+            ///   - finished:
+            public init(
+                kind: Components.Schemas.StatsKind.KindPayload,
+                episodes: Swift.Int,
+                minutes: Swift.Int,
+                finished: Swift.Int
+            ) {
+                self.kind = kind
+                self.episodes = episodes
+                self.minutes = minutes
+                self.finished = finished
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case episodes
+                case minutes
+                case finished
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsBucket`.
@@ -5712,6 +6177,10 @@ public enum Components {
             public var highest: Components.Schemas.TitleSummary?
             /// - Remark: Generated from `#/components/schemas/StatsRatings/highestRating`.
             public var highestRating: Swift.Double?
+            /// Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsRatings/distribution`.
+            public var distribution: [Swift.Int]
             /// Creates a new `StatsRatings`.
             ///
             /// - Parameters:
@@ -5719,22 +6188,26 @@ public enum Components {
             ///   - mean:
             ///   - highest:
             ///   - highestRating:
+            ///   - distribution: Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9.
             public init(
                 count: Swift.Int,
                 mean: Swift.Double? = nil,
                 highest: Components.Schemas.TitleSummary? = nil,
-                highestRating: Swift.Double? = nil
+                highestRating: Swift.Double? = nil,
+                distribution: [Swift.Int]
             ) {
                 self.count = count
                 self.mean = mean
                 self.highest = highest
                 self.highestRating = highestRating
+                self.distribution = distribution
             }
             public enum CodingKeys: String, CodingKey {
                 case count
                 case mean
                 case highest
                 case highestRating
+                case distribution
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsMoment`.
@@ -13681,6 +14154,388 @@ public enum Operations {
             }
         }
     }
+    /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
+    ///
+    /// - Remark: HTTP `GET /v1/web-push/key`.
+    /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)`.
+    public enum GetWebPushKey {
+        public static let id: Swift.String = "getWebPushKey"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/web-push/key/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetWebPushKey.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetWebPushKey.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetWebPushKey.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetWebPushKey.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/web-push/key/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/web-push/key/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WebPushKey)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WebPushKey {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetWebPushKey.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetWebPushKey.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The key.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetWebPushKey.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetWebPushKey.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Save this browser's push subscription. Saved again, it moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)`.
+    public enum SaveWebPushSubscription {
+        public static let id: Swift.String = "saveWebPushSubscription"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SaveWebPushSubscription.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SaveWebPushSubscription.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SaveWebPushSubscription.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.WebPushSubscription)
+            }
+            public var body: Operations.SaveWebPushSubscription.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SaveWebPushSubscription.Input.Headers = .init(),
+                body: Operations.SaveWebPushSubscription.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.SaveWebPushSubscription.Output.NoContent)
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.SaveWebPushSubscription.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `DELETE /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)`.
+    public enum DeleteWebPushSubscription {
+        public static let id: Swift.String = "deleteWebPushSubscription"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/DELETE/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/DELETE/query/endpoint`.
+                public var endpoint: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - endpoint:
+                public init(endpoint: Swift.String) {
+                    self.endpoint = endpoint
+                }
+            }
+            public var query: Operations.DeleteWebPushSubscription.Input.Query
+            /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteWebPushSubscription.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteWebPushSubscription.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteWebPushSubscription.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.DeleteWebPushSubscription.Input.Query,
+                headers: Operations.DeleteWebPushSubscription.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Forgotten.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteWebPushSubscription.Output.NoContent)
+            /// Forgotten.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteWebPushSubscription.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
     ///
     /// - Remark: HTTP `GET /v1/agent/tokens`.
@@ -14361,7 +15216,7 @@ public enum Operations {
             }
         }
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -14370,8 +15225,18 @@ public enum Operations {
         public struct Input: Sendable, Hashable {
             /// - Remark: Generated from `#/paths/v1/me/stats/GET/query`.
             public struct Query: Sendable, Hashable {
+                /// Required unless `span=all`.
+                ///
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/year`.
-                public var year: Swift.Int
+                public var year: Swift.Int?
+                /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/span`.
+                @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case all = "all"
+                }
+                /// `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise).
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/span`.
+                public var span: Operations.GetStats.Input.Query.SpanPayload?
                 /// 1–12. Absent means the whole year.
                 ///
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/month`.
@@ -14383,15 +15248,18 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - year:
+                ///   - year: Required unless `span=all`.
+                ///   - span: `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise).
                 ///   - month: 1–12. Absent means the whole year.
                 ///   - tz: IANA time zone for day and month boundaries. Absent means UTC.
                 public init(
-                    year: Swift.Int,
+                    year: Swift.Int? = nil,
+                    span: Operations.GetStats.Input.Query.SpanPayload? = nil,
                     month: Swift.Int? = nil,
                     tz: Swift.String? = nil
                 ) {
                     self.year = year
+                    self.span = span
                     self.month = month
                     self.tz = tz
                 }
@@ -14415,7 +15283,7 @@ public enum Operations {
             ///   - query:
             ///   - headers:
             public init(
-                query: Operations.GetStats.Input.Query,
+                query: Operations.GetStats.Input.Query = .init(),
                 headers: Operations.GetStats.Input.Headers = .init()
             ) {
                 self.query = query
@@ -14537,12 +15405,13 @@ public enum Operations {
                 public var q: Swift.String
                 /// - Remark: Generated from `#/paths/v1/search/GET/query/type`.
                 @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case all = "all"
                     case movie = "movie"
                     case show = "show"
                     case anime = "anime"
                     case book = "book"
                 }
-                /// `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
+                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
                 ///
                 /// - Remark: Generated from `#/paths/v1/search/GET/query/type`.
                 public var _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -14550,7 +15419,7 @@ public enum Operations {
                 ///
                 /// - Parameters:
                 ///   - q:
-                ///   - _type: `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
+                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
                 public init(
                     q: Swift.String,
                     _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -14614,7 +15483,7 @@ public enum Operations {
                     self.body = body
                 }
             }
-            /// Matches, best first.
+            /// Matches, best first. With `all`, exact title matches lead, then TMDB and AniList hits alternate, at most 40; a TMDB show is left out only when an AniList hit in the same results is mapped to it, and that hit then carries `ids.tmdb`.
             ///
             /// - Remark: Generated from `#/paths//v1/search/get(searchCatalog)/responses/200`.
             ///
@@ -18297,6 +19166,317 @@ public enum Operations {
             }
         }
     }
+    /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)`.
+    public enum StartStremioLink {
+        public static let id: Swift.String = "startStremioLink"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/stremio/link/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.StartStremioLink.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.StartStremioLink.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.StartStremioLink.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.StartStremioLink.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/stremio/link/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/stremio/link/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.StremioLink)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.StremioLink {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.StartStremioLink.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.StartStremioLink.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// A code to approve.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.StartStremioLink.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.StartStremioLink.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link/{code}`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)`.
+    public enum PollStremioLink {
+        public static let id: Swift.String = "pollStremioLink"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/path/code`.
+                public var code: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - code:
+                public init(code: Swift.String) {
+                    self.code = code
+                }
+            }
+            public var path: Operations.PollStremioLink.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PollStremioLink.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PollStremioLink.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.PollStremioLink.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.PollStremioLink.Input.Path,
+                headers: Operations.PollStremioLink.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.PollStremioLink.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.PollStremioLink.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Approved. The library was read and its import queued.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.PollStremioLink.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.PollStremioLink.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Not approved yet.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.PollStremioLink.Output.NoContent)
+            /// Not approved yet.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.PollStremioLink.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Import the connected Trakt account. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/trakt`.
@@ -20105,7 +21285,7 @@ public enum Operations {
             }
         }
     }
-    /// Continue Watching and Start Watching for the home screen, in one call.
+    /// Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
     ///
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
@@ -20161,7 +21341,7 @@ public enum Operations {
                     self.body = body
                 }
             }
-            /// Both rows.
+            /// The home rows.
             ///
             /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)/responses/200`.
             ///

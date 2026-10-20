@@ -9,6 +9,8 @@ Scope of this file: Aaru only.
 ## How to read this
 
 - IDs are stable. Never renumber. Close an item by moving it to **Done** with its ID.
+  Until then, the **Status** table below is the record of what is done; update its row when an
+  item changes.
 - Work is grouped into **phases** (P0–P7). Each phase has an exit gate. Inside a phase,
   milestones (`M1`…`M14`) and groups keep their old IDs; order inside a group is dependency
   order. Do not start an item whose `Needs` is open.
@@ -40,6 +42,50 @@ library layer stay separate, external IDs stored whenever known, no second backe
   the same for every user and read no per-user signal, so they are **not** the out-of-scope
   recommendations engine; nothing personalised ("because you watched…") is allowed under this
   item. Posters stay hotlinked catalog URLs.
+- **Discover, Insights and a fuller Home are built before the P2 gate**, by the owner's call,
+  with 0 strangers (flagged; the owner chose). Prompted by the owner's own first run: a search
+  for "Mobland" from Home found nothing and an empty library left Home, Library and Calendar
+  blank. Items: CAT-019, UPN-002, GAM-006c, APP-011…APP-015
+  (CAT-020 superseded by DISC-001).
+- **Search defaults to All** (CAT-019): `type=all` is TMDB `search/multi` (films and shows,
+  people dropped) plus AniList, in parallel, merged on the server, each row keeping its kind.
+  **Books stay out of All** (Open Library is the slowest and noisiest provider); All ends with
+  a "Search Books for 'x'" row. A TMDB show is dropped only when `anime_mappings` links it to an
+  AniList hit in the same results. Nothing is merged on a name.
+- **The Discover tab/page is built on DISC-001's rows** (APP-012). This branch first had its
+  own `GET /v1/discover?section=` (CAT-020); on merging with DISC-001 the owner kept DISC-001's
+  API, so CAT-020 is superseded. Discover shows the same rows as Home (books included) as a full
+  destination. Items carry `libraryItemId` for the caller: the server's list cache holds no user
+  data, and the per-user mark is one library query applied after the cache read. Still catalog
+  data, the same lists for everyone, not a recommendations engine (see the DISC-001 bullet).
+- **Insights (GAM-006c) pulls part of GAM-006b forward**: all time, by kind, a ratings
+  histogram, on `/v1/me/stats`. Genres (CAT-018), networks, badges and the profile placement
+  stay in P5.
+- **Status labels are per kind; stored values do not change** (APP-014). `wishlist |
+  in_progress | finished | dropped` stay the wire and domain words. Films, shows and anime read
+  Plan to watch / Watching / Watched / Dropped; books read Plan to read / Reading / Read /
+  Dropped; with no kind, Planned / In progress / Finished / Dropped.
+- **"Multiple watchlists" are Lists** (APP-015): Lists become a top-level destination and
+  Discover cards get Add to list. There is no starter "Watchlist" list; the `wishlist` status
+  already means that. Shelves stay API-only.
+- **The iPhone tab bar stops at five**: Home · Discover · Library · Calendar · Lists. Insights
+  is not a tab; it opens from Home's stats strip and next to Recap.
+
+## Decisions recorded 2026-10-20
+
+- **Imports move status forward only.** A later import may take a title from wishlist to in
+  progress to finished, never backward, never out of dropped, and never past a status the user
+  chose. Fill-empty stays the rule for ratings and dates. Owner's call after the multi-source
+  audit (IMP-004).
+- **Web push is un-deferred** (by the owner's call: "notifications working, on web and iOS"):
+  airing alerts reach browsers too, over standard Web Push with a VAPID key (`VAPID_CONFIG`,
+  sealed in `aaru-env`, generated once). Endpoints are limited to the browsers' push services.
+  iPhone and iPad get browser alerts only from Aaru added to the Home Screen.
+- **Stremio history import (IMP-016), by the owner's call:** the addon only sees playback after it
+  is installed, so past history comes from Stremio's account API through its device-link code: the
+  user approves on stremio.com, Aaru reads the library once, logs the session out and never stores
+  the key. The API is unofficial; it is used once per import, never polled or synced (still no
+  two-way sync). An export-file fallback follows once a real export is in hand.
 - **Groups are built before the P2 gate**, by the owner's call, with 0 strangers (flagged; the
   owner chose). A group is a friends-only space with channels and a default `#general`, where
   members chat and can tag `@aaru`. Section `P4 · Groups` (GRP-001…GRP-012). Pulled forward with
@@ -103,6 +149,10 @@ library layer stay separate, external IDs stored whenever known, no second backe
   permission, registers the token (Debug → sandbox, TestFlight/App Store → production), and
   sign-out forgets the device. Mac push is not on yet (it needs its own entitlement key).
   Episodes come from what is already hydrated; a scheduled show refresh is still JOB-001 work.
+  **2026-10-20:** the alert carries `libraryItemId`, and a tap opens that show on iPhone (also
+  from a cold launch). Production has the APNs key (`APNS_KEY_ID` set, `.p8` sealed in
+  `aaru-env`). An alert needs the switch on, a show `in_progress`, and an episode that airs after
+  the switch was turned on. Mac push still waits on the Push capability in the Mac profile.
 - **Sign in with Google is un-deferred** (AUTH-005, by the owner's call): iOS, Mac and web, Google ID
   tokens verified server-side against Google's JWKS, identities keyed on Google's `sub`, never
   merged on email; linking Google to an existing account from Settings.
@@ -142,20 +192,193 @@ library layer stay separate, external IDs stored whenever known, no second backe
   **Resolved 2026-10-16:** the owner created the "Aaru" Trakt app (no VIP needed); its Client ID
   is configured on `maat` with PKCE and no client secret. First real connect is the proof.
 
-## Status snapshot (verified 2026-10-09)
+## Status (verified 2026-10-20)
 
-| Area | State |
-| --- | --- |
-| `aaru-core` | Domain model present: `Title`, `LibraryItem`, `Progress`, `Rating`, `ExternalIDs`, `MediaRef`, `AaruList`, `ImportJob`, `TitleMatching`, `Episode`, identifiers, validation. ~32 tests: validation, rating, matching, external IDs, wire contract, Codable round-trip. No anime IDs, no user/social types. |
-| `aaru-server` | Hummingbird skeleton. Fluent + Postgres configured in `App+build.swift`, migrations gated behind `db.migrate`. **Zero migrations registered.** `openapi.yaml` is still the generator template (`getHello`). A template WebSocket echo is wired at `/ws`. CI sits in `aaru-server/.github/workflows/` and therefore never runs. |
-| `aaru-client` | Fresh `sv create` template: Svelte 5, Kit `next`, adapter-cloudflare, Tailwind 4, Paraglide (en/es/pt), Storybook, Vitest, Playwright. Untracked. No Aaru code. |
-| `aaru-ios` | Empty directory. No Xcode project. |
-| Release | No fastlane, no TestFlight lane, no infra entry, no Worker deploy. `swiftly.pkg` (10 MB) committed at repo root. |
-| Auth, search, library, lists, imports | None of it exists. |
+Checked item by item against `origin/main` at `62dfe1d` (PR #46), every Claude session on this
+repo, and the merged PRs here and in the infra repo. Production runs `5be7fef` (infra #376);
+#39 (Settings tab), #41 (import merge), #42 (push tap), #45 (web push) and #46 (Stremio history)
+are on `main` and wait for the next promote PR. Unmerged branches (Groups, realtime: #40, #44,
+#47, #48) are not counted.
 
-So the real starting line is P0.
+| Phase | Done | Gate | What blocks it |
+| --- | --- | --- | --- |
+| **P0 — Rails** | 14/16 (1 built, unverified; 1 dropped) | **Met** | Nothing. `INFRA_TOKEN` is unset by choice, so promote PRs are opened by hand and Server Deploy's promote job shows red |
+| **P1 — Basics (API)** | 30/31 (1 built, unverified) | **Met** | Nothing; CAT-010's first production load of the anime mappings is unconfirmed (CronJob first fires 2026-11-02) |
+| **P2 — Clients, widgets, imports** | 29/54 (10 built, unverified; 3 partial; 9 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) and unmatched-row triage (IMP-011) open |
+| **P3 — Tracking** | 1/6 (1 partial) | Not met | Stremio addon built and deployed (SCR-003) but playback never tried live; no `/v1/scrobble/*` routes, no Plex/Jellyfin |
+| **P4 — Social** | 0/6 (1 partial) | Not met | Only push plumbing (SOC-005, airing alerts) is on `main` |
+| **P5 — Gamification** | 1/9 (1 partial) | Not met | Recap (GAM-006a) only; no points ledger, streaks, badges |
+| **P6 — Realtime, DMs, rooms** | 0/10 | Not met | Nothing on `main` |
+| **P7 — Agent surfaces** | 0/12 (3 partial) | Not met | Agent tokens exist for Stremio only; no tool layer, MCP or model provider |
 
-### P0 progress (2026-10-09, branch `p0-rails`, not yet pushed)
+Totals over 147 items: **Done 75**, built but unverified 12, partial 9, open 44, deferred 2,
+dropped 5. "Done" means the item's own **Done when** is met by code on `main` (caveats noted);
+"Built, unverified" means the code is on `main` but the Done-when asks for a device run, a real
+account or a stranger that has not happened yet.
+
+**Known gaps no item owns yet:**
+
+- **Undo ribbon.** DESIGN.md and AUD-001 require it, WID-002 and OUT-002 depend on it, and the
+  server's `POST /v1/actions/{id}/undo` exists, but no client calls it.
+- IMP-004's text still says a later source never overwrites a status; since 2026-10-20 (#41)
+  status moves forward only (see that day's decision).
+- PRV-001's ODbL credit no longer applies: anime mappings come from Fribb (MIT).
+
+### Every item
+
+| ID | Status | Evidence | Caveat |
+| --- | --- | --- | --- |
+| --- | --- | --- | --- |
+| REL-001 | Done | #1 577ba6e; `.github/workflows/ci-*.yml` path filters | Nested `aaru-server/.github` gone |
+| REL-002 | Done | #1; no `*.pkg` in tree | |
+| REL-003 | Built, unverified | #1, #3; `aaru-ios/Config/{Beta,Release}.xcconfig` | Release app never installed beside Beta on a device |
+| REL-004 | Done | #3, #4; `release-apple.yml` succeeds on every main merge | iOS + macOS lanes; `release` dispatch-only |
+| REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
+| REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
+| DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
+| SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
+| SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
+| SRV-003 | Done | #1; no Fluent import under `Sources/App/API`; `TestFakes.swift` | |
+| SRV-004 | Done | #1; `Data/Migrations/Migrations.swift` | |
+| SRV-005 | Done | #1; Migrations.swift | |
+| SRV-006 | Done | #1; Migrations.swift | |
+| SRV-007 | Done | #1; Migrations+Imports.swift | |
+| SRV-008 | Done | `Config/AppConfig.swift` requires TMDB_API_KEY; `.env` ignored | |
+| SRV-009 | Done | `ci-swift.yml` swiftformat --lint + tests on Postgres | Deliberate-failure run not recorded |
+| AUTH-001 | Done | #2 5f873ce; AuthMiddleware.swift, APITests 401 | |
+| AUTH-002 | Done | #2; AppleVerifierTests (exp, kid refresh) | |
+| AUTH-003 | Done | #2, #8; AuthFlowTests rate limit | Email depends on Resend sender config |
+| AUTH-004 | Done | AuthFlowTests "AUTH-004: … no row anywhere" | |
+| AUTH-005 | Done | #18, #19; GoogleSignInTests linking/409; LinkGoogleButton.swift | |
+| CAT-001 | Done | #2; ProviderClientTests (429 retry) | |
+| CAT-002 | Done | #2; TMDBCatalog.swift | |
+| CAT-003 | Done | #2; ISBNTests, OpenLibraryCatalog.swift | |
+| CAT-004 | Done | #2; `/v1/search` | |
+| CAT-005 | Done | #2; CatalogResolutionTests (concurrent adds) | |
+| CAT-006 | Done | #2, #36; CatalogRefreshTests | |
+| CAT-007 | Done | #2; AniListCatalog.swift | |
+| CAT-008 | Done | #2; aaru-core anime ids, WireContractTests | |
+| CAT-009 | Done | #2; TitleResolver.swift | |
+| CAT-010 | Built, unverified | #36 e8bdebb; AnimeMappingLoader.swift; infra #362 CronJob | First production load not confirmed; CronJob first fires Nov 2 |
+| LIB-001 | Done | #2; `POST /v1/library/items` | |
+| LIB-002 | Done | #2; LibraryTests | No EXPLAIN check in tests |
+| LIB-003 | Done | #2; LibraryTests | |
+| LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
+| AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
+| AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Server only; no client undo ribbon |
+| PROG-001 | Done | #2; episodes PUT route | |
+| PROG-002 | Done | #2; seasons watched route | |
+| PROG-003 | Done | #2; LibraryTests nextEpisode | |
+| PROG-004 | Done | #2; ValidationTests percent | |
+| LST-001 | Done | #2; ListShelfTests visibility | |
+| LST-002 | Done | #2; `/v1/lists/{id}/items`, `/order` | |
+| LST-003 | Built, unverified | ListShelfTests LST-003, CatalogRefreshTests | iOS not checked on TestFlight yet |
+| SHF-001 | Done | #2; `saved_queries` | API-only by decision |
+| SHF-002 | Done | #2; `/v1/shelves/{id}/items` | |
+| CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
+| UPN-001 | Done | #2; `/v1/up-next` | |
+| APP-001 | Done | #7 432e35f; SessionMiddleware (12 concurrent 401s) | |
+| APP-002 | Done | #8; SessionKeychain.swift | Mac relaunch persistence not recorded |
+| APP-003 | Built, unverified | #10; LibraryCache.swift | Offline checked in simulator; 1,000-item scroll not measured |
+| APP-004 | Done | #10; SearchView.swift, SearchPanel.tsx | iOS not driven in simulator |
+| APP-005 | Done | #11; TitleDetailModel.swift | Rollback verified on web only |
+| APP-006 | Done | #12; ListsView.swift, AddToListDialog.tsx | |
+| APP-007 | Done | #15, #39 e12567e; SettingsView.swift, ImportDetailView.swift | Live-ish polling verified on web only |
+| APP-008 | Partial | sidebarAdaptable + ⌘F in RootView/LibraryView | No ⌘N add shortcut |
+| APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
+| DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
+| APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
+| WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
+| WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
+| WID-003 | Built, unverified | #26; CountdownWidget.swift | Not seen on a device |
+| WID-004 | Built, unverified | #26; WeekWidget.swift | Not seen on a device |
+| WID-005 | Built, unverified | #35 f7fc4a1; NowWatchingLiveActivity.swift | Not run on a device |
+| WID-006 | Built, unverified | #26; same extension for macOS | Mac intent not shown working |
+| JOB-001 | Done | #13, #36; ImportWorker.swift, CatalogRefreshService.swift | Journal pruning not built |
+| IMP-001 | Done | #13 c12c751; `/v1/imports/{id}` + apply | |
+| IMP-002 | Done | #16 9cb13d5; TraktTests (PKCE, state, refresh); infra #341 | No real Trakt account connected yet |
+| IMP-003 | Built, unverified | #16; TraktImporter.swift | Stub Trakt only; 10,000-item run not measured |
+| IMP-004 | Done | #41 f54b1e7; ImportMergeTests | Not deployed; no literal Trakt→Letterboxd rating test |
+| IMP-005 | Done | #13; `/v1/imports/csv` 413/422 tests | 5 MB cap |
+| IMP-006 | Done | #13; CSVImportParser.swift | |
+| IMP-007 | Done | #13; CSVImportParser.swift | |
+| IMP-008 | Done | #13; ImportParserTests | |
+| IMP-009 | Open | only `cat_list` enum in ImportJob.swift | Parser rejects it ("not a CSV import") |
+| IMP-010 | Open | only `cat_ics` enum | No ICS parser |
+| IMP-011 | Open | ImportDetailView lists unmatched rows only | No resolve/search-and-pick UI |
+| IMP-012 | Deferred | BACKLOG "Parked 2026-10-16 by the owner" | Needs a real export |
+| IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |
+| IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
+| IMP-016 | Built, unverified | #46 62dfe1d; Imports/Stremio/*, StremioImportTests | Not deployed; no real account library |
+| PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
+| CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
+| CAT-012 | Open | no Google Books code | |
+| CAT-013 | Open | no Wikidata code | |
+| CAT-014 | Open | no watch-providers code | |
+| CAT-015 | Open | none | Scheduled after P2 gate |
+| CAT-016 | Open | none | Scheduled after P2 gate |
+| CAT-017 | Deferred | heading "Deferred" | |
+| CAT-019 | Done | #43 5be7fef; CatalogSearchAllTests (Mobland) | Stub tests |
+| CAT-020 | Dropped | superseded by DISC-001 | |
+| UPN-002 | Done | #43; ScheduleTests UPN-002 | |
+| GAM-006c | Done | #43; StatsTests "all time equals the years summed" | |
+| APP-011 | Done | #43; SearchPanel.tsx, SearchView.swift | Not seen on a device |
+| APP-012 | Done | #43; DiscoverScreen.swift, app_.discover.tsx | |
+| APP-013 | Done | #43; HomeSummary.swift, HomeRows.tsx | |
+| APP-014 | Done | #43; LibraryRow.swift, library/model.ts labels | |
+| APP-015 | Done | #43; RootView `lists` tab | |
+| LAND-001 | Partial | #5, #9; routes/index.tsx, demo/ gone | No prerender config found; Lighthouse never run |
+| LAND-002 | Open | no waitlist code | |
+| LAND-003 | Done | #27; docs/privacy.md, /privacy | Names all six third parties |
+| WEB-001 | Done | #9 da50ed5 + later; ARCHITECTURE.md lists it | |
+| SCR-001 | Partial | #36; ScrobbleService.swift, ScrobbleTests | No `/v1/scrobble/*` routes; service only |
+| SCR-002 | Open | no Plex/Jellyfin code | |
+| SCR-003 | Done | #36 e8bdebb; Sources/App/Stremio; deployed | Verified in Stremio Web on local server; playback events not tried |
+| SCR-004 | Open | none | |
+| SCR-005 | Open | none | |
+| SCR-006 | Open | none | |
+| SOC-001 | Open | none on main (PR #44 open) | |
+| SOC-002 | Open | none on main (PR #44 open) | |
+| SOC-003 | Open | none | |
+| SOC-004 | Open | none | |
+| SOC-005 | Partial | #17, #42, #45; Push.swift, `/v1/devices`, `/v1/me/notifications` | Airing push only; no friend-request category |
+| SHR-001 | Open | none | |
+| GAM-001 | Open | none | |
+| GAM-002 | Open | none | |
+| GAM-003 | Open | none | |
+| WID-007 | Open | none | |
+| GAM-004 | Open | none | |
+| GAM-005 | Open | none | |
+| GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
+| GAM-006b | Partial | #43 Insights covers all-time/by-kind | No genres, profile placement, badges |
+| CAT-018 | Open | genres not stored | |
+| RT-001 | Open | none (PR #48 open) | |
+| DM-001 | Open | none | |
+| DM-002 | Open | none | |
+| DM-003 | Open | none | |
+| DM-004 | Open | none | |
+| DM-005 | Open | none | |
+| ROOM-001 | Open | none | |
+| ROOM-002 | Open | none | |
+| ROOM-003 | Open | none | |
+| ROOM-004 | Open | none | |
+| AG-001 | Open | none | |
+| AG-002 | Open | none | |
+| AG-003 | Open | none | Import plan/apply exists, not the agent one |
+| AG-004 | Open | none | |
+| AG-005 | Open | none | |
+| AG-006 | Open | none | |
+| AG-007 | Open | no ModelProviding | |
+| OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio kind only; no general scopes |
+| OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
+| OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
+| OUT-004 | Open | no AppMCP | |
+| OUT-005 | Open | none | |
+| MOAT-001 | Dropped (promoted) | now SCR-003 | SCR-003 built |
+| MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
+| MOAT-003 | Dropped (promoted) | now SCR-004 | |
+
+### P0 progress log (from 2026-10-09; merged in #1, deployed 2026-10-15)
 
 | Item | State |
 | --- | --- |
@@ -167,7 +390,7 @@ So the real starting line is P0.
 | REL-005 | Image builds from the repo root and was smoke-tested locally (migrate, fail-fast, health 200); promote workflow written; infra draft PR LuminaVault/LuminaVaultInfra#292. Needs `TMDB_API_KEY` sealed, first image tag, `/data/pg-aaru` on the node, `INFRA_TOKEN`, and the domain. |
 | REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Domain `aaruapp.com` (Cloudflare, 2026-10-15): prod Worker on `aaruapp.com` (+ `www` → apex 301), beta on `beta.aaruapp.com`, no `workers.dev`; security headers in `src/start.ts`. Needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (token also needs Workers Routes + DNS edit on the zone for the custom domains). |
 
-### P1 progress (2026-10-09, branch `p1-basics`, stacked on `p0-rails`, not pushed)
+### P1 and later progress log (from 2026-10-09)
 
 Server side of P1 is built: 62 server tests and 37 core tests pass against local Postgres,
 with every provider stubbed.
@@ -182,30 +405,32 @@ with every provider stubbed.
 | CAL-001, UPN-001 | Done. Network comes from TMDB's first network / AniList's first streaming link (2026-10-15); TVmaze (CAT-011, built 2026-10-16) refines TMDB dates to exact times and the network; its CC BY-SA credit still needs the About screen (PRV-001). Shows hydrate when added; refreshing every tracked show on its staleness window needs a job (JOB-001). |
 | Account export | Built 2026-10-16: `GET /v1/me/export` (JSON: everything incl. watched episodes, lists, shelves; CSV: one row per item in the generic-import columns, so it re-imports; formula cells defused). Settings → Export your data on iPhone/iPad/Mac (save panel) and web (`/app/export`, native download). Privacy policy updated. |
 | IMP-013, IMP-014 | Built 2026-10-16: MyAnimeList XML upload (`source=mal`, `application/xml`; clients gunzip `.xml.gz`) and AniList by username (`POST /v1/imports/anilist`, read in the worker; private list / unknown user fails with a clear message). Both resolve through AniList, so the same anime from both is one title. Also (owner's ask): `source=auto` detects MAL-format XML / IMDb / Letterboxd / Goodreads, and any other CSV imports by its column names (title, year, type, IMDb/TMDB/TVDB/MAL/AniList ids, ISBN, status words, ratings on 5/10/100 scales). IMP-012 TV Time still waits for real exports. |
+| IMP-016 Stremio history | Built 2026-10-20 (server, iPhone, iPad, Mac, web): Settings → Stremio → "Import my Stremio history" shows a code + QR, polls every 3 s, then opens the import's plan. Watched films, in-progress titles, wishlist, and ticked episodes (bitfield over Cinemeta's list). Checked with stub transports and a live link-code create/read only; not yet against a real account's library. The export-file fallback waits for a real export. |
 | PRV-001, LAND-003 | Built 2026-10-16: `docs/providers.md` (register) and `docs/privacy.md` (policy, rendered at `aaruapp.com/privacy`); `/about` and the Apple About screen show the TMDB logo + notice, TVmaze (CC BY-SA), AniList, Open Library. `privacy@aaruapp.com` needs Cloudflare Email Routing. No self-serve export yet (policy says "ask us"). |
 | APP-009 Home rows | Built 2026-10-16 on iPhone, iPad, Mac and web: Home is the first destination (Home · Library · Calendar; web library moved to `/app/library`). Continue watching (one-tap check advances optimistically), Airing soon / Coming up (badges from `airTimeKnown`), Start watching. Apple renders from a disk cache first; the web has no offline cache yet. In-progress movies are not in Continue watching (server returns shows only). Checked with sample data only. |
 | WID-001…004, WID-006 | Built 2026-10-16 (iOS + macOS, one extension): App Group snapshot (`Shared/WidgetSnapshot.swift`) written after every Home load and tick, an hourly `BGAppRefreshTask` on iOS, cleared on sign-out. Up Next (small/medium/large) with an interactive "mark watched" App Intent that calls the same PUT with the shared Keychain token, advances optimistically and restores on failure; Next Episode countdown (small + Lock Screen accessories on iOS; entries at each air time flip to "Out now"); This Week (large/extra large, Monday-first, deep links `aaru://title/{id}`). Not yet seen on a device; no undo ribbon for widget ticks; the large Up Next has no progress bar (the snapshot has no episode totals). WID-005 (Live Activity) is next. |
 | WID-005 | Built 2026-10-19 (iOS only, client-side; no server change): "Start watching" from an aired episode's context menu in title detail and from Home's Continue watching card starts a `NowWatchingAttributes` Live Activity (one at a time; poster downsampled into the App Group). Lock Screen + Dynamic Island: poster, `S1 · E8 · Name`, progress bar, "Ends at" ↔ "Nm left" via `ToggleEndTimeIntent`, "Mark watched" via `MarkNowWatchingIntent` (same PUT and widget path as the Up Next check). Stale after end + 30 min ("Did you finish?"), ended on app foreground and in the background refresh; ticking that episode anywhere ends it with a brief "Watched". Started by check-in only; scrobble start is P3. Not yet run on a device. |
 | DISC-001 Discover rows | Built 2026-10-20 on iPhone, iPad, Mac and web: `GET /v1/discover` returns up to eight public rows (TMDB trending/on the air/new shows/trending movies/in theaters, AniList this season + trending, Open Library weekly trending), cached in memory for 6 h, a failing provider dropping only its row; items the caller has carry `libraryItemId`. Home renders them under the user's rows; a new account sees a slim "Add a show" header above them. Adding from a card is search's add (wishlist, or a status, or a list). TMDB rows checked with stubs only (no local key); AniList and Open Library checked live. |
 | APP-010 + catch-up month | Built 2026-10-15 on iPhone, iPad, Mac and web: Calendar destination with Week (CAT grid / iPhone day pager) and Month (Stremio-style posters + agenda). Server adds `backdropUrl`, `network`, `airTimeKnown`, `episodeOverview`; range up to 42 days. Checked with sample data only. |
+| CAT-019, UPN-002, GAM-006c, APP-014 (server) | Built 2026-10-20 on `feat/discover-insights`, tests against stubs only: `type=all` search with `releaseDate` on hits, Up Next `counts` + `unfinished`, `/v1/me/stats?span=all` with `byKind` and the ratings distribution, per-kind labels in journal summaries and the Stremio catalog name. CAT-020's own `/v1/discover` was dropped for DISC-001's in the merge. Clients (APP-011…APP-015: Discover tab/page on DISC-001's rows, Insights, Home additions, Lists tab) are being built. |
 
-**P1 gate** (works end to end against the production API on `maat`) is not met until P0's
-deploy steps are done.
+**P1 gate** (works end to end against the production API on `maat`): met. The API has been live
+on `maat` since 2026-10-15 with the Apple and web clients on it.
 
 ---
 
 ## Phase map
 
-| Phase | Groups | Exit gate |
-| --- | --- | --- |
-| **P0 — Rails** | REL, M1 server foundation | CI green from repo root; empty app builds to TestFlight beta; API image deploys to `maat` via promote PR; web Worker deploys |
-| **P1 — Basics (API)** | M2 auth, M3 catalog + anime, M4 library, M5 progress, M6 lists, Calendar + Up Next | A personal tracker works end to end over `/v1`: sign in, search movies/shows/anime/books, add, tick episodes, lists, calendar, up next |
-| **P2 — Clients, widgets, imports** | M7 iOS + Mac, Widgets, M10/M11 web, M8 Trakt, M9 file imports, catalog sources | **The "basics done" line.** TestFlight beta and the beta Worker are usable by a stranger end to end; widgets work; Trakt + CSV imports work |
-| **P3 — Tracking integrations** | Scrobble, Stremio, Plex/Jellyfin, outbound Trakt/MAL/AniList | A play in Plex, Jellyfin or Stremio moves Aaru progress without a tap |
-| **P4 — Social** | Profiles, friends, activity, push, shared lists, groups | Two users can friend, see each other's activity, and block cleanly; friends chat in a group |
-| **P5 — Gamification** | Points ledger, levels, streaks, badges, leaderboard, stats | Points and streaks are idempotent and survive replays and undo |
-| **P6 — Realtime, DMs, watch together** | WebSocket gateway, libsignal DMs, rooms, SharePlay | E2E DMs between two devices; a room counts down and checks off together |
-| **P7 — Agent surfaces** | M13 agent, M14 outbound agent | As written in M13/M14 |
+| Phase | Groups | Exit gate | Status (2026-10-20) |
+| --- | --- | --- | --- |
+| **P0 — Rails** | REL, M1 server foundation | CI green from repo root; empty app builds to TestFlight beta; API image deploys to `maat` via promote PR; web Worker deploys | **Done** — gate met |
+| **P1 — Basics (API)** | M2 auth, M3 catalog + anime, M4 library, M5 progress, M6 lists, Calendar + Up Next | A personal tracker works end to end over `/v1`: sign in, search movies/shows/anime/books, add, tick episodes, lists, calendar, up next | **Done** — gate met |
+| **P2 — Clients, widgets, imports** | M7 iOS + Mac, Widgets, M10/M11 web, M8 Trakt, M9 file imports, catalog sources | **The "basics done" line.** TestFlight beta and the beta Worker are usable by a stranger end to end; widgets work; Trakt + CSV imports work | In progress — 29/54 done; not met |
+| **P3 — Tracking integrations** | Scrobble, Stremio, Plex/Jellyfin, outbound Trakt/MAL/AniList | A play in Plex, Jellyfin or Stremio moves Aaru progress without a tap | Started — 1/6 (Stremio addon) |
+| **P4 — Social** | Profiles, friends, activity, push, shared lists, groups | Two users can friend, see each other's activity, and block cleanly; friends chat in a group | Not started (airing push plumbing only); groups pulled forward 2026-10-20, in review (GRP-001…GRP-011) |
+| **P5 — Gamification** | Points ledger, levels, streaks, badges, leaderboard, stats | Points and streaks are idempotent and survive replays and undo | Started — 1/9 (Recap) |
+| **P6 — Realtime, DMs, watch together** | WebSocket gateway, libsignal DMs, rooms, SharePlay | E2E DMs between two devices; a room counts down and checks off together | Not started |
+| **P7 — Agent surfaces** | M13 agent, M14 outbound agent | As written in M13/M14 | Not started |
 
 **Hard rule:** no P3–P6 code before the P2 gate. Social and gamification on a library nobody
 has used is supply-side polish. Exceptions by the owner's call are listed in the decisions
@@ -706,6 +931,19 @@ user has no status for. `DELETE /v1/lists/{id}/items/{itemId}`. Manual ordering.
 **Done when:** adding a title not in the library succeeds without creating a library item,
 and reordering survives a round trip.
 
+### LST-003 · Fill a list from inside it; rows that say what is airing · M
+**Needs:** LST-002, APP-006, CAT-006.
+A list was easy to make and hard to fill: "Add to list" lived only on a title page, a search
+hit and a Discover card. Now "Add titles" inside a list opens search aimed at it (one tap adds,
+"On this list" after), and every library row offers "Add to list". `GET /v1/lists/{id}` returns
+`items`, one `ListItem` per member in order: the title, the caller's `LibraryEntry` when there
+is one, and for shows `showStatus` and `nextAiring` (the first episode not aired yet). `titles`
+stays for clients that predate it. A show only on a list has its episodes loaded on add and
+refreshed by `CatalogRefresher` like a tracked one; Calendar and Up Next stay library-only.
+
+**Done when:** a title can be added from inside a list on web and iOS, and a list row shows
+status, progress, show status and next airing, including for a show not in the library.
+
 ### SHF-001 · Saved queries (shelves) · M
 **Needs:** LIB-002, LST-001.
 `saved_queries` table: `id`, `userId`, `name`, serialized filter, `isPinned`, `createdAt`.
@@ -890,6 +1128,11 @@ a `partial` job keeps its unmatched rows listed. Verified on the web against a l
 real Goodreads-format file matched through Open Library: progress then plan, title + author
 matched a book with no ISBN, approve added two books and turned a custom shelf into a list. The
 Apple screens build but were not driven in the simulator.
+
+**Progress 2026-10-20 (Apple):** Settings is the fourth tab (Home · Library · Calendar ·
+Settings; a sidebar item on iPad and Mac) and the Mac Settings window (Cmd-,). The Library's More
+menu no longer carries Settings or Sign out. Owner: "the iOS app doesn't even have a settings
+view": the old entry point was too buried to find.
 
 ### APP-008 · Mac-specific pass · M
 **Needs:** APP-005.
@@ -1097,6 +1340,16 @@ test asserts that on a title present in both.
 rating survives, an empty one is filled, a status is never overwritten). The Trakt half waits for
 IMP-002/003.
 
+**Correction and progress 2026-10-20:** the 2026-10-15 test only covered a manual add followed by
+Goodreads. An audit found status stuck at its first import (an IMDb watchlist title stayed
+wishlist after Letterboxd said watched), MAL rows after Trakt creating a second, AniList-backed
+copy of the show, and later AniList seasons ticked as season 1 or skipped. Now, by the owner's
+choice: status moves forward only (wishlist → in progress → finished), never backward, never out
+of dropped, never past a status the user set (`status_by_hand`, backfilled from the journal, undo
+restores it). MAL ids resolve through `anime_mappings`, and rows for one title merge, each season
+ticked where its mapping says. `ImportMergeTests` covers same-source-twice, wishlist then
+finished, dropped and hand-set statuses staying, undo, Trakt then MAL, and two AniList seasons.
+
 ---
 
 ## P2 · M9 — File imports
@@ -1211,6 +1464,21 @@ as IMP-013; AniList's score format is normalised to Aaru's 1–10.
 Merge order for one account becomes Trakt → IMDb → Letterboxd → Goodreads → CAT → TV Time →
 MAL → AniList. `CLAUDE.md` and `ARCHITECTURE.md` carry the same order.
 
+**Progress 2026-10-20:** MAL rows also resolve through the anime mapping (by MAL id), so MAL after
+a Trakt import lands on the same TMDB show (IMP-004's 2026-10-20 note).
+
+### IMP-016 · Stremio history import · M
+**Needs:** IMP-001, SCR-003.
+Past Stremio history through Stremio's device-link code: approve on stremio.com, one library
+read, logout, key discarded. Shows tick from the watched bitfield over Cinemeta's episode list.
+Second in the merge order (after Trakt).
+
+**Done when:** a real Stremio account imports its watched movies, ticked episodes and in-progress
+shows, and running it again plans only skips and updates.
+
+Export-file fallback (`/v1/imports/csv` with a Stremio JSON export, same mapper): waits for a
+real export sample.
+
 ---
 
 ## P2 · Catalog sources
@@ -1291,6 +1559,84 @@ the TMDB backdrop with no layout change.
 ### CAT-017 · MyAnimeList fallback search · S · Deferred
 Only if AniList misses titles users actually search for. MAL API v2 reads with the PRV-001
 client ID. Deferred until there is a measured miss rate; Jikan is out (it scrapes MAL).
+
+---
+
+## P2 · Discover, Insights, Home (pulled forward 2026-10-20)
+
+See the 2026-10-20 decisions. No new tables.
+
+### CAT-019 · All-kinds search · S
+**Needs:** CAT-001, CAT-002.
+`GET /v1/search?type=all`: TMDB `search/multi` (movie and tv; person and adult dropped) and
+AniList in parallel, AniList with a short deadline. One provider failing returns the other's
+hits with `incomplete: true`; both failing is a 502. A TMDB show is dropped only when an
+`anime_mappings` row links it to an AniList hit in the same results. Hits carry `releaseDate`.
+
+**Done when:** "Mobland" with `type=all` returns the TMDB show, a mapped anime appears once,
+two same-named titles with no shared id both stay, and Open Library is never called.
+
+### CAT-020 · Discover feed · M — Superseded by DISC-001
+Superseded by DISC-001 (2026-10-20). This branch built its own `GET /v1/discover?section=`
+(trending, upcoming films, new shows, on the air, anime this season and next); when it met
+DISC-001 on `main`, the owner kept DISC-001's API and this one was dropped, code and tests. The
+Discover tab/page (APP-012) renders DISC-001's rows. The id stays so old references resolve.
+
+### UPN-002 · Library counts and Unfinished business · S
+**Needs:** UPN-001.
+`GET /v1/up-next` gains `counts` (items per status) and `unfinished`: every `dropped` item and
+every `in_progress` item untouched for 30 days, newest change first, never one already in
+Continue watching. Shows carry their next unwatched aired episode.
+
+**Done when:** a dropped show and a 31-day-old book appear, a 29-day-old book does not, and no
+title is in both Continue watching and Unfinished business.
+
+### GAM-006c · Insights · M
+**Needs:** GAM-006a.
+`/v1/me/stats?span=all` (one bucket per year from the first active year), `byKind`, and a
+10-bin ratings `distribution`. A browsable Insights view on iPhone, Mac and web: month, year or
+all time; totals, buckets, by kind, top titles, ratings, longest run. Static, no motion.
+
+**Done when:** all-time totals equal the yearly stats summed, and imported ticks are still left
+out.
+
+### APP-011 · Search defaults to All; Home refreshes after an add · S
+**Needs:** CAT-019.
+Search opens on All on every client, each row labelled with its kind. An add from search shows
+on Home without a manual refresh. On the web, Search opens in place on Home.
+
+**Done when:** searching "Mobland" from Home and adding it puts it in Start watching on iPhone,
+Mac and web without reloading.
+
+### APP-012 · Discover screen · M
+**Needs:** DISC-001.
+Discover on iPhone, Mac and web: DISC-001's rows (`GET /v1/discover`, the rows Home shows) as a
+full destination, posters with a kind and date badge. A card whose item carries
+`libraryItemId` reads "On your shelf" and opens the item; else Add (with status) and Add to
+list. TMDB, AniList and Open Library credits in the footer.
+
+**Done when:** a title can be added, and added to a list, from Discover on all three clients.
+
+### APP-013 · Home stats, counts, Unfinished business, lists · M
+**Needs:** UPN-002, GAM-006c, DISC-001.
+Home adds a this-month stats strip (opens Insights), status count chips, an Unfinished business
+row and list chips. Discover on Home is DISC-001's rows under the user's rows; there is no
+separate teaser.
+
+**Done when:** a new account's Home shows its stats and counts at zero above DISC-001's rows,
+not a blank page.
+
+### APP-014 · Status labels per kind · S
+Clients and server journal summaries label statuses per kind (see 2026-10-20). Stored values,
+ids and the Stremio catalog ids do not change.
+
+**Done when:** no client shows "Wishlist", and the API still sends `wishlist`.
+
+### APP-015 · Lists as a top-level destination · S
+**Needs:** APP-006.
+Lists is a tab on iPhone and a sidebar entry on iPad and Mac; Home shows list chips.
+
+**Done when:** Lists is one tap from anywhere on iPhone and Mac.
 
 ---
 

@@ -170,7 +170,7 @@ private struct ShelfCard: View {
                 Text("Added by \(addedBy.label)").font(.caption).foregroundStyle(Color(.muted)).lineLimit(1)
             }
             if let status = item.myStatus {
-                Label(status.label, systemImage: "checkmark")
+                Label(status.label(for: item.title.mediaKind), systemImage: "checkmark")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(Color(.accent))
             } else if adding {

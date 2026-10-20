@@ -1,8 +1,18 @@
 import { For, Show } from 'solid-js'
-import { STATUSES, hitKey } from '../lib/library/model'
+import {
+  hitKey,
+  kindOf,
+  statusLabel,
+  statusOptions,
+} from '../lib/library/model'
 import type { CatalogHit, LibraryStatus } from '../lib/library/model'
 
-/** "Add" (to the wishlist) with an "As…" status picker: search's and Discover's add control. */
+/**
+ * Add to the library: the button adds as planned, the "As…" menu beside it adds with another
+ * status, worded for the title's kind ("Plan to watch", "Plan to read"). Shared by Search,
+ * Discover and Home's Discover rows. While `adding`, it shows "Adding…" so a second click
+ * waits instead of adding twice.
+ */
 export function AddControl(props: {
   hit: CatalogHit
   adding: boolean
@@ -11,6 +21,7 @@ export function AddControl(props: {
   idPrefix?: string
 }) {
   const id = () => `${props.idPrefix ?? 'status'}-${hitKey(props.hit)}`
+  const kind = () => kindOf(props.hit.type, props.hit.isAnime)
   return (
     <Show
       when={!props.adding}
@@ -20,7 +31,7 @@ export function AddControl(props: {
         <button
           type="button"
           class="px-4 py-1.5 text-sm font-semibold hover:bg-surface"
-          aria-label={`Add ${props.hit.title} to your wishlist`}
+          aria-label={`Add ${props.hit.title}: ${statusLabel('wishlist', kind())}`}
           onClick={() => props.onAdd('wishlist')}
         >
           Add
@@ -40,7 +51,9 @@ export function AddControl(props: {
           <option value="" disabled selected>
             As…
           </option>
-          <For each={STATUSES.filter((s) => s.status !== 'dropped')}>
+          <For
+            each={statusOptions(kind()).filter((s) => s.status !== 'dropped')}
+          >
             {(s) => <option value={s.status}>{s.label}</option>}
           </For>
         </select>

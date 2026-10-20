@@ -13,9 +13,15 @@ extension APIImplementation {
 
     func getUpNext(_: Operations.GetUpNext.Input) async throws -> Operations.GetUpNext.Output {
         let rows = try await services.schedule.upNext(userID: currentUser())
+        let counts = rows.counts
         return .ok(.init(body: .json(.init(
             continueWatching: rows.continueWatching.map(Components.Schemas.ContinueEntry.init),
-            startWatching: rows.startWatching.map(Components.Schemas.StartEntry.init)
+            startWatching: rows.startWatching.map(Components.Schemas.StartEntry.init),
+            counts: .init(
+                wishlist: counts.wishlist, inProgress: counts.inProgress, finished: counts.finished,
+                dropped: counts.dropped
+            ),
+            unfinished: rows.unfinished.map(Components.Schemas.UnfinishedEntry.init)
         ))))
     }
 }
@@ -59,6 +65,18 @@ extension Components.Schemas.StartEntry {
             libraryItemId: entry.libraryItemID.description,
             title: .init(entry.title),
             runtimeMinutes: entry.runtimeMinutes
+        )
+    }
+}
+
+extension Components.Schemas.UnfinishedEntry {
+    init(_ entry: UnfinishedEntry) {
+        self.init(
+            libraryItemId: entry.libraryItemID.description,
+            title: .init(entry.title),
+            reason: entry.reason == .dropped ? .dropped : .stalled,
+            since: entry.since,
+            next: entry.next.map { .init(season: $0.season, number: $0.episode) }
         )
     }
 }

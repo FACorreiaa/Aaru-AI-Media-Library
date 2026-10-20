@@ -68,8 +68,16 @@ from your own library with their status and progress. It never sends another mem
 or progress. Aaru's answer is posted in the channel like any message. Aaru keeps a count of how
 many questions you asked each day and how much text they used, to keep the service fair.
 
+**Importing your Stremio history.** If you choose to, you approve a code on stremio.com (your
+Stremio password never reaches Aaru). Aaru then reads your Stremio library once, signs that
+session out at once, and does not keep Stremio's session key. What it read becomes an import you
+review like any other.
+
 **Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
-that setting.
+that setting. In a browser, it stores the subscription your browser hands over: an address at your
+browser's push service (Google, Mozilla, Apple or Microsoft) and the keys that encrypt each alert so
+only your browser can read it. Turning alerts off in that browser, or deleting your account, removes
+it.
 
 **Catalog data** (titles, posters, episode lists) is shared by everyone and is not about you.
 
@@ -80,12 +88,16 @@ Aaru only uses these services, and only for the purpose listed:
 - **Hetzner** (Germany) runs Aaru's server and database and holds encrypted backups.
 - **Cloudflare** serves the website at aaruapp.com and its DNS.
 - **Apple** for Sign in with Apple and push notifications; **Google** for Sign in with Google.
+- **Your browser's push service** (Google, Mozilla, Apple or Microsoft) carries browser alerts. It
+  sees an encrypted message and when it was sent, never its text.
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
 - **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer. It receives
   what is described under "Aaru in groups" above, through its API, and does not train on it.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
-  what you play; Aaru does not send anything to Stremio's servers.
+  what you play. If you import your Stremio history, Aaru's server reads your Stremio library
+  once with the code you approved, then signs out. Aaru also asks Stremio's public catalog
+  (Cinemeta) for a show's episode list by its IMDb id, never who you are.
 - **TMDB, TVmaze, AniList and Open Library** provide catalog data. Aaru's server sends them
   what you search for and catalog ids, never who you are.
 

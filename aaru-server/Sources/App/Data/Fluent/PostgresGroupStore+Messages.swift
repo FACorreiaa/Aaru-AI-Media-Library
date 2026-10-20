@@ -246,15 +246,15 @@ extension PostgresGroupStore {
     /// Components as stored: `[{"type": "title", "titleId": "…"}]`.
     static func componentsJSON(_ components: [MessageComponent]) -> String? {
         guard !components.isEmpty else { return nil }
-        let items = components.map { JSONValue.object([
+        let items = components.map { ModelJSON.object([
             "type": .string("title"),
             "titleId": .string($0.titleID.description),
         ]) }
-        return (try? JSONEncoder().encode(JSONValue.array(items))).flatMap { String(bytes: $0, encoding: .utf8) }
+        return (try? JSONEncoder().encode(ModelJSON.array(items))).flatMap { String(bytes: $0, encoding: .utf8) }
     }
 
     static func components(_ json: String?) -> [MessageComponent] {
-        guard let json, case let .array(items)? = try? JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        guard let json, case let .array(items)? = try? JSONDecoder().decode(ModelJSON.self, from: Data(json.utf8))
         else { return [] }
         return items.compactMap { item in
             item["titleId"]?.string.flatMap(TitleID.init(uuidString:)).map { MessageComponent(titleID: $0) }

@@ -20,6 +20,8 @@ struct Services: Sendable {
     var realtime: RealtimeHub
     /// `@aaru` answers; nil when no model is configured (GRP-011).
     var agentReplies: AgentReplyService?
+    /// Nil when `VAPID_CONFIG` is unset; the key route then answers 503.
+    var webPush: (any WebPushSending)?
 
     /// `trakt` is nil when Trakt is not configured; connect then answers 503.
     static func make(
@@ -27,6 +29,7 @@ struct Services: Sendable {
         catalogs: CatalogProviders,
         auth: AuthService,
         trakt: TraktAPI? = nil,
+        stremio: StremioAccount? = nil,
         publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!,
         model: (any ModelProviding)? = nil
     ) -> Services {
@@ -45,14 +48,15 @@ struct Services: Sendable {
                 providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
             ),
             library: library,
-            lists: ListService(stores: stores, resolver: resolver),
+            lists: ListService(stores: stores, resolver: resolver, catalog: catalog),
             shelves: ShelfService(stores: stores, library: library),
             schedule: ScheduleService(stores: stores, catalog: catalog),
             stats: StatsService(stores: stores),
             imports: ImportService(
                 stores: stores, resolver: resolver,
                 trakt: trakt.map { TraktImport(connect: traktConnect(stores, $0), importer: TraktImporter(api: $0)) },
-                anilistLists: catalogs.anilist as? any AniListListReading
+                anilistLists: catalogs.anilist as? any AniListListReading,
+                stremio: stremio
             ),
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),

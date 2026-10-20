@@ -11,7 +11,7 @@ import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
-import { KINDS, STATUSES, kindOf } from '../lib/library/model'
+import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
 import { getSession } from '../lib/session/session'
 import {
@@ -249,7 +249,7 @@ function TitleRoom() {
                 void update({ status }, { status })
               }}
             >
-              <For each={STATUSES}>
+              <For each={statusOptions(kind())}>
                 {(s) => (
                   // `selected` on the option, not `value` on the select: the value would be
                   // applied before the options exist and show the first one.

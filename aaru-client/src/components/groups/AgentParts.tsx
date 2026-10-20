@@ -77,7 +77,13 @@ export function AgentCards(props: { cards: MessageComponent[] }) {
       const entry = await addTitleToLibrary({
         data: { titleId: card.title.id, type: card.title.type },
       })
-      setAdded({ ...added(), [card.title.id]: statusLabel(entry.status) })
+      setAdded({
+        ...added(),
+        [card.title.id]: statusLabel(
+          entry.status,
+          kindOf(card.title.type, card.title.isAnime),
+        ),
+      })
     } catch {
       setFailed(card.title.id)
     } finally {

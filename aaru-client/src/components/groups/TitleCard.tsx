@@ -93,7 +93,7 @@ export function TitleCard(props: { channel: Channel }) {
             <p class="mt-0.5 text-xs text-muted">
               You:{' '}
               <span class="font-semibold text-ink">
-                {progressLabel(progress()?.mine)}
+                {progressLabel(progress()?.mine, kindOf(t().type, t().isAnime))}
               </span>
               <span class="mx-1.5">·</span>
               Spoilers past your progress stay veiled.
@@ -115,7 +115,9 @@ export function TitleCard(props: { channel: Channel }) {
                       <span class="font-medium">
                         {member.user.displayName ?? `@${member.user.handle}`}
                       </span>
-                      <span class="text-muted">{progressLabel(member)}</span>
+                      <span class="text-muted">
+                        {progressLabel(member, kindOf(t().type, t().isAnime))}
+                      </span>
                     </li>
                   )}
                 </For>

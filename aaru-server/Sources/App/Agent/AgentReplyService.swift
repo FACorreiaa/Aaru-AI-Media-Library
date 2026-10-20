@@ -101,7 +101,7 @@ struct AgentReplyService: Sendable {
 
     /// Runs every call in one assistant turn and answers them all in one user turn.
     static func results(of calls: [ModelResponse.ToolCall], with tools: inout AgentTools) async -> ModelTurn {
-        var results: [JSONValue] = []
+        var results: [ModelJSON] = []
         for call in calls {
             let (output, isError) = await tools.run(call.name, input: call.input)
             results.append(.object([

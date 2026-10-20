@@ -41,6 +41,7 @@ const SOURCE_LABELS: Record<ImportJob['source'], string> = {
   letterboxd_csv: 'Letterboxd',
   goodreads_csv: 'Goodreads',
   trakt: 'Trakt',
+  stremio: 'Stremio',
   cat_list: 'Pogdesign CAT',
   cat_ics: 'Pogdesign CAT',
   mal_xml: 'MyAnimeList',

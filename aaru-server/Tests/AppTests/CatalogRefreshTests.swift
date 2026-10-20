@@ -97,6 +97,26 @@ struct CatalogRefreshTests {
         }
     }
 
+    @Test("A show only on a list is refreshed like a tracked one (LST-003)")
+    func listMember() async throws {
+        try await LibraryHarness.run { env in
+            let now = wholeSecondNow()
+            let list = try #require(try await env.send(.post, "/v1/lists", json: ["name": "Later"])
+                .json()["id"] as? String)
+            let tmdb = env.stubShow("Listed", status: .returning)
+            let reply = try await env.send(
+                .post, "/v1/lists/\(list)/items", json: ["mediaRef": ["type": "show", "ids": ["tmdb": tmdb]]]
+            )
+            let title = try (reply.json()["items"] as? [[String: Any]])?.first?["title"] as? [String: Any]
+            let titleID = try TitleID(#require(UUID(uuidString: title?["id"] as? String ?? "")))
+            try await setState(titleID, hydratedAt: nil)
+            let due = try await env.stores.titles.staleTrackedShows(
+                now: now, retryAfter: now.addingTimeInterval(-CatalogRefresher.retryAfter), limit: 100_000
+            )
+            #expect(due.contains(titleID))
+        }
+    }
+
     @Test("A show with an episode airing within 30 days is stale after a day")
     func airingWindow() async throws {
         try await LibraryHarness.run { env in
