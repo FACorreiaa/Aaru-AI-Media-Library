@@ -46,7 +46,7 @@ struct CatalogRefreshTests {
     @Test("A pass loads never-loaded shows, refreshes stale ones, skips fresh ones and backs off on failure")
     func pass() async throws {
         try await LibraryHarness.run { env in
-            let now = Date()
+            let now = wholeSecondNow()
             let fresh = try await titleID(env.add("show", tmdb: env.stubShow("Fresh", status: .ended)))
             let stale = try await titleID(env.add("show", tmdb: env.stubShow("Stale", status: .ended)))
             let imported = try await titleID(env.add("show", tmdb: env.stubShow("Imported", status: .ended)))
@@ -100,7 +100,7 @@ struct CatalogRefreshTests {
     @Test("A show with an episode airing within 30 days is stale after a day")
     func airingWindow() async throws {
         try await LibraryHarness.run { env in
-            let now = Date()
+            let now = wholeSecondNow()
             let airing = try await titleID(env.add("show", tmdb: env.stubShow(
                 "Airing", status: .returning, unaired: true, now: now
             )))
