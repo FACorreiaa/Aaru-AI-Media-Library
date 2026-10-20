@@ -29,6 +29,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
         .package(url: "https://github.com/apple/swift-http-types.git", from: "1.3.0"),
         .package(url: "https://github.com/swift-server-community/APNSwift.git", from: "6.0.0"),
+        // Web push (RFC 8030/8291/8292): VAPID signing and aes128gcm payloads. Pre-1.0, so pinned.
+        .package(url: "https://github.com/mochidev/swift-webpush.git", .upToNextMinor(from: "0.4.2")),
     ],
     targets: [
         .executableTarget(
@@ -51,6 +53,7 @@ let package = Package(
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "OpenAPIHummingbird", package: "swift-openapi-hummingbird"),
                 .product(name: "APNS", package: "APNSwift"),
+                .product(name: "WebPush", package: "swift-webpush"),
             ],
             path: "Sources/App"
         ),

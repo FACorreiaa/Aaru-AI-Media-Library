@@ -822,6 +822,12 @@ server never sees plaintext.
   claimed in `notifications_sent` before it goes out. The payload carries `libraryItemId`, which a
   tap opens. The other categories arrive in Phase 4; until then remote approval stays a pinned
   artifact in The Field.
+- Web push (2026-10-20): browsers subscribe with the VAPID public key (`GET /v1/web-push/key`)
+  and save the subscription (`PUT /v1/web-push/subscriptions`, one row per endpoint in
+  `web_push_subscriptions`). Only the browsers' own push services are accepted as endpoints, so
+  the server never POSTs anywhere else. The same airing job fans out to APNs devices and browser
+  subscriptions behind `WebPushSending` (named for the wire format). The web's `public/sw.js` has
+  no fetch handler: it shows the alert and opens the same-origin path the alert carries.
 
 ## Phasing
 

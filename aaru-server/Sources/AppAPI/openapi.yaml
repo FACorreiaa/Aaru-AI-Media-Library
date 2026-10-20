@@ -176,6 +176,41 @@ paths:
           description: Forgotten.
         default:
           $ref: '#/components/responses/Error'
+  /v1/web-push/key:
+    get:
+      operationId: getWebPushKey
+      summary: The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
+      responses:
+        '200':
+          description: The key.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebPushKey'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/web-push/subscriptions:
+    put:
+      operationId: saveWebPushSubscription
+      summary: Save this browser's push subscription. Saved again, it moves to this user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WebPushSubscription'}
+      responses:
+        '204':
+          description: Saved.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteWebPushSubscription
+      parameters:
+        - {name: endpoint, in: query, required: true, schema: {type: string}}
+      responses:
+        '204':
+          description: Forgotten.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/agent/tokens:
     get:
       operationId: listAgentTokens
@@ -1103,6 +1138,23 @@ components:
           enum: [sandbox, production]
           description: "`sandbox` for Xcode builds; `production` for TestFlight and the App Store."
         bundleId: {type: string}
+    WebPushKey:
+      type: object
+      required: [publicKey]
+      properties:
+        publicKey: {type: string, description: "VAPID public key, base64url: the browser's applicationServerKey."}
+    WebPushSubscription:
+      type: object
+      required: [endpoint, keys]
+      description: "`PushSubscription.toJSON()` as the browser gives it."
+      properties:
+        endpoint: {type: string}
+        keys:
+          type: object
+          required: [p256dh, auth]
+          properties:
+            p256dh: {type: string}
+            auth: {type: string}
     NotificationSettings:
       type: object
       required: [airing]

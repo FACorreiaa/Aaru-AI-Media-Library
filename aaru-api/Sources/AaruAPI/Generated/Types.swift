@@ -64,6 +64,19 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/devices/{token}`.
     /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)`.
     func unregisterDevice(_ input: Operations.UnregisterDevice.Input) async throws -> Operations.UnregisterDevice.Output
+    /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
+    ///
+    /// - Remark: HTTP `GET /v1/web-push/key`.
+    /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)`.
+    func getWebPushKey(_ input: Operations.GetWebPushKey.Input) async throws -> Operations.GetWebPushKey.Output
+    /// Save this browser's push subscription. Saved again, it moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)`.
+    func saveWebPushSubscription(_ input: Operations.SaveWebPushSubscription.Input) async throws -> Operations.SaveWebPushSubscription.Output
+    /// - Remark: HTTP `DELETE /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)`.
+    func deleteWebPushSubscription(_ input: Operations.DeleteWebPushSubscription.Input) async throws -> Operations.DeleteWebPushSubscription.Output
     /// The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
     ///
     /// - Remark: HTTP `GET /v1/agent/tokens`.
@@ -375,6 +388,37 @@ extension APIProtocol {
     ) async throws -> Operations.UnregisterDevice.Output {
         try await unregisterDevice(Operations.UnregisterDevice.Input(
             path: path,
+            headers: headers
+        ))
+    }
+    /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
+    ///
+    /// - Remark: HTTP `GET /v1/web-push/key`.
+    /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)`.
+    public func getWebPushKey(headers: Operations.GetWebPushKey.Input.Headers = .init()) async throws -> Operations.GetWebPushKey.Output {
+        try await getWebPushKey(Operations.GetWebPushKey.Input(headers: headers))
+    }
+    /// Save this browser's push subscription. Saved again, it moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)`.
+    public func saveWebPushSubscription(
+        headers: Operations.SaveWebPushSubscription.Input.Headers = .init(),
+        body: Operations.SaveWebPushSubscription.Input.Body
+    ) async throws -> Operations.SaveWebPushSubscription.Output {
+        try await saveWebPushSubscription(Operations.SaveWebPushSubscription.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)`.
+    public func deleteWebPushSubscription(
+        query: Operations.DeleteWebPushSubscription.Input.Query,
+        headers: Operations.DeleteWebPushSubscription.Input.Headers = .init()
+    ) async throws -> Operations.DeleteWebPushSubscription.Output {
+        try await deleteWebPushSubscription(Operations.DeleteWebPushSubscription.Input(
+            query: query,
             headers: headers
         ))
     }
@@ -1581,6 +1625,71 @@ public enum Components {
                 case token
                 case environment
                 case bundleId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WebPushKey`.
+        public struct WebPushKey: Codable, Hashable, Sendable {
+            /// VAPID public key, base64url: the browser's applicationServerKey.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WebPushKey/publicKey`.
+            public var publicKey: Swift.String
+            /// Creates a new `WebPushKey`.
+            ///
+            /// - Parameters:
+            ///   - publicKey: VAPID public key, base64url: the browser's applicationServerKey.
+            public init(publicKey: Swift.String) {
+                self.publicKey = publicKey
+            }
+            public enum CodingKeys: String, CodingKey {
+                case publicKey
+            }
+        }
+        /// `PushSubscription.toJSON()` as the browser gives it.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WebPushSubscription`.
+        public struct WebPushSubscription: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WebPushSubscription/endpoint`.
+            public var endpoint: Swift.String
+            /// - Remark: Generated from `#/components/schemas/WebPushSubscription/keys`.
+            public struct KeysPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/WebPushSubscription/keys/p256dh`.
+                public var p256dh: Swift.String
+                /// - Remark: Generated from `#/components/schemas/WebPushSubscription/keys/auth`.
+                public var auth: Swift.String
+                /// Creates a new `KeysPayload`.
+                ///
+                /// - Parameters:
+                ///   - p256dh:
+                ///   - auth:
+                public init(
+                    p256dh: Swift.String,
+                    auth: Swift.String
+                ) {
+                    self.p256dh = p256dh
+                    self.auth = auth
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case p256dh
+                    case auth
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/WebPushSubscription/keys`.
+            public var keys: Components.Schemas.WebPushSubscription.KeysPayload
+            /// Creates a new `WebPushSubscription`.
+            ///
+            /// - Parameters:
+            ///   - endpoint:
+            ///   - keys:
+            public init(
+                endpoint: Swift.String,
+                keys: Components.Schemas.WebPushSubscription.KeysPayload
+            ) {
+                self.endpoint = endpoint
+                self.keys = keys
+            }
+            public enum CodingKeys: String, CodingKey {
+                case endpoint
+                case keys
             }
         }
         /// - Remark: Generated from `#/components/schemas/NotificationSettings`.
@@ -5221,6 +5330,388 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
+    ///
+    /// - Remark: HTTP `GET /v1/web-push/key`.
+    /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)`.
+    public enum GetWebPushKey {
+        public static let id: Swift.String = "getWebPushKey"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/web-push/key/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetWebPushKey.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetWebPushKey.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetWebPushKey.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetWebPushKey.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/web-push/key/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/web-push/key/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WebPushKey)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WebPushKey {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetWebPushKey.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetWebPushKey.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The key.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetWebPushKey.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetWebPushKey.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/key/get(getWebPushKey)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Save this browser's push subscription. Saved again, it moves to this user.
+    ///
+    /// - Remark: HTTP `PUT /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)`.
+    public enum SaveWebPushSubscription {
+        public static let id: Swift.String = "saveWebPushSubscription"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SaveWebPushSubscription.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SaveWebPushSubscription.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SaveWebPushSubscription.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.WebPushSubscription)
+            }
+            public var body: Operations.SaveWebPushSubscription.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SaveWebPushSubscription.Input.Headers = .init(),
+                body: Operations.SaveWebPushSubscription.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.SaveWebPushSubscription.Output.NoContent)
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.SaveWebPushSubscription.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/put(saveWebPushSubscription)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `DELETE /v1/web-push/subscriptions`.
+    /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)`.
+    public enum DeleteWebPushSubscription {
+        public static let id: Swift.String = "deleteWebPushSubscription"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/DELETE/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/DELETE/query/endpoint`.
+                public var endpoint: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - endpoint:
+                public init(endpoint: Swift.String) {
+                    self.endpoint = endpoint
+                }
+            }
+            public var query: Operations.DeleteWebPushSubscription.Input.Query
+            /// - Remark: Generated from `#/paths/v1/web-push/subscriptions/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteWebPushSubscription.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteWebPushSubscription.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteWebPushSubscription.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.DeleteWebPushSubscription.Input.Query,
+                headers: Operations.DeleteWebPushSubscription.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Forgotten.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteWebPushSubscription.Output.NoContent)
+            /// Forgotten.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteWebPushSubscription.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/web-push/subscriptions/delete(deleteWebPushSubscription)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

@@ -75,6 +75,10 @@ library layer stay separate, external IDs stored whenever known, no second backe
   progress to finished, never backward, never out of dropped, and never past a status the user
   chose. Fill-empty stays the rule for ratings and dates. Owner's call after the multi-source
   audit (IMP-004).
+- **Web push is un-deferred** (by the owner's call: "notifications working, on web and iOS"):
+  airing alerts reach browsers too, over standard Web Push with a VAPID key (`VAPID_CONFIG`,
+  sealed in `aaru-env`, generated once). Endpoints are limited to the browsers' push services.
+  iPhone and iPad get browser alerts only from Aaru added to the Home Screen.
 
 ## Decisions recorded 2026-10-19
 

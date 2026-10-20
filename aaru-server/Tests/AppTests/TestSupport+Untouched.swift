@@ -68,6 +68,22 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func saveWebPush(_: WebPushSubscription, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func deleteWebPush(endpoint _: String, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func forgetWebPush(endpoint _: String) async throws {
+        throw Touched()
+    }
+
+    func webPushSubscriptions(userID _: UserID) async throws -> [WebPushSubscription] {
+        throw Touched()
+    }
+
     func mapping(mal _: String) async throws -> AnimeMapping? {
         throw Touched()
     }
