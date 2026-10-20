@@ -232,7 +232,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date. */
+    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date. */
     get: operations['getStats']
     put?: never
     post?: never
@@ -251,6 +251,23 @@ export interface paths {
     }
     /** Search the catalog. Results are catalog projections, never library rows. */
     get: operations['searchCatalog']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/discover': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Catalog lists to add from without typing (CAT-020): trending, upcoming films, new shows, airing this week, and anime this season and next. Catalog data only, the same for every user (cached for 6 hours); whether a title is on the user's shelf is the client's call. */
+    get: operations['getDiscover']
     put?: never
     post?: never
     delete?: never
@@ -713,7 +730,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Continue Watching and Start Watching for the home screen, in one call. */
+    /** Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call. */
     get: operations['getUpNext']
     put?: never
     post?: never
@@ -925,9 +942,43 @@ export interface components {
       byline?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
+      /** @description YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date. */
+      releaseDate?: string
     }
     SearchResults: {
       items: components['schemas']['CatalogHit'][]
+      /** @description True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search. */
+      incomplete: boolean
+    }
+    /**
+     * @description `trending`: TMDB films and shows trending this week. `upcoming_movies`: films first released in the next 60 days. `new_shows`: shows first aired from 7 days ago to 30 days ahead. `on_the_air`: shows with an episode in the next 7 days. `anime_season` / `anime_next_season`: AniList's anime of the current / next season, by popularity.
+     * @enum {string}
+     */
+    DiscoverSectionId:
+      | 'trending'
+      | 'upcoming_movies'
+      | 'new_shows'
+      | 'on_the_air'
+      | 'anime_season'
+      | 'anime_next_season'
+    /** @description A season as AniList counts it; December is already the next year's winter. */
+    AnimeSeason: {
+      /** @enum {string} */
+      season: 'winter' | 'spring' | 'summer' | 'fall'
+      year: number
+    }
+    DiscoverSection: {
+      id: components['schemas']['DiscoverSectionId']
+      animeSeason?: components['schemas']['AnimeSeason']
+      items: components['schemas']['CatalogHit'][]
+      /**
+       * Format: date-time
+       * @description When the server fetched this list from the provider.
+       */
+      fetchedAt: string
+    }
+    Discover: {
+      sections: components['schemas']['DiscoverSection'][]
     }
     Episode: {
       season: number
@@ -1194,16 +1245,47 @@ export interface components {
     UpNext: {
       continueWatching: components['schemas']['ContinueEntry'][]
       startWatching: components['schemas']['StartEntry'][]
+      counts?: components['schemas']['LibraryCounts']
+      /** @description Unfinished business (UPN-002): every dropped item, and every in-progress item last changed 30 or more days ago that is not in `continueWatching`. Newest change first, at most 20. */
+      unfinished?: components['schemas']['UnfinishedEntry'][]
+    }
+    /** @description The user's library items per status. */
+    LibraryCounts: {
+      wishlist: number
+      inProgress: number
+      finished: number
+      dropped: number
+    }
+    UnfinishedEntry: {
+      /** Format: uuid */
+      libraryItemId: string
+      title: components['schemas']['TitleSummary']
+      /**
+       * @description `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+       * @enum {string}
+       */
+      reason: 'dropped' | 'stalled'
+      /**
+       * Format: date-time
+       * @description The item's last change.
+       */
+      since: string
+      next?: components['schemas']['EpisodeRef']
     }
     /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. */
     Stats: {
+      /** @enum {string} */
+      span: 'month' | 'year' | 'all'
+      /** @description The last year the period touches; for `all`, the current year. */
       year: number
       month?: number
       timeZone: string
-      /** @description The period is not over yet in the user's time zone. */
+      /** @description The period is not over yet in the user's time zone (always true for `all`). */
       isPartial: boolean
       totals: components['schemas']['StatsTotals']
-      /** @description One per month of the year, or one per day of the month, in order. */
+      /** @description Movie, show, anime and book, always all four in that order; they sum to `totals`. */
+      byKind: components['schemas']['StatsKind'][]
+      /** @description One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order. */
       buckets: components['schemas']['StatsBucket'][]
       busiest?: components['schemas']['StatsBucket']
       mostEpisodes?: components['schemas']['StatsBucket']
@@ -1224,6 +1306,16 @@ export interface components {
       /** @description Anime shows and films. Not counted again as shows or movies. */
       animeFinished: number
       booksFinished: number
+    }
+    StatsKind: {
+      /**
+       * @description Anime is its own kind, films and shows alike; never counted again as either.
+       * @enum {string}
+       */
+      kind: 'movie' | 'show' | 'anime' | 'book'
+      episodes: number
+      minutes: number
+      finished: number
     }
     StatsBucket: {
       /** @description First local day of the bucket, YYYY-MM-DD. */
@@ -1250,6 +1342,8 @@ export interface components {
       mean?: number
       highest?: components['schemas']['TitleSummary']
       highestRating?: number
+      /** @description Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9. */
+      distribution: number[]
     }
     StatsMoment: {
       title: components['schemas']['TitleSummary']
@@ -1656,8 +1750,11 @@ export interface operations {
   }
   getStats: {
     parameters: {
-      query: {
-        year: number
+      query?: {
+        /** @description Required unless `span=all`. */
+        year?: number
+        /** @description `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise). */
+        span?: 'all'
         /** @description 1–12. Absent means the whole year. */
         month?: number
         /** @description IANA time zone for day and month boundaries. Absent means UTC. */
@@ -1685,8 +1782,8 @@ export interface operations {
     parameters: {
       query: {
         q: string
-        /** @description `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library. */
-        type: 'movie' | 'show' | 'anime' | 'book'
+        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library. */
+        type: 'all' | 'movie' | 'show' | 'anime' | 'book'
       }
       header?: never
       path?: never
@@ -1694,13 +1791,37 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Matches, best first. */
+      /** @description Matches, best first. With `all`, exact title matches lead, then TMDB and AniList hits alternate, at most 40; a TMDB show is left out only when an AniList hit in the same results is mapped to it, and that hit then carries `ids.tmdb`. */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
           'application/json': components['schemas']['SearchResults']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getDiscover: {
+    parameters: {
+      query?: {
+        /** @description One section only. Absent means every section, in the enum's order. */
+        section?: components['schemas']['DiscoverSectionId']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The sections that could be served, in order. A section whose provider fails is left out; when every requested section fails the answer is a 502. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Discover']
         }
       }
       default: components['responses']['Error']
@@ -2584,7 +2705,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Both rows. */
+      /** @description The home rows. */
       200: {
         headers: {
           [name: string]: unknown

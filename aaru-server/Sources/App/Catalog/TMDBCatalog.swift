@@ -1,10 +1,10 @@
 import AaruCore
 import Foundation
 
-/// TMDB adapter (CAT-002): search and detail for movies and shows, external ids, and
-/// season/episode lists. Poster URLs are referenced, never downloaded. No TMDB field
-/// name leaves this file.
-struct TMDBCatalog: CatalogSearching, EpisodeListing {
+/// TMDB adapter (CAT-002): search and detail for movies and shows, external ids,
+/// season/episode lists, and the Discover lists (CAT-020). Poster URLs are referenced, never
+/// downloaded. No TMDB field name leaves this file.
+struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching, DiscoverFeeds {
     static let baseURL = URL(string: "https://api.themoviedb.org/3")!
     static let imageBase = "https://image.tmdb.org/t/p/w500"
     /// Backdrops render as wide banners, never full-screen: w780 is enough at 3x.
@@ -24,14 +24,20 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing {
         let kind = try Self.kind(for: type)
         let page = try await get(SearchPage.self, "search/\(kind)", ["query": query, "include_adult": "false"])
         let hits = page.results.compactMap { $0.hit(type: type) }
-        return try await withImdbIDs(hits, kind: kind)
+        return try await withImdbIDs(hits)
+    }
+
+    /// CAT-019: films and shows in one query. People and adult titles are dropped.
+    func searchMulti(query: String) async throws -> [CatalogHit] {
+        let page = try await get(SearchPage.self, "search/multi", ["query": query, "include_adult": "false"])
+        return try await withImdbIDs(page.results.compactMap(\.mixedHit))
     }
 
     /// Fills `imdb` on the top hits from each title's external ids, concurrently and paced.
-    private func withImdbIDs(_ hits: [CatalogHit], kind: String) async throws -> [CatalogHit] {
+    private func withImdbIDs(_ hits: [CatalogHit]) async throws -> [CatalogHit] {
         try await withThrowingTaskGroup(of: (Int, String?).self) { group in
             for (index, hit) in hits.prefix(Self.enrichLimit).enumerated() {
-                guard let tmdb = hit.ids.tmdb else { continue }
+                guard let tmdb = hit.ids.tmdb, let kind = try? Self.kind(for: hit.type) else { continue }
                 group.addTask {
                     let ids = try? await get(ExternalIDsBody.self, "\(kind)/\(tmdb)/external_ids", [:])
                     return (index, ids?.imdbId?.nilIfBlank)
@@ -114,6 +120,33 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing {
         return CatalogEpisodes(
             status: show.titleStatus, episodes: episodes, backdropURL: show.backdropURL, network: show.network
         )
+    }
+
+    // MARK: Discover (CAT-020)
+
+    /// Catalog lists, the same for every user. One page each, no IMDb lookups.
+    func discover(_ feed: DiscoverFeed) async throws -> [CatalogHit] {
+        let base = ["include_adult": "false"]
+        switch feed {
+        case .trending:
+            return try await get(SearchPage.self, "trending/all/week", [:]).results.compactMap(\.mixedHit)
+        case let .upcomingMovies(from, until):
+            let query = base.merging([
+                "sort_by": "popularity.desc", "include_video": "false",
+                "primary_release_date.gte": from.description, "primary_release_date.lte": until.description,
+            ]) { $1 }
+            return try await get(SearchPage.self, "discover/movie", query).results.compactMap { $0.hit(type: .movie) }
+        case let .newShows(from, until):
+            let query = base.merging([
+                "sort_by": "popularity.desc", "include_null_first_air_dates": "false",
+                "first_air_date.gte": from.description, "first_air_date.lte": until.description,
+            ]) { $1 }
+            return try await get(SearchPage.self, "discover/tv", query).results.compactMap { $0.hit(type: .show) }
+        case .onTheAir:
+            return try await get(SearchPage.self, "tv/on_the_air", [:]).results.compactMap { $0.hit(type: .show) }
+        case .animeSeason:
+            throw ProviderError(provider: "tmdb", kind: .notFound)
+        }
     }
 
     // MARK: Plumbing
@@ -199,6 +232,9 @@ private struct Detail: Decodable {
     let seasons: [SeasonSummary]?
     let externalIds: ExternalIDsBody?
     let imdbId: String?
+    /// Mixed lists only (`search/multi`, `trending/all`): `movie`, `tv` or `person`.
+    let mediaType: String?
+    let adult: Bool?
 
     struct Genre: Decodable { let id: Int }
     struct Network: Decodable { let name: String }
@@ -210,6 +246,16 @@ private struct Detail: Decodable {
     /// The first network TMDB lists is the original broadcaster or streamer.
     var network: String? {
         networks?.first?.name.nilIfBlank
+    }
+
+    /// A mixed-list entry as a film or show; people and adult titles are nil.
+    var mixedHit: CatalogHit? {
+        guard adult != true else { return nil }
+        switch mediaType {
+        case "movie": return hit(type: .movie)
+        case "tv": return hit(type: .show)
+        default: return nil
+        }
     }
 
     func hit(type: MediaType) -> CatalogHit? {
@@ -231,7 +277,8 @@ private struct Detail: Decodable {
             // Japanese animation. AniList is the anime catalog; this flags TMDB hits.
             isAnime: genreIDs.contains(16) && originalLanguage == "ja",
             backdropURL: backdropURL,
-            network: network
+            network: network,
+            releaseDate: catalogDate(releaseDate?.nilIfBlank ?? firstAirDate)
         )
     }
 

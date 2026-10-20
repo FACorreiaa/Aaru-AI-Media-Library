@@ -4,6 +4,7 @@ import Foundation
 struct Services: Sendable {
     var auth: AuthService
     var catalog: CatalogService
+    var discover: DiscoverService
     var library: LibraryService
     var lists: ListService
     var shelves: ShelfService
@@ -28,6 +29,8 @@ struct Services: Sendable {
         return Services(
             auth: auth,
             catalog: catalog,
+            // One cache per process: Services are built once at boot.
+            discover: DiscoverService(tmdb: catalogs.tmdb, anilist: catalogs.anilist, cache: DiscoverCache()),
             library: library,
             lists: ListService(stores: stores, resolver: resolver),
             shelves: ShelfService(stores: stores, library: library),

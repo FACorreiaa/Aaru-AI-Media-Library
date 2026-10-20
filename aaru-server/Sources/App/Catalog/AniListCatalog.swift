@@ -3,7 +3,7 @@ import Foundation
 
 /// AniList adapter (CAT-007): the anime catalog, over GraphQL. Reads need no key.
 /// Each AniList entry is one season/cour, so its episodes are season 1.
-struct AniListCatalog: CatalogSearching, EpisodeListing {
+struct AniListCatalog: CatalogSearching, EpisodeListing, DiscoverFeeds {
     static let endpoint = URL(string: "https://graphql.anilist.co")!
 
     let client: ProviderClient
@@ -11,7 +11,7 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
     private static let mediaFields = """
     id idMal format status episodes duration
     title { romaji english native }
-    startDate { year }
+    startDate { year month day }
     coverImage { large }
     bannerImage
     externalLinks { site type }
@@ -24,6 +24,21 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
           Page(perPage: 20) { media(search: $search, type: ANIME, sort: SEARCH_MATCH) { \(Self.mediaFields) } }
         }
         """, variables: ["search": .string(query)])
+        return body.page.media.map(\.hit)
+    }
+
+    /// CAT-020: one season's anime by popularity. Adult entries are never asked for.
+    func discover(_ feed: DiscoverFeed) async throws -> [CatalogHit] {
+        guard case let .animeSeason(season) = feed else { throw ProviderError(provider: "anilist", kind: .notFound) }
+        let body = try await post(SearchData.self, """
+        query ($season: MediaSeason, $year: Int) {
+          Page(perPage: 20) {
+            media(season: $season, seasonYear: $year, type: ANIME, isAdult: false, sort: POPULARITY_DESC) {
+              \(Self.mediaFields)
+            }
+          }
+        }
+        """, variables: ["season": .string(season.name.rawValue.uppercased()), "year": .int(season.year)])
         return body.page.media.map(\.hit)
     }
 
@@ -177,7 +192,18 @@ private struct Media: Decodable {
         let native: String?
     }
 
-    struct StartDate: Decodable { let year: Int? }
+    struct StartDate: Decodable {
+        let year: Int?
+        let month: Int?
+        let day: Int?
+
+        /// `YYYY-MM-DD` when AniList knows the full date.
+        var text: String? {
+            guard let year, let month, let day else { return nil }
+            return String(format: "%04d-%02d-%02d", year, month, day)
+        }
+    }
+
     struct Cover: Decodable { let large: String? }
     struct ExternalLink: Decodable {
         let site: String
@@ -220,7 +246,8 @@ private struct Media: Decodable {
             ids: ExternalIDs(anilist: String(id), mal: idMal.map(String.init)),
             isAnime: true,
             backdropURL: backdropURL,
-            network: network
+            network: network,
+            releaseDate: startDate?.text
         )
     }
 

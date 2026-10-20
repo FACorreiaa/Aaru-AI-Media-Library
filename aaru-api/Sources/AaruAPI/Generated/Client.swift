@@ -1244,7 +1244,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -1268,6 +1268,13 @@ public struct Client: APIProtocol {
                     explode: true,
                     name: "year",
                     value: input.query.year
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "span",
+                    value: input.query.span
                 )
                 try converter.setQueryItemAsURI(
                     in: &request,
@@ -1395,6 +1402,90 @@ public struct Client: APIProtocol {
                     case "application/json":
                         body = try await converter.getResponseBodyAsJSON(
                             Components.Schemas.SearchResults.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Catalog lists to add from without typing (CAT-020): trending, upcoming films, new shows, airing this week, and anime this season and next. Catalog data only, the same for every user (cached for 6 hours); whether a title is on the user's shelf is the client's call.
+    ///
+    /// - Remark: HTTP `GET /v1/discover`.
+    /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
+    public func getDiscover(_ input: Operations.GetDiscover.Input) async throws -> Operations.GetDiscover.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetDiscover.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/discover",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "section",
+                    value: input.query.section
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetDiscover.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.Discover.self,
                             from: responseBody,
                             transforming: { value in
                                 .json(value)
@@ -4360,7 +4451,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Continue Watching and Start Watching for the home screen, in one call.
+    /// Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
     ///
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.

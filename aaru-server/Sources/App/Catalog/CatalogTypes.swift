@@ -15,6 +15,9 @@ struct CatalogHit: Sendable, Equatable {
     var isAnime: Bool
     var backdropURL: URL?
     var network: String?
+    /// First release (films) or first air date (shows), `YYYY-MM-DD`; nil when the provider
+    /// gives no full date.
+    var releaseDate: String?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)
@@ -67,16 +70,22 @@ protocol CatalogSearching: Sendable {
     func hydrate(ids: ExternalIDs, type: MediaType) async throws -> CatalogTitle?
 }
 
+/// One query across films and shows at once (CAT-019's All scope). TMDB's `search/multi`.
+protocol MultiSearching: Sendable {
+    /// Films and shows, best first; people and adult titles are never returned.
+    func searchMulti(query: String) async throws -> [CatalogHit]
+}
+
 protocol EpisodeListing: Sendable {
     /// Every episode the provider knows for a show it can identify from `ids`.
     func episodes(ids: ExternalIDs) async throws -> CatalogEpisodes?
 }
 
 /// The adapters, by role. Search scope `anime` goes to AniList; movie/show to TMDB;
-/// book to Open Library.
+/// book to Open Library; `all` to TMDB's multi search and AniList together.
 struct CatalogProviders: Sendable {
-    var tmdb: any CatalogSearching & EpisodeListing
-    var anilist: any CatalogSearching & EpisodeListing
+    var tmdb: any CatalogSearching & EpisodeListing & MultiSearching & DiscoverFeeds
+    var anilist: any CatalogSearching & EpisodeListing & DiscoverFeeds
     var openLibrary: any CatalogSearching
     /// Exact air times for TMDB's date-only episodes (TVmaze, CAT-011). Optional: without it the
     /// calendar shows dates.
@@ -97,6 +106,12 @@ extension Date {
         components.day = parts[2]
         return components.date
     }
+}
+
+/// A provider date string as `YYYY-MM-DD`, or nil when it is not a full date.
+func catalogDate(_ string: String?) -> String? {
+    guard let string, let match = string.prefixMatch(of: /\d{4}-\d{2}-\d{2}/) else { return nil }
+    return String(match.output)
 }
 
 /// The leading four-digit year of a provider date string, if any.
