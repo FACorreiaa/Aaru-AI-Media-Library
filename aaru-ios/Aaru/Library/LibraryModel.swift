@@ -12,6 +12,9 @@ final class LibraryModel {
     /// Set when the last sync failed; the cached shelf stays on screen.
     private(set) var syncProblem: String?
     private(set) var hasSynced = false
+    /// Goes up whenever the shelf changes (a write here, or a sync that brought anything), so
+    /// screens built from other endpoints, like Home, know to refetch.
+    private(set) var revision = 0
 
     @ObservationIgnored private var entries: [String: LibraryEntry] = [:]
     @ObservationIgnored private var token: String?
@@ -64,6 +67,9 @@ final class LibraryModel {
                 hasSynced = true
                 publish()
                 persist()
+                if !changes.items.isEmpty || !changes.deleted.isEmpty {
+                    revision += 1
+                }
             case let .default(_, error):
                 syncProblem = (try? error.body.json.message) ?? "The library could not be updated."
             }
@@ -74,11 +80,30 @@ final class LibraryModel {
         }
     }
 
+    /// Adds a catalog hit (Search, Discover) with a starting status. Returns what went wrong, or
+    /// nil when the title is on the shelf.
+    func add(_ hit: CatalogHit, status: LibraryStatus, api: Client?) async -> String? {
+        guard let api else { return "Aaru could not reach the server." }
+        let ref = MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year)
+        do {
+            switch try await api.addLibraryItem(body: .json(.init(mediaRef: ref, status: status))) {
+            case let .ok(response):
+                try upsert(response.body.json)
+                return nil
+            case let .default(_, error):
+                return (try? error.body.json.message) ?? "\(hit.title) could not be added."
+            }
+        } catch {
+            return "Aaru could not reach the server."
+        }
+    }
+
     /// A write the user just made (an add from search): shown at once, no refetch.
     func upsert(_ entry: LibraryEntry) {
         entries[entry.id] = entry
         publish()
         persist()
+        revision += 1
     }
 
     func reset() {

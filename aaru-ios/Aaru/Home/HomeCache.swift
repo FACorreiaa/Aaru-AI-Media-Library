@@ -4,9 +4,14 @@ import Foundation
 /// The last Home load on disk, so Home opens offline like the library (APP-003). Cleared on
 /// sign-out.
 struct HomeCache {
+    /// The newer fields are optional, so a cache written by an older build still opens.
     struct Snapshot: Codable {
         var upNext: Components.Schemas.UpNext
         var airing: [CalendarEntry]
+        /// This month's numbers for the stats strip.
+        var monthStats: Stats?
+        /// Discover's "New shows", the teaser that keeps Home from ever being blank.
+        var newShows: [CatalogHit]?
     }
 
     let url: URL

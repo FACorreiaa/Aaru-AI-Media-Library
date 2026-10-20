@@ -21,6 +21,10 @@ struct TitleDetailView: View {
         model.entry
     }
 
+    private var kind: MediaKind {
+        MediaKind(type: entry.title._type, isAnime: entry.title.isAnime)
+    }
+
     var body: some View {
         Form {
             Section { header }
@@ -28,7 +32,7 @@ struct TitleDetailView: View {
 
             Section {
                 Picker("Status", selection: statusBinding) {
-                    ForEach(LibraryStatus.allCases) { Text($0.label).tag($0) }
+                    ForEach(LibraryStatus.allCases) { Text($0.label(for: kind)).tag($0) }
                 }
                 LabeledContent("Rating") {
                     RatingStars(rating: entry.rating) { rating in
@@ -103,7 +107,7 @@ struct TitleDetailView: View {
         HStack(alignment: .top, spacing: 16) {
             PosterView(
                 url: entry.title.posterUrl.flatMap(URL.init(string:)),
-                kind: MediaKind(type: entry.title._type, isAnime: entry.title.isAnime)
+                kind: kind
             )
             .frame(width: 110)
             VStack(alignment: .leading, spacing: 8) {
@@ -127,10 +131,9 @@ struct TitleDetailView: View {
     }
 
     private var meta: String {
-        let kind = MediaKind(type: entry.title._type, isAnime: entry.title.isAnime).label
         let runtime = model.title?.runtimeMinutes.map { "\($0) min" }
         let status = model.title?.status.map { $0.rawValue.capitalized }
-        return [entry.title.year.map(String.init), kind, runtime, status]
+        return [entry.title.year.map(String.init), kind.label, runtime, status]
             .compactMap(\.self).joined(separator: " · ")
     }
 
