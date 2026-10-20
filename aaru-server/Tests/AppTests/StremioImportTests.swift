@@ -29,8 +29,8 @@ final class FakeStremio: @unchecked Sendable {
             client.sleep = { _ in }
             return client
         }
-        // JSON bodies made up front: the stub's closure is @Sendable.
         func encoded(_ object: Any) -> Data {
+            // Made up front: the stub's closure is @Sendable and [String: Any] is not.
             (try? JSONSerialization.data(withJSONObject: object)) ?? Data()
         }
         let library = encoded(["result": library])
