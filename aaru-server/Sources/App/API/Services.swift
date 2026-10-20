@@ -14,6 +14,7 @@ struct Services: Sendable {
     var traktConnect: TraktConnectService
     var agentTokens: AgentTokenService
     var scrobble: ScrobbleService
+    var plans: PlanService
     /// Nil when `VAPID_CONFIG` is unset; the key route then answers 503.
     var webPush: (any WebPushSending)?
 
@@ -49,7 +50,8 @@ struct Services: Sendable {
             ),
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
-            scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver)
+            scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
+            plans: PlanService(stores: stores, library: library)
         )
     }
 

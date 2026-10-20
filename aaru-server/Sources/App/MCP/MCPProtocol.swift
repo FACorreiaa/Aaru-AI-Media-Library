@@ -26,8 +26,9 @@ enum MCPProtocol {
 
     apply_library_patch changes the library only if the user allowed changes for this connection. \
     One item at a time applies at once, like a tap in the app, and the user can undo it there. \
-    Anything larger needs the user's approval inside Aaru. Never tell the user something changed \
-    unless the tool answered applied: true.
+    Anything larger, and any removal, becomes a request the user approves or denies inside Aaru: \
+    the tool answers applied: false with a planId. Never tell the user something changed unless \
+    the tool answered applied: true.
     """
 }
 

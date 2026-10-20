@@ -25,6 +25,7 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
 import { Route as AppListsIndexRouteImport } from './routes/app_.lists.index'
 import { Route as AppListsIdRouteImport } from './routes/app_.lists.$id'
+import { Route as AppPlansIdRouteImport } from './routes/app_.plans.$id'
 import { Route as AppTitleIdRouteImport } from './routes/app_.title.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -107,6 +108,11 @@ const AppListsIdRoute = AppListsIdRouteImport.update({
   path: '/app/lists/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPlansIdRoute = AppPlansIdRouteImport.update({
+  id: '/app_/plans/$id',
+  path: '/app/plans/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppTitleIdRoute = AppTitleIdRouteImport.update({
   id: '/app_/title/$id',
   path: '/app/title/$id',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/auth/verify': typeof AuthVerifyRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
+  '/app/plans/$id': typeof AppPlansIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
   '/app/lists/': typeof AppListsIndexRoute
 }
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/auth/verify': typeof AuthVerifyRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
+  '/app/plans/$id': typeof AppPlansIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
   '/app/lists': typeof AppListsIndexRoute
 }
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/auth/verify': typeof AuthVerifyRoute
   '/app_/imports/$id': typeof AppImportsIdRoute
   '/app_/lists/$id': typeof AppListsIdRoute
+  '/app_/plans/$id': typeof AppPlansIdRoute
   '/app_/title/$id': typeof AppTitleIdRoute
   '/app_/lists/': typeof AppListsIndexRoute
 }
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/app/imports/$id'
     | '/app/lists/$id'
+    | '/app/plans/$id'
     | '/app/title/$id'
     | '/app/lists/'
   fileRoutesByTo: FileRoutesByTo
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/app/imports/$id'
     | '/app/lists/$id'
+    | '/app/plans/$id'
     | '/app/title/$id'
     | '/app/lists'
   id:
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/app_/imports/$id'
     | '/app_/lists/$id'
+    | '/app_/plans/$id'
     | '/app_/title/$id'
     | '/app_/lists/'
   fileRoutesById: FileRoutesById
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   AuthVerifyRoute: typeof AuthVerifyRoute
   AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
+  AppPlansIdRoute: typeof AppPlansIdRoute
   AppTitleIdRoute: typeof AppTitleIdRoute
   AppListsIndexRoute: typeof AppListsIndexRoute
 }
@@ -365,6 +378,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AppListsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app_/plans/$id': {
+      id: '/app_/plans/$id'
+      path: '/app/plans/$id'
+      fullPath: '/app/plans/$id'
+      preLoaderRoute: typeof AppPlansIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app_/title/$id': {
       id: '/app_/title/$id'
       path: '/app/title/$id'
@@ -391,6 +411,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthVerifyRoute: AuthVerifyRoute,
   AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,
+  AppPlansIdRoute: AppPlansIdRoute,
   AppTitleIdRoute: AppTitleIdRoute,
   AppListsIndexRoute: AppListsIndexRoute,
 }

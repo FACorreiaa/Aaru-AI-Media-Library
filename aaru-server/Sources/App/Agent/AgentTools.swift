@@ -150,15 +150,28 @@ struct AgentTools: Sendable {
         var item: Components.Schemas.LibraryEntry?
     }
 
+    /// A change bigger than a tap: nothing was written; the user decides in Aaru.
+    struct PlanProposed: Encodable, Sendable {
+        var applied = false
+        var status = "pending_approval"
+        var planId: String
+        var summary: String
+        var changes: Int
+        var expiresAt: Date
+        var message = """
+        Nothing has changed yet. The user was asked to approve this in Aaru; tell them it is waiting there.
+        """
+    }
+
     func applyLibraryPatch(_ input: AgentPatchInput, caller: AgentCaller) async throws -> any Encodable & Sendable {
         try require(.libraryWrite, caller)
         let changes = try AgentChange.parse(input)
         guard changes.count == 1, let change = changes.first, change.isTapSized else {
-            throw AgentToolError(message: """
-            Changes to more than one item, more than one episode, or any removal need the user's approval \
-            in Aaru, which this connection cannot request yet. Make one change at a time, or ask the user \
-            to do it in the app.
-            """)
+            let plan = try await services.plans.propose(changes, caller: caller)
+            return PlanProposed(
+                planId: plan.id.uuidString.lowercased(), summary: plan.summary, changes: plan.changes.count,
+                expiresAt: plan.expiresAt
+            )
         }
         return try await apply(change, caller: caller)
     }

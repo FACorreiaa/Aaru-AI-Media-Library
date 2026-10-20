@@ -226,6 +226,73 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/plans': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does. */
+    get: operations['listPlans']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/plans/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['getPlan']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/plans/{id}/approve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`. */
+    post: operations['approvePlan']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/plans/{id}/deny': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Refuse the plan. Nothing is written; the plan stays as the record of what was asked. */
+    post: operations['denyPlan']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/agent/setup/{kind}': {
     parameters: {
       query?: never
@@ -851,6 +918,39 @@ export interface components {
       name?: string
       /** @description Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default. */
       allowLibraryWrites?: boolean
+    }
+    AgentPlan: {
+      /** Format: uuid */
+      id: string
+      /** @enum {string} */
+      status: 'pending' | 'applied' | 'denied' | 'stale' | 'expired'
+      /** @description The connection that asked, as the user named it. */
+      agentName: string
+      summary: string
+      changes: {
+        text: string
+        /** Format: uuid */
+        titleId: string
+        title: string
+        type: components['schemas']['MediaType']
+        posterUrl?: string
+        /** @description Absent when the change adds the title. */
+        libraryItemId?: string
+      }[]
+      counts: {
+        adds: number
+        updates: number
+        removes: number
+        episodes: number
+      }
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      expiresAt: string
+      /** Format: date-time */
+      decidedAt?: string
+      /** @description The journaled action, once applied; undo it like any other. */
+      actionId?: string
     }
     /**
      * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
@@ -1866,6 +1966,104 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['AgentTokenCreated']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listPlans: {
+    parameters: {
+      query?: {
+        /** @description `pending` (default) leaves out decided and expired plans. */
+        status?: 'pending' | 'all'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Plans. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            items: components['schemas']['AgentPlan'][]
+          }
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getPlan: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The plan. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AgentPlan']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  approvePlan: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Applied. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            plan: components['schemas']['AgentPlan']
+            action: components['schemas']['Action']
+          }
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  denyPlan: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Denied. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AgentPlan']
         }
       }
       default: components['responses']['Error']
