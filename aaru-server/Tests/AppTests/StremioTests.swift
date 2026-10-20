@@ -117,6 +117,10 @@ struct StremioTests {
             #expect(resources == ["catalog", "meta", "player", "library"])
             #expect(String(bytes: got.body, encoding: .utf8)?.contains("stream") == false)
             #expect((manifest["catalogs"] as? [Any])?.count == 4)
+            // APP-014: the name reads per kind; the id installed addons use does not change.
+            let catalogs = manifest["catalogs"] as? [[String: Any]] ?? []
+            #expect(catalogs.filter { $0["id"] as? String == "aaru-wishlist" }.compactMap { $0["name"] as? String }
+                == ["Aaru · Plan to watch", "Aaru · Plan to watch"])
 
             let options = try await get(env, "/stremio/\(secret)/manifest.json", method: .options)
             #expect(options.headers[.accessControlAllowOrigin] == "*")

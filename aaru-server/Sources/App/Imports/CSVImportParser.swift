@@ -11,7 +11,7 @@ enum CSVImportParser {
         case .letterboxdCSV: return try letterboxd(table, filename: filename)
         case .goodreadsCSV: return try goodreads(table)
         case .genericCSV: return try GenericCSVParser.parse(table)
-        case .trakt, .catList, .catICS, .malXML, .anilist:
+        case .trakt, .stremio, .catList, .catICS, .malXML, .anilist:
             throw ImportFormatError(message: "\(source.rawValue) is not a CSV import.")
         }
     }

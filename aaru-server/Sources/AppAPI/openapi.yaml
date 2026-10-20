@@ -326,6 +326,41 @@ paths:
           description: Forgotten.
         default:
           $ref: '#/components/responses/Error'
+  /v1/web-push/key:
+    get:
+      operationId: getWebPushKey
+      summary: The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
+      responses:
+        '200':
+          description: The key.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebPushKey'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/web-push/subscriptions:
+    put:
+      operationId: saveWebPushSubscription
+      summary: Save this browser's push subscription. Saved again, it moves to this user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WebPushSubscription'}
+      responses:
+        '204':
+          description: Saved.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteWebPushSubscription
+      parameters:
+        - {name: endpoint, in: query, required: true, schema: {type: string}}
+      responses:
+        '204':
+          description: Forgotten.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/agent/tokens:
     get:
       operationId: listAgentTokens
@@ -403,10 +438,23 @@ paths:
     get:
       operationId: getStats
       summary: >-
-        What the user watched and read in one calendar year or month of their time zone (GAM-006a).
-        Derived only from their own library. Imported history counts only where it carries a real date.
+        What the user watched and read in one calendar year or month of their time zone (GAM-006a),
+        or in all time (GAM-006c). Derived only from their own library. Imported history counts
+        only where it carries a real date.
       parameters:
-        - {name: year, in: query, required: true, schema: {type: integer}}
+        - name: year
+          in: query
+          description: Required unless `span=all`.
+          schema: {type: integer}
+        - name: span
+          in: query
+          description: >-
+            `all` is all time: every year from the first active one through the current year,
+            one bucket per year, so its totals equal the years' summed. It takes no `year` or
+            `month` (422 otherwise).
+          schema:
+            type: string
+            enum: [all]
         - name: month
           in: query
           description: 1–12. Absent means the whole year.
@@ -436,13 +484,19 @@ paths:
         - name: type
           in: query
           required: true
-          description: "`anime` searches AniList; `movie`/`show` TMDB; `book` Open Library."
+          description: >-
+            `all` searches films, shows and anime together (TMDB and AniList in parallel, merged;
+            books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open
+            Library.
           schema:
             type: string
-            enum: [movie, show, anime, book]
+            enum: [all, movie, show, anime, book]
       responses:
         '200':
-          description: Matches, best first.
+          description: >-
+            Matches, best first. With `all`, exact title matches lead, then TMDB and AniList hits
+            alternate, at most 40; a TMDB show is left out only when an AniList hit in the same
+            results is mapped to it, and that hit then carries `ids.tmdb`.
           content:
             application/json:
               schema:
@@ -842,6 +896,39 @@ paths:
               schema: {$ref: '#/components/schemas/ImportJob'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/imports/stremio/link:
+    post:
+      operationId: startStremioLink
+      summary: >-
+        Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then
+        poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is
+        used for one library read, then logged out.
+      responses:
+        '200':
+          description: A code to approve.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StremioLink'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/stremio/link/{code}:
+    post:
+      operationId: pollStremioLink
+      summary: >-
+        Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued
+        import once approved; 410 `stremio_link_expired` when the code ran out.
+      parameters:
+        - {name: code, in: path, required: true, schema: {type: string, maxLength: 64}}
+      responses:
+        '202':
+          description: Approved. The library was read and its import queued.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        '204':
+          description: Not approved yet.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/imports/trakt:
     post:
       operationId: createTraktImport
@@ -1014,10 +1101,12 @@ paths:
   /v1/up-next:
     get:
       operationId: getUpNext
-      summary: Continue Watching and Start Watching for the home screen, in one call.
+      summary: >-
+        Continue Watching, Start Watching, status counts and Unfinished business for the home
+        screen, in one call.
       responses:
         '200':
-          description: Both rows.
+          description: The home rows.
           content:
             application/json:
               schema: {$ref: '#/components/schemas/UpNext'}
@@ -1162,6 +1251,14 @@ components:
         connected: {type: boolean}
         username: {type: string}
         connectedAt: {type: string, format: date-time}
+    StremioLink:
+      type: object
+      required: [code, link, qrcode, expiresAt]
+      properties:
+        code: {type: string}
+        link: {type: string, format: uri, description: "The stremio.com page where the user approves the code."}
+        qrcode: {type: string, format: uri, description: "A QR image of `link`, for scanning with a phone."}
+        expiresAt: {type: string, format: date-time}
     ImportJob:
       type: object
       required: [id, source, state, stats, createdAt, updatedAt]
@@ -1169,7 +1266,7 @@ components:
         id: {type: string, format: uuid}
         source:
           type: string
-          enum: [trakt, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, mal_xml, anilist, csv]
+          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, mal_xml, anilist, csv]
         state:
           type: string
           enum: [queued, running, planned, succeeded, failed, partial]
@@ -1232,6 +1329,23 @@ components:
           enum: [sandbox, production]
           description: "`sandbox` for Xcode builds; `production` for TestFlight and the App Store."
         bundleId: {type: string}
+    WebPushKey:
+      type: object
+      required: [publicKey]
+      properties:
+        publicKey: {type: string, description: "VAPID public key, base64url: the browser's applicationServerKey."}
+    WebPushSubscription:
+      type: object
+      required: [endpoint, keys]
+      description: "`PushSubscription.toJSON()` as the browser gives it."
+      properties:
+        endpoint: {type: string}
+        keys:
+          type: object
+          required: [p256dh, auth]
+          properties:
+            p256dh: {type: string}
+            auth: {type: string}
     NotificationSettings:
       type: object
       required: [airing]
@@ -1370,13 +1484,23 @@ components:
         libraryItemId:
           type: string
           description: The caller's library item for this title, when they have one. Discover only.
+        releaseDate:
+          type: string
+          description: >-
+            YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start
+            date (AniList). Absent when the provider has no full date.
     SearchResults:
       type: object
-      required: [items]
+      required: [items, incomplete]
       properties:
         items:
           type: array
           items: {$ref: '#/components/schemas/CatalogHit'}
+        incomplete:
+          type: boolean
+          description: >-
+            True when one provider of an `all` search failed or ran out of time, so the items
+            come from the other alone. Always false for a single-provider search.
     DiscoverRow:
       type: object
       required: [id, title, items]
@@ -1638,15 +1762,45 @@ components:
           items: {$ref: '#/components/schemas/ListSummary'}
     ListDetail:
       type: object
-      required: [id, name, titles, createdAt, updatedAt]
+      required: [id, name, titles, items, createdAt, updatedAt]
       properties:
         id: {type: string, format: uuid}
         name: {type: string}
         titles:
           type: array
+          description: Superseded by `items`; kept for clients that predate it.
           items: {$ref: '#/components/schemas/TitleSummary'}
+        items:
+          type: array
+          description: The members in list order.
+          items: {$ref: '#/components/schemas/ListItem'}
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+    ListItem:
+      type: object
+      description: >-
+        One list member. `entry` is the caller's library row when the title is in the library.
+        Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their
+        episodes are loaded.
+      required: [title]
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        entry: {$ref: '#/components/schemas/LibraryEntry'}
+        showStatus:
+          type: string
+          enum: [upcoming, returning, ended, canceled]
+        nextAiring: {$ref: '#/components/schemas/UpcomingEpisode'}
+    UpcomingEpisode:
+      type: object
+      required: [season, number, airsAt, airTimeKnown]
+      properties:
+        season: {type: integer}
+        number: {type: integer}
+        episodeName: {type: string}
+        airsAt: {type: string, format: date-time}
+        airTimeKnown:
+          type: boolean
+          description: False when the source gives only a date, as on CalendarEntry.
     CreateList:
       type: object
       required: [name]
@@ -1769,24 +1923,67 @@ components:
         startWatching:
           type: array
           items: {$ref: '#/components/schemas/StartEntry'}
+        counts: {$ref: '#/components/schemas/LibraryCounts'}
+        unfinished:
+          type: array
+          description: >-
+            Unfinished business (UPN-002): every dropped item, and every in-progress item last
+            changed 30 or more days ago that is not in `continueWatching`. Newest change first, at
+            most 20.
+          items: {$ref: '#/components/schemas/UnfinishedEntry'}
+    LibraryCounts:
+      type: object
+      description: The user's library items per status.
+      required: [wishlist, inProgress, finished, dropped]
+      properties:
+        wishlist: {type: integer}
+        inProgress: {type: integer}
+        finished: {type: integer}
+        dropped: {type: integer}
+    UnfinishedEntry:
+      type: object
+      required: [libraryItemId, title, reason, since]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        reason:
+          type: string
+          enum: [dropped, stalled]
+          description: "`dropped` is the status; `stalled` is in progress and untouched for 30 days."
+        since:
+          type: string
+          format: date-time
+          description: The item's last change.
+        next: {$ref: '#/components/schemas/EpisodeRef'}
     Stats:
       type: object
       description: >-
         `busiest` is the bucket with the most time (minutes, then episodes, then finishes).
         `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were
         watched or the top count is shared, so a tie names no winner.
-      required: [year, timeZone, isPartial, totals, buckets, topTitles, ratings]
+      required: [span, year, timeZone, isPartial, totals, byKind, buckets, topTitles, ratings]
       properties:
-        year: {type: integer}
+        span:
+          type: string
+          enum: [month, year, all]
+        year:
+          type: integer
+          description: The last year the period touches; for `all`, the current year.
         month: {type: integer}
         timeZone: {type: string}
         isPartial:
           type: boolean
-          description: The period is not over yet in the user's time zone.
+          description: The period is not over yet in the user's time zone (always true for `all`).
         totals: {$ref: '#/components/schemas/StatsTotals'}
+        byKind:
+          type: array
+          description: Movie, show, anime and book, always all four in that order; they sum to `totals`.
+          items: {$ref: '#/components/schemas/StatsKind'}
         buckets:
           type: array
-          description: One per month of the year, or one per day of the month, in order.
+          description: >-
+            One per month of the year, one per day of the month, or one per year (all time) from the
+            first active year to this one, in order.
           items: {$ref: '#/components/schemas/StatsBucket'}
         busiest: {$ref: '#/components/schemas/StatsBucket'}
         mostEpisodes: {$ref: '#/components/schemas/StatsBucket'}
@@ -1814,6 +2011,17 @@ components:
           type: integer
           description: Anime shows and films. Not counted again as shows or movies.
         booksFinished: {type: integer}
+    StatsKind:
+      type: object
+      required: [kind, episodes, minutes, finished]
+      properties:
+        kind:
+          type: string
+          enum: [movie, show, anime, book]
+          description: Anime is its own kind, films and shows alike; never counted again as either.
+        episodes: {type: integer}
+        minutes: {type: integer}
+        finished: {type: integer}
     StatsBucket:
       type: object
       required: [start, episodes, minutes, finished]
@@ -1840,7 +2048,7 @@ components:
         minutes: {type: integer}
     StatsRatings:
       type: object
-      required: [count]
+      required: [count, distribution]
       properties:
         count:
           type: integer
@@ -1848,6 +2056,14 @@ components:
         mean: {type: number}
         highest: {$ref: '#/components/schemas/TitleSummary'}
         highestRating: {type: number}
+        distribution:
+          type: array
+          description: >-
+            Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1,
+            so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9.
+          minItems: 10
+          maxItems: 10
+          items: {type: integer}
     StatsMoment:
       type: object
       required: [title, at]

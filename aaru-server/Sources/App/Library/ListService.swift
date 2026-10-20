@@ -5,6 +5,15 @@ import Foundation
 struct ListDetail: Sendable {
     var list: AaruList
     var titles: [Title]
+    var members: [ListMember]
+}
+
+/// One list row (LST-003): the title, the caller's library entry when there is one, and for
+/// shows, their status and next episode to air.
+struct ListMember: Sendable {
+    var title: Title
+    var entry: LibraryEntry?
+    var airing: TitleAiring?
 }
 
 /// Lists (LST-001, LST-002): membership of titles, journaled like every library write.
@@ -12,6 +21,7 @@ struct ListDetail: Sendable {
 struct ListService: Sendable {
     let stores: Stores
     let resolver: TitleResolver
+    let catalog: CatalogService
     var now: @Sendable () -> Date = { Date() }
 
     func lists(userID: UserID) async throws -> [AaruList] {
@@ -21,7 +31,17 @@ struct ListService: Sendable {
     func detail(_ id: ListID, userID: UserID) async throws -> ListDetail {
         guard let list = try await stores.lists.list(id: id, userID: userID)
         else { throw AppError.notFound("No such list.") }
-        return try await ListDetail(list: list, titles: stores.titles.titles(ids: list.titleIDs))
+        let now = now()
+        async let titles = stores.titles.titles(ids: list.titleIDs)
+        async let entries = stores.library.entries(
+            userID: userID, filter: LibraryFilter(listID: id), after: nil, limit: max(list.titleIDs.count, 1),
+            now: now
+        ).entries
+        async let airing = stores.titles.airing(ids: list.titleIDs, now: now)
+        let byTitle = try await Dictionary(entries.map { ($0.title.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let schedule = try await airing
+        let members = try await titles.map { ListMember(title: $0, entry: byTitle[$0.id], airing: schedule[$0.id]) }
+        return try await ListDetail(list: list, titles: titles, members: members)
     }
 
     func create(name: String, userID: UserID) async throws -> ListDetail {
@@ -66,6 +86,11 @@ struct ListService: Sendable {
             .setListMembers(id, current.list.titleIDs + [title.id]), userID: userID, actor: .user, kind: "list",
             summary: "Added \(title.title) to \(current.list.name)"
         )
+        if title.type == .show {
+            // Load episodes now so the row shows the next airing. Best effort, as for a library add;
+            // `CatalogRefresher` retries.
+            _ = try? await catalog.detail(title.id)
+        }
         return try await detail(id, userID: userID)
     }
 

@@ -1,5 +1,5 @@
 {
-  "originHash" : "861e939e6f6bf8b6782da1cde18a49598a848a49c41e625bb4d614e8c7ab3083",
+  "originHash" : "abc3d08d308e91c9eae146b87dcfe464389163193de561820140381c632b125e",
   "pins" : [
     {
       "identity" : "apnswift",
@@ -341,6 +341,15 @@
       "state" : {
         "revision" : "869129b7bf4ecc57b97d0193ad29690ca2134750",
         "version" : "1.8.1"
+      }
+    },
+    {
+      "identity" : "swift-webpush",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mochidev/swift-webpush.git",
+      "state" : {
+        "revision" : "70e9c03eb355c181ce0f9beada7eac3496d786b5",
+        "version" : "0.4.2"
       }
     },
     {

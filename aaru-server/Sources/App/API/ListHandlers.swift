@@ -116,8 +116,27 @@ extension Components.Schemas.ListDetail {
             id: detail.list.id.description,
             name: detail.list.name,
             titles: detail.titles.map(Components.Schemas.TitleSummary.init),
+            items: detail.members.map(Components.Schemas.ListItem.init),
             createdAt: detail.list.createdAt,
             updatedAt: detail.list.updatedAt
+        )
+    }
+}
+
+extension Components.Schemas.ListItem {
+    init(_ member: ListMember) {
+        self.init(
+            title: .init(member.title),
+            entry: member.entry.map(Components.Schemas.LibraryEntry.init),
+            showStatus: member.airing?.status.flatMap { .init(rawValue: $0.rawValue) },
+            nextAiring: member.airing?.next.flatMap { episode in
+                episode.airsAt.map {
+                    .init(
+                        season: episode.season, number: episode.episode, episodeName: episode.name, airsAt: $0,
+                        airTimeKnown: episode.airTimeKnown
+                    )
+                }
+            }
         )
     }
 }

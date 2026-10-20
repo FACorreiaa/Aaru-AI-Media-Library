@@ -1,8 +1,8 @@
 import AaruCore
 import Foundation
 
-/// GAM-006a: period stats for the Recap. A derived read over the library with no table of its
-/// own; imports never count as activity.
+/// GAM-006a/c: period stats for the Recap and Insights. A derived read over the library with no
+/// table of its own; imports never count as activity.
 struct StatsService: Sendable {
     static let topTitleCount = 5
     static let years = 1900 ... 2200
@@ -10,14 +10,35 @@ struct StatsService: Sendable {
     let stores: Stores
     var now: @Sendable () -> Date = { Date() }
 
-    func stats(userID: UserID, year: Int, month: Int?, timeZone: String?) async throws -> PeriodStats {
-        let period = try Self.period(year: year, month: month, timeZone: timeZone)
+    /// `allTime` takes no year or month; otherwise a year is required.
+    func stats(userID: UserID, allTime: Bool = false, year: Int?, month: Int?, timeZone: String?) async throws
+        -> PeriodStats
+    {
+        var period = try Self.period(allTime: allTime, year: year, month: month, timeZone: timeZone, now: now())
         let rows = try await stores.stats.activity(
             userID: userID, from: period.start, until: period.end, timeZone: period.timeZone
         )
+        if period.span == .all, let first = rows.map(\.day.year).min() {
+            period.firstYear = min(first, period.year)
+        }
         let digest = StatsDigest(rows, period: period, today: LocalDay(now(), in: period.timeZone))
         let titles = try await stores.titles.titles(ids: digest.titleIDs)
         return digest.stats(titles: Dictionary(titles.map { ($0.id, $0) }) { first, _ in first })
+    }
+
+    /// GAM-006c: a year, a month of it, or all time up to today in the user's time zone.
+    static func period(allTime: Bool, year: Int?, month: Int?, timeZone: String?, now: Date) throws -> StatsPeriod {
+        if allTime {
+            guard year == nil, month == nil else {
+                throw invalid(["span": "All time takes no year or month."])
+            }
+            let zone = try zone(timeZone)
+            return StatsPeriod(allTimeUntil: LocalDay(now, in: zone), timeZone: zone)
+        }
+        guard let year else {
+            throw invalid(["year": "Send a year, or span=all."])
+        }
+        return try period(year: year, month: month, timeZone: timeZone)
     }
 
     static func period(year: Int, month: Int?, timeZone: String?) throws -> StatsPeriod {
@@ -30,15 +51,28 @@ struct StatsService: Sendable {
         }
         let zone = TimeZone(identifier: timeZone ?? "UTC")
         if zone == nil {
-            details["tz"] = "Use an IANA time zone such as Europe/Lisbon."
+            details["tz"] = zoneMessage
         }
         guard details.isEmpty, let zone else {
-            throw AppError(
-                status: .unprocessableContent, code: "validation_failed",
-                message: details.values.sorted().joined(separator: " "), details: details
-            )
+            throw invalid(details)
         }
         return StatsPeriod(year: year, month: month, timeZone: zone)
+    }
+
+    private static let zoneMessage = "Use an IANA time zone such as Europe/Lisbon."
+
+    private static func zone(_ identifier: String?) throws -> TimeZone {
+        guard let zone = TimeZone(identifier: identifier ?? "UTC") else {
+            throw invalid(["tz": zoneMessage])
+        }
+        return zone
+    }
+
+    private static func invalid(_ details: [String: String]) -> AppError {
+        AppError(
+            status: .unprocessableContent, code: "validation_failed",
+            message: details.values.sorted().joined(separator: " "), details: details
+        )
     }
 }
 
@@ -54,6 +88,8 @@ struct StatsDigest {
     var period: StatsPeriod
     var isPartial: Bool
     var totals = PeriodStats.Totals()
+    var byKind = PeriodStats.Kind.allCases.map { PeriodStats.KindTotals(kind: $0) }
+    var distribution = Array(repeating: 0, count: 10)
     var buckets: [PeriodStats.Bucket]
     var longestRun: PeriodStats.Run?
     var topTitles: [TitleTime] = []
@@ -79,6 +115,9 @@ struct StatsDigest {
         for row in rows {
             totals.episodesWatched += row.episodes
             totals.minutesWatched += row.minutes
+            let kind = Self.kindIndex(row)
+            byKind[kind].episodes += row.episodes
+            byKind[kind].minutes += row.minutes
             buckets[period.bucket(of: row.day)]?.episodes += row.episodes
             buckets[period.bucket(of: row.day)]?.minutes += row.minutes
             if row.episodes > 0 || row.minutes > 0 {
@@ -88,9 +127,11 @@ struct StatsDigest {
             }
             if row.finished {
                 buckets[period.bucket(of: row.day)]?.finished += 1
+                byKind[kind].finished += 1
                 Self.countFinish(row, in: &totals)
                 if let rating = row.rating {
                     ratings.append(Rated(titleID: row.titleID, rating: rating, date: row.lastAt))
+                    distribution[Self.ratingBin(rating)] += 1
                 }
             }
             if first.map({ row.firstAt < $0.date }) ?? true {
@@ -114,6 +155,22 @@ struct StatsDigest {
         }
         // The highest rating; among ties, the latest finish.
         highest = ratings.max { ($0.rating, $0.date) < ($1.rating, $1.date) }
+    }
+
+    /// The row's place in `byKind`: anime is anime whatever its type.
+    private static func kindIndex(_ row: StatsActivity) -> Int {
+        let kind: PeriodStats.Kind = switch (row.type, row.isAnime) {
+        case (_, true): .anime
+        case (.movie, false): .movie
+        case (.show, false): .show
+        case (.book, false): .book
+        }
+        return PeriodStats.Kind.allCases.firstIndex(of: kind) ?? 0
+    }
+
+    /// The histogram bin of a 1–10 rating: (n, n + 1] is bin n, so half stars round up.
+    static func ratingBin(_ rating: Double) -> Int {
+        min(9, max(0, Int(rating.rounded(.up)) - 1))
     }
 
     /// Anime counts once, as anime, whatever its type.
@@ -164,6 +221,7 @@ struct StatsDigest {
             period: period,
             isPartial: isPartial,
             totals: totals,
+            byKind: byKind,
             buckets: buckets,
             busiest: buckets.filter { !$0.isEmpty }.max {
                 ($0.minutes, $0.episodes, $0.finished) < ($1.minutes, $1.episodes, $1.finished)
@@ -177,7 +235,8 @@ struct StatsDigest {
             },
             ratings: PeriodStats.Ratings(
                 count: ratingCount, mean: ratingMean,
-                highest: highest.flatMap { titles[$0.titleID] }, highestRating: highest?.rating
+                highest: highest.flatMap { titles[$0.titleID] }, highestRating: highest?.rating,
+                distribution: distribution
             ),
             first: first.flatMap(moment(titles)),
             last: last.flatMap(moment(titles))
