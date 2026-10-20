@@ -546,6 +546,14 @@ table, recorded in PRV-001). Catalog data only: no user rows, no scraping. No ke
 **Done when:** a mapped AniList id from the dataset resolves to its TMDB show in production,
 and re-running the load is idempotent.
 
+**Progress 2026-10-20:** built. `aaru --anime-mappings <path|url|default>` loads Fribb's
+`anime-list-full.json` in one transaction (20,874 AniList rows, 6,958 with a TMDB show on
+2026-10-20); re-running changes nothing. Only TMDB TV ids are kept (films would attach to the
+wrong show). anime-offline-database stays out until Fribb's gaps are measured (its ODbL
+share-alike is a real duty). Unmapped anime now get episode names from AniList's
+`streamingEpisodes` titles. Still to do: the monthly CronJob in the infra repo, and the first
+production load.
+
 ---
 
 ## P1 · M4 — Library

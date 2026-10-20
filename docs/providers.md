@@ -11,7 +11,8 @@ render the **Credit** column; `/privacy` names every row that receives user data
 | --- | --- | --- | --- | --- | --- | --- |
 | TMDB | Movies and shows: search, details, posters, backdrops, episodes, networks | v3 key | `TMDB_API_KEY` in `aaru-env` (horus) | 40/s | TMDB API terms: non-commercial on the free tier; logo + notice required, our logo must stay more prominent | TMDB logo and "This product uses the TMDB API but is not endorsed or certified by TMDB." |
 | TVmaze | Exact air times and networks for TMDB shows (CAT-011) | none | — | 1.8/s (~20 per 10 s per IP) | Data CC BY-SA 4.0; free API, attribution required | "Air times from TVmaze" linking to tvmaze.com, CC BY-SA |
-| AniList | Anime: search, details, banners, exact airing times | none | — | 1.5/s (90/min) | AniList API terms (non-commercial without permission) | "Anime data from AniList" linking to anilist.co |
+| AniList | Anime: search, details, banners, exact airing times, episode names from its streaming links | none | — | 1.5/s (90/min) | AniList API terms (non-commercial without permission) | "Anime data from AniList" linking to anilist.co |
+| Fribb/anime-lists | AniList → TMDB/TVDB/MAL/AniDB id mappings, so mapped anime use TMDB's episodes (CAT-010). A file loaded by `aaru --anime-mappings`, monthly; no API calls at request time | none | — | one download per load | MIT | "Anime id mappings from Fribb/anime-lists" linking to github.com/Fribb/anime-lists, MIT |
 | Open Library | Books: search, details, covers | none | — | 3/s, contact User-Agent | Internet Archive terms; covers rate-limited | "Book data from Open Library" linking to openlibrary.org |
 
 Commercial use of TMDB and AniList on these keys is **not** allowed: any paid plan in

@@ -111,6 +111,8 @@ struct AnimeMapping: Sendable, Equatable {
 protocol AnimeMappingStore: Sendable {
     func mapping(anilist: String) async throws -> AnimeMapping?
     func upsert(_ mapping: AnimeMapping) async throws
+    /// Upserts in batches inside one transaction; re-running with the same rows changes nothing.
+    func upsertMany(_ mappings: [AnimeMapping]) async throws
 }
 
 /// The library and its journal. Every write goes through `apply`, which runs the op,

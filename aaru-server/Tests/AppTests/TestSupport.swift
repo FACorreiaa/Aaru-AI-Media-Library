@@ -79,6 +79,10 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
+    func upsertMany(_: [AnimeMapping]) async throws {
+        throw Touched()
+    }
+
     func staleTrackedShows(now _: Date, retryAfter _: Date, limit _: Int) async throws -> [TitleID] {
         throw Touched()
     }

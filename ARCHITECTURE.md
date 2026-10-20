@@ -381,7 +381,13 @@ Anime is first-class from Phase 1 (CAT-007…009).
   is still a movie. TMDB hits are flagged when they are Japanese animation.
 - Community AniList → TMDB mappings live in `anime_mappings` (CAT-009/010). A mapped AniList
   entry resolves to the TMDB show; an unmapped one stays its own AniList-backed title, whose
-  episodes come from AniList's airing schedule (one season per entry).
+  episodes come from AniList's airing schedule (one season per entry), named from AniList's
+  streaming links ("Episode 3 - Name") when it has them, and "Episode N" otherwise.
+- The mappings come from Fribb/anime-lists (MIT), loaded by `aaru --anime-mappings
+  <path|url|default>` (CAT-010) and refreshed monthly by a CronJob. Only a TMDB **TV** id is
+  kept: a film's TMDB movie id would attach it to whichever show shares the number. Anime
+  titles created before a mapping existed keep their AniList episodes; they are found by their
+  AniList id first and are never merged into the TMDB show.
 
 ### Trakt
 

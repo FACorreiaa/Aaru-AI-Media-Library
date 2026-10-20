@@ -27,6 +27,11 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         exit(0)
     }
 
+    if let source = reader.string(forKey: "anime.mappings") {
+        try await loadAnimeMappings(from: source, reader: reader, logger: logger)
+        exit(0)
+    }
+
     let config = try AppConfig.load(from: reader)
     let fluent = try await makeFluent(config.postgres, logger: logger)
     let stores = try Stores.postgres(fluent.db())
@@ -64,6 +69,26 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         ],
         logger: logger
     )
+}
+
+/// CAT-010 · `aaru --anime-mappings <path|url|default>` loads Fribb's anime list into
+/// `anime_mappings` and exits. Needs only Postgres settings, like `db.migrate`.
+func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger) async throws {
+    let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
+    do {
+        let resolved = source == "default" || source.isEmpty ? AnimeMappingLoader.defaultSource : source
+        var transport = AsyncHTTPTransport(client: .shared)
+        transport.maxBodyBytes = 64 * 1024 * 1024
+        let mappings = try await AnimeMappingLoader.parse(AnimeMappingLoader.load(from: resolved, transport: transport))
+        try await Stores.postgres(fluent.db()).animeMappings.upsertMany(mappings)
+        logger.info("Anime mappings loaded", metadata: [
+            "count": "\(mappings.count)", "withTMDB": "\(mappings.count { $0.tmdb != nil })",
+        ])
+        try await fluent.shutdown()
+    } catch {
+        try? await fluent.shutdown()
+        throw error
+    }
 }
 
 /// The APNs sender, or nil (with a notice) when no key is configured or the key does not parse.

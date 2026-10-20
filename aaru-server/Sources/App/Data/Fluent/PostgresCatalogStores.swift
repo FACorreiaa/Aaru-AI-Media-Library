@@ -250,6 +250,31 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
             }
     }
 
+    func upsertMany(_ mappings: [AnimeMapping]) async throws {
+        let rows = mappings.map {
+            Row(
+                anilist: $0.anilist,
+                mal: $0.mal,
+                anidb: $0.anidb,
+                tvdb: $0.tvdb,
+                tmdb: $0.tmdb,
+                tmdbSeason: $0.tmdbSeason
+            )
+        }
+        try await sql.transaction { sql in
+            for start in stride(from: 0, to: rows.count, by: 1000) {
+                let batch = Array(rows[start ..< min(start + 1000, rows.count)])
+                try await sql.insert(into: "anime_mappings")
+                    .models(batch, keyEncodingStrategy: .convertToSnakeCase, nilEncodingStrategy: .asNil)
+                    .onConflict(with: ["anilist"]) {
+                        $0.set(excludedValueOf: "mal").set(excludedValueOf: "anidb").set(excludedValueOf: "tvdb")
+                            .set(excludedValueOf: "tmdb").set(excludedValueOf: "tmdb_season")
+                    }
+                    .run()
+            }
+        }
+    }
+
     func upsert(_ mapping: AnimeMapping) async throws {
         let row = Row(
             anilist: mapping.anilist, mal: mapping.mal, anidb: mapping.anidb, tvdb: mapping.tvdb,

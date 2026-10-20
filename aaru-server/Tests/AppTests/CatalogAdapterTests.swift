@@ -130,12 +130,15 @@ struct CatalogAdapterTests {
           "title":{"romaji":"X","english":null,"native":null},"startDate":{"year":2026},
           "coverImage":null,"description":null,
           "airingSchedule":{"nodes":[{"episode":1,"airingAt":1790000000},{"episode":2,"airingAt":1790604800}]},
-          "nextAiringEpisode":{"episode":3,"airingAt":1791209600}}}}
+          "nextAiringEpisode":{"episode":3,"airingAt":1791209600},
+          "streamingEpisodes":[{"title":"Episode 2 - The Second One"},{"title":"Episode 1 - Pilot"},
+            {"title":"Episode 9 - Out of Range"},{"title":"Recap Special"}]}}}
         """#])
         let result = try #require(try await AniListCatalog(client: client(stub, "anilist"))
             .episodes(ids: ExternalIDs(anilist: "1")))
         #expect(result.status == .returning)
         #expect(result.episodes.map(\.episode) == [1, 2, 3])
         #expect(result.episodes.allSatisfy { $0.season == 1 && $0.airsAt != nil })
+        #expect(result.episodes.map(\.name) == ["Pilot", "The Second One", nil], "named from streaming links")
     }
 }
