@@ -332,6 +332,12 @@ their agent, what they may do and their last use, with a confirmed Revoke. Chang
 land as journaled actions named after the connection ("Claude Code: marked S01E01 of X
 watched"), so history and undo treat them like a tap.
 
+**Claude** is first in the list and has no token: its steps say to add Aaru in Claude
+(Settings → Connectors → Add custom connector, with the URL), and Claude sends you to Aaru's
+**consent page**. That page names the app and, in bold, the host it will return you to (apps
+name themselves; the host they cannot fake), then a name for the history, **Allow changes**
+(off), and **Allow** / **Not now**. A signed-out visitor signs in first and lands back on it.
+
 ## 16. Widgets (Phase 2)
 
 Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only

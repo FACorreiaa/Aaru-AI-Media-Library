@@ -62,6 +62,11 @@ struct AppConfig: Sendable {
     var vapidConfigJSON: String?
     /// Where this API is reachable from outside (`PUBLIC_BASE_URL`), for the Stremio install link.
     var publicBaseURL: URL
+    /// Where the web app lives (`WEB_BASE_URL`): the OAuth consent page for Claude's connector.
+    var webBaseURL: URL
+    /// `OAUTH_COOKIE_DOMAIN`: the parent domain of the API and the web app, so the consent page
+    /// can read the cookie the API set. Empty for a host-only cookie (local development).
+    var oauthCookieDomain: String?
 
     static func load(from reader: ConfigReader) throws -> AppConfig {
         let audiences = reader.string(forKey: "apple.audiences", default: defaultAppleAudiences)
@@ -81,7 +86,10 @@ struct AppConfig: Sendable {
             trakt: traktSettings(from: reader),
             push: pushSettings(from: reader),
             vapidConfigJSON: reader.string(forKey: "vapid.config").flatMap { $0.isEmpty ? nil : $0 },
-            publicBaseURL: publicBaseURL(from: reader)
+            publicBaseURL: publicBaseURL(from: reader),
+            webBaseURL: URL(string: reader.string(forKey: "web.base.url", default: "https://aaruapp.com"))
+                ?? URL(string: "https://aaruapp.com")!,
+            oauthCookieDomain: reader.string(forKey: "oauth.cookie.domain", default: "aaruapp.com").nilIfBlank
         )
     }
 

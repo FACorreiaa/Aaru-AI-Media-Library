@@ -31,6 +31,8 @@ struct MintedAgentToken: Sendable {
 struct AgentTokenService: Sendable {
     static let stremioPrefix = "aaru_st_"
     static let mcpPrefix = "aaru_mcp_"
+    /// An access token the OAuth front door issued (one hour). Also an MCP credential.
+    static let oauthPrefix = "aaru_oat_"
     /// `last_used_at` is written at most this often, so a busy addon does not write per request.
     static let touchInterval: TimeInterval = 60 * 60
     /// Requests per token per minute. Stremio asks for a few catalogs per screen.
@@ -45,6 +47,13 @@ struct AgentTokenService: Sendable {
     func create(userID: UserID, kind: AgentTokenKind, name: String?, allowLibraryWrites: Bool) async throws
         -> MintedAgentToken
     {
+        guard kind != .claude else {
+            throw AppError(
+                status: .unprocessableContent, code: "validation_failed",
+                message: "Claude connects through its connector: add Aaru in Claude and approve it there.",
+                details: ["kind": "Claude connects over OAuth."]
+            )
+        }
         let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard trimmed.count <= 80 else {
             throw AppError(
@@ -86,7 +95,8 @@ struct AgentTokenService: Sendable {
 
     /// The live token for a presented secret on one surface, or nil. Records use at most hourly.
     func authenticate(_ secret: String, for group: AgentTokenKind.Group) async throws -> AgentCaller? {
-        guard secret.hasPrefix(Self.prefix(for: group)), secret.count < 200 else { return nil }
+        let prefixes = group == .mcp ? [Self.mcpPrefix, Self.oauthPrefix] : [Self.stremioPrefix]
+        guard prefixes.contains(where: secret.hasPrefix), secret.count < 200 else { return nil }
         let now = now()
         guard let (token, userID) = try await stores.agentTokens.token(forHash: OpaqueToken.hash(secret), now: now),
               token.kind.group == group

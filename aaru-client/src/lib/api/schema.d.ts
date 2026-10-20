@@ -293,6 +293,56 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/oauth/requests/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked. */
+    get: operations['getOAuthRequest']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/oauth/requests/{id}/approve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next. */
+    post: operations['approveOAuthRequest']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/oauth/requests/{id}/deny': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['denyOAuthRequest']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/agent/setup/{kind}': {
     parameters: {
       query?: never
@@ -952,18 +1002,44 @@ export interface components {
       /** @description The journaled action, once applied; undo it like any other. */
       actionId?: string
     }
+    OAuthConsentRequest: {
+      /** Format: uuid */
+      id: string
+      /** @description The name the app registered with. Apps name themselves; show the host too. */
+      clientName: string
+      /** @description Where the app returns the user. This part an impostor cannot fake. */
+      redirectHost: string
+      kind: components['schemas']['AgentTokenKind']
+      /** Format: date-time */
+      expiresAt: string
+    }
+    OAuthRedirect: {
+      redirectTo: string
+    }
     /**
      * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
      * @enum {string}
      */
     AgentTokenKind:
-      'stremio' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
+      | 'stremio'
+      | 'claude_code'
+      | 'codex'
+      | 'hermes'
+      | 'gemini'
+      | 'other'
+      | 'claude'
     /** @enum {string} */
-    AgentMCPKind: 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
+    AgentMCPKind:
+      'claude' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
     /** @description How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`. */
     AgentSetup: {
       kind: components['schemas']['AgentMCPKind']
       title: string
+      /**
+       * @description `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
+       * @enum {string}
+       */
+      auth: 'token' | 'oauth'
       /** @description The MCP endpoint (streamable HTTP). */
       url: string
       steps: {
@@ -2084,6 +2160,89 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['AgentPlan']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getOAuthRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The request. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OAuthConsentRequest']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  approveOAuthRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          binding: string
+          name?: string
+          allowLibraryWrites?: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Send the browser here. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OAuthRedirect']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  denyOAuthRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          binding: string
+        }
+      }
+    }
+    responses: {
+      /** @description Send the browser here. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OAuthRedirect']
         }
       }
       default: components['responses']['Error']

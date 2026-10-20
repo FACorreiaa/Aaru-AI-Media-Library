@@ -40,7 +40,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let webPush = makeWebPushSender(config.vapidConfigJSON, logger: logger)
     var services = Services.make(
         stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
-        publicBaseURL: config.publicBaseURL
+        publicBaseURL: config.publicBaseURL, oauth: (config.webBaseURL, config.oauthCookieDomain)
     )
     services.webPush = webPush
     let pushSender = makePushSender(config.push, logger: logger)
@@ -208,6 +208,7 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         tokens: services.agentTokens
     ).register(on: router)
     MCPRoutes(tools: AgentTools(services: services, stores: stores), tokens: services.agentTokens).register(on: router)
+    OAuthRoutes(service: services.oauth).register(on: router)
     return router
 }
 

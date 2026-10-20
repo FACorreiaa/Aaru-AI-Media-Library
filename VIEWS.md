@@ -47,6 +47,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Approvals | `PlanCard`, pinned at the top of Home ("Waiting for you") until The Field exists; a push opens one | `GET /v1/plans`, `GET /v1/plans/{id}`, `POST /v1/plans/{id}/approve`, `/deny` | 7 · OUT-004 (built 2026-10-20) |
 | Shortcuts / App Intents | `TitleCard`, `TonightStrip` as intent snippets | agent tool layer | 7 · M14 |
 | MCP | none — headless, no rendering | `POST /v1/mcp` | 7 · OUT-004 (built 2026-10-20) |
+| OAuth consent (web only) | none — the app's name, the host it returns to, a name, Allow changes, Allow / Not now | `GET /v1/oauth/requests/{id}`, `POST …/approve`, `POST …/deny` | 7 · OUT-004 (built 2026-10-20) |
 
 No surface gets a private endpoint. If a view needs data no route returns, add the route,
 not a view-shaped one.

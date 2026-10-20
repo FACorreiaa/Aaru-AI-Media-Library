@@ -370,7 +370,7 @@ account or a stranger that has not happened yet.
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
-| OUT-004 | Partial | Sources/App/MCP, `POST /v1/mcp`, `/v1/plans` | No OAuth front door yet |
+| OUT-004 | Built | Sources/App/MCP, `/v1/plans`, Sources/App/OAuth | Claude connector unverified against claude.ai until deployed |
 | OUT-005 | Open | none | |
 | MOAT-001 | Dropped (promoted) | now SCR-003 | SCR-003 built |
 | MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
@@ -2299,6 +2299,21 @@ Pending plans pin to the top of Home on web and Apple ("Waiting for you"), and t
 the plan. **Denials are recorded on the plan row** (`status = denied`, `decided_at`, the token),
 not as an `actions` row: the action journal holds only undoable writes, and `agent_plans` is the
 ledger of what each token asked for.
+
+**Progress 2026-10-20 (OAuth front door, the Claude connector):** `Sources/App/OAuth`, per the
+MCP authorization spec. `/.well-known/oauth-protected-resource` (and `/v1/mcp` under it),
+`/.well-known/oauth-authorization-server`, `POST /oauth/register` (RFC 7591; every client is
+public, https or loopback redirects only, 20 per address per hour), `GET /oauth/authorize`
+(S256 PKCE only; `resource` must be the MCP endpoint), `POST /oauth/token`, `POST /oauth/revoke`,
+all CORS `*` without credentials. Authorize sets an `aaru_oauth` binding cookie on
+`OAUTH_COOKIE_DOMAIN` and sends the browser to the web consent page (`/oauth/consent`), which
+answers through `GET/POST /v1/oauth/requests/{id}…` with the session and that binding, so a
+consent link sent to someone else approves nothing. The access token is an `agent_tokens` row
+(`issuance = oauth`, `aaru_oat_`, one hour, kind from the client's name: `claude`,
+`claude_code`, …); the refresh token (30 days) rotates, and a replayed refresh token or a reused
+code revokes the connection. MCP's 401 names the resource metadata. Settings lists these
+connections with the others; revoking one stops its refresh. `kind = claude` cannot be minted
+with a pasted token. New env: `WEB_BASE_URL`, `OAUTH_COOKIE_DOMAIN`.
 
 ### OUT-005 · Agent-readable digest · S
 **Needs:** LIB-002, SHF-002, OUT-001.

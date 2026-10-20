@@ -627,6 +627,28 @@ Rules:
 - Every rule in "Agent tools" applies unchanged. In particular: deleting `App/MCP` must leave
   every feature reachable through `/v1`.
 
+### OAuth front door (Claude's connector)
+
+Claude (claude.ai, Desktop, mobile) adds a remote MCP server as a custom connector, and a
+connector authenticates with OAuth per the MCP authorization spec. `aaru-server/Sources/App/OAuth`
+is that front door, hand-written like the MCP route:
+
+| Endpoint | Role |
+| --- | --- |
+| `GET /.well-known/oauth-protected-resource[/v1/mcp]` | RFC 9728: the resource is `/v1/mcp`, the issuer is the API |
+| `GET /.well-known/oauth-authorization-server` | RFC 8414 metadata |
+| `POST /oauth/register` | RFC 7591. Every client is public (`none`); https or loopback redirects |
+| `GET /oauth/authorize` | S256 PKCE only. Sets the `aaru_oauth` binding cookie, sends the browser to the web consent page |
+| `POST /oauth/token` | Code (60 s, once) or refresh token (30 days, rotated) for an access token (one hour) |
+| `POST /oauth/revoke` | RFC 7009 |
+| `GET/POST /v1/oauth/requests/{id}[/approve, /deny]` | The consent page's answer: session plus binding |
+
+The consent page lives in `aaru-client` (`/oauth/consent`) and holds no rules: it forwards the
+session and the binding cookie, which the API sets on `OAUTH_COOKIE_DOMAIN` (the parent of the
+API and web hosts). Tokens are `agent_tokens` rows (`issuance = oauth`), so an OAuth client gets
+exactly an MCP token's scopes, lists in Settings, and is revoked the same way. A reused code or a
+replayed refresh token revokes the connection.
+
 ### Model provider
 
 The agent's model is pluggable, in the same narrow-protocol style as the catalog adapters.
