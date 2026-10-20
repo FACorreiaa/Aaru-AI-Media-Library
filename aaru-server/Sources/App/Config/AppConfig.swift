@@ -57,6 +57,8 @@ struct AppConfig: Sendable {
     var trakt: TraktSettings?
     /// Nil when `APNS_PRIVATE_KEY` is unset: devices still register, no push is sent.
     var push: PushSettings?
+    /// Where this API is reachable from outside (`PUBLIC_BASE_URL`), for the Stremio install link.
+    var publicBaseURL: URL
 
     static func load(from reader: ConfigReader) throws -> AppConfig {
         let audiences = reader.string(forKey: "apple.audiences", default: defaultAppleAudiences)
@@ -74,8 +76,17 @@ struct AppConfig: Sendable {
                 default: "Aaru/0.1 (media library; contact: signin@aaruapp.com)"
             ),
             trakt: traktSettings(from: reader),
-            push: pushSettings(from: reader)
+            push: pushSettings(from: reader),
+            publicBaseURL: publicBaseURL(from: reader)
         )
+    }
+
+    static func publicBaseURL(from reader: ConfigReader) throws -> URL {
+        let base = reader.string(forKey: "public.base.url", default: "https://api.aaruapp.com")
+        guard let url = URL(string: base), url.scheme == "https" || url.scheme == "http" else {
+            throw MissingConfigError(environmentName: "PUBLIC_BASE_URL", key: "public.base.url")
+        }
+        return url
     }
 
     private static func pushSettings(from reader: ConfigReader) throws -> PushSettings? {

@@ -24,7 +24,8 @@ extension Stores {
             stats: PostgresStatsStore(sql: sql),
             importJobs: PostgresImportJobStore(sql: sql),
             trakt: PostgresTraktStore(sql: sql),
-            push: PostgresPushStore(sql: sql)
+            push: PostgresPushStore(sql: sql),
+            agentTokens: PostgresAgentTokenStore(sql: sql)
         )
     }
 }

@@ -47,7 +47,9 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             settings: settings
         )
     }
-    let services = Services.make(stores: stores, catalogs: catalogs, auth: auth, trakt: trakt)
+    let services = Services.make(
+        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, publicBaseURL: config.publicBaseURL
+    )
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -129,7 +131,7 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
 func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
-        LogRequestsMiddleware(.info)
+        RedactedLogRequestsMiddleware(.info)
         ErrorMiddleware()
         AuthMiddleware(sessions: stores.sessions)
         // store request context in TaskLocal; must be last

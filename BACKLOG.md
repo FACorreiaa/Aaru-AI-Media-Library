@@ -1788,6 +1788,14 @@ the central rate limiter per X-002.
 refused on the next call; deleting the account deletes its tokens; and the secret is
 unrecoverable from the database.
 
+**Progress 2026-10-20 (minimal, for Stremio):** server built. `agent_tokens` adds a `kind`
+(`stremio` only until OUT-004) so Settings can list Stremio links; `imports:write` is not
+mintable yet. Secrets are `aaru_st_` + 32 random bytes, stored as SHA-256; `last_used_at` is
+written at most hourly; 120 requests per token per minute. `POST` answers the Stremio manifest,
+`stremio://` and Stremio Web install links (`PUBLIC_BASE_URL`, default
+`https://api.aaruapp.com`). Request logs redact `/stremio/<token>/` and the Trakt callback's
+query. All done-when conditions are server tests; the Settings UI comes with SCR-003.
+
 ### OUT-002 · Action provenance for external callers · S
 **Needs:** AUD-001, OUT-001.
 `actions.actor` gains `external_agent`; `actions` gains a nullable `agentTokenId`. The undo

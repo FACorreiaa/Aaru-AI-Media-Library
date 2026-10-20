@@ -23,6 +23,7 @@ let allMigrations: [any Migration] = [
     AddTitleArtwork(),
     AddEpisodeWatchDateKnown(),
     AddEpisodeDetail(),
+    CreateAgentTokens(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

@@ -7,10 +7,12 @@ import Testing
 struct AnimeMappingLoaderTests {
     /// Fribb rows: a mapped TV cour, a film (TMDB *movie* id, as a list), a row with no AniList
     /// id, and a TV entry whose TMDB id is a list.
-    func fixture(_ al: [String], tmdb: String) -> Data {
+    func fixture(_ al: [String], tmdb: String, mal: String = "290", anidb: String = "1", tvdb: String = "72025")
+        -> Data
+    {
         Data("""
         [
-          {"type":"TV","anilist_id":\(al[0]),"mal_id":290,"anidb_id":1,"tvdb_id":72025,
+          {"type":"TV","anilist_id":\(al[0]),"mal_id":\(mal),"anidb_id":\(anidb),"tvdb_id":\(tvdb),
            "themoviedb_id":{"tv":\(tmdb)},"season":{"tvdb":2,"tmdb":2}},
           {"type":"MOVIE","anilist_id":\(al[1]),"mal_id":291,"themoviedb_id":{"movie":[1390599]},
            "season":{"tvdb":0}},
@@ -37,7 +39,11 @@ struct AnimeMappingLoaderTests {
         try await withMigratedStores { stores in
             let tmdb = String(Int.random(in: 10_000_000 ... 99_999_999))
             let ids = (0 ..< 3).map { _ in String(Int.random(in: 10_000_000 ... 99_999_999)) }
-            let mappings = try AnimeMappingLoader.parse(fixture(ids, tmdb: tmdb))
+            // Global ids are unique across titles, so a fixed MAL id would find an earlier run's title.
+            let random = { String(Int.random(in: 10_000_000 ... 99_999_999)) }
+            let mappings = try AnimeMappingLoader.parse(fixture(
+                ids, tmdb: tmdb, mal: random(), anidb: random(), tvdb: random()
+            ))
             try await stores.animeMappings.upsertMany(mappings)
             try await stores.animeMappings.upsertMany(mappings)
             #expect(try await stores.animeMappings.mapping(anilist: ids[0]) == mappings[0])

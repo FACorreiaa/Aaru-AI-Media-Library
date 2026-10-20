@@ -176,6 +176,53 @@ paths:
           description: Forgotten.
         default:
           $ref: '#/components/responses/Error'
+  /v1/agent/tokens:
+    get:
+      operationId: listAgentTokens
+      summary: The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
+      responses:
+        '200':
+          description: Live tokens.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/AgentToken'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createAgentToken
+      summary: >-
+        Mint a token for an outside caller. Today only Stremio: the answer carries the addon's
+        install links. The secret is shown once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AgentTokenCreate'}
+      responses:
+        '201':
+          description: Minted.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AgentTokenCreated'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/agent/tokens/{id}:
+    delete:
+      operationId: revokeAgentToken
+      summary: Revoke a token. Its addon stops answering at once.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Revoked.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/me/notifications:
     get:
       operationId: getNotificationSettings
@@ -833,6 +880,49 @@ components:
         maximum: 200
         default: 50
   schemas:
+    AgentToken:
+      type: object
+      required: [id, name, kind, scopes, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        kind: {type: string, enum: [stremio]}
+        scopes:
+          type: array
+          items: {type: string, enum: ['library:read', 'library:write', 'scrobble:write']}
+        createdAt: {type: string, format: date-time}
+        lastUsedAt:
+          type: string
+          format: date-time
+          description: Recorded at most once an hour.
+    AgentTokenCreate:
+      type: object
+      required: [kind]
+      properties:
+        kind: {type: string, enum: [stremio]}
+        name: {type: string, maxLength: 80}
+        allowLibraryWrites:
+          type: boolean
+          description: >-
+            Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by
+            default; removing from Stremio's library never deletes anything in Aaru.
+    AgentTokenCreated:
+      type: object
+      required: [token, secret, stremio]
+      properties:
+        token: {$ref: '#/components/schemas/AgentToken'}
+        secret:
+          type: string
+          description: Shown once. Anyone holding it, or the install links, can use the token.
+        stremio:
+          type: object
+          required: [manifestUrl, installUrl, webInstallUrl]
+          properties:
+            manifestUrl: {type: string}
+            installUrl:
+              type: string
+              description: The `stremio://` link that opens the Stremio app.
+            webInstallUrl: {type: string}
     ErrorResponse:
       type: object
       description: The one error shape every route returns.

@@ -180,3 +180,30 @@ struct AddEpisodeDetail: SQLMigration {
         "ALTER TABLE show_episodes DROP COLUMN still_url",
     ]
 }
+
+/// OUT-001 (minimal, for Stremio) · per-user agent tokens. Only the SHA-256 of the secret is
+/// stored. `kind` names the outside caller so Settings can list Stremio links without guessing;
+/// revoking keeps the row so journal entries can still name the token.
+struct CreateAgentTokens: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE agent_tokens (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name text NOT NULL CHECK (char_length(name) BETWEEN 1 AND 80),
+            kind text NOT NULL CHECK (kind IN ('stremio')),
+            token_hash text NOT NULL UNIQUE,
+            scopes text[] NOT NULL
+                CHECK (scopes <@ ARRAY['library:read', 'library:write', 'scrobble:write']::text[]),
+            created_at timestamptz NOT NULL DEFAULT now(),
+            last_used_at timestamptz,
+            expires_at timestamptz,
+            revoked_at timestamptz
+        )
+        """,
+        "CREATE INDEX agent_tokens_user ON agent_tokens (user_id) WHERE revoked_at IS NULL",
+    ]
+    let backward = [
+        "DROP TABLE agent_tokens",
+    ]
+}

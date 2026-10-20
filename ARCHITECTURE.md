@@ -139,7 +139,7 @@ PostgreSQL. Suggested tables:
 - `import_jobs`, `import_job_events` (optional log lines)
 - `actions` (action journal: one row per mutating library write, with its inverse)
 - `match_aliases` (match ledger: aggregate crosswalk from a source row key to an external id)
-- `agent_tokens` (per-user agent access: hashed secret, scopes, `lastUsedAt`, revocation)
+- `agent_tokens` (per-user agent access: `kind` (`stremio` for now), hashed secret, scopes, `lastUsedAt`, revocation)
 - `agent_usage` (model spend per user per day: tokens in and out, cost in cents)
 
 Later-phase tables, listed so nobody invents a parallel shape. None is created before its
