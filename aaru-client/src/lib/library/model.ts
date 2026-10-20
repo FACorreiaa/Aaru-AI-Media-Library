@@ -95,6 +95,11 @@ export function idKeys(ids: ExternalIds): string[] {
     .map(([name, value]) => `${name}:${value}`)
 }
 
+/** One key per catalog hit: a provider key when there is one, so one title is one hit. */
+export function hitKey(hit: CatalogHit): string {
+  return idKeys(hit.ids).sort()[0] ?? `${hit.title}-${hit.year ?? ''}`
+}
+
 export function isOnShelf(hit: CatalogHit, entries: LibraryEntry[]): boolean {
   const known = new Set(entries.flatMap((e) => idKeys(e.title.ids)))
   return idKeys(hit.ids).some((key) => known.has(key))

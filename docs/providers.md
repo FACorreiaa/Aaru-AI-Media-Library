@@ -9,10 +9,10 @@ render the **Credit** column; `/privacy` names every row that receives user data
 
 | Provider | Used for | Key | Secret | Rate limit (ours) | Terms | Credit Aaru shows |
 | --- | --- | --- | --- | --- | --- | --- |
-| TMDB | Movies and shows: search, details, posters, backdrops, episodes, networks | v3 key | `TMDB_API_KEY` in `aaru-env` (horus) | 40/s | TMDB API terms: non-commercial on the free tier; logo + notice required, our logo must stay more prominent | TMDB logo and "This product uses the TMDB API but is not endorsed or certified by TMDB." |
+| TMDB | Movies and shows: search, details, posters, backdrops, episodes, networks; Discover rows (trending, on the air, new shows, now playing) | v3 key | `TMDB_API_KEY` in `aaru-env` (horus) | 40/s | TMDB API terms: non-commercial on the free tier; logo + notice required, our logo must stay more prominent | TMDB logo and "This product uses the TMDB API but is not endorsed or certified by TMDB." |
 | TVmaze | Exact air times and networks for TMDB shows (CAT-011) | none | — | 1.8/s (~20 per 10 s per IP) | Data CC BY-SA 4.0; free API, attribution required | "Air times from TVmaze" linking to tvmaze.com, CC BY-SA |
-| AniList | Anime: search, details, banners, exact airing times | none | — | 1.5/s (90/min) | AniList API terms (non-commercial without permission) | "Anime data from AniList" linking to anilist.co |
-| Open Library | Books: search, details, covers | none | — | 3/s, contact User-Agent | Internet Archive terms; covers rate-limited | "Book data from Open Library" linking to openlibrary.org |
+| AniList | Anime: search, details, banners, exact airing times; Discover rows (this season, trending) | none | — | 1.5/s (90/min) | AniList API terms (non-commercial without permission) | "Anime data from AniList" linking to anilist.co |
+| Open Library | Books: search, details, covers; Discover's weekly trending books | none | — | 3/s, contact User-Agent | Internet Archive terms; covers rate-limited | "Book data from Open Library" linking to openlibrary.org |
 
 Commercial use of TMDB and AniList on these keys is **not** allowed: any paid plan in
 `BUSINESS.md` needs a TMDB commercial agreement and AniList's permission first.

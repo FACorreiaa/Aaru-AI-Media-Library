@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   advance,
   airingBadge,
+  markAdded,
   nextLine,
   remainingLabel,
   runtimeLabel,
   upcoming,
 } from './model'
-import type { ContinueEntry } from './model'
+import type { ContinueEntry, DiscoverRow } from './model'
 import type { CalendarEntry } from '../calendar/model'
 
 function airing(overrides: Partial<CalendarEntry> = {}): CalendarEntry {
@@ -156,5 +157,36 @@ describe('continue watching tick', () => {
     expect(
       advance([continuing({ remainingCount: 1 }), other], continuing()),
     ).toEqual([other])
+  })
+})
+
+describe('markAdded', () => {
+  const hit = (tmdb: string, title: string) => ({
+    type: 'movie' as const,
+    title,
+    isAnime: false,
+    ids: { tmdb },
+  })
+  const rows: DiscoverRow[] = [
+    {
+      id: 'movies_trending',
+      title: 'Trending movies',
+      items: [hit('1', 'A'), hit('2', 'B')],
+    },
+    { id: 'movies_in_theaters', title: 'In theaters', items: [hit('1', 'A')] },
+  ]
+
+  it('links every card for the added title, in every row', () => {
+    const marked = markAdded(rows, 'tmdb:1', 'item-1')
+    expect(marked[0].items.map((h) => h.libraryItemId)).toEqual([
+      'item-1',
+      undefined,
+    ])
+    expect(marked[1].items[0].libraryItemId).toBe('item-1')
+  })
+
+  it('leaves the rows it was given untouched', () => {
+    markAdded(rows, 'tmdb:1', 'item-1')
+    expect(rows[0].items[0].libraryItemId).toBeUndefined()
   })
 })

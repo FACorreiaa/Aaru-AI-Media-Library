@@ -4,8 +4,10 @@ import type { JSX } from 'solid-js'
 import { badge, metaLine, shortCode } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { kindOf } from '../lib/library/model'
+import type { CatalogHit, LibraryStatus } from '../lib/library/model'
 import { nextLine, remainingLabel, runtimeLabel } from '../lib/home/model'
 import type { ContinueEntry, StartEntry } from '../lib/home/model'
+import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
@@ -259,5 +261,65 @@ export function AiringCard(props: {
         <p class="truncate text-xs text-muted">{meta()}</p>
       </Show>
     </Link>
+  )
+}
+
+/** DISC-001: a poster from a public row. On the shelf it links to the item; otherwise it
+ * carries search's add control and a list button. */
+export function DiscoverCard(props: {
+  hit: CatalogHit
+  rowId: string
+  adding: boolean
+  onAdd: (status: LibraryStatus) => void
+  onList: () => void
+}) {
+  const h = () => props.hit
+  const kind = () => kindOf(h().type, h().isAnime)
+  const meta = () => [h().year, h().byline].filter(Boolean).join(' · ')
+  return (
+    <div class="w-32 shrink-0 snap-start md:w-36">
+      <Show
+        when={h().libraryItemId}
+        fallback={<Poster url={h().posterUrl} kind={kind()} />}
+      >
+        {(id) => (
+          <Link
+            to="/app/title/$id"
+            params={{ id: id() }}
+            class="relative block"
+            aria-label={`${h().title}, in your library`}
+          >
+            <Poster url={h().posterUrl} kind={kind()} />
+            <span
+              class="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-accent text-xs font-bold text-on-accent"
+              aria-hidden="true"
+            >
+              ✓
+            </span>
+          </Link>
+        )}
+      </Show>
+      <p class="mt-2 line-clamp-2 text-sm font-medium">{h().title}</p>
+      <Show when={meta()}>
+        <p class="truncate text-xs text-muted">{meta()}</p>
+      </Show>
+      <Show when={!h().libraryItemId}>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <AddControl
+            hit={h()}
+            adding={props.adding}
+            onAdd={props.onAdd}
+            idPrefix={`discover-${props.rowId}`}
+          />
+          <button
+            type="button"
+            class="text-xs font-medium text-muted hover:text-ink"
+            onClick={() => props.onList()}
+          >
+            List…
+          </button>
+        </div>
+      </Show>
+    </div>
   )
 }
