@@ -4,7 +4,8 @@ import { api } from '../api/client'
 import { sessionToken } from '../session/guard'
 import type { components } from '../api/schema'
 import type { LibraryEntry } from '../library/model'
-import { check, checkEmpty, mediaRef } from './server'
+import { check, checkEmpty } from './responses'
+import { mediaRef } from './server'
 import type { GroupSummary } from './server'
 
 // GRP-007…GRP-009 on the web: the calls behind title, shelf and watch channels. Every rule is
