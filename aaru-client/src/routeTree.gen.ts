@@ -14,7 +14,9 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as AppDiscoverRouteImport } from './routes/app_.discover'
 import { Route as AppExportRouteImport } from './routes/app_.export'
+import { Route as AppInsightsRouteImport } from './routes/app_.insights'
 import { Route as AppLibraryRouteImport } from './routes/app_.library'
 import { Route as AppRecapRouteImport } from './routes/app_.recap'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
@@ -50,9 +52,19 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppDiscoverRoute = AppDiscoverRouteImport.update({
+  id: '/app_/discover',
+  path: '/app/discover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppExportRoute = AppExportRouteImport.update({
   id: '/app_/export',
   path: '/app/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppInsightsRoute = AppInsightsRouteImport.update({
+  id: '/app_/insights',
+  path: '/app/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppLibraryRoute = AppLibraryRouteImport.update({
@@ -107,7 +119,9 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/app/discover': typeof AppDiscoverRoute
   '/app/export': typeof AppExportRoute
+  '/app/insights': typeof AppInsightsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/recap': typeof AppRecapRoute
   '/app/settings': typeof AppSettingsRoute
@@ -124,7 +138,9 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/app/discover': typeof AppDiscoverRoute
   '/app/export': typeof AppExportRoute
+  '/app/insights': typeof AppInsightsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/recap': typeof AppRecapRoute
   '/app/settings': typeof AppSettingsRoute
@@ -142,7 +158,9 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/app_/discover': typeof AppDiscoverRoute
   '/app_/export': typeof AppExportRoute
+  '/app_/insights': typeof AppInsightsRoute
   '/app_/library': typeof AppLibraryRoute
   '/app_/recap': typeof AppRecapRoute
   '/app_/settings': typeof AppSettingsRoute
@@ -161,7 +179,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/app/discover'
     | '/app/export'
+    | '/app/insights'
     | '/app/library'
     | '/app/recap'
     | '/app/settings'
@@ -178,7 +198,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/app/discover'
     | '/app/export'
+    | '/app/insights'
     | '/app/library'
     | '/app/recap'
     | '/app/settings'
@@ -195,7 +217,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/app_/discover'
     | '/app_/export'
+    | '/app_/insights'
     | '/app_/library'
     | '/app_/recap'
     | '/app_/settings'
@@ -213,7 +237,9 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
+  AppDiscoverRoute: typeof AppDiscoverRoute
   AppExportRoute: typeof AppExportRoute
+  AppInsightsRoute: typeof AppInsightsRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppRecapRoute: typeof AppRecapRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -262,11 +288,25 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app_/discover': {
+      id: '/app_/discover'
+      path: '/app/discover'
+      fullPath: '/app/discover'
+      preLoaderRoute: typeof AppDiscoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app_/export': {
       id: '/app_/export'
       path: '/app/export'
       fullPath: '/app/export'
       preLoaderRoute: typeof AppExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/insights': {
+      id: '/app_/insights'
+      path: '/app/insights'
+      fullPath: '/app/insights'
+      preLoaderRoute: typeof AppInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/library': {
@@ -341,7 +381,9 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
+  AppDiscoverRoute: AppDiscoverRoute,
   AppExportRoute: AppExportRoute,
+  AppInsightsRoute: AppInsightsRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppRecapRoute: AppRecapRoute,
   AppSettingsRoute: AppSettingsRoute,

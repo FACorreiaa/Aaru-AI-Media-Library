@@ -85,7 +85,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -262,7 +262,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/calendar`.
     /// - Remark: Generated from `#/paths//v1/calendar/get(getCalendar)`.
     func getCalendar(_ input: Operations.GetCalendar.Input) async throws -> Operations.GetCalendar.Output
-    /// Continue Watching and Start Watching for the home screen, in one call.
+    /// Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
     ///
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
@@ -437,12 +437,12 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
     public func getStats(
-        query: Operations.GetStats.Input.Query,
+        query: Operations.GetStats.Input.Query = .init(),
         headers: Operations.GetStats.Input.Headers = .init()
     ) async throws -> Operations.GetStats.Output {
         try await getStats(Operations.GetStats.Input(
@@ -910,7 +910,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Continue Watching and Start Watching for the home screen, in one call.
+    /// Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
     ///
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
@@ -1862,6 +1862,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/CatalogHit/libraryItemId`.
             public var libraryItemId: Swift.String?
+            /// YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CatalogHit/releaseDate`.
+            public var releaseDate: Swift.String?
             /// Creates a new `CatalogHit`.
             ///
             /// - Parameters:
@@ -1875,6 +1879,7 @@ public enum Components {
             ///   - isAnime:
             ///   - ids:
             ///   - libraryItemId: The caller's library item for this title, when they have one. Discover only.
+            ///   - releaseDate: YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date.
             public init(
                 _type: Components.Schemas.MediaType,
                 title: Swift.String,
@@ -1885,7 +1890,8 @@ public enum Components {
                 byline: Swift.String? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds,
-                libraryItemId: Swift.String? = nil
+                libraryItemId: Swift.String? = nil,
+                releaseDate: Swift.String? = nil
             ) {
                 self._type = _type
                 self.title = title
@@ -1897,6 +1903,7 @@ public enum Components {
                 self.isAnime = isAnime
                 self.ids = ids
                 self.libraryItemId = libraryItemId
+                self.releaseDate = releaseDate
             }
             public enum CodingKeys: String, CodingKey {
                 case _type = "type"
@@ -1909,21 +1916,32 @@ public enum Components {
                 case isAnime
                 case ids
                 case libraryItemId
+                case releaseDate
             }
         }
         /// - Remark: Generated from `#/components/schemas/SearchResults`.
         public struct SearchResults: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/SearchResults/items`.
             public var items: [Components.Schemas.CatalogHit]
+            /// True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchResults/incomplete`.
+            public var incomplete: Swift.Bool
             /// Creates a new `SearchResults`.
             ///
             /// - Parameters:
             ///   - items:
-            public init(items: [Components.Schemas.CatalogHit]) {
+            ///   - incomplete: True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search.
+            public init(
+                items: [Components.Schemas.CatalogHit],
+                incomplete: Swift.Bool
+            ) {
                 self.items = items
+                self.incomplete = incomplete
             }
             public enum CodingKeys: String, CodingKey {
                 case items
+                case incomplete
             }
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
@@ -3270,40 +3288,157 @@ public enum Components {
             public var continueWatching: [Components.Schemas.ContinueEntry]
             /// - Remark: Generated from `#/components/schemas/UpNext/startWatching`.
             public var startWatching: [Components.Schemas.StartEntry]
+            /// - Remark: Generated from `#/components/schemas/UpNext/counts`.
+            public var counts: Components.Schemas.LibraryCounts?
+            /// Unfinished business (UPN-002): every dropped item, and every in-progress item last changed 30 or more days ago that is not in `continueWatching`. Newest change first, at most 20.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpNext/unfinished`.
+            public var unfinished: [Components.Schemas.UnfinishedEntry]?
             /// Creates a new `UpNext`.
             ///
             /// - Parameters:
             ///   - continueWatching:
             ///   - startWatching:
+            ///   - counts:
+            ///   - unfinished: Unfinished business (UPN-002): every dropped item, and every in-progress item last changed 30 or more days ago that is not in `continueWatching`. Newest change first, at most 20.
             public init(
                 continueWatching: [Components.Schemas.ContinueEntry],
-                startWatching: [Components.Schemas.StartEntry]
+                startWatching: [Components.Schemas.StartEntry],
+                counts: Components.Schemas.LibraryCounts? = nil,
+                unfinished: [Components.Schemas.UnfinishedEntry]? = nil
             ) {
                 self.continueWatching = continueWatching
                 self.startWatching = startWatching
+                self.counts = counts
+                self.unfinished = unfinished
             }
             public enum CodingKeys: String, CodingKey {
                 case continueWatching
                 case startWatching
+                case counts
+                case unfinished
+            }
+        }
+        /// The user's library items per status.
+        ///
+        /// - Remark: Generated from `#/components/schemas/LibraryCounts`.
+        public struct LibraryCounts: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/wishlist`.
+            public var wishlist: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/inProgress`.
+            public var inProgress: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/finished`.
+            public var finished: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/dropped`.
+            public var dropped: Swift.Int
+            /// Creates a new `LibraryCounts`.
+            ///
+            /// - Parameters:
+            ///   - wishlist:
+            ///   - inProgress:
+            ///   - finished:
+            ///   - dropped:
+            public init(
+                wishlist: Swift.Int,
+                inProgress: Swift.Int,
+                finished: Swift.Int,
+                dropped: Swift.Int
+            ) {
+                self.wishlist = wishlist
+                self.inProgress = inProgress
+                self.finished = finished
+                self.dropped = dropped
+            }
+            public enum CodingKeys: String, CodingKey {
+                case wishlist
+                case inProgress
+                case finished
+                case dropped
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UnfinishedEntry`.
+        public struct UnfinishedEntry: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/libraryItemId`.
+            public var libraryItemId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/reason`.
+            @frozen public enum ReasonPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case dropped = "dropped"
+                case stalled = "stalled"
+            }
+            /// `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/reason`.
+            public var reason: Components.Schemas.UnfinishedEntry.ReasonPayload
+            /// The item's last change.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/since`.
+            public var since: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/UnfinishedEntry/next`.
+            public var next: Components.Schemas.EpisodeRef?
+            /// Creates a new `UnfinishedEntry`.
+            ///
+            /// - Parameters:
+            ///   - libraryItemId:
+            ///   - title:
+            ///   - reason: `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+            ///   - since: The item's last change.
+            ///   - next:
+            public init(
+                libraryItemId: Swift.String,
+                title: Components.Schemas.TitleSummary,
+                reason: Components.Schemas.UnfinishedEntry.ReasonPayload,
+                since: Foundation.Date,
+                next: Components.Schemas.EpisodeRef? = nil
+            ) {
+                self.libraryItemId = libraryItemId
+                self.title = title
+                self.reason = reason
+                self.since = since
+                self.next = next
+            }
+            public enum CodingKeys: String, CodingKey {
+                case libraryItemId
+                case title
+                case reason
+                case since
+                case next
             }
         }
         /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner.
         ///
         /// - Remark: Generated from `#/components/schemas/Stats`.
         public struct Stats: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Stats/span`.
+            @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case month = "month"
+                case year = "year"
+                case all = "all"
+            }
+            /// - Remark: Generated from `#/components/schemas/Stats/span`.
+            public var span: Components.Schemas.Stats.SpanPayload
+            /// The last year the period touches; for `all`, the current year.
+            ///
             /// - Remark: Generated from `#/components/schemas/Stats/year`.
             public var year: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Stats/month`.
             public var month: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/Stats/timeZone`.
             public var timeZone: Swift.String
-            /// The period is not over yet in the user's time zone.
+            /// The period is not over yet in the user's time zone (always true for `all`).
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/isPartial`.
             public var isPartial: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/Stats/totals`.
             public var totals: Components.Schemas.StatsTotals
-            /// One per month of the year, or one per day of the month, in order.
+            /// Movie, show, anime and book, always all four in that order; they sum to `totals`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/byKind`.
+            public var byKind: [Components.Schemas.StatsKind]
+            /// One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/buckets`.
             public var buckets: [Components.Schemas.StatsBucket]
@@ -3326,12 +3461,14 @@ public enum Components {
             /// Creates a new `Stats`.
             ///
             /// - Parameters:
-            ///   - year:
+            ///   - span:
+            ///   - year: The last year the period touches; for `all`, the current year.
             ///   - month:
             ///   - timeZone:
-            ///   - isPartial: The period is not over yet in the user's time zone.
+            ///   - isPartial: The period is not over yet in the user's time zone (always true for `all`).
             ///   - totals:
-            ///   - buckets: One per month of the year, or one per day of the month, in order.
+            ///   - byKind: Movie, show, anime and book, always all four in that order; they sum to `totals`.
+            ///   - buckets: One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order.
             ///   - busiest:
             ///   - mostEpisodes:
             ///   - longestRun:
@@ -3340,11 +3477,13 @@ public enum Components {
             ///   - first:
             ///   - last:
             public init(
+                span: Components.Schemas.Stats.SpanPayload,
                 year: Swift.Int,
                 month: Swift.Int? = nil,
                 timeZone: Swift.String,
                 isPartial: Swift.Bool,
                 totals: Components.Schemas.StatsTotals,
+                byKind: [Components.Schemas.StatsKind],
                 buckets: [Components.Schemas.StatsBucket],
                 busiest: Components.Schemas.StatsBucket? = nil,
                 mostEpisodes: Components.Schemas.StatsBucket? = nil,
@@ -3354,11 +3493,13 @@ public enum Components {
                 first: Components.Schemas.StatsMoment? = nil,
                 last: Components.Schemas.StatsMoment? = nil
             ) {
+                self.span = span
                 self.year = year
                 self.month = month
                 self.timeZone = timeZone
                 self.isPartial = isPartial
                 self.totals = totals
+                self.byKind = byKind
                 self.buckets = buckets
                 self.busiest = busiest
                 self.mostEpisodes = mostEpisodes
@@ -3369,11 +3510,13 @@ public enum Components {
                 self.last = last
             }
             public enum CodingKeys: String, CodingKey {
+                case span
                 case year
                 case month
                 case timeZone
                 case isPartial
                 case totals
+                case byKind
                 case buckets
                 case busiest
                 case mostEpisodes
@@ -3439,6 +3582,52 @@ public enum Components {
                 case showsFinished
                 case animeFinished
                 case booksFinished
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsKind`.
+        public struct StatsKind: Codable, Hashable, Sendable {
+            /// Anime is its own kind, films and shows alike; never counted again as either.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsKind/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case movie = "movie"
+                case show = "show"
+                case anime = "anime"
+                case book = "book"
+            }
+            /// Anime is its own kind, films and shows alike; never counted again as either.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsKind/kind`.
+            public var kind: Components.Schemas.StatsKind.KindPayload
+            /// - Remark: Generated from `#/components/schemas/StatsKind/episodes`.
+            public var episodes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsKind/minutes`.
+            public var minutes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StatsKind/finished`.
+            public var finished: Swift.Int
+            /// Creates a new `StatsKind`.
+            ///
+            /// - Parameters:
+            ///   - kind: Anime is its own kind, films and shows alike; never counted again as either.
+            ///   - episodes:
+            ///   - minutes:
+            ///   - finished:
+            public init(
+                kind: Components.Schemas.StatsKind.KindPayload,
+                episodes: Swift.Int,
+                minutes: Swift.Int,
+                finished: Swift.Int
+            ) {
+                self.kind = kind
+                self.episodes = episodes
+                self.minutes = minutes
+                self.finished = finished
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case episodes
+                case minutes
+                case finished
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsBucket`.
@@ -3552,6 +3741,10 @@ public enum Components {
             public var highest: Components.Schemas.TitleSummary?
             /// - Remark: Generated from `#/components/schemas/StatsRatings/highestRating`.
             public var highestRating: Swift.Double?
+            /// Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsRatings/distribution`.
+            public var distribution: [Swift.Int]
             /// Creates a new `StatsRatings`.
             ///
             /// - Parameters:
@@ -3559,22 +3752,26 @@ public enum Components {
             ///   - mean:
             ///   - highest:
             ///   - highestRating:
+            ///   - distribution: Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9.
             public init(
                 count: Swift.Int,
                 mean: Swift.Double? = nil,
                 highest: Components.Schemas.TitleSummary? = nil,
-                highestRating: Swift.Double? = nil
+                highestRating: Swift.Double? = nil,
+                distribution: [Swift.Int]
             ) {
                 self.count = count
                 self.mean = mean
                 self.highest = highest
                 self.highestRating = highestRating
+                self.distribution = distribution
             }
             public enum CodingKeys: String, CodingKey {
                 case count
                 case mean
                 case highest
                 case highestRating
+                case distribution
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsMoment`.
@@ -5821,7 +6018,7 @@ public enum Operations {
             }
         }
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -5830,8 +6027,18 @@ public enum Operations {
         public struct Input: Sendable, Hashable {
             /// - Remark: Generated from `#/paths/v1/me/stats/GET/query`.
             public struct Query: Sendable, Hashable {
+                /// Required unless `span=all`.
+                ///
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/year`.
-                public var year: Swift.Int
+                public var year: Swift.Int?
+                /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/span`.
+                @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case all = "all"
+                }
+                /// `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise).
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/span`.
+                public var span: Operations.GetStats.Input.Query.SpanPayload?
                 /// 1–12. Absent means the whole year.
                 ///
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/month`.
@@ -5843,15 +6050,18 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - year:
+                ///   - year: Required unless `span=all`.
+                ///   - span: `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise).
                 ///   - month: 1–12. Absent means the whole year.
                 ///   - tz: IANA time zone for day and month boundaries. Absent means UTC.
                 public init(
-                    year: Swift.Int,
+                    year: Swift.Int? = nil,
+                    span: Operations.GetStats.Input.Query.SpanPayload? = nil,
                     month: Swift.Int? = nil,
                     tz: Swift.String? = nil
                 ) {
                     self.year = year
+                    self.span = span
                     self.month = month
                     self.tz = tz
                 }
@@ -5875,7 +6085,7 @@ public enum Operations {
             ///   - query:
             ///   - headers:
             public init(
-                query: Operations.GetStats.Input.Query,
+                query: Operations.GetStats.Input.Query = .init(),
                 headers: Operations.GetStats.Input.Headers = .init()
             ) {
                 self.query = query
@@ -5997,12 +6207,13 @@ public enum Operations {
                 public var q: Swift.String
                 /// - Remark: Generated from `#/paths/v1/search/GET/query/type`.
                 @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case all = "all"
                     case movie = "movie"
                     case show = "show"
                     case anime = "anime"
                     case book = "book"
                 }
-                /// `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
+                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
                 ///
                 /// - Remark: Generated from `#/paths/v1/search/GET/query/type`.
                 public var _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -6010,7 +6221,7 @@ public enum Operations {
                 ///
                 /// - Parameters:
                 ///   - q:
-                ///   - _type: `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
+                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
                 public init(
                     q: Swift.String,
                     _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -6074,7 +6285,7 @@ public enum Operations {
                     self.body = body
                 }
             }
-            /// Matches, best first.
+            /// Matches, best first. With `all`, exact title matches lead, then TMDB and AniList hits alternate, at most 40; a TMDB show is left out only when an AniList hit in the same results is mapped to it, and that hit then carries `ids.tmdb`.
             ///
             /// - Remark: Generated from `#/paths//v1/search/get(searchCatalog)/responses/200`.
             ///
@@ -11876,7 +12087,7 @@ public enum Operations {
             }
         }
     }
-    /// Continue Watching and Start Watching for the home screen, in one call.
+    /// Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
     ///
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
@@ -11932,7 +12143,7 @@ public enum Operations {
                     self.body = body
                 }
             }
-            /// Both rows.
+            /// The home rows.
             ///
             /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)/responses/200`.
             ///

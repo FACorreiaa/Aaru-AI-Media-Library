@@ -112,6 +112,8 @@ protocol AnimeMappingStore: Sendable {
     func mapping(anilist: String) async throws -> AnimeMapping?
     /// The first mapping with this MAL id: a MAL export carries no AniList id.
     func mapping(mal: String) async throws -> AnimeMapping?
+    /// The mappings known for any of these AniList ids, in one query.
+    func mappings(anilist: [String]) async throws -> [AnimeMapping]
     func upsert(_ mapping: AnimeMapping) async throws
     /// Upserts in batches inside one transaction; re-running with the same rows changes nothing.
     func upsertMany(_ mappings: [AnimeMapping]) async throws

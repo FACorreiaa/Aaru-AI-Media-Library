@@ -110,6 +110,64 @@ struct StatsDigestTests {
         #expect(StatsDigest.mostEpisodes([bucket("2026-04-03", 0)]) == nil)
     }
 
+    @Test("GAM-006c: by kind sums to the totals; anime is its own kind")
+    func byKind() {
+        let show = TitleID(), anime = TitleID(), movie = TitleID(), book = TitleID()
+        let digest = StatsDigest(
+            [
+                row("2026-03-10", show, episodes: 2, minutes: 90),
+                row("2026-03-11", anime, type: .movie, anime: true, minutes: 72, finished: true, rating: 9),
+                row("2026-07-04", movie, type: .movie, minutes: 120, finished: true, rating: 7.5),
+                row("2026-07-05", book, type: .book, finished: true, rating: 1),
+            ],
+            period: StatsPeriod(year: 2026, month: nil, timeZone: utc),
+            today: day("2026-10-16")
+        )
+        #expect(digest.byKind == [
+            PeriodStats.KindTotals(kind: .movie, episodes: 0, minutes: 120, finished: 1),
+            PeriodStats.KindTotals(kind: .show, episodes: 2, minutes: 90, finished: 0),
+            PeriodStats.KindTotals(kind: .anime, episodes: 0, minutes: 72, finished: 1),
+            PeriodStats.KindTotals(kind: .book, episodes: 0, minutes: 0, finished: 1),
+        ])
+        #expect(digest.byKind.map(\.minutes).reduce(0, +) == digest.totals.minutesWatched)
+        #expect(digest.distribution == [1, 0, 0, 0, 0, 0, 0, 1, 1, 0])
+    }
+
+    @Test("GAM-006c: ratings bin on the 1–10 scale with half stars rounding up")
+    func ratingBins() {
+        #expect([1, 1.5, 2, 7.5, 8, 9.5, 10].map(StatsDigest.ratingBin) == [0, 1, 1, 7, 7, 9, 9])
+    }
+
+    @Test("GAM-006c: all time runs through this year, one bucket per year from the first active year")
+    func allTimePeriod() {
+        var period = StatsPeriod(allTimeUntil: day("2026-10-16"), timeZone: utc)
+        #expect(period.span == .all && period.year == 2026)
+        #expect(period.start == StatsPeriod.firstDay && period.end == day("2027-01-01"))
+        #expect(period.bucketStarts == [day("2026-01-01")], "no activity: this year alone")
+        period.firstYear = 2024
+        #expect(period.bucketStarts == ["2024-01-01", "2025-01-01", "2026-01-01"].map(day))
+        #expect(period.bucket(of: day("2025-06-03")) == day("2025-01-01"))
+        let digest = StatsDigest([row("2024-02-10", TitleID(), episodes: 1)], period: period, today: day("2026-10-16"))
+        #expect(digest.isPartial)
+        #expect(digest.buckets.map(\.episodes) == [1, 0, 0])
+    }
+
+    @Test("GAM-006c: all time takes no year or month; without span a year is required")
+    func spanValidation() throws {
+        let now = Date()
+        let combined: [(year: Int?, month: Int?)] = [(2026, nil), (nil, 3), (2026, 3)]
+        for (year, month) in combined {
+            #expect {
+                try StatsService.period(allTime: true, year: year, month: month, timeZone: nil, now: now)
+            } throws: { ($0 as? AppError)?.details?["span"] != nil }
+        }
+        #expect {
+            try StatsService.period(allTime: false, year: nil, month: 3, timeZone: nil, now: now)
+        } throws: { ($0 as? AppError)?.details?["year"] != nil }
+        let lisbon = try StatsService.period(allTime: true, year: nil, month: nil, timeZone: "Europe/Lisbon", now: now)
+        #expect(lisbon.span == .all && lisbon.timeZone.identifier == "Europe/Lisbon")
+    }
+
     struct BadPeriod {
         var year: Int
         var month: Int?
@@ -225,6 +283,53 @@ struct StatsTests {
 
             #expect(try await env.send(.get, "/v1/me/stats?year=2026&month=13").status == .unprocessableContent)
             #expect(try await env.send(.get, "/v1/me/stats?year=2026&tz=Nowhere").status == .unprocessableContent)
+        }
+    }
+
+    @Test("GAM-006c: all time equals the years summed, imported ticks still left out; bad spans are 422")
+    func allTime() async throws {
+        try await LibraryHarness.run { env in
+            try await seed(env)
+            // An earlier year: a film finished in 2024, rated 7.5 (a half star rounds up to 8).
+            let movieID = try await env.add("movie", tmdb: env.stubMovie("Heat"), status: "finished")
+            _ = try await env.send(.patch, "/v1/library/items/\(movieID)", json: ["rating": 7.5])
+            let movie = try #require(UUID(uuidString: movieID))
+            try await withSQL { sql in
+                try await sql.raw("""
+                UPDATE library_items SET finished_at = '2024-02-10T15:00:00Z' WHERE id = \(bind: movie)
+                """).run()
+            }
+
+            let reply = try await env.send(.get, "/v1/me/stats?span=all")
+            #expect(reply.status == .ok)
+            let body = try reply.json()
+            let thisYear = Calendar(identifier: .gregorian).component(.year, from: Date())
+            #expect(body["span"] as? String == "all" && body["year"] as? Int == thisYear)
+            #expect(body["isPartial"] as? Bool == true)
+            let buckets = try #require(body["buckets"] as? [[String: Any]])
+            #expect(buckets.compactMap { $0["start"] as? String } == (2024 ... thisYear).map { "\($0)-01-01" })
+
+            var summed: [String: Int] = [:]
+            for year in 2024 ... thisYear {
+                for (key, value) in try totals(await env.send(.get, "/v1/me/stats?year=\(year)")) {
+                    summed[key, default: 0] += value
+                }
+            }
+            let all = try totals(reply)
+            #expect(all == summed)
+            #expect(all["episodesWatched"] == 3, "season 2's imported ticks never count")
+
+            let byKind = try #require(body["byKind"] as? [[String: Any]])
+            #expect(byKind.compactMap { $0["kind"] as? String } == ["movie", "show", "anime", "book"])
+            #expect(byKind.compactMap { $0["minutes"] as? Int }.reduce(0, +) == all["minutesWatched"])
+            #expect(byKind.first?["finished"] as? Int == 2)
+            let ratings = try #require(body["ratings"] as? [String: Any])
+            #expect(ratings["distribution"] as? [Int] == [0, 0, 0, 0, 0, 0, 0, 2, 0, 0])
+
+            for bad in ["span=all&year=2026", "span=all&month=2", "", "month=2"] {
+                #expect(try await env.send(.get, "/v1/me/stats?\(bad)").status == .unprocessableContent, "\(bad)")
+            }
+            #expect(try await env.send(.get, "/v1/me/stats?span=decade").status == .badRequest)
         }
     }
 

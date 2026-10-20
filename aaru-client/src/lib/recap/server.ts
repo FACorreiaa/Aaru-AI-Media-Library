@@ -5,16 +5,26 @@ import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { Stats } from './model'
 
-// GAM-006a on the web: `/v1/me/stats` for one year or month. The browser sends its own time
-// zone; the Worker runs in UTC and must not decide where the viewer's days begin.
+// GAM-006a on the web: `/v1/me/stats` for one year, one month, or all time (`span: 'all'`, no
+// year or month). The browser sends its own time zone; the Worker runs in UTC and must not
+// decide where the viewer's days begin.
 
 export const getStats = createServerFn({ method: 'GET' })
   .validator(
-    z.object({
-      year: z.number().int().min(1900).max(2200),
-      month: z.number().int().min(1).max(12).optional(),
-      tz: z.string().min(1).max(64),
-    }),
+    z
+      .object({
+        year: z.number().int().min(1900).max(2200).optional(),
+        month: z.number().int().min(1).max(12).optional(),
+        span: z.literal('all').optional(),
+        tz: z.string().min(1).max(64),
+      })
+      .refine(
+        (q) =>
+          q.span === 'all'
+            ? q.year === undefined && q.month === undefined
+            : q.year !== undefined,
+        { message: 'Ask for a year, a month, or all time.' },
+      ),
   )
   .handler(async ({ data }): Promise<Stats> => {
     const {
@@ -22,10 +32,17 @@ export const getStats = createServerFn({ method: 'GET' })
       error,
       response,
     } = await api(sessionToken()).GET('/v1/me/stats', {
-      params: { query: { year: data.year, month: data.month, tz: data.tz } },
+      params: {
+        query: {
+          year: data.year,
+          month: data.month,
+          span: data.span,
+          tz: data.tz,
+        },
+      },
     })
     if (response.status === 401) sessionRejected()
     if (!stats)
-      throw new Error(errorMessage(error, 'Your recap could not be loaded.'))
+      throw new Error(errorMessage(error, 'Your stats could not be loaded.'))
     return stats
   })
