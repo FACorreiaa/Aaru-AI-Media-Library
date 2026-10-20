@@ -19,6 +19,28 @@ struct DatabaseTests {
         try await fluent.shutdown()
     }
 
+    @Test("One-shot modes go ahead once the database answers")
+    func waitForDatabaseReturns() async throws {
+        var logger = Logger(label: "aaru-tests")
+        logger.logLevel = .warning
+        let fluent = try await makeFluent(testPostgresSettings(), logger: logger)
+        try await waitForDatabase(fluent, attempts: 1, logger: logger)
+        try await fluent.shutdown()
+    }
+
+    @Test("One-shot modes give up and throw when the database never answers")
+    func waitForDatabaseGivesUp() async throws {
+        var logger = Logger(label: "aaru-tests")
+        logger.logLevel = .critical
+        var settings = testPostgresSettings()
+        settings.port = 1
+        let fluent = try await makeFluent(settings, logger: logger)
+        await #expect(throws: (any Error).self) {
+            try await waitForDatabase(fluent, attempts: 2, delay: .milliseconds(10), logger: logger)
+        }
+        try await fluent.shutdown()
+    }
+
     @Test("SRV-004: one identity maps to one user")
     func identityIsUnique() async throws {
         try await withMigratedStores { stores in
