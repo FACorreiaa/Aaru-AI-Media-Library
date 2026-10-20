@@ -43,10 +43,17 @@ struct PostgresAgentTokenStore: AgentTokenStore {
 
     func revoke(id: UUID, userID: UserID, now: Date) async throws -> Bool {
         struct Revoked: Decodable { let id: UUID }
+        // A revoked token's waiting plans expire with it: nothing it asked for lands later.
         return try await sql.raw("""
-        UPDATE agent_tokens SET revoked_at = \(bind: now)
-        WHERE id = \(bind: id) AND user_id = \(bind: userID.rawValue) AND revoked_at IS NULL
-        RETURNING id
+        WITH revoked AS (
+            UPDATE agent_tokens SET revoked_at = \(bind: now)
+            WHERE id = \(bind: id) AND user_id = \(bind: userID.rawValue) AND revoked_at IS NULL
+            RETURNING id
+        ), expired AS (
+            UPDATE agent_plans SET status = 'expired', decided_at = \(bind: now)
+            WHERE agent_token_id IN (SELECT id FROM revoked) AND status = 'pending'
+        )
+        SELECT id FROM revoked
         """).first(decoding: Revoked.self) != nil
     }
 

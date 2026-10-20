@@ -171,19 +171,3 @@ private struct StremioEnvelope<T: Decodable>: Decodable {
 struct StremioAPIError: Error, Equatable {
     let code: Int
 }
-
-/// A small JSON value, for request bodies.
-private enum JSONValue: Encodable, Sendable {
-    case string(String)
-    case bool(Bool)
-    case array([JSONValue])
-
-    func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        switch self {
-        case let .string(value): try container.encode(value)
-        case let .bool(value): try container.encode(value)
-        case let .array(value): try container.encode(value)
-        }
-    }
-}

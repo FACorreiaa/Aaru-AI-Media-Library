@@ -1,7 +1,7 @@
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import type { RecapCard, Stats } from '../../lib/recap/model'
 import { RecapCardView } from './RecapCards'
-import { prefersReducedMotion } from './motion'
+import { prefersReducedMotion } from '../../lib/motion'
 import { shareRecap } from './share'
 
 // GAM-006a: the Recap story. Tap the right of a card to go on, the left to go back, hold to

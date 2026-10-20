@@ -21,8 +21,16 @@ Keep a **canvas** beside intent so work does not die in the scroll.
 The app's landing screen, and the web landing page's twin. Mascot on its disc, wordmark, one
 serif headline, three plain pillars (one shelf, private by default, bring your history), then
 Sign in with Apple and Continue with email pinned to the bottom on iPhone. Side by side on iPad
-and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`,
-`src/routes/(marketing)` in `aaru-client`.
+and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`.
+
+The web landing (`src/routes/index.tsx`, owner 2026-10-20) is centred: a privacy pill, the
+serif headline, Get started, then App Store and Google Play buttons at equal weight ("Coming
+soon" until a listing exists; URLs in `src/lib/site.ts`). Below sits a still fan of real
+posters (`PosterFan`) that fades into the page; it enters once and never sways. Then one card
+per thing tracked (TV shows, movies, anime, books, music, sports), each with a small fan of
+three covers (`KindCard`), imports, native apps, FAQ. The header and footer link to X. Art is
+hotlinked from TMDB, Open Library and the Cover Art Archive (`src/lib/landing/art.ts`); sports
+use type tiles. `WelcomeView` has not been brought in line yet.
 
 ## 1. The Field (home)
 
@@ -204,6 +212,12 @@ tap from gone.
 Nothing else in this category can do this, and the reason is boring: every write already
 carries its own inverse. The trust comes from the plumbing, not from a promise.
 
+**Built 2026-10-20.** Until The Field exists, waiting requests pin to the top of Home as
+"Waiting for you", on web and Apple: the caller's name, the summary, a counts line ending
+"nothing changes until you approve", the changes when there are several, then **Approve** and
+**Not this**. The push reads "Laptop wants to change your library" and opens the request. A
+request whose library moved meanwhile says so and applies nothing; ask the agent again.
+
 The feeling to protect: **the buzz is a question, never a receipt.** The moment a notification
 tells you what an agent already did, Aaru is somebody else's app.
 
@@ -307,6 +321,23 @@ from another device, and a quiet "Waiting for approval…" line. It polls on its
 approved, opens the import's plan, which is approved like any other import. Nothing is written
 before that approval.
 
+**Connections, built 2026-10-20** (OUT-004). Settings has a Connections section on web, iPhone
+and Mac for AI agents that reach the library over MCP. Pick the agent (Claude Code, Codex,
+Hermes, Gemini CLI, any other MCP client) and its setup steps show at once, with a placeholder
+where the token goes; every block has Copy. Name it, choose **Allow changes** (off by default:
+one item at a time, as a tap would; never a removal or many items at once), and connect: the same
+steps come back with the token filled in, shown once, and the sheet will not swipe away until
+Done. Last comes a message to paste into the agent so it checks itself. Live connections list
+their agent, what they may do and their last use, with a confirmed Revoke. Changes they make
+land as journaled actions named after the connection ("Claude Code: marked S01E01 of X
+watched"), so history and undo treat them like a tap.
+
+**Claude** is first in the list and has no token: its steps say to add Aaru in Claude
+(Settings → Connectors → Add custom connector, with the URL), and Claude sends you to Aaru's
+**consent page**. That page names the app and, in bold, the host it will return you to (apps
+name themselves; the host they cannot fake), then a name for the history, **Allow changes**
+(off), and **Allow** / **Not now**. A signed-out visitor signs in first and lands back on it.
+
 ## 16. Widgets (Phase 2)
 
 Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only
@@ -402,6 +433,16 @@ Motion rules (the first written ones; they hold for any later surface):
   no auto-advance; cards cross-fade and wait for a tap.
 - The share image carries only the user's own numbers and the brand, no posters, so the web
   canvas and the Apple renderer draw the same card. Nothing is shared without a tap.
+
+On the web (2026-10-20), performance comes first:
+- **Native HTML before Kobalte, CSS before Motion.** `<dialog>`, `<details>`, checkboxes and
+  `<select>` stay native. Kobalte (the base of solid-ui, adapted into
+  `aaru-client/src/components/ui`) only where the browser has no pattern: tabs, toggle and radio
+  groups, tooltips, toasts, switches. Entrances stay CSS keyframes.
+- **Motion only for what CSS cannot do:** an exit before an element leaves, siblings sliding
+  into the gap (FLIP), direction-aware swaps. Through `src/lib/motion.ts` on `motion/mini`, only
+  `transform` and `opacity`, and nothing at all with reduced motion.
+- `npm run size` holds every route to `size-budget.json` in CI.
 
 ---
 

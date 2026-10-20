@@ -10,7 +10,11 @@ import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { StremioSection } from '../components/StremioSection'
+import { ConnectionsSection } from '../components/ConnectionsSection'
 import { NotificationsSection } from '../components/NotificationsSection'
+import { Alert } from '../components/ui/alert'
+import { Button, buttonVariants } from '../components/ui/button'
+import { Card } from '../components/ui/card'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
 import { readImportFile } from '../lib/imports/file'
@@ -29,6 +33,7 @@ import {
   signOut,
 } from '../lib/session/session'
 import { listStremio } from '../lib/stremio/server'
+import { listConnections } from '../lib/agents/server'
 import { getPushSetup } from '../lib/push/server'
 
 // APP-007 on the web: account, imports, connected apps, and the way out.
@@ -44,17 +49,20 @@ export const Route = createFileRoute('/app_/settings')({
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
   },
   loader: async () => {
-    const [account, imports, signIn, stremio, push] = await Promise.all([
-      getAccount(),
-      listImports(),
-      getSignInConfig(),
-      listStremio(),
-      getPushSetup(),
-    ])
+    const [account, imports, signIn, stremio, connections, push] =
+      await Promise.all([
+        getAccount(),
+        listImports(),
+        getSignInConfig(),
+        listStremio(),
+        listConnections(),
+        getPushSetup(),
+      ])
     return {
       account,
       imports,
       stremio,
+      connections,
       push,
       googleClientId: signIn.googleClientId,
     }
@@ -158,17 +166,10 @@ function Settings() {
         </h1>
 
         <Show when={problem()}>
-          {(message) => (
-            <p
-              role="alert"
-              class="mt-4 rounded-[14px] bg-danger/10 px-4 py-3 text-sm text-danger"
-            >
-              {message()}
-            </p>
-          )}
+          {(message) => <Alert class="mt-4">{message()}</Alert>}
         </Show>
 
-        <section class="mt-8 rounded-[20px] bg-surface p-5">
+        <Card class="mt-8 p-5">
           <h2 class="font-display text-xl font-medium">Account</h2>
           <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
             <dt class="text-muted">Name</dt>
@@ -202,14 +203,10 @@ function Settings() {
               </div>
             )}
           </Show>
-          <button
-            type="button"
-            onClick={leave}
-            class="mt-4 rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold"
-          >
+          <Button size="sm" onClick={leave} class="mt-4">
             Sign out
-          </button>
-        </section>
+          </Button>
+        </Card>
 
         <section class="mt-8">
           <h2 class="font-display text-2xl font-medium">Bring your history</h2>
@@ -220,7 +217,7 @@ function Settings() {
           <div class="mt-5 grid gap-3 sm:grid-cols-2">
             <For each={FILE_SOURCES}>
               {(option) => (
-                <label class="flex cursor-pointer flex-col gap-1 rounded-[20px] border border-line p-4 hover:bg-surface">
+                <label class="flex cursor-pointer flex-col gap-1 rounded-card border border-line p-4 hover:bg-surface">
                   <span class="font-medium">
                     {uploading() === option.source
                       ? 'Uploading…'
@@ -242,7 +239,7 @@ function Settings() {
               )}
             </For>
             <form
-              class="flex flex-col gap-2 rounded-[20px] border border-line p-4 sm:col-span-2"
+              class="flex flex-col gap-2 rounded-card border border-line p-4 sm:col-span-2"
               onSubmit={importAniList}
             >
               <label for="anilist-username" class="font-medium">
@@ -259,20 +256,19 @@ function Settings() {
                   autocapitalize="off"
                   spellcheck={false}
                   placeholder="username"
-                  class="min-h-11 min-w-0 flex-1 rounded-[14px] border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
+                  class="min-h-11 min-w-0 flex-1 rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
                   value={anilistName()}
                   onInput={(e) => setAnilistName(e.currentTarget.value)}
                   aria-describedby={
                     anilistProblem() ? 'anilist-problem' : undefined
                   }
                 />
-                <button
+                <Button
                   type="submit"
-                  class="min-h-11 rounded-full border border-ink/25 px-5 text-sm font-semibold disabled:opacity-50"
                   disabled={anilistBusy() || anilistName().trim() === ''}
                 >
                   {anilistBusy() ? 'Starting…' : 'Import'}
-                </button>
+                </Button>
               </div>
               <Show when={anilistProblem()}>
                 {(message) => (
@@ -324,6 +320,7 @@ function Settings() {
         <NotificationsSection setup={loaded().push} />
 
         <StremioSection links={loaded().stremio} />
+        <ConnectionsSection connections={loaded().connections} />
 
         <section class="mt-10">
           <h2 class="font-display text-2xl font-medium">Recaps</h2>
@@ -351,7 +348,7 @@ function Settings() {
           </div>
         </section>
 
-        <section class="mt-10 rounded-[20px] bg-surface p-5">
+        <Card class="mt-10 p-5">
           <h2 class="font-display text-xl font-medium">About Aaru</h2>
           <p class="mt-2 text-sm text-muted">{TMDB_NOTICE}</p>
           <div class="mt-4 flex gap-4 text-sm font-semibold">
@@ -362,9 +359,9 @@ function Settings() {
               Privacy policy
             </Link>
           </div>
-        </section>
+        </Card>
 
-        <section class="mt-10 rounded-[20px] bg-surface p-5">
+        <Card class="mt-10 p-5">
           <h2 class="font-display text-xl font-medium">Export your data</h2>
           <p class="mt-2 text-sm text-muted">
             Everything Aaru holds for you. The spreadsheet opens anywhere and
@@ -375,21 +372,21 @@ function Settings() {
             <a
               href="/app/export?format=json"
               download=""
-              class="rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold"
+              class={buttonVariants({ size: 'sm' })}
             >
               Everything (JSON)
             </a>
             <a
               href="/app/export?format=csv"
               download=""
-              class="rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold"
+              class={buttonVariants({ size: 'sm' })}
             >
               Library spreadsheet (CSV)
             </a>
           </div>
-        </section>
+        </Card>
 
-        <section class="mt-12 rounded-[20px] border border-danger/30 p-5">
+        <section class="mt-12 rounded-card border border-danger/30 p-5">
           <h2 class="font-display text-xl font-medium">Delete account</h2>
           <p class="mt-2 text-sm text-muted">
             Deletes your library, lists, imports and sessions from Aaru for
@@ -398,13 +395,14 @@ function Settings() {
           <Show
             when={confirmingDelete()}
             fallback={
-              <button
-                type="button"
+              <Button
+                variant="danger-outline"
+                size="sm"
                 onClick={() => setConfirmingDelete(true)}
-                class="mt-4 rounded-full border border-danger/50 px-4 py-1.5 text-sm font-semibold text-danger"
+                class="mt-4"
               >
                 Delete account
-              </button>
+              </Button>
             }
           >
             <div class="mt-4 flex flex-wrap items-center gap-3">
@@ -412,20 +410,17 @@ function Settings() {
                 This cannot be undone. Export your data first if you want to
                 keep it.
               </span>
-              <button
-                type="button"
-                onClick={remove}
-                class="rounded-full bg-danger px-4 py-1.5 text-sm font-semibold text-paper"
-              >
+              <Button variant="danger" size="sm" onClick={remove}>
                 Delete account and library
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
+                size="bare"
                 onClick={() => setConfirmingDelete(false)}
-                class="text-sm text-muted hover:text-ink"
+                class="text-sm"
               >
                 Keep it
-              </button>
+              </Button>
             </div>
           </Show>
         </section>

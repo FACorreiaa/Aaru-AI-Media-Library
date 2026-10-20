@@ -9,4 +9,6 @@ final class PushInbox {
 
     /// The library item to open, from the alert's `libraryItemId`.
     var libraryItemID: String?
+    /// The agent request to open, from the alert's `planId` (OUT-004).
+    var planID: String?
 }

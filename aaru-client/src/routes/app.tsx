@@ -3,6 +3,11 @@ import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { SearchPanel } from '../components/SearchPanel'
+import { PlanCard } from '../components/PlanCard'
+import { Alert } from '../components/ui/alert'
+import { Button, buttonVariants } from '../components/ui/button'
+import { cardClass } from '../components/ui/card'
+import { cn } from '../lib/cn'
 import {
   AiringCard,
   ContinueCard,
@@ -37,6 +42,8 @@ import type { ListSummary } from '../lib/lists/server'
 import { getStats } from '../lib/recap/server'
 import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { getSession } from '../lib/session/session'
+import { listPendingPlans } from '../lib/plans/server'
+import type { AgentPlan } from '../lib/plans/server'
 import { setEpisode } from '../lib/title/server'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
@@ -72,6 +79,7 @@ function Home() {
   const [discoverReady, setDiscoverReady] = createSignal(false)
   const [searchOpened, setSearchOpened] = createSignal(false)
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
+  const [plans, setPlans] = createSignal<AgentPlan[]>([])
   let dialog: HTMLDialogElement | undefined
   let libraryRequested = false
 
@@ -130,6 +138,15 @@ function Home() {
     }
   }
 
+  /** Agent requests waiting for the user (OUT-004), pinned above everything else. */
+  async function loadPlans() {
+    try {
+      setPlans(await listPendingPlans())
+    } catch {
+      // The requests stay on the server; the next visit shows them.
+    }
+  }
+
   async function loadDiscover() {
     try {
       setDiscover(await getDiscover())
@@ -154,6 +171,7 @@ function Home() {
     const today = localDayKey(current)
     void loadStrip(current)
     void loadDiscover()
+    void loadPlans()
     void loadLists()
     loadLibrary()
     try {
@@ -261,20 +279,35 @@ function Home() {
         </h1>
 
         <Show when={problem()}>
-          {(message) => (
-            <p
-              role="alert"
-              class="mt-4 rounded-[14px] bg-danger/10 px-4 py-3 text-sm text-danger"
-            >
-              {message()}
-            </p>
-          )}
+          {(message) => <Alert class="mt-4">{message()}</Alert>}
+        </Show>
+
+        <Show when={plans().length > 0}>
+          <section class="mt-6" aria-label="Waiting for you">
+            <h2 class="font-display text-2xl font-medium">Waiting for you</h2>
+            <div class="mt-3 grid gap-3 md:grid-cols-2">
+              <For each={plans()}>
+                {(plan) => (
+                  <PlanCard
+                    plan={plan}
+                    onDecided={(decided) => {
+                      if (decided.status === 'applied')
+                        void getUpNext().then(showUpNext, () => {})
+                    }}
+                  />
+                )}
+              </For>
+            </div>
+          </section>
         </Show>
 
         <Show when={strip().length > 0}>
           <Link
             to="/app/insights"
-            class="mt-6 flex items-center justify-between gap-4 rounded-[20px] bg-surface px-5 py-4 hover:text-accent"
+            class={cn(
+              cardClass,
+              'mt-6 flex items-center justify-between gap-4 px-5 py-4 hover:text-accent',
+            )}
           >
             <span class="min-w-0">
               <span class="block text-sm text-muted">This month</span>
@@ -311,7 +344,7 @@ function Home() {
             <Link
               to="/app/recap"
               search={period()}
-              class="rise mt-6 flex items-center justify-between gap-4 rounded-[20px] bg-ink p-5 text-paper"
+              class="rise mt-6 flex items-center justify-between gap-4 rounded-card bg-ink p-5 text-paper"
             >
               <span>
                 <span class="block text-sm opacity-80">
@@ -414,7 +447,12 @@ function Home() {
         </Show>
 
         <Show when={empty() && (!discoverReady() || discover().length > 0)}>
-          <div class="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[20px] bg-surface p-5">
+          <div
+            class={cn(
+              cardClass,
+              'mt-8 flex flex-wrap items-center justify-between gap-4 p-5',
+            )}
+          >
             <div>
               <h2 class="font-display text-xl font-medium">
                 Add a show to see what’s next
@@ -462,17 +500,13 @@ function Home() {
             <div class="mt-6 flex items-center justify-center gap-3">
               <Link
                 to="/app/discover"
-                class="rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
+                class={buttonVariants({ variant: 'primary', size: 'lg' })}
               >
                 Discover
               </Link>
-              <button
-                type="button"
-                onClick={openSearch}
-                class="rounded-full border border-line px-6 py-3 font-semibold hover:bg-surface"
-              >
+              <Button variant="quiet" size="lg" onClick={openSearch}>
                 Search
-              </button>
+              </Button>
             </div>
           </div>
         </Show>
@@ -481,7 +515,7 @@ function Home() {
       <dialog
         ref={dialog}
         aria-label="Search"
-        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
+        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-card bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
         onClick={(e) => {
           // A click on the backdrop closes it.
           if (e.target === dialog) dialog.close()

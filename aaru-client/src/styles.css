@@ -39,6 +39,10 @@
   --color-line: var(--line);
   --color-medallion: var(--medallion);
   --color-danger: var(--danger);
+  /* Corner radii: cards, panels (callouts, inner boxes), fields. */
+  --radius-card: 20px;
+  --radius-panel: 14px;
+  --radius-field: 10px;
   --font-display: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
@@ -57,6 +61,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* One keyboard focus ring for every control, in the accent colour. Only for keyboard focus, so
+   a tap or click never draws it. Utilities can still override it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
 /* Hero entrance only: it orders the first read (headline, then art). No loops. */
 @media (prefers-reduced-motion: no-preference) {
   .rise {
@@ -69,6 +82,53 @@ body {
       transform: translateY(12px);
     }
   }
+}
+
+/* LAND-001: the hero's poster fan. Each slot sits at --t steps from the middle: further out
+   means more turn, a lower start and less light. Still once it lands. */
+.poster-fan {
+  --card: 9.5rem;
+  --step: 4.4rem;
+  --turn: 6deg;
+  position: relative;
+  height: calc(var(--card) * 1.25);
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 70%, transparent);
+}
+@media (min-width: 48rem) {
+  .poster-fan {
+    --card: 11.5rem;
+    --step: 6.6rem;
+    --turn: 5deg;
+  }
+}
+@media (min-width: 64rem) {
+  .poster-fan {
+    --card: 12.5rem;
+    --step: 8rem;
+    --turn: 4.5deg;
+  }
+}
+.poster-fan-slot {
+  position: absolute;
+  top: calc(1.5rem + var(--reach) * var(--reach) * 0.55rem);
+  left: 50%;
+  width: var(--card);
+  transform: translateX(calc(-50% + var(--t) * var(--step)))
+    rotate(calc(var(--t) * var(--turn)));
+  transform-origin: 50% 120%;
+}
+.poster-fan-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 22px 40px -22px rgb(15 34 36 / 0.6);
+  filter: brightness(calc(1 - var(--reach) * 0.06));
 }
 
 /* GAM-006a: the Recap story's entrances. They replay on every card and never loop. With

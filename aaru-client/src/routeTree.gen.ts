@@ -22,9 +22,11 @@ import { Route as AppRecapRouteImport } from './routes/app_.recap'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
+import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
 import { Route as AppListsIndexRouteImport } from './routes/app_.lists.index'
 import { Route as AppListsIdRouteImport } from './routes/app_.lists.$id'
+import { Route as AppPlansIdRouteImport } from './routes/app_.plans.$id'
 import { Route as AppTitleIdRouteImport } from './routes/app_.title.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -92,6 +94,11 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/auth/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OauthConsentRoute = OauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppImportsIdRoute = AppImportsIdRouteImport.update({
   id: '/app_/imports/$id',
   path: '/app/imports/$id',
@@ -105,6 +112,11 @@ const AppListsIndexRoute = AppListsIndexRouteImport.update({
 const AppListsIdRoute = AppListsIdRouteImport.update({
   id: '/app_/lists/$id',
   path: '/app/lists/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppPlansIdRoute = AppPlansIdRouteImport.update({
+  id: '/app_/plans/$id',
+  path: '/app/plans/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTitleIdRoute = AppTitleIdRouteImport.update({
@@ -127,8 +139,10 @@ export interface FileRoutesByFullPath {
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
+  '/app/plans/$id': typeof AppPlansIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
   '/app/lists/': typeof AppListsIndexRoute
 }
@@ -146,8 +160,10 @@ export interface FileRoutesByTo {
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
+  '/app/plans/$id': typeof AppPlansIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
   '/app/lists': typeof AppListsIndexRoute
 }
@@ -166,8 +182,10 @@ export interface FileRoutesById {
   '/app_/settings': typeof AppSettingsRoute
   '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/app_/imports/$id': typeof AppImportsIdRoute
   '/app_/lists/$id': typeof AppListsIdRoute
+  '/app_/plans/$id': typeof AppPlansIdRoute
   '/app_/title/$id': typeof AppTitleIdRoute
   '/app_/lists/': typeof AppListsIndexRoute
 }
@@ -187,8 +205,10 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
+    | '/oauth/consent'
     | '/app/imports/$id'
     | '/app/lists/$id'
+    | '/app/plans/$id'
     | '/app/title/$id'
     | '/app/lists/'
   fileRoutesByTo: FileRoutesByTo
@@ -206,8 +226,10 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
+    | '/oauth/consent'
     | '/app/imports/$id'
     | '/app/lists/$id'
+    | '/app/plans/$id'
     | '/app/title/$id'
     | '/app/lists'
   id:
@@ -225,8 +247,10 @@ export interface FileRouteTypes {
     | '/app_/settings'
     | '/app_/week'
     | '/auth/verify'
+    | '/oauth/consent'
     | '/app_/imports/$id'
     | '/app_/lists/$id'
+    | '/app_/plans/$id'
     | '/app_/title/$id'
     | '/app_/lists/'
   fileRoutesById: FileRoutesById
@@ -245,8 +269,10 @@ export interface RootRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppWeekRoute: typeof AppWeekRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  OauthConsentRoute: typeof OauthConsentRoute
   AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
+  AppPlansIdRoute: typeof AppPlansIdRoute
   AppTitleIdRoute: typeof AppTitleIdRoute
   AppListsIndexRoute: typeof AppListsIndexRoute
 }
@@ -344,6 +370,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oauth/consent': {
+      id: '/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof OauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app_/imports/$id': {
       id: '/app_/imports/$id'
       path: '/app/imports/$id'
@@ -363,6 +396,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/lists/$id'
       fullPath: '/app/lists/$id'
       preLoaderRoute: typeof AppListsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/plans/$id': {
+      id: '/app_/plans/$id'
+      path: '/app/plans/$id'
+      fullPath: '/app/plans/$id'
+      preLoaderRoute: typeof AppPlansIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/title/$id': {
@@ -389,11 +429,23 @@ const rootRouteChildren: RootRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppWeekRoute: AppWeekRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  OauthConsentRoute: OauthConsentRoute,
   AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,
+  AppPlansIdRoute: AppPlansIdRoute,
   AppTitleIdRoute: AppTitleIdRoute,
   AppListsIndexRoute: AppListsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/solid-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

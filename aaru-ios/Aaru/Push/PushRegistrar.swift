@@ -105,13 +105,18 @@
             [.banner, .sound]
         }
 
-        /// A tap on an airing alert opens the show it announced.
+        /// A tap on an airing alert opens the show it announced; one on an agent request opens it.
         nonisolated func userNotificationCenter(
             _: UNUserNotificationCenter,
             didReceive response: UNNotificationResponse
         ) async {
-            let id = response.notification.request.content.userInfo["libraryItemId"] as? String
-            await MainActor.run { PushInbox.shared.libraryItemID = id }
+            let info = response.notification.request.content.userInfo
+            let id = info["libraryItemId"] as? String
+            let plan = info["planId"] as? String
+            await MainActor.run {
+                PushInbox.shared.libraryItemID = id
+                PushInbox.shared.planID = plan
+            }
         }
     }
 #endif

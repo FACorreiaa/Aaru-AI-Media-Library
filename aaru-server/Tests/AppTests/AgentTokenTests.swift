@@ -42,15 +42,18 @@ struct AgentTokenTests {
             #expect(listed?.first?["secret"] == nil)
 
             let service = AgentTokenService(stores: env.stores, publicBaseURL: URL(string: "https://api.aaruapp.com")!)
-            let caller = try #require(try await service.authenticate(secret))
+            let caller = try #require(try await service.authenticate(secret, for: .stremio))
             #expect(caller.userID == env.userID)
             #expect(caller.has(.scrobbleWrite) && !caller.has(.libraryWrite))
-            #expect(try await service.authenticate("aaru_st_wrong") == nil)
-            #expect(try await service.authenticate(String(secret.dropFirst(8))) == nil, "prefix required")
+            #expect(try await service.authenticate("aaru_st_wrong", for: .stremio) == nil)
+            #expect(
+                try await service.authenticate(String(secret.dropFirst(8)), for: .stremio) == nil,
+                "prefix required"
+            )
 
             #expect(try await env.send(.delete, "/v1/agent/tokens/\(id)").status == .noContent)
             #expect(try await env.send(.delete, "/v1/agent/tokens/\(id)").status == .notFound)
-            #expect(try await service.authenticate(secret) == nil, "revoked")
+            #expect(try await service.authenticate(secret, for: .stremio) == nil, "revoked")
             #expect(try (await env.send(.get, "/v1/agent/tokens").json()["items"] as? [Any])?.isEmpty == true)
         }
     }
@@ -71,6 +74,40 @@ struct AgentTokenTests {
             #expect(try await env.send(.post, "/v1/agent/tokens", json: [
                 "kind": "stremio", "name": String(repeating: "x", count: 81),
             ]).status == .unprocessableContent)
+        }
+    }
+
+    @Test("MCP tokens: own prefix and scopes, setup with the secret, listed apart from Stremio, no Stremio access")
+    func mcpTokens() async throws {
+        try await LibraryHarness.run { env in
+            let body = try await env.send(.post, "/v1/agent/tokens", json: ["kind": "codex"]).json()
+            let secret = try #require(body["secret"] as? String)
+            let token = try #require(body["token"] as? [String: Any])
+            #expect(secret.hasPrefix("aaru_mcp_"))
+            #expect(token["kind"] as? String == "codex")
+            #expect(token["name"] as? String == "Codex")
+            #expect(token["scopes"] as? [String] == ["library:read"], "never scrobble:write")
+            #expect(body["stremio"] == nil)
+            let setup = try #require(body["setup"] as? [String: Any])
+            #expect(setup["url"] as? String == "https://api.aaruapp.com/v1/mcp")
+            let steps = try #require(setup["steps"] as? [[String: Any]])
+            #expect(steps.contains { ($0["text"] as? String)?.contains(secret) == true })
+            #expect(steps.contains { ($0["text"] as? String)?.contains("codex mcp add aaru") == true })
+
+            _ = try await env.send(.post, "/v1/agent/tokens", json: ["kind": "stremio"])
+            let stremioOnly = try await env.send(.get, "/v1/agent/tokens").json()["items"] as? [[String: Any]]
+            #expect(stremioOnly?.compactMap { $0["kind"] as? String } == ["stremio"], "default stays Stremio")
+            let mcp = try await env.send(.get, "/v1/agent/tokens?for=mcp").json()["items"] as? [[String: Any]]
+            #expect(mcp?.compactMap { $0["kind"] as? String } == ["codex"])
+
+            let manifest = try await env.send(.get, "/stremio/\(secret)/manifest.json")
+            #expect(manifest.status == .notFound, "an MCP secret is not a Stremio link")
+
+            let preview = try await env.send(.get, "/v1/agent/setup/hermes").json()
+            let previewSteps = try #require(preview["steps"] as? [[String: Any]])
+            #expect(previewSteps.contains { ($0["text"] as? String)?.contains("hermes mcp add aaru") == true })
+            #expect(previewSteps.contains { ($0["note"] as? String)?.contains(AgentSetup.placeholder) == true })
+            #expect(try await env.send(.get, "/v1/agent/setup/stremio").status == .badRequest)
         }
     }
 
