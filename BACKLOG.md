@@ -9,6 +9,8 @@ Scope of this file: Aaru only.
 ## How to read this
 
 - IDs are stable. Never renumber. Close an item by moving it to **Done** with its ID.
+  Until then, the **Status** table below is the record of what is done; update its row when an
+  item changes.
 - Work is grouped into **phases** (P0–P7). Each phase has an exit gate. Inside a phase,
   milestones (`M1`…`M14`) and groups keep their old IDs; order inside a group is dependency
   order. Do not start an item whose `Needs` is open.
@@ -174,20 +176,192 @@ library layer stay separate, external IDs stored whenever known, no second backe
   **Resolved 2026-10-16:** the owner created the "Aaru" Trakt app (no VIP needed); its Client ID
   is configured on `maat` with PKCE and no client secret. First real connect is the proof.
 
-## Status snapshot (verified 2026-10-09)
+## Status (verified 2026-10-20)
 
-| Area | State |
-| --- | --- |
-| `aaru-core` | Domain model present: `Title`, `LibraryItem`, `Progress`, `Rating`, `ExternalIDs`, `MediaRef`, `AaruList`, `ImportJob`, `TitleMatching`, `Episode`, identifiers, validation. ~32 tests: validation, rating, matching, external IDs, wire contract, Codable round-trip. No anime IDs, no user/social types. |
-| `aaru-server` | Hummingbird skeleton. Fluent + Postgres configured in `App+build.swift`, migrations gated behind `db.migrate`. **Zero migrations registered.** `openapi.yaml` is still the generator template (`getHello`). A template WebSocket echo is wired at `/ws`. CI sits in `aaru-server/.github/workflows/` and therefore never runs. |
-| `aaru-client` | Fresh `sv create` template: Svelte 5, Kit `next`, adapter-cloudflare, Tailwind 4, Paraglide (en/es/pt), Storybook, Vitest, Playwright. Untracked. No Aaru code. |
-| `aaru-ios` | Empty directory. No Xcode project. |
-| Release | No fastlane, no TestFlight lane, no infra entry, no Worker deploy. `swiftly.pkg` (10 MB) committed at repo root. |
-| Auth, search, library, lists, imports | None of it exists. |
+Checked item by item against `origin/main` at `62dfe1d` (PR #46), every Claude session on this
+repo, and the merged PRs here and in the infra repo. Production runs `5be7fef` (infra #376);
+#39 (Settings tab), #41 (import merge), #42 (push tap), #45 (web push) and #46 (Stremio history)
+are on `main` and wait for the next promote PR. Unmerged branches (Groups, realtime: #40, #44,
+#47, #48) are not counted.
 
-So the real starting line is P0.
+| Phase | Done | Gate | What blocks it |
+| --- | --- | --- | --- |
+| **P0 — Rails** | 14/16 (1 built, unverified; 1 dropped) | **Met** | Nothing. `INFRA_TOKEN` is unset by choice, so promote PRs are opened by hand and Server Deploy's promote job shows red |
+| **P1 — Basics (API)** | 30/31 (1 built, unverified) | **Met** | Nothing; CAT-010's first production load of the anime mappings is unconfirmed (CronJob first fires 2026-11-02) |
+| **P2 — Clients, widgets, imports** | 29/54 (10 built, unverified; 3 partial; 9 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) and unmatched-row triage (IMP-011) open |
+| **P3 — Tracking** | 1/6 (1 partial) | Not met | Stremio addon built and deployed (SCR-003) but playback never tried live; no `/v1/scrobble/*` routes, no Plex/Jellyfin |
+| **P4 — Social** | 0/6 (1 partial) | Not met | Only push plumbing (SOC-005, airing alerts) is on `main` |
+| **P5 — Gamification** | 1/9 (1 partial) | Not met | Recap (GAM-006a) only; no points ledger, streaks, badges |
+| **P6 — Realtime, DMs, rooms** | 0/10 | Not met | Nothing on `main` |
+| **P7 — Agent surfaces** | 0/12 (3 partial) | Not met | Agent tokens exist for Stremio only; no tool layer, MCP or model provider |
 
-### P0 progress (2026-10-09, branch `p0-rails`, not yet pushed)
+Totals over 147 items: **Done 75**, built but unverified 12, partial 9, open 44, deferred 2,
+dropped 5. "Done" means the item's own **Done when** is met by code on `main` (caveats noted);
+"Built, unverified" means the code is on `main` but the Done-when asks for a device run, a real
+account or a stranger that has not happened yet.
+
+**Known gaps no item owns yet:**
+
+- **Undo ribbon.** DESIGN.md and AUD-001 require it, WID-002 and OUT-002 depend on it, and the
+  server's `POST /v1/actions/{id}/undo` exists, but no client calls it.
+- IMP-004's text still says a later source never overwrites a status; since 2026-10-20 (#41)
+  status moves forward only (see that day's decision).
+- PRV-001's ODbL credit no longer applies: anime mappings come from Fribb (MIT).
+
+### Every item
+
+| ID | Status | Evidence | Caveat |
+| --- | --- | --- | --- |
+| --- | --- | --- | --- |
+| REL-001 | Done | #1 577ba6e; `.github/workflows/ci-*.yml` path filters | Nested `aaru-server/.github` gone |
+| REL-002 | Done | #1; no `*.pkg` in tree | |
+| REL-003 | Built, unverified | #1, #3; `aaru-ios/Config/{Beta,Release}.xcconfig` | Release app never installed beside Beta on a device |
+| REL-004 | Done | #3, #4; `release-apple.yml` succeeds on every main merge | iOS + macOS lanes; `release` dispatch-only |
+| REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
+| REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
+| DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
+| SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
+| SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
+| SRV-003 | Done | #1; no Fluent import under `Sources/App/API`; `TestFakes.swift` | |
+| SRV-004 | Done | #1; `Data/Migrations/Migrations.swift` | |
+| SRV-005 | Done | #1; Migrations.swift | |
+| SRV-006 | Done | #1; Migrations.swift | |
+| SRV-007 | Done | #1; Migrations+Imports.swift | |
+| SRV-008 | Done | `Config/AppConfig.swift` requires TMDB_API_KEY; `.env` ignored | |
+| SRV-009 | Done | `ci-swift.yml` swiftformat --lint + tests on Postgres | Deliberate-failure run not recorded |
+| AUTH-001 | Done | #2 5f873ce; AuthMiddleware.swift, APITests 401 | |
+| AUTH-002 | Done | #2; AppleVerifierTests (exp, kid refresh) | |
+| AUTH-003 | Done | #2, #8; AuthFlowTests rate limit | Email depends on Resend sender config |
+| AUTH-004 | Done | AuthFlowTests "AUTH-004: … no row anywhere" | |
+| AUTH-005 | Done | #18, #19; GoogleSignInTests linking/409; LinkGoogleButton.swift | |
+| CAT-001 | Done | #2; ProviderClientTests (429 retry) | |
+| CAT-002 | Done | #2; TMDBCatalog.swift | |
+| CAT-003 | Done | #2; ISBNTests, OpenLibraryCatalog.swift | |
+| CAT-004 | Done | #2; `/v1/search` | |
+| CAT-005 | Done | #2; CatalogResolutionTests (concurrent adds) | |
+| CAT-006 | Done | #2, #36; CatalogRefreshTests | |
+| CAT-007 | Done | #2; AniListCatalog.swift | |
+| CAT-008 | Done | #2; aaru-core anime ids, WireContractTests | |
+| CAT-009 | Done | #2; TitleResolver.swift | |
+| CAT-010 | Built, unverified | #36 e8bdebb; AnimeMappingLoader.swift; infra #362 CronJob | First production load not confirmed; CronJob first fires Nov 2 |
+| LIB-001 | Done | #2; `POST /v1/library/items` | |
+| LIB-002 | Done | #2; LibraryTests | No EXPLAIN check in tests |
+| LIB-003 | Done | #2; LibraryTests | |
+| LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
+| AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
+| AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Server only; no client undo ribbon |
+| PROG-001 | Done | #2; episodes PUT route | |
+| PROG-002 | Done | #2; seasons watched route | |
+| PROG-003 | Done | #2; LibraryTests nextEpisode | |
+| PROG-004 | Done | #2; ValidationTests percent | |
+| LST-001 | Done | #2; ListShelfTests visibility | |
+| LST-002 | Done | #2; `/v1/lists/{id}/items`, `/order` | |
+| SHF-001 | Done | #2; `saved_queries` | API-only by decision |
+| SHF-002 | Done | #2; `/v1/shelves/{id}/items` | |
+| CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
+| UPN-001 | Done | #2; `/v1/up-next` | |
+| APP-001 | Done | #7 432e35f; SessionMiddleware (12 concurrent 401s) | |
+| APP-002 | Done | #8; SessionKeychain.swift | Mac relaunch persistence not recorded |
+| APP-003 | Built, unverified | #10; LibraryCache.swift | Offline checked in simulator; 1,000-item scroll not measured |
+| APP-004 | Done | #10; SearchView.swift, SearchPanel.tsx | iOS not driven in simulator |
+| APP-005 | Done | #11; TitleDetailModel.swift | Rollback verified on web only |
+| APP-006 | Done | #12; ListsView.swift, AddToListDialog.tsx | |
+| APP-007 | Done | #15, #39 e12567e; SettingsView.swift, ImportDetailView.swift | Live-ish polling verified on web only |
+| APP-008 | Partial | sidebarAdaptable + ⌘F in RootView/LibraryView | No ⌘N add shortcut |
+| APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
+| DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
+| APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
+| WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
+| WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
+| WID-003 | Built, unverified | #26; CountdownWidget.swift | Not seen on a device |
+| WID-004 | Built, unverified | #26; WeekWidget.swift | Not seen on a device |
+| WID-005 | Built, unverified | #35 f7fc4a1; NowWatchingLiveActivity.swift | Not run on a device |
+| WID-006 | Built, unverified | #26; same extension for macOS | Mac intent not shown working |
+| JOB-001 | Done | #13, #36; ImportWorker.swift, CatalogRefreshService.swift | Journal pruning not built |
+| IMP-001 | Done | #13 c12c751; `/v1/imports/{id}` + apply | |
+| IMP-002 | Done | #16 9cb13d5; TraktTests (PKCE, state, refresh); infra #341 | No real Trakt account connected yet |
+| IMP-003 | Built, unverified | #16; TraktImporter.swift | Stub Trakt only; 10,000-item run not measured |
+| IMP-004 | Done | #41 f54b1e7; ImportMergeTests | Not deployed; no literal Trakt→Letterboxd rating test |
+| IMP-005 | Done | #13; `/v1/imports/csv` 413/422 tests | 5 MB cap |
+| IMP-006 | Done | #13; CSVImportParser.swift | |
+| IMP-007 | Done | #13; CSVImportParser.swift | |
+| IMP-008 | Done | #13; ImportParserTests | |
+| IMP-009 | Open | only `cat_list` enum in ImportJob.swift | Parser rejects it ("not a CSV import") |
+| IMP-010 | Open | only `cat_ics` enum | No ICS parser |
+| IMP-011 | Open | ImportDetailView lists unmatched rows only | No resolve/search-and-pick UI |
+| IMP-012 | Deferred | BACKLOG "Parked 2026-10-16 by the owner" | Needs a real export |
+| IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |
+| IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
+| IMP-016 | Built, unverified | #46 62dfe1d; Imports/Stremio/*, StremioImportTests | Not deployed; no real account library |
+| PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
+| CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
+| CAT-012 | Open | no Google Books code | |
+| CAT-013 | Open | no Wikidata code | |
+| CAT-014 | Open | no watch-providers code | |
+| CAT-015 | Open | none | Scheduled after P2 gate |
+| CAT-016 | Open | none | Scheduled after P2 gate |
+| CAT-017 | Deferred | heading "Deferred" | |
+| CAT-019 | Done | #43 5be7fef; CatalogSearchAllTests (Mobland) | Stub tests |
+| CAT-020 | Dropped | superseded by DISC-001 | |
+| UPN-002 | Done | #43; ScheduleTests UPN-002 | |
+| GAM-006c | Done | #43; StatsTests "all time equals the years summed" | |
+| APP-011 | Done | #43; SearchPanel.tsx, SearchView.swift | Not seen on a device |
+| APP-012 | Done | #43; DiscoverScreen.swift, app_.discover.tsx | |
+| APP-013 | Done | #43; HomeSummary.swift, HomeRows.tsx | |
+| APP-014 | Done | #43; LibraryRow.swift, library/model.ts labels | |
+| APP-015 | Done | #43; RootView `lists` tab | |
+| LAND-001 | Partial | #5, #9; routes/index.tsx, demo/ gone | No prerender config found; Lighthouse never run |
+| LAND-002 | Open | no waitlist code | |
+| LAND-003 | Done | #27; docs/privacy.md, /privacy | Names all six third parties |
+| WEB-001 | Done | #9 da50ed5 + later; ARCHITECTURE.md lists it | |
+| SCR-001 | Partial | #36; ScrobbleService.swift, ScrobbleTests | No `/v1/scrobble/*` routes; service only |
+| SCR-002 | Open | no Plex/Jellyfin code | |
+| SCR-003 | Done | #36 e8bdebb; Sources/App/Stremio; deployed | Verified in Stremio Web on local server; playback events not tried |
+| SCR-004 | Open | none | |
+| SCR-005 | Open | none | |
+| SCR-006 | Open | none | |
+| SOC-001 | Open | none on main (PR #44 open) | |
+| SOC-002 | Open | none on main (PR #44 open) | |
+| SOC-003 | Open | none | |
+| SOC-004 | Open | none | |
+| SOC-005 | Partial | #17, #42, #45; Push.swift, `/v1/devices`, `/v1/me/notifications` | Airing push only; no friend-request category |
+| SHR-001 | Open | none | |
+| GAM-001 | Open | none | |
+| GAM-002 | Open | none | |
+| GAM-003 | Open | none | |
+| WID-007 | Open | none | |
+| GAM-004 | Open | none | |
+| GAM-005 | Open | none | |
+| GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
+| GAM-006b | Partial | #43 Insights covers all-time/by-kind | No genres, profile placement, badges |
+| CAT-018 | Open | genres not stored | |
+| RT-001 | Open | none (PR #48 open) | |
+| DM-001 | Open | none | |
+| DM-002 | Open | none | |
+| DM-003 | Open | none | |
+| DM-004 | Open | none | |
+| DM-005 | Open | none | |
+| ROOM-001 | Open | none | |
+| ROOM-002 | Open | none | |
+| ROOM-003 | Open | none | |
+| ROOM-004 | Open | none | |
+| AG-001 | Open | none | |
+| AG-002 | Open | none | |
+| AG-003 | Open | none | Import plan/apply exists, not the agent one |
+| AG-004 | Open | none | |
+| AG-005 | Open | none | |
+| AG-006 | Open | none | |
+| AG-007 | Open | no ModelProviding | |
+| OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio kind only; no general scopes |
+| OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
+| OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
+| OUT-004 | Open | no AppMCP | |
+| OUT-005 | Open | none | |
+| MOAT-001 | Dropped (promoted) | now SCR-003 | SCR-003 built |
+| MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
+| MOAT-003 | Dropped (promoted) | now SCR-004 | |
+
+### P0 progress log (from 2026-10-09; merged in #1, deployed 2026-10-15)
 
 | Item | State |
 | --- | --- |
@@ -199,7 +373,7 @@ So the real starting line is P0.
 | REL-005 | Image builds from the repo root and was smoke-tested locally (migrate, fail-fast, health 200); promote workflow written; infra draft PR LuminaVault/LuminaVaultInfra#292. Needs `TMDB_API_KEY` sealed, first image tag, `/data/pg-aaru` on the node, `INFRA_TOKEN`, and the domain. |
 | REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Domain `aaruapp.com` (Cloudflare, 2026-10-15): prod Worker on `aaruapp.com` (+ `www` → apex 301), beta on `beta.aaruapp.com`, no `workers.dev`; security headers in `src/start.ts`. Needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (token also needs Workers Routes + DNS edit on the zone for the custom domains). |
 
-### P1 progress (2026-10-09, branch `p1-basics`, stacked on `p0-rails`, not pushed)
+### P1 and later progress log (from 2026-10-09)
 
 Server side of P1 is built: 62 server tests and 37 core tests pass against local Postgres,
 with every provider stubbed.
@@ -223,23 +397,23 @@ with every provider stubbed.
 | APP-010 + catch-up month | Built 2026-10-15 on iPhone, iPad, Mac and web: Calendar destination with Week (CAT grid / iPhone day pager) and Month (Stremio-style posters + agenda). Server adds `backdropUrl`, `network`, `airTimeKnown`, `episodeOverview`; range up to 42 days. Checked with sample data only. |
 | CAT-019, UPN-002, GAM-006c, APP-014 (server) | Built 2026-10-20 on `feat/discover-insights`, tests against stubs only: `type=all` search with `releaseDate` on hits, Up Next `counts` + `unfinished`, `/v1/me/stats?span=all` with `byKind` and the ratings distribution, per-kind labels in journal summaries and the Stremio catalog name. CAT-020's own `/v1/discover` was dropped for DISC-001's in the merge. Clients (APP-011…APP-015: Discover tab/page on DISC-001's rows, Insights, Home additions, Lists tab) are being built. |
 
-**P1 gate** (works end to end against the production API on `maat`) is not met until P0's
-deploy steps are done.
+**P1 gate** (works end to end against the production API on `maat`): met. The API has been live
+on `maat` since 2026-10-15 with the Apple and web clients on it.
 
 ---
 
 ## Phase map
 
-| Phase | Groups | Exit gate |
-| --- | --- | --- |
-| **P0 — Rails** | REL, M1 server foundation | CI green from repo root; empty app builds to TestFlight beta; API image deploys to `maat` via promote PR; web Worker deploys |
-| **P1 — Basics (API)** | M2 auth, M3 catalog + anime, M4 library, M5 progress, M6 lists, Calendar + Up Next | A personal tracker works end to end over `/v1`: sign in, search movies/shows/anime/books, add, tick episodes, lists, calendar, up next |
-| **P2 — Clients, widgets, imports** | M7 iOS + Mac, Widgets, M10/M11 web, M8 Trakt, M9 file imports, catalog sources | **The "basics done" line.** TestFlight beta and the beta Worker are usable by a stranger end to end; widgets work; Trakt + CSV imports work |
-| **P3 — Tracking integrations** | Scrobble, Stremio, Plex/Jellyfin, outbound Trakt/MAL/AniList | A play in Plex, Jellyfin or Stremio moves Aaru progress without a tap |
-| **P4 — Social** | Profiles, friends, activity, push, shared lists | Two users can friend, see each other's activity, and block cleanly |
-| **P5 — Gamification** | Points ledger, levels, streaks, badges, leaderboard, stats | Points and streaks are idempotent and survive replays and undo |
-| **P6 — Realtime, DMs, watch together** | WebSocket gateway, libsignal DMs, rooms, SharePlay | E2E DMs between two devices; a room counts down and checks off together |
-| **P7 — Agent surfaces** | M13 agent, M14 outbound agent | As written in M13/M14 |
+| Phase | Groups | Exit gate | Status (2026-10-20) |
+| --- | --- | --- | --- |
+| **P0 — Rails** | REL, M1 server foundation | CI green from repo root; empty app builds to TestFlight beta; API image deploys to `maat` via promote PR; web Worker deploys | **Done** — gate met |
+| **P1 — Basics (API)** | M2 auth, M3 catalog + anime, M4 library, M5 progress, M6 lists, Calendar + Up Next | A personal tracker works end to end over `/v1`: sign in, search movies/shows/anime/books, add, tick episodes, lists, calendar, up next | **Done** — gate met |
+| **P2 — Clients, widgets, imports** | M7 iOS + Mac, Widgets, M10/M11 web, M8 Trakt, M9 file imports, catalog sources | **The "basics done" line.** TestFlight beta and the beta Worker are usable by a stranger end to end; widgets work; Trakt + CSV imports work | In progress — 29/54 done; not met |
+| **P3 — Tracking integrations** | Scrobble, Stremio, Plex/Jellyfin, outbound Trakt/MAL/AniList | A play in Plex, Jellyfin or Stremio moves Aaru progress without a tap | Started — 1/6 (Stremio addon) |
+| **P4 — Social** | Profiles, friends, activity, push, shared lists | Two users can friend, see each other's activity, and block cleanly | Not started (airing push plumbing only) |
+| **P5 — Gamification** | Points ledger, levels, streaks, badges, leaderboard, stats | Points and streaks are idempotent and survive replays and undo | Started — 1/9 (Recap) |
+| **P6 — Realtime, DMs, watch together** | WebSocket gateway, libsignal DMs, rooms, SharePlay | E2E DMs between two devices; a room counts down and checks off together | Not started |
+| **P7 — Agent surfaces** | M13 agent, M14 outbound agent | As written in M13/M14 | Not started |
 
 **Hard rule:** no P3–P6 code before the P2 gate. Social and gamification on a library nobody
 has used is supply-side polish.
