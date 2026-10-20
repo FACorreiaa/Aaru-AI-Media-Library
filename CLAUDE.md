@@ -28,7 +28,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
-| User import — primary | Trakt OAuth |
+| User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | Realtime (P6) | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server` |
@@ -174,7 +174,7 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 6. Manual lists.
 7. iOS + Mac clients on the JSON API: home rows, week grid, widgets, Live Activity.
 8. Web client (`aaru-client`) on the same API.
-9. Trakt OAuth import; CSV import for IMDb, Letterboxd, Goodreads; CAT list + ICS; TV Time, MAL, AniList.
+9. Trakt OAuth import; Stremio history by link code; CSV import for IMDb, Letterboxd, Goodreads; CAT list + ICS; TV Time, MAL, AniList.
 
 ## Later phases (after the P2 gate, see `BACKLOG.md`)
 
@@ -207,14 +207,15 @@ and Home stats 2026-10-20).
 When implementing multi-source import for one account, apply in this order and skip sources the user did not connect:
 
 1. Trakt
-2. IMDb CSV
-3. Letterboxd CSV
-4. Goodreads CSV
-5. CAT show list / ICS
-6. TV Time export
-7. MyAnimeList XML
-8. AniList list
-9. Any other CSV (generic, by column names): fills gaps only
+2. Stremio history (link code)
+3. IMDb CSV
+4. Letterboxd CSV
+5. Goodreads CSV
+6. CAT show list / ICS
+7. TV Time export
+8. MyAnimeList XML
+9. AniList list
+10. Any other CSV (generic, by column names): fills gaps only
 
 Capture is **not** in this order. It is a user-triggered one-shot, applied when the user asks
 and never as part of reconciling an account's connected sources.

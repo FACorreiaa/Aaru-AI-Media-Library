@@ -6,6 +6,8 @@ import Foundation
 /// apply them in this order and let later sources fill only empty fields.
 public enum ImportSource: String, Codable, Hashable, Sendable, CaseIterable {
     case trakt
+    /// A Stremio account's library and watch history, read once through a link code (IMP-016).
+    case stremio
     case imdbCSV = "imdb_csv"
     case letterboxdCSV = "letterboxd_csv"
     case goodreadsCSV = "goodreads_csv"

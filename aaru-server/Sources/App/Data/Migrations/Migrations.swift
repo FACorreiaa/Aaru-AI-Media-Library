@@ -28,6 +28,7 @@ let allMigrations: [any Migration] = [
     CreateWatchEvents(),
     AddStatusByHand(),
     CreateWebPush(),
+    CreateStremioLinkRequests(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

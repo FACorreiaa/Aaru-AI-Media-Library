@@ -224,6 +224,12 @@ protocol ImportJobStore: Sendable {
     func savePlan(_ job: ImportJob, rows: [PlannedRow]) async throws
     /// Removes a job and its rows. Library items it created stay; undo is the journal's job.
     func delete(id: ImportJobID, userID: UserID) async throws -> Bool
+    /// A Stremio link code the user is approving (IMP-016). Expired ones are swept here.
+    func createStremioLink(code: String, userID: UserID, expiresAt: Date, now: Date) async throws
+    /// When the user's code stops being valid; nil when it is not theirs or is gone.
+    func stremioLinkExpiry(code: String, userID: UserID) async throws -> Date?
+    /// Single use: true when this call removed the code, so two polls never import twice.
+    func consumeStremioLink(code: String, userID: UserID) async throws -> Bool
 }
 
 /// A user's Trakt connection, tokens still sealed.

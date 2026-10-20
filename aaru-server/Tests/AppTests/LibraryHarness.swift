@@ -28,6 +28,7 @@ struct LibraryHarness {
     static func run(
         clock: TestClock? = nil,
         trakt: TraktAPI? = nil,
+        stremio: StremioAccount? = nil,
         webPush: (any WebPushSending)? = nil,
         _ body: @escaping @Sendable (LibraryHarness) async throws -> Void
     ) async throws {
@@ -36,7 +37,7 @@ struct LibraryHarness {
             let (userID, token) = try await signedInUser(stores)
             let auth = AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil)
             var services = Services.make(
-                stores: stores, catalogs: FakeCatalog.providers(fake), auth: auth, trakt: trakt
+                stores: stores, catalogs: FakeCatalog.providers(fake), auth: auth, trakt: trakt, stremio: stremio
             )
             services.webPush = webPush
             if let clock {

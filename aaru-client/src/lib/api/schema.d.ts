@@ -604,6 +604,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/stremio/link': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out. */
+    post: operations['startStremioLink']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/stremio/link/{code}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out. */
+    post: operations['pollStremioLink']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/trakt': {
     parameters: {
       query?: never
@@ -863,12 +897,28 @@ export interface components {
       /** Format: date-time */
       connectedAt?: string
     }
+    StremioLink: {
+      code: string
+      /**
+       * Format: uri
+       * @description The stremio.com page where the user approves the code.
+       */
+      link: string
+      /**
+       * Format: uri
+       * @description A QR image of `link`, for scanning with a phone.
+       */
+      qrcode: string
+      /** Format: date-time */
+      expiresAt: string
+    }
     ImportJob: {
       /** Format: uuid */
       id: string
       /** @enum {string} */
       source:
         | 'trakt'
+        | 'stremio'
         | 'imdb_csv'
         | 'letterboxd_csv'
         | 'goodreads_csv'
@@ -2487,6 +2537,57 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ImportJob']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  startStremioLink: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description A code to approve. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StremioLink']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  pollStremioLink: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        code: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Approved. The library was read and its import queued. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      /** @description Not approved yet. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

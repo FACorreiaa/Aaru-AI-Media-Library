@@ -98,3 +98,17 @@ extension UntouchedStore {
         throw Touched()
     }
 }
+
+extension UntouchedStore {
+    func createStremioLink(code _: String, userID _: UserID, expiresAt _: Date, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func stremioLinkExpiry(code _: String, userID _: UserID) async throws -> Date? {
+        throw Touched()
+    }
+
+    func consumeStremioLink(code _: String, userID _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+}

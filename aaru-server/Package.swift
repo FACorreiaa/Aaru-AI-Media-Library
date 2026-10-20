@@ -54,8 +54,16 @@ let package = Package(
                 .product(name: "OpenAPIHummingbird", package: "swift-openapi-hummingbird"),
                 .product(name: "APNS", package: "APNSwift"),
                 .product(name: "WebPush", package: "swift-webpush"),
+                .target(name: "CZlib"),
             ],
             path: "Sources/App"
+        ),
+        // The system zlib (in every Swift image), for Stremio's compressed watched bitfields.
+        .systemLibrary(
+            name: "CZlib",
+            path: "Sources/CZlib",
+            pkgConfig: "zlib",
+            providers: [.apt(["zlib1g-dev"]), .brew(["zlib"])]
         ),
         .target(
             name: "aaruAPI",

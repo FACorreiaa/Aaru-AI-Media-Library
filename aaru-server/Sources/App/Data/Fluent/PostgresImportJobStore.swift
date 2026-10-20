@@ -142,7 +142,7 @@ struct PostgresImportJobStore: ImportJobStore {
             for row in rows {
                 try await sql.raw("""
                 UPDATE import_rows SET outcome = \(bind: row.outcome.rawValue), reason = \(bind: row.reason),
-                    title_id = \(bind: row.titleID?.rawValue)
+                    title_id = \(bind: row.titleID?.rawValue), row = \(bind: row.row)
                 WHERE job_id = \(bind: job.id.rawValue) AND idx = \(bind: row.index)
                 """).run()
             }
@@ -159,6 +159,35 @@ struct PostgresImportJobStore: ImportJobStore {
         return try await sql.raw("""
         DELETE FROM import_jobs WHERE id = \(bind: id.rawValue) AND user_id = \(bind: userID.rawValue) RETURNING id
         """).first(decoding: Deleted.self) != nil
+    }
+
+    // MARK: Stremio link codes
+
+    func createStremioLink(code: String, userID: UserID, expiresAt: Date, now: Date) async throws {
+        try await sql.transaction { sql in
+            try await sql.raw("DELETE FROM stremio_link_requests WHERE expires_at < \(bind: now)").run()
+            try await sql.raw("""
+            INSERT INTO stremio_link_requests (code, user_id, expires_at)
+            VALUES (\(bind: code), \(bind: userID.rawValue), \(bind: expiresAt))
+            ON CONFLICT (code) DO UPDATE SET user_id = EXCLUDED.user_id, expires_at = EXCLUDED.expires_at
+            """).run()
+        }
+    }
+
+    func stremioLinkExpiry(code: String, userID: UserID) async throws -> Date? {
+        struct Row: Decodable { let expiresAt: Date }
+        return try await sql.raw("""
+        SELECT expires_at FROM stremio_link_requests
+        WHERE code = \(bind: code) AND user_id = \(bind: userID.rawValue)
+        """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)?.expiresAt
+    }
+
+    func consumeStremioLink(code: String, userID: UserID) async throws -> Bool {
+        struct Row: Decodable { let code: String }
+        return try await sql.raw("""
+        DELETE FROM stremio_link_requests WHERE code = \(bind: code) AND user_id = \(bind: userID.rawValue)
+        RETURNING code
+        """).first(decoding: Row.self) != nil
     }
 }
 

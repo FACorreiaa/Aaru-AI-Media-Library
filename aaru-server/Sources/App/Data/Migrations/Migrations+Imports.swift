@@ -294,3 +294,18 @@ struct CreateWebPush: SQLMigration {
         "DROP TABLE web_push_subscriptions",
     ]
 }
+
+/// Stremio history import (IMP-016): a link code waiting for the user's approval on stremio.com.
+/// Only the code and its owner are kept, never Stremio's session key.
+struct CreateStremioLinkRequests: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE stremio_link_requests (
+            code text PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            expires_at timestamptz NOT NULL
+        )
+        """,
+    ]
+    let backward = ["DROP TABLE stremio_link_requests"]
+}

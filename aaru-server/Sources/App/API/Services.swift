@@ -23,6 +23,7 @@ struct Services: Sendable {
         catalogs: CatalogProviders,
         auth: AuthService,
         trakt: TraktAPI? = nil,
+        stremio: StremioAccount? = nil,
         publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!
     ) -> Services {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
@@ -43,7 +44,8 @@ struct Services: Sendable {
             imports: ImportService(
                 stores: stores, resolver: resolver,
                 trakt: trakt.map { TraktImport(connect: traktConnect(stores, $0), importer: TraktImporter(api: $0)) },
-                anilistLists: catalogs.anilist as? any AniListListReading
+                anilistLists: catalogs.anilist as? any AniListListReading,
+                stremio: stremio
             ),
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),

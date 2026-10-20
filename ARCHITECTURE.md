@@ -260,6 +260,8 @@ GET    /v1/me/stats?year=&month=&span=&tz=  # GAM-006a/c: a year, a month or spa
 GET    /v1/imports
 POST   /v1/imports/trakt/connect          # start OAuth
 GET    /v1/imports/trakt/callback
+POST   /v1/imports/stremio/link           # IMP-016: a code to approve on stremio.com
+POST   /v1/imports/stremio/link/{code}    # 204 pending | 202 queued import | 410 expired
 POST   /v1/imports/csv                    # text/csv body; ?source=imdb|letterboxd|goodreads&filename=
 POST   /v1/imports/{id}/apply             # approve the plan: one journaled, undoable action
 DELETE /v1/imports/{id}                   # discard
@@ -453,6 +455,26 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - Map Trakt ids → TMDB/IMDb → `Title`
 - First importer in the merge order
 
+### Stremio history (IMP-016)
+
+- Stremio's own device-link flow: `link.stremio.com/api/v2/create` gives a code, the user approves
+  it on stremio.com (no password reaches Aaru), `read` then returns a session key. The client polls
+  `POST /v1/imports/stremio/link/{code}`; Aaru keeps only the code, its owner and a 5-minute expiry
+  (`stremio_link_requests`), because Stremio answers pending and expired codes the same way.
+- On approval, one `api.strem.io/api/datastoreGet` reads every library item, then `api/logout`
+  ends the session. The key lives in that request's local variables only: never stored, never
+  logged. Unofficial API (what Stremio's apps call); used once per import.
+- `StremioLibraryMapper`: `movie`/`series` only; removed-by-hand items are skipped, played-but-never-
+  added (`temp`) ones come in if they were played. Watched film → finished (`lastWatched` as the
+  finish date), started → in progress, otherwise wishlist. Only `tt…` ids match; add-on ids
+  (`kitsu:`…) are listed unmatched.
+- A show's `state.watched` is a bitfield over its Cinemeta episode list
+  (`{anchorId}:{anchorLength}:{base64 zlib}`, LSB first, list sorted by season, episode, release).
+  The worker fetches `v3-cinemeta.strem.io/meta/series/{tt}.json` once per show, lines the bits up
+  by the anchor (stremio-core's rules), and ticks the episodes. Specials are left out; Cinemeta's
+  numbering that disagrees with TMDB stays unticked rather than guessed.
+- Second in the merge order, after Trakt. Then the normal plan → approve flow.
+
 ### CSV importers
 
 Parse known column layouts:
@@ -496,10 +518,11 @@ rolled up to their show (decided for IMP-006).
 Merge when the same user imports several sources, in order:
 
 1. Trakt  
-2. IMDb CSV  
-3. Letterboxd CSV  
-4. Goodreads CSV  
-5. CAT  
+2. Stremio history  
+3. IMDb CSV  
+4. Letterboxd CSV  
+5. Goodreads CSV  
+6. CAT  
 
 Later sources fill empty fields; they do not overwrite a non-empty rating, status, or progress from an earlier source unless the incoming event is newer *and* the source is explicitly marked authoritative. v1 can skip “newer” and use fill-empty-only. That is enough.
 
