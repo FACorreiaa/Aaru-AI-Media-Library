@@ -599,6 +599,21 @@ paths:
           description: Marked.
         default:
           $ref: '#/components/responses/Error'
+  /v1/realtime/ticket:
+    post:
+      operationId: createRealtimeTicket
+      summary: >-
+        A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser,
+        which cannot send an Authorization header on a WebSocket. Apps send their bearer token on
+        the upgrade instead.
+      responses:
+        '200':
+          description: The ticket and the socket URL to open with it.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RealtimeTicket'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/devices:
     put:
       operationId: registerDevice
@@ -1773,6 +1788,38 @@ components:
       required: [messageId]
       properties:
         messageId: {type: string, format: uuid}
+    RealtimeTicket:
+      type: object
+      required: [ticket, url, expiresAt]
+      properties:
+        ticket: {type: string}
+        url: {type: string, description: 'The wss:// URL to open, ticket included.'}
+        expiresAt: {type: string, format: date-time}
+    RealtimeEvent:
+      type: object
+      description: >-
+        One frame from GET /v1/ws (a WebSocket). The socket is never the source of truth: on
+        `ready` (every connect and reconnect), refetch what is on screen with REST.
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [ready, message.created, message.updated, message.deleted, typing, read, group.updated, group.removed, invites.changed]
+        groupId: {type: string, format: uuid}
+        channelId: {type: string, format: uuid}
+        messageId: {type: string, format: uuid}
+        message: {$ref: '#/components/schemas/GroupMessage'}
+        user: {$ref: '#/components/schemas/SocialUser', description: 'Who is typing.'}
+    RealtimeCommand:
+      type: object
+      description: One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds counts.
+      required: [type, groupId, channelId]
+      properties:
+        type:
+          type: string
+          enum: [typing]
+        groupId: {type: string, format: uuid}
+        channelId: {type: string, format: uuid}
     ExternalIds:
       type: object
       description: Provider identifiers known for a title. Absent means unknown.

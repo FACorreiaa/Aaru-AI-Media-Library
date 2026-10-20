@@ -13,6 +13,7 @@ let package = Package(
         .package(path: "../aaru-core"),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.25.0"),
         .package(url: "https://github.com/hummingbird-project/hummingbird-fluent.git", from: "2.0.0"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird-websocket.git", from: "2.0.0"),
         .package(
             url: "https://github.com/apple/swift-configuration.git",
             from: "1.0.0",
@@ -47,6 +48,7 @@ let package = Package(
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdFluent", package: "hummingbird-fluent"),
+                .product(name: "HummingbirdWebSocket", package: "hummingbird-websocket"),
                 .byName(name: "aaruAPI"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "OpenAPIHummingbird", package: "swift-openapi-hummingbird"),
@@ -67,6 +69,7 @@ let package = Package(
             dependencies: [
                 .byName(name: "aaru"),
                 .product(name: "HummingbirdTesting", package: "hummingbird"),
+                .product(name: "HummingbirdWSTesting", package: "hummingbird-websocket"),
                 .product(name: "JWTKit", package: "jwt-kit"),
                 .product(name: "FluentSQL", package: "fluent-kit"),
             ],

@@ -558,6 +558,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/realtime/ticket': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead. */
+    post: operations['createRealtimeTicket']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/devices': {
     parameters: {
       query?: never
@@ -1494,6 +1511,45 @@ export interface components {
     ReadMark: {
       /** Format: uuid */
       messageId: string
+    }
+    RealtimeTicket: {
+      ticket: string
+      /** @description The wss:// URL to open, ticket included. */
+      url: string
+      /** Format: date-time */
+      expiresAt: string
+    }
+    /** @description One frame from GET /v1/ws (a WebSocket). The socket is never the source of truth: on `ready` (every connect and reconnect), refetch what is on screen with REST. */
+    RealtimeEvent: {
+      /** @enum {string} */
+      type:
+        | 'ready'
+        | 'message.created'
+        | 'message.updated'
+        | 'message.deleted'
+        | 'typing'
+        | 'read'
+        | 'group.updated'
+        | 'group.removed'
+        | 'invites.changed'
+      /** Format: uuid */
+      groupId?: string
+      /** Format: uuid */
+      channelId?: string
+      /** Format: uuid */
+      messageId?: string
+      message?: components['schemas']['GroupMessage']
+      /** @description Who is typing. */
+      user?: components['schemas']['SocialUser']
+    }
+    /** @description One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds counts. */
+    RealtimeCommand: {
+      /** @enum {string} */
+      type: 'typing'
+      /** Format: uuid */
+      groupId: string
+      /** Format: uuid */
+      channelId: string
     }
     /** @description Provider identifiers known for a title. Absent means unknown. */
     ExternalIds: {
@@ -2872,6 +2928,27 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createRealtimeTicket: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The ticket and the socket URL to open with it. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RealtimeTicket']
+        }
       }
       default: components['responses']['Error']
     }

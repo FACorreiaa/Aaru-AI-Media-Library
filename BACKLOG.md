@@ -1622,10 +1622,16 @@ sign-out leaves no group data on screen.
 ### GRP-006 · Realtime for groups · L
 **Needs:** GRP-003.
 The groups subset of RT-001: `/v1/ws` (`hummingbird-websocket`), an in-process `RealtimeHub`
-actor (LuminaVault's `ConnectionManager` is the template), envelopes `message.*`, `typing`,
-`read`, `member.*`, `channel.*`, `invite.received`. Writes stay on REST; the socket only
-announces. The web gets a 60 s single-use ticket from `POST /v1/realtime/ticket` because its
-session token is cookie-only. Origin is checked. Presence stays in RT-001.
+actor (LuminaVault's `ConnectionManager` is the template). Events go to every member of the
+group and clients filter by channel: `ready` on every connect, `message.created` /
+`message.updated` / `message.deleted`, `typing`, `read` (your other devices), `group.updated`
+(name, channels, members or invites changed: refetch), `group.removed`, `invites.changed`. The
+shape is `RealtimeEvent` in `openapi.yaml`. Writes stay on REST; the socket only announces, and
+on `ready` clients refetch what is on screen. Apps send their bearer token on the upgrade; the
+web gets a 60 s single-use ticket from `POST /v1/realtime/ticket` because its session token is
+cookie-only, and a ticket only works from an allowed `Origin` (`REALTIME_ORIGINS`). The server
+pings every 25 s; Traefik's idle timeout is 600 s and `api` is DNS-only, so nothing else sits in
+the path. Presence stays in RT-001.
 
 **Done when:** a message appears on the other client within two seconds, a reconnect fills the
 gap from REST with no duplicates, a used or expired ticket is refused, and a non-member's

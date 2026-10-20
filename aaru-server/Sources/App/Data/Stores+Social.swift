@@ -66,5 +66,7 @@ protocol SocialStore: Sendable {
     func block(_ blocker: UserID, _ blocked: UserID, now: Date) async throws
     func unblock(_ blocker: UserID, _ blocked: UserID) async throws -> Bool
     func blocked(by id: UserID) async throws -> [SocialUser]
+    /// Everyone who blocked this user.
+    func blockers(of id: UserID) async throws -> Set<UserID>
     func report(_ report: UserReport) async throws
 }

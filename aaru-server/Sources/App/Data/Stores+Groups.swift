@@ -123,8 +123,9 @@ protocol GroupStore: Sendable {
     /// Turns an invite to `invitee` into a membership, with every channel read up to now.
     /// Returns the group, or nil when no such invite is pending.
     func acceptInvite(id: UUID, invitee: UserID, now: Date) async throws -> UUID?
-    /// Deletes an invite the invitee declines or the inviter cancels. True when one was pending.
-    func deleteInvite(id: UUID, party: UserID) async throws -> Bool
+    /// Deletes an invite the invitee declines or the inviter cancels. Returns its group and
+    /// invitee, or nil when none was pending.
+    func deleteInvite(id: UUID, party: UserID) async throws -> (group: UUID, invitee: UserID)?
 
     /// Channels by position, with the viewer's unread and mention counts.
     func channels(_ group: UUID, viewer: UserID) async throws -> [GroupChannel]

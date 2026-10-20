@@ -2,10 +2,11 @@ import AaruCore
 import Foundation
 import HTTPTypes
 import Hummingbird
+import HummingbirdWebSocket
 import NIOCore
 
 /// Request context for every route. `AuthMiddleware` fills in the signed-in user.
-struct AppRequestContext: RequestContext {
+struct AppRequestContext: RequestContext, WebSocketRequestContext {
     var coreContext: CoreRequestContextStorage
     /// Set when the request carries a valid session token.
     var userID: UserID?
@@ -15,9 +16,12 @@ struct AppRequestContext: RequestContext {
     let peerAddress: String?
     /// `clientAddress(for:)` resolved once by `AuthMiddleware`, for handlers that rate-limit.
     var clientAddressForRateLimit = "unknown"
+    /// Set by `router.ws` when `/v1/ws` upgrades.
+    let webSocket: WebSocketHandlerReference<Self>
 
     init(source: Source) {
         coreContext = .init(source: source)
+        webSocket = .init()
         peerAddress = source.channel.remoteAddress?.ipAddress
     }
 }

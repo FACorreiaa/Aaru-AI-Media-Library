@@ -16,6 +16,8 @@ struct Services: Sendable {
     var scrobble: ScrobbleService
     var social: SocialService
     var groups: GroupService
+    /// Open sockets and browser tickets (GRP-006). One per process.
+    var realtime: RealtimeHub
 
     /// `trakt` is nil when Trakt is not configured; connect then answers 503.
     static func make(
@@ -28,6 +30,7 @@ struct Services: Sendable {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
         let resolver = TitleResolver(stores: stores, catalogs: catalogs)
         let library = LibraryService(stores: stores, resolver: resolver, catalog: catalog)
+        let realtime = RealtimeHub()
         return Services(
             auth: auth,
             catalog: catalog,
@@ -49,7 +52,8 @@ struct Services: Sendable {
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
             social: SocialService(stores: stores),
-            groups: GroupService(stores: stores)
+            groups: GroupService(stores: stores, events: realtime),
+            realtime: realtime
         )
     }
 

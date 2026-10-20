@@ -11,6 +11,11 @@ struct LibraryHarness {
     let fake: FakeCatalog
     let token: String
     let userID: UserID
+    let services: Services
+
+    var realtime: RealtimeHub {
+        services.realtime
+    }
 
     struct Reply {
         let status: HTTPResponse.Status
@@ -46,9 +51,13 @@ struct LibraryHarness {
                     now: { clock.now }
                 )
             }
-            let app = try Application(router: buildRouter(stores: stores, services: services))
+            let built = services
+            let app = try Application(router: buildRouter(stores: stores, services: built))
             try await app.test(.router) { client in
-                try await body(LibraryHarness(client: client, stores: stores, fake: fake, token: token, userID: userID))
+                try await body(LibraryHarness(
+                    client: client, stores: stores, fake: fake, token: token, userID: userID,
+                    services: built
+                ))
             }
         }
     }

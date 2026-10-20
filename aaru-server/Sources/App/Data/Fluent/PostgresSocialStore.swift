@@ -225,6 +225,13 @@ struct PostgresSocialStore: SocialStore {
         """).all(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase).map(\.user)
     }
 
+    func blockers(of id: UserID) async throws -> Set<UserID> {
+        struct Row: Decodable { let blockerId: UUID }
+        return try await Set(sql.raw("""
+        SELECT blocker_id FROM social_blocks WHERE blocked_id = \(bind: id.rawValue)
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map { UserID($0.blockerId) })
+    }
+
     func report(_ report: UserReport) async throws {
         try await sql.raw("""
         INSERT INTO social_reports (id, reporter_id, target_user_id, reason, note, created_at)

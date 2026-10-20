@@ -8,6 +8,8 @@ import Foundation
 /// does not exist. Messages are server-visible and labelled so in the clients.
 struct GroupService: Sendable {
     let stores: Stores
+    /// Members' open sockets hear about each change after it commits (GRP-006).
+    let events: any GroupEventPublishing
     var now: @Sendable () -> Date = { Date() }
 
     static let maxMembers = 50
@@ -70,13 +72,16 @@ struct GroupService: Sendable {
     func rename(_ group: UUID, name: String, viewer: UserID) async throws -> Detail {
         try await requireManager(group, viewer)
         try await stores.groups.renameGroup(group, name: Self.validName(name), now: now())
+        await announce(.groupUpdated(group: group), in: group)
         return try await detail(group, viewer: viewer)
     }
 
     func delete(_ group: UUID, viewer: UserID) async throws {
         guard try await role(group, viewer) == .owner
         else { throw Self.forbidden("Only the owner can delete the group.") }
+        let members = try await stores.groups.members(group).map(\.user.id)
         try await stores.groups.deleteGroup(group)
+        await events.publish(.groupRemoved(group: group), to: members)
     }
 
     // MARK: Members
@@ -88,6 +93,7 @@ struct GroupService: Sendable {
         guard let current = try await stores.groups.role(group, user: user) else { throw Self.noSuchMember }
         guard current != .owner else { throw Self.invalid("role", "Transfer ownership instead.") }
         try await stores.groups.setRole(group, user: user, role: newRole)
+        await announce(.groupUpdated(group: group), in: group)
     }
 
     /// Removes a member. Removing yourself is leaving; the owner transfers or deletes first.
@@ -103,12 +109,15 @@ struct GroupService: Sendable {
             guard mine.manages, theirs < mine else { throw Self.forbidden("You can't remove that member.") }
         }
         try await stores.groups.removeMember(group, user: user)
+        await events.publish(.groupRemoved(group: group), to: [user])
+        await announce(.groupUpdated(group: group), in: group)
     }
 
     func transfer(_ group: UUID, to user: UserID, viewer: UserID) async throws {
         guard try await role(group, viewer) == .owner else { throw Self.forbidden("Only the owner can transfer.") }
         guard user != viewer, try await stores.groups.role(group, user: user) != nil else { throw Self.noSuchMember }
         try await stores.groups.transferOwnership(group, from: viewer, to: user)
+        await announce(.groupUpdated(group: group), in: group)
     }
 
     // MARK: Invites
@@ -126,6 +135,8 @@ struct GroupService: Sendable {
             throw Self.invalid("userId", "A group holds \(Self.maxMembers) people.")
         }
         try await stores.groups.createInvite(id: UUID(), group: group, inviter: viewer, invitee: user, now: now())
+        await events.publish(.invitesChanged, to: [user])
+        await announce(.groupUpdated(group: group), in: group)
     }
 
     func invites(_ viewer: UserID) async throws -> [GroupInvite] {
@@ -143,47 +154,17 @@ struct GroupService: Sendable {
         guard let group = try await stores.groups.acceptInvite(id: invite, invitee: viewer, now: now()),
               let summary = try await stores.groups.summary(group, viewer: viewer)
         else { throw Self.noSuchInvite }
+        await announce(.groupUpdated(group: group), in: group)
         return summary
     }
 
     /// Declines an invite to the viewer, or cancels one the viewer sent.
     func decline(_ invite: UUID, viewer: UserID) async throws {
-        guard try await stores.groups.deleteInvite(id: invite, party: viewer) else { throw Self.noSuchInvite }
-    }
-
-    // MARK: Channels
-
-    func createChannel(_ group: UUID, name: String, topic: String?, viewer: UserID) async throws -> GroupChannel {
-        try await requireManager(group, viewer)
-        let existing = try await stores.groups.channels(group, viewer: viewer)
-        guard existing.count < Self.maxChannels else {
-            throw Self.invalid("name", "A group holds \(Self.maxChannels) channels.")
+        guard let (group, invitee) = try await stores.groups.deleteInvite(id: invite, party: viewer) else {
+            throw Self.noSuchInvite
         }
-        let channel = try GroupChannel(
-            id: UUID(), groupID: group, name: Self.channelName(name), topic: Self.validTopic(topic),
-            position: (existing.map(\.position).max() ?? 0) + 1, isDefault: false, createdAt: now()
-        )
-        try await stores.groups.createChannel(channel)
-        return channel
-    }
-
-    func updateChannel(
-        _ group: UUID, channel: UUID, name: String?, topic: String?, viewer: UserID
-    ) async throws -> GroupChannel {
-        try await requireManager(group, viewer)
-        _ = try await requireChannel(group, channel)
-        try await stores.groups.updateChannel(
-            channel, name: name.map(Self.channelName), topic: topic.map { try Self.validTopic($0) }
-        )
-        return try await requireChannel(group, channel)
-    }
-
-    func deleteChannel(_ group: UUID, channel: UUID, viewer: UserID) async throws {
-        try await requireManager(group, viewer)
-        guard try await !requireChannel(group, channel).isDefault else {
-            throw Self.invalid("channelId", "The first channel stays; rename it instead.")
-        }
-        _ = try await stores.groups.deleteChannel(channel)
+        await events.publish(.invitesChanged, to: [invitee])
+        await announce(.groupUpdated(group: group), in: group)
     }
 
     // MARK: Messages
@@ -209,14 +190,20 @@ struct GroupService: Sendable {
         if let nonce, nonce.count > 64 {
             throw Self.invalid("clientNonce", "Keep the nonce under 64 characters.")
         }
-        let (mentions, agent) = try await Self.mentions(in: body, members: stores.groups.members(group))
-        return try await stores.groups.postMessage(
+        let members = try await stores.groups.members(group)
+        let (mentions, agent) = Self.mentions(in: body, members: members)
+        let posted = try await stores.groups.postMessage(
             GroupMessage(
                 id: UUID(), channelID: channel, author: author, body: body, mentions: mentions,
                 mentionsAgent: agent, createdAt: now()
             ),
             nonce: nonce?.isEmpty == false ? nonce : nil
         )
+        let blockedBy = try await stores.social.blockers(of: viewer)
+        await events.publish(
+            .messageCreated(group: group, posted, blockedBy: blockedBy), to: members.map(\.user.id)
+        )
+        return posted
     }
 
     /// Only the author edits a message.
@@ -229,7 +216,10 @@ struct GroupService: Sendable {
         let body = try Self.validBody(body)
         let (mentions, agent) = try await Self.mentions(in: body, members: stores.groups.members(group))
         try await stores.groups.editMessage(message, body: body, mentions: mentions, mentionsAgent: agent, now: now())
-        return try await requireMessage(group, channel, message)
+        let edited = try await requireMessage(group, channel, message)
+        let blockedBy = try await stores.social.blockers(of: viewer)
+        await announce(.messageUpdated(group: group, edited, blockedBy: blockedBy), in: group)
+        return edited
     }
 
     /// The author, an admin or the owner deletes a message. Deleting twice changes nothing.
@@ -240,15 +230,32 @@ struct GroupService: Sendable {
             throw Self.forbidden("You can only delete your own messages.")
         }
         try await stores.groups.deleteMessage(message, now: now())
+        await announce(.messageDeleted(group: group, channel: channel, message: message), in: group)
     }
 
     func markRead(_ group: UUID, channel: UUID, upTo message: UUID, viewer: UserID) async throws {
         _ = try await role(group, viewer)
         _ = try await requireMessage(group, channel, message)
         try await stores.groups.markRead(viewer, channel: channel, upTo: message)
+        await events.publish(.read(group: group, channel: channel), to: [viewer])
+    }
+
+    /// Tells the other members the viewer is typing in a channel. The socket rate-limits it.
+    func typing(_ group: UUID, channel: UUID, viewer: UserID) async throws {
+        _ = try await role(group, viewer)
+        _ = try await requireChannel(group, channel)
+        let typist = try await social.requireHandle(viewer)
+        await announce(.typing(group: group, channel: channel, typist), in: group, except: viewer)
     }
 
     // MARK: Rules
+
+    /// Publishes to every member. The write already committed, so a failed member lookup only
+    /// costs the live update; clients catch up over REST on their next `ready`.
+    private func announce(_ event: GroupEvent, in group: UUID, except: UserID? = nil) async {
+        guard let members = try? await stores.groups.members(group) else { return }
+        await events.publish(event, to: members.map(\.user.id).filter { $0 != except })
+    }
 
     private var social: SocialService {
         SocialService(stores: stores, now: now)
@@ -282,81 +289,42 @@ struct GroupService: Sendable {
     }
 }
 
-// MARK: Validation and parsing
-
 extension GroupService {
-    /// Members tagged with `@handle`, and whether `@aaru` was. A tag inside a word or an email
-    /// address is not a mention.
-    static func mentions(in body: String, members: [GroupMember]) -> (users: [UserID], agent: Bool) {
-        let byHandle = Dictionary(members.map { ($0.user.handle, $0.user.id) }, uniquingKeysWith: { first, _ in first })
-        var users: [UserID] = []
-        var agent = false
-        for match in body.matches(of: /@([A-Za-z0-9_]{3,20})/) {
-            let before = match.range.lowerBound == body
-                .startIndex ? nil : body[body.index(before: match.range.lowerBound)]
-            let after = match.range.upperBound == body.endIndex ? nil : body[match.range.upperBound]
-            guard !(before.map(isHandleCharacter) ?? false), !(after.map(isHandleCharacter) ?? false) else { continue }
-            let handle = match.output.1.lowercased()
-            if handle == agentHandle {
-                agent = true
-            } else if let id = byHandle[handle], !users.contains(id) {
-                users.append(id)
-            }
+    // MARK: Channels
+
+    func createChannel(_ group: UUID, name: String, topic: String?, viewer: UserID) async throws -> GroupChannel {
+        try await requireManager(group, viewer)
+        let existing = try await stores.groups.channels(group, viewer: viewer)
+        guard existing.count < Self.maxChannels else {
+            throw Self.invalid("name", "A group holds \(Self.maxChannels) channels.")
         }
-        return (users, agent)
+        let channel = try GroupChannel(
+            id: UUID(), groupID: group, name: Self.channelName(name), topic: Self.validTopic(topic),
+            position: (existing.map(\.position).max() ?? 0) + 1, isDefault: false, createdAt: now()
+        )
+        try await stores.groups.createChannel(channel)
+        await announce(.groupUpdated(group: group), in: group)
+        return channel
     }
 
-    private static func isHandleCharacter(_ character: Character) -> Bool {
-        character == "_" || character == "@" || character.isLetter || character.isNumber
+    func updateChannel(
+        _ group: UUID, channel: UUID, name: String?, topic: String?, viewer: UserID
+    ) async throws -> GroupChannel {
+        try await requireManager(group, viewer)
+        _ = try await requireChannel(group, channel)
+        try await stores.groups.updateChannel(
+            channel, name: name.map(Self.channelName), topic: topic.map { try Self.validTopic($0) }
+        )
+        await announce(.groupUpdated(group: group), in: group)
+        return try await requireChannel(group, channel)
     }
 
-    /// Lowercase, spaces to dashes, letters, numbers, dashes and underscores only: `Movie Night`
-    /// becomes `movie-night`.
-    static func channelName(_ raw: String) throws -> String {
-        let words = raw.lowercased().split(whereSeparator: { $0.isWhitespace || $0 == "-" })
-        let name = words.map { $0.filter { $0.isLetter || $0.isNumber || $0 == "_" } }
-            .filter { !$0.isEmpty }.joined(separator: "-")
-        guard !name.isEmpty, name.count <= maxChannelNameLength else {
-            throw invalid("name", "Use 1–\(maxChannelNameLength) letters or numbers.")
+    func deleteChannel(_ group: UUID, channel: UUID, viewer: UserID) async throws {
+        try await requireManager(group, viewer)
+        guard try await !requireChannel(group, channel).isDefault else {
+            throw Self.invalid("channelId", "The first channel stays; rename it instead.")
         }
-        return name
-    }
-
-    static func validName(_ raw: String) throws -> String {
-        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty, name.count <= maxNameLength else {
-            throw invalid("name", "Use 1–\(maxNameLength) characters.")
-        }
-        return name
-    }
-
-    /// Trimmed; empty clears it.
-    static func validTopic(_ raw: String?) throws -> String? {
-        guard let topic = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !topic.isEmpty else { return nil }
-        guard topic.count <= maxTopicLength else {
-            throw invalid("topic", "Keep the topic under \(maxTopicLength) characters.")
-        }
-        return topic
-    }
-
-    static func validBody(_ raw: String) throws -> String {
-        let body = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !body.isEmpty else { throw invalid("body", "Write something first.") }
-        guard body.count <= maxMessageLength else {
-            throw invalid("body", "Keep messages under \(maxMessageLength) characters.")
-        }
-        return body
-    }
-
-    static let noSuchGroup = AppError.notFound("No such group.")
-    static let noSuchMember = AppError.notFound("Not a member of this group.")
-    static let noSuchInvite = AppError.notFound("No such invite.")
-
-    private static func forbidden(_ message: String) -> AppError {
-        AppError(status: .forbidden, code: "forbidden", message: message)
-    }
-
-    private static func invalid(_ field: String, _ message: String) -> AppError {
-        AppError(status: .unprocessableContent, code: "validation_failed", message: message, details: [field: message])
+        _ = try await stores.groups.deleteChannel(channel)
+        await announce(.groupUpdated(group: group), in: group)
     }
 }

@@ -239,12 +239,17 @@ struct PostgresGroupStore: GroupStore {
         }
     }
 
-    func deleteInvite(id: UUID, party: UserID) async throws -> Bool {
-        struct Row: Decodable { let id: UUID }
+    func deleteInvite(id: UUID, party: UserID) async throws -> (group: UUID, invitee: UserID)? {
+        struct Row: Decodable {
+            let groupId: UUID
+            let inviteeId: UUID
+        }
         return try await sql.raw("""
         DELETE FROM group_invites
         WHERE id = \(bind: id) AND (inviter_id = \(bind: party.rawValue) OR invitee_id = \(bind: party.rawValue))
-        RETURNING id
-        """).first(decoding: Row.self) != nil
+        RETURNING group_id, invitee_id
+        """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
+            ($0.groupId, UserID($0.inviteeId))
+        }
     }
 }

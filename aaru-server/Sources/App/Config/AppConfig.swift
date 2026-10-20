@@ -59,6 +59,10 @@ struct AppConfig: Sendable {
     var push: PushSettings?
     /// Where this API is reachable from outside (`PUBLIC_BASE_URL`), for the Stremio install link.
     var publicBaseURL: URL
+    /// Browser origins allowed to open the realtime socket (`REALTIME_ORIGINS`, comma-separated).
+    var realtimeOrigins: Set<String>
+
+    static let defaultRealtimeOrigins = "https://aaruapp.com,https://www.aaruapp.com,https://beta.aaruapp.com"
 
     static func load(from reader: ConfigReader) throws -> AppConfig {
         let audiences = reader.string(forKey: "apple.audiences", default: defaultAppleAudiences)
@@ -77,7 +81,11 @@ struct AppConfig: Sendable {
             ),
             trakt: traktSettings(from: reader),
             push: pushSettings(from: reader),
-            publicBaseURL: publicBaseURL(from: reader)
+            publicBaseURL: publicBaseURL(from: reader),
+            realtimeOrigins: Set(
+                reader.string(forKey: "realtime.origins", default: defaultRealtimeOrigins).split(separator: ",")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            )
         )
     }
 

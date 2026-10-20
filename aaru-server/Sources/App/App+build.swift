@@ -2,7 +2,9 @@ import Configuration
 import FluentPostgresDriver
 import Foundation
 import Hummingbird
+import HummingbirdCore
 import HummingbirdFluent
+import HummingbirdWebSocket
 import Logging
 import OpenAPIHummingbird
 import ServiceLifecycle
@@ -45,6 +47,12 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let router = try buildRouter(stores: stores, services: services)
     return Application(
         router: router,
+        server: realtimeServer(
+            RealtimeRoutes(
+                hub: services.realtime, groups: services.groups, sessions: stores.sessions,
+                allowedOrigins: config.realtimeOrigins
+            )
+        ),
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
         services: [
             fluent,
@@ -59,6 +67,15 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             ),
         ],
         logger: logger
+    )
+}
+
+/// HTTP/1 with the `/v1/ws` upgrade (GRP-006). A ping every 25 s keeps a proxy with a 60 s idle
+/// timeout from closing a quiet socket.
+func realtimeServer(_ realtime: RealtimeRoutes) -> HTTPServerBuilder {
+    .http1WebSocketUpgrade(
+        webSocketRouter: realtime.router(),
+        configuration: .init(ws: .init(autoPing: .enabled(timePeriod: .seconds(25))))
     )
 }
 

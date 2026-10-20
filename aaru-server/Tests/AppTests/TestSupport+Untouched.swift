@@ -129,6 +129,10 @@ extension UntouchedStore: SocialStore {
     func report(_: UserReport) async throws {
         throw Touched()
     }
+
+    func blockers(of _: UserID) async throws -> Set<UserID> {
+        throw Touched()
+    }
 }
 
 extension UntouchedStore: GroupStore {
@@ -192,7 +196,7 @@ extension UntouchedStore: GroupStore {
         throw Touched()
     }
 
-    func deleteInvite(id _: UUID, party _: UserID) async throws -> Bool {
+    func deleteInvite(id _: UUID, party _: UserID) async throws -> (group: UUID, invitee: UserID)? {
         throw Touched()
     }
 

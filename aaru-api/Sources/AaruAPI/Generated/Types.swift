@@ -212,6 +212,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/read`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/read/post(markChannelRead)`.
     func markChannelRead(_ input: Operations.MarkChannelRead.Input) async throws -> Operations.MarkChannelRead.Output
+    /// A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead.
+    ///
+    /// - Remark: HTTP `POST /v1/realtime/ticket`.
+    /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
+    func createRealtimeTicket(_ input: Operations.CreateRealtimeTicket.Input) async throws -> Operations.CreateRealtimeTicket.Output
     /// Register this device for pushes. A token registered again moves to this user.
     ///
     /// - Remark: HTTP `PUT /v1/devices`.
@@ -911,6 +916,13 @@ extension APIProtocol {
             headers: headers,
             body: body
         ))
+    }
+    /// A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead.
+    ///
+    /// - Remark: HTTP `POST /v1/realtime/ticket`.
+    /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
+    public func createRealtimeTicket(headers: Operations.CreateRealtimeTicket.Input.Headers = .init()) async throws -> Operations.CreateRealtimeTicket.Output {
+        try await createRealtimeTicket(Operations.CreateRealtimeTicket.Input(headers: headers))
     }
     /// Register this device for pushes. A token registered again moves to this user.
     ///
@@ -2976,6 +2988,135 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case messageId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RealtimeTicket`.
+        public struct RealtimeTicket: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RealtimeTicket/ticket`.
+            public var ticket: Swift.String
+            /// The wss:// URL to open, ticket included.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeTicket/url`.
+            public var url: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RealtimeTicket/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// Creates a new `RealtimeTicket`.
+            ///
+            /// - Parameters:
+            ///   - ticket:
+            ///   - url: The wss:// URL to open, ticket included.
+            ///   - expiresAt:
+            public init(
+                ticket: Swift.String,
+                url: Swift.String,
+                expiresAt: Foundation.Date
+            ) {
+                self.ticket = ticket
+                self.url = url
+                self.expiresAt = expiresAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case ticket
+                case url
+                case expiresAt
+            }
+        }
+        /// One frame from GET /v1/ws (a WebSocket). The socket is never the source of truth: on `ready` (every connect and reconnect), refetch what is on screen with REST.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RealtimeEvent`.
+        public struct RealtimeEvent: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/type`.
+            @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case ready = "ready"
+                case message_created = "message.created"
+                case message_updated = "message.updated"
+                case message_deleted = "message.deleted"
+                case typing = "typing"
+                case read = "read"
+                case group_updated = "group.updated"
+                case group_removed = "group.removed"
+                case invites_changed = "invites.changed"
+            }
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/type`.
+            public var _type: Components.Schemas.RealtimeEvent._TypePayload
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/groupId`.
+            public var groupId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/channelId`.
+            public var channelId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/messageId`.
+            public var messageId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/message`.
+            public var message: Components.Schemas.GroupMessage?
+            /// Who is typing.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/user`.
+            public var user: Components.Schemas.SocialUser?
+            /// Creates a new `RealtimeEvent`.
+            ///
+            /// - Parameters:
+            ///   - _type:
+            ///   - groupId:
+            ///   - channelId:
+            ///   - messageId:
+            ///   - message:
+            ///   - user: Who is typing.
+            public init(
+                _type: Components.Schemas.RealtimeEvent._TypePayload,
+                groupId: Swift.String? = nil,
+                channelId: Swift.String? = nil,
+                messageId: Swift.String? = nil,
+                message: Components.Schemas.GroupMessage? = nil,
+                user: Components.Schemas.SocialUser? = nil
+            ) {
+                self._type = _type
+                self.groupId = groupId
+                self.channelId = channelId
+                self.messageId = messageId
+                self.message = message
+                self.user = user
+            }
+            public enum CodingKeys: String, CodingKey {
+                case _type = "type"
+                case groupId
+                case channelId
+                case messageId
+                case message
+                case user
+            }
+        }
+        /// One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds counts.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RealtimeCommand`.
+        public struct RealtimeCommand: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/type`.
+            @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case typing = "typing"
+            }
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/type`.
+            public var _type: Components.Schemas.RealtimeCommand._TypePayload
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/groupId`.
+            public var groupId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/channelId`.
+            public var channelId: Swift.String
+            /// Creates a new `RealtimeCommand`.
+            ///
+            /// - Parameters:
+            ///   - _type:
+            ///   - groupId:
+            ///   - channelId:
+            public init(
+                _type: Components.Schemas.RealtimeCommand._TypePayload,
+                groupId: Swift.String,
+                channelId: Swift.String
+            ) {
+                self._type = _type
+                self.groupId = groupId
+                self.channelId = channelId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case _type = "type"
+                case groupId
+                case channelId
             }
         }
         /// Provider identifiers known for a title. Absent means unknown.
@@ -10692,6 +10833,135 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/read/post(markChannelRead)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead.
+    ///
+    /// - Remark: HTTP `POST /v1/realtime/ticket`.
+    /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
+    public enum CreateRealtimeTicket {
+        public static let id: Swift.String = "createRealtimeTicket"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/realtime/ticket/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateRealtimeTicket.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateRealtimeTicket.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateRealtimeTicket.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.CreateRealtimeTicket.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/realtime/ticket/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/realtime/ticket/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.RealtimeTicket)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.RealtimeTicket {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateRealtimeTicket.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateRealtimeTicket.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The ticket and the socket URL to open with it.
+            ///
+            /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.CreateRealtimeTicket.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.CreateRealtimeTicket.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

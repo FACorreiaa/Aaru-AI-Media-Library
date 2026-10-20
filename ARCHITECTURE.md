@@ -795,10 +795,13 @@ Modelled on Norviq `gamification_xp_events` and Loci `points_events`.
   envelopes first, presence and DM notices in Phase 6.
 - Apple clients send the bearer token on the upgrade. The web cannot, because its session token
   is in an HttpOnly cookie, so a server function fetches a single-use ticket valid for 60 s from
-  `POST /v1/realtime/ticket` and the browser connects with it. The server checks `Origin`.
-- One in-process hub actor keyed by user and channel, as LuminaVaultServer's
-  `ConnectionManager`. It carries group events, then presence, room events, and
-  message-arrival notices.
+  `POST /v1/realtime/ticket` and the browser connects with it. A ticket only works from an
+  allowed `Origin` (`REALTIME_ORIGINS`); a bearer upgrade cannot come from a browser.
+- One in-process hub actor (`RealtimeHub`) keyed by user, as LuminaVaultServer's
+  `ConnectionManager`. A group event goes to every member's sockets and the client filters by
+  channel; there is no subscribe step. It carries group events, then presence, room events,
+  and message-arrival notices. Frames are `RealtimeEvent` in `openapi.yaml`; the server pings
+  every 25 s.
 - **Single replica** is assumed and documented. Cross-pod fan-out (Valkey pub/sub) is added
   when a second replica is needed, not before.
 - The template `/ws` echo is deleted in SRV-001; this is a fresh gateway.

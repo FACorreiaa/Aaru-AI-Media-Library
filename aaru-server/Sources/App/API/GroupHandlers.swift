@@ -256,3 +256,19 @@ extension Components.Schemas.GroupMessage {
         )
     }
 }
+
+extension APIImplementation {
+    func createRealtimeTicket(_: Operations.CreateRealtimeTicket.Input) async throws
+        -> Operations.CreateRealtimeTicket.Output
+    {
+        let (ticket, expiresAt) = try await services.realtime.issueTicket(for: currentUser(), now: Date())
+        let base = services.agentTokens.publicBaseURL
+        var url = URLComponents()
+        url.scheme = base.scheme == "http" ? "ws" : "wss"
+        url.host = base.host
+        url.port = base.port
+        url.path = "/v1/ws"
+        url.queryItems = [URLQueryItem(name: "ticket", value: ticket)]
+        return .ok(.init(body: .json(.init(ticket: ticket, url: url.string ?? "", expiresAt: expiresAt))))
+    }
+}
