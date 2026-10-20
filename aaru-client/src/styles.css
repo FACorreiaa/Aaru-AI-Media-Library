@@ -39,6 +39,10 @@
   --color-line: var(--line);
   --color-medallion: var(--medallion);
   --color-danger: var(--danger);
+  /* Corner radii: cards, panels (callouts, inner boxes), fields. */
+  --radius-card: 20px;
+  --radius-panel: 14px;
+  --radius-field: 10px;
   --font-display: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
@@ -55,6 +59,15 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* One keyboard focus ring for every control, in the accent colour. Only for keyboard focus, so
+   a tap or click never draws it. Utilities can still override it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 /* Hero entrance only: it orders the first read (headline, then art). No loops. */

@@ -7,6 +7,8 @@ import {
   setAiring,
 } from '../lib/push/server'
 import type { PushSetup } from '../lib/push/server'
+import { Button } from './ui/button'
+import { Card } from './ui/card'
 
 // Airing alerts in this browser. "New episodes" is the account's switch, shared with the Apple
 // apps; "this browser" is one push subscription. Permission is asked only on a tap.
@@ -98,7 +100,7 @@ export function NotificationsSection(props: { setup: PushSetup }) {
   }
 
   return (
-    <section class="mt-10 rounded-[20px] bg-surface p-5">
+    <Card class="mt-10 p-5">
       <h2 class="font-display text-xl font-medium">Notifications</h2>
       <label class="mt-3 flex items-start gap-2 text-sm">
         <input
@@ -138,9 +140,7 @@ export function NotificationsSection(props: { setup: PushSetup }) {
               </p>
             </Show>
             <Show when={support() === 'supported'}>
-              <button
-                type="button"
-                class="min-h-11 rounded-full border border-ink/25 px-5 text-sm font-semibold disabled:opacity-50"
+              <Button
                 disabled={busy()}
                 onClick={() =>
                   void (subscribed() ? turnOff() : turnOn(publicKey()))
@@ -149,7 +149,7 @@ export function NotificationsSection(props: { setup: PushSetup }) {
                 {subscribed()
                   ? 'Turn off alerts in this browser'
                   : 'Turn on alerts in this browser'}
-              </button>
+              </Button>
             </Show>
           </div>
         )}
@@ -162,6 +162,6 @@ export function NotificationsSection(props: { setup: PushSetup }) {
           </p>
         )}
       </Show>
-    </section>
+    </Card>
   )
 }

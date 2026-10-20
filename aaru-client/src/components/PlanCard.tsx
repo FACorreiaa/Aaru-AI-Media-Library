@@ -1,4 +1,5 @@
 import { For, Show, createSignal } from 'solid-js'
+import { Button } from './ui/button'
 import { countsLine, decidedLabel, expiresLabel } from '../lib/plans/model'
 import { approvePlan, denyPlan } from '../lib/plans/server'
 import type { AgentPlan } from '../lib/plans/server'
@@ -32,7 +33,7 @@ export function PlanCard(props: {
   }
 
   return (
-    <article class="rounded-[20px] border border-line bg-surface p-5">
+    <article class="rounded-card border border-line bg-surface p-5">
       <p class="text-xs font-semibold uppercase tracking-wide text-muted">
         {plan().agentName} asks
       </p>
@@ -52,22 +53,16 @@ export function PlanCard(props: {
         when={decidedLabel(plan())}
         fallback={
           <div class="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              class="min-h-11 rounded-full bg-accent px-5 text-sm font-semibold text-on-accent disabled:opacity-50"
+            <Button
+              variant="primary"
               disabled={busy()}
               onClick={() => void decide(true)}
             >
               Approve
-            </button>
-            <button
-              type="button"
-              class="min-h-11 rounded-full border border-ink/25 px-5 text-sm font-semibold disabled:opacity-50"
-              disabled={busy()}
-              onClick={() => void decide(false)}
-            >
+            </Button>
+            <Button disabled={busy()} onClick={() => void decide(false)}>
               Not this
-            </button>
+            </Button>
           </div>
         }
       >

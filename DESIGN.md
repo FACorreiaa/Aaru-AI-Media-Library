@@ -395,6 +395,16 @@ Motion rules (the first written ones; they hold for any later surface):
 - The share image carries only the user's own numbers and the brand, no posters, so the web
   canvas and the Apple renderer draw the same card. Nothing is shared without a tap.
 
+On the web (2026-10-20), performance comes first:
+- **Native HTML before Kobalte, CSS before Motion.** `<dialog>`, `<details>`, checkboxes and
+  `<select>` stay native. Kobalte (the base of solid-ui, adapted into
+  `aaru-client/src/components/ui`) only where the browser has no pattern: tabs, toggle and radio
+  groups, tooltips, toasts, switches. Entrances stay CSS keyframes.
+- **Motion only for what CSS cannot do:** an exit before an element leaves, siblings sliding
+  into the gap (FLIP), direction-aware swaps. Through `src/lib/motion.ts` on `motion/mini`, only
+  `transform` and `opacity`, and nothing at all with reduced motion.
+- `npm run size` holds every route to `size-budget.json` in CI.
+
 ---
 
 ## Component catalog the agent may emit

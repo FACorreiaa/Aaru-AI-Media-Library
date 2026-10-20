@@ -13,7 +13,10 @@ import type { InsightsPeriod } from '../lib/insights/model'
 import { kindOf } from '../lib/library/model'
 import { dayLabel } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
+import { cn } from '../lib/cn'
 import { Poster } from './Poster'
+import { buttonVariants } from './ui/button'
+import { cardClass } from './ui/card'
 
 // Insights: one period's numbers, drawn plainly. Bars are static CSS, no chart library; the
 // Recap is where the same numbers move.
@@ -47,7 +50,7 @@ export function StatsPanel(props: { stats: Stats; period: InsightsPeriod }) {
       <dl class="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
         <For each={totals(s())}>
           {(total) => (
-            <div class="rounded-[20px] bg-surface p-5">
+            <div class={cn(cardClass, 'p-5')}>
               <dt class="text-sm text-muted">{total.label}</dt>
               <dd class="mt-1 font-display text-3xl font-medium tabular-nums">
                 {total.value}
@@ -62,7 +65,7 @@ export function StatsPanel(props: { stats: Stats; period: InsightsPeriod }) {
           <Link
             to="/app/recap"
             search={period()}
-            class="mt-4 inline-block rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper"
+            class={cn(buttonVariants({ variant: 'ink' }), 'mt-4')}
           >
             Play as a story
           </Link>

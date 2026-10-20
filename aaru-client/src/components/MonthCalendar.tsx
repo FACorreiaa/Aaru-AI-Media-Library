@@ -14,7 +14,10 @@ import {
   shortCode,
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
+import { cn } from '../lib/cn'
 import { WatchedCheckbox } from './WatchedCheckbox'
+import { Button, buttonVariants } from './ui/button'
+import { cardClass } from './ui/card'
 
 // The month view, after Stremio's calendar: a month of your airings with posters in each day,
 // the neighbouring months one click away, and an agenda from the selected day on. Posters from
@@ -81,12 +84,12 @@ function MonthSwitcher(props: {
     const m = addMonths(props.month, delta)
     return monthLabel(m, undefined, m.slice(0, 4) !== props.month.slice(0, 4))
   }
-  const side =
-    'rounded-full px-2 py-1 text-sm text-muted hover:text-ink sm:text-base'
+  const side = 'px-2 py-1 text-sm sm:text-base'
   return (
     <div class="flex items-baseline justify-center gap-2 sm:gap-6">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="bare"
         class={side}
         onClick={() => props.onMonth(-1)}
         aria-keyshortcuts="PageUp"
@@ -94,15 +97,16 @@ function MonthSwitcher(props: {
         <span aria-hidden="true">‹ </span>
         <span class="sr-only">Previous month, </span>
         {neighbour(-1)}
-      </button>
+      </Button>
       <h2
         class="font-display text-2xl font-medium tracking-tight sm:text-3xl"
         aria-live="polite"
       >
         {monthLabel(props.month)}
       </h2>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="bare"
         class={side}
         onClick={() => props.onMonth(1)}
         aria-keyshortcuts="PageDown"
@@ -110,7 +114,7 @@ function MonthSwitcher(props: {
         <span class="sr-only">Next month, </span>
         {neighbour(1)}
         <span aria-hidden="true"> ›</span>
-      </button>
+      </Button>
     </div>
   )
 }
@@ -143,7 +147,7 @@ function MonthDay(props: {
             ? '1 episode'
             : `${count()} episodes`
       }`}
-      class="flex min-h-14 min-w-0 flex-col gap-1 rounded-[10px] p-1 text-left transition md:min-h-28 md:p-1.5"
+      class="flex min-h-14 min-w-0 flex-col gap-1 rounded-field p-1 text-left transition md:min-h-28 md:p-1.5"
       classList={{
         'bg-surface hover:ring-1 hover:ring-line': !props.selected,
         'bg-accent/15 ring-2 ring-accent': props.selected,
@@ -254,7 +258,10 @@ function Agenda(props: {
   return (
     <aside
       aria-label="Agenda"
-      class="mt-6 rounded-[20px] bg-surface lg:sticky lg:top-4 lg:mt-0 lg:w-80 lg:shrink-0 xl:w-96"
+      class={cn(
+        cardClass,
+        'mt-6 lg:sticky lg:top-4 lg:mt-0 lg:w-80 lg:shrink-0 xl:w-96',
+      )}
     >
       <div
         ref={list}
@@ -337,7 +344,7 @@ function AgendaRow(props: {
         </span>
       </button>
       <Show when={props.open}>
-        <div id={panel()} class="mb-3 rounded-[14px] bg-paper p-3 text-sm">
+        <div id={panel()} class="mb-3 rounded-panel bg-paper p-3 text-sm">
           <div class="flex items-start justify-between gap-2">
             <p class="font-semibold">
               {e().episodeName ?? shortCode(e().season, e().number)}
@@ -368,7 +375,7 @@ function AgendaRow(props: {
             <Link
               to="/app/title/$id"
               params={{ id: e().libraryItemId }}
-              class="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-on-accent"
+              class={buttonVariants({ variant: 'primary', size: 'xs' })}
             >
               Open show
             </Link>

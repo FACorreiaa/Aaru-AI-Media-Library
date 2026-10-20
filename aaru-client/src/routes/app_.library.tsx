@@ -5,6 +5,7 @@ import { AddToListDialog } from '../components/AddToListDialog'
 import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
 import { SearchPanel } from '../components/SearchPanel'
+import { Button } from '../components/ui/button'
 import { getLibrary } from '../lib/library/server'
 import {
   KINDS,
@@ -198,13 +199,14 @@ function Library() {
                 <p class="mt-2 text-muted">
                   Search for a film, show, anime or book to start.
                 </p>
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
+                  size="lg"
                   onClick={() => dialog?.showModal()}
-                  class="mt-6 rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
+                  class="mt-6"
                 >
                   Search
-                </button>
+                </Button>
               </Show>
             </div>
           }
@@ -291,7 +293,7 @@ function Library() {
       <dialog
         ref={dialog}
         aria-label="Search"
-        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
+        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-card bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
         onClick={(e) => {
           // A click on the backdrop closes it.
           if (e.target === dialog) dialog.close()
