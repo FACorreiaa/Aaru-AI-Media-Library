@@ -102,19 +102,21 @@ struct StremioSection: View {
 
     @ViewBuilder
     private func createdRows(_ created: Components.Schemas.AgentTokenCreated) -> some View {
-        if let install = URL(string: created.stremio.installUrl) {
-            Link(destination: install) { Label("Open in Stremio", systemImage: "arrow.up.forward.app") }
-        }
-        if let web = URL(string: created.stremio.webInstallUrl) {
-            Link(destination: web) { Label("Install on Stremio Web", systemImage: "safari") }
-        }
-        Button {
-            copy(created.stremio.manifestUrl)
-        } label: {
-            Label(copied ? "Copied" : "Copy link", systemImage: copied ? "checkmark" : "doc.on.doc")
-        }
-        if let manifest = URL(string: created.stremio.manifestUrl) {
-            ShareLink(item: manifest) { Label("Share link", systemImage: "square.and.arrow.up") }
+        if let links = created.stremio {
+            if let install = URL(string: links.installUrl) {
+                Link(destination: install) { Label("Open in Stremio", systemImage: "arrow.up.forward.app") }
+            }
+            if let web = URL(string: links.webInstallUrl) {
+                Link(destination: web) { Label("Install on Stremio Web", systemImage: "safari") }
+            }
+            Button {
+                copy(links.manifestUrl)
+            } label: {
+                Label(copied ? "Copied" : "Copy link", systemImage: copied ? "checkmark" : "doc.on.doc")
+            }
+            if let manifest = URL(string: links.manifestUrl) {
+                ShareLink(item: manifest) { Label("Share link", systemImage: "square.and.arrow.up") }
+            }
         }
         Button("Done") {
             self.created = nil
@@ -134,7 +136,7 @@ struct StremioSection: View {
         guard let api else { return }
         defer { loaded = true }
         do {
-            switch try await api.listAgentTokens() {
+            switch try await api.listAgentTokens(query: .init(_for: .stremio)) {
             case let .ok(response):
                 tokens = try response.body.json.items.filter { $0.kind == .stremio }
             case let .default(_, error):

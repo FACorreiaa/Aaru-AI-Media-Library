@@ -181,6 +181,7 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         ),
         tokens: services.agentTokens
     ).register(on: router)
+    MCPRoutes(tools: AgentTools(services: services, stores: stores), tokens: services.agentTokens).register(on: router)
     return router
 }
 

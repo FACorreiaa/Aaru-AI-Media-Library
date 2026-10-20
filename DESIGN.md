@@ -299,6 +299,17 @@ from another device, and a quiet "Waiting for approval…" line. It polls on its
 approved, opens the import's plan, which is approved like any other import. Nothing is written
 before that approval.
 
+**Connections, built 2026-10-20** (OUT-004). Settings has a Connections section on web, iPhone
+and Mac for AI agents that reach the library over MCP. Pick the agent (Claude Code, Codex,
+Hermes, Gemini CLI, any other MCP client) and its setup steps show at once, with a placeholder
+where the token goes; every block has Copy. Name it, choose **Allow changes** (off by default:
+one item at a time, as a tap would; never a removal or many items at once), and connect: the same
+steps come back with the token filled in, shown once, and the sheet will not swipe away until
+Done. Last comes a message to paste into the agent so it checks itself. Live connections list
+their agent, what they may do and their last use, with a confirmed Revoke. Changes they make
+land as journaled actions named after the connection ("Claude Code: marked S01E01 of X
+watched"), so history and undo treat them like a tap.
+
 ## 16. Widgets (Phase 2)
 
 Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only

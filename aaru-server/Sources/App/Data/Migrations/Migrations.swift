@@ -29,6 +29,7 @@ let allMigrations: [any Migration] = [
     AddStatusByHand(),
     CreateWebPush(),
     CreateStremioLinkRequests(),
+    AddAgentTokenKinds(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

@@ -215,6 +215,13 @@ paths:
     get:
       operationId: listAgentTokens
       summary: The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
+      parameters:
+        - name: for
+          in: query
+          description: >-
+            Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so
+            Apple builds that only know the Stremio kind never see an MCP token.
+          schema: {type: string, enum: [stremio, mcp], default: stremio}
       responses:
         '200':
           description: Live tokens.
@@ -232,8 +239,9 @@ paths:
     post:
       operationId: createAgentToken
       summary: >-
-        Mint a token for an outside caller. Today only Stremio: the answer carries the addon's
-        install links. The secret is shown once.
+        Mint a token for an outside caller. A Stremio token's answer carries the addon's install
+        links; an MCP client's carries its setup, with the secret filled in. The secret is shown
+        once.
       requestBody:
         required: true
         content:
@@ -245,6 +253,25 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AgentTokenCreated'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/agent/setup/{kind}:
+    get:
+      operationId: getAgentSetup
+      summary: >-
+        How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so
+        Settings can show the steps before a token exists.
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema: {$ref: '#/components/schemas/AgentMCPKind'}
+      responses:
+        '200':
+          description: The client's setup.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AgentSetup'}
         default:
           $ref: '#/components/responses/Error'
   /v1/agent/tokens/{id}:
@@ -991,7 +1018,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         name: {type: string}
-        kind: {type: string, enum: [stremio]}
+        kind: {$ref: '#/components/schemas/AgentTokenKind'}
         scopes:
           type: array
           items: {type: string, enum: ['library:read', 'library:write', 'scrobble:write']}
@@ -1004,16 +1031,52 @@ components:
       type: object
       required: [kind]
       properties:
-        kind: {type: string, enum: [stremio]}
+        kind: {$ref: '#/components/schemas/AgentTokenKind'}
         name: {type: string, maxLength: 80}
         allowLibraryWrites:
           type: boolean
           description: >-
-            Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by
-            default; removing from Stremio's library never deletes anything in Aaru.
+            Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru;
+            removing from Stremio's library never deletes anything in Aaru. For an MCP client, it
+            may change one item directly, as a tap does; anything larger waits for approval in
+            Aaru. Off by default.
+    AgentTokenKind:
+      type: string
+      description: >-
+        Which outside caller a token is for. The MCP kinds differ only in the setup shown; they
+        reach the same tools.
+      enum: [stremio, claude_code, codex, hermes, gemini, other]
+    AgentMCPKind:
+      type: string
+      enum: [claude_code, codex, hermes, gemini, other]
+    AgentSetup:
+      type: object
+      description: >-
+        How to connect one MCP client: the endpoint, then steps to copy. Before a token exists
+        the secret reads `PASTE_YOUR_TOKEN_HERE`.
+      required: [kind, title, url, steps, prompt]
+      properties:
+        kind: {$ref: '#/components/schemas/AgentMCPKind'}
+        title: {type: string}
+        url:
+          type: string
+          description: The MCP endpoint (streamable HTTP).
+        steps:
+          type: array
+          items:
+            type: object
+            required: [label, language, text]
+            properties:
+              label: {type: string}
+              language: {type: string, enum: [bash, json, toml, yaml, text]}
+              text: {type: string}
+              note: {type: string}
+        prompt:
+          type: string
+          description: A message to paste into the agent once it is connected.
     AgentTokenCreated:
       type: object
-      required: [token, secret, stremio]
+      required: [token, secret]
       properties:
         token: {$ref: '#/components/schemas/AgentToken'}
         secret:
@@ -1021,6 +1084,7 @@ components:
           description: Shown once. Anyone holding it, or the install links, can use the token.
         stremio:
           type: object
+          description: Only for a Stremio token.
           required: [manifestUrl, installUrl, webInstallUrl]
           properties:
             manifestUrl: {type: string}
@@ -1028,6 +1092,7 @@ components:
               type: string
               description: The `stremio://` link that opens the Stremio app.
             webInstallUrl: {type: string}
+        setup: {$ref: '#/components/schemas/AgentSetup'}
     ErrorResponse:
       type: object
       description: The one error shape every route returns.

@@ -140,7 +140,7 @@ PostgreSQL. Suggested tables:
 - `actions` (action journal: one row per mutating library write, with its inverse)
 - `match_aliases` (match ledger: aggregate crosswalk from a source row key to an external id)
 - `watch_events` (one playback session per user, source and player id: state, position, longest known duration, `title_id` null when unmatched; built 2026-10-20 for Stremio)
-- `agent_tokens` (per-user agent access: `kind` (`stremio` for now), hashed secret, scopes, `lastUsedAt`, revocation)
+- `agent_tokens` (per-user agent access: `kind` (`stremio`, or an MCP client: `claude_code`, `codex`, `hermes`, `gemini`, `other`), hashed secret, scopes, `lastUsedAt`, revocation)
 - `agent_usage` (model spend per user per day: tokens in and out, cost in cents)
 
 Later-phase tables, listed so nobody invents a parallel shape. None is created before its
@@ -569,7 +569,7 @@ the same tools**. Neither adds a capability, a route behind the tools, or a writ
 | Transport | Where it lives | Notes |
 | --- | --- | --- |
 | App Intents / Shortcuts | `aaru-ios` | Each tool is an App Intent. `TitleCard` and `TonightStrip` serve as snippet views. No server work |
-| MCP | `aaru-server/Sources/AppMCP`, `POST /v1/mcp` | Streamable HTTP. In the existing server — MCP is a transport, not a second backend |
+| MCP | `aaru-server/Sources/App/MCP`, `POST /v1/mcp` | Streamable HTTP, stateless, hand-rolled JSON-RPC. In the existing server — MCP is a transport, not a second backend. A folder, not a SwiftPM target (`aaru` is an executable target); it is registered by one line in `buildRouter` |
 
 **This is not a public API.** Access is per-user and token-scoped: the user generates a token
 in settings for their own agents. A documented third-party platform with quotas and
@@ -587,6 +587,13 @@ deprecation policy remains out of scope until there are real users. See `MARKETI
 A Stremio token (`kind = stremio`) gets `library:read` (its catalogs) and `scrobble:write` by
 default. `library:write` is an opt-in at connect time and only lets Stremio's `unwatched` and
 `libraryAdd` events through.
+
+An MCP token (`kind` = `claude_code`, `codex`, `hermes`, `gemini` or `other`) gets
+`library:read`, plus `library:write` when the user allows changes at connect time; never
+`scrobble:write`. The kind only picks the setup Settings shows (`GET /v1/agent/setup/{kind}`,
+written once on the server for web and Apple). Secrets carry a per-surface prefix
+(`aaru_st_`, `aaru_mcp_`) and a token authenticates only on its own surface. The tools live in
+`aaru-server/Sources/App/Agent/AgentTools.swift`, transport-neutral, and answer the `/v1` DTOs.
 
 ### Remote approval
 
@@ -609,7 +616,7 @@ Rules:
 - Plans expire, and a plan whose library changed since the dry run is rejected rather than
   re-planned. Unchanged from the agent-tools rules above.
 - Agent tokens go through the central rate limiter (X-002). A token is not a bypass.
-- Every rule in "Agent tools" applies unchanged. In particular: deleting `AppMCP` must leave
+- Every rule in "Agent tools" applies unchanged. In particular: deleting `App/MCP` must leave
   every feature reachable through `/v1`.
 
 ### Model provider
@@ -877,7 +884,8 @@ added "to save time later". Nullable hooks that already exist (such as `visibili
 the only allowance. Exception by the owner's call (2026-10-19): agent tokens for Stremio, the
 scrobble service, and the Stremio addon. And (2026-10-20): Discover rows (DISC-001) and the Discover
 tab/page on them, Insights (GAM-006c, part of P5's stats) and Home's stats strip, with no new
-tables.
+tables. And (2026-10-20): agent connections, MCP with its OAuth front door, and remote
+plans/approvals (OUT-001/002/004, AG-001's tools, AG-003's remote-plan slice).
 
 ## Deployment
 
