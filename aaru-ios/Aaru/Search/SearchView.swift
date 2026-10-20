@@ -24,10 +24,12 @@ enum SearchScope: String, CaseIterable, Identifiable {
 }
 
 /// APP-004: catalog search, debounced, with add and an initial status. All by default (APP-011).
+/// Given `intoList` (LST-003), each hit adds to that list instead of the library.
 struct SearchView: View {
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
+    var intoList: Binding<ListDetail>?
 
     @Environment(\.dismiss) private var dismiss
     @State private var listTarget: CatalogHit?
@@ -70,17 +72,29 @@ struct SearchView: View {
                         .listRowBackground(Color.clear)
                 }
                 ForEach(hits, id: \.self) { hit in
-                    SearchHitRow(
-                        hit: hit,
-                        kind: MediaKind(type: hit._type, isAnime: hit.isAnime),
-                        isOnShelf: library.contains(hit),
-                        isAdding: adding.contains(hit.id)
-                    ) { status in
-                        Task { await add(hit, status: status) }
-                    } onAddToList: {
-                        listTarget = hit
+                    if let intoList {
+                        ListHitRow(
+                            hit: hit,
+                            kind: MediaKind(type: hit._type, isAnime: hit.isAnime),
+                            isOnList: intoList.wrappedValue.contains(hit),
+                            isAdding: adding.contains(hit.id)
+                        ) {
+                            Task { await add(hit, to: intoList) }
+                        }
+                        .listRowBackground(Color.clear)
+                    } else {
+                        SearchHitRow(
+                            hit: hit,
+                            kind: MediaKind(type: hit._type, isAnime: hit.isAnime),
+                            isOnShelf: library.contains(hit),
+                            isAdding: adding.contains(hit.id)
+                        ) { status in
+                            Task { await add(hit, status: status) }
+                        } onAddToList: {
+                            listTarget = hit
+                        }
+                        .listRowBackground(Color.clear)
                     }
-                    .listRowBackground(Color.clear)
                 }
                 if scope == .all, trimmedQuery.count >= 2, !isSearching || !hits.isEmpty {
                     SearchBooksRow(query: trimmedQuery, isFirst: hits.isEmpty) { scope = .book }
@@ -97,7 +111,7 @@ struct SearchView: View {
                     ProgressView()
                 }
             }
-            .navigationTitle("Search")
+            .navigationTitle(intoList.map { "Add to \($0.wrappedValue.name)" } ?? "Search")
             .searchable(text: $query, prompt: scope == .book ? "Title, author or ISBN" : "Title")
             .task(id: SearchKey(query: query, scope: scope)) { await search() }
             .sheet(item: $listTarget) { hit in
@@ -156,6 +170,61 @@ struct SearchView: View {
         if let failure = await library.add(hit, status: status, api: api) {
             problem = failure
         }
+    }
+
+    private func add(_ hit: CatalogHit, to list: Binding<ListDetail>) async {
+        guard !adding.contains(hit.id) else { return }
+        adding.insert(hit.id)
+        defer { adding.remove(hit.id) }
+        let ref = MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year)
+        if let updated = await lists.add(ref, to: list.wrappedValue.id) {
+            list.wrappedValue = updated
+        } else {
+            problem = lists.problem ?? "\(hit.title) could not be added to \(list.wrappedValue.name)."
+            lists.problem = nil
+        }
+    }
+}
+
+/// A hit in list mode: one tap adds it to the list.
+private struct ListHitRow: View {
+    let hit: CatalogHit
+    let kind: MediaKind
+    let isOnList: Bool
+    let isAdding: Bool
+    let onAdd: () -> Void
+
+    var body: some View {
+        HStack(spacing: 14) {
+            PosterView(url: hit.posterUrl.flatMap(URL.init(string:)), kind: kind)
+                .frame(width: 52)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(hit.title).font(.body.weight(.medium)).lineLimit(2)
+                Text([kind.noun, hit.year.map(String.init), hit.byline].compactMap(\.self).joined(separator: " · "))
+                    .font(.footnote)
+                    .foregroundStyle(Color(.muted))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            if isOnList {
+                Label("On this list", systemImage: "checkmark")
+                    .labelStyle(.iconOnly)
+                    .foregroundStyle(.tint)
+                    .accessibilityLabel("On this list")
+            } else if isAdding {
+                ProgressView()
+            } else {
+                Button(action: onAdd) {
+                    Text("Add")
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.25)))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 

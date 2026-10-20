@@ -21,8 +21,16 @@ Keep a **canvas** beside intent so work does not die in the scroll.
 The app's landing screen, and the web landing page's twin. Mascot on its disc, wordmark, one
 serif headline, three plain pillars (one shelf, private by default, bring your history), then
 Sign in with Apple and Continue with email pinned to the bottom on iPhone. Side by side on iPad
-and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`,
-`src/routes/(marketing)` in `aaru-client`.
+and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`.
+
+The web landing (`src/routes/index.tsx`, owner 2026-10-20) is centred: a privacy pill, the
+serif headline, Get started, then App Store and Google Play buttons at equal weight ("Coming
+soon" until a listing exists; URLs in `src/lib/site.ts`). Below sits a still fan of real
+posters (`PosterFan`) that fades into the page; it enters once and never sways. Then one card
+per thing tracked (TV shows, movies, anime, books, music, sports), each with a small fan of
+three covers (`KindCard`), imports, native apps, FAQ. The header and footer link to X. Art is
+hotlinked from TMDB, Open Library and the Cover Art Archive (`src/lib/landing/art.ts`); sports
+use type tiles. `WelcomeView` has not been brought in line yet.
 
 ## 1. The Field (home)
 
@@ -118,6 +126,12 @@ Classic filters are how a shelf is edited, not how you enter the app.
 
 Visual cue: Letterboxd lists + Ryot filters, presented as pages of reeds rather than a
 spreadsheet.
+
+A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
+library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
+reads "On this list" once it is there. Every library row also offers "Add to list". A list row
+says what the title is doing: show status (Returning, Ended…), the next episode and when it
+airs, and the library status and progress when the title is on the shelf (LST-003).
 
 ## 7. Catch-up calendar
 
@@ -300,6 +314,17 @@ with the code in large monospace, an "Approve on stremio.com" button and a QR fo
 from another device, and a quiet "Waiting for approval…" line. It polls on its own and, once
 approved, opens the import's plan, which is approved like any other import. Nothing is written
 before that approval.
+
+**Connections, built 2026-10-20** (OUT-004). Settings has a Connections section on web, iPhone
+and Mac for AI agents that reach the library over MCP. Pick the agent (Claude Code, Codex,
+Hermes, Gemini CLI, any other MCP client) and its setup steps show at once, with a placeholder
+where the token goes; every block has Copy. Name it, choose **Allow changes** (off by default:
+one item at a time, as a tap would; never a removal or many items at once), and connect: the same
+steps come back with the token filled in, shown once, and the sheet will not swipe away until
+Done. Last comes a message to paste into the agent so it checks itself. Live connections list
+their agent, what they may do and their last use, with a confirmed Revoke. Changes they make
+land as journaled actions named after the connection ("Claude Code: marked S01E01 of X
+watched"), so history and undo treat them like a tap.
 
 ## 16. Widgets (Phase 2)
 

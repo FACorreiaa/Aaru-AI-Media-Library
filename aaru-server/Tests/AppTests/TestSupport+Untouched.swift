@@ -60,6 +60,10 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func airing(ids _: [TitleID], now _: Date) async throws -> [TitleID: TitleAiring] {
+        throw Touched()
+    }
+
     func staleTrackedShows(now _: Date, retryAfter _: Date, limit _: Int) async throws -> [TitleID] {
         throw Touched()
     }

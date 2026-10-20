@@ -152,11 +152,11 @@ struct LibraryService: Sendable {
         return try await entry(id, userID: userID)
     }
 
-    func delete(_ id: LibraryItemID, userID: UserID) async throws {
+    func delete(_ id: LibraryItemID, userID: UserID, by caller: Caller = .user) async throws {
         let current = try await entry(id, userID: userID)
         try await stores.library.apply(
-            .deleteItem(id), userID: userID, actor: .user, kind: "remove",
-            summary: "Removed \(current.title.title)"
+            .deleteItem(id), userID: userID, caller: caller, kind: "remove",
+            summary: caller.summary("Removed \(current.title.title)")
         )
     }
 
@@ -226,7 +226,9 @@ struct LibraryService: Sendable {
     }
 
     /// Marks every aired episode of a season watched in one action; unaired ones are left alone.
-    func markSeasonWatched(_ id: LibraryItemID, userID: UserID, season: Int) async throws -> LibraryEntry {
+    func markSeasonWatched(_ id: LibraryItemID, userID: UserID, season: Int, by caller: Caller = .user) async throws
+        -> LibraryEntry
+    {
         let show = try await showContext(id, userID: userID)
         let inSeason = show.episodes.filter { $0.season == season }
         guard !inSeason.isEmpty else { throw ValidationError.invalidEpisodeNumber(season: season, episode: 1) }
@@ -234,7 +236,7 @@ struct LibraryService: Sendable {
             .compactMap { try? EpisodeKey(season: $0.season, episode: $0.episode) }
         let summary = "Marked season \(season) of \(show.entry.title.title) watched (\(aired.count) episodes)"
         return try await applyProgress(
-            watch: aired, unwatch: [], show: show, journal: ("season", summary), caller: .user
+            watch: aired, unwatch: [], show: show, journal: ("season", caller.summary(summary)), caller: caller
         )
     }
 

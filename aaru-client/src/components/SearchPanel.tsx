@@ -1,5 +1,8 @@
 import { For, Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { addToLibrary, searchCatalog } from '../lib/library/server'
+import { isOnList } from '../lib/lists/model'
+import { addToList } from '../lib/lists/server'
+import type { ListDetail } from '../lib/lists/server'
 import {
   KINDS,
   hitKey,
@@ -27,11 +30,14 @@ const SCOPES: Array<{ kind: Scope; label: string }> = [
   ...KINDS.map((k) => ({ kind: k.kind, label: k.label })),
 ]
 
-/** APP-004 on the web: scoped search, debounced, with add and an initial status. */
+/** APP-004 on the web: scoped search, debounced, with add and an initial status. Given a
+ * `list` (LST-003), each hit adds to that list instead of the library. */
 export function SearchPanel(props: {
-  entries: LibraryEntry[]
-  onAdded: (entry: LibraryEntry) => void
+  entries?: LibraryEntry[]
+  onAdded?: (entry: LibraryEntry) => void
   onClose: () => void
+  list?: ListDetail
+  onListChanged?: (detail: ListDetail) => void
 }) {
   const [query, setQuery] = createSignal('')
   const [kind, setKind] = createSignal<Scope>('all')
@@ -97,7 +103,7 @@ export function SearchPanel(props: {
           status,
         },
       })
-      props.onAdded(entry)
+      props.onAdded?.(entry)
     } catch (error) {
       setProblem(
         error instanceof Error
@@ -111,10 +117,42 @@ export function SearchPanel(props: {
     }
   }
 
+  async function addToTarget(hit: CatalogHit, list: ListDetail) {
+    const key = keyOf(hit)
+    if (adding().has(key)) return
+    setAdding(new Set([...adding(), key]))
+    try {
+      const detail = await addToList({
+        data: {
+          id: list.id,
+          mediaRef: {
+            type: hit.type,
+            ids: hit.ids,
+            title: hit.title,
+            year: hit.year,
+          },
+        },
+      })
+      props.onListChanged?.(detail)
+    } catch (error) {
+      setProblem(
+        error instanceof Error
+          ? error.message
+          : `${hit.title} could not be added to ${list.name}.`,
+      )
+    } finally {
+      const next = new Set(adding())
+      next.delete(key)
+      setAdding(next)
+    }
+  }
+
   return (
     <div class="flex max-h-[85dvh] w-full flex-col">
       <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-        <h2 class="font-display text-2xl font-medium">Search</h2>
+        <h2 class="font-display text-2xl font-medium">
+          {props.list ? `Add to ${props.list.name}` : 'Search'}
+        </h2>
         <Button
           variant="ghost"
           size="bare"
@@ -207,27 +245,59 @@ export function SearchPanel(props: {
                       .join(' · ')}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="bare"
-                  class="text-sm"
-                  onClick={() => setListTarget(hit)}
-                >
-                  List…
-                </Button>
                 <Show
-                  when={!isOnShelf(hit, props.entries)}
+                  when={props.list}
                   fallback={
-                    <span class="text-sm font-medium text-accent">
-                      On your shelf
-                    </span>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="bare"
+                        class="text-sm"
+                        onClick={() => setListTarget(hit)}
+                      >
+                        List…
+                      </Button>
+                      <Show
+                        when={!isOnShelf(hit, props.entries ?? [])}
+                        fallback={
+                          <span class="text-sm font-medium text-accent">
+                            On your shelf
+                          </span>
+                        }
+                      >
+                        <AddControl
+                          hit={hit}
+                          adding={adding().has(keyOf(hit))}
+                          onAdd={(status) => void add(hit, status)}
+                        />
+                      </Show>
+                    </>
                   }
                 >
-                  <AddControl
-                    hit={hit}
-                    adding={adding().has(keyOf(hit))}
-                    onAdd={(status) => void add(hit, status)}
-                  />
+                  {(list) => (
+                    <Show
+                      when={!isOnList(hit, list().items)}
+                      fallback={
+                        <span class="text-sm font-medium text-accent">
+                          On this list
+                        </span>
+                      }
+                    >
+                      <Show
+                        when={!adding().has(keyOf(hit))}
+                        fallback={
+                          <span class="text-sm text-muted">Adding…</span>
+                        }
+                      >
+                        <Button
+                          size="sm"
+                          onClick={() => void addToTarget(hit, list())}
+                        >
+                          Add
+                        </Button>
+                      </Show>
+                    </Show>
+                  )}
                 </Show>
               </li>
             )

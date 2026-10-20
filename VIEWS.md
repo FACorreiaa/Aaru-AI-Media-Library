@@ -19,7 +19,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; this-month strip, status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats` (month), `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
 | Discover | `DiscoverRow` per DISC-001 row, add with status or to a list | `GET /v1/discover`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20) |
 | Insights | `StatsPanel` (month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all` | 2 · GAM-006c (pulled forward 2026-10-20) |
-| Lists | `Shelf` rendering a list's items | `GET /v1/lists`, `/v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
+| Lists | `Shelf` rendering a list's items: show status, next airing, library status and progress (LST-003) | `GET /v1/lists`, `GET /v1/lists/{id}` (`items`), `POST /v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
 | Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
@@ -36,7 +36,8 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
 | Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3); Stremio `player` events already fill `watch_events` (2026-10-20) | 2–3 |
 | Settings | none — account, notifications, imports, connected apps, export, delete account. A tab on Apple (plus Cmd-, on Mac), `/app/settings` on the web | `GET /v1/me`, `/v1/me/notifications`, `/v1/imports`, `/v1/agent/tokens` | 2 · APP-007 |
-| Connected apps (Settings) | none — a Settings section: connect, one-time install links, live links with last use, revoke | `GET`/`POST /v1/agent/tokens`, `DELETE /v1/agent/tokens/{id}` | 3 · SCR-003 (owner un-deferred 2026-10-19) |
+| Connected apps (Settings) | none — a Settings section: connect, one-time install links, live links with last use, revoke | `GET`/`POST /v1/agent/tokens?for=stremio`, `DELETE /v1/agent/tokens/{id}` | 3 · SCR-003 (owner un-deferred 2026-10-19) |
+| Connections (Settings) | none — a Settings section: pick an agent (Claude Code, Codex, Hermes, Gemini CLI, other), its setup steps, create a token shown once with the steps filled in, live connections with last use, revoke | `GET`/`POST /v1/agent/tokens?for=mcp`, `GET /v1/agent/setup/{kind}`, `DELETE /v1/agent/tokens/{id}` | 7 · OUT-001/004 (owner pulled forward 2026-10-20) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
 | Profile and stats | `StatsPanel` (already on Insights), `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
@@ -45,7 +46,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Conversations | `ConversationView` | ciphertext message routes + `/v1/ws` | 6 · DM-* |
 | Approvals | `PlanCard` | `POST /v1/plans/{id}/approve`, `/deny` | 7 · M14 |
 | Shortcuts / App Intents | `TitleCard`, `TonightStrip` as intent snippets | agent tool layer | 7 · M14 |
-| MCP | none — headless, no rendering | `POST /v1/mcp` | 7 · M14 |
+| MCP | none — headless, no rendering | `POST /v1/mcp` | 7 · OUT-004 (built 2026-10-20) |
 
 No surface gets a private endpoint. If a view needs data no route returns, add the route,
 not a view-shaped one.
