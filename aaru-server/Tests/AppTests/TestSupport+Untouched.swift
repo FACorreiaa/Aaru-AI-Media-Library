@@ -46,11 +46,53 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func mappings(anilist _: [String]) async throws -> [AnimeMapping] {
+        throw Touched()
+    }
+
+    func libraryCounts(userID _: UserID) async throws -> LibraryCounts {
+        throw Touched()
+    }
+
+    func unfinished(userID _: UserID, stalledBefore _: Date, now _: Date, limit _: Int) async throws
+        -> [UnfinishedEntry]
+    {
+        throw Touched()
+    }
+
+    func airing(ids _: [TitleID], now _: Date) async throws -> [TitleID: TitleAiring] {
+        throw Touched()
+    }
+
     func staleTrackedShows(now _: Date, retryAfter _: Date, limit _: Int) async throws -> [TitleID] {
         throw Touched()
     }
 
     func markEpisodesAttempted(_: TitleID, at _: Date) async throws {
+        throw Touched()
+    }
+
+    func saveWebPush(_: WebPushSubscription, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func deleteWebPush(endpoint _: String, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func forgetWebPush(endpoint _: String) async throws {
+        throw Touched()
+    }
+
+    func webPushSubscriptions(userID _: UserID) async throws -> [WebPushSubscription] {
+        throw Touched()
+    }
+
+    func mapping(mal _: String) async throws -> AnimeMapping? {
+        throw Touched()
+    }
+
+    func statusSetByHand(itemID _: LibraryItemID) async throws -> Bool {
         throw Touched()
     }
 
@@ -241,6 +283,20 @@ extension UntouchedStore: GroupStore {
     }
 
     func exportMessages(_: UserID) async throws -> [ExportedGroupMessage] {
+        throw Touched()
+    }
+}
+
+extension UntouchedStore {
+    func createStremioLink(code _: String, userID _: UserID, expiresAt _: Date, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func stremioLinkExpiry(code _: String, userID _: UserID) async throws -> Date? {
+        throw Touched()
+    }
+
+    func consumeStremioLink(code _: String, userID _: UserID) async throws -> Bool {
         throw Touched()
     }
 }

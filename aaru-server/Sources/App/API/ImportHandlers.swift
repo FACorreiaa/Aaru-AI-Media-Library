@@ -75,6 +75,21 @@ extension APIImplementation {
         return .accepted(.init(body: .json(.init(job))))
     }
 
+    func startStremioLink(_: Operations.StartStremioLink.Input) async throws -> Operations.StartStremioLink.Output {
+        let link = try await services.imports.startStremioLink(userID: currentUser())
+        return .ok(.init(body: .json(.init(
+            code: link.code, link: link.link.absoluteString, qrcode: link.qrcode.absoluteString,
+            expiresAt: link.expiresAt
+        ))))
+    }
+
+    func pollStremioLink(_ input: Operations.PollStremioLink.Input) async throws -> Operations.PollStremioLink.Output {
+        switch try await services.imports.pollStremioLink(code: input.path.code, userID: currentUser()) {
+        case .pending: .noContent(.init())
+        case let .imported(job): .accepted(.init(body: .json(.init(job))))
+        }
+    }
+
     func createTraktImport(_: Operations.CreateTraktImport.Input) async throws -> Operations.CreateTraktImport
         .Output
     {

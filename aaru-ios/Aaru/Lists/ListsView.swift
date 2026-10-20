@@ -95,7 +95,8 @@ struct ListsView: View {
     }
 }
 
-/// One list: its titles in order, swipe to remove, drag to reorder.
+/// One list: its titles in order, swipe to remove, drag to reorder, "Add titles" to search into
+/// it. Rows carry status, progress and the next airing (LST-003).
 struct ListDetailView: View {
     let listID: String
     let lists: ListsModel
@@ -103,16 +104,17 @@ struct ListDetailView: View {
     let api: Client?
 
     @State private var detail: ListDetail?
+    @State private var showsSearch = false
 
     var body: some View {
         List {
-            ForEach(detail?.titles ?? [], id: \.id) { title in
-                row(for: title)
+            ForEach(detail?.items ?? [], id: \.title.id) { item in
+                row(for: item)
                     .listRowBackground(Color.clear)
             }
             .onDelete { offsets in
                 guard let detail else { return }
-                let ids = offsets.map { detail.titles[$0].id }
+                let ids = offsets.map { detail.items[$0].title.id }
                 Task {
                     for id in ids {
                         if let updated = await lists.remove(titleID: id, from: listID) {
@@ -122,12 +124,12 @@ struct ListDetailView: View {
                 }
             }
             .onMove { source, destination in
-                guard var titles = detail?.titles else { return }
+                guard var items = detail?.items else { return }
                 let before = detail
-                titles.move(fromOffsets: source, toOffset: destination)
-                detail?.titles = titles
+                items.move(fromOffsets: source, toOffset: destination)
+                detail?.items = items
                 Task {
-                    if let saved = await lists.reorder(listID, titleIDs: titles.map(\.id)) {
+                    if let saved = await lists.reorder(listID, titleIDs: items.map(\.title.id)) {
                         detail = saved
                     } else {
                         detail = before
@@ -139,12 +141,12 @@ struct ListDetailView: View {
         .scrollContentBackground(.hidden)
         .background(Color(.paper))
         .overlay {
-            if let detail, detail.titles.isEmpty {
-                ContentUnavailableView(
-                    "Nothing on this list",
-                    systemImage: "text.badge.plus",
-                    description: Text("Add titles from search or from a title's page.")
-                )
+            if let detail, detail.items.isEmpty {
+                ContentUnavailableView {
+                    Label("Nothing on this list", systemImage: "text.badge.plus")
+                } actions: {
+                    Button("Add titles") { showsSearch = true }.buttonStyle(.borderedProminent)
+                }
             } else if detail == nil {
                 ProgressView()
             }
@@ -152,33 +154,31 @@ struct ListDetailView: View {
         .safeAreaInset(edge: .bottom) { ProblemBanner(message: lists.problem) { lists.problem = nil } }
         .navigationTitle(detail?.name ?? "List")
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Add titles", systemImage: "plus") { showsSearch = true }
+                    .disabled(detail == nil)
+            }
             #if os(iOS)
                 ToolbarItem(placement: .primaryAction) { EditButton() }
             #endif
         }
+        .sheet(isPresented: $showsSearch) {
+            if let list = Binding($detail) {
+                SearchView(api: api, library: library, lists: lists, intoList: list)
+            }
+        }
         .task { detail = await lists.detail(listID) }
     }
 
-    @ViewBuilder private func row(for title: Components.Schemas.TitleSummary) -> some View {
-        let label = HStack(spacing: 14) {
-            PosterView(
-                url: title.posterUrl.flatMap(URL.init(string:)),
-                kind: MediaKind(type: title._type, isAnime: title.isAnime)
-            )
-            .frame(width: 44)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title.title).font(.body.weight(.medium)).lineLimit(2)
-                Text([title.year.map(String.init), MediaKind(type: title._type, isAnime: title.isAnime).label]
-                    .compactMap(\.self).joined(separator: " · "))
-                    .font(.footnote)
-                    .foregroundStyle(Color(.muted))
-            }
-        }
-        // A title on the shelf opens its Title room; one that is only on the list does not.
-        if let entry = library.entry(forTitle: title.id) {
-            NavigationLink { TitleDetailView(entry: entry, api: api, library: library, lists: lists) } label: { label }
+    @ViewBuilder private func row(for item: ListItem) -> some View {
+        // A title on the shelf opens its Title room; one that is only on the list does not. The
+        // local library wins over the row's entry: it is the copy Title detail edits.
+        if let entry = library.entry(forTitle: item.title.id) ?? item.entry {
+            NavigationLink {
+                TitleDetailView(entry: entry, api: api, library: library, lists: lists)
+            } label: { ListItemRow(item: item) }
         } else {
-            label
+            ListItemRow(item: item)
         }
     }
 }
@@ -243,7 +243,7 @@ struct ListPickerSheet: View {
         guard !working.contains(id) else { return }
         working.insert(id)
         defer { working.remove(id) }
-        if await lists.add(ref, to: id) {
+        if await lists.add(ref, to: id) != nil {
             added.insert(id)
         }
     }

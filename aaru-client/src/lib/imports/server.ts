@@ -94,6 +94,34 @@ export const startAniListImport = createServerFn({ method: 'POST' })
     ),
   )
 
+export type StremioLink = components['schemas']['StremioLink']
+export type StremioPoll =
+  { state: 'pending' } | { state: 'imported'; job: ImportJob }
+
+/** IMP-016: a link code the user approves on stremio.com. No Stremio password reaches Aaru. */
+export const startStremioImport = createServerFn({ method: 'POST' }).handler(
+  async (): Promise<StremioLink> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/stremio/link'),
+      'Stremio could not be reached. Try again in a minute.',
+    ),
+)
+
+/** Pending until the code is approved; then the server reads the library once and queues it. */
+export const pollStremioImport = createServerFn({ method: 'POST' })
+  .validator(z.object({ code: z.string().min(1).max(64) }))
+  .handler(async ({ data }): Promise<StremioPoll> => {
+    const result = await api(sessionToken()).POST(
+      '/v1/imports/stremio/link/{code}',
+      { params: { path: { code: data.code } } },
+    )
+    if (result.response.status === 204) return { state: 'pending' }
+    return {
+      state: 'imported',
+      job: check(result, 'Your Stremio history could not be imported.'),
+    }
+  })
+
 export const getImport = createServerFn({ method: 'GET' })
   .validator(z.object({ id }))
   .handler(async ({ data }): Promise<ImportDetail> =>

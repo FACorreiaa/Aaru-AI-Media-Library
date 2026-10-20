@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { api } from '../api/client'
 import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
-import type { CatalogHit, LibraryEntry } from './model'
+import type { LibraryEntry, SearchResults } from './model'
 
 // APP-003/APP-004 on the web: the same `/v1` routes the Apple apps call, sent with the session.
 
@@ -23,10 +23,11 @@ export const searchCatalog = createServerFn({ method: 'GET' })
   .validator(
     z.object({
       q: z.string().trim().min(2).max(200),
-      type: z.enum(['movie', 'show', 'anime', 'book']),
+      type: z.enum(['all', 'movie', 'show', 'anime', 'book']),
     }),
   )
-  .handler(async ({ data }): Promise<CatalogHit[]> => {
+  /** `incomplete` is true when a catalog did not answer: the hits are what the others found. */
+  .handler(async ({ data }): Promise<SearchResults> => {
     const {
       data: results,
       error,
@@ -37,7 +38,7 @@ export const searchCatalog = createServerFn({ method: 'GET' })
     if (response.status === 401) sessionRejected()
     if (!results)
       throw new Error(errorMessage(error, 'Search is not available right now.'))
-    return results.items
+    return { items: results.items, incomplete: results.incomplete }
   })
 
 const externalIds = z

@@ -97,7 +97,8 @@ struct PostgresLibraryStore: LibraryStore {
             UPDATE library_items SET status = \(bind: fields.status.rawValue), rating = \(bind: fields.rating),
                 notes = \(bind: fields.notes), is_owned = \(bind: fields.isOwned),
                 finished_at = \(bind: fields.finishedAt), book_page = \(bind: fields.bookPage),
-                book_percent = \(bind: fields.bookPercent), updated_at = now()
+                book_percent = \(bind: fields.bookPercent),
+                status_by_hand = COALESCE(\(bind: fields.statusByHand), status_by_hand), updated_at = now()
             WHERE id = \(bind: id.rawValue)
             """).run()
             return .setFields(id, previous)
@@ -140,11 +141,11 @@ struct PostgresLibraryStore: LibraryStore {
         let fields = snapshot.fields
         try await sql.raw("""
         INSERT INTO library_items (id, user_id, title_id, status, is_owned, rating, notes, added_at,
-            updated_at, finished_at, book_page, book_percent)
+            updated_at, finished_at, book_page, book_percent, status_by_hand)
         VALUES (\(bind: snapshot.id.rawValue), \(bind: userID.rawValue), \(bind: snapshot.titleID.rawValue),
             \(bind: fields.status.rawValue), \(bind: fields.isOwned), \(bind: fields.rating), \(bind: fields.notes),
             \(bind: snapshot.addedAt), now(), \(bind: fields.finishedAt), \(bind: fields.bookPage),
-            \(bind: fields.bookPercent))
+            \(bind: fields.bookPercent), \(bind: fields.statusByHand ?? false))
         """).run()
         for key in snapshot.watched {
             try await sql.raw("""
@@ -191,7 +192,8 @@ struct PostgresLibraryStore: LibraryStore {
         sql: any SQLDatabase
     ) async throws -> ItemFields {
         guard let row = try await sql.raw("""
-        SELECT status, rating, notes, is_owned, finished_at, book_page, book_percent FROM library_items
+        SELECT status, rating, notes, is_owned, finished_at, book_page, book_percent, status_by_hand
+        FROM library_items
         WHERE id = \(bind: id.rawValue) AND user_id = \(bind: userID.rawValue) FOR UPDATE
         """).first(decoding: FieldsRow.self, keyDecodingStrategy: .convertFromSnakeCase),
             let fields = row.fields
@@ -263,12 +265,13 @@ private struct FieldsRow: Decodable {
     let finishedAt: Date?
     let bookPage: Int?
     let bookPercent: Double?
+    let statusByHand: Bool
 
     var fields: ItemFields? {
         LibraryStatus(rawValue: status).map {
             ItemFields(
                 status: $0, rating: rating, notes: notes, isOwned: isOwned, finishedAt: finishedAt,
-                bookPage: bookPage, bookPercent: bookPercent
+                bookPage: bookPage, bookPercent: bookPercent, statusByHand: statusByHand
             )
         }
     }

@@ -252,3 +252,60 @@ struct CreateWatchEvents: SQLMigration {
         "DROP TABLE watch_events",
     ]
 }
+
+/// Multi-source imports (2026-10-20): an import may move a status forward, never past one the
+/// user chose. The backfill marks items whose status a user edit changed and that still hold it.
+struct AddStatusByHand: SQLMigration {
+    let forward = [
+        "ALTER TABLE library_items ADD COLUMN status_by_hand boolean NOT NULL DEFAULT false",
+        """
+        UPDATE library_items li SET status_by_hand = true
+        WHERE EXISTS (
+            SELECT 1 FROM actions a
+            WHERE a.user_id = li.user_id AND li.id = ANY(a.item_ids) AND a.kind = 'update'
+                AND a.actor = 'user' AND a.undone_at IS NULL
+                AND a.inverse #>> '{setFields,_1,status}' IS DISTINCT FROM li.status
+        )
+        """,
+        "CREATE INDEX anime_mappings_mal ON anime_mappings (mal) WHERE mal IS NOT NULL",
+    ]
+    let backward = [
+        "DROP INDEX anime_mappings_mal",
+        "ALTER TABLE library_items DROP COLUMN status_by_hand",
+    ]
+}
+
+/// Web push (2026-10-20): one row per browser subscription. Deleting the user deletes them.
+struct CreateWebPush: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE web_push_subscriptions (
+            endpoint text PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            p256dh text NOT NULL,
+            auth text NOT NULL,
+            vapid_key_id text NOT NULL,
+            updated_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+        "CREATE INDEX web_push_subscriptions_user ON web_push_subscriptions (user_id)",
+    ]
+    let backward = [
+        "DROP TABLE web_push_subscriptions",
+    ]
+}
+
+/// Stremio history import (IMP-016): a link code waiting for the user's approval on stremio.com.
+/// Only the code and its owner are kept, never Stremio's session key.
+struct CreateStremioLinkRequests: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE stremio_link_requests (
+            code text PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            expires_at timestamptz NOT NULL
+        )
+        """,
+    ]
+    let backward = ["DROP TABLE stremio_link_requests"]
+}

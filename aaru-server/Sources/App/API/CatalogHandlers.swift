@@ -6,8 +6,10 @@ import OpenAPIRuntime
 extension APIImplementation {
     func searchCatalog(_ input: Operations.SearchCatalog.Input) async throws -> Operations.SearchCatalog.Output {
         guard let scope = SearchScope(rawValue: input.query._type.rawValue) else { throw AppError.badRequest() }
-        let hits = try await catalog.search(query: input.query.q, scope: scope)
-        return .ok(.init(body: .json(.init(items: hits.map { Components.Schemas.CatalogHit($0) }))))
+        let result = try await catalog.search(query: input.query.q, scope: scope)
+        return .ok(.init(body: .json(.init(
+            items: result.hits.map { Components.Schemas.CatalogHit($0) }, incomplete: result.incomplete
+        ))))
     }
 
     func getDiscover(_: Operations.GetDiscover.Input) async throws -> Operations.GetDiscover.Output {
@@ -56,7 +58,8 @@ extension Components.Schemas.CatalogHit {
             byline: hit.byline,
             isAnime: hit.isAnime,
             ids: .init(hit.ids),
-            libraryItemId: libraryItemID?.description
+            libraryItemId: libraryItemID?.description,
+            releaseDate: hit.releaseDate
         )
     }
 }

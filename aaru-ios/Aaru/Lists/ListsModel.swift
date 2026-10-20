@@ -75,16 +75,16 @@ final class ListsModel {
         }
     }
 
-    /// Adds a title to a list. Adding one that is already there changes nothing.
+    /// Adds a title to a list and returns the list. Adding one that is already there changes nothing.
     @discardableResult
-    func add(_ ref: MediaRef, to id: String) async -> Bool {
-        guard let api else { return false }
+    func add(_ ref: MediaRef, to id: String) async -> ListDetail? {
+        guard let api else { return nil }
         return await write("The title could not be added to the list.") {
             switch try await api.addListItem(path: .init(id: id), body: .json(.init(mediaRef: ref))) {
             case let .ok(response): try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
             }
-        } != nil
+        }
     }
 
     func detail(_ id: String) async -> ListDetail? {

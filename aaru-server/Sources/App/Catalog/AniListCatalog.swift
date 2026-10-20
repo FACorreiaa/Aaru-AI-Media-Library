@@ -11,7 +11,7 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
     private static let mediaFields = """
     id idMal format status episodes duration
     title { romaji english native }
-    startDate { year }
+    startDate { year month day }
     coverImage { large }
     bannerImage
     externalLinks { site type }
@@ -177,7 +177,18 @@ private struct Media: Decodable {
         let native: String?
     }
 
-    struct StartDate: Decodable { let year: Int? }
+    struct StartDate: Decodable {
+        let year: Int?
+        let month: Int?
+        let day: Int?
+
+        /// `YYYY-MM-DD` when AniList knows the full date.
+        var text: String? {
+            guard let year, let month, let day else { return nil }
+            return String(format: "%04d-%02d-%02d", year, month, day)
+        }
+    }
+
     struct Cover: Decodable { let large: String? }
     struct ExternalLink: Decodable {
         let site: String
@@ -220,7 +231,8 @@ private struct Media: Decodable {
             ids: ExternalIDs(anilist: String(id), mal: idMal.map(String.init)),
             isAnime: true,
             backdropURL: backdropURL,
-            network: network
+            network: network,
+            releaseDate: startDate?.text
         )
     }
 

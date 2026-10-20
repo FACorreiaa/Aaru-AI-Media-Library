@@ -79,8 +79,10 @@ protocol TitleStore: Sendable {
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode]
     /// The titles with these ids, in the order given; unknown ids are skipped.
     func titles(ids: [TitleID]) async throws -> [Title]
-    /// Shows someone tracks (wishlist or in progress) whose episodes were never loaded or are
-    /// past their staleness window, never-loaded first. Shows attempted since `retryAfter`
+    /// Status and first unaired episode of each show among these ids; other types are left out.
+    func airing(ids: [TitleID], now: Date) async throws -> [TitleID: TitleAiring]
+    /// Shows someone tracks (wishlist or in progress, or on a list) whose episodes were never
+    /// loaded or are past their staleness window, never-loaded first. Shows attempted since `retryAfter`
     /// are skipped so a failing provider is not hammered.
     func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID]
     /// Records an episode refresh attempt, successful or not.
@@ -91,6 +93,12 @@ extension TitleStore {
     func insert(_ title: Title) async throws {
         try await insert(title, status: nil, runtimeMinutes: nil)
     }
+}
+
+/// A show's lifecycle and its next episode to air, for list rows (LST-003).
+struct TitleAiring: Sendable, Equatable {
+    var status: TitleStatus?
+    var next: CatalogEpisode?
 }
 
 struct TitleCatalogState: Sendable, Equatable {
@@ -111,6 +119,10 @@ struct AnimeMapping: Sendable, Equatable {
 
 protocol AnimeMappingStore: Sendable {
     func mapping(anilist: String) async throws -> AnimeMapping?
+    /// The first mapping with this MAL id: a MAL export carries no AniList id.
+    func mapping(mal: String) async throws -> AnimeMapping?
+    /// The mappings known for any of these AniList ids, in one query.
+    func mappings(anilist: [String]) async throws -> [AnimeMapping]
     func upsert(_ mapping: AnimeMapping) async throws
     /// Upserts in batches inside one transaction; re-running with the same rows changes nothing.
     func upsertMany(_ mappings: [AnimeMapping]) async throws
@@ -127,6 +139,8 @@ protocol LibraryStore: Sendable {
         -> ActionRecord
     func item(id: LibraryItemID, userID: UserID) async throws -> LibraryItem?
     func item(userID: UserID, titleID: TitleID) async throws -> LibraryItem?
+    /// Whether the user set the item's status themselves (imports never move it then).
+    func statusSetByHand(itemID: LibraryItemID) async throws -> Bool
     func entry(id: LibraryItemID, userID: UserID, now: Date) async throws -> LibraryEntry?
     func entries(
         userID: UserID,
@@ -219,6 +233,12 @@ protocol ImportJobStore: Sendable {
     func savePlan(_ job: ImportJob, rows: [PlannedRow]) async throws
     /// Removes a job and its rows. Library items it created stay; undo is the journal's job.
     func delete(id: ImportJobID, userID: UserID) async throws -> Bool
+    /// A Stremio link code the user is approving (IMP-016). Expired ones are swept here.
+    func createStremioLink(code: String, userID: UserID, expiresAt: Date, now: Date) async throws
+    /// When the user's code stops being valid; nil when it is not theirs or is gone.
+    func stremioLinkExpiry(code: String, userID: UserID) async throws -> Date?
+    /// Single use: true when this call removed the code, so two polls never import twice.
+    func consumeStremioLink(code: String, userID: UserID) async throws -> Bool
 }
 
 /// A user's Trakt connection, tokens still sealed.
@@ -263,6 +283,8 @@ struct PushDevice: Sendable, Equatable {
 struct DueAiring: Sendable, Equatable {
     var userID: UserID
     var titleID: TitleID
+    /// The user's library item for the show: what a tap on the alert opens.
+    var libraryItemID: LibraryItemID
     var title: String
     var season: Int
     var episode: Int
@@ -283,6 +305,23 @@ protocol PushStore: Sendable {
     func dueAirings(now: Date, since: Date) async throws -> [DueAiring]
     /// Claims an announcement. False when another run already sent it.
     func claim(_ airing: DueAiring) async throws -> Bool
+    /// A browser subscription belongs to one user: saving it again moves it.
+    func saveWebPush(_ subscription: WebPushSubscription, userID: UserID) async throws
+    func deleteWebPush(endpoint: String, userID: UserID) async throws
+    /// The push service said the subscription is gone (unsubscribed, expired).
+    func forgetWebPush(endpoint: String) async throws
+    func webPushSubscriptions(userID: UserID) async throws -> [WebPushSubscription]
+}
+
+/// One browser's push subscription (W3C Push API), as the browser handed it over.
+struct WebPushSubscription: Sendable, Equatable {
+    var endpoint: String
+    /// The browser's P-256 public key, base64url.
+    var p256dh: String
+    /// The browser's auth secret, base64url.
+    var auth: String
+    /// The VAPID public key it was made with (base64url), so a later key still reaches it.
+    var vapidKeyID: String
 }
 
 /// Everything handlers may touch, injected once at boot.
