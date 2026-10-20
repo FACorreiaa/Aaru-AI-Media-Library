@@ -21,8 +21,16 @@ Keep a **canvas** beside intent so work does not die in the scroll.
 The app's landing screen, and the web landing page's twin. Mascot on its disc, wordmark, one
 serif headline, three plain pillars (one shelf, private by default, bring your history), then
 Sign in with Apple and Continue with email pinned to the bottom on iPhone. Side by side on iPad
-and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`,
-`src/routes/(marketing)` in `aaru-client`.
+and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`.
+
+The web landing (`src/routes/index.tsx`, owner 2026-10-20) is centred: a privacy pill, the
+serif headline, Get started, then App Store and Google Play buttons at equal weight ("Coming
+soon" until a listing exists; URLs in `src/lib/site.ts`). Below sits a still fan of real
+posters (`PosterFan`) that fades into the page; it enters once and never sways. Then one card
+per thing tracked (TV shows, movies, anime, books, music, sports), each with a small fan of
+three covers (`KindCard`), imports, native apps, FAQ. The header and footer link to X. Art is
+hotlinked from TMDB, Open Library and the Cover Art Archive (`src/lib/landing/art.ts`); sports
+use type tiles. `WelcomeView` has not been brought in line yet.
 
 ## 1. The Field (home)
 

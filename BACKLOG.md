@@ -1662,6 +1662,11 @@ placeholder domain (`src/lib/site.ts`).
 **2026-10-14:** ported to SolidJS (`src/routes/index.tsx`), English only (see the 2026-10-14
 decision). The hero CTA now goes to sign-in.
 
+**2026-10-20:** redesigned after bingers.app, in Aaru's own palette and type: poster fan hero,
+App Store and Google Play buttons (Coming soon), one card per kind (TV shows, movies, anime,
+books, music, sports), X link (@fatc88). Music and sports cards read as live by owner's call;
+the library itself still tracks films, shows, anime and books only.
+
 ### LAND-002 · Waitlist · S
 **Needs:** LAND-001.
 Email capture with double opt-in and an export. Stored through a `/v1` route, not in a Worker
