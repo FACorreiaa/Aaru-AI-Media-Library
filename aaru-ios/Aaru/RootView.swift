@@ -30,14 +30,17 @@ struct RootView: View {
                         HomeScreen(api: api, library: library, lists: lists) { tab = .calendar }
                     }
                     Tab("Library", systemImage: "books.vertical", value: AppTab.library) {
-                        LibraryView(
-                            api: api, library: library, lists: lists, imports: imports,
-                            onSignOut: { Task { await flow.signOut() } },
-                            onDeleteAccount: { await flow.deleteAccount() }
-                        )
+                        LibraryView(api: api, library: library, lists: lists)
                     }
                     Tab("Calendar", systemImage: "calendar", value: AppTab.calendar) {
                         CalendarScreen(api: api, library: library, lists: lists)
+                    }
+                    Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
+                        SettingsView(
+                            api: api, imports: imports, library: library, lists: lists,
+                            onSignOut: { Task { await flow.signOut() } },
+                            onDeleteAccount: { await flow.deleteAccount() }
+                        )
                     }
                 }
                 .tabViewStyle(.sidebarAdaptable)
@@ -114,7 +117,7 @@ struct RootView: View {
     }
 
     enum AppTab: Hashable {
-        case home, library, calendar
+        case home, library, calendar, settings
     }
 
     struct LinkedTitle: Identifiable {

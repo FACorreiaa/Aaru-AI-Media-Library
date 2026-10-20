@@ -874,6 +874,11 @@ real Goodreads-format file matched through Open Library: progress then plan, tit
 matched a book with no ISBN, approve added two books and turned a custom shelf into a list. The
 Apple screens build but were not driven in the simulator.
 
+**Progress 2026-10-20 (Apple):** Settings is the fourth tab (Home · Library · Calendar ·
+Settings; a sidebar item on iPad and Mac) and the Mac Settings window (Cmd-,). The Library's More
+menu no longer carries Settings or Sign out. Owner: "the iOS app doesn't even have a settings
+view": the old entry point was too buried to find.
+
 ### APP-008 · Mac-specific pass · M
 **Needs:** APP-005.
 Keyboard navigation, multi-column layout, menu bar commands. Same target.
