@@ -1560,32 +1560,37 @@ messages when `@aaru` is tagged with GRP-011.
 
 ### GRP-001 · Groups, members, `#general` · M
 **Needs:** SOC-001, SOC-002.
-Tables `groups` (name, owner, `deleted_at`) and `group_members` (role `owner` | `admin` |
-`member`, `muted`, `joined_at`). Creating a group inserts the owner and a `#general` text channel
-(`is_default`) in one transaction. `#general` can be renamed, never deleted or archived. The
-owner can't leave without transferring ownership or deleting the group. Owner and admins manage
-channels and members. Account delete removes the user's memberships and hands owned groups to
-the oldest admin, or deletes them when there is none (extends AUTH-004).
+Tables `groups` (name) and `group_members` (role `owner` | `admin` | `member`, `joined_at`).
+Ownership is the one `owner` row, held unique by a partial index; there is no owner column.
+Deleting a group is a hard delete that cascades to its channels and messages. Creating a group
+inserts the owner and a `#general` text channel (`is_default`) in one transaction. `#general`
+can be renamed, never deleted. The owner can't leave without transferring ownership or deleting
+the group. Owner and admins manage channels; admins remove members, the owner removes anyone.
+Account delete empties the user's messages, hands owned groups to the oldest admin, else the
+oldest member, and deletes a group nobody else is in (extends AUTH-004). `muted` arrives with
+GRP-012. A user owns at most 10 groups.
 
 **Done when:** a new group has exactly one member and one channel, `#general`; a non-member gets
 404 for the group, its channels and its messages; and the owner's leave is refused.
 
 ### GRP-002 · Group invites, friends only · S
 **Needs:** GRP-001.
-`group_invites` (inviter, invitee, status `pending` | `accepted` | `declined` | `revoked`). Insert
-only when inviter and invitee are friends and neither has blocked the other. `GET
-/v1/me/group-invites` is the invitee's inbox. Accepting adds a `member` row.
+`group_invites` (inviter, invitee) holds pending invites only, like friend requests: accepting
+turns it into a `member` row, declining or cancelling deletes it. Insert only when inviter and
+invitee are friends (a block ends a friendship, so a block also stops it). `GET
+/v1/me/group-invites` is the invitee's inbox. Joining marks every channel read up to then.
 
 **Done when:** inviting a non-friend returns 422, inviting someone who blocked you returns the
-same 422 with no hint of the block, and accepting adds the member once (a double accept is a
-no-op).
+same 422 with no hint of the block, and accepting adds the member once (a second accept is a
+404 and adds nothing).
 
 ### GRP-003 · Text channels and group messages · M
 **Needs:** GRP-001.
-`group_channels` (`kind` `text` | `title` | `watch` | `shelf`, name, topic, position) and
-`group_messages` (author kind `user` | `agent`, body, `components`, `reply_to`, `mentions`,
-`mentions_agent`, spoiler stamp, `client_nonce`, `edited_at`, `deleted_at`).
-`group_read_state` holds each member's last read message and unread mention count. Cursor
+`group_channels` (`kind` `text`, name, topic, position) and `group_messages` (body,
+`mentions`, `mentions_agent`, `client_nonce`, `edited_at`, `deleted_at`). GRP-007 adds the other
+kinds and the spoiler stamp; GRP-010 adds the agent author, `components` and `reply_to`.
+`group_read_state` holds each member's read point per channel; unread and mention counts are
+counted from it, never stored. Channel names are lowercase with dashes (`movie-night`). Cursor
 pagination by `(created_at, id)`. A retried post with the same `client_nonce` returns the first
 message. Mentions are parsed on the server from `@handle` and checked against members. A delete
 wipes the body and keeps the row. A blocked member's messages arrive flagged so the client

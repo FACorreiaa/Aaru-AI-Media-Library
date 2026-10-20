@@ -40,8 +40,14 @@ struct GroupTests {
             let mine = try await claimHandle(env)
             let (group, _) = try await createGroup(env)
             let (strangerID, _) = try await signedInUser(env.stores)
-            #expect(try await env.send(.post, "/v1/groups/\(group)/invites", json: ["userId": "\(strangerID)"]).status
-                == .unprocessableContent)
+            let notFriend = try await env.send(.post, "/v1/groups/\(group)/invites", json: ["userId": "\(strangerID)"])
+            #expect(notFriend.status == .unprocessableContent)
+            // Someone who blocked you looks exactly like someone who is not your friend.
+            let blocker = try await friend(env, of: mine)
+            _ = try await env.send(.put, "/v1/social/blocks/\(env.userID)", token: blocker.token)
+            let blocked = try await env.send(.post, "/v1/groups/\(group)/invites", json: ["userId": blocker.id])
+            #expect(blocked.status == .unprocessableContent)
+            #expect(blocked.text == notFriend.text.replacingOccurrences(of: "\(strangerID)", with: blocker.id))
 
             let ana = try await friend(env, of: mine)
             #expect(try await env.send(.post, "/v1/groups/\(group)/invites", json: ["userId": ana.id]).status
@@ -94,6 +100,9 @@ struct GroupTests {
             let tagged = try await post(env, channel, "@\(ana.handle.uppercased()) and @aaru, not a@\(ana.handle)")
             #expect(tagged["mentions"] as? [String] == [ana.id])
             #expect(tagged["mentionsAgent"] as? Bool == true)
+            // A friend who is not in the group is not mentioned.
+            let outsider = try await friend(env, of: mine)
+            #expect(try await post(env, channel, "hi @\(outsider.handle)")["mentions"] as? [String] == [])
             for number in 1 ... 5 {
                 _ = try await post(env, channel, "m\(number)")
             }
@@ -101,7 +110,7 @@ struct GroupTests {
             // Ana sees her unread and mention counts, then reads.
             let summary = try await env.send(.get, "/v1/groups", token: ana.token).json()["items"] as? [[String: Any]]
             let row = try #require(summary?.first { $0["id"] as? String == group })
-            #expect(row["unread"] as? Int == 7)
+            #expect(row["unread"] as? Int == 8)
             #expect(row["mentions"] as? Int == 1)
 
             let latest = try await env.send(.get, "\(channel)/messages?limit=3", token: ana.token)
@@ -267,6 +276,30 @@ struct GroupTests {
             #expect(try await env.send(.get, "/v1/groups/\(aloneGroup)", token: other).status == .notFound)
         }
     }
+}
+
+extension GroupTests {
+    @Test("GRP-003: walking back page by page returns every message exactly once")
+    func pagination() async throws {
+        try await LibraryHarness.run { env in
+            _ = try await claimHandle(env)
+            let (group, general) = try await createGroup(env)
+            let channel = "/v1/groups/\(group)/channels/\(general)"
+            for number in 1 ... 7 {
+                _ = try await post(env, channel, "p\(number)")
+            }
+            var seen: [String] = []
+            var cursor = ""
+            while true {
+                let page = try await env.send(.get, "\(channel)/messages?limit=2\(cursor)")
+                let items = try page.json()["items"] as? [[String: Any]] ?? []
+                guard let first = items.first?["id"] as? String else { break }
+                seen.insert(contentsOf: items.compactMap { $0["body"] as? String }, at: 0)
+                cursor = "&before=\(first)"
+            }
+            #expect(seen == (1 ... 7).map { "p\($0)" })
+        }
+    }
 
     @Test("Mentions skip emails and words, dedupe, and tag the agent")
     func mentionParsing() throws {
@@ -282,9 +315,7 @@ struct GroupTests {
         #expect(try GroupService.channelName("Séries  e Filmes") == "séries-e-filmes")
         #expect(throws: AppError.self) { try GroupService.channelName("!!!") }
     }
-}
 
-extension GroupTests {
     struct Person {
         let id: String
         let token: String

@@ -726,12 +726,12 @@ GRP-001…GRP-012.
 | Table | Shape |
 | --- | --- |
 | `profiles` | `user_id`, `handle` (unique, `^[a-z0-9_]{3,20}$`), display name |
-| `groups` | name, `owner_id`, `deleted_at` |
-| `group_members` | group, user, role `owner` / `admin` / `member`, `muted`, `share_progress` (default off) |
-| `group_invites` | group, inviter, invitee, status `pending` / `accepted` / `declined` / `revoked` |
+| `groups` | name. Ownership is the one `owner` member row (unique partial index); delete is hard and cascades |
+| `group_members` | group, user, role `owner` / `admin` / `member`, `joined_at`; `muted` (GRP-012), `share_progress` (GRP-007, default off) |
+| `group_invites` | group, inviter, invitee. Pending only: accepted becomes a member row, declined or cancelled is deleted |
 | `group_channels` | group, kind `text` / `title` / `watch` / `shelf`, name, topic, position, `is_default`, `title_id` (required for `title`) |
-| `group_messages` | channel, author kind `user` / `agent`, author, body (≤ 4,000), `components`, `reply_to`, `mentions`, `mentions_agent`, spoiler season and episode, `client_nonce`, `edited_at`, `deleted_at` |
-| `group_read_state` | user, channel, last read message, unread mention count |
+| `group_messages` | channel, author (null once the account is deleted), body (≤ 4,000), `mentions`, `mentions_agent`, `client_nonce`, `edited_at`, `deleted_at`; author kind `agent`, `components`, `reply_to` (GRP-010); spoiler season and episode (GRP-007) |
+| `group_read_state` | user, channel, `last_read_at`. Unread and mention counts are counted from it, never stored |
 | `group_channel_items` | shelf channel, title, `added_by`, position |
 | `watch_sessions` | watch channel, title, season, episode, `starts_at`, state |
 | `agent_replies` | the job row for one `@aaru` mention, claimed with a lease like imports |
