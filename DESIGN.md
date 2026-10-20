@@ -325,7 +325,8 @@ before that approval.
 and Mac for AI agents that reach the library over MCP. Pick the agent (Claude Code, Codex,
 Hermes, Gemini CLI, any other MCP client) and its setup steps show at once, with a placeholder
 where the token goes; every block has Copy. Name it, choose **Allow changes** (off by default:
-one item at a time, as a tap would; never a removal or many items at once), and connect: the same
+one item at a time, as a tap would; never a removal or many items at once) and **Allow imports**
+(off by default: it may hand Aaru a list, which you review as any import), and connect: the same
 steps come back with the token filled in, shown once, and the sheet will not swipe away until
 Done. Last comes a message to paste into the agent so it checks itself. Live connections list
 their agent, what they may do and their last use, with a confirmed Revoke. Changes they make
