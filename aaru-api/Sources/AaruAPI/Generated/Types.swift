@@ -2871,6 +2871,10 @@ public enum Components {
             public var createdAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/GroupMessage/editedAt`.
             public var editedAt: Foundation.Date?
+            /// Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/clientNonce`.
+            public var clientNonce: Swift.String?
             /// Creates a new `GroupMessage`.
             ///
             /// - Parameters:
@@ -2884,6 +2888,7 @@ public enum Components {
             ///   - deleted:
             ///   - createdAt:
             ///   - editedAt:
+            ///   - clientNonce: Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.
             public init(
                 id: Swift.String,
                 channelId: Swift.String,
@@ -2894,7 +2899,8 @@ public enum Components {
                 fromBlocked: Swift.Bool,
                 deleted: Swift.Bool,
                 createdAt: Foundation.Date,
-                editedAt: Foundation.Date? = nil
+                editedAt: Foundation.Date? = nil,
+                clientNonce: Swift.String? = nil
             ) {
                 self.id = id
                 self.channelId = channelId
@@ -2906,6 +2912,7 @@ public enum Components {
                 self.deleted = deleted
                 self.createdAt = createdAt
                 self.editedAt = editedAt
+                self.clientNonce = clientNonce
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -2918,6 +2925,7 @@ public enum Components {
                 case deleted
                 case createdAt
                 case editedAt
+                case clientNonce
             }
         }
         /// - Remark: Generated from `#/components/schemas/GroupMessagePage`.

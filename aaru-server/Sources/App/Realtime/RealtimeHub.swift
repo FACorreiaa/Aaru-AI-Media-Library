@@ -137,13 +137,13 @@ actor RealtimeHub: GroupEventPublishing {
             .init(
                 _type: .message_created, groupId: group.uuidString, channelId: message.channelID.uuidString,
                 messageId: message.id.uuidString,
-                message: .init(message, fromBlocked: blockedBy.contains(recipient))
+                message: .init(message, fromBlocked: blockedBy.contains(recipient), viewer: recipient)
             )
         case let .messageUpdated(group, message, blockedBy):
             .init(
                 _type: .message_updated, groupId: group.uuidString, channelId: message.channelID.uuidString,
                 messageId: message.id.uuidString,
-                message: .init(message, fromBlocked: blockedBy.contains(recipient))
+                message: .init(message, fromBlocked: blockedBy.contains(recipient), viewer: recipient)
             )
         case let .messageDeleted(group, channel, message):
             .init(

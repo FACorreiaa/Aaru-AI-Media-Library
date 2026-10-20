@@ -78,6 +78,8 @@ struct GroupMessage: Sendable, Equatable {
     var createdAt: Date
     var editedAt: Date?
     var deletedAt: Date?
+    /// The author's retry key. Only the author is ever shown it.
+    var clientNonce: String?
 }
 
 /// Where a page of messages starts: older than one message, newer than one, or the latest.

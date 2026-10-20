@@ -1496,6 +1496,8 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       editedAt?: string
+      /** @description Only on your own messages: the clientNonce you posted with, to match a pending send to its echo. */
+      clientNonce?: string
     }
     GroupMessagePage: {
       items: components['schemas']['GroupMessage'][]

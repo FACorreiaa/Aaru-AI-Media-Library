@@ -36,6 +36,7 @@ extension PostgresGroupStore {
         let createdAt: Date
         let editedAt: Date?
         let deletedAt: Date?
+        let clientNonce: String?
 
         var message: GroupMessage {
             let author = authorId.flatMap { id in
@@ -43,14 +44,15 @@ extension PostgresGroupStore {
             }
             return GroupMessage(
                 id: id, channelID: channelId, author: author, body: body, mentions: mentions.map(UserID.init),
-                mentionsAgent: mentionsAgent, createdAt: createdAt, editedAt: editedAt, deletedAt: deletedAt
+                mentionsAgent: mentionsAgent, createdAt: createdAt, editedAt: editedAt, deletedAt: deletedAt,
+                clientNonce: clientNonce
             )
         }
     }
 
     private static let messageColumns: SQLQueryString = """
     SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
-        m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at
+        m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce
     FROM group_messages m
     LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
     """

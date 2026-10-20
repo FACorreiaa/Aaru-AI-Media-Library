@@ -1765,6 +1765,7 @@ components:
         deleted: {type: boolean}
         createdAt: {type: string, format: date-time}
         editedAt: {type: string, format: date-time}
+        clientNonce: {type: string, description: 'Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.'}
     GroupMessagePage:
       type: object
       required: [items]

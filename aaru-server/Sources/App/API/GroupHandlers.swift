@@ -122,12 +122,13 @@ extension APIImplementation {
         } else {
             .latest
         }
+        let viewer = try currentUser()
         let page = try await services.groups.messages(
             groupID(input.path.groupId), channel: channelID(input.path.channelId), cursor: cursor,
-            limit: input.query.limit, viewer: currentUser()
+            limit: input.query.limit, viewer: viewer
         )
         return .ok(.init(body: .json(.init(items: page.messages.map {
-            .init($0, fromBlocked: $0.author.map { page.blocked.contains($0.id) } ?? false)
+            .init($0, fromBlocked: $0.author.map { page.blocked.contains($0.id) } ?? false, viewer: viewer)
         }))))
     }
 
@@ -137,7 +138,7 @@ extension APIImplementation {
             groupID(input.path.groupId), channel: channelID(input.path.channelId), body: body.body,
             nonce: body.clientNonce, viewer: currentUser()
         )
-        return .ok(.init(body: .json(.init(message, fromBlocked: false))))
+        return try .ok(.init(body: .json(.init(message, fromBlocked: false, viewer: currentUser()))))
     }
 
     func editMessage(_ input: Operations.EditMessage.Input) async throws -> Operations.EditMessage.Output {
@@ -146,7 +147,7 @@ extension APIImplementation {
             groupID(input.path.groupId), channel: channelID(input.path.channelId),
             message: messageID(input.path.messageId), body: body.body, viewer: currentUser()
         )
-        return .ok(.init(body: .json(.init(message, fromBlocked: false))))
+        return try .ok(.init(body: .json(.init(message, fromBlocked: false, viewer: currentUser()))))
     }
 
     func deleteMessage(_ input: Operations.DeleteMessage.Input) async throws -> Operations.DeleteMessage.Output {
@@ -246,13 +247,15 @@ extension Components.Schemas.GroupInvite {
 }
 
 extension Components.Schemas.GroupMessage {
-    init(_ message: GroupMessage, fromBlocked: Bool) {
+    /// `viewer` sees the nonce only on their own messages, to match a pending send to its echo.
+    init(_ message: GroupMessage, fromBlocked: Bool, viewer: UserID) {
         self.init(
             id: message.id.uuidString, channelId: message.channelID.uuidString,
             author: message.author.map { .init($0) },
             body: message.body, mentions: message.mentions.map(\.description), mentionsAgent: message.mentionsAgent,
             fromBlocked: fromBlocked, deleted: message.deletedAt != nil, createdAt: message.createdAt,
-            editedAt: message.editedAt
+            editedAt: message.editedAt,
+            clientNonce: message.author?.id == viewer ? message.clientNonce : nil
         )
     }
 }

@@ -279,6 +279,23 @@ struct GroupTests {
 }
 
 extension GroupTests {
+    @Test("GRP-006: the author, and only the author, gets their clientNonce back")
+    func nonceIsTheAuthors() async throws {
+        try await LibraryHarness.run { env in
+            let mine = try await claimHandle(env)
+            let ana = try await friend(env, of: mine)
+            let (group, general) = try await createGroup(env)
+            try await join(env, ana, group: group)
+            let channel = "/v1/groups/\(group)/channels/\(general)/messages"
+            let posted = try await env.send(.post, channel, json: ["body": "hi", "clientNonce": "n-9"]).json()
+            #expect(posted["clientNonce"] as? String == "n-9")
+            let mineAgain = try await env.send(.get, channel).json()["items"] as? [[String: Any]]
+            #expect(mineAgain?.last?["clientNonce"] as? String == "n-9")
+            let hers = try await env.send(.get, channel, token: ana.token).json()["items"] as? [[String: Any]]
+            #expect(hers?.last?["clientNonce"] == nil)
+        }
+    }
+
     @Test("GRP-003: walking back page by page returns every message exactly once")
     func pagination() async throws {
         try await LibraryHarness.run { env in
