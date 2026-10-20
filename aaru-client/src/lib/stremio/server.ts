@@ -9,7 +9,10 @@ import type { components } from '../api/schema'
 // the Apple apps.
 
 export type AgentToken = components['schemas']['AgentToken']
-export type StremioConnection = components['schemas']['AgentTokenCreated']
+type AgentTokenCreated = components['schemas']['AgentTokenCreated']
+export type StremioConnection = Omit<AgentTokenCreated, 'stremio' | 'setup'> & {
+  stremio: NonNullable<AgentTokenCreated['stremio']>
+}
 
 function check<T>(
   result: { data?: T; error?: unknown; response: Response },
@@ -21,11 +24,13 @@ function check<T>(
   return result.data
 }
 
-/** The user's live Stremio links. Stremio is the only token kind so far. */
+/** The user's live Stremio links; MCP connections are listed apart. */
 export const listStremio = createServerFn({ method: 'GET' }).handler(
   async (): Promise<AgentToken[]> =>
     check(
-      await api(sessionToken()).GET('/v1/agent/tokens'),
+      await api(sessionToken()).GET('/v1/agent/tokens', {
+        params: { query: { for: 'stremio' } },
+      }),
       'Your Stremio links could not be loaded.',
     ).items,
 )
@@ -33,14 +38,20 @@ export const listStremio = createServerFn({ method: 'GET' }).handler(
 /** Mints a link. The answer carries the install links; they are shown once. */
 export const connectStremio = createServerFn({ method: 'POST' })
   .validator(z.object({ allowLibraryWrites: z.boolean() }))
-  .handler(async ({ data }): Promise<StremioConnection> =>
-    check(
+  .handler(async ({ data }): Promise<StremioConnection> => {
+    const created = check(
       await api(sessionToken()).POST('/v1/agent/tokens', {
         body: { kind: 'stremio', allowLibraryWrites: data.allowLibraryWrites },
       }),
       'Stremio could not be connected.',
-    ),
-  )
+    )
+    if (!created.stremio) throw new Error('Stremio could not be connected.')
+    return {
+      token: created.token,
+      secret: created.secret,
+      stremio: created.stremio,
+    }
+  })
 
 export const revokeStremio = createServerFn({ method: 'POST' })
   .validator(z.object({ id: z.string().uuid() }))

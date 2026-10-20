@@ -229,7 +229,7 @@ struct StremioTests {
     @Test("A token without scrobble:write is refused player events with 403")
     func scopes() async throws {
         try await LibraryHarness.run { env in
-            let secret = AgentTokenService.secretPrefix + OpaqueToken.generate()
+            let secret = AgentTokenService.stremioPrefix + OpaqueToken.generate()
             try await env.stores.agentTokens.create(
                 AgentToken(
                     id: UUID(),
