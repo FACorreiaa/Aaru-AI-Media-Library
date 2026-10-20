@@ -61,6 +61,13 @@ struct ScheduleTests {
                 "/v1/calendar?from=\(iso(now))&to=\(iso(now.addingTimeInterval(43 * Self.day)))"
             )
             #expect(tooLong.status == .unprocessableContent)
+
+            // A browser's `toISOString()` carries milliseconds; the server reads it the same.
+            let fractional = try await env.send(
+                .get,
+                "/v1/calendar?from=2026-10-18T00:00:00.000Z&to=2026-10-25T00:00:00.000Z"
+            )
+            #expect(fractional.status == .ok)
         }
     }
 
