@@ -78,8 +78,10 @@ protocol TitleStore: Sendable {
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode]
     /// The titles with these ids, in the order given; unknown ids are skipped.
     func titles(ids: [TitleID]) async throws -> [Title]
-    /// Shows someone tracks (wishlist or in progress) whose episodes were never loaded or are
-    /// past their staleness window, never-loaded first. Shows attempted since `retryAfter`
+    /// Status and first unaired episode of each show among these ids; other types are left out.
+    func airing(ids: [TitleID], now: Date) async throws -> [TitleID: TitleAiring]
+    /// Shows someone tracks (wishlist or in progress, or on a list) whose episodes were never
+    /// loaded or are past their staleness window, never-loaded first. Shows attempted since `retryAfter`
     /// are skipped so a failing provider is not hammered.
     func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID]
     /// Records an episode refresh attempt, successful or not.
@@ -90,6 +92,12 @@ extension TitleStore {
     func insert(_ title: Title) async throws {
         try await insert(title, status: nil, runtimeMinutes: nil)
     }
+}
+
+/// A show's lifecycle and its next episode to air, for list rows (LST-003).
+struct TitleAiring: Sendable, Equatable {
+    var status: TitleStatus?
+    var next: CatalogEpisode?
 }
 
 struct TitleCatalogState: Sendable, Equatable {
@@ -323,9 +331,36 @@ enum AgentScope: String, Codable, Sendable, CaseIterable {
     case scrobbleWrite = "scrobble:write"
 }
 
-/// Which outside caller a token is for. Only Stremio exists until OUT-004.
-enum AgentTokenKind: String, Codable, Sendable {
+/// Which outside caller a token is for: the Stremio addon, or an MCP client (OUT-004).
+/// The MCP kinds differ only in the setup Settings shows; they reach the same tools.
+enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
     case stremio
+    case claudeCode = "claude_code"
+    case codex
+    case hermes
+    case gemini
+    case other
+
+    /// Which surface a token opens. A token for one never authenticates on the other.
+    enum Group: String, Sendable {
+        case stremio, mcp
+    }
+
+    var group: Group {
+        self == .stremio ? .stremio : .mcp
+    }
+
+    /// The default token name, and the client's name in Settings.
+    var label: String {
+        switch self {
+        case .stremio: "Stremio"
+        case .claudeCode: "Claude Code"
+        case .codex: "Codex"
+        case .hermes: "Hermes"
+        case .gemini: "Gemini CLI"
+        case .other: "MCP client"
+        }
+    }
 }
 
 /// One agent token as its owner sees it. The secret is never stored, only its SHA-256.

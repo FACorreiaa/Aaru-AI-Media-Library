@@ -37,7 +37,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
 | Agent model | Pluggable `ModelProviding` in `Server`. Anthropic default, user key supported, spend metered daily |
-| Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/AppMCP`. Not a second backend |
+| Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`. Not a second backend |
 
 ## Repo layout
 
@@ -188,7 +188,8 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 Do not write code for a later phase before the P2 gate, and do not add empty abstractions for it.
 Owner's exceptions are recorded in `BACKLOG.md` decisions (Recap 2026-10-16; Stremio tokens,
 scrobble service and addon 2026-10-19; Discover rows (DISC-001), the Discover tab, Insights
-and Home stats 2026-10-20).
+and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remote approval
+2026-10-20).
 
 ## Out of scope (do not add unless asked)
 

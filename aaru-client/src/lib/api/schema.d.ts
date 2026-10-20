@@ -218,8 +218,25 @@ export interface paths {
     /** The user's live agent tokens (OUT-001), newest first. Secrets are never returned. */
     get: operations['listAgentTokens']
     put?: never
-    /** Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once. */
+    /** Mint a token for an outside caller. A Stremio token's answer carries the addon's install links; an MCP client's carries its setup, with the secret filled in. The secret is shown once. */
     post: operations['createAgentToken']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/agent/setup/{kind}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists. */
+    get: operations['getAgentSetup']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -819,8 +836,7 @@ export interface components {
       /** Format: uuid */
       id: string
       name: string
-      /** @enum {string} */
-      kind: 'stremio'
+      kind: components['schemas']['AgentTokenKind']
       scopes: ('library:read' | 'library:write' | 'scrobble:write')[]
       /** Format: date-time */
       createdAt: string
@@ -831,22 +847,47 @@ export interface components {
       lastUsedAt?: string
     }
     AgentTokenCreate: {
-      /** @enum {string} */
-      kind: 'stremio'
+      kind: components['schemas']['AgentTokenKind']
       name?: string
-      /** @description Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by default; removing from Stremio's library never deletes anything in Aaru. */
+      /** @description Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default. */
       allowLibraryWrites?: boolean
+    }
+    /**
+     * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
+     * @enum {string}
+     */
+    AgentTokenKind:
+      'stremio' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
+    /** @enum {string} */
+    AgentMCPKind: 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
+    /** @description How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`. */
+    AgentSetup: {
+      kind: components['schemas']['AgentMCPKind']
+      title: string
+      /** @description The MCP endpoint (streamable HTTP). */
+      url: string
+      steps: {
+        label: string
+        /** @enum {string} */
+        language: 'bash' | 'json' | 'toml' | 'yaml' | 'text'
+        text: string
+        note?: string
+      }[]
+      /** @description A message to paste into the agent once it is connected. */
+      prompt: string
     }
     AgentTokenCreated: {
       token: components['schemas']['AgentToken']
       /** @description Shown once. Anyone holding it, or the install links, can use the token. */
       secret: string
-      stremio: {
+      /** @description Only for a Stremio token. */
+      stremio?: {
         manifestUrl: string
         /** @description The `stremio://` link that opens the Stremio app. */
         installUrl: string
         webInstallUrl: string
       }
+      setup?: components['schemas']['AgentSetup']
     }
     /** @description The one error shape every route returns. */
     ErrorResponse: {
@@ -1236,11 +1277,31 @@ export interface components {
       /** Format: uuid */
       id: string
       name: string
+      /** @description Superseded by `items`; kept for clients that predate it. */
       titles: components['schemas']['TitleSummary'][]
+      /** @description The members in list order. */
+      items: components['schemas']['ListItem'][]
       /** Format: date-time */
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+    }
+    /** @description One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded. */
+    ListItem: {
+      title: components['schemas']['TitleSummary']
+      entry?: components['schemas']['LibraryEntry']
+      /** @enum {string} */
+      showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
+      nextAiring?: components['schemas']['UpcomingEpisode']
+    }
+    UpcomingEpisode: {
+      season: number
+      number: number
+      episodeName?: string
+      /** Format: date-time */
+      airsAt: string
+      /** @description False when the source gives only a date, as on CalendarEntry. */
+      airTimeKnown: boolean
     }
     CreateList: {
       name: string
@@ -1781,7 +1842,10 @@ export interface operations {
   }
   listAgentTokens: {
     parameters: {
-      query?: never
+      query?: {
+        /** @description Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token. */
+        for?: 'stremio' | 'mcp'
+      }
       header?: never
       path?: never
       cookie?: never
@@ -1822,6 +1886,29 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['AgentTokenCreated']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getAgentSetup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['AgentMCPKind']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The client's setup. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AgentSetup']
         }
       }
       default: components['responses']['Error']

@@ -187,7 +187,9 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()
     }
-    try APIImplementation(stores: stores, services: services).registerHandlers(on: router)
+    try APIImplementation(stores: stores, services: services).registerHandlers(
+        on: router, configuration: .init(dateTranscoder: LenientDateTranscoder())
+    )
     // Trakt's browser redirect (IMP-002). Plain, not generated: the generated server would
     // percent-encode the `aaru://` Location.
     router.get("/v1/imports/trakt/callback") { request, _ -> Response in
@@ -205,6 +207,7 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         ),
         tokens: services.agentTokens
     ).register(on: router)
+    MCPRoutes(tools: AgentTools(services: services, stores: stores), tokens: services.agentTokens).register(on: router)
     return router
 }
 
