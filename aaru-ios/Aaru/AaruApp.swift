@@ -15,6 +15,20 @@ struct AaruApp: App {
     }
 
     var body: some Scene {
+        mainWindow
+        #if os(macOS)
+            // Cmd-, opens the same Settings the tab shows.
+            Settings {
+                SettingsWindow(
+                    api: services.api, imports: services.imports, library: services.library, lists: services.lists
+                )
+                .environment(services.session)
+                .tint(Color(.accent))
+            }
+        #endif
+    }
+
+    private var mainWindow: some Scene {
         let scene = WindowGroup {
             RootView(api: services.api, library: services.library, lists: services.lists, imports: services.imports)
                 .environment(services.session)
