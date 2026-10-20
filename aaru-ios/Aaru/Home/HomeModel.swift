@@ -4,9 +4,11 @@ import Observation
 
 typealias ContinueEntry = Components.Schemas.ContinueEntry
 typealias StartEntry = Components.Schemas.StartEntry
+typealias DiscoverRow = Components.Schemas.DiscoverRow
 
 /// Home (APP-009): Continue watching and Start watching from `/v1/up-next`, and the next two
-/// weeks of airings from `/v1/calendar`. The last good load is cached so Home opens offline.
+/// weeks of airings from `/v1/calendar`, then Discover's public rows from `/v1/discover`
+/// (DISC-001). The last good load is cached so Home opens offline.
 @MainActor
 @Observable
 final class HomeModel {
@@ -14,6 +16,11 @@ final class HomeModel {
     private(set) var startWatching: [StartEntry] = []
     /// Unwatched episodes of tracked shows airing from today on, in air order.
     private(set) var upcoming: [CalendarEntry] = []
+    /// Trending and this-season rows, the same for everyone. Below the user's own rows, and
+    /// all a new account sees.
+    private(set) var discover: [DiscoverRow] = []
+    /// Discover hits being added right now, by hit id.
+    private(set) var adding: Set<String> = []
     private(set) var isLoading = false
     private(set) var hasLoaded = false
     private(set) var pending: Set<String> = []
@@ -44,12 +51,14 @@ final class HomeModel {
         if let snapshot = cache?.load() {
             apply(snapshot)
         }
+        discover = cache?.loadDiscover() ?? []
     }
 
     /// For previews: rows already in place, nothing to fetch.
-    convenience init(preview snapshot: HomeCache.Snapshot, now: Date = .now) {
+    convenience init(preview snapshot: HomeCache.Snapshot, discover: [DiscoverRow] = [], now: Date = .now) {
         self.init(api: nil, library: nil, cache: nil, now: { now })
         apply(snapshot)
+        self.discover = discover
         hasLoaded = true
     }
 
@@ -64,11 +73,26 @@ final class HomeModel {
         await load()
     }
 
-    /// Both reads at once. Either failing keeps whatever is on screen.
+    /// Every read at once. Any failing keeps whatever is on screen; Discover failing never
+    /// touches the user's own rows.
     func load() async {
         guard let api, !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
+        async let discoverRows = Self.fetchDiscover(api)
+        await loadOwnRows(api)
+        if let rows = await discoverRows {
+            discover = rows
+            cache?.saveDiscover(rows)
+        }
+    }
+
+    private nonisolated static func fetchDiscover(_ api: Client) async -> [DiscoverRow]? {
+        guard case let .ok(response) = try? await api.getDiscover() else { return nil }
+        return try? response.body.json.rows
+    }
+
+    private func loadOwnRows(_ api: Client) async {
         // The widgets' window: from this week's Monday (or yesterday — a date-only air date is
         // midnight UTC, "yesterday" west of Greenwich) to two weeks out. Home keeps only today on.
         let window = WidgetSync.window(now: now(), calendar: calendar)
@@ -117,6 +141,43 @@ final class HomeModel {
             }
             .prefix(Self.upcomingLimit)
             .map(\.self)
+    }
+
+    // MARK: Discover
+
+    /// The library item a Discover hit opens: the server's mark, else a match on the shelf
+    /// (it may have been added since the rows loaded).
+    func libraryItemID(_ hit: CatalogHit) -> String? {
+        hit.libraryItemId ?? library?.entry(matching: hit)?.id
+    }
+
+    /// Adds a Discover hit with a status, as search does. The card turns into a link to it.
+    func add(_ hit: CatalogHit, status: LibraryStatus) async {
+        guard let api, !adding.contains(hit.id) else { return }
+        problem = nil
+        adding.insert(hit.id)
+        defer { adding.remove(hit.id) }
+        let ref = Components.Schemas.MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year)
+        do {
+            switch try await api.addLibraryItem(body: .json(.init(mediaRef: ref, status: status))) {
+            case let .ok(response):
+                let entry = try response.body.json
+                library?.upsert(entry)
+                mark(hit, libraryItemID: entry.id)
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "\(hit.title) could not be added."
+            }
+        } catch {
+            problem = "\(hit.title) was not added. Aaru could not reach the server."
+        }
+    }
+
+    private func mark(_ hit: CatalogHit, libraryItemID: String) {
+        for row in discover.indices {
+            for item in discover[row].items.indices where discover[row].items[item].id == hit.id {
+                discover[row].items[item].libraryItemId = libraryItemID
+            }
+        }
     }
 
     // MARK: Checking

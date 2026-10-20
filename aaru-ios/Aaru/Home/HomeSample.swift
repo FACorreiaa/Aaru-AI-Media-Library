@@ -53,7 +53,43 @@ extension HomeModel {
                 upNext: .init(continueWatching: continueWatching, startWatching: startWatching),
                 airing: airing
             ),
+            discover: sampleDiscover,
             now: now
         )
+    }
+
+    /// A new account: nothing tracked, only the public rows (DISC-001).
+    static var newAccount: HomeModel {
+        HomeModel(
+            preview: .init(upNext: .init(continueWatching: [], startWatching: []), airing: []),
+            discover: sampleDiscover
+        )
+    }
+
+    private static var sampleDiscover: [DiscoverRow] {
+        func hit(_ name: String, _ year: Int, type: Components.Schemas.MediaType = .show, anime: Bool = false)
+            -> CatalogHit
+        {
+            .init(_type: type, title: name, year: year, isAnime: anime, ids: .init(tmdb: name))
+        }
+        return [
+            .init(id: "tv_trending", title: "Trending shows", items: [
+                hit("Pluribus", 2025), hit("The Pitt", 2025), hit("Severance", 2022), hit("Andor", 2022),
+            ]),
+            .init(id: "anime_season", title: "Fall 2026 anime", items: [
+                hit("The Apothecary Diaries", 2026, anime: true), hit("Black Clover", 2026, anime: true),
+                hit("Cyberpunk: Edgerunners 2", 2026, type: .movie, anime: true),
+            ]),
+            .init(id: "books_trending", title: "Trending books", items: [
+                .init(
+                    _type: .book,
+                    title: "Atomic Habits",
+                    year: 2016,
+                    byline: "James Clear",
+                    isAnime: false,
+                    ids: .init(openLibrary: "OL17930368W")
+                ),
+            ]),
+        ]
     }
 }
