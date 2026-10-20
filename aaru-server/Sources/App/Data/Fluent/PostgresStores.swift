@@ -27,7 +27,8 @@ extension Stores {
             push: PostgresPushStore(sql: sql),
             agentTokens: PostgresAgentTokenStore(sql: sql),
             watchEvents: PostgresWatchEventStore(sql: sql),
-            plans: PostgresPlanStore(database: database)
+            plans: PostgresPlanStore(database: database),
+            oauth: PostgresOAuthStore(database: database)
         )
     }
 }

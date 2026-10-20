@@ -10,7 +10,7 @@ struct ConnectionSetupView: View {
     var onCreated: (Components.Schemas.AgentTokenCreated) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var kind: Kind = .claudeCode
+    @State private var kind: Kind = .claude
     @State private var name = ""
     @State private var allowsLibraryWrites = false
     @State private var preview: Components.Schemas.AgentSetup?
@@ -41,25 +41,29 @@ struct ConnectionSetupView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        TextField("Name", text: $name, prompt: Text(Self.label(kind.rawValue)))
-                        Toggle(isOn: $allowsLibraryWrites) {
-                            Text("Allow changes")
-                            Text("One item at a time, as a tap would. Never a removal or many items at once.")
-                        }
-                    }
-                    Section {
-                        Button {
-                            Task { await create() }
-                        } label: {
-                            HStack {
-                                Text("Connect \(Self.label(kind.rawValue))")
-                                if working {
-                                    Spacer()
-                                    ProgressView()
-                                }
+                        if !connectsOverOAuth {
+                            TextField("Name", text: $name, prompt: Text(Self.label(kind.rawValue)))
+                            Toggle(isOn: $allowsLibraryWrites) {
+                                Text("Allow changes")
+                                Text("One item at a time, as a tap would. Bigger changes wait for your approval.")
                             }
                         }
-                        .disabled(working)
+                    }
+                    if !connectsOverOAuth {
+                        Section {
+                            Button {
+                                Task { await create() }
+                            } label: {
+                                HStack {
+                                    Text("Connect \(Self.label(kind.rawValue))")
+                                    if working {
+                                        Spacer()
+                                        ProgressView()
+                                    }
+                                }
+                            }
+                            .disabled(working)
+                        }
                     }
                     if let preview {
                         steps(preview)
@@ -82,6 +86,11 @@ struct ConnectionSetupView: View {
         }
         // A token shown once must not vanish on a stray swipe.
         .interactiveDismissDisabled(created != nil)
+    }
+
+    /// Claude asks for approval in Aaru itself: no token to make here, only the steps.
+    private var connectsOverOAuth: Bool {
+        kind == .claude || preview?.auth == .oauth
     }
 
     @ViewBuilder
@@ -156,6 +165,7 @@ struct ConnectionSetupView: View {
 
     static func label(_ kind: String) -> String {
         switch kind {
+        case "claude": "Claude"
         case "claude_code": "Claude Code"
         case "codex": "Codex"
         case "hermes": "Hermes"

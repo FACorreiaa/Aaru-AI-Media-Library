@@ -323,8 +323,7 @@ enum AgentScope: String, Codable, Sendable, CaseIterable {
     case scrobbleWrite = "scrobble:write"
 }
 
-/// Which outside caller a token is for: the Stremio addon, or an MCP client (OUT-004).
-/// The MCP kinds differ only in the setup Settings shows; they reach the same tools.
+/// The Stremio addon, or an MCP client (OUT-004): MCP kinds differ only in their setup steps.
 enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
     case stremio
     case claudeCode = "claude_code"
@@ -332,6 +331,8 @@ enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
     case hermes
     case gemini
     case other
+    /// Claude (claude.ai, Desktop, mobile) through its custom connector, over OAuth.
+    case claude
 
     /// Which surface a token opens. A token for one never authenticates on the other.
     enum Group: String, Sendable {
@@ -351,6 +352,7 @@ enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
         case .hermes: "Hermes"
         case .gemini: "Gemini CLI"
         case .other: "MCP client"
+        case .claude: "Claude"
         }
     }
 }
@@ -394,4 +396,5 @@ struct Stores: Sendable {
     var agentTokens: any AgentTokenStore
     var watchEvents: any WatchEventStore
     var plans: any PlanStore
+    var oauth: any OAuthStore
 }

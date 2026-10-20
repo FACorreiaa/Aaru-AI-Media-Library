@@ -3,8 +3,9 @@ import type { components } from '../api/schema'
 type AgentToken = components['schemas']['AgentToken']
 export type AgentKind = components['schemas']['AgentMCPKind']
 
-/** The MCP clients Settings offers, in the order it shows them. */
+/** The MCP clients Settings offers, in the order it shows them. Claude connects over OAuth. */
 export const AGENT_KINDS = [
+  'claude',
   'claude_code',
   'codex',
   'hermes',
@@ -19,6 +20,7 @@ const labels: Record<AgentToken['kind'], string> = {
   gemini: 'Gemini CLI',
   other: 'Other MCP client',
   stremio: 'Stremio',
+  claude: 'Claude',
 }
 
 export const kindLabel = (kind: AgentToken['kind']) => labels[kind]

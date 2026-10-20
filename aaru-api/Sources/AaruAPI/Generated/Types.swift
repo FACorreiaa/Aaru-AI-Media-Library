@@ -105,6 +105,19 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/plans/{id}/deny`.
     /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)`.
     func denyPlan(_ input: Operations.DenyPlan.Input) async throws -> Operations.DenyPlan.Output
+    /// A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked.
+    ///
+    /// - Remark: HTTP `GET /v1/oauth/requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)`.
+    func getOAuthRequest(_ input: Operations.GetOAuthRequest.Input) async throws -> Operations.GetOAuthRequest.Output
+    /// Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next.
+    ///
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)`.
+    func approveOAuthRequest(_ input: Operations.ApproveOAuthRequest.Input) async throws -> Operations.ApproveOAuthRequest.Output
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)`.
+    func denyOAuthRequest(_ input: Operations.DenyOAuthRequest.Input) async throws -> Operations.DenyOAuthRequest.Output
     /// How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists.
     ///
     /// - Remark: HTTP `GET /v1/agent/setup/{kind}`.
@@ -529,6 +542,47 @@ extension APIProtocol {
         try await denyPlan(Operations.DenyPlan.Input(
             path: path,
             headers: headers
+        ))
+    }
+    /// A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked.
+    ///
+    /// - Remark: HTTP `GET /v1/oauth/requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)`.
+    public func getOAuthRequest(
+        path: Operations.GetOAuthRequest.Input.Path,
+        headers: Operations.GetOAuthRequest.Input.Headers = .init()
+    ) async throws -> Operations.GetOAuthRequest.Output {
+        try await getOAuthRequest(Operations.GetOAuthRequest.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next.
+    ///
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)`.
+    public func approveOAuthRequest(
+        path: Operations.ApproveOAuthRequest.Input.Path,
+        headers: Operations.ApproveOAuthRequest.Input.Headers = .init(),
+        body: Operations.ApproveOAuthRequest.Input.Body
+    ) async throws -> Operations.ApproveOAuthRequest.Output {
+        try await approveOAuthRequest(Operations.ApproveOAuthRequest.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)`.
+    public func denyOAuthRequest(
+        path: Operations.DenyOAuthRequest.Input.Path,
+        headers: Operations.DenyOAuthRequest.Input.Headers = .init(),
+        body: Operations.DenyOAuthRequest.Input.Body
+    ) async throws -> Operations.DenyOAuthRequest.Output {
+        try await denyOAuthRequest(Operations.DenyOAuthRequest.Input(
+            path: path,
+            headers: headers,
+            body: body
         ))
     }
     /// How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists.
@@ -1338,6 +1392,66 @@ public enum Components {
                 case actionId
             }
         }
+        /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest`.
+        public struct OAuthConsentRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/id`.
+            public var id: Swift.String
+            /// The name the app registered with. Apps name themselves; show the host too.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/clientName`.
+            public var clientName: Swift.String
+            /// Where the app returns the user. This part an impostor cannot fake.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/redirectHost`.
+            public var redirectHost: Swift.String
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/kind`.
+            public var kind: Components.Schemas.AgentTokenKind
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// Creates a new `OAuthConsentRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - clientName: The name the app registered with. Apps name themselves; show the host too.
+            ///   - redirectHost: Where the app returns the user. This part an impostor cannot fake.
+            ///   - kind:
+            ///   - expiresAt:
+            public init(
+                id: Swift.String,
+                clientName: Swift.String,
+                redirectHost: Swift.String,
+                kind: Components.Schemas.AgentTokenKind,
+                expiresAt: Foundation.Date
+            ) {
+                self.id = id
+                self.clientName = clientName
+                self.redirectHost = redirectHost
+                self.kind = kind
+                self.expiresAt = expiresAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case clientName
+                case redirectHost
+                case kind
+                case expiresAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OAuthRedirect`.
+        public struct OAuthRedirect: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OAuthRedirect/redirectTo`.
+            public var redirectTo: Swift.String
+            /// Creates a new `OAuthRedirect`.
+            ///
+            /// - Parameters:
+            ///   - redirectTo:
+            public init(redirectTo: Swift.String) {
+                self.redirectTo = redirectTo
+            }
+            public enum CodingKeys: String, CodingKey {
+                case redirectTo
+            }
+        }
         /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
         ///
         /// - Remark: Generated from `#/components/schemas/AgentTokenKind`.
@@ -1348,9 +1462,11 @@ public enum Components {
             case hermes = "hermes"
             case gemini = "gemini"
             case other = "other"
+            case claude = "claude"
         }
         /// - Remark: Generated from `#/components/schemas/AgentMCPKind`.
         @frozen public enum AgentMCPKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case claude = "claude"
             case claudeCode = "claude_code"
             case codex = "codex"
             case hermes = "hermes"
@@ -1365,6 +1481,17 @@ public enum Components {
             public var kind: Components.Schemas.AgentMCPKind
             /// - Remark: Generated from `#/components/schemas/AgentSetup/title`.
             public var title: Swift.String
+            /// `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/auth`.
+            @frozen public enum AuthPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case token = "token"
+                case oauth = "oauth"
+            }
+            /// `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/auth`.
+            public var auth: Components.Schemas.AgentSetup.AuthPayload
             /// The MCP endpoint (streamable HTTP).
             ///
             /// - Remark: Generated from `#/components/schemas/AgentSetup/url`.
@@ -1425,18 +1552,21 @@ public enum Components {
             /// - Parameters:
             ///   - kind:
             ///   - title:
+            ///   - auth: `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
             ///   - url: The MCP endpoint (streamable HTTP).
             ///   - steps:
             ///   - prompt: A message to paste into the agent once it is connected.
             public init(
                 kind: Components.Schemas.AgentMCPKind,
                 title: Swift.String,
+                auth: Components.Schemas.AgentSetup.AuthPayload,
                 url: Swift.String,
                 steps: Components.Schemas.AgentSetup.StepsPayload,
                 prompt: Swift.String
             ) {
                 self.kind = kind
                 self.title = title
+                self.auth = auth
                 self.url = url
                 self.steps = steps
                 self.prompt = prompt
@@ -1444,6 +1574,7 @@ public enum Components {
             public enum CodingKeys: String, CodingKey {
                 case kind
                 case title
+                case auth
                 case url
                 case steps
                 case prompt
@@ -7096,6 +7227,507 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked.
+    ///
+    /// - Remark: HTTP `GET /v1/oauth/requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)`.
+    public enum GetOAuthRequest {
+        public static let id: Swift.String = "getOAuthRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetOAuthRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetOAuthRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetOAuthRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetOAuthRequest.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetOAuthRequest.Input.Path,
+                headers: Operations.GetOAuthRequest.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.OAuthConsentRequest)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.OAuthConsentRequest {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetOAuthRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetOAuthRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The request.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetOAuthRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetOAuthRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next.
+    ///
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)`.
+    public enum ApproveOAuthRequest {
+        public static let id: Swift.String = "approveOAuthRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.ApproveOAuthRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApproveOAuthRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApproveOAuthRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ApproveOAuthRequest.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/json/binding`.
+                    public var binding: Swift.String
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/json/name`.
+                    public var name: Swift.String?
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/json/allowLibraryWrites`.
+                    public var allowLibraryWrites: Swift.Bool?
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - binding:
+                    ///   - name:
+                    ///   - allowLibraryWrites:
+                    public init(
+                        binding: Swift.String,
+                        name: Swift.String? = nil,
+                        allowLibraryWrites: Swift.Bool? = nil
+                    ) {
+                        self.binding = binding
+                        self.name = name
+                        self.allowLibraryWrites = allowLibraryWrites
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case binding
+                        case name
+                        case allowLibraryWrites
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/content/application\/json`.
+                case json(Operations.ApproveOAuthRequest.Input.Body.JsonPayload)
+            }
+            public var body: Operations.ApproveOAuthRequest.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.ApproveOAuthRequest.Input.Path,
+                headers: Operations.ApproveOAuthRequest.Input.Headers = .init(),
+                body: Operations.ApproveOAuthRequest.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.OAuthRedirect)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.OAuthRedirect {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ApproveOAuthRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ApproveOAuthRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Send the browser here.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ApproveOAuthRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ApproveOAuthRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)`.
+    public enum DenyOAuthRequest {
+        public static let id: Swift.String = "denyOAuthRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DenyOAuthRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DenyOAuthRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DenyOAuthRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DenyOAuthRequest.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/requestBody/json/binding`.
+                    public var binding: Swift.String
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - binding:
+                    public init(binding: Swift.String) {
+                        self.binding = binding
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case binding
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/requestBody/content/application\/json`.
+                case json(Operations.DenyOAuthRequest.Input.Body.JsonPayload)
+            }
+            public var body: Operations.DenyOAuthRequest.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.DenyOAuthRequest.Input.Path,
+                headers: Operations.DenyOAuthRequest.Input.Headers = .init(),
+                body: Operations.DenyOAuthRequest.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.OAuthRedirect)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.OAuthRedirect {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.DenyOAuthRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.DenyOAuthRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Send the browser here.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.DenyOAuthRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.DenyOAuthRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

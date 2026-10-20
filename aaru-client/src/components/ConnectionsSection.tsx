@@ -18,7 +18,7 @@ import type {
 // it fills in, right after creating it.
 export function ConnectionsSection(props: { connections: AgentToken[] }) {
   const [connections, setConnections] = createSignal(props.connections)
-  const [kind, setKind] = createSignal<AgentKind>('claude_code')
+  const [kind, setKind] = createSignal<AgentKind>('claude')
   const [name, setName] = createSignal('')
   const [allowWrites, setAllowWrites] = createSignal(false)
   const [busy, setBusy] = createSignal(false)
@@ -106,40 +106,42 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
               {(setup) => <SetupSteps setup={setup()} />}
             </Show>
 
-            <label class="flex flex-col gap-1 text-sm">
-              <span class="font-medium">Name</span>
-              <input
-                type="text"
-                maxLength={80}
-                placeholder={kindLabel(kind())}
-                class="min-h-11 max-w-sm rounded-[10px] border border-line bg-paper px-3"
-                value={name()}
-                onInput={(e) => setName(e.currentTarget.value)}
-              />
-            </label>
-            <label class="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                class="mt-0.5"
-                checked={allowWrites()}
-                onChange={(e) => setAllowWrites(e.currentTarget.checked)}
-              />
-              <span>
-                Allow changes
-                <span class="block text-xs text-muted">
-                  One item at a time, as a tap would. It can never remove
-                  anything or change many items at once.
+            <Show when={preview()?.auth === 'token'}>
+              <label class="flex flex-col gap-1 text-sm">
+                <span class="font-medium">Name</span>
+                <input
+                  type="text"
+                  maxLength={80}
+                  placeholder={kindLabel(kind())}
+                  class="min-h-11 max-w-sm rounded-[10px] border border-line bg-paper px-3"
+                  value={name()}
+                  onInput={(e) => setName(e.currentTarget.value)}
+                />
+              </label>
+              <label class="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  class="mt-0.5"
+                  checked={allowWrites()}
+                  onChange={(e) => setAllowWrites(e.currentTarget.checked)}
+                />
+                <span>
+                  Allow changes
+                  <span class="block text-xs text-muted">
+                    One item at a time, as a tap would. It can never remove
+                    anything or change many items at once.
+                  </span>
                 </span>
-              </span>
-            </label>
-            <button
-              type="button"
-              class="min-h-11 self-start rounded-full bg-accent px-5 text-sm font-semibold text-on-accent disabled:opacity-50"
-              disabled={busy()}
-              onClick={() => void create()}
-            >
-              {busy() ? 'Creating…' : `Connect ${kindLabel(kind())}`}
-            </button>
+              </label>
+              <button
+                type="button"
+                class="min-h-11 self-start rounded-full bg-accent px-5 text-sm font-semibold text-on-accent disabled:opacity-50"
+                disabled={busy()}
+                onClick={() => void create()}
+              >
+                {busy() ? 'Creating…' : `Connect ${kindLabel(kind())}`}
+              </button>
+            </Show>
           </div>
         }
       >

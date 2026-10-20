@@ -39,7 +39,7 @@ struct ConnectionsSection: View {
             Text("Connections")
         } footer: {
             Text(
-                "Claude Code, Codex, Hermes, Gemini CLI or any MCP client can read your library. If you allow "
+                "Claude, Claude Code, Codex, Hermes, Gemini CLI or any MCP client can read your library. If you allow "
                     + "changes, it changes one item at a time, and you can undo it here."
             )
         }

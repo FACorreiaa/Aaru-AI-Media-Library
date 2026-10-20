@@ -142,3 +142,53 @@ extension UntouchedStore: PlanStore {
         throw Touched()
     }
 }
+
+extension UntouchedStore: OAuthStore {
+    func register(_: OAuthClient) async throws {
+        throw Touched()
+    }
+
+    func client(id _: String) async throws -> OAuthClient? {
+        throw Touched()
+    }
+
+    func createRequest(_: OAuthRequest) async throws {
+        throw Touched()
+    }
+
+    func request(id _: UUID, now _: Date) async throws -> OAuthRequest? {
+        throw Touched()
+    }
+
+    func consumeRequest(id _: UUID, now _: Date) async throws -> OAuthRequest? {
+        throw Touched()
+    }
+
+    func createCode(_: OAuthCode, hash _: String) async throws {
+        throw Touched()
+    }
+
+    func redeemCode(hash _: String, now _: Date) async throws -> CodeRedemption? {
+        throw Touched()
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    func issue(
+        _: AgentToken, userID _: UserID, clientID _: String, codeHash _: String, accessHash _: String,
+        accessExpiresAt _: Date, refreshHash _: String, refreshExpiresAt _: Date
+    ) async throws {
+        throw Touched()
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    func rotate(
+        refreshHash _: String, clientID _: String, now _: Date, accessHash _: String, accessExpiresAt _: Date,
+        newRefreshHash _: String, refreshExpiresAt _: Date
+    ) async throws -> RefreshOutcome {
+        throw Touched()
+    }
+
+    func revoke(tokenHash _: String, now _: Date) async throws {
+        throw Touched()
+    }
+}

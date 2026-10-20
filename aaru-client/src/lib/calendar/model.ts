@@ -44,6 +44,12 @@ export function daysFrom(start: string, count = 7): string[] {
   return Array.from({ length: count }, (_, i) => addDays(start, i))
 }
 
+/** An instant as whole-second ISO-8601 ("…T00:00:00Z"). `toISOString()` adds milliseconds,
+ * which the server's date-time query parsing rejects with a 400. */
+function instant(ms: number): string {
+  return new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z')
+}
+
 /** The instants to ask `/v1/calendar` for so every day in [first, last] is complete. Two days
  * of padding on each side cover any UTC offset. */
 export function fetchWindow(
@@ -51,8 +57,8 @@ export function fetchWindow(
   last: string,
 ): { from: string; to: string } {
   return {
-    from: new Date(Date.parse(`${first}T00:00:00Z`) - 2 * DAY_MS).toISOString(),
-    to: new Date(Date.parse(`${last}T00:00:00Z`) + 3 * DAY_MS).toISOString(),
+    from: instant(Date.parse(`${first}T00:00:00Z`) - 2 * DAY_MS),
+    to: instant(Date.parse(`${last}T00:00:00Z`) + 3 * DAY_MS),
   }
 }
 
@@ -71,8 +77,8 @@ export function fetchWindows(
   for (let cursor = Date.parse(from); cursor < end;) {
     const next = Math.min(end, cursor + MAX_FETCH_DAYS * DAY_MS)
     windows.push({
-      from: new Date(cursor).toISOString(),
-      to: new Date(next).toISOString(),
+      from: instant(cursor),
+      to: instant(next),
     })
     cursor = next
   }

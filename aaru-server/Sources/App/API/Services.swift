@@ -15,6 +15,7 @@ struct Services: Sendable {
     var agentTokens: AgentTokenService
     var scrobble: ScrobbleService
     var plans: PlanService
+    var oauth: OAuthService
     /// Nil when `VAPID_CONFIG` is unset; the key route then answers 503.
     var webPush: (any WebPushSending)?
 
@@ -25,7 +26,9 @@ struct Services: Sendable {
         auth: AuthService,
         trakt: TraktAPI? = nil,
         stremio: StremioAccount? = nil,
-        publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!
+        publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!,
+        // The web app's base URL and the binding cookie's domain, for the OAuth consent page.
+        oauth: (webBaseURL: URL, cookieDomain: String?) = (URL(string: "https://aaruapp.com")!, "aaruapp.com")
     ) -> Services {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
         let resolver = TitleResolver(stores: stores, catalogs: catalogs)
@@ -51,7 +54,13 @@ struct Services: Sendable {
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
-            plans: PlanService(stores: stores, library: library)
+            plans: PlanService(stores: stores, library: library),
+            oauth: OAuthService(
+                stores: stores, oauth: stores.oauth,
+                settings: .init(
+                    publicBaseURL: publicBaseURL, webBaseURL: oauth.webBaseURL, cookieDomain: oauth.cookieDomain
+                )
+            )
         )
     }
 

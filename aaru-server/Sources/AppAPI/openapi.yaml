@@ -328,6 +328,71 @@ paths:
               schema: {$ref: '#/components/schemas/AgentPlan'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/oauth/requests/{id}:
+    get:
+      operationId: getOAuthRequest
+      summary: >-
+        A connection an app asked for over OAuth (Claude's custom connector), for the consent
+        page. Expires ten minutes after the app asked.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The request.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OAuthConsentRequest'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/oauth/requests/{id}/approve:
+    post:
+      operationId: approveOAuthRequest
+      summary: >-
+        Allow the app. Only the browser that started the request holds its binding (the
+        `aaru_oauth` cookie the API set); the answer is where to send the browser next.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [binding]
+              properties:
+                binding: {type: string}
+                name: {type: string, maxLength: 80}
+                allowLibraryWrites: {type: boolean}
+      responses:
+        '200':
+          description: Send the browser here.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OAuthRedirect'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/oauth/requests/{id}/deny:
+    post:
+      operationId: denyOAuthRequest
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [binding]
+              properties:
+                binding: {type: string}
+      responses:
+        '200':
+          description: Send the browser here.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OAuthRedirect'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/agent/setup/{kind}:
     get:
       operationId: getAgentSetup
@@ -1151,24 +1216,48 @@ components:
         actionId:
           type: string
           description: The journaled action, once applied; undo it like any other.
+    OAuthConsentRequest:
+      type: object
+      required: [id, clientName, redirectHost, kind, expiresAt]
+      properties:
+        id: {type: string, format: uuid}
+        clientName:
+          type: string
+          description: The name the app registered with. Apps name themselves; show the host too.
+        redirectHost:
+          type: string
+          description: Where the app returns the user. This part an impostor cannot fake.
+        kind: {$ref: '#/components/schemas/AgentTokenKind'}
+        expiresAt: {type: string, format: date-time}
+    OAuthRedirect:
+      type: object
+      required: [redirectTo]
+      properties:
+        redirectTo: {type: string}
     AgentTokenKind:
       type: string
       description: >-
         Which outside caller a token is for. The MCP kinds differ only in the setup shown; they
         reach the same tools.
-      enum: [stremio, claude_code, codex, hermes, gemini, other]
+      enum: [stremio, claude_code, codex, hermes, gemini, other, claude]
     AgentMCPKind:
       type: string
-      enum: [claude_code, codex, hermes, gemini, other]
+      enum: [claude, claude_code, codex, hermes, gemini, other]
     AgentSetup:
       type: object
       description: >-
         How to connect one MCP client: the endpoint, then steps to copy. Before a token exists
         the secret reads `PASTE_YOUR_TOKEN_HERE`.
-      required: [kind, title, url, steps, prompt]
+      required: [kind, title, url, auth, steps, prompt]
       properties:
         kind: {$ref: '#/components/schemas/AgentMCPKind'}
         title: {type: string}
+        auth:
+          type: string
+          enum: [token, oauth]
+          description: >-
+            `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which
+            sends the user to Aaru to approve; no token to copy.
         url:
           type: string
           description: The MCP endpoint (streamable HTTP).

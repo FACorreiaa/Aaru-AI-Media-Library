@@ -23,7 +23,8 @@ enum AgentSetup {
         let url = endpoint(publicBaseURL)
         let token = secret ?? placeholder
         return Components.Schemas.AgentSetup(
-            kind: dto, title: kind.label, url: url, steps: steps(kind, url: url, token: token), prompt: prompt
+            kind: dto, title: kind.label, auth: kind == .claude ? .oauth : .token, url: url,
+            steps: steps(kind, url: url, token: token), prompt: prompt
         )
     }
 
@@ -35,6 +36,7 @@ enum AgentSetup {
         case .codex: codex(url: url, token: token)
         case .hermes: hermes(url: url, token: token)
         case .gemini: gemini(url: url, token: token)
+        case .claude: claude(url: url)
         case .other, .stremio: [
                 Step(label: "Any MCP client", language: .text, text: """
                 Transport: streamable HTTP
@@ -43,6 +45,19 @@ enum AgentSetup {
                 """),
             ]
         }
+    }
+
+    /// claude.ai, Claude Desktop and Claude mobile: a custom connector over OAuth, no token.
+    private static func claude(url: String) -> [Step] {
+        [
+            Step(label: "In Claude, open Settings → Connectors → Add custom connector", language: .text, text: """
+            Name: Aaru
+            URL:  \(url)
+            """, note: """
+            Then choose Connect: Claude sends you to Aaru to approve. On a Team or Enterprise plan, an owner \
+            adds the connector for everyone first.
+            """),
+        ]
     }
 
     private static func export(_ token: String) -> Step {
@@ -56,7 +71,10 @@ enum AgentSetup {
             Step(label: "Add Aaru to Claude Code", language: .bash, text: """
             claude mcp add --transport http \(serverName) \(url) \\
               --header "Authorization: Bearer \(token)"
-            """, note: "Adds Aaru for you on this machine. Run /mcp in Claude Code to check it is connected."),
+            """, note: """
+            Adds Aaru for you on this machine. Run /mcp in Claude Code to check it is connected. Or leave \
+            out the header and choose Authenticate in /mcp to approve in Aaru instead of pasting a token.
+            """),
             export(token),
             Step(label: "Or share it with a project (.mcp.json)", language: .json, text: """
             {
