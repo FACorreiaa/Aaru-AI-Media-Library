@@ -35,6 +35,8 @@ final class ChannelModel {
         let id: String
         let body: String
         let createdAt: Date
+        /// Title channels only; elsewhere the server ignores it.
+        var spoiler: SpoilerChoice = .auto
         var failed = false
     }
 
@@ -104,10 +106,10 @@ final class ChannelModel {
 
     // MARK: Writes
 
-    func send(_ text: String) async {
+    func send(_ text: String, spoiler: SpoilerChoice = .auto) async {
         let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty, body.count <= Self.maxLength else { return }
-        let outgoing = Outgoing(id: UUID().uuidString, body: body, createdAt: Date())
+        let outgoing = Outgoing(id: UUID().uuidString, body: body, createdAt: Date(), spoiler: spoiler)
         outbox.append(outgoing)
         await deliver(outgoing)
     }
@@ -127,7 +129,10 @@ final class ChannelModel {
         do {
             switch try await api.postMessage(
                 path: .init(groupId: groupID, channelId: channelID),
-                body: .json(.init(body: outgoing.body, clientNonce: outgoing.id))
+                body: .json(.init(
+                    body: outgoing.body, clientNonce: outgoing.id, spoiler: outgoing.spoiler.stamp,
+                    spoilerFree: outgoing.spoiler == .free ? true : nil
+                ))
             ) {
             case let .ok(response):
                 let message = try response.body.json
@@ -275,15 +280,6 @@ final class ChannelModel {
 
     // MARK: Helpers
 
-    private func merge(_ incoming: [GroupMessage]) {
-        guard !incoming.isEmpty else { return }
-        var byID = Dictionary(messages.map { ($0.id, $0) }, uniquingKeysWith: { _, new in new })
-        for message in incoming {
-            byID[message.id] = message
-        }
-        messages = byID.values.sorted { ($0.createdAt, $0.id) < ($1.createdAt, $1.id) }
-    }
-
     /// The first of the last `unread` messages from others: the server counts only those.
     static func firstUnread(in messages: [GroupMessage], unread: Int, viewer: String?) -> String? {
         guard unread > 0 else { return nil }
@@ -295,5 +291,27 @@ final class ChannelModel {
             }
         }
         return messages.first?.id
+    }
+}
+
+private extension ChannelModel {
+    func merge(_ incoming: [GroupMessage]) {
+        guard !incoming.isEmpty else { return }
+        // One row per id, the newer copy winning, in the order rows arrived (the server's order).
+        var merged = messages
+        var position = Dictionary(merged.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for message in incoming {
+            if let index = position[message.id] {
+                merged[index] = message
+            } else {
+                position[message.id] = merged.count
+                merged.append(message)
+            }
+        }
+        // Timestamps arrive in whole seconds, so ties keep arrival order; an id tie-break would
+        // scramble messages sent in the same second.
+        messages = merged.enumerated()
+            .sorted { ($0.element.createdAt, $0.offset) < ($1.element.createdAt, $1.offset) }
+            .map(\.element)
     }
 }

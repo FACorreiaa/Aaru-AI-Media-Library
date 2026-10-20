@@ -47,6 +47,7 @@ struct MessageRow: View {
     let myUserID: String?
     let myHandle: String?
     @State private var revealed = false
+    @State private var spoilerShown = false
 
     private var message: GroupMessage {
         line.message
@@ -83,12 +84,21 @@ struct MessageRow: View {
                     .buttonStyle(.borderless)
                     .font(.callout)
             }
+        } else if message.veiled, !spoilerShown {
+            SpoilerVeil { spoilerShown = true }
         } else {
             let edited = Text(message.editedAt == nil ? "" : "  (edited)")
                 .font(.caption)
                 .foregroundStyle(Color(.muted))
             Text("\(Text(MentionText.attributed(message.body, myHandle: myHandle)))\(edited)")
                 .textSelection(.enabled)
+            // Only the author is ever sent the stamp.
+            if let stamp = message.spoiler?.label {
+                Label(stamp, systemImage: "eye.slash")
+                    .font(.caption2)
+                    .foregroundStyle(Color(.muted))
+                    .accessibilityLabel("Marked as a spoiler: \(stamp)")
+            }
         }
     }
 }

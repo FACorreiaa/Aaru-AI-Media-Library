@@ -143,15 +143,13 @@ struct UnreadBadge: View {
     }
 }
 
-/// A text channel on a list: `#name`, bold when unread.
+/// A channel on a list: its kind's mark and name, bold when unread.
 struct ChannelRow: View {
     let channel: GroupChannel
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "number")
-                .foregroundStyle(Color(.muted))
-                .accessibilityHidden(true)
+            ChannelKindMark(channel: channel)
             Text(channel.name)
                 .fontWeight(channel.unread > 0 ? .semibold : .regular)
                 .foregroundStyle(channel.unread > 0 ? Color.primary : Color(.muted))
@@ -159,7 +157,7 @@ struct ChannelRow: View {
             Spacer(minLength: 8)
             UnreadBadge(unread: 0, mentions: channel.mentions)
         }
-        .accessibilityLabel("#\(channel.name)")
+        .accessibilityLabel(channel.kind == .text ? "#\(channel.name)" : "\(channel.kind.label): \(channel.name)")
     }
 }
 
@@ -178,7 +176,7 @@ struct ChannelListView: View {
     var body: some View {
         List {
             if let detail {
-                Section("Text channels") {
+                Section("Channels") {
                     ForEach(detail.channels, id: \.id) { channel in
                         Button { onOpen(channel) } label: {
                             VStack(alignment: .leading, spacing: 2) {

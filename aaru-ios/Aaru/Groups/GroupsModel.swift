@@ -8,6 +8,13 @@ typealias GroupChannel = Components.Schemas.Channel
 typealias GroupMember = Components.Schemas.GroupMember
 typealias GroupInvite = Components.Schemas.GroupInvite
 typealias GroupMessage = Components.Schemas.GroupMessage
+typealias ChannelKind = Components.Schemas.ChannelKind
+
+/// A channel some other screen asked the Groups tab to open ("Discuss in a group…").
+struct ChannelOpenRequest: Equatable {
+    let group: String
+    let channel: String
+}
 
 /// GRP-001 / GRP-002: the user's groups, invites waiting for them, and each group's channels and
 /// members. Friends-only: the only way into a group is an invite from a friend.
@@ -22,6 +29,8 @@ final class GroupsModel {
     private(set) var myHandle: String?
     private(set) var hasLoaded = false
     var problem: String?
+    /// Set to send the Groups tab to a channel; the tab clears it once it has navigated.
+    var openRequest: ChannelOpenRequest?
 
     @ObservationIgnored let api: Client?
     /// Nil only in previews.
@@ -59,6 +68,7 @@ final class GroupsModel {
         myHandle = nil
         hasLoaded = false
         problem = nil
+        openRequest = nil
     }
 
     // MARK: Reads
@@ -286,7 +296,7 @@ final class GroupsModel {
 
     /// Runs one write and turns any failure into one visible message. True when it succeeded.
     @discardableResult
-    private func run(_ fallback: String, _ call: () async throws -> Void) async -> Bool {
+    func run(_ fallback: String, _ call: () async throws -> Void) async -> Bool {
         problem = nil
         do {
             try await call()
@@ -306,12 +316,20 @@ final class GroupsModel {
 extension GroupsModel {
     // MARK: Channels
 
-    func createChannel(in groupID: String, name: String, topic: String) async -> GroupChannel? {
+    /// A title channel takes its title's name when `name` is empty.
+    func createChannel(
+        in groupID: String, kind: ChannelKind = .text, name: String, topic: String,
+        title: Components.Schemas.MediaRef? = nil
+    ) async -> GroupChannel? {
         guard let api else { return nil }
         var created: GroupChannel?
+        let name = name.trimmingCharacters(in: .whitespaces)
         await run("The channel was not created.") {
             switch try await api.createChannel(
-                path: .init(groupId: groupID), body: .json(.init(name: name, topic: topic.isEmpty ? nil : topic))
+                path: .init(groupId: groupID),
+                body: .json(.init(
+                    kind: kind, name: name.isEmpty ? nil : name, topic: topic.isEmpty ? nil : topic, title: title
+                ))
             ) {
             case let .ok(response):
                 created = try response.body.json

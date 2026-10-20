@@ -48,6 +48,13 @@ struct RootView: View {
                     .badge(groups.mentionTotal)
                 }
                 .tabViewStyle(.sidebarAdaptable)
+                // Screens outside the tab (a title's "Discuss in a group…") reach groups through this.
+                .environment(groups)
+                .onChange(of: groups.openRequest) { _, request in
+                    if request != nil {
+                        tab = .groups
+                    }
+                }
                 // The tab's mention badge needs the counts before the tab is opened.
                 .task { await groups.load() }
                 // The socket is open while the app is active, and its events keep groups current.

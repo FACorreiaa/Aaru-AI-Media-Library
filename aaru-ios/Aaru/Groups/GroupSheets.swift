@@ -95,11 +95,11 @@ struct GroupPresentation: ViewModifier {
                     }
             }
         case let .newChannel(groupID):
-            ChannelEditorSheet(groups: groups, groupID: groupID, channel: nil) { channel in
+            NewChannelSheet(groups: groups, groupID: groupID) { channel in
                 onChannelCreated(groupID, channel)
             }
         case let .editChannel(groupID, channel):
-            ChannelEditorSheet(groups: groups, groupID: groupID, channel: channel) { _ in }
+            ChannelEditorSheet(groups: groups, groupID: groupID, channel: channel)
         }
     }
 
@@ -194,8 +194,7 @@ private struct GroupNameSheet: View {
 private struct ChannelEditorSheet: View {
     let groups: GroupsModel
     let groupID: String
-    let channel: GroupChannel?
-    let onCreated: (GroupChannel) -> Void
+    let channel: GroupChannel
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
@@ -223,14 +222,14 @@ private struct ChannelEditorSheet: View {
                 if let problem = groups.problem {
                     Text(problem).foregroundStyle(.red)
                 }
-                if let channel, !channel.isDefault {
+                if !channel.isDefault {
                     Section {
                         Button("Delete channel", role: .destructive) { confirmsDelete = true }
                     }
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle(channel == nil ? "New channel" : "Edit channel")
+            .navigationTitle("Edit channel")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -238,10 +237,10 @@ private struct ChannelEditorSheet: View {
                         .disabled(saving || name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-            .confirmationDialog("Delete #\(channel?.name ?? "")?", isPresented: $confirmsDelete) {
+            .confirmationDialog("Delete #\(channel.name)?", isPresented: $confirmsDelete) {
                 Button("Delete channel", role: .destructive) {
                     Task {
-                        if let channel, await groups.deleteChannel(channel, in: groupID) {
+                        if await groups.deleteChannel(channel, in: groupID) {
                             dismiss()
                         }
                     }
@@ -252,8 +251,8 @@ private struct ChannelEditorSheet: View {
         }
         .onAppear {
             groups.problem = nil
-            name = channel?.name ?? ""
-            topic = channel?.topic ?? ""
+            name = channel.name
+            topic = channel.topic ?? ""
         }
     }
 
@@ -261,13 +260,8 @@ private struct ChannelEditorSheet: View {
         Task {
             saving = true
             defer { saving = false }
-            if let channel {
-                if await groups.updateChannel(channel, in: groupID, name: name, topic: topic) {
-                    dismiss()
-                }
-            } else if let created = await groups.createChannel(in: groupID, name: name, topic: topic) {
+            if await groups.updateChannel(channel, in: groupID, name: name, topic: topic) {
                 dismiss()
-                onCreated(created)
             }
         }
     }

@@ -30,8 +30,11 @@ final class RealtimeClient {
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var subscribers: [UUID: AsyncStream<RealtimeEvent>.Continuation] = [:]
     @ObservationIgnored private var lastTyping: [String: Date] = [:]
+    @ObservationIgnored private var lastReaction = Date.distantPast
 
     static let typingInterval: TimeInterval = 3
+    /// The server counts one reaction a second per socket; sending more only wastes frames.
+    static let reactionInterval: TimeInterval = 1
     static let maxBackoff: Double = 30
 
     /// `baseURL` is the `/v1` host; nil (no API configured) never connects.
@@ -75,6 +78,7 @@ final class RealtimeClient {
     func reset() {
         stop()
         lastTyping = [:]
+        lastReaction = .distantPast
     }
 
     /// Every event from now until the caller stops iterating.
@@ -90,16 +94,38 @@ final class RealtimeClient {
 
     /// Tells the channel's other members the user is typing, at most once every three seconds.
     func sendTyping(group: String, channel: String) {
-        guard state == .open, let socket else { return }
+        guard state == .open else { return }
         let now = Date()
         if let last = lastTyping[channel], now.timeIntervalSince(last) < Self.typingInterval {
             return
         }
         lastTyping[channel] = now
-        let command = Components.Schemas.RealtimeCommand(_type: .typing, groupId: group, channelId: channel)
-        guard let data = try? JSONEncoder().encode(command), let text = String(bytes: data, encoding: .utf8)
-        else { return }
+        send(Components.Schemas.RealtimeCommand(_type: .typing, groupId: group, channelId: channel))
+    }
+
+    /// A watch-party reaction from the fixed set. False when it was throttled or the socket is down.
+    @discardableResult
+    func sendReaction(group: String, channel: String, emoji: String) -> Bool {
+        let now = Date()
+        guard now.timeIntervalSince(lastReaction) >= Self.reactionInterval else { return false }
+        let command = Components.Schemas.RealtimeCommand(
+            _type: .react,
+            emoji: emoji,
+            groupId: group,
+            channelId: channel
+        )
+        guard send(command) else { return false }
+        lastReaction = now
+        return true
+    }
+
+    @discardableResult
+    private func send(_ command: Components.Schemas.RealtimeCommand) -> Bool {
+        guard state == .open, let socket, let data = try? JSONEncoder().encode(command),
+              let text = String(bytes: data, encoding: .utf8)
+        else { return false }
         Task { try? await socket.send(.string(text)) }
+        return true
     }
 
     // MARK: Connection

@@ -16,6 +16,8 @@ struct ChannelView: View {
     @State private var editing: GroupMessage?
     @State private var deleting: GroupMessage?
     @State private var nearBottom = true
+    /// Title channels: how the next message is marked for spoilers. Back to automatic after each.
+    @State private var spoiler = SpoilerChoice.auto
     @FocusState private var composerFocused: Bool
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -83,10 +85,13 @@ struct ChannelView: View {
         }
         .background(Color(.paper))
         .safeAreaInset(edge: .top, spacing: 0) {
-            ChannelHeader(
-                topic: channel.topic,
-                disconnectedSince: socketOpen ? nil : groups.realtime?.disconnectedSince
-            )
+            VStack(spacing: 0) {
+                ChannelHeader(
+                    topic: channel.topic,
+                    disconnectedSince: socketOpen ? nil : groups.realtime?.disconnectedSince
+                )
+                ChannelKindPanel(groups: groups, groupID: groupID, channel: channel)
+            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
@@ -105,6 +110,7 @@ struct ChannelView: View {
                     channelName: channel.name,
                     editing: editing,
                     members: (detail?.members ?? []).filter { $0.user.userId != groups.myUserID },
+                    spoiler: channel.kind == .title ? $spoiler : nil,
                     focused: $composerFocused,
                     onSend: submit,
                     onCancelEdit: {
@@ -245,7 +251,9 @@ struct ChannelView: View {
             }
         } else {
             draft = ""
-            Task { await model.send(text) }
+            let marked = spoiler
+            spoiler = .auto
+            Task { await model.send(text, spoiler: marked) }
         }
     }
 
@@ -263,98 +271,6 @@ struct ChannelView: View {
         } else {
             withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(Self.bottomID, anchor: .bottom) }
         }
-    }
-}
-
-/// One growing box. Return sends on Mac (Option-Return adds a line); on iPhone and iPad the send
-/// button sends. Typing `@` suggests members.
-private struct Composer: View {
-    @Binding var text: String
-    let channelName: String
-    let editing: GroupMessage?
-    let members: [GroupMember]
-    var focused: FocusState<Bool>.Binding
-    let onSend: () -> Void
-    let onCancelEdit: () -> Void
-
-    private var canSend: Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && text.count <= ChannelModel.maxLength
-    }
-
-    /// The `@` word being typed, without the `@`.
-    private var mentionPrefix: String? {
-        let word = text.split(whereSeparator: \.isWhitespace).last.map(String.init) ?? ""
-        guard text.last?.isWhitespace != true, word.hasPrefix("@") else { return nil }
-        return String(word.dropFirst()).lowercased()
-    }
-
-    private var suggestions: [GroupMember] {
-        guard let prefix = mentionPrefix else { return [] }
-        return Array(members.filter { $0.user.handle.hasPrefix(prefix) }.prefix(5))
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if editing != nil {
-                HStack {
-                    Label("Editing message", systemImage: "pencil").font(.caption)
-                    Spacer()
-                    Button("Cancel", action: onCancelEdit).font(.caption).buttonStyle(.borderless)
-                }
-                .foregroundStyle(Color(.muted))
-            }
-            if !suggestions.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(suggestions, id: \.user.userId) { member in
-                            Button {
-                                complete(member.user.handle)
-                            } label: {
-                                Label("@\(member.user.handle)", systemImage: "at")
-                                    .font(.callout)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    }
-                }
-            }
-            HStack(alignment: .bottom, spacing: 8) {
-                field
-                Button(editing == nil ? "Send" : "Save", systemImage: "arrow.up.circle.fill", action: onSend)
-                    .labelStyle(.iconOnly)
-                    .font(.title2)
-                    .foregroundStyle(canSend ? Color(.accent) : Color(.muted))
-                    .buttonStyle(.plain)
-                    .disabled(!canSend)
-                    .keyboardShortcut(.return, modifiers: .command)
-            }
-            if text.count > ChannelModel.maxLength - 500 {
-                Text("\(text.count) / \(ChannelModel.maxLength)")
-                    .font(.caption)
-                    .foregroundStyle(text.count > ChannelModel.maxLength ? .red : Color(.muted))
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.bar)
-    }
-
-    private var field: some View {
-        TextField("Message #\(channelName)", text: $text, axis: .vertical)
-            .lineLimit(1 ... 6)
-            .textFieldStyle(.plain)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color(.surface), in: RoundedRectangle(cornerRadius: 18))
-            .focused(focused)
-        #if os(macOS)
-            .onSubmit(onSend)
-        #endif
-    }
-
-    private func complete(_ handle: String) {
-        guard let range = text.range(of: "@", options: .backwards) else { return }
-        text.replaceSubrange(range.lowerBound..., with: "@\(handle) ")
     }
 }
 

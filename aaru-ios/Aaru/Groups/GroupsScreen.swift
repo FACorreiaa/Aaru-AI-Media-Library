@@ -73,6 +73,12 @@ private struct GroupsStack: View {
                 path = []
             }
         }
+        // "Discuss in a group…" from a title.
+        .onChange(of: groups.openRequest, initial: true) { _, request in
+            guard let request else { return }
+            path = [.group(request.group), .channel(group: request.group, channel: request.channel)]
+            groups.openRequest = nil
+        }
     }
 }
 
@@ -106,7 +112,7 @@ private struct GroupsSplit: View {
         .task {
             await groups.load()
             await groups.loadAllDetails()
-            if selection == nil, let first = groups.groups.first {
+            if selection == nil, groups.openRequest == nil, let first = groups.groups.first {
                 selection = ChannelRef(group: first.id, channel: first.defaultChannelId)
             }
         }
@@ -114,6 +120,13 @@ private struct GroupsSplit: View {
             if let selection, !ids.contains(selection.group) {
                 self.selection = nil
             }
+        }
+        // "Discuss in a group…" from a title.
+        .onChange(of: groups.openRequest, initial: true) { _, request in
+            guard let request else { return }
+            collapsed.remove(request.group)
+            selection = ChannelRef(group: request.group, channel: request.channel)
+            groups.openRequest = nil
         }
     }
 
@@ -223,7 +236,11 @@ private struct ChannelDestination: View {
 
     var body: some View {
         if let channel = groups.details[groupID]?.channels.first(where: { $0.id == channelID }) {
-            ChannelView(groups: groups, groupID: groupID, channel: channel, onShowMembers: onShowMembers)
+            if channel.kind == .shelf {
+                ShelfScreen(groups: groups, groupID: groupID, channel: channel, onShowMembers: onShowMembers)
+            } else {
+                ChannelView(groups: groups, groupID: groupID, channel: channel, onShowMembers: onShowMembers)
+            }
         } else if groups.details[groupID] != nil {
             ContentUnavailableView("This channel is gone", systemImage: "number")
         } else {
