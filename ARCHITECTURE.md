@@ -230,6 +230,7 @@ GET    /v1/titles/{id}
 
 GET    /v1/calendar?from=&to=             # CAL-001
 GET    /v1/up-next                        # UPN-001
+GET    /v1/discover                       # DISC-001
 
 GET    /v1/library/items
 POST   /v1/library/items
@@ -321,6 +322,21 @@ Both are derived reads over the user's library. Neither has its own table.
   widget, and the Live Activity.
 
 `list_airs` in the tool layer wraps CAL-001.
+
+### Discover (DISC-001)
+
+`GET /v1/discover` is the one catalog read that is not a search: provider-curated public lists
+for Home, the same for every user. `DiscoverService` (`Catalog/DiscoverService.swift`) asks each
+adapter that conforms to `DiscoverListing` for its lists — TMDB `trending/tv/week`,
+`tv/on_the_air`, `discover/tv` (premiered in the last 90 days), `trending/movie/week`,
+`movie/now_playing`; AniList `Page.media` by `season`/`seasonYear` (popularity) and
+`RELEASING` (trending); Open Library `trending/weekly.json`. A `DiscoverCache` actor holds them
+in memory for 6 h, coalesces concurrent fetches into one, and serves the stale copy (then backs
+off 5 min) when a refresh fails; a provider that fails drops only its rows. The API runs one
+replica, so memory is enough; a second replica would hold its own copy (Valkey if that ever
+matters). After the cache read, one `LibraryStore.itemIDs` query (type + tmdb/anilist/Open
+Library id) sets `libraryItemId` on hits the caller already has. Nothing is personalised and
+nothing is stored.
 
 ### MediaRef
 

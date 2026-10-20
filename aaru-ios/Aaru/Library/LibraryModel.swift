@@ -44,6 +44,13 @@ final class LibraryModel {
         !knownKeys.isDisjoint(with: hit.ids.keys)
     }
 
+    /// The shelf's entry for a catalog hit: same type, any shared provider id.
+    func entry(matching hit: CatalogHit) -> LibraryEntry? {
+        let keys = hit.ids.keys
+        guard contains(hit) else { return nil }
+        return entries.values.first { $0.title._type == hit._type && !$0.title.ids.keys.isDisjoint(with: keys) }
+    }
+
     /// Pulls what changed since the last sync (everything the first time).
     func sync(api: Client?) async {
         guard let api, !isSyncing else { return }

@@ -24,10 +24,10 @@ This file is the working contract for anyone — human or agent — changing the
 | Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). No DB access, no business logic |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
-| Catalog — video | TMDB |
-| Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1 |
+| Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
+| Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
-| Catalog — books | Open Library (Google Books only if Open Library is insufficient) |
+| Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | User import — primary | Trakt OAuth |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
@@ -186,7 +186,8 @@ scrobble service and addon 2026-10-19).
 
 - Two-way sync with any provider, or a conflict engine
 - A documented public API with third-party clients, quotas, and a deprecation policy
-- Recommendations engine
+- Recommendations engine. Provider-curated public rows on Home (trending, this season,
+  DISC-001) are allowed; anything personalised is not
 - A global or public activity feed; public profile pages indexed by search engines
 - Serializd / SIMKL integrations
 - Music, manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`

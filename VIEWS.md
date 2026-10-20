@@ -16,7 +16,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon` (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next`, `GET /v1/calendar`, `GET /v1/library/items`, `GET /v1/imports` | 2 · M7 |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon` (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next`, `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports` | 2 · M7 |
 | Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
@@ -69,6 +69,7 @@ refuses and substitutes the nearest catalog piece.
 | `ContinueRow` | In-progress titles | ordered `libraryItemId`, next `EpisodeKey`, time left, remaining count + duration, `isFinale` |
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |
+| `DiscoverRow` | Public catalog rows on Home (DISC-001) | row id + title, `CatalogHit`s with `libraryItemId` when on the shelf; each a `DiscoverCard` (poster, add or open) |
 | `NowPlayingCard` | Current watch | `libraryItemId`, `EpisodeKey`, progress, started at, ends at, source (check-in / scrobble). Rendered on iOS as the "Now watching" Live Activity (`NowWatchingAttributes`, WID-005) |
 | `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
@@ -96,6 +97,9 @@ The eleven new components add product, not agent reach, and each has a reason:
 - `RecapStory` (GAM-006a, the twenty-first, added 2026-10-16) — the Recap is a full-screen,
   tap-through story with a share image; no grid or row of the twenty can play a sequence. It is
   read-only, so the agent may open it ("show me my October") but it writes nothing.
+- `DiscoverRow` (DISC-001, the twenty-second, added 2026-10-20) — a new account's Home had
+  nothing to show; these are public catalog rows (trending, this season), the same for
+  everyone. Home renders them; the agent does not emit them, since it would be recommending.
 
 The agent may emit the read-only social components but never initiates a friend request, a
 message, or a room invite: those are user acts with no agent write path. A twenty-first

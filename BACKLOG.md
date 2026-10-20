@@ -32,6 +32,15 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-20
+
+- **Discover rows on Home (DISC-001), by the owner's call:** a new account opened to an empty
+  Home. Home now also shows provider-curated public lists: trending shows, this season's anime,
+  trending movies, on the air, trending anime, new shows, in theaters, trending books. They are
+  the same for every user and read no per-user signal, so they are **not** the out-of-scope
+  recommendations engine; nothing personalised ("because you watched…") is allowed under this
+  item. Posters stay hotlinked catalog URLs.
+
 ## Decisions recorded 2026-10-19
 
 - **Episodes and Stremio are built before the P2 gate**, by the owner's call, with 0 strangers
@@ -161,6 +170,7 @@ with every provider stubbed.
 | APP-009 Home rows | Built 2026-10-16 on iPhone, iPad, Mac and web: Home is the first destination (Home · Library · Calendar; web library moved to `/app/library`). Continue watching (one-tap check advances optimistically), Airing soon / Coming up (badges from `airTimeKnown`), Start watching. Apple renders from a disk cache first; the web has no offline cache yet. In-progress movies are not in Continue watching (server returns shows only). Checked with sample data only. |
 | WID-001…004, WID-006 | Built 2026-10-16 (iOS + macOS, one extension): App Group snapshot (`Shared/WidgetSnapshot.swift`) written after every Home load and tick, an hourly `BGAppRefreshTask` on iOS, cleared on sign-out. Up Next (small/medium/large) with an interactive "mark watched" App Intent that calls the same PUT with the shared Keychain token, advances optimistically and restores on failure; Next Episode countdown (small + Lock Screen accessories on iOS; entries at each air time flip to "Out now"); This Week (large/extra large, Monday-first, deep links `aaru://title/{id}`). Not yet seen on a device; no undo ribbon for widget ticks; the large Up Next has no progress bar (the snapshot has no episode totals). WID-005 (Live Activity) is next. |
 | WID-005 | Built 2026-10-19 (iOS only, client-side; no server change): "Start watching" from an aired episode's context menu in title detail and from Home's Continue watching card starts a `NowWatchingAttributes` Live Activity (one at a time; poster downsampled into the App Group). Lock Screen + Dynamic Island: poster, `S1 · E8 · Name`, progress bar, "Ends at" ↔ "Nm left" via `ToggleEndTimeIntent`, "Mark watched" via `MarkNowWatchingIntent` (same PUT and widget path as the Up Next check). Stale after end + 30 min ("Did you finish?"), ended on app foreground and in the background refresh; ticking that episode anywhere ends it with a brief "Watched". Started by check-in only; scrobble start is P3. Not yet run on a device. |
+| DISC-001 Discover rows | Built 2026-10-20 on iPhone, iPad, Mac and web: `GET /v1/discover` returns up to eight public rows (TMDB trending/on the air/new shows/trending movies/in theaters, AniList this season + trending, Open Library weekly trending), cached in memory for 6 h, a failing provider dropping only its row; items the caller has carry `libraryItemId`. Home renders them under the user's rows; a new account sees a slim "Add a show" header above them. Adding from a card is search's add (wishlist, or a status, or a list). TMDB rows checked with stubs only (no local key); AniList and Open Library checked live. |
 | APP-010 + catch-up month | Built 2026-10-15 on iPhone, iPad, Mac and web: Calendar destination with Week (CAT grid / iPhone day pager) and Month (Stremio-style posters + agenda). Server adds `backdropUrl`, `network`, `airTimeKnown`, `episodeOverview`; range up to 42 days. Checked with sample data only. |
 
 **P1 gate** (works end to end against the production API on `maat`) is not met until P0's
@@ -880,6 +890,21 @@ refresh; cached for offline like APP-003.
 
 **Done when:** checking an episode from `ContinueRow` advances the card to the next episode
 optimistically and rolls back on failure, and the screen renders from cache in airplane mode.
+
+### DISC-001 · Discover rows on Home · M
+**Needs:** APP-009, CAT-002, CAT-003, CAT-007.
+`GET /v1/discover`: provider-curated public rows, the same for everyone — TMDB trending shows,
+on the air, new shows (premiered in the last 90 days), trending movies, in theaters; AniList
+this season's anime and trending anime; Open Library's weekly trending books. TMDB TV rows
+leave out anime (AniList is the anime source) and news, soap and talk; poster-less hits are
+dropped. One in-memory cache (6 h TTL, concurrent fetches coalesced, stale served and a 5 min
+back-off on failure). One library query marks items the caller already has. Home renders the
+rows after Continue / Airing / Start; an empty library gets a compact header instead of the
+full empty state. Not personalised, ever (decision 2026-10-20).
+
+**Done when:** a brand-new account opens Home on iPhone, Mac and web and sees the rows, adds a
+title from a card in one tap, and that card turns into a link to the item; a provider being
+down drops only its row.
 
 ### APP-010 · Week grid · L
 **Needs:** APP-001, CAL-001.
@@ -1942,7 +1967,8 @@ Now **SCR-004** (P3): user-triggered push with a dry-run diff, one-way out.
 
 ## Explicitly not doing
 
-Two-way sync · conflict engine · recommendations engine · a global or public activity feed ·
+Two-way sync · conflict engine · recommendations engine (DISC-001's public provider rows are
+not one: nothing personalised) · a global or public activity feed ·
 public profile pages indexed by search engines · scraping any site
 without an official export (Pogdesign, IMDb pages, AniDB) · a Stremio `stream` resource or any
 stream source · hosting TMDB, Open Library or AniList artwork · a second backend · a documented

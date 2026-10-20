@@ -81,6 +81,7 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, @unchecked Sendable {
     private var episodeLists: [String: CatalogEpisodes] = [:]
     private var calls: [String: Int] = [:]
     private var failure: (any Error)?
+    private var discoverHits: [DiscoverList: [CatalogHit]] = [:]
 
     static func providers(_ catalog: FakeCatalog) -> CatalogProviders {
         CatalogProviders(tmdb: catalog, anilist: catalog, openLibrary: catalog)
@@ -133,5 +134,20 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, @unchecked Sendable {
     func episodes(ids: ExternalIDs) async throws -> CatalogEpisodes? {
         try record("episodes")
         return lock.withLock { ids.tmdb.flatMap { episodeLists[$0] } ?? ids.anilist.flatMap { episodeLists[$0] } }
+    }
+
+    func stubDiscover(_ list: DiscoverList, _ hits: [CatalogHit]) {
+        lock.withLock { discoverHits[list] = hits }
+    }
+}
+
+extension FakeCatalog: DiscoverListing {
+    var discoverLists: Set<DiscoverList> {
+        Set(DiscoverList.allCases)
+    }
+
+    func list(_ list: DiscoverList, now _: Date) async throws -> [CatalogHit] {
+        try record("discover")
+        return lock.withLock { discoverHits[list] ?? [] }
     }
 }

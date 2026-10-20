@@ -215,6 +215,13 @@ rows of wide cards, one job per row.
 - **Calendar** (`CalendarRow`) — the next few airings of tracked shows and anime, badged
   `Today` / `New` / `In 3 hours` / `In 2 days`.
 
+- **Discover** (`DiscoverRow`, DISC-001) — after the user's own rows, public poster rows from
+  the catalogs: Trending shows, this season's anime ("Fall 2026 anime"), Trending movies, On
+  the air, Trending anime, New shows, In theaters, Trending books. A card not on the shelf is
+  an add (tap: wishlist; hold or "As…": a status or a list); a card on the shelf wears a check
+  and opens the item. A new account sees a slim "Add a show to see what's next" header above
+  them instead of an empty screen. The same rows for everyone; never "because you watched".
+
 Rows are the Field's artifacts, not new chrome. The composer still sits on top.
 
 ## 14. Week grid (Phase 2)

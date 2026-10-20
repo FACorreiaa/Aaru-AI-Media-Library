@@ -4,6 +4,7 @@ import Foundation
 struct Services: Sendable {
     var auth: AuthService
     var catalog: CatalogService
+    var discover: DiscoverService
     var library: LibraryService
     var lists: ListService
     var shelves: ShelfService
@@ -28,6 +29,10 @@ struct Services: Sendable {
         return Services(
             auth: auth,
             catalog: catalog,
+            discover: DiscoverService(
+                stores: stores,
+                providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
+            ),
             library: library,
             lists: ListService(stores: stores, resolver: resolver),
             shelves: ShelfService(stores: stores, library: library),

@@ -1,9 +1,11 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import { AddToListDialog } from '../components/AddToListDialog'
 import { AppHeader } from '../components/AppHeader'
 import {
   AiringCard,
   ContinueCard,
+  DiscoverCard,
   Row,
   StartCard,
 } from '../components/HomeRows'
@@ -15,16 +17,26 @@ import {
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { getCalendar } from '../lib/calendar/server'
-import { AIRING_DAYS, advance, airingBadge, upcoming } from '../lib/home/model'
-import type { ContinueEntry } from '../lib/home/model'
-import { getUpNext } from '../lib/home/server'
+import {
+  AIRING_DAYS,
+  advance,
+  airingBadge,
+  markAdded,
+  upcoming,
+} from '../lib/home/model'
+import type { ContinueEntry, DiscoverRow } from '../lib/home/model'
+import { getDiscover, getUpNext } from '../lib/home/server'
+import { hitKey } from '../lib/library/model'
+import type { CatalogHit, LibraryStatus } from '../lib/library/model'
+import { addToLibrary } from '../lib/library/server'
 import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
 // watching come with the page; the calendar row loads in the browser, which knows the
-// viewer's "today".
+// viewer's "today". Discover's public rows (DISC-001) load in the browser too, so a cold
+// provider cache never holds the page.
 export const Route = createFileRoute('/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
   beforeLoad: async () => {
@@ -45,6 +57,20 @@ function Home() {
   const [airingsReady, setAiringsReady] = createSignal(false)
   const [busy, setBusy] = createSignal<ReadonlySet<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [discover, setDiscover] = createSignal<DiscoverRow[]>([])
+  const [discoverReady, setDiscoverReady] = createSignal(false)
+  const [adding, setAdding] = createSignal<ReadonlySet<string>>(new Set())
+  const [listTarget, setListTarget] = createSignal<CatalogHit | null>(null)
+
+  onMount(async () => {
+    try {
+      setDiscover(await getDiscover())
+    } catch {
+      // Discover is extra: the user's own rows stand without it.
+    } finally {
+      setDiscoverReady(true)
+    }
+  })
 
   onMount(async () => {
     const current = new Date()
@@ -87,6 +113,36 @@ function Home() {
     starting().length === 0 &&
     airingsReady() &&
     nextAirings().length === 0
+
+  /** Adds a Discover hit with a status; its cards then link to the new item. */
+  async function add(hit: CatalogHit, status: LibraryStatus) {
+    const key = hitKey(hit)
+    if (adding().has(key)) return
+    setAdding((current) => new Set([...current, key]))
+    setProblem(null)
+    try {
+      const entry = await addToLibrary({
+        data: {
+          type: hit.type,
+          ids: hit.ids,
+          title: hit.title,
+          year: hit.year,
+          status,
+        },
+      })
+      setDiscover((rows) => markAdded(rows, key, entry.id))
+    } catch (err) {
+      setProblem(
+        err instanceof Error ? err.message : `${hit.title} could not be added.`,
+      )
+    } finally {
+      setAdding((current) => {
+        const next = new Set(current)
+        next.delete(key)
+        return next
+      })
+    }
+  }
 
   function setBusyFor(id: string, on: boolean) {
     setBusy((current) => {
@@ -228,7 +284,46 @@ function Home() {
           </Row>
         </Show>
 
-        <Show when={empty()}>
+        <Show when={empty() && (!discoverReady() || discover().length > 0)}>
+          <div class="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[20px] bg-surface p-5">
+            <div>
+              <h2 class="font-display text-xl font-medium">
+                Add a show to see what’s next
+              </h2>
+              <p class="mt-1 text-sm text-muted">
+                Pick from the rows below or search. What you watch and what airs
+                next land here.
+              </p>
+            </div>
+            <Link
+              to="/app/library"
+              search={{ search: true }}
+              class="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-on-accent"
+            >
+              Search
+            </Link>
+          </div>
+        </Show>
+
+        <For each={discover()}>
+          {(row) => (
+            <Row title={row.title}>
+              <For each={row.items}>
+                {(hit) => (
+                  <DiscoverCard
+                    hit={hit}
+                    rowId={row.id}
+                    adding={adding().has(hitKey(hit))}
+                    onAdd={(status) => void add(hit, status)}
+                    onList={() => setListTarget(hit)}
+                  />
+                )}
+              </For>
+            </Row>
+          )}
+        </For>
+
+        <Show when={empty() && discoverReady() && discover().length === 0}>
           <div class="mx-auto mt-24 max-w-sm text-center">
             <h2 class="font-display text-2xl font-medium">
               Add a show to see what’s next
@@ -247,6 +342,20 @@ function Home() {
           </div>
         </Show>
       </main>
+      <Show when={listTarget()}>
+        {(hit) => (
+          <AddToListDialog
+            mediaRef={{
+              type: hit().type,
+              ids: hit().ids,
+              title: hit().title,
+              year: hit().year,
+            }}
+            titleName={hit().title}
+            onClose={() => setListTarget(null)}
+          />
+        )}
+      </Show>
     </div>
   )
 }

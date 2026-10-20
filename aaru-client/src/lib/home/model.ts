@@ -1,6 +1,7 @@
 import type { components } from '../api/schema'
 import { entryDay, localDayKey } from '../calendar/model'
 import type { CalendarEntry } from '../calendar/model'
+import { hitKey } from '../library/model'
 
 // APP-009: the Home rows' pure parts (Trakt-style Continue watching, Start watching, and the
 // next airings). Labels and the calendar row's day maths are computed in the browser: the
@@ -9,6 +10,7 @@ import type { CalendarEntry } from '../calendar/model'
 export type ContinueEntry = components['schemas']['ContinueEntry']
 export type StartEntry = components['schemas']['StartEntry']
 export type UpNext = components['schemas']['UpNext']
+export type DiscoverRow = components['schemas']['DiscoverRow']
 
 const HOUR_MS = 3_600_000
 /** Closer than this, an exactly-timed airing reads "In 3 hours" rather than a day. */
@@ -120,4 +122,18 @@ export function advance(
       },
     ]
   })
+}
+
+/** DISC-001: after an add, every card for that title links to the new item. No refetch. */
+export function markAdded(
+  rows: DiscoverRow[],
+  key: string,
+  libraryItemId: string,
+): DiscoverRow[] {
+  return rows.map((row) => ({
+    ...row,
+    items: row.items.map((hit) =>
+      hitKey(hit) === key ? { ...hit, libraryItemId } : hit,
+    ),
+  }))
 }

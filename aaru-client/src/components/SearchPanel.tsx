@@ -1,18 +1,13 @@
 import { For, Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { addToLibrary, searchCatalog } from '../lib/library/server'
-import {
-  KINDS,
-  STATUSES,
-  idKeys,
-  isOnShelf,
-  kindOf,
-} from '../lib/library/model'
+import { KINDS, hitKey, isOnShelf, kindOf } from '../lib/library/model'
 import type {
   CatalogHit,
   LibraryEntry,
   LibraryStatus,
   MediaKind,
 } from '../lib/library/model'
+import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 import { AddToListDialog } from './AddToListDialog'
 
@@ -62,8 +57,7 @@ export function SearchPanel(props: {
     onCleanup(() => clearTimeout(timer))
   })
 
-  const keyOf = (hit: CatalogHit) =>
-    idKeys(hit.ids).sort()[0] ?? `${hit.title}-${hit.year ?? ''}`
+  const keyOf = hitKey
 
   async function add(hit: CatalogHit, status: LibraryStatus) {
     const key = keyOf(hit)
@@ -196,41 +190,11 @@ export function SearchPanel(props: {
                     </span>
                   }
                 >
-                  <Show
-                    when={!adding().has(keyOf(hit))}
-                    fallback={<span class="text-sm text-muted">Adding…</span>}
-                  >
-                    <div class="flex items-center overflow-hidden rounded-full border border-ink/25">
-                      <button
-                        type="button"
-                        class="px-4 py-1.5 text-sm font-semibold hover:bg-surface"
-                        onClick={() => add(hit, 'wishlist')}
-                      >
-                        Add
-                      </button>
-                      <label class="sr-only" for={`status-${keyOf(hit)}`}>
-                        Add with status
-                      </label>
-                      <select
-                        id={`status-${keyOf(hit)}`}
-                        class="border-0 border-l border-ink/25 bg-transparent py-1.5 pr-7 pl-2 text-sm text-muted focus:ring-0"
-                        onChange={(e) => {
-                          const status = e.currentTarget.value
-                          e.currentTarget.value = ''
-                          if (status) void add(hit, status as LibraryStatus)
-                        }}
-                      >
-                        <option value="" disabled selected>
-                          As…
-                        </option>
-                        <For
-                          each={STATUSES.filter((s) => s.status !== 'dropped')}
-                        >
-                          {(s) => <option value={s.status}>{s.label}</option>}
-                        </For>
-                      </select>
-                    </div>
-                  </Show>
+                  <AddControl
+                    hit={hit}
+                    adding={adding().has(keyOf(hit))}
+                    onAdd={(status) => void add(hit, status)}
+                  />
                 </Show>
               </li>
             )

@@ -264,6 +264,37 @@ enum AniListText {
     }
 }
 
+// MARK: Discover (DISC-001)
+
+extension AniListCatalog: DiscoverListing {
+    var discoverLists: Set<DiscoverList> {
+        [.animeSeason, .animeTrending]
+    }
+
+    func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit] {
+        let filter: String
+        switch list {
+        case .animeSeason:
+            guard let current = AnimeSeason.current(now) else { return [] }
+            filter = "season: \(current.season.anilist), seasonYear: \(current.year), sort: POPULARITY_DESC"
+        case .animeTrending:
+            filter = "status: RELEASING, sort: TRENDING_DESC"
+        default:
+            throw ProviderError(provider: "anilist", kind: .notFound)
+        }
+        let body = try await post(SearchData.self, """
+        query {
+          Page(perPage: 20) {
+            media(type: ANIME, isAdult: false, format_in: [TV, TV_SHORT, ONA, MOVIE], \(filter)) {
+              \(Self.mediaFields)
+            }
+          }
+        }
+        """, variables: [:])
+        return body.page.media.map(\.hit)
+    }
+}
+
 // MARK: Lists (IMP-014)
 
 extension AniListCatalog: AniListListReading {

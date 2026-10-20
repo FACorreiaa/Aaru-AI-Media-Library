@@ -259,6 +259,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/discover': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Provider-curated public rows for Home (trending, airing, this season).
+     * @description The same lists for every user, cached by the server. Items the caller already has carry `libraryItemId`. A row whose provider is down is left out.
+     */
+    get: operations['getDiscover']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}': {
     parameters: {
       query?: never
@@ -925,9 +945,21 @@ export interface components {
       byline?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
+      /** @description The caller's library item for this title, when they have one. Discover only. */
+      libraryItemId?: string
     }
     SearchResults: {
       items: components['schemas']['CatalogHit'][]
+    }
+    DiscoverRow: {
+      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get. */
+      id: string
+      /** @description Display title, e.g. "Fall 2026 anime". */
+      title: string
+      items: components['schemas']['CatalogHit'][]
+    }
+    DiscoverRows: {
+      rows: components['schemas']['DiscoverRow'][]
     }
     Episode: {
       season: number
@@ -1701,6 +1733,27 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SearchResults']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getDiscover: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Rows in display order. Empty rows are left out. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DiscoverRows']
         }
       }
       default: components['responses']['Error']
