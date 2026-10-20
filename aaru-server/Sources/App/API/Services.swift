@@ -41,7 +41,7 @@ struct Services: Sendable {
                 providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
             ),
             library: library,
-            lists: ListService(stores: stores, resolver: resolver),
+            lists: ListService(stores: stores, resolver: resolver, catalog: catalog),
             shelves: ShelfService(stores: stores, library: library),
             schedule: ScheduleService(stores: stores, catalog: catalog),
             stats: StatsService(stores: stores),

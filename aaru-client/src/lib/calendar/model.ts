@@ -21,7 +21,10 @@ export function localDayKey(date: Date, timeZone?: string): string {
 
 /** The day an entry belongs to: its local day when the time is exact, else the UTC date of the
  * date-only air date (stored as midnight UTC), which must not shift with the timezone. */
-export function entryDay(entry: CalendarEntry, timeZone?: string): string {
+export function entryDay(
+  entry: Pick<CalendarEntry, 'airsAt' | 'airTimeKnown'>,
+  timeZone?: string,
+): string {
   return entry.airTimeKnown
     ? localDayKey(new Date(entry.airsAt), timeZone)
     : entry.airsAt.slice(0, 10)

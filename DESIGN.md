@@ -127,6 +127,12 @@ Classic filters are how a shelf is edited, not how you enter the app.
 Visual cue: Letterboxd lists + Ryot filters, presented as pages of reeds rather than a
 spreadsheet.
 
+A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
+library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
+reads "On this list" once it is there. Every library row also offers "Add to list". A list row
+says what the title is doing: show status (Returning, Ended…), the next episode and when it
+airs, and the library status and progress when the title is on the shelf (LST-003).
+
 ## 7. Catch-up calendar
 
 You came from Pogdesign CAT. Steal the *feeling*, not the site.
@@ -305,7 +311,9 @@ then the install links (Open in Stremio, Install on Stremio Web, Copy) show once
 carry the secret. Live links list their last use and a Revoke. Writing back to the library
 beyond "watched" is an opt-in at connect time. Stremio's events land as journaled actions
 named "Stremio: …", so the undo ribbon and history treat them like a tap. The card itself is
-not built yet; `watch_events` holds what it will read.
+not built yet; `watch_events` holds what it will read. Under the intro, a collapsed "How to set it
+up" lists the install steps, what Stremio's marks do here, where it works, and that a lost link is
+revoked and made again; the same text on web and Apple.
 
 The same section offers **Import my Stremio history** (IMP-016): a sheet (web: an inline panel)
 with the code in large monospace, an "Approve on stremio.com" button and a QR for approving

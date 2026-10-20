@@ -19,7 +19,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; this-month strip, status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats` (month), `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
 | Discover | `DiscoverRow` per DISC-001 row, add with status or to a list | `GET /v1/discover`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20) |
 | Insights | `StatsPanel` (month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all` | 2 · GAM-006c (pulled forward 2026-10-20) |
-| Lists | `Shelf` rendering a list's items | `GET /v1/lists`, `/v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
+| Lists | `Shelf` rendering a list's items: show status, next airing, library status and progress (LST-003) | `GET /v1/lists`, `GET /v1/lists/{id}` (`items`), `POST /v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
 | Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |

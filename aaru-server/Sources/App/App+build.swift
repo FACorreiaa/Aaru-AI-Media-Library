@@ -1,5 +1,6 @@
 import Configuration
 import FluentPostgresDriver
+import FluentSQL
 import Foundation
 import Hummingbird
 import HummingbirdFluent
@@ -74,6 +75,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
 func runOneShotModes(reader: ConfigReader, logger: Logger) async throws {
     if reader.bool(forKey: "db.migrate") == true {
         let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
+        try await waitForDatabase(fluent, logger: logger)
         logger.info("Running database migrations")
         try await fluent.migrate()
         try await fluent.shutdown()
@@ -90,6 +92,7 @@ func runOneShotModes(reader: ConfigReader, logger: Logger) async throws {
 func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger) async throws {
     let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
     do {
+        try await waitForDatabase(fluent, logger: logger)
         let resolved = source == "default" || source.isEmpty ? AnimeMappingLoader.defaultSource : source
         var transport = AsyncHTTPTransport(client: .shared)
         transport.maxBodyBytes = 64 * 1024 * 1024
@@ -102,6 +105,27 @@ func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger
     } catch {
         try? await fluent.shutdown()
         throw error
+    }
+}
+
+/// A fresh pod can be refused by Postgres for its first seconds while the network policy that
+/// admits it is still being programmed. One-shot modes start talking to the database at once,
+/// so they wait here (up to `attempts` × `delay`) instead of crashing on the first refusal.
+func waitForDatabase(
+    _ fluent: Fluent,
+    attempts: Int = 10,
+    delay: Duration = .seconds(3),
+    logger: Logger
+) async throws {
+    guard let sql = fluent.db() as? any SQLDatabase else { throw MigrationNeedsSQL() }
+    for attempt in 1 ... attempts {
+        do {
+            try await sql.raw("SELECT 1").run()
+            return
+        } catch where attempt < attempts {
+            logger.notice("Database not reachable yet, retrying", metadata: ["attempt": "\(attempt)"])
+            try await Task.sleep(for: delay)
+        }
     }
 }
 
