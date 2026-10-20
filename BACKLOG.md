@@ -88,9 +88,9 @@ library layer stay separate, external IDs stored whenever known, no second backe
   sign-out forgets the device. Mac push is not on yet (it needs its own entitlement key).
   Episodes come from what is already hydrated; a scheduled show refresh is still JOB-001 work.
   **2026-10-20:** the alert carries `libraryItemId`, and a tap opens that show on iPhone (also
-  from a cold launch). Found while checking why nothing arrives: production has no APNs key
-  (`APNS_PRIVATE_KEY`/`APNS_KEY_ID` unset), so the job sends nothing until the owner creates one
-  and seals it into `aaru-env`. Mac push still waits on the Push capability in the Mac profile.
+  from a cold launch). Production has the APNs key (`APNS_KEY_ID` set, `.p8` sealed in
+  `aaru-env`). An alert needs the switch on, a show `in_progress`, and an episode that airs after
+  the switch was turned on. Mac push still waits on the Push capability in the Mac profile.
 - **Sign in with Google is un-deferred** (AUTH-005, by the owner's call): iOS, Mac and web, Google ID
   tokens verified server-side against Google's JWKS, identities keyed on Google's `sub`, never
   merged on email; linking Google to an existing account from Settings.
