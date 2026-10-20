@@ -69,7 +69,7 @@ refuses and substitutes the nearest catalog piece.
 | `ContinueRow` | In-progress titles | ordered `libraryItemId`, next `EpisodeKey`, time left, remaining count + duration, `isFinale` |
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |
-| `NowPlayingCard` | Current watch | `libraryItemId`, `EpisodeKey`, progress, started at, ends at, source (check-in / scrobble) |
+| `NowPlayingCard` | Current watch | `libraryItemId`, `EpisodeKey`, progress, started at, ends at, source (check-in / scrobble). Rendered on iOS as the "Now watching" Live Activity (`NowWatchingAttributes`, WID-005) |
 | `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
 | `BadgeShelf` | Earned badges | badge ids, tier, earned at |

@@ -1195,6 +1195,7 @@ export interface components {
       continueWatching: components['schemas']['ContinueEntry'][]
       startWatching: components['schemas']['StartEntry'][]
     }
+    /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. */
     Stats: {
       year: number
       month?: number
@@ -1205,6 +1206,7 @@ export interface components {
       /** @description One per month of the year, or one per day of the month, in order. */
       buckets: components['schemas']['StatsBucket'][]
       busiest?: components['schemas']['StatsBucket']
+      mostEpisodes?: components['schemas']['StatsBucket']
       longestRun?: components['schemas']['StatsRun']
       /** @description Most time spent, at most five. */
       topTitles: components['schemas']['StatsTitle'][]

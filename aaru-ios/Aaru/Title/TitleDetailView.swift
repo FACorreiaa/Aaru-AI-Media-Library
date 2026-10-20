@@ -307,6 +307,15 @@ private struct EpisodeRow: View {
             .buttonStyle(.plain)
             .accessibilityLabel("\(episode.name ?? "Episode \(episode.number)") details")
         }
+        #if os(iOS)
+        .contextMenu {
+            if model.hasAired(episode), !isWatched {
+                Button("Start watching", systemImage: "play.circle") {
+                    Task { await model.startWatching(episode) }
+                }
+            }
+        }
+        #endif
     }
 
     /// Aired: the date. Upcoming: "Airs …", with the time only when the source knows it.

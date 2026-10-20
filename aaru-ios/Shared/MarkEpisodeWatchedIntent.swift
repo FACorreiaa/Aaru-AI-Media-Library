@@ -29,6 +29,14 @@ struct MarkEpisodeWatchedIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult {
+        try await EpisodeWatching.markWatched(libraryItemId: libraryItemId, season: season, episode: episode)
+        return .result()
+    }
+}
+
+/// The one way the widgets and the Live Activity tick an episode outside the app's own models.
+enum EpisodeWatching {
+    static func markWatched(libraryItemId: String, season: Int, episode: Int) async throws {
         guard let api = SharedAPI.client() else { throw SignedOut() }
         let before = WidgetSnapshotStore.advance(libraryItemId: libraryItemId)
         WidgetCenter.shared.reloadAllTimelines()
@@ -45,10 +53,12 @@ struct MarkEpisodeWatchedIntent: AppIntent {
             throw NotSaved()
         }
         WidgetSnapshotStore.setWatched(libraryItemId: libraryItemId, season: season, number: episode, watched: true)
+        #if os(iOS)
+            await NowWatching.episodeWatched(libraryItemId: libraryItemId, season: season, episode: episode)
+        #endif
         // The real next episode, remaining count and finale flag come from the server.
         try? await WidgetSync.refresh(api: api)
         WidgetCenter.shared.reloadAllTimelines()
-        return .result()
     }
 
     struct SignedOut: LocalizedError {
@@ -63,3 +73,45 @@ struct MarkEpisodeWatchedIntent: AppIntent {
         }
     }
 }
+
+#if os(iOS)
+    /// The Live Activity's "Mark watched" (WID-005). Runs in the app's process; on failure the
+    /// activity stays as it was.
+    struct MarkNowWatchingIntent: LiveActivityIntent {
+        static let title: LocalizedStringResource = "Mark Now Watching Episode Watched"
+        static let isDiscoverable = false
+
+        @Parameter(title: "Library item")
+        var libraryItemId: String
+
+        @Parameter(title: "Season")
+        var season: Int
+
+        @Parameter(title: "Episode")
+        var episode: Int
+
+        init() {}
+
+        init(libraryItemId: String, season: Int, episode: Int) {
+            self.libraryItemId = libraryItemId
+            self.season = season
+            self.episode = episode
+        }
+
+        func perform() async throws -> some IntentResult {
+            try await EpisodeWatching.markWatched(libraryItemId: libraryItemId, season: season, episode: episode)
+            return .result()
+        }
+    }
+
+    /// Tapping the time label flips "Ends at 1:20 PM" and "41m left".
+    struct ToggleEndTimeIntent: LiveActivityIntent {
+        static let title: LocalizedStringResource = "Toggle End Time"
+        static let isDiscoverable = false
+
+        func perform() async throws -> some IntentResult {
+            await NowWatching.toggleEndTime()
+            return .result()
+        }
+    }
+#endif

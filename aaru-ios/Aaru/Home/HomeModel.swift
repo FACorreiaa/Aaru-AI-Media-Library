@@ -141,6 +141,11 @@ final class HomeModel {
                 var forShelf = try response.body.json
                 forShelf.watchedEpisodes = nil
                 library?.upsert(forShelf)
+                #if os(iOS)
+                    await NowWatching.episodeWatched(
+                        libraryItemId: id, season: entry.next.season, episode: entry.next.number
+                    )
+                #endif
                 await load()
             case let .default(_, error):
                 continueWatching = before
@@ -151,6 +156,17 @@ final class HomeModel {
             problem = Self.notSaved(entry) + " Aaru could not reach the server."
         }
     }
+
+    #if os(iOS)
+        /// Starts the "Now watching" Live Activity for the card's next episode (WID-005).
+        func startWatching(_ entry: ContinueEntry) async {
+            problem = await NowWatchingStart.start(NowWatchingAttributes(
+                libraryItemId: entry.libraryItemId, title: entry.title.title, season: entry.next.season,
+                episode: entry.next.number, episodeName: entry.nextName, posterURL: entry.title.posterUrl,
+                runtimeMinutes: NowWatchingStart.runtime(entry.nextRuntimeMinutes)
+            ))
+        }
+    #endif
 
     /// The optimistic step: next episode in the same season, one fewer left.
     private func advance(_ id: String) {

@@ -98,6 +98,13 @@ struct HomeScreen: View {
                                     width: HomeCardSize.wide.width(compact: compact),
                                     isPending: model.pending.contains(entry.libraryItemId)
                                 ) { Task { await model.markNextWatched(entry) } }
+                                #if os(iOS)
+                                    .contextMenu {
+                                        Button("Start watching", systemImage: "play.circle") {
+                                            Task { await model.startWatching(entry) }
+                                        }
+                                    }
+                                #endif
                             }
                         }
                     }
