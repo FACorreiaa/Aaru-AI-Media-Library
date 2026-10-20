@@ -3,6 +3,8 @@ import { For } from 'solid-js'
 import { MascotMedallion, Wordmark } from '../components/Brand'
 import { ImportSources } from '../components/ImportSources'
 import { LegalLinks } from '../components/LegalPage'
+import { cardClass } from '../components/ui/card'
+import { cn } from '../lib/cn'
 import { SITE_URL } from '../lib/site'
 import reedMark from '../assets/brand/reed-mark.webp'
 import appIcon from '../assets/brand/app-icon.webp'
@@ -214,7 +216,7 @@ function Landing() {
             <div class="flex flex-col gap-3">
               <For each={faqs}>
                 {([question, answer]) => (
-                  <details class="group rounded-[20px] bg-surface px-6 py-5 open:pb-6">
+                  <details class={cn(cardClass, 'group px-6 py-5 open:pb-6')}>
                     <summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-medium [&::-webkit-details-marker]:hidden">
                       {question}
                       <span

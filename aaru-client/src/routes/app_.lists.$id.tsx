@@ -2,6 +2,7 @@ import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import { Wordmark } from '../components/Brand'
 import { Poster } from '../components/Poster'
+import { Button } from '../components/ui/button'
 import { KINDS, kindOf } from '../lib/library/model'
 import { getList, removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
@@ -111,24 +112,26 @@ function ListPage() {
                     </p>
                   </div>
                   <div class="flex items-center gap-1 text-sm">
-                    <button
-                      type="button"
+                    <Button
+                      variant="soft"
+                      size="bare"
                       aria-label={`Move ${title.title} up`}
                       disabled={index() === 0}
-                      class="rounded-full px-2 py-1 hover:bg-surface disabled:opacity-30"
+                      class="px-2 py-1"
                       onClick={() => move(index(), -1)}
                     >
                       ↑
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="soft"
+                      size="bare"
                       aria-label={`Move ${title.title} down`}
                       disabled={index() === detail().titles.length - 1}
-                      class="rounded-full px-2 py-1 hover:bg-surface disabled:opacity-30"
+                      class="px-2 py-1"
                       onClick={() => move(index(), 1)}
                     >
                       ↓
-                    </button>
+                    </Button>
                     <button
                       type="button"
                       class="ml-2 text-muted hover:text-danger"
