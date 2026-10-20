@@ -9,6 +9,7 @@ import { For, Show, createSignal } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
+import { SocialSection } from '../components/SocialSection'
 import { StremioSection } from '../components/StremioSection'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
@@ -27,6 +28,7 @@ import {
   linkGoogle,
   signOut,
 } from '../lib/session/session'
+import { loadSocial } from '../lib/social/server'
 import { listStremio } from '../lib/stremio/server'
 
 // APP-007 on the web: account, imports, connected apps, and the way out.
@@ -42,16 +44,18 @@ export const Route = createFileRoute('/app_/settings')({
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
   },
   loader: async () => {
-    const [account, imports, signIn, stremio] = await Promise.all([
+    const [account, imports, signIn, stremio, social] = await Promise.all([
       getAccount(),
       listImports(),
       getSignInConfig(),
       listStremio(),
+      loadSocial(),
     ])
     return {
       account,
       imports,
       stremio,
+      social,
       googleClientId: signIn.googleClientId,
     }
   },
@@ -206,6 +210,19 @@ function Settings() {
             Sign out
           </button>
         </section>
+
+        <SocialSection
+          handle={account().handle}
+          displayName={account().displayName}
+          state={loaded().social}
+          onProfileSaved={(user) =>
+            setAccount({
+              ...account(),
+              handle: user.handle,
+              displayName: user.displayName,
+            })
+          }
+        />
 
         <section class="mt-8">
           <h2 class="font-display text-2xl font-medium">Bring your history</h2>

@@ -175,6 +175,8 @@ struct SocialTests {
             _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": mine], token: ana.token)
             _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": ana.handle])
             #expect(try await handles(env.send(.get, "/v1/social/friends")) == [ana.handle])
+            // The account export carries the social graph too.
+            #expect(try await handles(env.send(.get, "/v1/me/export"), "friends") == [ana.handle])
             #expect(try await env.send(.delete, "/v1/me", token: ana.token).status == .noContent)
             #expect(try await handles(env.send(.get, "/v1/social/friends")).isEmpty)
             #expect(try await env.send(.get, "/v1/social/users/\(ana.handle)").status == .notFound)

@@ -26,6 +26,7 @@ struct SettingsView: View {
         NavigationStack(path: $path) {
             Form {
                 accountSection
+                FriendsSection(api: api)
                 #if os(iOS)
                     if let push = PushRegistrar.current {
                         NotificationsSection(push: push)

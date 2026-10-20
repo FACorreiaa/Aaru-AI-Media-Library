@@ -8,8 +8,9 @@ what Aaru does, this page changes first.
 
 ## The short version
 
-- Your library is **private**. There is no public profile, no feed, and nothing is shared
-  with other users.
+- Your library is **private**. There is no public profile and no feed, and your library is
+  never shared with other users. If you choose a handle, people who know it can send you a
+  friend request; friends see your handle and name, nothing else.
 - **No ads, no tracking, no analytics.** Aaru does not sell or rent data, and has no
   advertising or analytics code in the apps or on the website.
 - You can **delete your account** in Settings. That removes your library and account at once.
@@ -35,6 +36,13 @@ what it may do, and when it was last used. While it is connected, Stremio tells 
 start, pause and stop playing something, and Aaru keeps that playback session (the title,
 episode, position and length) so it can tick off what you finished. Your changes from Stremio
 appear in your history like any other. Revoking the link in Settings stops all of it.
+
+**Profile and friends.** If you choose a handle, Aaru stores it. Anyone who types your exact
+handle can see it with your name and send you a friend request; nobody can search or browse for
+you. Aaru stores pending requests, who your friends are, who you blocked, and any report you
+send about another user (the reason and your note). The person you block or report is not
+told. Deleting your account removes all of it; a report someone sent about you keeps its reason
+but no longer points to you.
 
 **Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
 that setting.

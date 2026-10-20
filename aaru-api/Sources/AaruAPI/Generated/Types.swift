@@ -2928,6 +2928,10 @@ public enum Components {
             public var lists: Components.Schemas.AccountExport.ListsPayload
             /// - Remark: Generated from `#/components/schemas/AccountExport/shelves`.
             public var shelves: [Components.Schemas.Shelf]
+            /// - Remark: Generated from `#/components/schemas/AccountExport/friends`.
+            public var friends: [Components.Schemas.SocialUser]?
+            /// - Remark: Generated from `#/components/schemas/AccountExport/blocked`.
+            public var blocked: [Components.Schemas.SocialUser]?
             /// Creates a new `AccountExport`.
             ///
             /// - Parameters:
@@ -2936,18 +2940,24 @@ public enum Components {
             ///   - library: Every library item; shows carry `watchedEpisodes`.
             ///   - lists:
             ///   - shelves:
+            ///   - friends:
+            ///   - blocked:
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
                 library: [Components.Schemas.LibraryEntry],
                 lists: Components.Schemas.AccountExport.ListsPayload,
-                shelves: [Components.Schemas.Shelf]
+                shelves: [Components.Schemas.Shelf],
+                friends: [Components.Schemas.SocialUser]? = nil,
+                blocked: [Components.Schemas.SocialUser]? = nil
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
                 self.library = library
                 self.lists = lists
                 self.shelves = shelves
+                self.friends = friends
+                self.blocked = blocked
             }
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
@@ -2955,6 +2965,8 @@ public enum Components {
                 case library
                 case lists
                 case shelves
+                case friends
+                case blocked
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.

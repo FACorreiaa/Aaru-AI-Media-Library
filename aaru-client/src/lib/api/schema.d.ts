@@ -1307,6 +1307,8 @@ export interface components {
         items: components['schemas']['TitleSummary'][]
       }[]
       shelves: components['schemas']['Shelf'][]
+      friends?: components['schemas']['SocialUser'][]
+      blocked?: components['schemas']['SocialUser'][]
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]

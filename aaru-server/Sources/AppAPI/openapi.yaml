@@ -1569,6 +1569,12 @@ components:
         shelves:
           type: array
           items: {$ref: '#/components/schemas/Shelf'}
+        friends:
+          type: array
+          items: {$ref: '#/components/schemas/SocialUser'}
+        blocked:
+          type: array
+          items: {$ref: '#/components/schemas/SocialUser'}
     LibraryPage:
       type: object
       required: [items, page]

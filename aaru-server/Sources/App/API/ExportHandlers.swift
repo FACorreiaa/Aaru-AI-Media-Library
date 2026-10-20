@@ -20,7 +20,9 @@ extension APIImplementation {
             dto.watchedEpisodes = export.watched[entry.item.id]?.map { .init(season: $0.season, number: $0.episode) }
             return dto
         }
-        return .ok(.init(
+        async let friends = services.social.friends(userID)
+        async let blocked = services.social.blocked(userID)
+        return try await .ok(.init(
             headers: .init(contentDisposition: "attachment; filename=\"aaru-export-\(stamp).json\""),
             body: .json(.init(
                 exportedAt: Date(),
@@ -36,7 +38,9 @@ extension APIImplementation {
                     createdAt: $0.list.createdAt,
                     items: $0.titles.map(Components.Schemas.TitleSummary.init)
                 ) },
-                shelves: export.shelves.map(Components.Schemas.Shelf.init)
+                shelves: export.shelves.map(Components.Schemas.Shelf.init),
+                friends: friends.map(Components.Schemas.SocialUser.init),
+                blocked: blocked.map(Components.Schemas.SocialUser.init)
             ))
         ))
     }
