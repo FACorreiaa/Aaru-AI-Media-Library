@@ -31,10 +31,20 @@ struct TraktAPI: Sendable {
     private func token(_ body: [String: String]) async throws -> Tokens {
         try await client.decode(Tokens.self, OutboundRequest(
             method: "POST",
-            url: TraktSettings.apiURL.appendingPathComponent("oauth/token"),
-            headers: [("Content-Type", "application/json")],
+            url: TraktSettings.authURL.appendingPathComponent("oauth/token"),
+            headers: headers(token: nil),
             body: JSONEncoder().encode(body)
         ), decoder: Self.decoder)
+    }
+
+    /// Ends this app's access on the user's Trakt account, which frees one of their app slots.
+    func revoke(_ accessToken: String) async throws {
+        _ = try await client.data(OutboundRequest(
+            method: "POST",
+            url: TraktSettings.authURL.appendingPathComponent("oauth/revoke"),
+            headers: headers(token: nil),
+            body: JSONEncoder().encode(["token": accessToken, "client_id": settings.clientID])
+        ))
     }
 
     func username(token: String) async throws -> String? {
@@ -42,14 +52,59 @@ struct TraktAPI: Sendable {
     }
 
     func get<T: Decodable>(_: T.Type, _ path: String, token: String) async throws -> T {
-        try await client.decode(T.self, OutboundRequest(
-            url: TraktSettings.apiURL.appendingPathComponent(path),
-            headers: [
-                ("Content-Type", "application/json"), ("trakt-api-version", "2"),
-                ("trakt-api-key", settings.clientID), ("Authorization", "Bearer \(token)"),
-            ],
-            timeout: .seconds(30)
-        ), decoder: Self.decoder)
+        try await client.decode(T.self, request(path, token: token), decoder: Self.decoder)
+    }
+
+    /// Most pages Trakt allows per request; a larger `limit` is silently capped.
+    static let pageSize = 250
+    /// A runaway guard: 400 pages of 250 is 100,000 items of one kind.
+    static let maxPages = 400
+
+    /// Every page of a list. Trakt pages lists, watchlists, ratings and watched (and without
+    /// `page`/`limit` returns only the first 10–100 items), and may send fewer items than asked.
+    /// An endpoint that does not page sends no `X-Pagination-Page-Count`: one call has it all.
+    func paged<T: Decodable>(
+        _: T.Type,
+        _ path: String,
+        query: [URLQueryItem] = [],
+        token: String
+    ) async throws -> [T] {
+        var items: [T] = []
+        for page in 1 ... Self.maxPages {
+            let response = try await client.response(request(path, query: query + [
+                URLQueryItem(name: "page", value: String(page)),
+                URLQueryItem(name: "limit", value: String(Self.pageSize)),
+            ], token: token))
+            guard let batch = try? Self.decoder.decode([T].self, from: response.body) else {
+                throw ProviderError(provider: client.name, kind: .malformed)
+            }
+            items += batch
+            guard !batch.isEmpty, let pages = response.header("X-Pagination-Page-Count").flatMap(Int.init),
+                  page < pages
+            else { break }
+        }
+        return items
+    }
+
+    private func request(_ path: String, query: [URLQueryItem] = [], token: String) -> OutboundRequest {
+        var url = TraktSettings.apiURL.appendingPathComponent(path)
+        if !query.isEmpty, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            components.queryItems = query
+            url = components.url ?? url
+        }
+        return OutboundRequest(url: url, headers: headers(token: token), timeout: .seconds(30))
+    }
+
+    /// What Trakt asks of every call; the bearer token only on the user's own data.
+    private func headers(token: String?) -> [(String, String)] {
+        var headers = [
+            ("Content-Type", "application/json"), ("User-Agent", TraktSettings.userAgent),
+            ("trakt-api-version", "2"), ("trakt-api-key", settings.clientID),
+        ]
+        if let token {
+            headers.append(("Authorization", "Bearer \(token)"))
+        }
+        return headers
     }
 
     static let decoder: JSONDecoder = {

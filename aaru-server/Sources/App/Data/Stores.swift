@@ -262,6 +262,13 @@ protocol TraktStore: Sendable {
     func consumeAuthRequest(stateHash: String, now: Date) async throws -> TraktAuthRequest?
     func saveConnection(_ connection: TraktConnectionRecord, userID: UserID) async throws
     func connection(userID: UserID) async throws -> TraktConnectionRecord?
+    /// Replaces the connection with `refresh`'s result while holding its row, so two callers
+    /// never spend the same single-use refresh token. `refresh` sees the row as it is after the
+    /// wait. Nil when the user has no connection.
+    func refreshConnection(
+        userID: UserID,
+        _ refresh: @escaping @Sendable (TraktConnectionRecord) async throws -> TraktConnectionRecord
+    ) async throws -> TraktConnectionRecord?
     func deleteConnection(userID: UserID) async throws
 }
 

@@ -17,6 +17,12 @@ struct OutboundRequest: Sendable {
 struct OutboundResponse: Sendable {
     var status: Int
     var body: Data
+    var headers: [(String, String)] = []
+
+    /// The first header with this name, ignoring case.
+    func header(_ name: String) -> String? {
+        headers.first { $0.0.caseInsensitiveCompare(name) == .orderedSame }?.1
+    }
 }
 
 protocol HTTPTransport: Sendable {
@@ -42,6 +48,9 @@ struct AsyncHTTPTransport: HTTPTransport {
         let seconds = Int64(request.timeout.components.seconds)
         let response = try await client.execute(outbound, timeout: .seconds(seconds))
         let buffer = try await response.body.collect(upTo: maxBodyBytes)
-        return OutboundResponse(status: Int(response.status.code), body: Data(buffer: buffer))
+        return OutboundResponse(
+            status: Int(response.status.code), body: Data(buffer: buffer),
+            headers: response.headers.map { ($0.name, $0.value) }
+        )
     }
 }

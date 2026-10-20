@@ -60,6 +60,33 @@ struct ProviderClientTests {
         #expect(missing.requests.count == 1)
     }
 
+    @Test("429 waits as long as Retry-After says; a wait over a minute gives up; other 4xx are refused at once")
+    func honoursRetryAfter() async throws {
+        let counter = Counter()
+        let limited = StubTransport { _ in
+            counter.next() < 1
+                ? OutboundResponse(status: 429, body: Data(), headers: [("retry-after", "7")])
+                : OutboundResponse(status: 200, body: Data("ok".utf8))
+        }
+        let sleeps = SleepLog()
+        _ = try await client(limited, sleeps: sleeps).data(OutboundRequest(url: url))
+        #expect(sleeps.all == [.seconds(7)])
+
+        let tooLong = StubTransport { _ in
+            OutboundResponse(status: 429, body: Data(), headers: [("Retry-After", "3600")])
+        }
+        await #expect(throws: ProviderError(provider: "test", kind: .unavailable)) {
+            _ = try await client(tooLong).data(OutboundRequest(url: url))
+        }
+        #expect(tooLong.requests.count == 1)
+
+        let overLimit = StubTransport { _ in OutboundResponse(status: 420, body: Data()) }
+        await #expect(throws: ProviderError(provider: "test", kind: .refused(420))) {
+            _ = try await client(overLimit).data(OutboundRequest(url: url))
+        }
+        #expect(overLimit.requests.count == 1)
+    }
+
     @Test("Cancelling the caller cancels the in-flight provider call")
     func cancellationPropagates() async throws {
         let transport = HangingTransport()

@@ -29,10 +29,10 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let auth = makeAuthService(config: config, stores: stores, transport: transport)
     let catalogs = makeCatalogProviders(config: config, transport: transport)
     let trakt = config.trakt.map { settings in
-        // Trakt allows 1000 calls per 5 minutes per user; stay well under it.
+        // Trakt allows 500 reads per 5 minutes per user (1.67/s); stay under it.
         TraktAPI(
             client: ProviderClient(
-                name: "trakt", transport: transport, pacer: RequestPacer(requestsPerSecond: 2, burst: 10)
+                name: "trakt", transport: transport, pacer: RequestPacer(requestsPerSecond: 1.5, burst: 10)
             ),
             settings: settings
         )
