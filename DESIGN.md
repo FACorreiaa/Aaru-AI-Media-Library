@@ -291,7 +291,9 @@ then the install links (Open in Stremio, Install on Stremio Web, Copy) show once
 carry the secret. Live links list their last use and a Revoke. Writing back to the library
 beyond "watched" is an opt-in at connect time. Stremio's events land as journaled actions
 named "Stremio: …", so the undo ribbon and history treat them like a tap. The card itself is
-not built yet; `watch_events` holds what it will read.
+not built yet; `watch_events` holds what it will read. Under the intro, a collapsed "How to set it
+up" lists the install steps, what Stremio's marks do here, where it works, and that a lost link is
+revoked and made again; the same text on web and Apple.
 
 The same section offers **Import my Stremio history** (IMP-016): a sheet (web: an inline panel)
 with the code in large monospace, an "Approve on stremio.com" button and a QR for approving
