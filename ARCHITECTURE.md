@@ -730,10 +730,10 @@ GRP-001…GRP-012.
 | `group_members` | group, user, role `owner` / `admin` / `member`, `joined_at`; `muted` (GRP-012), `share_progress` (GRP-007, default off) |
 | `group_invites` | group, inviter, invitee. Pending only: accepted becomes a member row, declined or cancelled is deleted |
 | `group_channels` | group, kind `text` / `title` / `watch` / `shelf`, name, topic, position, `is_default`, `title_id` (required for `title`) |
-| `group_messages` | channel, author (null once the account is deleted), body (≤ 4,000), `mentions`, `mentions_agent`, `client_nonce`, `edited_at`, `deleted_at`; author kind `agent`, `components`, `reply_to` (GRP-010); spoiler season and episode (GRP-007) |
+| `group_messages` | channel, author (null once the account is deleted), body (≤ 4,000), `mentions`, `mentions_agent`, `client_nonce`, `edited_at`, `deleted_at`, spoiler season and episode or `spoiler_ending` (GRP-007); author kind `agent`, `components`, `reply_to` (GRP-010) |
 | `group_read_state` | user, channel, `last_read_at`. Unread and mention counts are counted from it, never stored |
 | `group_channel_items` | shelf channel, title, `added_by`, position |
-| `watch_sessions` | watch channel, title, season, episode, `starts_at`, state |
+| `watch_sessions` | watch channel, title, season, episode, `created_by`, `starts_at`, `ended_at`. One open per channel. State is derived: lobby, countdown until `starts_at`, live, ended. `watch_ready` holds who is ready |
 | `agent_replies` | the job row for one `@aaru` mention, claimed with a lease like imports |
 
 Rules:
@@ -752,11 +752,17 @@ Rules:
   A client that reconnects reads REST `after=` its last message, so the socket is never the
   source of truth. Posts carry a `client_nonce`, which makes retries idempotent.
 - **Channel kinds** add behaviour, not separate chat systems:
-  - `title`: a message is stamped with the author's progress, and a reader who is behind sees
-    it veiled.
+  - `title`: a message is stamped with the author's furthest episode (or the ending once they
+    finished), by hand, or not at all, and a reader who is behind sees it veiled. Finishing the
+    title unveils everything. The stamp says where its author is, so only the author ever sees
+    it; readers get `veiled` and nothing more. The header lists the progress of members who
+    switched on `share_progress` for that group, and nobody else.
   - `shelf`: a list the members edit together. Separate from `lists`, which stay single-owner;
     the two share a renderer. "Add to my library" is the viewer's own journaled tap.
-  - `watch`: the watch-together room (below) living in a channel.
+  - `watch`: the watch-together room (below) living in a channel: one open party at a time, a
+    ready list, a countdown every client runs against `serverTime`, reactions from a fixed set
+    over the socket, and "Mark watched for me", which ticks only the tapper's library through
+    `LibraryService`.
 - **`@aaru`.** A mention enqueues an `agent_replies` row. The worker builds context from the
   channel's last 30 messages, the channel's title, session or shelf, and the tagger's own
   library. It never reads another member's library. Tools are read-only. The reply is a group

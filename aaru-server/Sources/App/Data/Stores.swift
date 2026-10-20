@@ -338,4 +338,5 @@ struct Stores: Sendable {
     var watchEvents: any WatchEventStore
     var social: any SocialStore
     var groups: any GroupStore
+    var groupKinds: any GroupKindStore
 }

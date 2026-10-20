@@ -170,8 +170,9 @@ extension RealtimeTests {
     func commands() {
         let (group, channel) = (UUID(), UUID())
         let typing = #"{"type":"typing","groupId":"\#(group)","channelId":"\#(channel)"}"#
-        #expect(RealtimeRoutes.command(typing)?.group == group)
-        #expect(RealtimeRoutes.command(typing)?.channel == channel)
+        #expect(RealtimeRoutes.command(typing) == .typing(group: group, channel: channel))
+        let react = #"{"type":"react","groupId":"\#(group)","channelId":"\#(channel)","emoji":"🔥"}"#
+        #expect(RealtimeRoutes.command(react) == .react(group: group, channel: channel, emoji: "🔥"))
         #expect(RealtimeRoutes.command(#"{"type":"typing","groupId":"x","channelId":"y"}"#) == nil)
         #expect(RealtimeRoutes.command(#"{"type":"shout","groupId":"\#(group)","channelId":"\#(channel)"}"#) == nil)
         #expect(RealtimeRoutes.command("not json") == nil)
@@ -182,9 +183,14 @@ extension RealtimeTests {
         let hub = RealtimeHub()
         let user = UserID(UUID())
         let (ticket, _) = await hub.issueTicket(for: user, now: Date())
+        let stores = fakeStores()
+        let services = Services.make(
+            stores: stores, catalogs: FakeCatalog.providers(FakeCatalog()),
+            auth: AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil)
+        )
         let routes = RealtimeRoutes(
             hub: hub,
-            groups: GroupService(stores: fakeStores(), events: hub),
+            groups: services.groups,
             sessions: UntouchedStore(),
             allowedOrigins: ["https://aaruapp.com"]
         )

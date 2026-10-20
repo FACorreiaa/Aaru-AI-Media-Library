@@ -217,6 +217,61 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/realtime/ticket`.
     /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
     func createRealtimeTicket(_ input: Operations.CreateRealtimeTicket.Input) async throws -> Operations.CreateRealtimeTicket.Output
+    /// Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+    ///
+    /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
+    func updateMyMembership(_ input: Operations.UpdateMyMembership.Input) async throws -> Operations.UpdateMyMembership.Output
+    /// A title channel's title, your progress, and the progress of members who share theirs in this group.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/progress`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)`.
+    func getChannelProgress(_ input: Operations.GetChannelProgress.Input) async throws -> Operations.GetChannelProgress.Output
+    /// A shelf channel's titles, with your own library status for each.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)`.
+    func listChannelItems(_ input: Operations.ListChannelItems.Input) async throws -> Operations.ListChannelItems.Output
+    /// Add a title to a shelf channel. Any member can; adding one already there changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)`.
+    func addChannelItem(_ input: Operations.AddChannelItem.Input) async throws -> Operations.AddChannelItem.Output
+    /// Take a title off a shelf channel. Any member can.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/items/{titleId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)`.
+    func removeChannelItem(_ input: Operations.RemoveChannelItem.Input) async throws -> Operations.RemoveChannelItem.Output
+    /// A watch channel's newest party, ended or not, and the server's clock for the countdown.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)`.
+    func getWatchParty(_ input: Operations.GetWatchParty.Input) async throws -> Operations.GetWatchParty.Output
+    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
+    func openWatchParty(_ input: Operations.OpenWatchParty.Input) async throws -> Operations.OpenWatchParty.Output
+    /// Say you are ready, or not.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
+    func setWatchPartyReady(_ input: Operations.SetWatchPartyReady.Input) async throws -> Operations.SetWatchPartyReady.Output
+    /// Start the countdown. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/start`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)`.
+    func startWatchParty(_ input: Operations.StartWatchParty.Input) async throws -> Operations.StartWatchParty.Output
+    /// End the party. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
+    func endWatchParty(_ input: Operations.EndWatchParty.Input) async throws -> Operations.EndWatchParty.Output
+    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.
+    func markWatchPartyWatched(_ input: Operations.MarkWatchPartyWatched.Input) async throws -> Operations.MarkWatchPartyWatched.Output
     /// Register this device for pushes. A token registered again moves to this user.
     ///
     /// - Remark: HTTP `PUT /v1/devices`.
@@ -923,6 +978,159 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
     public func createRealtimeTicket(headers: Operations.CreateRealtimeTicket.Input.Headers = .init()) async throws -> Operations.CreateRealtimeTicket.Output {
         try await createRealtimeTicket(Operations.CreateRealtimeTicket.Input(headers: headers))
+    }
+    /// Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+    ///
+    /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
+    public func updateMyMembership(
+        path: Operations.UpdateMyMembership.Input.Path,
+        headers: Operations.UpdateMyMembership.Input.Headers = .init(),
+        body: Operations.UpdateMyMembership.Input.Body
+    ) async throws -> Operations.UpdateMyMembership.Output {
+        try await updateMyMembership(Operations.UpdateMyMembership.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// A title channel's title, your progress, and the progress of members who share theirs in this group.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/progress`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)`.
+    public func getChannelProgress(
+        path: Operations.GetChannelProgress.Input.Path,
+        headers: Operations.GetChannelProgress.Input.Headers = .init()
+    ) async throws -> Operations.GetChannelProgress.Output {
+        try await getChannelProgress(Operations.GetChannelProgress.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// A shelf channel's titles, with your own library status for each.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)`.
+    public func listChannelItems(
+        path: Operations.ListChannelItems.Input.Path,
+        headers: Operations.ListChannelItems.Input.Headers = .init()
+    ) async throws -> Operations.ListChannelItems.Output {
+        try await listChannelItems(Operations.ListChannelItems.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Add a title to a shelf channel. Any member can; adding one already there changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)`.
+    public func addChannelItem(
+        path: Operations.AddChannelItem.Input.Path,
+        headers: Operations.AddChannelItem.Input.Headers = .init(),
+        body: Operations.AddChannelItem.Input.Body
+    ) async throws -> Operations.AddChannelItem.Output {
+        try await addChannelItem(Operations.AddChannelItem.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Take a title off a shelf channel. Any member can.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/items/{titleId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)`.
+    public func removeChannelItem(
+        path: Operations.RemoveChannelItem.Input.Path,
+        headers: Operations.RemoveChannelItem.Input.Headers = .init()
+    ) async throws -> Operations.RemoveChannelItem.Output {
+        try await removeChannelItem(Operations.RemoveChannelItem.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// A watch channel's newest party, ended or not, and the server's clock for the countdown.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)`.
+    public func getWatchParty(
+        path: Operations.GetWatchParty.Input.Path,
+        headers: Operations.GetWatchParty.Input.Headers = .init()
+    ) async throws -> Operations.GetWatchParty.Output {
+        try await getWatchParty(Operations.GetWatchParty.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
+    public func openWatchParty(
+        path: Operations.OpenWatchParty.Input.Path,
+        headers: Operations.OpenWatchParty.Input.Headers = .init(),
+        body: Operations.OpenWatchParty.Input.Body
+    ) async throws -> Operations.OpenWatchParty.Output {
+        try await openWatchParty(Operations.OpenWatchParty.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Say you are ready, or not.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
+    public func setWatchPartyReady(
+        path: Operations.SetWatchPartyReady.Input.Path,
+        headers: Operations.SetWatchPartyReady.Input.Headers = .init(),
+        body: Operations.SetWatchPartyReady.Input.Body
+    ) async throws -> Operations.SetWatchPartyReady.Output {
+        try await setWatchPartyReady(Operations.SetWatchPartyReady.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Start the countdown. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/start`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)`.
+    public func startWatchParty(
+        path: Operations.StartWatchParty.Input.Path,
+        headers: Operations.StartWatchParty.Input.Headers = .init(),
+        body: Operations.StartWatchParty.Input.Body? = nil
+    ) async throws -> Operations.StartWatchParty.Output {
+        try await startWatchParty(Operations.StartWatchParty.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// End the party. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
+    public func endWatchParty(
+        path: Operations.EndWatchParty.Input.Path,
+        headers: Operations.EndWatchParty.Input.Headers = .init()
+    ) async throws -> Operations.EndWatchParty.Output {
+        try await endWatchParty(Operations.EndWatchParty.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.
+    public func markWatchPartyWatched(
+        path: Operations.MarkWatchPartyWatched.Input.Path,
+        headers: Operations.MarkWatchPartyWatched.Input.Headers = .init()
+    ) async throws -> Operations.MarkWatchPartyWatched.Output {
+        try await markWatchPartyWatched(Operations.MarkWatchPartyWatched.Input(
+            path: path,
+            headers: headers
+        ))
     }
     /// Register this device for pushes. A token registered again moves to this user.
     ///
@@ -2502,6 +2710,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/GroupSummary/mentions`.
             public var mentions: Swift.Int
+            /// You show your progress in this group's title channels.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/shareProgress`.
+            public var shareProgress: Swift.Bool
             /// Creates a new `GroupSummary`.
             ///
             /// - Parameters:
@@ -2511,13 +2723,15 @@ public enum Components {
             ///   - defaultChannelId:
             ///   - unread: Messages from others since you last read
             ///   - mentions: Unread messages that tag you.
+            ///   - shareProgress: You show your progress in this group's title channels.
             public init(
                 id: Swift.String,
                 name: Swift.String,
                 role: Components.Schemas.GroupRole,
                 defaultChannelId: Swift.String,
                 unread: Swift.Int,
-                mentions: Swift.Int
+                mentions: Swift.Int,
+                shareProgress: Swift.Bool
             ) {
                 self.id = id
                 self.name = name
@@ -2525,6 +2739,7 @@ public enum Components {
                 self.defaultChannelId = defaultChannelId
                 self.unread = unread
                 self.mentions = mentions
+                self.shareProgress = shareProgress
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -2533,6 +2748,7 @@ public enum Components {
                 case defaultChannelId
                 case unread
                 case mentions
+                case shareProgress
             }
         }
         /// - Remark: Generated from `#/components/schemas/GroupList`.
@@ -2558,25 +2774,31 @@ public enum Components {
             public var role: Components.Schemas.GroupRole
             /// - Remark: Generated from `#/components/schemas/GroupMember/joinedAt`.
             public var joinedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/GroupMember/shareProgress`.
+            public var shareProgress: Swift.Bool
             /// Creates a new `GroupMember`.
             ///
             /// - Parameters:
             ///   - user:
             ///   - role:
             ///   - joinedAt:
+            ///   - shareProgress:
             public init(
                 user: Components.Schemas.SocialUser,
                 role: Components.Schemas.GroupRole,
-                joinedAt: Foundation.Date
+                joinedAt: Foundation.Date,
+                shareProgress: Swift.Bool
             ) {
                 self.user = user
                 self.role = role
                 self.joinedAt = joinedAt
+                self.shareProgress = shareProgress
             }
             public enum CodingKeys: String, CodingKey {
                 case user
                 case role
                 case joinedAt
+                case shareProgress
             }
         }
         /// - Remark: Generated from `#/components/schemas/Channel`.
@@ -2584,11 +2806,11 @@ public enum Components {
             /// - Remark: Generated from `#/components/schemas/Channel/id`.
             public var id: Swift.String
             /// - Remark: Generated from `#/components/schemas/Channel/kind`.
-            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
-                case text = "text"
-            }
-            /// - Remark: Generated from `#/components/schemas/Channel/kind`.
-            public var kind: Components.Schemas.Channel.KindPayload
+            public var kind: Components.Schemas.ChannelKind
+            /// What a title channel is about.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Channel/title`.
+            public var title: Components.Schemas.TitleSummary?
             /// Lowercase, dashes for spaces: movie-night.
             ///
             /// - Remark: Generated from `#/components/schemas/Channel/name`.
@@ -2610,6 +2832,7 @@ public enum Components {
             /// - Parameters:
             ///   - id:
             ///   - kind:
+            ///   - title: What a title channel is about.
             ///   - name: Lowercase, dashes for spaces: movie-night.
             ///   - topic:
             ///   - position:
@@ -2618,7 +2841,8 @@ public enum Components {
             ///   - mentions:
             public init(
                 id: Swift.String,
-                kind: Components.Schemas.Channel.KindPayload,
+                kind: Components.Schemas.ChannelKind,
+                title: Components.Schemas.TitleSummary? = nil,
                 name: Swift.String,
                 topic: Swift.String? = nil,
                 position: Swift.Int,
@@ -2628,6 +2852,7 @@ public enum Components {
             ) {
                 self.id = id
                 self.kind = kind
+                self.title = title
                 self.name = name
                 self.topic = topic
                 self.position = position
@@ -2638,6 +2863,7 @@ public enum Components {
             public enum CodingKeys: String, CodingKey {
                 case id
                 case kind
+                case title
                 case name
                 case topic
                 case position
@@ -2789,27 +3015,52 @@ public enum Components {
                 case items
             }
         }
+        /// text: chat. title: one title, with the spoiler guard. watch: watch parties. shelf: a shared list.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChannelKind`.
+        @frozen public enum ChannelKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case text = "text"
+            case title = "title"
+            case watch = "watch"
+            case shelf = "shelf"
+        }
         /// - Remark: Generated from `#/components/schemas/ChannelCreate`.
         public struct ChannelCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelCreate/kind`.
+            public var kind: Components.Schemas.ChannelKind?
+            /// Required, except a title channel takes its title's name.
+            ///
             /// - Remark: Generated from `#/components/schemas/ChannelCreate/name`.
-            public var name: Swift.String
+            public var name: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ChannelCreate/topic`.
             public var topic: Swift.String?
+            /// Required for a title channel.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelCreate/title`.
+            public var title: Components.Schemas.MediaRef?
             /// Creates a new `ChannelCreate`.
             ///
             /// - Parameters:
-            ///   - name:
+            ///   - kind:
+            ///   - name: Required, except a title channel takes its title's name.
             ///   - topic:
+            ///   - title: Required for a title channel.
             public init(
-                name: Swift.String,
-                topic: Swift.String? = nil
+                kind: Components.Schemas.ChannelKind? = nil,
+                name: Swift.String? = nil,
+                topic: Swift.String? = nil,
+                title: Components.Schemas.MediaRef? = nil
             ) {
+                self.kind = kind
                 self.name = name
                 self.topic = topic
+                self.title = title
             }
             public enum CodingKeys: String, CodingKey {
+                case kind
                 case name
                 case topic
+                case title
             }
         }
         /// - Remark: Generated from `#/components/schemas/ChannelUpdate`.
@@ -2875,6 +3126,14 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/GroupMessage/clientNonce`.
             public var clientNonce: Swift.String?
+            /// Only on your own messages: it says where you are in the title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/spoiler`.
+            public var spoiler: Components.Schemas.SpoilerStamp?
+            /// It may spoil what you have not watched yet: show it veiled until you tap.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/veiled`.
+            public var veiled: Swift.Bool
             /// Creates a new `GroupMessage`.
             ///
             /// - Parameters:
@@ -2889,6 +3148,8 @@ public enum Components {
             ///   - createdAt:
             ///   - editedAt:
             ///   - clientNonce: Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.
+            ///   - spoiler: Only on your own messages: it says where you are in the title.
+            ///   - veiled: It may spoil what you have not watched yet: show it veiled until you tap.
             public init(
                 id: Swift.String,
                 channelId: Swift.String,
@@ -2900,7 +3161,9 @@ public enum Components {
                 deleted: Swift.Bool,
                 createdAt: Foundation.Date,
                 editedAt: Foundation.Date? = nil,
-                clientNonce: Swift.String? = nil
+                clientNonce: Swift.String? = nil,
+                spoiler: Components.Schemas.SpoilerStamp? = nil,
+                veiled: Swift.Bool
             ) {
                 self.id = id
                 self.channelId = channelId
@@ -2913,6 +3176,8 @@ public enum Components {
                 self.createdAt = createdAt
                 self.editedAt = editedAt
                 self.clientNonce = clientNonce
+                self.spoiler = spoiler
+                self.veiled = veiled
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -2926,6 +3191,8 @@ public enum Components {
                 case createdAt
                 case editedAt
                 case clientNonce
+                case spoiler
+                case veiled
             }
         }
         /// - Remark: Generated from `#/components/schemas/GroupMessagePage`.
@@ -2951,21 +3218,37 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MessageCreate/clientNonce`.
             public var clientNonce: Swift.String?
+            /// Title channels: stamp by hand. Absent: stamped from your progress.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MessageCreate/spoiler`.
+            public var spoiler: Components.Schemas.SpoilerStamp?
+            /// Title channels: no stamp at all.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MessageCreate/spoilerFree`.
+            public var spoilerFree: Swift.Bool?
             /// Creates a new `MessageCreate`.
             ///
             /// - Parameters:
             ///   - body:
             ///   - clientNonce: Makes a retry safe.
+            ///   - spoiler: Title channels: stamp by hand. Absent: stamped from your progress.
+            ///   - spoilerFree: Title channels: no stamp at all.
             public init(
                 body: Swift.String,
-                clientNonce: Swift.String? = nil
+                clientNonce: Swift.String? = nil,
+                spoiler: Components.Schemas.SpoilerStamp? = nil,
+                spoilerFree: Swift.Bool? = nil
             ) {
                 self.body = body
                 self.clientNonce = clientNonce
+                self.spoiler = spoiler
+                self.spoilerFree = spoilerFree
             }
             public enum CodingKeys: String, CodingKey {
                 case body
                 case clientNonce
+                case spoiler
+                case spoilerFree
             }
         }
         /// - Remark: Generated from `#/components/schemas/MessageUpdate`.
@@ -3044,6 +3327,9 @@ public enum Components {
                 case group_updated = "group.updated"
                 case group_removed = "group.removed"
                 case invites_changed = "invites.changed"
+                case shelf_updated = "shelf.updated"
+                case watch_updated = "watch.updated"
+                case watch_reaction = "watch.reaction"
             }
             /// - Remark: Generated from `#/components/schemas/RealtimeEvent/type`.
             public var _type: Components.Schemas.RealtimeEvent._TypePayload
@@ -3055,10 +3341,14 @@ public enum Components {
             public var messageId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/RealtimeEvent/message`.
             public var message: Components.Schemas.GroupMessage?
-            /// Who is typing.
+            /// Who is typing, or reacting.
             ///
             /// - Remark: Generated from `#/components/schemas/RealtimeEvent/user`.
             public var user: Components.Schemas.SocialUser?
+            /// watch.reaction only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/emoji`.
+            public var emoji: Swift.String?
             /// Creates a new `RealtimeEvent`.
             ///
             /// - Parameters:
@@ -3067,14 +3357,16 @@ public enum Components {
             ///   - channelId:
             ///   - messageId:
             ///   - message:
-            ///   - user: Who is typing.
+            ///   - user: Who is typing, or reacting.
+            ///   - emoji: watch.reaction only.
             public init(
                 _type: Components.Schemas.RealtimeEvent._TypePayload,
                 groupId: Swift.String? = nil,
                 channelId: Swift.String? = nil,
                 messageId: Swift.String? = nil,
                 message: Components.Schemas.GroupMessage? = nil,
-                user: Components.Schemas.SocialUser? = nil
+                user: Components.Schemas.SocialUser? = nil,
+                emoji: Swift.String? = nil
             ) {
                 self._type = _type
                 self.groupId = groupId
@@ -3082,6 +3374,7 @@ public enum Components {
                 self.messageId = messageId
                 self.message = message
                 self.user = user
+                self.emoji = emoji
             }
             public enum CodingKeys: String, CodingKey {
                 case _type = "type"
@@ -3090,18 +3383,24 @@ public enum Components {
                 case messageId
                 case message
                 case user
+                case emoji
             }
         }
-        /// One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds counts.
+        /// One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds, and one reaction a second, counts.
         ///
         /// - Remark: Generated from `#/components/schemas/RealtimeCommand`.
         public struct RealtimeCommand: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/RealtimeCommand/type`.
             @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case typing = "typing"
+                case react = "react"
             }
             /// - Remark: Generated from `#/components/schemas/RealtimeCommand/type`.
             public var _type: Components.Schemas.RealtimeCommand._TypePayload
+            /// react only: one of 😂 😱 😭 ❤️ 👏 🔥.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/emoji`.
+            public var emoji: Swift.String?
             /// - Remark: Generated from `#/components/schemas/RealtimeCommand/groupId`.
             public var groupId: Swift.String
             /// - Remark: Generated from `#/components/schemas/RealtimeCommand/channelId`.
@@ -3110,21 +3409,366 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - _type:
+            ///   - emoji: react only: one of 😂 😱 😭 ❤️ 👏 🔥.
             ///   - groupId:
             ///   - channelId:
             public init(
                 _type: Components.Schemas.RealtimeCommand._TypePayload,
+                emoji: Swift.String? = nil,
                 groupId: Swift.String,
                 channelId: Swift.String
             ) {
                 self._type = _type
+                self.emoji = emoji
                 self.groupId = groupId
                 self.channelId = channelId
             }
             public enum CodingKeys: String, CodingKey {
                 case _type = "type"
+                case emoji
                 case groupId
                 case channelId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MembershipUpdate`.
+        public struct MembershipUpdate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MembershipUpdate/shareProgress`.
+            public var shareProgress: Swift.Bool
+            /// Creates a new `MembershipUpdate`.
+            ///
+            /// - Parameters:
+            ///   - shareProgress:
+            public init(shareProgress: Swift.Bool) {
+                self.shareProgress = shareProgress
+            }
+            public enum CodingKeys: String, CodingKey {
+                case shareProgress
+            }
+        }
+        /// How far into the title a reader must be to read the message unveiled. An episode, or the ending.
+        ///
+        /// - Remark: Generated from `#/components/schemas/SpoilerStamp`.
+        public struct SpoilerStamp: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SpoilerStamp/season`.
+            public var season: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/SpoilerStamp/episode`.
+            public var episode: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/SpoilerStamp/ending`.
+            public var ending: Swift.Bool?
+            /// Creates a new `SpoilerStamp`.
+            ///
+            /// - Parameters:
+            ///   - season:
+            ///   - episode:
+            ///   - ending:
+            public init(
+                season: Swift.Int? = nil,
+                episode: Swift.Int? = nil,
+                ending: Swift.Bool? = nil
+            ) {
+                self.season = season
+                self.episode = episode
+                self.ending = ending
+            }
+            public enum CodingKeys: String, CodingKey {
+                case season
+                case episode
+                case ending
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MemberProgress`.
+        public struct MemberProgress: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MemberProgress/user`.
+            public var user: Components.Schemas.SocialUser
+            /// Absent when it is not in their library.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MemberProgress/status`.
+            public var status: Components.Schemas.LibraryStatus?
+            /// The furthest episode they ticked.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MemberProgress/season`.
+            public var season: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/MemberProgress/episode`.
+            public var episode: Swift.Int?
+            /// Creates a new `MemberProgress`.
+            ///
+            /// - Parameters:
+            ///   - user:
+            ///   - status: Absent when it is not in their library.
+            ///   - season: The furthest episode they ticked.
+            ///   - episode:
+            public init(
+                user: Components.Schemas.SocialUser,
+                status: Components.Schemas.LibraryStatus? = nil,
+                season: Swift.Int? = nil,
+                episode: Swift.Int? = nil
+            ) {
+                self.user = user
+                self.status = status
+                self.season = season
+                self.episode = episode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case user
+                case status
+                case season
+                case episode
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelProgress`.
+        public struct ChannelProgress: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelProgress/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/ChannelProgress/mine`.
+            public var mine: Components.Schemas.MemberProgress?
+            /// Only members who share their progress in this group.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelProgress/members`.
+            public var members: [Components.Schemas.MemberProgress]
+            /// Creates a new `ChannelProgress`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - mine:
+            ///   - members: Only members who share their progress in this group.
+            public init(
+                title: Components.Schemas.TitleSummary,
+                mine: Components.Schemas.MemberProgress? = nil,
+                members: [Components.Schemas.MemberProgress]
+            ) {
+                self.title = title
+                self.mine = mine
+                self.members = members
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case mine
+                case members
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelItem`.
+        public struct ChannelItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelItem/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/ChannelItem/addedBy`.
+            public var addedBy: Components.Schemas.SocialUser?
+            /// - Remark: Generated from `#/components/schemas/ChannelItem/addedAt`.
+            public var addedAt: Foundation.Date
+            /// Yours
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelItem/myStatus`.
+            public var myStatus: Components.Schemas.LibraryStatus?
+            /// Creates a new `ChannelItem`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - addedBy:
+            ///   - addedAt:
+            ///   - myStatus: Yours
+            public init(
+                title: Components.Schemas.TitleSummary,
+                addedBy: Components.Schemas.SocialUser? = nil,
+                addedAt: Foundation.Date,
+                myStatus: Components.Schemas.LibraryStatus? = nil
+            ) {
+                self.title = title
+                self.addedBy = addedBy
+                self.addedAt = addedAt
+                self.myStatus = myStatus
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case addedBy
+                case addedAt
+                case myStatus
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelItemList`.
+        public struct ChannelItemList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelItemList/items`.
+            public var items: [Components.Schemas.ChannelItem]
+            /// Creates a new `ChannelItemList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.ChannelItem]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelItemCreate`.
+        public struct ChannelItemCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelItemCreate/title`.
+            public var title: Components.Schemas.MediaRef
+            /// Creates a new `ChannelItemCreate`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            public init(title: Components.Schemas.MediaRef) {
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchParty`.
+        public struct WatchParty: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchParty/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/WatchParty/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/WatchParty/season`.
+            public var season: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/episode`.
+            public var episode: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case lobby = "lobby"
+                case countdown = "countdown"
+                case live = "live"
+                case ended = "ended"
+            }
+            /// - Remark: Generated from `#/components/schemas/WatchParty/state`.
+            public var state: Components.Schemas.WatchParty.StatePayload
+            /// - Remark: Generated from `#/components/schemas/WatchParty/startsAt`.
+            public var startsAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/endedAt`.
+            public var endedAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/host`.
+            public var host: Components.Schemas.SocialUser?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/ready`.
+            public var ready: [Components.Schemas.SocialUser]
+            /// Creates a new `WatchParty`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - title:
+            ///   - season:
+            ///   - episode:
+            ///   - state:
+            ///   - startsAt:
+            ///   - endedAt:
+            ///   - host:
+            ///   - ready:
+            public init(
+                id: Swift.String,
+                title: Components.Schemas.TitleSummary,
+                season: Swift.Int? = nil,
+                episode: Swift.Int? = nil,
+                state: Components.Schemas.WatchParty.StatePayload,
+                startsAt: Foundation.Date? = nil,
+                endedAt: Foundation.Date? = nil,
+                host: Components.Schemas.SocialUser? = nil,
+                ready: [Components.Schemas.SocialUser]
+            ) {
+                self.id = id
+                self.title = title
+                self.season = season
+                self.episode = episode
+                self.state = state
+                self.startsAt = startsAt
+                self.endedAt = endedAt
+                self.host = host
+                self.ready = ready
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case title
+                case season
+                case episode
+                case state
+                case startsAt
+                case endedAt
+                case host
+                case ready
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchPartyView`.
+        public struct WatchPartyView: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchPartyView/party`.
+            public var party: Components.Schemas.WatchParty?
+            /// Count down against this, not the device clock.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchPartyView/serverTime`.
+            public var serverTime: Foundation.Date
+            /// Creates a new `WatchPartyView`.
+            ///
+            /// - Parameters:
+            ///   - party:
+            ///   - serverTime: Count down against this, not the device clock.
+            public init(
+                party: Components.Schemas.WatchParty? = nil,
+                serverTime: Foundation.Date
+            ) {
+                self.party = party
+                self.serverTime = serverTime
+            }
+            public enum CodingKeys: String, CodingKey {
+                case party
+                case serverTime
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchPartyCreate`.
+        public struct WatchPartyCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/title`.
+            public var title: Components.Schemas.MediaRef
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/season`.
+            public var season: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/episode`.
+            public var episode: Swift.Int?
+            /// Creates a new `WatchPartyCreate`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - season:
+            ///   - episode:
+            public init(
+                title: Components.Schemas.MediaRef,
+                season: Swift.Int? = nil,
+                episode: Swift.Int? = nil
+            ) {
+                self.title = title
+                self.season = season
+                self.episode = episode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case season
+                case episode
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchPartyReady`.
+        public struct WatchPartyReady: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchPartyReady/ready`.
+            public var ready: Swift.Bool
+            /// Creates a new `WatchPartyReady`.
+            ///
+            /// - Parameters:
+            ///   - ready:
+            public init(ready: Swift.Bool) {
+                self.ready = ready
+            }
+            public enum CodingKeys: String, CodingKey {
+                case ready
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchPartyStart`.
+        public struct WatchPartyStart: Codable, Hashable, Sendable {
+            /// 3–60, default 10.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchPartyStart/countdownSeconds`.
+            public var countdownSeconds: Swift.Int?
+            /// Creates a new `WatchPartyStart`.
+            ///
+            /// - Parameters:
+            ///   - countdownSeconds: 3–60, default 10.
+            public init(countdownSeconds: Swift.Int? = nil) {
+                self.countdownSeconds = countdownSeconds
+            }
+            public enum CodingKeys: String, CodingKey {
+                case countdownSeconds
             }
         }
         /// Provider identifiers known for a title. Absent means unknown.
@@ -10970,6 +11614,1711 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+    ///
+    /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
+    public enum UpdateMyMembership {
+        public static let id: Swift.String = "updateMyMembership"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/path/groupId`.
+                public var groupId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                public init(groupId: Swift.String) {
+                    self.groupId = groupId
+                }
+            }
+            public var path: Operations.UpdateMyMembership.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateMyMembership.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateMyMembership.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateMyMembership.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.MembershipUpdate)
+            }
+            public var body: Operations.UpdateMyMembership.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdateMyMembership.Input.Path,
+                headers: Operations.UpdateMyMembership.Input.Headers = .init(),
+                body: Operations.UpdateMyMembership.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupSummary)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupSummary {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateMyMembership.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateMyMembership.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateMyMembership.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateMyMembership.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A title channel's title, your progress, and the progress of members who share theirs in this group.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/progress`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)`.
+    public enum GetChannelProgress {
+        public static let id: Swift.String = "getChannelProgress"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.GetChannelProgress.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetChannelProgress.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetChannelProgress.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetChannelProgress.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetChannelProgress.Input.Path,
+                headers: Operations.GetChannelProgress.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChannelProgress)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChannelProgress {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetChannelProgress.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetChannelProgress.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetChannelProgress.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetChannelProgress.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A shelf channel's titles, with your own library status for each.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)`.
+    public enum ListChannelItems {
+        public static let id: Swift.String = "listChannelItems"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.ListChannelItems.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListChannelItems.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListChannelItems.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListChannelItems.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.ListChannelItems.Input.Path,
+                headers: Operations.ListChannelItems.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChannelItemList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChannelItemList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListChannelItems.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListChannelItems.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListChannelItems.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListChannelItems.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Add a title to a shelf channel. Any member can; adding one already there changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)`.
+    public enum AddChannelItem {
+        public static let id: Swift.String = "addChannelItem"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.AddChannelItem.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddChannelItem.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddChannelItem.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AddChannelItem.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ChannelItemCreate)
+            }
+            public var body: Operations.AddChannelItem.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.AddChannelItem.Input.Path,
+                headers: Operations.AddChannelItem.Input.Headers = .init(),
+                body: Operations.AddChannelItem.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChannelItemList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChannelItemList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AddChannelItem.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AddChannelItem.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The shelf.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AddChannelItem.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AddChannelItem.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Take a title off a shelf channel. Any member can.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/items/{titleId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)`.
+    public enum RemoveChannelItem {
+        public static let id: Swift.String = "removeChannelItem"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/path/channelId`.
+                public var channelId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/path/titleId`.
+                public var titleId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                ///   - titleId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String,
+                    titleId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                    self.titleId = titleId
+                }
+            }
+            public var path: Operations.RemoveChannelItem.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveChannelItem.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveChannelItem.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RemoveChannelItem.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RemoveChannelItem.Input.Path,
+                headers: Operations.RemoveChannelItem.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Removed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RemoveChannelItem.Output.NoContent)
+            /// Removed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RemoveChannelItem.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A watch channel's newest party, ended or not, and the server's clock for the countdown.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)`.
+    public enum GetWatchParty {
+        public static let id: Swift.String = "getWatchParty"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.GetWatchParty.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetWatchParty.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetWatchParty.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetWatchParty.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetWatchParty.Input.Path,
+                headers: Operations.GetWatchParty.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetWatchParty.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetWatchParty.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetWatchParty.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetWatchParty.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
+    public enum OpenWatchParty {
+        public static let id: Swift.String = "openWatchParty"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.OpenWatchParty.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.OpenWatchParty.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.OpenWatchParty.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.OpenWatchParty.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.WatchPartyCreate)
+            }
+            public var body: Operations.OpenWatchParty.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.OpenWatchParty.Input.Path,
+                headers: Operations.OpenWatchParty.Input.Headers = .init(),
+                body: Operations.OpenWatchParty.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.OpenWatchParty.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.OpenWatchParty.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.OpenWatchParty.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.OpenWatchParty.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Say you are ready, or not.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
+    public enum SetWatchPartyReady {
+        public static let id: Swift.String = "setWatchPartyReady"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.SetWatchPartyReady.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetWatchPartyReady.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetWatchPartyReady.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SetWatchPartyReady.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.WatchPartyReady)
+            }
+            public var body: Operations.SetWatchPartyReady.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.SetWatchPartyReady.Input.Path,
+                headers: Operations.SetWatchPartyReady.Input.Headers = .init(),
+                body: Operations.SetWatchPartyReady.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SetWatchPartyReady.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SetWatchPartyReady.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SetWatchPartyReady.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SetWatchPartyReady.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Start the countdown. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/start`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)`.
+    public enum StartWatchParty {
+        public static let id: Swift.String = "startWatchParty"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.StartWatchParty.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.StartWatchParty.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.StartWatchParty.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.StartWatchParty.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.WatchPartyStart)
+            }
+            public var body: Operations.StartWatchParty.Input.Body?
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.StartWatchParty.Input.Path,
+                headers: Operations.StartWatchParty.Input.Headers = .init(),
+                body: Operations.StartWatchParty.Input.Body? = nil
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.StartWatchParty.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.StartWatchParty.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.StartWatchParty.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.StartWatchParty.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// End the party. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
+    public enum EndWatchParty {
+        public static let id: Swift.String = "endWatchParty"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.EndWatchParty.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EndWatchParty.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EndWatchParty.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.EndWatchParty.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.EndWatchParty.Input.Path,
+                headers: Operations.EndWatchParty.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.EndWatchParty.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.EndWatchParty.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.EndWatchParty.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.EndWatchParty.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.
+    public enum MarkWatchPartyWatched {
+        public static let id: Swift.String = "markWatchPartyWatched"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/watched/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/watched/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/watched/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.MarkWatchPartyWatched.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/watched/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkWatchPartyWatched.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkWatchPartyWatched.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.MarkWatchPartyWatched.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.MarkWatchPartyWatched.Input.Path,
+                headers: Operations.MarkWatchPartyWatched.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Marked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.MarkWatchPartyWatched.Output.NoContent)
+            /// Marked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.MarkWatchPartyWatched.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

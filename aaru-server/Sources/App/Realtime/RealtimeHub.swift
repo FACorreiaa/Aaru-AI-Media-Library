@@ -8,8 +8,9 @@ import Logging
 /// is not there.
 enum GroupEvent: Sendable, Equatable {
     /// `blockedBy`: recipients who blocked the author, who get the message flagged.
-    case messageCreated(group: UUID, GroupMessage, blockedBy: Set<UserID>)
-    case messageUpdated(group: UUID, GroupMessage, blockedBy: Set<UserID>)
+    /// `veiledFor`: recipients behind the message's spoiler stamp, who get it veiled.
+    case messageCreated(group: UUID, GroupMessage, blockedBy: Set<UserID>, veiledFor: Set<UserID>)
+    case messageUpdated(group: UUID, GroupMessage, blockedBy: Set<UserID>, veiledFor: Set<UserID>)
     case messageDeleted(group: UUID, channel: UUID, message: UUID)
     case typing(group: UUID, channel: UUID, SocialUser)
     /// The recipient read a channel on another device.
@@ -20,6 +21,10 @@ enum GroupEvent: Sendable, Equatable {
     case groupRemoved(group: UUID)
     /// The recipient's invites changed.
     case invitesChanged
+    case shelfUpdated(group: UUID, channel: UUID)
+    /// The party in a watch channel opened, changed state, gained or lost a ready member.
+    case watchUpdated(group: UUID, channel: UUID)
+    case watchReaction(group: UUID, channel: UUID, SocialUser, String)
 }
 
 protocol GroupEventPublishing: Sendable {
@@ -131,19 +136,27 @@ actor RealtimeHub: GroupEventPublishing {
         (try? encoder.encode(event)).flatMap { String(bytes: $0, encoding: .utf8) }
     }
 
+    // One case per event type; splitting it would only hide the mapping.
+    // swiftlint:disable:next cyclomatic_complexity
     static func dto(_ event: GroupEvent, for recipient: UserID) -> Components.Schemas.RealtimeEvent {
         switch event {
-        case let .messageCreated(group, message, blockedBy):
+        case let .messageCreated(group, message, blockedBy, veiledFor):
             .init(
                 _type: .message_created, groupId: group.uuidString, channelId: message.channelID.uuidString,
                 messageId: message.id.uuidString,
-                message: .init(message, fromBlocked: blockedBy.contains(recipient), viewer: recipient)
+                message: .init(
+                    message, fromBlocked: blockedBy.contains(recipient), viewer: recipient,
+                    veiled: veiledFor.contains(recipient)
+                )
             )
-        case let .messageUpdated(group, message, blockedBy):
+        case let .messageUpdated(group, message, blockedBy, veiledFor):
             .init(
                 _type: .message_updated, groupId: group.uuidString, channelId: message.channelID.uuidString,
                 messageId: message.id.uuidString,
-                message: .init(message, fromBlocked: blockedBy.contains(recipient), viewer: recipient)
+                message: .init(
+                    message, fromBlocked: blockedBy.contains(recipient), viewer: recipient,
+                    veiled: veiledFor.contains(recipient)
+                )
             )
         case let .messageDeleted(group, channel, message):
             .init(
@@ -160,6 +173,15 @@ actor RealtimeHub: GroupEventPublishing {
             .init(_type: .group_removed, groupId: group.uuidString)
         case .invitesChanged:
             .init(_type: .invites_changed)
+        case let .shelfUpdated(group, channel):
+            .init(_type: .shelf_updated, groupId: group.uuidString, channelId: channel.uuidString)
+        case let .watchUpdated(group, channel):
+            .init(_type: .watch_updated, groupId: group.uuidString, channelId: channel.uuidString)
+        case let .watchReaction(group, channel, user, emoji):
+            .init(
+                _type: .watch_reaction, groupId: group.uuidString, channelId: channel.uuidString, user: .init(user),
+                emoji: emoji
+            )
         }
     }
 }

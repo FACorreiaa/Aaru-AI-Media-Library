@@ -248,3 +248,45 @@ extension UntouchedStore: GroupStore {
         throw Touched()
     }
 }
+
+extension UntouchedStore: GroupKindStore {
+    func setShareProgress(_: UUID, user _: UserID, share _: Bool) async throws {
+        throw Touched()
+    }
+
+    func progress(title _: TitleID, users _: [UserID]) async throws -> [UserID: TitleProgress] {
+        throw Touched()
+    }
+
+    func shelfItems(_: UUID, viewer _: UserID) async throws -> [ShelfItem] {
+        throw Touched()
+    }
+
+    func addShelfItem(_: UUID, title _: TitleID, by _: UserID, now _: Date) async throws -> Bool {
+        throw Touched()
+    }
+
+    func removeShelfItem(_: UUID, title _: TitleID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func latestParty(_: UUID) async throws -> WatchParty? {
+        throw Touched()
+    }
+
+    func createSession(_: WatchParty) async throws {
+        throw Touched()
+    }
+
+    func setReady(_: UUID, user _: UserID, ready _: Bool) async throws {
+        throw Touched()
+    }
+
+    func startSession(_: UUID, at _: Date) async throws {
+        throw Touched()
+    }
+
+    func endSession(_: UUID, now _: Date) async throws {
+        throw Touched()
+    }
+}

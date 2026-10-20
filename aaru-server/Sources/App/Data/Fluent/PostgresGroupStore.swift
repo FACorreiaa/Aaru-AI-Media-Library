@@ -21,11 +21,12 @@ struct PostgresGroupStore: GroupStore {
         let defaultChannelId: UUID
         let unread: Int
         let mentions: Int
+        let shareProgress: Bool
 
         var summary: GroupSummary {
             GroupSummary(
                 id: id, name: name, role: GroupRole(rawValue: role) ?? .member,
-                defaultChannelID: defaultChannelId, unread: unread, mentions: mentions
+                defaultChannelID: defaultChannelId, unread: unread, mentions: mentions, shareProgress: shareProgress
             )
         }
     }
@@ -36,6 +37,7 @@ struct PostgresGroupStore: GroupStore {
         let displayName: String?
         let role: String
         let joinedAt: Date
+        let shareProgress: Bool
     }
 
     private struct InviteRow: Decodable {
@@ -76,7 +78,7 @@ struct PostgresGroupStore: GroupStore {
         WHERE c.group_id = g.id AND \(Self.unseen(viewer))
         """
         return try await sql.raw("""
-        SELECT g.id, g.name, gm.role,
+        SELECT g.id, g.name, gm.role, gm.share_progress,
             (SELECT id FROM group_channels WHERE group_id = g.id AND is_default) AS default_channel_id,
             (SELECT count(*) \(messages)) AS unread,
             (SELECT count(*) \(messages) AND \(bind: viewer.rawValue) = ANY(m.mentions)) AS mentions
@@ -129,7 +131,7 @@ struct PostgresGroupStore: GroupStore {
 
     func members(_ group: UUID) async throws -> [GroupMember] {
         try await sql.raw("""
-        SELECT gm.user_id, p.handle, u.display_name, gm.role, gm.joined_at
+        SELECT gm.user_id, p.handle, u.display_name, gm.role, gm.joined_at, gm.share_progress
         FROM group_members gm JOIN profiles p ON p.user_id = gm.user_id JOIN users u ON u.id = gm.user_id
         WHERE gm.group_id = \(bind: group)
         ORDER BY gm.joined_at, p.handle
@@ -137,7 +139,8 @@ struct PostgresGroupStore: GroupStore {
             GroupMember(
                 user: SocialUser(id: UserID($0.userId), handle: $0.handle, displayName: $0.displayName),
                 role: GroupRole(rawValue: $0.role) ?? .member,
-                joinedAt: $0.joinedAt
+                joinedAt: $0.joinedAt,
+                shareProgress: $0.shareProgress
             )
         }
     }

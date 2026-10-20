@@ -52,7 +52,7 @@ struct Services: Sendable {
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
             social: SocialService(stores: stores),
-            groups: GroupService(stores: stores, events: realtime),
+            groups: GroupService(stores: stores, events: realtime, resolver: resolver, library: library),
             realtime: realtime
         )
     }

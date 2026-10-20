@@ -28,6 +28,7 @@ let allMigrations: [any Migration] = [
     CreateWatchEvents(),
     CreateSocial(),
     CreateGroups(),
+    AddGroupChannelKinds(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

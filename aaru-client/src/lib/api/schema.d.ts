@@ -575,6 +575,167 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/groups/{groupId}/me': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Your own settings in a group. shareProgress shows your progress in its title channels (off by default). */
+    put: operations['updateMyMembership']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** A title channel's title, your progress, and the progress of members who share theirs in this group. */
+    get: operations['getChannelProgress']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/items': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    /** A shelf channel's titles, with your own library status for each. */
+    get: operations['listChannelItems']
+    put?: never
+    /** Add a title to a shelf channel. Any member can; adding one already there changes nothing. */
+    post: operations['addChannelItem']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/items/{titleId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Take a title off a shelf channel. Any member can. */
+    delete: operations['removeChannelItem']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/party': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    /** A watch channel's newest party, ended or not, and the server's clock for the countdown. */
+    get: operations['getWatchParty']
+    put?: never
+    /** Open a party in the lobby. A show needs the episode. One open party per channel (409). */
+    post: operations['openWatchParty']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/party/ready': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Say you are ready, or not. */
+    post: operations['setWatchPartyReady']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/party/start': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Start the countdown. The host or an admin. */
+    post: operations['startWatchParty']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/party/end': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** End the party. The host or an admin. */
+    post: operations['endWatchParty']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/party/watched': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Mark the party's episode, film or book watched in your own library. Nobody else's. */
+    post: operations['markWatchPartyWatched']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/devices': {
     parameters: {
       query?: never
@@ -1411,6 +1572,8 @@ export interface components {
       unread: number
       /** @description Unread messages that tag you. */
       mentions: number
+      /** @description You show your progress in this group's title channels. */
+      shareProgress: boolean
     }
     GroupList: {
       items: components['schemas']['GroupSummary'][]
@@ -1420,12 +1583,14 @@ export interface components {
       role: components['schemas']['GroupRole']
       /** Format: date-time */
       joinedAt: string
+      shareProgress: boolean
     }
     Channel: {
       /** Format: uuid */
       id: string
-      /** @enum {string} */
-      kind: 'text'
+      kind: components['schemas']['ChannelKind']
+      /** @description What a title channel is about. */
+      title?: components['schemas']['TitleSummary']
       /** @description Lowercase, dashes for spaces: movie-night. */
       name: string
       topic?: string
@@ -1466,9 +1631,18 @@ export interface components {
     GroupInviteList: {
       items: components['schemas']['GroupInvite'][]
     }
+    /**
+     * @description text: chat. title: one title, with the spoiler guard. watch: watch parties. shelf: a shared list.
+     * @enum {string}
+     */
+    ChannelKind: 'text' | 'title' | 'watch' | 'shelf'
     ChannelCreate: {
-      name: string
+      kind?: components['schemas']['ChannelKind']
+      /** @description Required, except a title channel takes its title's name. */
+      name?: string
       topic?: string
+      /** @description Required for a title channel. */
+      title?: components['schemas']['MediaRef']
     }
     ChannelUpdate: {
       /** @description Absent leaves it unchanged. */
@@ -1498,6 +1672,10 @@ export interface components {
       editedAt?: string
       /** @description Only on your own messages: the clientNonce you posted with, to match a pending send to its echo. */
       clientNonce?: string
+      /** @description Only on your own messages: it says where you are in the title. */
+      spoiler?: components['schemas']['SpoilerStamp']
+      /** @description It may spoil what you have not watched yet: show it veiled until you tap. */
+      veiled: boolean
     }
     GroupMessagePage: {
       items: components['schemas']['GroupMessage'][]
@@ -1506,6 +1684,10 @@ export interface components {
       body: string
       /** @description Makes a retry safe. */
       clientNonce?: string
+      /** @description Title channels: stamp by hand. Absent: stamped from your progress. */
+      spoiler?: components['schemas']['SpoilerStamp']
+      /** @description Title channels: no stamp at all. */
+      spoilerFree?: boolean
     }
     MessageUpdate: {
       body: string
@@ -1534,6 +1716,9 @@ export interface components {
         | 'group.updated'
         | 'group.removed'
         | 'invites.changed'
+        | 'shelf.updated'
+        | 'watch.updated'
+        | 'watch.reaction'
       /** Format: uuid */
       groupId?: string
       /** Format: uuid */
@@ -1541,17 +1726,93 @@ export interface components {
       /** Format: uuid */
       messageId?: string
       message?: components['schemas']['GroupMessage']
-      /** @description Who is typing. */
+      /** @description Who is typing, or reacting. */
       user?: components['schemas']['SocialUser']
+      /** @description watch.reaction only. */
+      emoji?: string
     }
-    /** @description One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds counts. */
+    /** @description One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds, and one reaction a second, counts. */
     RealtimeCommand: {
       /** @enum {string} */
-      type: 'typing'
+      type: 'typing' | 'react'
+      /** @description react only: one of 😂 😱 😭 ❤️ 👏 🔥. */
+      emoji?: string
       /** Format: uuid */
       groupId: string
       /** Format: uuid */
       channelId: string
+    }
+    MembershipUpdate: {
+      shareProgress: boolean
+    }
+    /** @description How far into the title a reader must be to read the message unveiled. An episode, or the ending. */
+    SpoilerStamp: {
+      season?: number
+      episode?: number
+      ending?: boolean
+    }
+    MemberProgress: {
+      user: components['schemas']['SocialUser']
+      /** @description Absent when it is not in their library. */
+      status?: components['schemas']['LibraryStatus']
+      /** @description The furthest episode they ticked. */
+      season?: number
+      episode?: number
+    }
+    ChannelProgress: {
+      title: components['schemas']['TitleSummary']
+      mine?: components['schemas']['MemberProgress']
+      /** @description Only members who share their progress in this group. */
+      members: components['schemas']['MemberProgress'][]
+    }
+    ChannelItem: {
+      title: components['schemas']['TitleSummary']
+      addedBy?: components['schemas']['SocialUser']
+      /** Format: date-time */
+      addedAt: string
+      /** @description Yours */
+      myStatus?: components['schemas']['LibraryStatus']
+    }
+    ChannelItemList: {
+      items: components['schemas']['ChannelItem'][]
+    }
+    ChannelItemCreate: {
+      title: components['schemas']['MediaRef']
+    }
+    WatchParty: {
+      /** Format: uuid */
+      id: string
+      title: components['schemas']['TitleSummary']
+      season?: number
+      episode?: number
+      /** @enum {string} */
+      state: 'lobby' | 'countdown' | 'live' | 'ended'
+      /** Format: date-time */
+      startsAt?: string
+      /** Format: date-time */
+      endedAt?: string
+      host?: components['schemas']['SocialUser']
+      ready: components['schemas']['SocialUser'][]
+    }
+    WatchPartyView: {
+      party?: components['schemas']['WatchParty']
+      /**
+       * Format: date-time
+       * @description Count down against this, not the device clock.
+       */
+      serverTime: string
+    }
+    WatchPartyCreate: {
+      title: components['schemas']['MediaRef']
+      season?: number
+      episode?: number
+    }
+    WatchPartyReady: {
+      ready: boolean
+    }
+    WatchPartyStart: {
+      /** @description 3–60, default 10. */
+      countdownSeconds?: number
     }
     /** @description Provider identifiers known for a title. Absent means unknown. */
     ExternalIds: {
@@ -2951,6 +3212,286 @@ export interface operations {
         content: {
           'application/json': components['schemas']['RealtimeTicket']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateMyMembership: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MembershipUpdate']
+      }
+    }
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupSummary']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getChannelProgress: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChannelProgress']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listChannelItems: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChannelItemList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  addChannelItem: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChannelItemCreate']
+      }
+    }
+    responses: {
+      /** @description The shelf. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChannelItemList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  removeChannelItem: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+        titleId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getWatchParty: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchPartyView']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  openWatchParty: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WatchPartyCreate']
+      }
+    }
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchPartyView']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  setWatchPartyReady: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WatchPartyReady']
+      }
+    }
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchPartyView']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  startWatchParty: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['WatchPartyStart']
+      }
+    }
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchPartyView']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  endWatchParty: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchPartyView']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  markWatchPartyWatched: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Marked. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

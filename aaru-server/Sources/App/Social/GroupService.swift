@@ -10,6 +10,9 @@ struct GroupService: Sendable {
     let stores: Stores
     /// Members' open sockets hear about each change after it commits (GRP-006).
     let events: any GroupEventPublishing
+    /// Title, shelf and watch channels resolve titles and tick the tapper's own library.
+    let resolver: TitleResolver
+    let library: LibraryService
     var now: @Sendable () -> Date = { Date() }
 
     static let maxMembers = 50
@@ -30,12 +33,24 @@ struct GroupService: Sendable {
         var channels: [GroupChannel]
         var members: [GroupMember]
         var invited: [SocialUser]
+        /// The titles `title` channels are about.
+        var titles: [TitleID: Title] = [:]
     }
 
-    /// A page of messages and the authors the viewer blocked, whose messages arrive collapsed.
+    /// A page of messages, the authors the viewer blocked (their messages arrive collapsed), and
+    /// the messages that would spoil what the viewer has not watched yet (they arrive veiled).
     struct Page: Sendable {
         var messages: [GroupMessage]
         var blocked: Set<UserID>
+        var veiled: Set<UUID> = []
+    }
+
+    /// How a message in a title channel is stamped: from the author's progress, not at all, or
+    /// by hand.
+    enum SpoilerChoice: Sendable, Equatable {
+        case auto
+        case free
+        case stamp(SpoilerStamp)
     }
 
     // MARK: Groups
@@ -64,8 +79,11 @@ struct GroupService: Sendable {
         async let channels = stores.groups.channels(group, viewer: viewer)
         async let members = stores.groups.members(group)
         async let invited = stores.groups.invitesPending(group)
+        let found = try await channels
+        let titles = try await stores.titles.titles(ids: found.compactMap(\.titleID))
         return try await Detail(
-            summary: summary, channels: channels, members: members, invited: invited.map(\.invitee)
+            summary: summary, channels: found, members: members, invited: invited.map(\.invitee),
+            titles: Dictionary(titles.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         )
     }
 
@@ -167,23 +185,127 @@ struct GroupService: Sendable {
         await announce(.groupUpdated(group: group), in: group)
     }
 
+    // MARK: Rules
+
+    /// Publishes to every member. The write already committed, so a failed member lookup only
+    /// costs the live update; clients catch up over REST on their next `ready`.
+    func announce(_ event: GroupEvent, in group: UUID, except: UserID? = nil) async {
+        guard let members = try? await stores.groups.members(group) else { return }
+        await events.publish(event, to: members.map(\.user.id).filter { $0 != except })
+    }
+
+    var social: SocialService {
+        SocialService(stores: stores, now: now)
+    }
+
+    /// The viewer's role, or the same 404 as a group that does not exist.
+    func role(_ group: UUID, _ viewer: UserID) async throws -> GroupRole {
+        guard let role = try await stores.groups.role(group, user: viewer) else { throw Self.noSuchGroup }
+        return role
+    }
+
+    func requireManager(_ group: UUID, _ viewer: UserID) async throws {
+        guard try await role(group, viewer).manages else {
+            throw Self.forbidden("Only the owner and admins can do that.")
+        }
+    }
+
+    func requireChannel(_ group: UUID, _ channel: UUID) async throws -> GroupChannel {
+        guard let found = try await stores.groups.channel(channel, group: group) else {
+            throw AppError.notFound("No such channel.")
+        }
+        return found
+    }
+
+    func requireMessage(_ group: UUID, _ channel: UUID, _ message: UUID) async throws -> GroupMessage {
+        _ = try await requireChannel(group, channel)
+        guard let found = try await stores.groups.message(message, channel: channel) else {
+            throw AppError.notFound("No such message.")
+        }
+        return found
+    }
+}
+
+extension GroupService {
+    // MARK: Channels
+
+    /// Adds a channel. A `title` channel needs the title, and takes its name when none is given.
+    func createChannel(
+        _ group: UUID, kind: ChannelKind = .text, name: String?, topic: String?, title ref: MediaRef? = nil,
+        viewer: UserID
+    ) async throws -> GroupChannel {
+        try await requireManager(group, viewer)
+        let existing = try await stores.groups.channels(group, viewer: viewer)
+        guard existing.count < Self.maxChannels else {
+            throw Self.invalid("name", "A group holds \(Self.maxChannels) channels.")
+        }
+        var title: Title?
+        if kind == .title {
+            guard let ref else { throw Self.invalid("title", "Pick the title this channel is about.") }
+            title = try await resolver.resolve(ref)
+        }
+        guard let raw = name ?? title.map({ String($0.title.prefix(Self.maxChannelNameLength)) }) else {
+            throw Self.invalid("name", "Name the channel.")
+        }
+        let channel = try GroupChannel(
+            id: UUID(), groupID: group, kind: kind, titleID: title?.id, name: Self.channelName(raw),
+            topic: Self.validTopic(topic), position: (existing.map(\.position).max() ?? 0) + 1, isDefault: false,
+            createdAt: now()
+        )
+        try await stores.groups.createChannel(channel)
+        await announce(.groupUpdated(group: group), in: group)
+        return channel
+    }
+
+    func updateChannel(
+        _ group: UUID, channel: UUID, name: String?, topic: String?, viewer: UserID
+    ) async throws -> GroupChannel {
+        try await requireManager(group, viewer)
+        _ = try await requireChannel(group, channel)
+        try await stores.groups.updateChannel(
+            channel, name: name.map(Self.channelName), topic: topic.map { try Self.validTopic($0) }
+        )
+        await announce(.groupUpdated(group: group), in: group)
+        return try await requireChannel(group, channel)
+    }
+
+    func deleteChannel(_ group: UUID, channel: UUID, viewer: UserID) async throws {
+        try await requireManager(group, viewer)
+        guard try await !requireChannel(group, channel).isDefault else {
+            throw Self.invalid("channelId", "The first channel stays; rename it instead.")
+        }
+        _ = try await stores.groups.deleteChannel(channel)
+        await announce(.groupUpdated(group: group), in: group)
+    }
+}
+
+extension GroupService {
     // MARK: Messages
 
     func messages(
         _ group: UUID, channel: UUID, cursor: MessageCursor, limit: Int?, viewer: UserID
     ) async throws -> Page {
         _ = try await role(group, viewer)
-        _ = try await requireChannel(group, channel)
+        let found = try await requireChannel(group, channel)
         let limit = min(max(limit ?? Self.defaultPageSize, 1), Self.maxPageSize)
         async let messages = stores.groups.messages(channel, cursor: cursor, limit: limit)
         async let blocked = stores.social.blocked(by: viewer)
-        return try await Page(messages: messages, blocked: Set(blocked.map(\.id)))
+        let page = try await messages
+        var veiled: Set<UUID> = []
+        if let title = found.titleID {
+            let mine = try await stores.groupKinds.progress(title: title, users: [viewer])[viewer]
+            veiled = Set(page.filter { $0.author?.id != viewer && Self.veils($0.spoiler, mine) }.map(\.id))
+        }
+        return try await Page(messages: page, blocked: Set(blocked.map(\.id)), veiled: veiled)
     }
 
-    /// Posts a message. A retry with the same `nonce` returns the first message.
-    func post(_ group: UUID, channel: UUID, body: String, nonce: String?, viewer: UserID) async throws -> GroupMessage {
+    /// Posts a message. A retry with the same `nonce` returns the first message. In a title
+    /// channel the message carries a spoiler stamp (see `SpoilerChoice`).
+    func post(
+        _ group: UUID, channel: UUID, body: String, nonce: String?, spoiler: SpoilerChoice = .auto, viewer: UserID
+    ) async throws -> GroupMessage {
         _ = try await role(group, viewer)
-        _ = try await requireChannel(group, channel)
+        let found = try await requireChannel(group, channel)
         let author = try await social.requireHandle(viewer)
         let body = try Self.validBody(body)
         let nonce = nonce?.trimmingCharacters(in: .whitespaces)
@@ -192,16 +314,27 @@ struct GroupService: Sendable {
         }
         let members = try await stores.groups.members(group)
         let (mentions, agent) = Self.mentions(in: body, members: members)
+        var progress: [UserID: TitleProgress]?
+        if let title = found.titleID {
+            progress = try await stores.groupKinds.progress(title: title, users: members.map(\.user.id))
+        }
+        let stamp: SpoilerStamp? = switch spoiler {
+        case _ where found.titleID == nil, .free: nil
+        case let .stamp(stamp): stamp
+        case .auto: progress?[viewer].flatMap(Self.autoStamp)
+        }
         let posted = try await stores.groups.postMessage(
             GroupMessage(
                 id: UUID(), channelID: channel, author: author, body: body, mentions: mentions,
-                mentionsAgent: agent, createdAt: now()
+                mentionsAgent: agent, createdAt: now(), spoiler: stamp
             ),
             nonce: nonce?.isEmpty == false ? nonce : nil
         )
         let blockedBy = try await stores.social.blockers(of: viewer)
+        let veiledFor = Self.veiledFor(posted, members: members, progress: progress)
         await events.publish(
-            .messageCreated(group: group, posted, blockedBy: blockedBy), to: members.map(\.user.id)
+            .messageCreated(group: group, posted, blockedBy: blockedBy, veiledFor: veiledFor),
+            to: members.map(\.user.id)
         )
         return posted
     }
@@ -214,11 +347,20 @@ struct GroupService: Sendable {
             throw Self.forbidden("You can only edit your own messages.")
         }
         let body = try Self.validBody(body)
-        let (mentions, agent) = try await Self.mentions(in: body, members: stores.groups.members(group))
+        let members = try await stores.groups.members(group)
+        let (mentions, agent) = Self.mentions(in: body, members: members)
         try await stores.groups.editMessage(message, body: body, mentions: mentions, mentionsAgent: agent, now: now())
         let edited = try await requireMessage(group, channel, message)
         let blockedBy = try await stores.social.blockers(of: viewer)
-        await announce(.messageUpdated(group: group, edited, blockedBy: blockedBy), in: group)
+        var progress: [UserID: TitleProgress]?
+        if let title = try await requireChannel(group, channel).titleID {
+            progress = try await stores.groupKinds.progress(title: title, users: members.map(\.user.id))
+        }
+        let veiledFor = Self.veiledFor(edited, members: members, progress: progress)
+        await events.publish(
+            .messageUpdated(group: group, edited, blockedBy: blockedBy, veiledFor: veiledFor),
+            to: members.map(\.user.id)
+        )
         return edited
     }
 
@@ -246,85 +388,5 @@ struct GroupService: Sendable {
         _ = try await requireChannel(group, channel)
         let typist = try await social.requireHandle(viewer)
         await announce(.typing(group: group, channel: channel, typist), in: group, except: viewer)
-    }
-
-    // MARK: Rules
-
-    /// Publishes to every member. The write already committed, so a failed member lookup only
-    /// costs the live update; clients catch up over REST on their next `ready`.
-    private func announce(_ event: GroupEvent, in group: UUID, except: UserID? = nil) async {
-        guard let members = try? await stores.groups.members(group) else { return }
-        await events.publish(event, to: members.map(\.user.id).filter { $0 != except })
-    }
-
-    private var social: SocialService {
-        SocialService(stores: stores, now: now)
-    }
-
-    /// The viewer's role, or the same 404 as a group that does not exist.
-    private func role(_ group: UUID, _ viewer: UserID) async throws -> GroupRole {
-        guard let role = try await stores.groups.role(group, user: viewer) else { throw Self.noSuchGroup }
-        return role
-    }
-
-    private func requireManager(_ group: UUID, _ viewer: UserID) async throws {
-        guard try await role(group, viewer).manages else {
-            throw Self.forbidden("Only the owner and admins can do that.")
-        }
-    }
-
-    private func requireChannel(_ group: UUID, _ channel: UUID) async throws -> GroupChannel {
-        guard let found = try await stores.groups.channel(channel, group: group) else {
-            throw AppError.notFound("No such channel.")
-        }
-        return found
-    }
-
-    private func requireMessage(_ group: UUID, _ channel: UUID, _ message: UUID) async throws -> GroupMessage {
-        _ = try await requireChannel(group, channel)
-        guard let found = try await stores.groups.message(message, channel: channel) else {
-            throw AppError.notFound("No such message.")
-        }
-        return found
-    }
-}
-
-extension GroupService {
-    // MARK: Channels
-
-    func createChannel(_ group: UUID, name: String, topic: String?, viewer: UserID) async throws -> GroupChannel {
-        try await requireManager(group, viewer)
-        let existing = try await stores.groups.channels(group, viewer: viewer)
-        guard existing.count < Self.maxChannels else {
-            throw Self.invalid("name", "A group holds \(Self.maxChannels) channels.")
-        }
-        let channel = try GroupChannel(
-            id: UUID(), groupID: group, name: Self.channelName(name), topic: Self.validTopic(topic),
-            position: (existing.map(\.position).max() ?? 0) + 1, isDefault: false, createdAt: now()
-        )
-        try await stores.groups.createChannel(channel)
-        await announce(.groupUpdated(group: group), in: group)
-        return channel
-    }
-
-    func updateChannel(
-        _ group: UUID, channel: UUID, name: String?, topic: String?, viewer: UserID
-    ) async throws -> GroupChannel {
-        try await requireManager(group, viewer)
-        _ = try await requireChannel(group, channel)
-        try await stores.groups.updateChannel(
-            channel, name: name.map(Self.channelName), topic: topic.map { try Self.validTopic($0) }
-        )
-        await announce(.groupUpdated(group: group), in: group)
-        return try await requireChannel(group, channel)
-    }
-
-    func deleteChannel(_ group: UUID, channel: UUID, viewer: UserID) async throws {
-        try await requireManager(group, viewer)
-        guard try await !requireChannel(group, channel).isDefault else {
-            throw Self.invalid("channelId", "The first channel stays; rename it instead.")
-        }
-        _ = try await stores.groups.deleteChannel(channel)
-        await announce(.groupUpdated(group: group), in: group)
     }
 }

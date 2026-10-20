@@ -55,6 +55,13 @@ message empties it straight away. Deleting your account empties every message yo
 group and removes you from them; a group you owned passes to another member, or goes if nobody
 else was in it. The export includes your groups and the messages you wrote.
 
+In a channel about one title, Aaru uses your own progress in that title to hide messages that
+would spoil what you have not watched yet, and to mark what you write so it is hidden from
+people who are behind you. Nobody sees that mark but you. Your progress itself is shown to the
+group only if you switch on "Share my progress" for that group; it is off until you do. Titles
+added to a shared shelf show who added them. A watch party shows who is ready, and "Mark
+watched" changes only your own library.
+
 **Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
 that setting.
 

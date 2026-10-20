@@ -8,6 +8,8 @@ extension PostgresGroupStore {
     private struct ChannelRow: Decodable {
         let id: UUID
         let groupId: UUID
+        let kind: String
+        let titleId: UUID?
         let name: String
         let topic: String?
         let position: Int
@@ -18,7 +20,9 @@ extension PostgresGroupStore {
 
         var channel: GroupChannel {
             GroupChannel(
-                id: id, groupID: groupId, name: name, topic: topic, position: position, isDefault: isDefault,
+                id: id, groupID: groupId, kind: ChannelKind(rawValue: kind) ?? .text,
+                titleID: titleId.map(TitleID.init),
+                name: name, topic: topic, position: position, isDefault: isDefault,
                 createdAt: createdAt, unread: unread ?? 0, mentions: mentions ?? 0
             )
         }
@@ -37,6 +41,9 @@ extension PostgresGroupStore {
         let editedAt: Date?
         let deletedAt: Date?
         let clientNonce: String?
+        let spoilerSeason: Int?
+        let spoilerEpisode: Int?
+        let spoilerEnding: Bool
 
         var message: GroupMessage {
             let author = authorId.flatMap { id in
@@ -45,22 +52,27 @@ extension PostgresGroupStore {
             return GroupMessage(
                 id: id, channelID: channelId, author: author, body: body, mentions: mentions.map(UserID.init),
                 mentionsAgent: mentionsAgent, createdAt: createdAt, editedAt: editedAt, deletedAt: deletedAt,
-                clientNonce: clientNonce
+                clientNonce: clientNonce,
+                spoiler: spoilerEnding ? .ending : spoilerSeason.flatMap { season in
+                    spoilerEpisode.map { .episode(EpisodePoint(season: season, episode: $0)) }
+                }
             )
         }
     }
 
     private static let messageColumns: SQLQueryString = """
     SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
-        m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce
+        m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
+        m.spoiler_season, m.spoiler_episode, m.spoiler_ending
     FROM group_messages m
     LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
     """
 
     static func insert(_ channel: GroupChannel, sql: any SQLDatabase) async throws {
         try await sql.raw("""
-        INSERT INTO group_channels (id, group_id, kind, name, topic, position, is_default, created_at)
-        VALUES (\(bind: channel.id), \(bind: channel.groupID), 'text', \(bind: channel.name), \(bind: channel.topic),
+        INSERT INTO group_channels (id, group_id, kind, title_id, name, topic, position, is_default, created_at)
+        VALUES (\(bind: channel.id), \(bind: channel.groupID), \(bind: channel.kind.rawValue),
+                \(bind: channel.titleID?.rawValue), \(bind: channel.name), \(bind: channel.topic),
                 \(bind: channel.position), \(bind: channel.isDefault), \(bind: channel.createdAt))
         """).run()
     }
@@ -72,7 +84,7 @@ extension PostgresGroupStore {
         FROM group_messages m WHERE m.channel_id = c.id AND \(Self.unseen(viewer))
         """
         return try await sql.raw("""
-        SELECT c.id, c.group_id, c.name, c.topic, c.position, c.is_default, c.created_at,
+        SELECT c.id, c.group_id, c.kind, c.title_id, c.name, c.topic, c.position, c.is_default, c.created_at,
             (SELECT count(*) \(messages)) AS unread,
             (SELECT count(*) \(messages) AND \(bind: viewer.rawValue) = ANY(m.mentions)) AS mentions
         FROM group_channels c
@@ -84,7 +96,7 @@ extension PostgresGroupStore {
 
     func channel(_ id: UUID, group: UUID) async throws -> GroupChannel? {
         try await sql.raw("""
-        SELECT id, group_id, name, topic, position, is_default, created_at, NULL::bigint AS unread,
+        SELECT id, group_id, kind, title_id, name, topic, position, is_default, created_at, NULL::bigint AS unread,
             NULL::bigint AS mentions
         FROM group_channels WHERE id = \(bind: id) AND group_id = \(bind: group)
         """).first(decoding: ChannelRow.self, keyDecodingStrategy: .convertFromSnakeCase)?.channel
@@ -150,11 +162,18 @@ extension PostgresGroupStore {
     func postMessage(_ message: GroupMessage, nonce: String?) async throws -> GroupMessage {
         struct Row: Decodable { let id: UUID }
         let author = message.author?.id.rawValue
+        let point: EpisodePoint? = if case let .episode(point) = message.spoiler {
+            point
+        } else {
+            nil
+        }
         let inserted = try await sql.raw("""
-        INSERT INTO group_messages (id, channel_id, author_id, body, mentions, mentions_agent, client_nonce, created_at)
+        INSERT INTO group_messages (id, channel_id, author_id, body, mentions, mentions_agent, client_nonce, created_at,
+                                    spoiler_season, spoiler_episode, spoiler_ending)
         VALUES (\(bind: message.id), \(bind: message.channelID), \(bind: author), \(bind: message.body),
                 \(bind: message.mentions.map(\.rawValue)), \(bind: message.mentionsAgent), \(bind: nonce),
-                \(bind: message.createdAt))
+                \(bind: message.createdAt), \(bind: point?.season), \(bind: point?.episode),
+                \(bind: message.spoiler == .ending))
         ON CONFLICT (author_id, client_nonce) DO NOTHING
         RETURNING id
         """).first(decoding: Row.self)

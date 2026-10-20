@@ -1640,29 +1640,37 @@ socket receives nothing for the group.
 ### GRP-007 · Title channels and the spoiler guard · M
 **Needs:** GRP-006, PROG-001.
 A `title` channel is bound to one title, created from search or "Discuss in group…" on the
-Title page. Its header is a `TitleCard`. A message is stamped with the author's current season
-and episode, or a hand-set one. A reader whose progress is behind sees `SpoilerVeil`.
-Members' progress shows in the header only for members who switch on `share_progress` for that
-group (default off).
+Title page, and named after it unless named by hand. Its header is a `TitleCard`. A message is
+stamped with the author's furthest episode (the ending once they finished), a hand-set episode
+or the ending, or nothing (`spoilerFree`). A reader whose progress is behind sees `SpoilerVeil`;
+finishing the title unveils everything. Only the author sees a stamp, since it says where they
+are; readers get `veiled`. Members' progress shows in the header
+(`GET …/channels/{id}/progress`) only for members who switch on `share_progress` for that group
+(`PUT /v1/groups/{id}/me`, default off).
 
 **Done when:** a reader at S1E3 sees a message stamped S1E5 veiled, a reader at S2E1 does not,
 and a member with `share_progress` off never appears in the header.
 
 ### GRP-008 · Shelf channels · M
 **Needs:** GRP-006.
-`group_channel_items` (title, `added_by`, position). Separate from `lists`, which stay
-single-owner; they share a renderer. Any member adds or removes titles. "Add to my library" is
-a normal tap through the library data layer, journaled with the user as actor.
+`group_channel_items` (title, `added_by`, position), up to 200 per shelf, at
+`…/channels/{id}/items`. Separate from `lists`, which stay single-owner; they share a renderer.
+Any member adds or removes titles, and `shelf.updated` tells the others. Each item carries the
+viewer's own status. "Add to my library" is the existing `POST /v1/library/items`, journaled
+with the user as actor.
 
 **Done when:** two members edit the same shelf live, and "Add to my library" writes one
 journaled, undoable action for the tapper only.
 
 ### GRP-009 · Watch channels · L
 **Needs:** GRP-006, PROG-001.
-Absorbs ROOM-001. `watch_sessions` (title, season, episode, `starts_at`, state `lobby` |
-`countdown` | `live` | `ended`). `WatchPanel`: ready list, a countdown driven by server time,
-ephemeral reactions over the socket, and "Mark watched for me", which ticks only the tapper's
-progress.
+Absorbs ROOM-001. `watch_sessions` (title, season, episode, host, `starts_at`, `ended_at`; one
+open per channel) and `watch_ready`, at `…/channels/{id}/party`. State is derived: `lobby`
+until the host or an admin starts a 3–60 s countdown, `countdown` until `starts_at`, `live`
+until ended. Every response carries `serverTime` so clients count down against it.
+`WatchPanel`: ready list, the countdown, reactions over the socket (😂 😱 😭 ❤️ 👏 🔥, one a
+second per socket, never stored), and "Mark watched for me" (`…/party/watched`), which ticks
+only the tapper's progress through `LibraryService`, during or after the party.
 
 **Done when:** members on web, iOS and Mac see the same countdown within 500 ms, and ending the
 session ticks the episode only for members who tap.

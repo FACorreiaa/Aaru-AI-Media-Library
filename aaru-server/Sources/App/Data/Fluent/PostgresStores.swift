@@ -28,7 +28,8 @@ extension Stores {
             agentTokens: PostgresAgentTokenStore(sql: sql),
             watchEvents: PostgresWatchEventStore(sql: sql),
             social: PostgresSocialStore(database: database),
-            groups: PostgresGroupStore(database: database)
+            groups: PostgresGroupStore(database: database),
+            groupKinds: PostgresGroupStore(database: database)
         )
     }
 }

@@ -614,6 +614,181 @@ paths:
               schema: {$ref: '#/components/schemas/RealtimeTicket'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/me:
+    put:
+      operationId: updateMyMembership
+      summary: Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MembershipUpdate'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupSummary'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/progress:
+    get:
+      operationId: getChannelProgress
+      summary: A title channel's title, your progress, and the progress of members who share theirs in this group.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChannelProgress'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/items:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listChannelItems
+      summary: A shelf channel's titles, with your own library status for each.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChannelItemList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: addChannelItem
+      summary: Add a title to a shelf channel. Any member can; adding one already there changes nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChannelItemCreate'}
+      responses:
+        '200':
+          description: The shelf.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChannelItemList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/items/{titleId}:
+    delete:
+      operationId: removeChannelItem
+      summary: Take a title off a shelf channel. Any member can.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: titleId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Removed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getWatchParty
+      summary: A watch channel's newest party, ended or not, and the server's clock for the countdown.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: openWatchParty
+      summary: Open a party in the lobby. A show needs the episode. One open party per channel (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WatchPartyCreate'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party/ready:
+    post:
+      operationId: setWatchPartyReady
+      summary: Say you are ready, or not.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WatchPartyReady'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party/start:
+    post:
+      operationId: startWatchParty
+      summary: Start the countdown. The host or an admin.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WatchPartyStart'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party/end:
+    post:
+      operationId: endWatchParty
+      summary: End the party. The host or an admin.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party/watched:
+    post:
+      operationId: markWatchPartyWatched
+      summary: Mark the party's episode, film or book watched in your own library. Nobody else's.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Marked.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/devices:
     put:
       operationId: registerDevice
@@ -1653,7 +1828,7 @@ components:
       enum: [owner, admin, member]
     GroupSummary:
       type: object
-      required: [id, name, role, defaultChannelId, unread, mentions]
+      required: [id, name, role, defaultChannelId, unread, mentions, shareProgress]
       properties:
         id: {type: string, format: uuid}
         name: {type: string}
@@ -1661,6 +1836,7 @@ components:
         defaultChannelId: {type: string, format: uuid}
         unread: {type: integer, description: Messages from others since you last read, across channels.}
         mentions: {type: integer, description: Unread messages that tag you.}
+        shareProgress: {type: boolean, description: You show your progress in this group's title channels.}
     GroupList:
       type: object
       required: [items]
@@ -1670,19 +1846,19 @@ components:
           items: {$ref: '#/components/schemas/GroupSummary'}
     GroupMember:
       type: object
-      required: [user, role, joinedAt]
+      required: [user, role, joinedAt, shareProgress]
       properties:
         user: {$ref: '#/components/schemas/SocialUser'}
         role: {$ref: '#/components/schemas/GroupRole'}
         joinedAt: {type: string, format: date-time}
+        shareProgress: {type: boolean}
     Channel:
       type: object
       required: [id, kind, name, position, isDefault, unread, mentions]
       properties:
         id: {type: string, format: uuid}
-        kind:
-          type: string
-          enum: [text]
+        kind: {$ref: '#/components/schemas/ChannelKind'}
+        title: {$ref: '#/components/schemas/TitleSummary', description: What a title channel is about.}
         name: {type: string, description: 'Lowercase, dashes for spaces: movie-night.'}
         topic: {type: string}
         position: {type: integer}
@@ -1737,12 +1913,17 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/GroupInvite'}
+    ChannelKind:
+      type: string
+      description: 'text: chat. title: one title, with the spoiler guard. watch: watch parties. shelf: a shared list.'
+      enum: [text, title, watch, shelf]
     ChannelCreate:
       type: object
-      required: [name]
       properties:
-        name: {type: string}
+        kind: {$ref: '#/components/schemas/ChannelKind'}
+        name: {type: string, description: "Required, except a title channel takes its title's name."}
         topic: {type: string, maxLength: 200}
+        title: {$ref: '#/components/schemas/MediaRef', description: Required for a title channel.}
     ChannelUpdate:
       type: object
       properties:
@@ -1750,7 +1931,7 @@ components:
         topic: {type: string, description: Absent leaves it unchanged; empty clears it.}
     GroupMessage:
       type: object
-      required: [id, channelId, body, mentions, mentionsAgent, fromBlocked, deleted, createdAt]
+      required: [id, channelId, body, mentions, mentionsAgent, fromBlocked, deleted, createdAt, veiled]
       properties:
         id: {type: string, format: uuid}
         channelId: {type: string, format: uuid}
@@ -1766,6 +1947,8 @@ components:
         createdAt: {type: string, format: date-time}
         editedAt: {type: string, format: date-time}
         clientNonce: {type: string, description: 'Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.'}
+        spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: 'Only on your own messages: it says where you are in the title.'}
+        veiled: {type: boolean, description: "It may spoil what you have not watched yet: show it veiled until you tap."}
     GroupMessagePage:
       type: object
       required: [items]
@@ -1779,6 +1962,8 @@ components:
       properties:
         body: {type: string, maxLength: 4000}
         clientNonce: {type: string, maxLength: 64, description: Makes a retry safe.}
+        spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: "Title channels: stamp by hand. Absent: stamped from your progress."}
+        spoilerFree: {type: boolean, description: 'Title channels: no stamp at all.'}
     MessageUpdate:
       type: object
       required: [body]
@@ -1805,22 +1990,113 @@ components:
       properties:
         type:
           type: string
-          enum: [ready, message.created, message.updated, message.deleted, typing, read, group.updated, group.removed, invites.changed]
+          enum: [ready, message.created, message.updated, message.deleted, typing, read, group.updated, group.removed, invites.changed, shelf.updated, watch.updated, watch.reaction]
         groupId: {type: string, format: uuid}
         channelId: {type: string, format: uuid}
         messageId: {type: string, format: uuid}
         message: {$ref: '#/components/schemas/GroupMessage'}
-        user: {$ref: '#/components/schemas/SocialUser', description: 'Who is typing.'}
+        user: {$ref: '#/components/schemas/SocialUser', description: 'Who is typing, or reacting.'}
+        emoji: {type: string, description: 'watch.reaction only.'}
     RealtimeCommand:
       type: object
-      description: One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds counts.
+      description: One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds, and one reaction a second, counts.
       required: [type, groupId, channelId]
       properties:
         type:
           type: string
-          enum: [typing]
+          enum: [typing, react]
+        emoji: {type: string, description: 'react only: one of 😂 😱 😭 ❤️ 👏 🔥.'}
         groupId: {type: string, format: uuid}
         channelId: {type: string, format: uuid}
+    MembershipUpdate:
+      type: object
+      required: [shareProgress]
+      properties:
+        shareProgress: {type: boolean}
+    SpoilerStamp:
+      type: object
+      description: How far into the title a reader must be to read the message unveiled. An episode, or the ending.
+      properties:
+        season: {type: integer}
+        episode: {type: integer}
+        ending: {type: boolean}
+    MemberProgress:
+      type: object
+      required: [user]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        status: {$ref: '#/components/schemas/LibraryStatus', description: Absent when it is not in their library.}
+        season: {type: integer, description: The furthest episode they ticked.}
+        episode: {type: integer}
+    ChannelProgress:
+      type: object
+      required: [title, members]
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        mine: {$ref: '#/components/schemas/MemberProgress'}
+        members:
+          type: array
+          description: Only members who share their progress in this group.
+          items: {$ref: '#/components/schemas/MemberProgress'}
+    ChannelItem:
+      type: object
+      required: [title, addedAt]
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        addedBy: {$ref: '#/components/schemas/SocialUser'}
+        addedAt: {type: string, format: date-time}
+        myStatus: {$ref: '#/components/schemas/LibraryStatus', description: Yours, when it is in your library.}
+    ChannelItemList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ChannelItem'}
+    ChannelItemCreate:
+      type: object
+      required: [title]
+      properties:
+        title: {$ref: '#/components/schemas/MediaRef'}
+    WatchParty:
+      type: object
+      required: [id, title, state, ready]
+      properties:
+        id: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        season: {type: integer}
+        episode: {type: integer}
+        state:
+          type: string
+          enum: [lobby, countdown, live, ended]
+        startsAt: {type: string, format: date-time}
+        endedAt: {type: string, format: date-time}
+        host: {$ref: '#/components/schemas/SocialUser'}
+        ready:
+          type: array
+          items: {$ref: '#/components/schemas/SocialUser'}
+    WatchPartyView:
+      type: object
+      required: [serverTime]
+      properties:
+        party: {$ref: '#/components/schemas/WatchParty'}
+        serverTime: {type: string, format: date-time, description: 'Count down against this, not the device clock.'}
+    WatchPartyCreate:
+      type: object
+      required: [title]
+      properties:
+        title: {$ref: '#/components/schemas/MediaRef'}
+        season: {type: integer}
+        episode: {type: integer}
+    WatchPartyReady:
+      type: object
+      required: [ready]
+      properties:
+        ready: {type: boolean}
+    WatchPartyStart:
+      type: object
+      properties:
+        countdownSeconds: {type: integer, description: '3–60, default 10.'}
     ExternalIds:
       type: object
       description: Provider identifiers known for a title. Absent means unknown.

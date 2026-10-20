@@ -35,12 +35,17 @@ struct GroupSummary: Sendable, Equatable {
     /// Messages from others since the viewer last read, across every channel.
     var unread: Int
     var mentions: Int
+    /// Whether the viewer shows their progress in this group's title channels (GRP-007).
+    var shareProgress = false
 }
 
-/// A text channel. M4 adds the title, watch and shelf kinds.
+/// A channel: plain chat, one title's thread, a watch party, or a shared shelf.
 struct GroupChannel: Sendable, Equatable {
     var id: UUID
     var groupID: UUID
+    var kind: ChannelKind = .text
+    /// The title a `title` channel is about; nil for every other kind.
+    var titleID: TitleID?
     var name: String
     var topic: String?
     var position: Int
@@ -54,6 +59,7 @@ struct GroupMember: Sendable, Equatable {
     var user: SocialUser
     var role: GroupRole
     var joinedAt: Date
+    var shareProgress = false
 }
 
 /// A pending invite into a group. It stops existing once accepted or declined.
@@ -80,6 +86,8 @@ struct GroupMessage: Sendable, Equatable {
     var deletedAt: Date?
     /// The author's retry key. Only the author is ever shown it.
     var clientNonce: String?
+    /// How far into the title a reader must be to read it unveiled (title channels).
+    var spoiler: SpoilerStamp?
 }
 
 /// Where a page of messages starts: older than one message, newer than one, or the latest.
