@@ -29,6 +29,7 @@ struct LibraryHarness {
         clock: TestClock? = nil,
         trakt: TraktAPI? = nil,
         stremio: StremioAccount? = nil,
+        webPush: (any WebPushSending)? = nil,
         _ body: @escaping @Sendable (LibraryHarness) async throws -> Void
     ) async throws {
         try await withMigratedStores { stores in
@@ -38,6 +39,7 @@ struct LibraryHarness {
             var services = Services.make(
                 stores: stores, catalogs: FakeCatalog.providers(fake), auth: auth, trakt: trakt, stremio: stremio
             )
+            services.webPush = webPush
             if let clock {
                 services.catalog.now = { clock.now }
                 services.library = LibraryService(

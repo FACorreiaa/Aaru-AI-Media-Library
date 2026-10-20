@@ -36,29 +36,35 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             settings: settings
         )
     }
-    let services = Services.make(
+    let webPush = makeWebPushSender(config.vapidConfigJSON, logger: logger)
+    var services = Services.make(
         stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
         publicBaseURL: config.publicBaseURL
     )
+    services.webPush = webPush
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
     let router = try buildRouter(stores: stores, services: services)
+    let background: [any Service] = [
+        fluent,
+        ImportWorker(imports: services.imports, logger: logger),
+        AiringNotifierService(
+            notifier: AiringNotifier(
+                stores: stores, sender: makePushSender(config.push, logger: logger), webPush: webPush
+            ),
+            logger: logger
+        ),
+        CatalogRefreshService(
+            refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
+            logger: logger
+        ),
+    ]
     return Application(
         router: router,
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        services: [
-            fluent,
-            ImportWorker(imports: services.imports, logger: logger),
-            AiringNotifierService(
-                notifier: AiringNotifier(stores: stores, sender: makePushSender(config.push, logger: logger)),
-                logger: logger
-            ),
-            CatalogRefreshService(
-                refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
-                logger: logger
-            ),
-        ],
+        // The web push manager finishes in-flight sends on shutdown.
+        services: background + [webPush?.manager].compactMap(\.self),
         logger: logger
     )
 }
@@ -109,6 +115,20 @@ func makePushSender(_ settings: PushSettings?, logger: Logger) -> (any PushSendi
         return try APNSPushSender(settings: settings)
     } catch {
         logger.error("Push disabled: APNS_PRIVATE_KEY is not a valid .p8 key")
+        return nil
+    }
+}
+
+/// The web push sender, or nil (with a notice) when `VAPID_CONFIG` is unset or does not parse.
+func makeWebPushSender(_ json: String?, logger: Logger) -> WebPushSender? {
+    guard let json else {
+        logger.notice("Web push disabled: VAPID_CONFIG is not set")
+        return nil
+    }
+    do {
+        return try WebPushSender(configurationJSON: json, logger: logger)
+    } catch {
+        logger.error("Web push disabled: VAPID_CONFIG is not a valid VAPID configuration")
         return nil
     }
 }

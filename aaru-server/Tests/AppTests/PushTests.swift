@@ -107,6 +107,7 @@ struct PushTests {
             #expect(mine.count == 1, "episode 2 only, and only once")
             #expect(mine.first?.0.title == "Severance")
             #expect(mine.first?.0.body == "S1 E2 · “Episode 2” is out")
+            #expect(mine.first?.0.payload["libraryItemId"] == itemID, "a tap opens the library item")
             #expect(mine.first?.1.token == live)
             #expect(
                 try await env.stores.push.devices(userID: env.userID).map(\.token) == [live],

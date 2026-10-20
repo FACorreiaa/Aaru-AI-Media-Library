@@ -297,7 +297,7 @@ Later-phase route groups, each added with its phase and never before:
 `/v1/scrobble/*` and `/v1/webhooks/{plex|jellyfin}` (3), `/v1/agent/tokens` and the Stremio
 addon at `/stremio/{token}/*` (3, pulled forward 2026-10-19; outside `/v1` because the Stremio
 protocol fixes the paths), `/v1/social/*`
-and `/v1/devices/apns` (4), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
+and `/v1/devices` (airing push, pulled into 2 on 2026-10-15), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
 with GAM-006a and grew with GAM-006c, 2026-10-20), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*`, `/v1/rooms/*` (6).
 
@@ -841,7 +841,16 @@ server never sees plaintext.
 - `apns_devices(user_id, token, environment, bundle_id)` stores the APNs environment per
   token, so the TestFlight `.beta` app and the App Store app share one API.
 - Notification categories (requests, messages, rooms, airing) have per-user preferences.
-- Push arrives in Phase 4. Before that, remote approval stays a pinned artifact in The Field.
+- Airing alerts shipped early (2026-10-15): an in-process job every 10 minutes, each episode
+  claimed in `notifications_sent` before it goes out. The payload carries `libraryItemId`, which a
+  tap opens. The other categories arrive in Phase 4; until then remote approval stays a pinned
+  artifact in The Field.
+- Web push (2026-10-20): browsers subscribe with the VAPID public key (`GET /v1/web-push/key`)
+  and save the subscription (`PUT /v1/web-push/subscriptions`, one row per endpoint in
+  `web_push_subscriptions`). Only the browsers' own push services are accepted as endpoints, so
+  the server never POSTs anywhere else. The same airing job fans out to APNs devices and browser
+  subscriptions behind `WebPushSending` (named for the wire format). The web's `public/sw.js` has
+  no fetch handler: it shows the alert and opens the same-origin path the alert carries.
 
 ## Phasing
 

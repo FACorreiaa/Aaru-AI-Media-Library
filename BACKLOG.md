@@ -75,6 +75,10 @@ library layer stay separate, external IDs stored whenever known, no second backe
   progress to finished, never backward, never out of dropped, and never past a status the user
   chose. Fill-empty stays the rule for ratings and dates. Owner's call after the multi-source
   audit (IMP-004).
+- **Web push is un-deferred** (by the owner's call: "notifications working, on web and iOS"):
+  airing alerts reach browsers too, over standard Web Push with a VAPID key (`VAPID_CONFIG`,
+  sealed in `aaru-env`, generated once). Endpoints are limited to the browsers' push services.
+  iPhone and iPad get browser alerts only from Aaru added to the Home Screen.
 - **Stremio history import (IMP-016), by the owner's call:** the addon only sees playback after it
   is installed, so past history comes from Stremio's account API through its device-link code: the
   user approves on stremio.com, Aaru reads the library once, logs the session out and never stores
@@ -127,6 +131,10 @@ library layer stay separate, external IDs stored whenever known, no second backe
   permission, registers the token (Debug → sandbox, TestFlight/App Store → production), and
   sign-out forgets the device. Mac push is not on yet (it needs its own entitlement key).
   Episodes come from what is already hydrated; a scheduled show refresh is still JOB-001 work.
+  **2026-10-20:** the alert carries `libraryItemId`, and a tap opens that show on iPhone (also
+  from a cold launch). Production has the APNs key (`APNS_KEY_ID` set, `.p8` sealed in
+  `aaru-env`). An alert needs the switch on, a show `in_progress`, and an episode that airs after
+  the switch was turned on. Mac push still waits on the Push capability in the Mac profile.
 - **Sign in with Google is un-deferred** (AUTH-005, by the owner's call): iOS, Mac and web, Google ID
   tokens verified server-side against Google's JWKS, identities keyed on Google's `sub`, never
   merged on email; linking Google to an existing account from Settings.

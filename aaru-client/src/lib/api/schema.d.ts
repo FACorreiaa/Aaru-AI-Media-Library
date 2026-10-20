@@ -174,6 +174,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/web-push/key': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off. */
+    get: operations['getWebPushKey']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/web-push/subscriptions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Save this browser's push subscription. Saved again, it moves to this user. */
+    put: operations['saveWebPushSubscription']
+    post?: never
+    delete: operations['deleteWebPushSubscription']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/agent/tokens': {
     parameters: {
       query?: never
@@ -947,6 +981,18 @@ export interface components {
       environment: 'sandbox' | 'production'
       bundleId: string
     }
+    WebPushKey: {
+      /** @description VAPID public key, base64url: the browser's applicationServerKey. */
+      publicKey: string
+    }
+    /** @description `PushSubscription.toJSON()` as the browser gives it. */
+    WebPushSubscription: {
+      endpoint: string
+      keys: {
+        p256dh: string
+        auth: string
+      }
+    }
     NotificationSettings: {
       /** @description Push when a new episode of a show you are watching airs. */
       airing: boolean
@@ -1654,6 +1700,71 @@ export interface operations {
       path: {
         token: string
       }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Forgotten. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getWebPushKey: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The key. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WebPushKey']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  saveWebPushSubscription: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebPushSubscription']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteWebPushSubscription: {
+    parameters: {
+      query: {
+        endpoint: string
+      }
+      header?: never
+      path?: never
       cookie?: never
     }
     requestBody?: never

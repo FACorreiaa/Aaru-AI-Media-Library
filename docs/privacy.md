@@ -42,7 +42,10 @@ session out at once, and does not keep Stremio's session key. What it read becom
 review like any other.
 
 **Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
-that setting.
+that setting. In a browser, it stores the subscription your browser hands over: an address at your
+browser's push service (Google, Mozilla, Apple or Microsoft) and the keys that encrypt each alert so
+only your browser can read it. Turning alerts off in that browser, or deleting your account, removes
+it.
 
 **Catalog data** (titles, posters, episode lists) is shared by everyone and is not about you.
 
@@ -53,6 +56,8 @@ Aaru only uses these services, and only for the purpose listed:
 - **Hetzner** (Germany) runs Aaru's server and database and holds encrypted backups.
 - **Cloudflare** serves the website at aaruapp.com and its DNS.
 - **Apple** for Sign in with Apple and push notifications; **Google** for Sign in with Google.
+- **Your browser's push service** (Google, Mozilla, Apple or Microsoft) carries browser alerts. It
+  sees an encrypted message and when it was sent, never its text.
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports

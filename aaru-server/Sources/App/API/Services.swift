@@ -14,6 +14,8 @@ struct Services: Sendable {
     var traktConnect: TraktConnectService
     var agentTokens: AgentTokenService
     var scrobble: ScrobbleService
+    /// Nil when `VAPID_CONFIG` is unset; the key route then answers 503.
+    var webPush: (any WebPushSending)?
 
     /// `trakt` is nil when Trakt is not configured; connect then answers 503.
     static func make(
