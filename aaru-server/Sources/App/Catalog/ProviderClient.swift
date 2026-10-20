@@ -83,22 +83,13 @@ struct ProviderClient: Sendable {
             var retryAfter: Duration?
             do {
                 let response = try await transport.send(request)
-                switch response.status {
-                case 200 ..< 300:
+                if (200 ..< 300).contains(response.status) {
                     return response
-                case 404:
-                    throw ProviderError(provider: name, kind: .notFound)
-                case 401, 403:
-                    throw ProviderError(provider: name, kind: .unauthorized)
-                case 429:
-                    retryable = true
+                }
+                try refuse(response)
+                retryable = response.status == 429 || (500 ..< 600).contains(response.status)
+                if response.status == 429 {
                     retryAfter = response.header("Retry-After").flatMap(Int.init).map { .seconds($0) }
-                case 500 ..< 600:
-                    retryable = true
-                case 400 ..< 500:
-                    throw ProviderError(provider: name, kind: .refused(response.status))
-                default:
-                    retryable = false
                 }
             } catch let error as ProviderError {
                 throw error
@@ -113,6 +104,18 @@ struct ProviderClient: Sendable {
             }
             try await sleep(retryAfter ?? baseDelay * (1 << (attempt - 1)))
             attempt += 1
+        }
+    }
+
+    /// Throws for the answers that asking again would not change: 404, 401/403, any other 4xx
+    /// but 429.
+    private func refuse(_ response: OutboundResponse) throws {
+        switch response.status {
+        case 404: throw ProviderError(provider: name, kind: .notFound)
+        case 401, 403: throw ProviderError(provider: name, kind: .unauthorized)
+        case 429: return
+        case 400 ..< 500: throw ProviderError(provider: name, kind: .refused(response.status))
+        default: return
         }
     }
 

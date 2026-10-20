@@ -286,13 +286,6 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func refreshConnection(
-        userID _: UserID,
-        _: @escaping @Sendable (TraktConnectionRecord) async throws -> TraktConnectionRecord
-    ) async throws -> TraktConnectionRecord? {
-        throw Touched()
-    }
-
     func deleteConnection(userID _: UserID) async throws {
         throw Touched()
     }
