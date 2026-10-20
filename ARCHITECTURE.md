@@ -139,6 +139,7 @@ PostgreSQL. Suggested tables:
 - `import_jobs`, `import_job_events` (optional log lines)
 - `actions` (action journal: one row per mutating library write, with its inverse)
 - `match_aliases` (match ledger: aggregate crosswalk from a source row key to an external id)
+- `watch_events` (one playback session per user, source and player id: state, position, longest known duration, `title_id` null when unmatched; built 2026-10-20 for Stremio)
 - `agent_tokens` (per-user agent access: `kind` (`stremio` for now), hashed secret, scopes, `lastUsedAt`, revocation)
 - `agent_usage` (model spend per user per day: tokens in and out, cost in cents)
 

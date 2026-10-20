@@ -25,7 +25,8 @@ extension Stores {
             importJobs: PostgresImportJobStore(sql: sql),
             trakt: PostgresTraktStore(sql: sql),
             push: PostgresPushStore(sql: sql),
-            agentTokens: PostgresAgentTokenStore(sql: sql)
+            agentTokens: PostgresAgentTokenStore(sql: sql),
+            watchEvents: PostgresWatchEventStore(sql: sql)
         )
     }
 }

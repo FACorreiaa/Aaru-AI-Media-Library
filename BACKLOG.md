@@ -1343,6 +1343,15 @@ Activity via push (needs SOC-005).
 **Done when:** a start → pause → stop at 85% produces one watched episode and one journal row,
 a duplicate stop is a no-op, and a token without `scrobble:write` gets 403.
 
+**Progress 2026-10-20 (service only):** `ScrobbleService` + `watch_events` built; Stremio's
+`player` events are its first caller (SCR-003), and `POST /v1/scrobble/*` waits for SCR-002.
+One open session per user, source and item; the longest non-zero duration wins, so Stremio's
+first `start` with duration 0 still counts. `stop` at ≥ 80% ticks the episode (or finishes the
+movie) through `LibraryService` as the token's caller; already watched, short of 80%, unknown
+duration, or a second `stop` within 10 minutes writes nothing. A title not in the library is
+added (in progress / finished) and then ticked: two journal rows, not one. Unknown ids are kept
+as unmatched rows with no library write. The 403 condition lives in the Stremio adapter.
+
 ### SCR-002 · Plex and Jellyfin webhooks · M
 **Needs:** SCR-001.
 `POST /v1/scrobble/hooks/plex/{token}` (multipart JSON; `media.play`, `media.pause`,

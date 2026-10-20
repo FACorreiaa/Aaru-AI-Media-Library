@@ -61,8 +61,25 @@ func withMigratedStores<T>(_ body: (Stores) async throws -> T) async throws -> T
 
 /// A store that must not be touched by the test using it.
 struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, AnimeMappingStore, LibraryStore,
-    ListStore, ShelfStore, ScheduleStore, ImportJobStore, TraktStore, PushStore, AgentTokenStore
+    ListStore, ShelfStore, ScheduleStore, ImportJobStore, TraktStore, PushStore, AgentTokenStore,
+    WatchEventStore
 {
+    func record(
+        _: PlaybackReport, titleID _: TitleID?, userID _: UserID, agentTokenID _: UUID?, now _: Date
+    ) async throws -> WatchSession {
+        throw Touched()
+    }
+
+    func close(_: UUID, at _: Date) async throws {
+        throw Touched()
+    }
+
+    func stoppedRecently(userID _: UserID, source _: WatchSource, externalRef _: String, since _: Date) async throws
+        -> Bool
+    {
+        throw Touched()
+    }
+
     func create(_: AgentToken, tokenHash _: String, userID _: UserID) async throws {
         throw Touched()
     }
@@ -386,7 +403,8 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         importJobs: untouched,
         trakt: untouched,
         push: untouched,
-        agentTokens: untouched
+        agentTokens: untouched,
+        watchEvents: untouched
     )
 }
 

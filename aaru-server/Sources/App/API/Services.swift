@@ -12,6 +12,7 @@ struct Services: Sendable {
     var imports: ImportService
     var traktConnect: TraktConnectService
     var agentTokens: AgentTokenService
+    var scrobble: ScrobbleService
 
     /// `trakt` is nil when Trakt is not configured; connect then answers 503.
     static func make(
@@ -38,7 +39,8 @@ struct Services: Sendable {
                 anilistLists: catalogs.anilist as? any AniListListReading
             ),
             traktConnect: traktConnect(stores, trakt),
-            agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL)
+            agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
+            scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver)
         )
     }
 

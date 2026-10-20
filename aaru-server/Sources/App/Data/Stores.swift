@@ -319,4 +319,5 @@ struct Stores: Sendable {
     var trakt: any TraktStore
     var push: any PushStore
     var agentTokens: any AgentTokenStore
+    var watchEvents: any WatchEventStore
 }

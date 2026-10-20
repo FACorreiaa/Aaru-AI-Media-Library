@@ -218,3 +218,37 @@ struct AddActionAgentToken: SQLMigration {
         "ALTER TABLE actions DROP COLUMN agent_token_id",
     ]
 }
+
+/// SCR-001 (service only) · one row per playback session from a player. A session is open
+/// until `stop`; at most one is open per user, source and item. `title_id` is null when the
+/// player's id resolved to nothing Aaru knows (an unmatched scrobble).
+struct CreateWatchEvents: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE watch_events (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            agent_token_id uuid REFERENCES agent_tokens(id) ON DELETE SET NULL,
+            source text NOT NULL CHECK (source IN ('stremio')),
+            external_ref text NOT NULL,
+            title_id uuid REFERENCES titles(id) ON DELETE SET NULL,
+            season integer,
+            episode integer,
+            state text NOT NULL CHECK (state IN ('playing', 'paused', 'stopped')),
+            position_ms bigint NOT NULL DEFAULT 0,
+            duration_ms bigint NOT NULL DEFAULT 0,
+            started_at timestamptz NOT NULL,
+            updated_at timestamptz NOT NULL,
+            stopped_at timestamptz
+        )
+        """,
+        """
+        CREATE UNIQUE INDEX watch_events_open ON watch_events (user_id, source, external_ref)
+        WHERE stopped_at IS NULL
+        """,
+        "CREATE INDEX watch_events_user ON watch_events (user_id, updated_at DESC)",
+    ]
+    let backward = [
+        "DROP TABLE watch_events",
+    ]
+}

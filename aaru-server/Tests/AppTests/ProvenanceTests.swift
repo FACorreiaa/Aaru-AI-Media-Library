@@ -24,11 +24,20 @@ struct ProvenanceTests {
                 userID: env.userID, kind: .stremio, name: nil, allowLibraryWrites: false
             )
             let caller = Caller.agent(minted.token)
-            let keys = try [EpisodeKey(season: 1, episode: 1), EpisodeKey(season: 1, episode: 2),
-                            EpisodeKey(season: 9, episode: 9)]
+            let keys = try [
+                EpisodeKey(season: 1, episode: 1),
+                EpisodeKey(season: 1, episode: 2),
+                EpisodeKey(season: 9, episode: 9),
+            ]
             let before = try await env.actionCount()
 
-            let entry = try await library(env).setEpisodes(item, userID: env.userID, keys: keys, watched: true, by: caller)
+            let entry = try await library(env).setEpisodes(
+                item,
+                userID: env.userID,
+                keys: keys,
+                watched: true,
+                by: caller
+            )
             #expect(entry?.item.status == .inProgress)
             #expect(try await env.actionCount() == before + 1, "one action for the batch; unknown episodes skipped")
             #expect(try await library(env).setEpisodes(
