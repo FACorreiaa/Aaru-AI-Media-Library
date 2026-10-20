@@ -33,6 +33,7 @@ struct LibraryHarness {
     static func run(
         clock: TestClock? = nil,
         trakt: TraktAPI? = nil,
+        model: (any ModelProviding)? = nil,
         _ body: @escaping @Sendable (LibraryHarness) async throws -> Void
     ) async throws {
         try await withMigratedStores { stores in
@@ -40,7 +41,7 @@ struct LibraryHarness {
             let (userID, token) = try await signedInUser(stores)
             let auth = AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil)
             var services = Services.make(
-                stores: stores, catalogs: FakeCatalog.providers(fake), auth: auth, trakt: trakt
+                stores: stores, catalogs: FakeCatalog.providers(fake), auth: auth, trakt: trakt, model: model
             )
             if let clock {
                 services.catalog.now = { clock.now }

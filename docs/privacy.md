@@ -62,6 +62,12 @@ group only if you switch on "Share my progress" for that group; it is off until 
 added to a shared shelf show who added them. A watch party shows who is ready, and "Mark
 watched" changes only your own library.
 
+**Aaru in groups.** If you tag @aaru in a group, Aaru sends Anthropic (below) the last 30
+messages of that channel, what the channel is about, and, only when it helps answer you, titles
+from your own library with their status and progress. It never sends another member's library
+or progress. Aaru's answer is posted in the channel like any message. Aaru keeps a count of how
+many questions you asked each day and how much text they used, to keep the service fair.
+
 **Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
 that setting.
 
@@ -76,6 +82,8 @@ Aaru only uses these services, and only for the purpose listed:
 - **Apple** for Sign in with Apple and push notifications; **Google** for Sign in with Google.
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
+- **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer. It receives
+  what is described under "Aaru in groups" above, through its API, and does not train on it.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
   what you play; Aaru does not send anything to Stremio's servers.
 - **TMDB, TVmaze, AniList and Open Library** provide catalog data. Aaru's server sends them

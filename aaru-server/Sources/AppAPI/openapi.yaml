@@ -1867,7 +1867,7 @@ components:
         mentions: {type: integer}
     GroupDetail:
       type: object
-      required: [group, channels, members, invited]
+      required: [group, channels, members, invited, agent]
       properties:
         group: {$ref: '#/components/schemas/GroupSummary'}
         channels:
@@ -1880,6 +1880,7 @@ components:
           type: array
           description: Friends invited who have not answered yet.
           items: {$ref: '#/components/schemas/SocialUser'}
+        agent: {type: boolean, description: '@aaru answers in this group. When false, hide it from mentions.'}
     GroupCreate:
       type: object
       required: [name]
@@ -1931,7 +1932,7 @@ components:
         topic: {type: string, description: Absent leaves it unchanged; empty clears it.}
     GroupMessage:
       type: object
-      required: [id, channelId, body, mentions, mentionsAgent, fromBlocked, deleted, createdAt, veiled]
+      required: [id, channelId, body, mentions, mentionsAgent, fromBlocked, deleted, createdAt, veiled, fromAgent]
       properties:
         id: {type: string, format: uuid}
         channelId: {type: string, format: uuid}
@@ -1949,6 +1950,20 @@ components:
         clientNonce: {type: string, description: 'Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.'}
         spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: 'Only on your own messages: it says where you are in the title.'}
         veiled: {type: boolean, description: "It may spoil what you have not watched yet: show it veiled until you tap."}
+        fromAgent: {type: boolean, description: Written by @aaru. It has no author.}
+        replyTo: {type: string, format: uuid, description: The mention an @aaru reply answers.}
+        components:
+          type: array
+          description: 'Cards on an @aaru reply. Catalog titles only; their buttons are the viewer''s own taps.'
+          items: {$ref: '#/components/schemas/MessageComponent'}
+    MessageComponent:
+      type: object
+      required: [type, title]
+      properties:
+        type:
+          type: string
+          enum: [title]
+        title: {$ref: '#/components/schemas/TitleSummary'}
     GroupMessagePage:
       type: object
       required: [items]
@@ -1990,10 +2005,10 @@ components:
       properties:
         type:
           type: string
-          enum: [ready, message.created, message.updated, message.deleted, typing, read, group.updated, group.removed, invites.changed, shelf.updated, watch.updated, watch.reaction]
+          enum: [ready, message.created, message.updated, message.deleted, typing, read, group.updated, group.removed, invites.changed, shelf.updated, watch.updated, watch.reaction, agent.thinking]
         groupId: {type: string, format: uuid}
         channelId: {type: string, format: uuid}
-        messageId: {type: string, format: uuid}
+        messageId: {type: string, format: uuid, description: 'agent.thinking: the mention being answered.'}
         message: {$ref: '#/components/schemas/GroupMessage'}
         user: {$ref: '#/components/schemas/SocialUser', description: 'Who is typing, or reacting.'}
         emoji: {type: string, description: 'watch.reaction only.'}

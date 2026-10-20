@@ -18,6 +18,8 @@ struct Services: Sendable {
     var groups: GroupService
     /// Open sockets and browser tickets (GRP-006). One per process.
     var realtime: RealtimeHub
+    /// `@aaru` answers; nil when no model is configured (GRP-011).
+    var agentReplies: AgentReplyService?
 
     /// `trakt` is nil when Trakt is not configured; connect then answers 503.
     static func make(
@@ -25,12 +27,16 @@ struct Services: Sendable {
         catalogs: CatalogProviders,
         auth: AuthService,
         trakt: TraktAPI? = nil,
-        publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!
+        publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!,
+        model: (any ModelProviding)? = nil
     ) -> Services {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
         let resolver = TitleResolver(stores: stores, catalogs: catalogs)
         let library = LibraryService(stores: stores, resolver: resolver, catalog: catalog)
         let realtime = RealtimeHub()
+        let groups = GroupService(
+            stores: stores, events: realtime, resolver: resolver, library: library, agentAvailable: model != nil
+        )
         return Services(
             auth: auth,
             catalog: catalog,
@@ -52,8 +58,13 @@ struct Services: Sendable {
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
             social: SocialService(stores: stores),
-            groups: GroupService(stores: stores, events: realtime, resolver: resolver, library: library),
-            realtime: realtime
+            groups: groups,
+            realtime: realtime,
+            agentReplies: model.map {
+                AgentReplyService(
+                    stores: stores, groups: groups, catalog: catalog, resolver: resolver, library: library, model: $0
+                )
+            }
         )
     }
 

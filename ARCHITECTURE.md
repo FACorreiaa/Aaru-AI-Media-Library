@@ -730,11 +730,12 @@ GRP-001…GRP-012.
 | `group_members` | group, user, role `owner` / `admin` / `member`, `joined_at`; `muted` (GRP-012), `share_progress` (GRP-007, default off) |
 | `group_invites` | group, inviter, invitee. Pending only: accepted becomes a member row, declined or cancelled is deleted |
 | `group_channels` | group, kind `text` / `title` / `watch` / `shelf`, name, topic, position, `is_default`, `title_id` (required for `title`) |
-| `group_messages` | channel, author (null once the account is deleted), body (≤ 4,000), `mentions`, `mentions_agent`, `client_nonce`, `edited_at`, `deleted_at`, spoiler season and episode or `spoiler_ending` (GRP-007); author kind `agent`, `components`, `reply_to` (GRP-010) |
+| `group_messages` | channel, author (null once the account is deleted), body (≤ 4,000), `mentions`, `mentions_agent`, `client_nonce`, `edited_at`, `deleted_at`, spoiler season and episode or `spoiler_ending` (GRP-007); `author_kind` `user` / `agent` (an agent message has no author), `components` (title cards), `reply_to` (GRP-011) |
 | `group_read_state` | user, channel, `last_read_at`. Unread and mention counts are counted from it, never stored |
 | `group_channel_items` | shelf channel, title, `added_by`, position |
 | `watch_sessions` | watch channel, title, season, episode, `created_by`, `starts_at`, `ended_at`. One open per channel. State is derived: lobby, countdown until `starts_at`, live, ended. `watch_ready` holds who is ready |
-| `agent_replies` | the job row for one `@aaru` mention, claimed with a lease like imports |
+| `agent_replies` | the job row for one `@aaru` mention, claimed with a lease like imports; `capped` and `skipped` rows record mentions over the fair-use cap |
+| `agent_usage` | user, UTC day, requests, input and output tokens |
 
 Rules:
 

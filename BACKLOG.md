@@ -1677,10 +1677,13 @@ session ticks the episode only for members who tap.
 
 ### GRP-010 · Model provider, minimal · M
 **Needs:** none.
-The groups subset of AG-007: `ModelProviding` plus an adapter for the Anthropic Messages API
-with `claude-haiku-5-5`. It sends no `temperature`, `top_p`, `top_k` or assistant prefill (see
-`platform/infra/docs/llm-haiku-trial.md`). The key is a sealed secret in `platform/infra`.
-Metering in `agent_usage` (user, day, requests, tokens). No user keys yet.
+The groups subset of AG-007: `ModelProviding` plus `AnthropicMessagesProvider`, raw HTTP to the
+Messages API (no Swift SDK) with `claude-haiku-5-5` at effort `low`. It sends no `temperature`,
+`top_p`, `top_k` or assistant prefill (see `platform/infra/docs/llm-haiku-trial.md`), and replays
+content blocks unchanged so thinking survives a tool loop. Env follows the trial contract:
+`ANTHROPIC_API_KEY` (sealed in `platform/infra`; unset turns `@aaru` off and `GroupDetail.agent`
+says so), `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`, and `ANTHROPIC_BASE_URL` for tests. Metering in
+`agent_usage` (user, UTC day, requests, input and output tokens). No user keys yet.
 
 **Done when:** tests against a stub server pass, a request body never contains `temperature`,
 and usage rows add up per user and day.
@@ -1688,12 +1691,17 @@ and usage rows add up per user and day.
 ### GRP-011 · `@aaru` replies in channels · L
 **Needs:** GRP-003, GRP-010.
 A message with `mentions_agent` enqueues an `agent_replies` row, claimed with the
-`FOR UPDATE SKIP LOCKED` lease used by imports. Context: the channel's last 30 messages, the
-channel's title, session or shelf, and **the tagger's own** library, read-only. Tools:
-`search_titles`, `title_details`, `list_airs`, `read_my_library`. The reply is a group message
-with author kind `agent`, `reply_to` the mention, and catalog components only. Its card
-buttons are the viewer's own taps. Caps: 30 mentions per user per day, 10 per group per hour;
-over the cap Aaru says once that it is resting, without calling the model.
+`FOR UPDATE SKIP LOCKED` lease used by imports by `AgentReplyWorker`, retried twice, then
+answered with a short apology. `agent.thinking` tells clients it is working. Context: the
+channel's last 30 messages, the channel's title, party or shelf, and **the tagger's own**
+library, read-only. Tools: `search_titles`, `title_details`, `list_airs`, `read_my_library`,
+and `show_titles`, which attaches title cards using refs the other tools handed out (so the
+model cannot invent ids). Up to 4 rounds. The reply is a group message with author kind
+`agent`, no author, `reply_to` the mention, and title cards only. In a title channel it is
+told the tagger's progress, avoids spoiling past it, and is stamped there. Its card buttons
+are the viewer's own taps. Caps: 30 mentions per user per UTC day, 10 per group per hour;
+over the cap Aaru says once that it is resting (per user per day, per group per hour), without
+calling the model, and then stays quiet. A refusal gets a one-line reply.
 
 **Done when:** a tagged question gets one reply, the model's context never contains another
 member's library, the cap reply makes no model call, and no tool can write.

@@ -2884,6 +2884,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/GroupDetail/invited`.
             public var invited: [Components.Schemas.SocialUser]
+            /// @aaru answers in this group. When false, hide it from mentions.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupDetail/agent`.
+            public var agent: Swift.Bool
             /// Creates a new `GroupDetail`.
             ///
             /// - Parameters:
@@ -2891,22 +2895,26 @@ public enum Components {
             ///   - channels:
             ///   - members:
             ///   - invited: Friends invited who have not answered yet.
+            ///   - agent: @aaru answers in this group. When false, hide it from mentions.
             public init(
                 group: Components.Schemas.GroupSummary,
                 channels: [Components.Schemas.Channel],
                 members: [Components.Schemas.GroupMember],
-                invited: [Components.Schemas.SocialUser]
+                invited: [Components.Schemas.SocialUser],
+                agent: Swift.Bool
             ) {
                 self.group = group
                 self.channels = channels
                 self.members = members
                 self.invited = invited
+                self.agent = agent
             }
             public enum CodingKeys: String, CodingKey {
                 case group
                 case channels
                 case members
                 case invited
+                case agent
             }
         }
         /// - Remark: Generated from `#/components/schemas/GroupCreate`.
@@ -3134,6 +3142,18 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/GroupMessage/veiled`.
             public var veiled: Swift.Bool
+            /// Written by @aaru. It has no author.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/fromAgent`.
+            public var fromAgent: Swift.Bool
+            /// The mention an @aaru reply answers.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/replyTo`.
+            public var replyTo: Swift.String?
+            /// Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/components`.
+            public var components: [Components.Schemas.MessageComponent]?
             /// Creates a new `GroupMessage`.
             ///
             /// - Parameters:
@@ -3150,6 +3170,9 @@ public enum Components {
             ///   - clientNonce: Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.
             ///   - spoiler: Only on your own messages: it says where you are in the title.
             ///   - veiled: It may spoil what you have not watched yet: show it veiled until you tap.
+            ///   - fromAgent: Written by @aaru. It has no author.
+            ///   - replyTo: The mention an @aaru reply answers.
+            ///   - components: Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps.
             public init(
                 id: Swift.String,
                 channelId: Swift.String,
@@ -3163,7 +3186,10 @@ public enum Components {
                 editedAt: Foundation.Date? = nil,
                 clientNonce: Swift.String? = nil,
                 spoiler: Components.Schemas.SpoilerStamp? = nil,
-                veiled: Swift.Bool
+                veiled: Swift.Bool,
+                fromAgent: Swift.Bool,
+                replyTo: Swift.String? = nil,
+                components: [Components.Schemas.MessageComponent]? = nil
             ) {
                 self.id = id
                 self.channelId = channelId
@@ -3178,6 +3204,9 @@ public enum Components {
                 self.clientNonce = clientNonce
                 self.spoiler = spoiler
                 self.veiled = veiled
+                self.fromAgent = fromAgent
+                self.replyTo = replyTo
+                self.components = components
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -3193,6 +3222,36 @@ public enum Components {
                 case clientNonce
                 case spoiler
                 case veiled
+                case fromAgent
+                case replyTo
+                case components
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MessageComponent`.
+        public struct MessageComponent: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MessageComponent/type`.
+            @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case title = "title"
+            }
+            /// - Remark: Generated from `#/components/schemas/MessageComponent/type`.
+            public var _type: Components.Schemas.MessageComponent._TypePayload
+            /// - Remark: Generated from `#/components/schemas/MessageComponent/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// Creates a new `MessageComponent`.
+            ///
+            /// - Parameters:
+            ///   - _type:
+            ///   - title:
+            public init(
+                _type: Components.Schemas.MessageComponent._TypePayload,
+                title: Components.Schemas.TitleSummary
+            ) {
+                self._type = _type
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case _type = "type"
+                case title
             }
         }
         /// - Remark: Generated from `#/components/schemas/GroupMessagePage`.
@@ -3330,6 +3389,7 @@ public enum Components {
                 case shelf_updated = "shelf.updated"
                 case watch_updated = "watch.updated"
                 case watch_reaction = "watch.reaction"
+                case agent_thinking = "agent.thinking"
             }
             /// - Remark: Generated from `#/components/schemas/RealtimeEvent/type`.
             public var _type: Components.Schemas.RealtimeEvent._TypePayload
@@ -3337,6 +3397,8 @@ public enum Components {
             public var groupId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/RealtimeEvent/channelId`.
             public var channelId: Swift.String?
+            /// agent.thinking: the mention being answered.
+            ///
             /// - Remark: Generated from `#/components/schemas/RealtimeEvent/messageId`.
             public var messageId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/RealtimeEvent/message`.
@@ -3355,7 +3417,7 @@ public enum Components {
             ///   - _type:
             ///   - groupId:
             ///   - channelId:
-            ///   - messageId:
+            ///   - messageId: agent.thinking: the mention being answered.
             ///   - message:
             ///   - user: Who is typing, or reacting.
             ///   - emoji: watch.reaction only.

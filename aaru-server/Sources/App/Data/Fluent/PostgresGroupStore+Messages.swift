@@ -44,6 +44,9 @@ extension PostgresGroupStore {
         let spoilerSeason: Int?
         let spoilerEpisode: Int?
         let spoilerEnding: Bool
+        let authorKind: String
+        let replyTo: UUID?
+        let components: String?
 
         var message: GroupMessage {
             let author = authorId.flatMap { id in
@@ -55,7 +58,10 @@ extension PostgresGroupStore {
                 clientNonce: clientNonce,
                 spoiler: spoilerEnding ? .ending : spoilerSeason.flatMap { season in
                     spoilerEpisode.map { .episode(EpisodePoint(season: season, episode: $0)) }
-                }
+                },
+                fromAgent: authorKind == "agent",
+                replyTo: replyTo,
+                components: PostgresGroupStore.components(components)
             )
         }
     }
@@ -63,7 +69,7 @@ extension PostgresGroupStore {
     private static let messageColumns: SQLQueryString = """
     SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
         m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-        m.spoiler_season, m.spoiler_episode, m.spoiler_ending
+        m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components::text
     FROM group_messages m
     LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
     """
@@ -169,11 +175,13 @@ extension PostgresGroupStore {
         }
         let inserted = try await sql.raw("""
         INSERT INTO group_messages (id, channel_id, author_id, body, mentions, mentions_agent, client_nonce, created_at,
-                                    spoiler_season, spoiler_episode, spoiler_ending)
+                                    spoiler_season, spoiler_episode, spoiler_ending, author_kind, reply_to,
+                                    components)
         VALUES (\(bind: message.id), \(bind: message.channelID), \(bind: author), \(bind: message.body),
                 \(bind: message.mentions.map(\.rawValue)), \(bind: message.mentionsAgent), \(bind: nonce),
                 \(bind: message.createdAt), \(bind: point?.season), \(bind: point?.episode),
-                \(bind: message.spoiler == .ending))
+                \(bind: message.spoiler == .ending), \(bind: message.fromAgent ? "agent" : "user"),
+                \(bind: message.replyTo), \(bind: Self.componentsJSON(message.components))::jsonb)
         ON CONFLICT (author_id, client_nonce) DO NOTHING
         RETURNING id
         """).first(decoding: Row.self)
@@ -230,6 +238,26 @@ extension PostgresGroupStore {
         ORDER BY m.created_at
         """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
             ExportedGroupMessage(group: $0.groupName, channel: $0.channelName, body: $0.body, createdAt: $0.createdAt)
+        }
+    }
+}
+
+extension PostgresGroupStore {
+    /// Components as stored: `[{"type": "title", "titleId": "…"}]`.
+    static func componentsJSON(_ components: [MessageComponent]) -> String? {
+        guard !components.isEmpty else { return nil }
+        let items = components.map { JSONValue.object([
+            "type": .string("title"),
+            "titleId": .string($0.titleID.description),
+        ]) }
+        return (try? JSONEncoder().encode(JSONValue.array(items))).flatMap { String(bytes: $0, encoding: .utf8) }
+    }
+
+    static func components(_ json: String?) -> [MessageComponent] {
+        guard let json, case let .array(items)? = try? JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        else { return [] }
+        return items.compactMap { item in
+            item["titleId"]?.string.flatMap(TitleID.init(uuidString:)).map { MessageComponent(titleID: $0) }
         }
     }
 }

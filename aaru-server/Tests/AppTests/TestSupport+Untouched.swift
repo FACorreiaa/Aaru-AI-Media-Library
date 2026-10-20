@@ -290,3 +290,33 @@ extension UntouchedStore: GroupKindStore {
         throw Touched()
     }
 }
+
+extension UntouchedStore: AgentStore {
+    func enqueue(_: AgentReplyJob, state _: AgentReplyState, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func load(tagger _: UserID, group _: UUID, dayStart _: Date, hourStart _: Date) async throws -> AgentLoad {
+        throw Touched()
+    }
+
+    func claim(now _: Date, lease _: TimeInterval) async throws -> AgentReplyJob? {
+        throw Touched()
+    }
+
+    func finish(_: UUID, state _: AgentReplyState, error _: String?, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func retry(_: UUID, error _: String, notBefore _: Date, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func recordUsage(_: UserID, day _: Date, inputTokens _: Int, outputTokens _: Int) async throws {
+        throw Touched()
+    }
+
+    func usage(_: UserID, day _: Date) async throws -> AgentUsage {
+        throw Touched()
+    }
+}

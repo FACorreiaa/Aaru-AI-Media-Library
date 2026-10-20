@@ -1606,6 +1606,8 @@ export interface components {
       members: components['schemas']['GroupMember'][]
       /** @description Friends invited who have not answered yet. */
       invited: components['schemas']['SocialUser'][]
+      /** @description @aaru answers in this group. When false, hide it from mentions. */
+      agent: boolean
     }
     GroupCreate: {
       name: string
@@ -1676,6 +1678,20 @@ export interface components {
       spoiler?: components['schemas']['SpoilerStamp']
       /** @description It may spoil what you have not watched yet: show it veiled until you tap. */
       veiled: boolean
+      /** @description Written by @aaru. It has no author. */
+      fromAgent: boolean
+      /**
+       * Format: uuid
+       * @description The mention an @aaru reply answers.
+       */
+      replyTo?: string
+      /** @description Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps. */
+      components?: components['schemas']['MessageComponent'][]
+    }
+    MessageComponent: {
+      /** @enum {string} */
+      type: 'title'
+      title: components['schemas']['TitleSummary']
     }
     GroupMessagePage: {
       items: components['schemas']['GroupMessage'][]
@@ -1719,11 +1735,15 @@ export interface components {
         | 'shelf.updated'
         | 'watch.updated'
         | 'watch.reaction'
+        | 'agent.thinking'
       /** Format: uuid */
       groupId?: string
       /** Format: uuid */
       channelId?: string
-      /** Format: uuid */
+      /**
+       * Format: uuid
+       * @description agent.thinking: the mention being answered.
+       */
       messageId?: string
       message?: components['schemas']['GroupMessage']
       /** @description Who is typing, or reacting. */

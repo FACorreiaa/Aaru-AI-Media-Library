@@ -339,4 +339,5 @@ struct Stores: Sendable {
     var social: any SocialStore
     var groups: any GroupStore
     var groupKinds: any GroupKindStore
+    var agent: any AgentStore
 }

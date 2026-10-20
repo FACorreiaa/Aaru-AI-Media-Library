@@ -251,7 +251,8 @@ extension Components.Schemas.GroupDetail {
                     shareProgress: $0.shareProgress
                 )
             },
-            invited: detail.invited.map { .init($0) }
+            invited: detail.invited.map { .init($0) },
+            agent: detail.agent
         )
     }
 }
@@ -278,7 +279,12 @@ extension Components.Schemas.GroupMessage {
             // The stamp says where the author is in the title, so only the author sees it; readers
             // learn only that it would spoil something for them.
             spoiler: message.author?.id == viewer ? message.spoiler.map(Components.Schemas.SpoilerStamp.init) : nil,
-            veiled: veiled
+            veiled: veiled,
+            fromAgent: message.fromAgent,
+            replyTo: message.replyTo?.uuidString,
+            components: message.components.isEmpty ? nil : message.components.compactMap { component in
+                component.title.map { .init(_type: .title, title: .init($0)) }
+            }
         )
     }
 }

@@ -13,6 +13,8 @@ struct GroupService: Sendable {
     /// Title, shelf and watch channels resolve titles and tick the tapper's own library.
     let resolver: TitleResolver
     let library: LibraryService
+    /// Whether `@aaru` answers here: a model is configured (GRP-010).
+    var agentAvailable = false
     var now: @Sendable () -> Date = { Date() }
 
     static let maxMembers = 50
@@ -35,6 +37,8 @@ struct GroupService: Sendable {
         var invited: [SocialUser]
         /// The titles `title` channels are about.
         var titles: [TitleID: Title] = [:]
+        /// Whether `@aaru` answers in this group.
+        var agent = false
     }
 
     /// A page of messages, the authors the viewer blocked (their messages arrive collapsed), and
@@ -83,7 +87,8 @@ struct GroupService: Sendable {
         let titles = try await stores.titles.titles(ids: found.compactMap(\.titleID))
         return try await Detail(
             summary: summary, channels: found, members: members, invited: invited.map(\.invitee),
-            titles: Dictionary(titles.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            titles: Dictionary(titles.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }),
+            agent: agentAvailable
         )
     }
 
@@ -290,7 +295,7 @@ extension GroupService {
         let limit = min(max(limit ?? Self.defaultPageSize, 1), Self.maxPageSize)
         async let messages = stores.groups.messages(channel, cursor: cursor, limit: limit)
         async let blocked = stores.social.blocked(by: viewer)
-        let page = try await messages
+        let page = try await hydrateComponents(messages)
         var veiled: Set<UUID> = []
         if let title = found.titleID {
             let mine = try await stores.groupKinds.progress(title: title, users: [viewer])[viewer]
@@ -336,6 +341,9 @@ extension GroupService {
             .messageCreated(group: group, posted, blockedBy: blockedBy, veiledFor: veiledFor),
             to: members.map(\.user.id)
         )
+        if posted.mentionsAgent {
+            await mentionAgent(posted, group: group, tagger: viewer)
+        }
         return posted
     }
 

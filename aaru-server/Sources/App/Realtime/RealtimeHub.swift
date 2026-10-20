@@ -25,6 +25,8 @@ enum GroupEvent: Sendable, Equatable {
     /// The party in a watch channel opened, changed state, gained or lost a ready member.
     case watchUpdated(group: UUID, channel: UUID)
     case watchReaction(group: UUID, channel: UUID, SocialUser, String)
+    /// `@aaru` is working on an answer to that mention.
+    case agentThinking(group: UUID, channel: UUID, mention: UUID)
 }
 
 protocol GroupEventPublishing: Sendable {
@@ -181,6 +183,11 @@ actor RealtimeHub: GroupEventPublishing {
             .init(
                 _type: .watch_reaction, groupId: group.uuidString, channelId: channel.uuidString, user: .init(user),
                 emoji: emoji
+            )
+        case let .agentThinking(group, channel, mention):
+            .init(
+                _type: .agent_thinking, groupId: group.uuidString, channelId: channel.uuidString,
+                messageId: mention.uuidString
             )
         }
     }

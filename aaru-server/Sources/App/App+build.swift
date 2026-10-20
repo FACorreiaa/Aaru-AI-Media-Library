@@ -38,8 +38,9 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             settings: settings
         )
     }
+    let model = makeModelProvider(config.anthropic, transport: transport, logger: logger)
     let services = Services.make(
-        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, publicBaseURL: config.publicBaseURL
+        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, publicBaseURL: config.publicBaseURL, model: model
     )
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
@@ -54,18 +55,13 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             )
         ),
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        services: [
-            fluent,
-            ImportWorker(imports: services.imports, logger: logger),
-            AiringNotifierService(
-                notifier: AiringNotifier(stores: stores, sender: makePushSender(config.push, logger: logger)),
-                logger: logger
-            ),
-            CatalogRefreshService(
-                refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
-                logger: logger
-            ),
-        ],
+        services: backgroundServices(
+            fluent: fluent,
+            stores: stores,
+            services: services,
+            config: config,
+            logger: logger
+        ),
         logger: logger
     )
 }
@@ -113,6 +109,38 @@ func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger
         try? await fluent.shutdown()
         throw error
     }
+}
+
+/// Everything that runs beside the HTTP server: the database, and the workers.
+func backgroundServices(
+    fluent: Fluent, stores: Stores, services: Services, config: AppConfig, logger: Logger
+) -> [any Service] {
+    [
+        fluent,
+        ImportWorker(imports: services.imports, logger: logger),
+        AiringNotifierService(
+            notifier: AiringNotifier(stores: stores, sender: makePushSender(config.push, logger: logger)),
+            logger: logger
+        ),
+        CatalogRefreshService(
+            refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
+            logger: logger
+        ),
+    ] + (services.agentReplies.map { [AgentReplyWorker(replies: $0, logger: logger)] } ?? [])
+}
+
+/// The agent's model, or nil (with a notice) when no key is configured: `@aaru` then stays off.
+func makeModelProvider(
+    _ settings: AnthropicSettings?, transport: any HTTPTransport, logger: Logger
+) -> (any ModelProviding)? {
+    guard let settings else {
+        logger.notice("@aaru disabled: ANTHROPIC_API_KEY is not set")
+        return nil
+    }
+    return AnthropicMessagesProvider(
+        transport: transport, apiKey: settings.apiKey, model: settings.model, baseURL: settings.baseURL,
+        effort: settings.effort
+    )
 }
 
 /// The APNs sender, or nil (with a notice) when no key is configured or the key does not parse.

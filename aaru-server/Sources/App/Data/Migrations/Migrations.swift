@@ -29,6 +29,7 @@ let allMigrations: [any Migration] = [
     CreateSocial(),
     CreateGroups(),
     AddGroupChannelKinds(),
+    AddAgentReplies(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

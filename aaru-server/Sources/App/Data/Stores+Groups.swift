@@ -88,6 +88,18 @@ struct GroupMessage: Sendable, Equatable {
     var clientNonce: String?
     /// How far into the title a reader must be to read it unveiled (title channels).
     var spoiler: SpoilerStamp?
+    /// Written by `@aaru`; such a message has no author.
+    var fromAgent = false
+    /// The mention an agent reply answers.
+    var replyTo: UUID?
+    /// Catalog cards an agent reply carries. Nothing else is allowed (VIEWS.md).
+    var components: [MessageComponent] = []
+}
+
+/// A card on an agent reply: one title. `title` is filled in when the message is read.
+struct MessageComponent: Sendable, Equatable {
+    var titleID: TitleID
+    var title: Title?
 }
 
 /// Where a page of messages starts: older than one message, newer than one, or the latest.
