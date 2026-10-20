@@ -110,7 +110,7 @@ private struct MonthDayCell: View {
                 .monospacedDigit()
                 .foregroundStyle(isToday ? Color(.paper) : Color(.ink))
                 .frame(minWidth: 26, minHeight: 26)
-                .background(isToday ? Color.accentColor : .clear, in: Circle())
+                .background(isToday ? Color(.accent) : .clear, in: Circle())
             switch style {
             case .posters: posters
             case .dots: dots
@@ -123,7 +123,7 @@ private struct MonthDayCell: View {
         .background(Color(.ink).opacity(isMuted ? 0.02 : 0.05), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             if isSelected {
-                RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 8).strokeBorder(Color(.accent), lineWidth: 2)
             }
         }
         .contentShape(Rectangle())
@@ -206,7 +206,7 @@ private struct PosterThumb: View {
     private var initials: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.accentColor.opacity(0.55), Color.weekGold.opacity(0.45)],
+                colors: [Color(.accent).opacity(0.55), Color.weekGold.opacity(0.45)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
             Text(entry.title.initials)
@@ -222,7 +222,7 @@ extension CalendarEntry {
     var dotColor: Color {
         switch badge {
         case .finale: .weekGold
-        case .premiere, .newSeason: .accentColor
+        case .premiere, .newSeason: Color(.accent)
         case nil: Color(.ink).opacity(0.55)
         }
     }

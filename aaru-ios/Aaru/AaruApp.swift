@@ -18,6 +18,10 @@ struct AaruApp: App {
         let scene = WindowGroup {
             RootView(api: services.api, library: services.library, lists: services.lists, imports: services.imports)
                 .environment(services.session)
+                // The asset catalog's global accent (NSAccentColorName) does not reach SwiftUI on
+                // iOS 26, so the brand teal is set here. Views use `Color(.accent)`, never
+                // `Color.accentColor`.
+                .tint(Color(.accent))
                 .task { WidgetCenter.shared.reloadAllTimelines() }
         }
         #if os(iOS)

@@ -27,7 +27,7 @@ struct RecapView: View {
         guard !deck.isEmpty else { return (Color(.paper), Color(.ink)) }
         switch index % 3 {
         case 0: return (Color(.ink), Color(.paper))
-        case 1: return (Color.accentColor, Color(.paper))
+        case 1: return (Color(.accent), Color(.paper))
         default: return (Color(.surface), Color(.ink))
         }
     }

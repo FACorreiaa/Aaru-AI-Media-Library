@@ -72,7 +72,7 @@ private struct AgendaHeader: View {
             }
         }
         .font(.footnote.weight(.semibold))
-        .foregroundStyle(Color.accentColor)
+        .foregroundStyle(Color(.accent))
         .padding(.horizontal, 14)
         .padding(.top, 14)
         .padding(.bottom, 4)
@@ -117,7 +117,7 @@ private struct AgendaRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(isExpanded ? Color.accentColor.opacity(0.10) : .clear)
+        .background(isExpanded ? Color(.accent).opacity(0.10) : .clear)
         .opacity(entry.watched && !isExpanded ? 0.55 : 1)
     }
 
@@ -126,7 +126,7 @@ private struct AgendaRow: View {
             if let name = entry.episodeName {
                 Text("“\(name)”")
                     .font(.system(.title3, design: .serif, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color(.accent))
                     .fixedSize(horizontal: false, vertical: true)
             }
             if let badge = entry.badge {
