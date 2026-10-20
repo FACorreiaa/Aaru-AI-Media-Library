@@ -10,7 +10,9 @@ struct RootView: View {
     let lists: ListsModel
     let imports: ImportsModel
     let groups: GroupsModel
+    let realtime: RealtimeClient
     @Environment(SessionStore.self) private var session
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var tab: AppTab = .home
@@ -48,6 +50,15 @@ struct RootView: View {
                 .tabViewStyle(.sidebarAdaptable)
                 // The tab's mention badge needs the counts before the tab is opened.
                 .task { await groups.load() }
+                // The socket is open while the app is active, and its events keep groups current.
+                .task { await groups.follow() }
+                .task(id: scenePhase) {
+                    if scenePhase == .background {
+                        realtime.stop()
+                    } else {
+                        realtime.start()
+                    }
+                }
                 .sheet(item: $linkedTitle) { link in
                     NavigationStack {
                         LibraryEntryDestination(id: link.id, api: api, library: library, lists: lists)
@@ -96,6 +107,7 @@ struct RootView: View {
                 lists.reset()
                 imports.reset()
                 groups.reset()
+                realtime.reset()
                 HomeCache().clear()
                 WidgetSnapshotStore.clear()
                 WidgetCenter.shared.reloadAllTimelines()
@@ -141,7 +153,7 @@ struct RootView: View {
 #Preview {
     RootView(
         api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil),
-        groups: GroupsModel(api: nil)
+        groups: GroupsModel(api: nil, realtime: nil), realtime: RealtimeClient(baseURL: nil) { nil }
     )
     .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
 }

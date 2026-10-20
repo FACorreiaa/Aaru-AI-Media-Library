@@ -24,9 +24,14 @@ final class GroupsModel {
     var problem: String?
 
     @ObservationIgnored let api: Client?
+    /// Nil only in previews.
+    @ObservationIgnored let realtime: RealtimeClient?
+    /// Count refreshes waiting out a burst of messages, by group.
+    @ObservationIgnored var pendingCounts: [String: Task<Void, Never>] = [:]
 
-    init(api: Client?) {
+    init(api: Client?, realtime: RealtimeClient?) {
         self.api = api
+        self.realtime = realtime
     }
 
     /// Unread mentions across every group, for the tab badge.
@@ -44,6 +49,8 @@ final class GroupsModel {
     }
 
     func reset() {
+        pendingCounts.values.forEach { $0.cancel() }
+        pendingCounts = [:]
         groups = []
         invites = []
         details = [:]
@@ -157,7 +164,7 @@ final class GroupsModel {
         guard let api else { return false }
         return await run("The group was not deleted.") {
             switch try await api.deleteGroup(path: .init(groupId: groupID)) {
-            case .noContent: forget(groupID)
+            case .noContent: forgetGroup(groupID)
             case let .default(_, error): throw Failure(try? error.body.json)
             }
         }
@@ -191,7 +198,7 @@ final class GroupsModel {
             switch try await api.removeGroupMember(path: .init(groupId: groupID, userId: userID)) {
             case .noContent:
                 if userID == myUserID {
-                    forget(groupID)
+                    forgetGroup(groupID)
                 } else {
                     await loadDetail(groupID)
                 }
@@ -254,12 +261,21 @@ final class GroupsModel {
         }
     }
 
-    // MARK: Plumbing
+    // MARK: Invites and leaving, also driven by socket events
 
-    private func forget(_ groupID: String) {
+    func loadInvites() async {
+        guard let api, case let .ok(response) = try? await api.listGroupInvites(),
+              let list = try? response.body.json
+        else { return }
+        invites = list.items
+    }
+
+    func forgetGroup(_ groupID: String) {
         groups.removeAll { $0.id == groupID }
         details[groupID] = nil
     }
+
+    // MARK: Plumbing
 
     struct Failure: Error {
         let response: Components.Schemas.ErrorResponse?

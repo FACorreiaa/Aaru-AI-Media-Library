@@ -18,7 +18,7 @@ struct AaruApp: App {
         let scene = WindowGroup {
             RootView(
                 api: services.api, library: services.library, lists: services.lists, imports: services.imports,
-                groups: services.groups
+                groups: services.groups, realtime: services.realtime
             )
             .environment(services.session)
             // The asset catalog's global accent (NSAccentColorName) does not reach SwiftUI on

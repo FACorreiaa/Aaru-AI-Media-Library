@@ -1,9 +1,9 @@
 import AaruAPI
 import SwiftUI
 
-/// GRP-003: one channel. Flat rows pinned to the bottom, a "New" line where reading stopped, and
-/// the composer in the bottom inset. Polls every five seconds while it is on screen and the app is
-/// active, until the realtime gateway replaces that (M3).
+/// GRP-003 / GRP-006: one channel. Flat rows pinned to the bottom, a "New" line where reading
+/// stopped, and the composer in the bottom inset. The socket keeps it live; only while the socket
+/// is down does it poll, every 30 seconds, and only while on screen with the app active.
 struct ChannelView: View {
     let groups: GroupsModel
     let groupID: String
@@ -42,6 +42,12 @@ struct ChannelView: View {
         detail?.group.role.manages ?? false
     }
 
+    private var socketOpen: Bool {
+        groups.realtime?.state == .open
+    }
+
+    static let fallbackPollInterval: Duration = .seconds(30)
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -76,10 +82,24 @@ struct ChannelView: View {
             .onChange(of: model.outbox.count) { scrollToBottom(proxy) }
         }
         .background(Color(.paper))
-        .safeAreaInset(edge: .top, spacing: 0) { ChannelHeader(topic: channel.topic) }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            ChannelHeader(
+                topic: channel.topic,
+                disconnectedSince: socketOpen ? nil : groups.realtime?.disconnectedSince
+            )
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
                 ProblemBanner(message: model.problem) { model.problem = nil }
+                if let line = model.typingLine {
+                    Text(line)
+                        .font(.caption)
+                        .foregroundStyle(Color(.muted))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                        .transition(reduceMotion ? .identity : .opacity)
+                }
                 Composer(
                     text: $draft,
                     channelName: channel.name,
@@ -104,12 +124,24 @@ struct ChannelView: View {
                 }
             }
             .task { await model.loadLatest() }
-            .task(id: scenePhase == .active) {
-                guard scenePhase == .active else { return }
+            .task {
+                guard let realtime = groups.realtime else { return }
+                for await event in realtime.events() {
+                    await model.apply(event)
+                }
+            }
+            // The fallback while the socket is down: on screen, app active, every 30 s.
+            .task(id: scenePhase == .active && !socketOpen) {
+                guard scenePhase == .active, !socketOpen else { return }
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(5))
+                    try? await Task.sleep(for: Self.fallbackPollInterval)
                     guard !Task.isCancelled else { break }
                     await model.pollNewer()
+                }
+            }
+            .onChange(of: draft) { _, text in
+                if editing == nil, !text.isEmpty {
+                    groups.realtime?.sendTyping(group: groupID, channel: channel.id)
                 }
             }
             .confirmationDialog(
@@ -231,49 +263,6 @@ struct ChannelView: View {
         } else {
             withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(Self.bottomID, anchor: .bottom) }
         }
-    }
-}
-
-/// The topic and the "Not end-to-end" chip, which never hides.
-private struct ChannelHeader: View {
-    let topic: String?
-    @State private var explains = false
-
-    var body: some View {
-        HStack(spacing: 12) {
-            if let topic {
-                Text(topic)
-                    .font(.callout)
-                    .foregroundStyle(Color(.muted))
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            Button {
-                explains = true
-            } label: {
-                Label("Not end-to-end", systemImage: "lock.open")
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color(.muted).opacity(0.12), in: .capsule)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color(.muted))
-            .popover(isPresented: $explains) {
-                Text("""
-                Group messages are stored on Aaru's server in a form it can read, so the group works \
-                on all your devices. Only members of this group can see them.
-                """)
-                .font(.callout)
-                .padding()
-                .frame(idealWidth: 300)
-                .presentationCompactAdaptation(.popover)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color(.paper))
-        .overlay(alignment: .bottom) { Rectangle().fill(.separator).frame(height: 0.5) }
     }
 }
 

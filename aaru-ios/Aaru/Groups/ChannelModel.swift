@@ -2,8 +2,9 @@ import AaruAPI
 import Foundation
 import Observation
 
-/// GRP-003: one channel's messages. Until the realtime gateway (M3) the open channel polls for
-/// newer messages; a send shows at once, dimmed until the server confirms, with a retry on failure.
+/// GRP-003 / GRP-006: one channel's messages. Socket events keep it live; a reconnect (`ready`)
+/// or the slow fallback poll fills any gap over REST. A send shows at once, dimmed until the
+/// server confirms, with a retry on failure.
 @MainActor
 @Observable
 final class ChannelModel {
@@ -16,6 +17,8 @@ final class ChannelModel {
     private(set) var loadingOlder = false
     /// Where the "New" line goes: the first message the user had not read when the channel opened.
     private(set) var firstUnreadID: String?
+    /// Who is typing, until when. A typing frame lasts five seconds unless renewed.
+    private(set) var typing: [String: (user: SocialUser, until: Date)] = [:]
     var problem: String?
 
     @ObservationIgnored private let api: Client?
@@ -25,6 +28,7 @@ final class ChannelModel {
 
     static let pageSize = 50
     static let maxLength = 4000
+    static let typingLifetime: TimeInterval = 5
 
     /// A message on its way: the nonce makes a retry safe.
     struct Outgoing: Identifiable, Equatable {
@@ -176,11 +180,7 @@ final class ChannelModel {
                 path: .init(groupId: groupID, channelId: channelID, messageId: message.id)
             ) {
             case .noContent:
-                if let index = messages.firstIndex(where: { $0.id == message.id }) {
-                    messages[index].body = ""
-                    messages[index].deleted = true
-                    messages[index].mentions = []
-                }
+                markDeleted(message.id)
             case let .default(_, error):
                 problem = (try? error.body.json.message) ?? "That message was not deleted."
             }
@@ -201,6 +201,76 @@ final class ChannelModel {
             return false
         }
         return true
+    }
+
+    // MARK: Realtime
+
+    /// Applies one socket event meant for this channel; others are ignored.
+    func apply(_ event: RealtimeEvent) async {
+        if event._type == .ready {
+            await pollNewer()
+            return
+        }
+        guard event.channelId == channelID else { return }
+        switch event._type {
+        case .message_created, .message_updated:
+            if let message = event.message {
+                received(message, isNew: event._type == .message_created)
+            }
+        case .message_deleted:
+            if let id = event.messageId {
+                markDeleted(id)
+            }
+        case .typing:
+            if let user = event.user, user.userId != myUserID {
+                startedTyping(user)
+            }
+        default:
+            break
+        }
+    }
+
+    private func received(_ message: GroupMessage, isNew: Bool) {
+        if let author = message.author?.userId {
+            typing[author] = nil
+            // My own message, echoed before the send's response: the server returns my nonce on
+            // my messages, so the pending copy it answers is exact.
+            if author == myUserID, isNew, let nonce = message.clientNonce {
+                outbox.removeAll { $0.id == nonce }
+            }
+        }
+        merge([message])
+    }
+
+    private func markDeleted(_ id: String) {
+        guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
+        messages[index].body = ""
+        messages[index].deleted = true
+        messages[index].mentions = []
+    }
+
+    private func startedTyping(_ user: SocialUser) {
+        typing[user.userId] = (user, Date().addingTimeInterval(Self.typingLifetime))
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.typingLifetime + 0.1))
+            self?.expireTyping()
+        }
+    }
+
+    /// "Kai is typing…", for the line above the composer; nil when nobody is.
+    var typingLine: String? {
+        let names = typing.values.sorted { $0.until < $1.until }.map { $0.user.displayName ?? "@\($0.user.handle)" }
+        switch names.count {
+        case 0: return nil
+        case 1: return "\(names[0]) is typing…"
+        case 2: return "\(names[0]) and \(names[1]) are typing…"
+        default: return "Several people are typing…"
+        }
+    }
+
+    private func expireTyping() {
+        let now = Date()
+        typing = typing.filter { $0.value.until > now }
     }
 
     // MARK: Helpers
