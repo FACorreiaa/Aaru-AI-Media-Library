@@ -56,6 +56,7 @@ export const createConnection = createServerFn({ method: 'POST' })
       kind,
       name: z.string().max(80).optional(),
       allowLibraryWrites: z.boolean(),
+      allowImports: z.boolean(),
     }),
   )
   .handler(async ({ data }): Promise<AgentConnection> =>
@@ -65,6 +66,7 @@ export const createConnection = createServerFn({ method: 'POST' })
           kind: data.kind,
           name: data.name?.trim() || undefined,
           allowLibraryWrites: data.allowLibraryWrites,
+          allowImports: data.allowImports,
         },
       }),
       'The connection could not be created.',

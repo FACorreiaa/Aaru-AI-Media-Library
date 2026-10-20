@@ -210,7 +210,7 @@ struct AgentTools: Sendable {
 
     // MARK: Helpers
 
-    private func require(_ scope: AgentScope, _ caller: AgentCaller) throws {
+    func require(_ scope: AgentScope, _ caller: AgentCaller) throws {
         guard caller.has(scope) else {
             throw scope == .libraryWrite ? AgentToolError.readOnly
                 : AgentToolError(message: "This connection cannot read the library.")
