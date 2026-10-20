@@ -252,6 +252,22 @@ paths:
                 $ref: '#/components/schemas/SearchResults'
         default:
           $ref: '#/components/responses/Error'
+  /v1/discover:
+    get:
+      operationId: getDiscover
+      summary: Provider-curated public rows for Home (trending, airing, this season).
+      description: >-
+        The same lists for every user, cached by the server. Items the caller already has
+        carry `libraryItemId`. A row whose provider is down is left out.
+      responses:
+        '200':
+          description: Rows in display order. Empty rows are left out.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverRows'
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}:
     get:
       operationId: getTitle
@@ -1049,6 +1065,9 @@ components:
           description: Authors, for books.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
+        libraryItemId:
+          type: string
+          description: The caller's library item for this title, when they have one. Discover only.
     SearchResults:
       type: object
       required: [items]
@@ -1056,6 +1075,28 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/CatalogHit'}
+    DiscoverRow:
+      type: object
+      required: [id, title, items]
+      properties:
+        id:
+          type: string
+          description: >-
+            Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum:
+            the server may add rows, and clients render any row they get.
+        title:
+          type: string
+          description: Display title, e.g. "Fall 2026 anime".
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CatalogHit'}
+    DiscoverRows:
+      type: object
+      required: [rows]
+      properties:
+        rows:
+          type: array
+          items: {$ref: '#/components/schemas/DiscoverRow'}
     Episode:
       type: object
       required: [season, number]

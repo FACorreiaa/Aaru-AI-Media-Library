@@ -114,6 +114,41 @@ extension PostgresLibraryStore {
         }
     }
 
+    func itemIDs(userID: UserID, matching keys: Set<CatalogKey>) async throws -> [CatalogKey: LibraryItemID] {
+        guard !keys.isEmpty else { return [:] }
+        struct Row: Decodable {
+            let id: UUID
+            let type: String
+            let tmdb: String?
+            let anilist: String?
+            let openLibrary: String?
+        }
+        func ids(_ provider: CatalogKey.Provider) -> [String] {
+            keys.filter { $0.provider == provider }.map(\.id)
+        }
+        let rows = try await sqlDatabase(database).raw("""
+        SELECT li.id, t.type, t.tmdb, t.anilist, t.open_library FROM library_items li
+        JOIN titles t ON t.id = li.title_id
+        WHERE li.user_id = \(bind: userID.rawValue)
+          AND (t.tmdb = ANY(\(bind: ids(.tmdb))) OR t.anilist = ANY(\(bind: ids(.anilist)))
+               OR t.open_library = ANY(\(bind: ids(.openLibrary))))
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
+        var found: [CatalogKey: LibraryItemID] = [:]
+        for row in rows {
+            guard let type = MediaType(rawValue: row.type) else { continue }
+            let candidates: [(CatalogKey.Provider, String?)] = [
+                (.tmdb, row.tmdb), (.anilist, row.anilist), (.openLibrary, row.openLibrary),
+            ]
+            for case let (provider, id?) in candidates {
+                let key = CatalogKey(type: type, provider: provider, id: id)
+                if keys.contains(key) {
+                    found[key] = LibraryItemID(row.id)
+                }
+            }
+        }
+        return found
+    }
+
     /// One query for a page of entries with title and show progress (PROG-003: no N+1).
     private func entryRows(userID: UserID, now: Date, extra: SQLQueryString, limit: Int) async throws -> [EntryRow] {
         let aired: SQLQueryString = """

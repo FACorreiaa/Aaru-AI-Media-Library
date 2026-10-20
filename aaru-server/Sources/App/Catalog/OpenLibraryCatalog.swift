@@ -48,6 +48,23 @@ struct OpenLibraryCatalog: CatalogSearching {
     }
 }
 
+// MARK: Discover (DISC-001)
+
+extension OpenLibraryCatalog: DiscoverListing {
+    var discoverLists: Set<DiscoverList> {
+        [.booksTrending]
+    }
+
+    func list(_ list: DiscoverList, now _: Date) async throws -> [CatalogHit] {
+        guard list == .booksTrending else { throw ProviderError(provider: "openlibrary", kind: .notFound) }
+        return try await get(TrendingPage.self, "trending/weekly.json", ["limit": "30"]).works.compactMap(\.hit)
+    }
+}
+
+private struct TrendingPage: Decodable {
+    let works: [SearchPage.Doc]
+}
+
 private struct SearchPage: Decodable {
     struct Doc: Decodable {
         let key: String

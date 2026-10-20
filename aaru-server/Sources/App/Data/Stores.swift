@@ -135,6 +135,21 @@ protocol LibraryStore: Sendable {
     /// Applies the action's inverse and journals that as a new `undo` action. Throws
     /// `ActionConflict` if it was already undone or its target no longer matches.
     func undo(actionID: UUID, userID: UserID) async throws -> ActionRecord
+    /// The user's items among titles carrying these provider ids: Discover's "in library" mark.
+    func itemIDs(userID: UserID, matching keys: Set<CatalogKey>) async throws -> [CatalogKey: LibraryItemID]
+}
+
+/// One provider id on a title of one type. TMDB reuses numbers across movies and shows, so
+/// the type is part of the key.
+struct CatalogKey: Hashable, Sendable {
+    enum Provider: String, Sendable, CaseIterable {
+        case tmdb, anilist
+        case openLibrary = "open_library"
+    }
+
+    var type: MediaType
+    var provider: Provider
+    var id: String
 }
 
 /// List reads. List writes are `LibraryOp`s through `LibraryStore.apply`.

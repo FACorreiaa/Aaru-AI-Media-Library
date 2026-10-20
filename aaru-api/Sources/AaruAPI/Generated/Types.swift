@@ -80,6 +80,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/search`.
     /// - Remark: Generated from `#/paths//v1/search/get(searchCatalog)`.
     func searchCatalog(_ input: Operations.SearchCatalog.Input) async throws -> Operations.SearchCatalog.Output
+    /// Provider-curated public rows for Home (trending, airing, this season).
+    ///
+    /// The same lists for every user, cached by the server. Items the caller already has carry `libraryItemId`. A row whose provider is down is left out.
+    ///
+    /// - Remark: HTTP `GET /v1/discover`.
+    /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
+    func getDiscover(_ input: Operations.GetDiscover.Input) async throws -> Operations.GetDiscover.Output
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -397,6 +404,15 @@ extension APIProtocol {
             query: query,
             headers: headers
         ))
+    }
+    /// Provider-curated public rows for Home (trending, airing, this season).
+    ///
+    /// The same lists for every user, cached by the server. Items the caller already has carry `libraryItemId`. A row whose provider is down is left out.
+    ///
+    /// - Remark: HTTP `GET /v1/discover`.
+    /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
+    public func getDiscover(headers: Operations.GetDiscover.Input.Headers = .init()) async throws -> Operations.GetDiscover.Output {
+        try await getDiscover(Operations.GetDiscover.Input(headers: headers))
     }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
@@ -1566,6 +1582,10 @@ public enum Components {
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/CatalogHit/ids`.
             public var ids: Components.Schemas.ExternalIds
+            /// The caller's library item for this title, when they have one. Discover only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CatalogHit/libraryItemId`.
+            public var libraryItemId: Swift.String?
             /// Creates a new `CatalogHit`.
             ///
             /// - Parameters:
@@ -1578,6 +1598,7 @@ public enum Components {
             ///   - byline: Authors, for books.
             ///   - isAnime:
             ///   - ids:
+            ///   - libraryItemId: The caller's library item for this title, when they have one. Discover only.
             public init(
                 _type: Components.Schemas.MediaType,
                 title: Swift.String,
@@ -1587,7 +1608,8 @@ public enum Components {
                 overview: Swift.String? = nil,
                 byline: Swift.String? = nil,
                 isAnime: Swift.Bool,
-                ids: Components.Schemas.ExternalIds
+                ids: Components.Schemas.ExternalIds,
+                libraryItemId: Swift.String? = nil
             ) {
                 self._type = _type
                 self.title = title
@@ -1598,6 +1620,7 @@ public enum Components {
                 self.byline = byline
                 self.isAnime = isAnime
                 self.ids = ids
+                self.libraryItemId = libraryItemId
             }
             public enum CodingKeys: String, CodingKey {
                 case _type = "type"
@@ -1609,6 +1632,7 @@ public enum Components {
                 case byline
                 case isAnime
                 case ids
+                case libraryItemId
             }
         }
         /// - Remark: Generated from `#/components/schemas/SearchResults`.
@@ -1624,6 +1648,54 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
+        public struct DiscoverRow: Codable, Hashable, Sendable {
+            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DiscoverRow/id`.
+            public var id: Swift.String
+            /// Display title, e.g. "Fall 2026 anime".
+            ///
+            /// - Remark: Generated from `#/components/schemas/DiscoverRow/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/DiscoverRow/items`.
+            public var items: [Components.Schemas.CatalogHit]
+            /// Creates a new `DiscoverRow`.
+            ///
+            /// - Parameters:
+            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get.
+            ///   - title: Display title, e.g. "Fall 2026 anime".
+            ///   - items:
+            public init(
+                id: Swift.String,
+                title: Swift.String,
+                items: [Components.Schemas.CatalogHit]
+            ) {
+                self.id = id
+                self.title = title
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case title
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DiscoverRows`.
+        public struct DiscoverRows: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DiscoverRows/rows`.
+            public var rows: [Components.Schemas.DiscoverRow]
+            /// Creates a new `DiscoverRows`.
+            ///
+            /// - Parameters:
+            ///   - rows:
+            public init(rows: [Components.Schemas.DiscoverRow]) {
+                self.rows = rows
+            }
+            public enum CodingKeys: String, CodingKey {
+                case rows
             }
         }
         /// - Remark: Generated from `#/components/schemas/Episode`.
@@ -5305,6 +5377,137 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/search/get(searchCatalog)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Provider-curated public rows for Home (trending, airing, this season).
+    ///
+    /// The same lists for every user, cached by the server. Items the caller already has carry `libraryItemId`. A row whose provider is down is left out.
+    ///
+    /// - Remark: HTTP `GET /v1/discover`.
+    /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
+    public enum GetDiscover {
+        public static let id: Swift.String = "getDiscover"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/discover/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetDiscover.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetDiscover.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetDiscover.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetDiscover.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/discover/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/discover/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.DiscoverRows)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.DiscoverRows {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetDiscover.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetDiscover.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Rows in display order. Empty rows are left out.
+            ///
+            /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetDiscover.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetDiscover.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

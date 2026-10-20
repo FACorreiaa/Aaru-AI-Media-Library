@@ -140,6 +140,56 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing {
     }
 }
 
+// MARK: - Discover (DISC-001)
+
+extension TMDBCatalog: DiscoverListing {
+    /// TV genres a "what to watch" row leaves out: news, soap, talk.
+    static let offRowGenres: Set<Int> = [10763, 10766, 10767]
+    /// "New shows" premiered within this window.
+    static let newShowWindow: TimeInterval = 90 * 24 * 60 * 60
+
+    var discoverLists: Set<DiscoverList> {
+        [.tvTrending, .tvOnAir, .tvNew, .moviesTrending, .moviesInTheaters]
+    }
+
+    func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit] {
+        let type: MediaType
+        let path: String
+        var query = ["include_adult": "false"]
+        switch list {
+        case .tvTrending: (type, path) = (.show, "trending/tv/week")
+        case .tvOnAir: (type, path) = (.show, "tv/on_the_air")
+        case .tvNew:
+            (type, path) = (.show, "discover/tv")
+            query["first_air_date.gte"] = Self.day(now.addingTimeInterval(-Self.newShowWindow))
+            query["first_air_date.lte"] = Self.day(now)
+            query["sort_by"] = "popularity.desc"
+            // Popularity alone surfaces shows nobody has rated yet.
+            query["vote_count.gte"] = "10"
+        case .moviesTrending: (type, path) = (.movie, "trending/movie/week")
+        case .moviesInTheaters: (type, path) = (.movie, "movie/now_playing")
+        default: throw ProviderError(provider: "tmdb", kind: .notFound)
+        }
+        let page = try await get(SearchPage.self, path, query)
+        return page.results.compactMap { entry -> CatalogHit? in
+            guard let hit = entry.hit(type: type) else { return nil }
+            guard type == .show else { return hit }
+            // Anime rows come from AniList, the anime catalog.
+            let genres = Set(entry.genreIds ?? [])
+            return hit.isAnime || !genres.isDisjoint(with: Self.offRowGenres) ? nil : hit
+        }
+    }
+
+    private static func day(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+}
+
 // MARK: - TMDB wire shapes (private to this adapter)
 
 private struct SearchPage: Decodable {
