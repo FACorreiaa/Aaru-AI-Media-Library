@@ -350,7 +350,8 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         push: untouched,
         agentTokens: untouched,
         watchEvents: untouched,
-        social: untouched
+        social: untouched,
+        groups: untouched
     )
 }
 

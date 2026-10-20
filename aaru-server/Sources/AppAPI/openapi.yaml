@@ -302,6 +302,303 @@ paths:
           description: Received.
         default:
           $ref: '#/components/responses/Error'
+  /v1/groups:
+    get:
+      operationId: listGroups
+      summary: Your groups, in the order you joined them, with unread and mention counts.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createGroup
+      summary: Create a group you own, with a #general channel. Needs your handle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GroupCreate'}
+      responses:
+        '200':
+          description: The new group.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getGroup
+      summary: A group you are in, with its channels, members and pending invites. 404 to anyone else.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: updateGroup
+      summary: Rename the group. Owner and admins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GroupCreate'}
+      responses:
+        '200':
+          description: The group.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteGroup
+      summary: Delete the group, its channels and every message. Owner only.
+      responses:
+        '204':
+          description: Gone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/members/{userId}:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: userId, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: updateGroupMember
+      summary: Make a member an admin, or an admin a member. Owner only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GroupMemberUpdate'}
+      responses:
+        '204':
+          description: Changed.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: removeGroupMember
+      summary: Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave.
+      responses:
+        '204':
+          description: Removed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/transfer:
+    post:
+      operationId: transferGroup
+      summary: Make another member the owner. You become an admin.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UserRef'}
+      responses:
+        '204':
+          description: Transferred.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/invites:
+    post:
+      operationId: inviteToGroup
+      summary: Invite a friend. Inviting again, or someone already in, changes nothing.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UserRef'}
+      responses:
+        '204':
+          description: Invited.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/group-invites:
+    get:
+      operationId: listGroupInvites
+      summary: Invites waiting for you, newest first.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupInviteList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/group-invites/{id}:
+    delete:
+      operationId: declineGroupInvite
+      summary: Decline an invite to you, or cancel one you sent.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Gone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/group-invites/{id}/accept:
+    post:
+      operationId: acceptGroupInvite
+      summary: Join the group.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The group you joined.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupSummary'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels:
+    post:
+      operationId: createChannel
+      summary: Add a text channel. Owner and admins.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChannelCreate'}
+      responses:
+        '200':
+          description: The channel.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Channel'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: updateChannel
+      summary: Rename a channel or set its topic. Owner and admins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChannelUpdate'}
+      responses:
+        '200':
+          description: The channel.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Channel'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteChannel
+      summary: Delete a channel and its messages. The first channel stays. Owner and admins.
+      responses:
+        '204':
+          description: Gone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/messages:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listMessages
+      summary: Messages oldest first. Without a cursor, the latest page.
+      parameters:
+        - name: before
+          in: query
+          description: Messages older than this one.
+          schema: {type: string, format: uuid}
+        - name: after
+          in: query
+          description: Messages newer than this one.
+          schema: {type: string, format: uuid}
+        - name: limit
+          in: query
+          description: 1–100, default 50.
+          schema: {type: integer}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupMessagePage'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: postMessage
+      summary: Post a message. A retry with the same clientNonce returns the first message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MessageCreate'}
+      responses:
+        '200':
+          description: The message.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupMessage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: messageId, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: editMessage
+      summary: Edit your own message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MessageUpdate'}
+      responses:
+        '200':
+          description: The message.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupMessage'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteMessage
+      summary: Delete your message, or any message as owner or admin. The row stays, empty.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/read:
+    post:
+      operationId: markChannelRead
+      summary: Mark the channel read up to a message. The read point never moves back.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReadMark'}
+      responses:
+        '204':
+          description: Marked.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/devices:
     put:
       operationId: registerDevice
@@ -1336,6 +1633,146 @@ components:
           type: string
           enum: [spam, harassment, impersonation, other]
         note: {type: string, maxLength: 1000}
+    GroupRole:
+      type: string
+      enum: [owner, admin, member]
+    GroupSummary:
+      type: object
+      required: [id, name, role, defaultChannelId, unread, mentions]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        role: {$ref: '#/components/schemas/GroupRole'}
+        defaultChannelId: {type: string, format: uuid}
+        unread: {type: integer, description: Messages from others since you last read, across channels.}
+        mentions: {type: integer, description: Unread messages that tag you.}
+    GroupList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/GroupSummary'}
+    GroupMember:
+      type: object
+      required: [user, role, joinedAt]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        role: {$ref: '#/components/schemas/GroupRole'}
+        joinedAt: {type: string, format: date-time}
+    Channel:
+      type: object
+      required: [id, kind, name, position, isDefault, unread, mentions]
+      properties:
+        id: {type: string, format: uuid}
+        kind:
+          type: string
+          enum: [text]
+        name: {type: string, description: 'Lowercase, dashes for spaces: movie-night.'}
+        topic: {type: string}
+        position: {type: integer}
+        isDefault: {type: boolean, description: 'The #general every group starts with. Cannot be deleted.'}
+        unread: {type: integer}
+        mentions: {type: integer}
+    GroupDetail:
+      type: object
+      required: [group, channels, members, invited]
+      properties:
+        group: {$ref: '#/components/schemas/GroupSummary'}
+        channels:
+          type: array
+          items: {$ref: '#/components/schemas/Channel'}
+        members:
+          type: array
+          items: {$ref: '#/components/schemas/GroupMember'}
+        invited:
+          type: array
+          description: Friends invited who have not answered yet.
+          items: {$ref: '#/components/schemas/SocialUser'}
+    GroupCreate:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string, maxLength: 50}
+    GroupMemberUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [admin, member]
+    UserRef:
+      type: object
+      required: [userId]
+      properties:
+        userId: {type: string, format: uuid}
+    GroupInvite:
+      type: object
+      required: [id, groupId, groupName, inviter, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        groupId: {type: string, format: uuid}
+        groupName: {type: string}
+        inviter: {$ref: '#/components/schemas/SocialUser'}
+        createdAt: {type: string, format: date-time}
+    GroupInviteList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/GroupInvite'}
+    ChannelCreate:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        topic: {type: string, maxLength: 200}
+    ChannelUpdate:
+      type: object
+      properties:
+        name: {type: string, description: Absent leaves it unchanged.}
+        topic: {type: string, description: Absent leaves it unchanged; empty clears it.}
+    GroupMessage:
+      type: object
+      required: [id, channelId, body, mentions, mentionsAgent, fromBlocked, deleted, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        channelId: {type: string, format: uuid}
+        author: {$ref: '#/components/schemas/SocialUser', description: Absent once the author deleted their account.}
+        body: {type: string, description: Empty when deleted.}
+        mentions:
+          type: array
+          description: Members the message tags.
+          items: {type: string, format: uuid}
+        mentionsAgent: {type: boolean, description: The message tags @aaru.}
+        fromBlocked: {type: boolean, description: You blocked the author. Show it collapsed.}
+        deleted: {type: boolean}
+        createdAt: {type: string, format: date-time}
+        editedAt: {type: string, format: date-time}
+    GroupMessagePage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/GroupMessage'}
+    MessageCreate:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
+        clientNonce: {type: string, maxLength: 64, description: Makes a retry safe.}
+    MessageUpdate:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
+    ReadMark:
+      type: object
+      required: [messageId]
+      properties:
+        messageId: {type: string, format: uuid}
     ExternalIds:
       type: object
       description: Provider identifiers known for a title. Absent means unknown.
@@ -1575,6 +2012,25 @@ components:
         blocked:
           type: array
           items: {$ref: '#/components/schemas/SocialUser'}
+        groups:
+          type: array
+          items:
+            type: object
+            required: [name, role]
+            properties:
+              name: {type: string}
+              role: {$ref: '#/components/schemas/GroupRole'}
+        groupMessages:
+          type: array
+          description: Messages you wrote in groups, oldest first.
+          items:
+            type: object
+            required: [group, channel, body, createdAt]
+            properties:
+              group: {type: string}
+              channel: {type: string}
+              body: {type: string}
+              createdAt: {type: string, format: date-time}
     LibraryPage:
       type: object
       required: [items, page]

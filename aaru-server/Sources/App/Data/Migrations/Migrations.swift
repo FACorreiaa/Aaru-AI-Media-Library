@@ -27,6 +27,7 @@ let allMigrations: [any Migration] = [
     AddActionAgentToken(),
     CreateWatchEvents(),
     CreateSocial(),
+    CreateGroups(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

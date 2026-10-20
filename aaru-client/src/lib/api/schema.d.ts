@@ -315,6 +315,249 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/groups': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your groups, in the order you joined them, with unread and mention counts. */
+    get: operations['listGroups']
+    put?: never
+    /** Create a group you own, with a */
+    post: operations['createGroup']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+      }
+      cookie?: never
+    }
+    /** A group you are in, with its channels, members and pending invites. 404 to anyone else. */
+    get: operations['getGroup']
+    put?: never
+    post?: never
+    /** Delete the group, its channels and every message. Owner only. */
+    delete: operations['deleteGroup']
+    options?: never
+    head?: never
+    /** Rename the group. Owner and admins. */
+    patch: operations['updateGroup']
+    trace?: never
+  }
+  '/v1/groups/{groupId}/members/{userId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        userId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave. */
+    delete: operations['removeGroupMember']
+    options?: never
+    head?: never
+    /** Make a member an admin, or an admin a member. Owner only. */
+    patch: operations['updateGroupMember']
+    trace?: never
+  }
+  '/v1/groups/{groupId}/transfer': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Make another member the owner. You become an admin. */
+    post: operations['transferGroup']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/invites': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Invite a friend. Inviting again, or someone already in, changes nothing. */
+    post: operations['inviteToGroup']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/group-invites': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Invites waiting for you, newest first. */
+    get: operations['listGroupInvites']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/group-invites/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Decline an invite to you, or cancel one you sent. */
+    delete: operations['declineGroupInvite']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/group-invites/{id}/accept': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Join the group. */
+    post: operations['acceptGroupInvite']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Add a text channel. Owner and admins. */
+    post: operations['createChannel']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Delete a channel and its messages. The first channel stays. Owner and admins. */
+    delete: operations['deleteChannel']
+    options?: never
+    head?: never
+    /** Rename a channel or set its topic. Owner and admins. */
+    patch: operations['updateChannel']
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/messages': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    /** Messages oldest first. Without a cursor, the latest page. */
+    get: operations['listMessages']
+    put?: never
+    /** Post a message. A retry with the same clientNonce returns the first message. */
+    post: operations['postMessage']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+        messageId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Delete your message, or any message as owner or admin. The row stays, empty. */
+    delete: operations['deleteMessage']
+    options?: never
+    head?: never
+    /** Edit your own message. */
+    patch: operations['editMessage']
+    trace?: never
+  }
+  '/v1/groups/{groupId}/channels/{channelId}/read': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Mark the channel read up to a message. The read point never moves back. */
+    post: operations['markChannelRead']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/devices': {
     parameters: {
       query?: never
@@ -1138,6 +1381,120 @@ export interface components {
       reason: 'spam' | 'harassment' | 'impersonation' | 'other'
       note?: string
     }
+    /** @enum {string} */
+    GroupRole: 'owner' | 'admin' | 'member'
+    GroupSummary: {
+      /** Format: uuid */
+      id: string
+      name: string
+      role: components['schemas']['GroupRole']
+      /** Format: uuid */
+      defaultChannelId: string
+      /** @description Messages from others since you last read */
+      unread: number
+      /** @description Unread messages that tag you. */
+      mentions: number
+    }
+    GroupList: {
+      items: components['schemas']['GroupSummary'][]
+    }
+    GroupMember: {
+      user: components['schemas']['SocialUser']
+      role: components['schemas']['GroupRole']
+      /** Format: date-time */
+      joinedAt: string
+    }
+    Channel: {
+      /** Format: uuid */
+      id: string
+      /** @enum {string} */
+      kind: 'text'
+      /** @description Lowercase, dashes for spaces: movie-night. */
+      name: string
+      topic?: string
+      position: number
+      /** @description The #general every group starts with. Cannot be deleted. */
+      isDefault: boolean
+      unread: number
+      mentions: number
+    }
+    GroupDetail: {
+      group: components['schemas']['GroupSummary']
+      channels: components['schemas']['Channel'][]
+      members: components['schemas']['GroupMember'][]
+      /** @description Friends invited who have not answered yet. */
+      invited: components['schemas']['SocialUser'][]
+    }
+    GroupCreate: {
+      name: string
+    }
+    GroupMemberUpdate: {
+      /** @enum {string} */
+      role: 'admin' | 'member'
+    }
+    UserRef: {
+      /** Format: uuid */
+      userId: string
+    }
+    GroupInvite: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      groupId: string
+      groupName: string
+      inviter: components['schemas']['SocialUser']
+      /** Format: date-time */
+      createdAt: string
+    }
+    GroupInviteList: {
+      items: components['schemas']['GroupInvite'][]
+    }
+    ChannelCreate: {
+      name: string
+      topic?: string
+    }
+    ChannelUpdate: {
+      /** @description Absent leaves it unchanged. */
+      name?: string
+      /** @description Absent leaves it unchanged; empty clears it. */
+      topic?: string
+    }
+    GroupMessage: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      channelId: string
+      /** @description Absent once the author deleted their account. */
+      author?: components['schemas']['SocialUser']
+      /** @description Empty when deleted. */
+      body: string
+      /** @description Members the message tags. */
+      mentions: string[]
+      /** @description The message tags @aaru. */
+      mentionsAgent: boolean
+      /** @description You blocked the author. Show it collapsed. */
+      fromBlocked: boolean
+      deleted: boolean
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      editedAt?: string
+    }
+    GroupMessagePage: {
+      items: components['schemas']['GroupMessage'][]
+    }
+    MessageCreate: {
+      body: string
+      /** @description Makes a retry safe. */
+      clientNonce?: string
+    }
+    MessageUpdate: {
+      body: string
+    }
+    ReadMark: {
+      /** Format: uuid */
+      messageId: string
+    }
     /** @description Provider identifiers known for a title. Absent means unknown. */
     ExternalIds: {
       tmdb?: string
@@ -1309,6 +1666,18 @@ export interface components {
       shelves: components['schemas']['Shelf'][]
       friends?: components['schemas']['SocialUser'][]
       blocked?: components['schemas']['SocialUser'][]
+      groups?: {
+        name: string
+        role: components['schemas']['GroupRole']
+      }[]
+      /** @description Messages you wrote in groups, oldest first. */
+      groupMessages?: {
+        group: string
+        channel: string
+        body: string
+        /** Format: date-time */
+        createdAt: string
+      }[]
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]
@@ -2004,6 +2373,500 @@ export interface operations {
     }
     responses: {
       /** @description Received. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listGroups: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GroupCreate']
+      }
+    }
+    responses: {
+      /** @description The new group. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Gone. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GroupCreate']
+      }
+    }
+    responses: {
+      /** @description The group. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  removeGroupMember: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        userId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateGroupMember: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        userId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GroupMemberUpdate']
+      }
+    }
+    responses: {
+      /** @description Changed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  transferGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserRef']
+      }
+    }
+    responses: {
+      /** @description Transferred. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  inviteToGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserRef']
+      }
+    }
+    responses: {
+      /** @description Invited. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listGroupInvites: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupInviteList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  declineGroupInvite: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Gone. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  acceptGroupInvite: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The group you joined. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupSummary']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createChannel: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChannelCreate']
+      }
+    }
+    responses: {
+      /** @description The channel. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Channel']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteChannel: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Gone. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateChannel: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChannelUpdate']
+      }
+    }
+    responses: {
+      /** @description The channel. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Channel']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listMessages: {
+    parameters: {
+      query?: {
+        /** @description Messages older than this one. */
+        before?: string
+        /** @description Messages newer than this one. */
+        after?: string
+        /** @description 1–100, default 50. */
+        limit?: number
+      }
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupMessagePage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  postMessage: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MessageCreate']
+      }
+    }
+    responses: {
+      /** @description The message. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupMessage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteMessage: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+        messageId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  editMessage: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+        messageId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MessageUpdate']
+      }
+    }
+    responses: {
+      /** @description The message. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GroupMessage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  markChannelRead: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        groupId: string
+        channelId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReadMark']
+      }
+    }
+    responses: {
+      /** @description Marked. */
       204: {
         headers: {
           [name: string]: unknown

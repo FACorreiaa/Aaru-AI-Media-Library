@@ -22,6 +22,8 @@ extension APIImplementation {
         }
         async let friends = services.social.friends(userID)
         async let blocked = services.social.blocked(userID)
+        async let groups = services.groups.groups(userID)
+        async let groupMessages = stores.groups.exportMessages(userID)
         return try await .ok(.init(
             headers: .init(contentDisposition: "attachment; filename=\"aaru-export-\(stamp).json\""),
             body: .json(.init(
@@ -40,7 +42,11 @@ extension APIImplementation {
                 ) },
                 shelves: export.shelves.map(Components.Schemas.Shelf.init),
                 friends: friends.map(Components.Schemas.SocialUser.init),
-                blocked: blocked.map(Components.Schemas.SocialUser.init)
+                blocked: blocked.map(Components.Schemas.SocialUser.init),
+                groups: groups.map { .init(name: $0.name, role: .init($0.role)) },
+                groupMessages: groupMessages.map {
+                    .init(group: $0.group, channel: $0.channel, body: $0.body, createdAt: $0.createdAt)
+                }
             ))
         ))
     }

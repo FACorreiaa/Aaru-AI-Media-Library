@@ -337,4 +337,5 @@ struct Stores: Sendable {
     var agentTokens: any AgentTokenStore
     var watchEvents: any WatchEventStore
     var social: any SocialStore
+    var groups: any GroupStore
 }

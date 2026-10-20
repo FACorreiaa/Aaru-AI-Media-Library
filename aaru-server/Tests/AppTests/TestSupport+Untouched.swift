@@ -130,3 +130,117 @@ extension UntouchedStore: SocialStore {
         throw Touched()
     }
 }
+
+extension UntouchedStore: GroupStore {
+    func groups(for _: UserID) async throws -> [GroupSummary] {
+        throw Touched()
+    }
+
+    func summary(_: UUID, viewer _: UserID) async throws -> GroupSummary? {
+        throw Touched()
+    }
+
+    func ownedCount(_: UserID) async throws -> Int {
+        throw Touched()
+    }
+
+    func createGroup(id _: UUID, name _: String, owner _: UserID, general _: GroupChannel, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func renameGroup(_: UUID, name _: String, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func deleteGroup(_: UUID) async throws {
+        throw Touched()
+    }
+
+    func members(_: UUID) async throws -> [GroupMember] {
+        throw Touched()
+    }
+
+    func role(_: UUID, user _: UserID) async throws -> GroupRole? {
+        throw Touched()
+    }
+
+    func setRole(_: UUID, user _: UserID, role _: GroupRole) async throws {
+        throw Touched()
+    }
+
+    func removeMember(_: UUID, user _: UserID) async throws {
+        throw Touched()
+    }
+
+    func transferOwnership(_: UUID, from _: UserID, to _: UserID) async throws {
+        throw Touched()
+    }
+
+    func createInvite(id _: UUID, group _: UUID, inviter _: UserID, invitee _: UserID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func invites(to _: UserID) async throws -> [GroupInvite] {
+        throw Touched()
+    }
+
+    func invitesPending(_: UUID) async throws -> [GroupInvite] {
+        throw Touched()
+    }
+
+    func acceptInvite(id _: UUID, invitee _: UserID, now _: Date) async throws -> UUID? {
+        throw Touched()
+    }
+
+    func deleteInvite(id _: UUID, party _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func channels(_: UUID, viewer _: UserID) async throws -> [GroupChannel] {
+        throw Touched()
+    }
+
+    func channel(_: UUID, group _: UUID) async throws -> GroupChannel? {
+        throw Touched()
+    }
+
+    func createChannel(_: GroupChannel) async throws {
+        throw Touched()
+    }
+
+    func updateChannel(_: UUID, name _: String?, topic _: String??) async throws {
+        throw Touched()
+    }
+
+    func deleteChannel(_: UUID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func messages(_: UUID, cursor _: MessageCursor, limit _: Int) async throws -> [GroupMessage] {
+        throw Touched()
+    }
+
+    func message(_: UUID, channel _: UUID) async throws -> GroupMessage? {
+        throw Touched()
+    }
+
+    func postMessage(_: GroupMessage, nonce _: String?) async throws -> GroupMessage {
+        throw Touched()
+    }
+
+    func editMessage(_: UUID, body _: String, mentions _: [UserID], mentionsAgent _: Bool, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func deleteMessage(_: UUID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func markRead(_: UserID, channel _: UUID, upTo _: UUID) async throws {
+        throw Touched()
+    }
+
+    func exportMessages(_: UserID) async throws -> [ExportedGroupMessage] {
+        throw Touched()
+    }
+}

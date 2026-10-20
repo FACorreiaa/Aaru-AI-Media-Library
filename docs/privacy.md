@@ -11,6 +11,8 @@ what Aaru does, this page changes first.
 - Your library is **private**. There is no public profile and no feed, and your library is
   never shared with other users. If you choose a handle, people who know it can send you a
   friend request; friends see your handle and name, nothing else.
+- **Group chats are not end-to-end encrypted.** Messages in a group are stored readable on
+  Aaru's server so the group works across your devices; the apps say so in every group.
 - **No ads, no tracking, no analytics.** Aaru does not sell or rent data, and has no
   advertising or analytics code in the apps or on the website.
 - You can **delete your account** in Settings. That removes your library and account at once.
@@ -43,6 +45,15 @@ you. Aaru stores pending requests, who your friends are, who you blocked, and an
 send about another user (the reason and your note). The person you block or report is not
 told. Deleting your account removes all of it; a report someone sent about you keeps its reason
 but no longer points to you.
+
+**Groups.** If you create or join a group, Aaru stores the group's name, its channels, who is in
+it and with what role, invites waiting for an answer, and where you last read in each channel.
+Every message you send in a group is stored as you wrote it, with who you tagged, and the other
+members of that group can read it. Group messages are **not end-to-end encrypted**: Aaru's
+server can read them. Nobody outside the group can find it or see anything in it. Deleting a
+message empties it straight away. Deleting your account empties every message you sent in any
+group and removes you from them; a group you owned passes to another member, or goes if nobody
+else was in it. The export includes your groups and the messages you wrote.
 
 **Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
 that setting.
