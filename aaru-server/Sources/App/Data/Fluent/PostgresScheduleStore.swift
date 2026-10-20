@@ -106,6 +106,60 @@ struct PostgresScheduleStore: ScheduleStore {
             }
     }
 
+    func libraryCounts(userID: UserID) async throws -> LibraryCounts {
+        struct Row: Decodable {
+            let status: String
+            let count: Int
+        }
+        let rows = try await sql.raw("""
+        SELECT status, count(*)::int AS count FROM library_items
+        WHERE user_id = \(bind: userID.rawValue) GROUP BY status
+        """).all(decoding: Row.self)
+        var counts = LibraryCounts()
+        for row in rows {
+            switch LibraryStatus(rawValue: row.status) {
+            case .wishlist: counts.wishlist = row.count
+            case .inProgress: counts.inProgress = row.count
+            case .finished: counts.finished = row.count
+            case .dropped: counts.dropped = row.count
+            case nil: continue
+            }
+        }
+        return counts
+    }
+
+    func unfinished(userID: UserID, stalledBefore: Date, now: Date, limit: Int) async throws -> [UnfinishedEntry] {
+        // `next` is Continue watching's rule: an in-progress show with one is already there.
+        let query: SQLQueryString = """
+        SELECT li.id AS item_id, \(Self.titleColumns), li.status, li.updated_at,
+            next.season AS next_season, next.episode AS next_episode
+        FROM library_items li
+        JOIN titles t ON t.id = li.title_id
+        LEFT JOIN LATERAL (
+            SELECT se.season, se.episode FROM show_episodes se
+            WHERE se.title_id = li.title_id AND se.season > 0 AND \(Self.aired(now)) AND \(Self.unwatched)
+            ORDER BY se.season, se.episode LIMIT 1
+        ) next ON t.type = 'show'
+        WHERE li.user_id = \(bind: userID.rawValue)
+          AND (li.status = 'dropped'
+               OR (li.status = 'in_progress' AND li.updated_at < \(bind: stalledBefore) AND next.season IS NULL))
+        ORDER BY li.updated_at DESC, li.id DESC
+        LIMIT \(literal: limit)
+        """
+        return try await sql.raw(query).all(decoding: UnfinishedRow.self, keyDecodingStrategy: .convertFromSnakeCase)
+            .compactMap { row in
+                guard let title = row.title.asTitle else { return nil }
+                let next = row.nextSeason.flatMap { season in
+                    row.nextEpisode.flatMap { try? EpisodeKey(season: season, episode: $0) }
+                }
+                return UnfinishedEntry(
+                    libraryItemID: LibraryItemID(row.itemId), title: title,
+                    reason: row.status == LibraryStatus.dropped.rawValue ? .dropped : .stalled,
+                    since: row.updatedAt, next: next
+                )
+            }
+    }
+
     func unhydratedTrackedShows(userID: UserID, limit: Int) async throws -> [TitleID] {
         struct Row: Decodable { let id: UUID }
         return try await sql.raw("""
@@ -223,5 +277,28 @@ private struct StartRow: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case itemId, runtimeMinutes
+    }
+}
+
+private struct UnfinishedRow: Decodable {
+    let itemId: UUID
+    let title: TitleColumns
+    let status: String
+    let updatedAt: Date
+    let nextSeason: Int?
+    let nextEpisode: Int?
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        itemId = try container.decode(UUID.self, forKey: .itemId)
+        status = try container.decode(String.self, forKey: .status)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        nextSeason = try container.decodeIfPresent(Int.self, forKey: .nextSeason)
+        nextEpisode = try container.decodeIfPresent(Int.self, forKey: .nextEpisode)
+        title = try TitleColumns(from: decoder)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case itemId, status, updatedAt, nextSeason, nextEpisode
     }
 }

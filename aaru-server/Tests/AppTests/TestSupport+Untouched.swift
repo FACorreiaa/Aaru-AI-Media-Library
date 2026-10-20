@@ -46,6 +46,20 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func mappings(anilist _: [String]) async throws -> [AnimeMapping] {
+        throw Touched()
+    }
+
+    func libraryCounts(userID _: UserID) async throws -> LibraryCounts {
+        throw Touched()
+    }
+
+    func unfinished(userID _: UserID, stalledBefore _: Date, now _: Date, limit _: Int) async throws
+        -> [UnfinishedEntry]
+    {
+        throw Touched()
+    }
+
     func staleTrackedShows(now _: Date, retryAfter _: Date, limit _: Int) async throws -> [TitleID] {
         throw Touched()
     }

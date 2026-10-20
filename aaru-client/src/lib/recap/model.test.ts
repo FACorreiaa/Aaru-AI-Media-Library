@@ -33,6 +33,7 @@ function stats(overrides: Partial<Stats> = {}): Stats {
   buckets[2] = { ...buckets[2], episodes: 4, minutes: 180 }
   buckets[6] = { ...buckets[6], episodes: 1, minutes: 45, finished: 1 }
   return {
+    span: 'year',
     year: 2026,
     timeZone: 'Europe/Lisbon',
     isPartial: false,
@@ -45,6 +46,12 @@ function stats(overrides: Partial<Stats> = {}): Stats {
       animeFinished: 0,
       booksFinished: 0,
     },
+    byKind: [
+      { kind: 'movie', episodes: 0, minutes: 0, finished: 0 },
+      { kind: 'show', episodes: 5, minutes: 225, finished: 1 },
+      { kind: 'anime', episodes: 0, minutes: 0, finished: 0 },
+      { kind: 'book', episodes: 0, minutes: 0, finished: 0 },
+    ],
     buckets,
     busiest: buckets[2],
     mostEpisodes: buckets[2],
@@ -53,7 +60,13 @@ function stats(overrides: Partial<Stats> = {}): Stats {
       { title: title('Severance'), episodes: 4, minutes: 180 },
       { title: title('Andor'), episodes: 1, minutes: 45 },
     ],
-    ratings: { count: 1, mean: 9, highest: title('Andor'), highestRating: 9 },
+    ratings: {
+      count: 1,
+      mean: 9,
+      highest: title('Andor'),
+      highestRating: 9,
+      distribution: [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    },
     first: { title: title('Severance'), at: '2026-03-10T12:00:00Z' },
     last: { title: title('Andor'), at: '2026-07-04T12:00:00Z' },
     ...overrides,
@@ -96,7 +109,7 @@ describe('cards', () => {
       },
       topTitles: [],
       longestRun: { days: 1, start: '2026-05-01', end: '2026-05-01' },
-      ratings: { count: 0 },
+      ratings: { count: 0, distribution: Array<number>(10).fill(0) },
       first: { title: title('Dune'), at: '2026-05-01T00:00:00Z' },
       last: { title: title('Dune'), at: '2026-05-01T00:00:00Z' },
     })

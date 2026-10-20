@@ -1449,7 +1449,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -1473,6 +1473,13 @@ public struct Client: APIProtocol {
                     explode: true,
                     name: "year",
                     value: input.query.year
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "span",
+                    value: input.query.span
                 )
                 try converter.setQueryItemAsURI(
                     in: &request,
@@ -4644,7 +4651,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Continue Watching and Start Watching for the home screen, in one call.
+    /// Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
     ///
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
