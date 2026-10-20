@@ -1,11 +1,14 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
+import { DiscoverRow } from '../components/DiscoverRow'
+import { SearchPanel } from '../components/SearchPanel'
 import {
   AiringCard,
   ContinueCard,
   Row,
   StartCard,
+  UnfinishedCard,
 } from '../components/HomeRows'
 import {
   addDays,
@@ -15,16 +18,32 @@ import {
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { getCalendar } from '../lib/calendar/server'
-import { AIRING_DAYS, advance, airingBadge, upcoming } from '../lib/home/model'
-import type { ContinueEntry } from '../lib/home/model'
+import { getDiscover } from '../lib/discover/server'
+import {
+  AIRING_DAYS,
+  advance,
+  airingBadge,
+  countChips,
+  monthStrip,
+  upcoming,
+} from '../lib/home/model'
+import type { ContinueEntry, UpNext } from '../lib/home/model'
 import { getUpNext } from '../lib/home/server'
+import { upsert } from '../lib/library/model'
+import type { CatalogHit, LibraryEntry } from '../lib/library/model'
+import { getLibrary } from '../lib/library/server'
+import { getLists } from '../lib/lists/server'
+import type { ListSummary } from '../lib/lists/server'
+import { getStats } from '../lib/recap/server'
 import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
 // watching come with the page; the calendar row loads in the browser, which knows the
-// viewer's "today".
+// viewer's "today", as do this month's stats, the New shows teaser and the list chips. Each
+// of those hides itself if it fails. Search opens in place; it and the teaser share the
+// library for their "On your shelf" marks.
 export const Route = createFileRoute('/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
   beforeLoad: async () => {
@@ -40,16 +59,100 @@ function Home() {
   const loaded = Route.useLoaderData()
   const [continuing, setContinuing] = createSignal(loaded().continueWatching)
   const [starting, setStarting] = createSignal(loaded().startWatching)
+  const [unfinished, setUnfinished] = createSignal(loaded().unfinished ?? [])
+  const [counts, setCounts] = createSignal(loaded().counts)
+  const [strip, setStrip] = createSignal<string[]>([])
+  const [teaser, setTeaser] = createSignal<CatalogHit[]>([])
+  const [lists, setLists] = createSignal<ListSummary[] | null>(null)
   const [airings, setAirings] = createSignal<CalendarEntry[]>([])
   const [now, setNow] = createSignal<Date | null>(null)
   const [airingsReady, setAiringsReady] = createSignal(false)
   const [busy, setBusy] = createSignal<ReadonlySet<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [searchOpened, setSearchOpened] = createSignal(false)
+  const [entries, setEntries] = createSignal<LibraryEntry[]>([])
+  let dialog: HTMLDialogElement | undefined
+  let libraryRequested = false
+
+  function openSearch() {
+    setSearchOpened(true)
+    dialog?.showModal()
+    loadLibrary()
+  }
+
+  function loadLibrary() {
+    if (libraryRequested) return
+    libraryRequested = true
+    getLibrary()
+      .then((library) => {
+        // Anything added while it loaded is already on the server's answer, or kept here.
+        setEntries((recent) => recent.reduce(upsert, library))
+      })
+      .catch(() => {
+        // Adding still works; titles just lack their "On your shelf" mark. Try again later.
+        libraryRequested = false
+      })
+  }
+
+  function showUpNext(fresh: UpNext) {
+    setContinuing(fresh.continueWatching)
+    setStarting(fresh.startWatching)
+    setUnfinished(fresh.unfinished ?? [])
+    setCounts(fresh.counts)
+  }
+
+  /** A title added from Search or the teaser: mark it on the shelf and refresh the rows. */
+  async function added(entry: LibraryEntry) {
+    setProblem(null)
+    setEntries((current) => upsert(current, entry))
+    try {
+      showUpNext(await getUpNext())
+    } catch {
+      // The add landed; the rows catch up on the next visit.
+    }
+  }
+
+  /** This month in numbers, in the viewer's time zone. A failure just leaves the strip out. */
+  async function loadStrip(current: Date) {
+    try {
+      const stats = await getStats({
+        data: {
+          year: current.getFullYear(),
+          month: current.getMonth() + 1,
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        },
+      })
+      setStrip(monthStrip(stats))
+    } catch {
+      setStrip([])
+    }
+  }
+
+  async function loadTeaser() {
+    try {
+      const discover = await getDiscover({ data: { section: 'new_shows' } })
+      setTeaser(discover.sections[0]?.items.slice(0, 10) ?? [])
+    } catch {
+      setTeaser([])
+    }
+  }
+
+  async function loadLists() {
+    try {
+      setLists(await getLists())
+    } catch {
+      setLists(null)
+    }
+  }
 
   onMount(async () => {
     const current = new Date()
     setNow(current)
     const today = localDayKey(current)
+    void loadStrip(current)
+    void loadTeaser()
+    void loadLists()
+    loadLibrary()
     try {
       setAirings(
         await getCalendar({
@@ -82,9 +185,12 @@ function Home() {
     return current ? airingBadge(entry, current) : null
   }
 
+  const chips = createMemo(() => countChips(counts()))
+
   const empty = () =>
     continuing().length === 0 &&
     starting().length === 0 &&
+    unfinished().length === 0 &&
     airingsReady() &&
     nextAirings().length === 0
 
@@ -135,9 +241,7 @@ function Home() {
     )
     if (match) setAirings((rows) => withWatched(rows, match, true))
     try {
-      const fresh = await getUpNext()
-      setContinuing(fresh.continueWatching)
-      setStarting(fresh.startWatching)
+      showUpNext(await getUpNext())
     } catch {
       // The write landed; the optimistic card stands until the next visit.
     } finally {
@@ -147,7 +251,7 @@ function Home() {
 
   return (
     <div class="min-h-[100dvh]">
-      <AppHeader />
+      <AppHeader onSearch={openSearch} />
       <main class="mx-auto max-w-6xl px-4 pb-16 md:px-8">
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
           Home
@@ -162,6 +266,41 @@ function Home() {
               {message()}
             </p>
           )}
+        </Show>
+
+        <Show when={strip().length > 0}>
+          <Link
+            to="/app/insights"
+            class="mt-6 flex items-center justify-between gap-4 rounded-[20px] bg-surface px-5 py-4 hover:text-accent"
+          >
+            <span class="min-w-0">
+              <span class="block text-sm text-muted">This month</span>
+              <span class="font-medium">{strip().join(' · ')}</span>
+            </span>
+            <span class="shrink-0 text-sm font-semibold text-accent">
+              Insights
+            </span>
+          </Link>
+        </Show>
+
+        <Show when={chips().length > 0}>
+          <nav
+            aria-label="Your shelf by status"
+            class="mt-4 flex flex-wrap gap-2"
+          >
+            <For each={chips()}>
+              {(chip) => (
+                <Link
+                  to="/app/library"
+                  search={{ status: chip.status }}
+                  class="rounded-full border border-line px-4 py-1.5 text-sm font-medium hover:bg-surface"
+                >
+                  {chip.label}{' '}
+                  <span class="text-muted tabular-nums">{chip.count}</span>
+                </Link>
+              )}
+            </For>
+          </nav>
         </Show>
 
         <Show when={recap()}>
@@ -228,8 +367,16 @@ function Home() {
           </Row>
         </Show>
 
+        <Show when={unfinished().length > 0}>
+          <Row title="Unfinished business">
+            <For each={unfinished()}>
+              {(entry) => <UnfinishedCard entry={entry} now={now()} />}
+            </For>
+          </Row>
+        </Show>
+
         <Show when={empty()}>
-          <div class="mx-auto mt-24 max-w-sm text-center">
+          <div class="mx-auto mt-16 max-w-sm text-center">
             <h2 class="font-display text-2xl font-medium">
               Add a show to see what’s next
             </h2>
@@ -237,16 +384,97 @@ function Home() {
               Shows you are watching, what you want to start, and what airs this
               week land here.
             </p>
-            <Link
-              to="/app/library"
-              search={{ search: true }}
-              class="mt-6 inline-block rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
-            >
-              Search
-            </Link>
+            <div class="mt-6 flex items-center justify-center gap-3">
+              <Link
+                to="/app/discover"
+                class="rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
+              >
+                Discover
+              </Link>
+              <button
+                type="button"
+                onClick={openSearch}
+                class="rounded-full border border-line px-6 py-3 font-semibold hover:bg-surface"
+              >
+                Search
+              </button>
+            </div>
           </div>
         </Show>
+
+        <Show when={teaser().length > 0}>
+          <DiscoverRow
+            section="new_shows"
+            title="New shows"
+            items={teaser()}
+            entries={entries()}
+            today={now() ? localDayKey(now() as Date) : null}
+            onAdded={(entry) => void added(entry)}
+            onProblem={setProblem}
+            action={
+              <Link
+                to="/app/discover"
+                class="text-sm font-medium text-accent hover:underline"
+              >
+                See Discover
+              </Link>
+            }
+          />
+        </Show>
+
+        <Show when={lists()}>
+          {(all) => (
+            <section class="mt-10" aria-labelledby="home-lists">
+              <h2
+                id="home-lists"
+                class="font-display text-2xl font-medium tracking-tight"
+              >
+                Lists
+              </h2>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <For each={all()}>
+                  {(list) => (
+                    <Link
+                      to="/app/lists/$id"
+                      params={{ id: list.id }}
+                      class="rounded-full bg-surface px-4 py-2 text-sm font-medium hover:text-accent"
+                    >
+                      {list.name}{' '}
+                      <span class="text-muted tabular-nums">
+                        {list.itemCount}
+                      </span>
+                    </Link>
+                  )}
+                </For>
+                <Link
+                  to="/app/lists"
+                  class="rounded-full border border-dashed border-line px-4 py-2 text-sm font-medium text-accent hover:bg-surface"
+                >
+                  New list
+                </Link>
+              </div>
+            </section>
+          )}
+        </Show>
       </main>
+
+      <dialog
+        ref={dialog}
+        aria-label="Search"
+        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
+        onClick={(e) => {
+          // A click on the backdrop closes it.
+          if (e.target === dialog) dialog.close()
+        }}
+      >
+        <Show when={searchOpened()}>
+          <SearchPanel
+            entries={entries()}
+            onAdded={(entry) => void added(entry)}
+            onClose={() => dialog?.close()}
+          />
+        </Show>
+      </dialog>
     </div>
   )
 }

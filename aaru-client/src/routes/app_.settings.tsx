@@ -325,6 +325,12 @@ function Settings() {
             What you watched and read, as a story you can share.
           </p>
           <div class="mt-3 flex flex-wrap gap-2">
+            <Link
+              to="/app/insights"
+              class="rounded-full border border-line px-4 py-2 text-sm font-medium text-accent hover:bg-surface"
+            >
+              Insights
+            </Link>
             <For each={recapShortcuts(new Date())}>
               {(period) => (
                 <Link

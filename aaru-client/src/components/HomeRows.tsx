@@ -4,8 +4,18 @@ import type { JSX } from 'solid-js'
 import { badge, metaLine, shortCode } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { kindOf } from '../lib/library/model'
-import { nextLine, remainingLabel, runtimeLabel } from '../lib/home/model'
-import type { ContinueEntry, StartEntry } from '../lib/home/model'
+import {
+  nextLine,
+  remainingLabel,
+  resumeLine,
+  runtimeLabel,
+  unfinishedLabel,
+} from '../lib/home/model'
+import type {
+  ContinueEntry,
+  StartEntry,
+  UnfinishedEntry,
+} from '../lib/home/model'
 import { Poster } from './Poster'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
@@ -205,6 +215,42 @@ export function StartCard(props: { entry: StartEntry }) {
       <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
       <Show when={runtimeLabel(e().runtimeMinutes)}>
         {(runtime) => <p class="text-xs text-muted">{runtime()}</p>}
+      </Show>
+    </Link>
+  )
+}
+
+/** Unfinished business: a dropped or long-paused title, why it is here, and where to resume. */
+export function UnfinishedCard(props: {
+  entry: UnfinishedEntry
+  now: Date | null
+}) {
+  const e = () => props.entry
+  const reason = () => {
+    const now = props.now
+    if (e().reason === 'dropped') return 'Dropped'
+    return now ? unfinishedLabel(e(), now) : null
+  }
+  return (
+    <Link
+      to="/app/title/$id"
+      params={{ id: e().libraryItemId }}
+      class="block w-32 shrink-0 snap-start md:w-36"
+    >
+      <div class="relative">
+        <Poster
+          url={e().title.posterUrl}
+          kind={kindOf(e().title.type, e().title.isAnime)}
+        />
+        <Show when={reason()}>
+          {(text) => (
+            <span class={`absolute top-2 left-2 ${chip}`}>{text()}</span>
+          )}
+        </Show>
+      </div>
+      <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
+      <Show when={resumeLine(e())}>
+        {(line) => <p class="text-xs text-muted">{line()}</p>}
       </Show>
     </Link>
   )

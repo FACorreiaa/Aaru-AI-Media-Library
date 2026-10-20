@@ -2,9 +2,9 @@ import { For, Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { addToLibrary, searchCatalog } from '../lib/library/server'
 import {
   KINDS,
-  STATUSES,
   idKeys,
   isOnShelf,
+  kindName,
   kindOf,
 } from '../lib/library/model'
 import type {
@@ -15,16 +15,27 @@ import type {
 } from '../lib/library/model'
 import { Poster } from './Poster'
 import { AddToListDialog } from './AddToListDialog'
+import { AddControl } from './AddControl'
 
-/** APP-004 on the web: type-scoped search, debounced, with add and an initial status. */
+/** All searches films, shows and anime together; books are never in it, and the last row of
+ * an All search offers them instead. */
+type Scope = MediaKind | 'all'
+
+const SCOPES: Array<{ kind: Scope; label: string }> = [
+  { kind: 'all', label: 'All' },
+  ...KINDS.map((k) => ({ kind: k.kind, label: k.label })),
+]
+
+/** APP-004 on the web: scoped search, debounced, with add and an initial status. */
 export function SearchPanel(props: {
   entries: LibraryEntry[]
   onAdded: (entry: LibraryEntry) => void
   onClose: () => void
 }) {
   const [query, setQuery] = createSignal('')
-  const [kind, setKind] = createSignal<MediaKind>('film')
+  const [kind, setKind] = createSignal<Scope>('all')
   const [hits, setHits] = createSignal<CatalogHit[]>([])
+  const [incomplete, setIncomplete] = createSignal(false)
   const [searching, setSearching] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
   // Hits being added right now: a second click waits instead of adding twice.
@@ -34,10 +45,15 @@ export function SearchPanel(props: {
 
   createEffect(() => {
     const text = query().trim()
-    const scope = KINDS.find((k) => k.kind === kind())?.search ?? 'movie'
+    const current = kind()
+    const scope =
+      current === 'all'
+        ? 'all'
+        : (KINDS.find((k) => k.kind === current)?.search ?? 'movie')
     const ticket = ++latest
     if (text.length < 2) {
       setHits([])
+      setIncomplete(false)
       setProblem(null)
       return
     }
@@ -47,12 +63,14 @@ export function SearchPanel(props: {
       try {
         const results = await searchCatalog({ data: { q: text, type: scope } })
         if (ticket === latest) {
-          setHits(results)
+          setHits(results.items)
+          setIncomplete(results.incomplete)
           setProblem(null)
         }
       } catch (error) {
         if (ticket === latest) {
           setHits([])
+          setIncomplete(false)
           setProblem(error instanceof Error ? error.message : 'Search failed.')
         }
       } finally {
@@ -119,15 +137,19 @@ export function SearchPanel(props: {
           onInput={(e) => setQuery(e.currentTarget.value)}
           class="min-h-12 w-full rounded-[14px] border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
         />
-        <div class="flex gap-2" role="tablist" aria-label="Type">
-          <For each={KINDS}>
+        <div
+          class="-mx-5 flex gap-2 overflow-x-auto px-5"
+          role="tablist"
+          aria-label="Type"
+        >
+          <For each={SCOPES}>
             {(option) => (
               <button
                 type="button"
                 role="tab"
                 aria-selected={kind() === option.kind}
                 onClick={() => setKind(option.kind)}
-                class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+                class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
                 classList={{
                   'bg-ink text-paper': kind() === option.kind,
                   'border border-line text-ink hover:bg-surface':
@@ -145,6 +167,9 @@ export function SearchPanel(props: {
               {message()}
             </p>
           )}
+        </Show>
+        <Show when={incomplete() && !searching()}>
+          <p class="text-sm text-muted">Some results are missing right now.</p>
         </Show>
       </div>
       <ul class="mt-3 flex-1 overflow-y-auto px-5 pb-5">
@@ -176,7 +201,9 @@ export function SearchPanel(props: {
                 <div class="min-w-0 flex-1">
                   <p class="line-clamp-2 font-medium">{hit.title}</p>
                   <p class="truncate text-sm text-muted">
-                    {[hit.year, hit.byline].filter(Boolean).join(' · ')}
+                    {[kindName(kindOfHit), hit.year, hit.byline]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </p>
                 </div>
                 <button
@@ -196,46 +223,30 @@ export function SearchPanel(props: {
                     </span>
                   }
                 >
-                  <Show
-                    when={!adding().has(keyOf(hit))}
-                    fallback={<span class="text-sm text-muted">Adding…</span>}
-                  >
-                    <div class="flex items-center overflow-hidden rounded-full border border-ink/25">
-                      <button
-                        type="button"
-                        class="px-4 py-1.5 text-sm font-semibold hover:bg-surface"
-                        onClick={() => add(hit, 'wishlist')}
-                      >
-                        Add
-                      </button>
-                      <label class="sr-only" for={`status-${keyOf(hit)}`}>
-                        Add with status
-                      </label>
-                      <select
-                        id={`status-${keyOf(hit)}`}
-                        class="border-0 border-l border-ink/25 bg-transparent py-1.5 pr-7 pl-2 text-sm text-muted focus:ring-0"
-                        onChange={(e) => {
-                          const status = e.currentTarget.value
-                          e.currentTarget.value = ''
-                          if (status) void add(hit, status as LibraryStatus)
-                        }}
-                      >
-                        <option value="" disabled selected>
-                          As…
-                        </option>
-                        <For
-                          each={STATUSES.filter((s) => s.status !== 'dropped')}
-                        >
-                          {(s) => <option value={s.status}>{s.label}</option>}
-                        </For>
-                      </select>
-                    </div>
-                  </Show>
+                  <AddControl
+                    kind={kindOfHit}
+                    id={keyOf(hit)}
+                    busy={adding().has(keyOf(hit))}
+                    onAdd={(status) => void add(hit, status)}
+                  />
                 </Show>
               </li>
             )
           }}
         </For>
+        <Show
+          when={kind() === 'all' && !searching() && query().trim().length >= 2}
+        >
+          <li class="py-3">
+            <button
+              type="button"
+              onClick={() => setKind('book')}
+              class="w-full rounded-[14px] px-3 py-2 text-left text-sm font-medium text-accent hover:bg-surface"
+            >
+              Search Books for “{query().trim()}”
+            </button>
+          </li>
+        </Show>
       </ul>
       <Show when={listTarget()}>
         {(hit) => (

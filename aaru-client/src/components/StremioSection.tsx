@@ -60,7 +60,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
     <section class="mt-10 rounded-[20px] bg-surface p-5">
       <h2 class="font-display text-xl font-medium">Stremio</h2>
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
-        Your Continue watching, Next 7 days and Wishlist appear as rows in
+        Your Continue watching, Next 7 days and Plan to watch appear as rows in
         Stremio. Finishing an episode there ticks it here, and every change
         shows in your history with an undo. Works with Stremio Web and Stremio 5
         on desktop.
