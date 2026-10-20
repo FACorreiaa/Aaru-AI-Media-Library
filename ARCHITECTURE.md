@@ -441,7 +441,9 @@ POST /imports/*  →  parse the file (bounded, 5 MB) into import_rows; the file 
                     3 attempts with backoff, then failed with an errorSummary)
                       1. map each row to MediaRef (exact ids → title+year+type; match_aliases later)
                       2. hydrate Title (IDs + TMDB/Open Library)
-                      3. decide each row: create / update (fill-empty) / skip / unmatched
+                      3. merge rows that matched one title (anime seasons tick their TMDB
+                         season), then decide: create / update (fill-empty, status forward
+                         only, never past one the user chose) / skip / unmatched
                       4. job → planned (nothing written yet)
 POST /imports/{id}/apply  →  decide again against the current library, then write every
                     create, update and list membership as ONE journaled batch action, so the

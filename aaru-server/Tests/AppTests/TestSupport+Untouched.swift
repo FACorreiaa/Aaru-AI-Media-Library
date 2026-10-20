@@ -54,6 +54,14 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func mapping(mal _: String) async throws -> AnimeMapping? {
+        throw Touched()
+    }
+
+    func statusSetByHand(itemID _: LibraryItemID) async throws -> Bool {
+        throw Touched()
+    }
+
     func apply(_: LibraryOp, userID _: UserID, caller _: Caller, kind _: String, summary _: String) async throws
         -> ActionRecord
     {

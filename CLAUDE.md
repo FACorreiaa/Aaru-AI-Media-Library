@@ -216,6 +216,12 @@ Scrobbles are not in this order either: they are live events, applied as they ar
 
 Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name.
 
+Merging sources (owner, 2026-10-20): an import fills empty fields and adds missing ticks, and may
+move a status forward (`wishlist` → `in_progress` → `finished`). It never moves one backward, never
+out of `dropped`, and never past a status the user chose themselves (`library_items.status_by_hand`).
+Anime from MAL or AniList resolves to the TMDB show through `anime_mappings` (by AniList id, else MAL
+id); entries for later seasons tick the TMDB season they map to and merge into one row.
+
 ## Architecture
 
 Read `ARCHITECTURE.md` before changing boundaries between `AaruCore`, `Server`, and apps.
