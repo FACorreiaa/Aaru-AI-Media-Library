@@ -10,13 +10,18 @@ import type { TitleDetail } from './model'
 
 const itemId = z.string().uuid()
 
-/** The library item (with its watched episodes) and the title it points at. */
+/** The library item (with its watched episodes) and the title it points at. A title that
+ * fails to load comes back as `titleError`, so the page can say so and offer a retry. */
 export const getTitlePage = createServerFn({ method: 'GET' })
   .validator(z.object({ id: itemId }))
   .handler(
     async ({
       data,
-    }): Promise<{ entry: LibraryEntry; title: TitleDetail | null }> => {
+    }): Promise<{
+      entry: LibraryEntry
+      title: TitleDetail | null
+      titleError: string | null
+    }> => {
       const client = api(sessionToken())
       const item = await client.GET('/v1/library/items/{id}', {
         params: { path: { id: data.id } },
@@ -29,7 +34,14 @@ export const getTitlePage = createServerFn({ method: 'GET' })
       const title = await client.GET('/v1/titles/{id}', {
         params: { path: { id: item.data.title.id } },
       })
-      return { entry: item.data, title: title.data ?? null }
+      if (title.response.status === 401) sessionRejected()
+      return {
+        entry: item.data,
+        title: title.data ?? null,
+        titleError: title.data
+          ? null
+          : errorMessage(title.error, 'Episodes could not be loaded.'),
+      }
     },
   )
 

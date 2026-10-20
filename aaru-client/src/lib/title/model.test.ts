@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { airedKeys, episodeKey, nextRating, orderedSeasons } from './model'
+import {
+  airedKeys,
+  cellState,
+  episodeKey,
+  neighbours,
+  nextEpisode,
+  nextRating,
+  orderedSeasons,
+} from './model'
 import type { TitleDetail } from './model'
 
 const title: TitleDetail = {
@@ -9,13 +17,23 @@ const title: TitleDetail = {
   isAnime: false,
   ids: {},
   seasons: [
-    { number: 0, episodes: [{ season: 0, number: 1 }] },
+    { number: 0, episodes: [{ season: 0, number: 1, airTimeKnown: false }] },
     {
       number: 1,
       episodes: [
-        { season: 1, number: 1, airsAt: '2026-01-01T00:00:00Z' },
-        { season: 1, number: 2, airsAt: '2099-01-01T00:00:00Z' },
-        { season: 1, number: 3 },
+        {
+          season: 1,
+          number: 1,
+          airTimeKnown: false,
+          airsAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          season: 1,
+          number: 2,
+          airTimeKnown: false,
+          airsAt: '2099-01-01T00:00:00Z',
+        },
+        { season: 1, number: 3, airTimeKnown: false },
       ],
     },
   ],
@@ -36,5 +54,33 @@ describe('title model', () => {
   it('rates in two-point stars, and the same star clears', () => {
     expect(nextRating(undefined, 4)).toBe(8)
     expect(nextRating(8, 4)).toBeNull()
+  })
+
+  const now = new Date('2026-10-15T00:00:00Z')
+
+  it('picks up at the first aired, unwatched episode, never a special', () => {
+    expect(nextEpisode(title, new Set(), now)?.number).toBe(1)
+    expect(nextEpisode(title, new Set([episodeKey(1, 1)]), now)?.number).toBe(3)
+    const all = new Set([episodeKey(1, 1), episodeKey(1, 3)])
+    expect(nextEpisode(title, all, now)).toBeUndefined()
+  })
+
+  it('colours cells watched, next, aired or unaired', () => {
+    const [first, unaired, undated] = title.seasons![1].episodes
+    const watched = new Set([episodeKey(1, 1)])
+    const next = nextEpisode(title, watched, now)
+    expect(cellState(first, watched, next, now)).toBe('watched')
+    expect(cellState(undated, watched, next, now)).toBe('next')
+    expect(cellState(unaired, watched, next, now)).toBe('unaired')
+    expect(
+      cellState(undated, new Set(), nextEpisode(title, new Set(), now), now),
+    ).toBe('aired')
+  })
+
+  it('steps through episodes in viewing order, across seasons into specials', () => {
+    expect(neighbours(title, 1, 1).previous).toBeUndefined()
+    expect(neighbours(title, 1, 2).next?.number).toBe(3)
+    expect(neighbours(title, 1, 3).next?.season).toBe(0)
+    expect(neighbours(title, 9, 9)).toEqual({})
   })
 })

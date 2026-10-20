@@ -162,7 +162,8 @@ struct PostgresImportJobStore: ImportJobStore {
     }
 }
 
-private extension SQLDatabase {
+extension SQLDatabase {
+    /// Runs `body` in one transaction when the database supports it.
     func transaction<T: Sendable>(_ body: @Sendable @escaping (any SQLDatabase) async throws -> T) async throws -> T {
         guard let database = self as? any Database else { return try await body(self) }
         return try await database.transaction { try await body(sqlDatabase($0)) }

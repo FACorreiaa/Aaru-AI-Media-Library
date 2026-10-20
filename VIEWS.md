@@ -21,7 +21,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
 | Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
-| Title room | `TitleCard`, `SeasonMap` (+ friends watching in 4) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
+| Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
 | Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 |
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
 | Catch-up calendar | `CalendarMonth` + agenda | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7 |
@@ -31,7 +31,8 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Mac companion | sidebar + inspector over the same components | same `/v1` | 2 · M7 |
 | Web (`aaru-client`) | same components as SolidJS views | same `/v1` | 2 · WEB-001 |
 | Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
-| Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3) | 2–3 |
+| Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3); Stremio `player` events already fill `watch_events` (2026-10-20) | 2–3 |
+| Connected apps (Settings) | none — a Settings section: connect, one-time install links, live links with last use, revoke | `GET`/`POST /v1/agent/tokens`, `DELETE /v1/agent/tokens/{id}` | 3 · SCR-003 (owner un-deferred 2026-10-19) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
 | Profile and stats | `StatsPanel`, `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
@@ -56,7 +57,7 @@ refuses and substitutes the nearest catalog piece.
 | Component | Job | Props (shape, not final signature) |
 | --- | --- | --- |
 | `TitleCard` | Add / status / owned / rating | `titleId` or `MediaRef`, `status`, `isOwned`, `rating` |
-| `SeasonMap` | Episode heat + bulk tick | `libraryItemId`, `season`, watched set, `nextEpisode` |
+| `SeasonMap` | Episode heat + bulk tick | `libraryItemId`, seasons (episode number, name, still, air time), watched set, `nextEpisode` |
 | `PlanCard` | Preview of a mutation | `planId`, summary counts, per-op diff, autonomy setting |
 | `JobLedger` | Import or bulk progress | `importJobId`, step rows, `state`, `stats`, unmatched count |
 | `TonightStrip` | 1–3 next actions | ordered `libraryItemId` + reason + est. minutes |

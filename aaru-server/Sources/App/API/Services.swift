@@ -1,3 +1,5 @@
+import Foundation
+
 /// Business services the handlers call. Built once at boot; tests build them over fakes.
 struct Services: Sendable {
     var auth: AuthService
@@ -10,13 +12,16 @@ struct Services: Sendable {
     var stats: StatsService
     var imports: ImportService
     var traktConnect: TraktConnectService
+    var agentTokens: AgentTokenService
+    var scrobble: ScrobbleService
 
     /// `trakt` is nil when Trakt is not configured; connect then answers 503.
     static func make(
         stores: Stores,
         catalogs: CatalogProviders,
         auth: AuthService,
-        trakt: TraktAPI? = nil
+        trakt: TraktAPI? = nil,
+        publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!
     ) -> Services {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
         let resolver = TitleResolver(stores: stores, catalogs: catalogs)
@@ -38,7 +43,9 @@ struct Services: Sendable {
                 trakt: trakt.map { TraktImport(connect: traktConnect(stores, $0), importer: TraktImporter(api: $0)) },
                 anilistLists: catalogs.anilist as? any AniListListReading
             ),
-            traktConnect: traktConnect(stores, trakt)
+            traktConnect: traktConnect(stores, trakt),
+            agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
+            scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver)
         )
     }
 

@@ -78,6 +78,12 @@ protocol TitleStore: Sendable {
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode]
     /// The titles with these ids, in the order given; unknown ids are skipped.
     func titles(ids: [TitleID]) async throws -> [Title]
+    /// Shows someone tracks (wishlist or in progress) whose episodes were never loaded or are
+    /// past their staleness window, never-loaded first. Shows attempted since `retryAfter`
+    /// are skipped so a failing provider is not hammered.
+    func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID]
+    /// Records an episode refresh attempt, successful or not.
+    func markEpisodesAttempted(_ id: TitleID, at date: Date) async throws
 }
 
 extension TitleStore {
@@ -105,6 +111,8 @@ struct AnimeMapping: Sendable, Equatable {
 protocol AnimeMappingStore: Sendable {
     func mapping(anilist: String) async throws -> AnimeMapping?
     func upsert(_ mapping: AnimeMapping) async throws
+    /// Upserts in batches inside one transaction; re-running with the same rows changes nothing.
+    func upsertMany(_ mappings: [AnimeMapping]) async throws
 }
 
 /// The library and its journal. Every write goes through `apply`, which runs the op,
@@ -114,7 +122,7 @@ protocol LibraryStore: Sendable {
     /// Throws `StoreConflict` on a duplicate (user, title) and `AppError.notFound` when an
     /// op names an item the user does not own.
     @discardableResult
-    func apply(_ op: LibraryOp, userID: UserID, actor: Actor, kind: String, summary: String) async throws
+    func apply(_ op: LibraryOp, userID: UserID, caller: Caller, kind: String, summary: String) async throws
         -> ActionRecord
     func item(id: LibraryItemID, userID: UserID) async throws -> LibraryItem?
     func item(userID: UserID, titleID: TitleID) async throws -> LibraryItem?
@@ -150,6 +158,15 @@ struct CatalogKey: Hashable, Sendable {
     var type: MediaType
     var provider: Provider
     var id: String
+}
+
+extension LibraryStore {
+    @discardableResult
+    func apply(_ op: LibraryOp, userID: UserID, actor: Actor, kind: String, summary: String) async throws
+        -> ActionRecord
+    {
+        try await apply(op, userID: userID, caller: Caller(actor: actor), kind: kind, summary: summary)
+    }
 }
 
 /// List reads. List writes are `LibraryOp`s through `LibraryStore.apply`.
@@ -268,6 +285,39 @@ protocol PushStore: Sendable {
 }
 
 /// Everything handlers may touch, injected once at boot.
+/// What an agent token may do (OUT-001). A token never has more than a signed-in session.
+enum AgentScope: String, Codable, Sendable, CaseIterable {
+    case libraryRead = "library:read"
+    case libraryWrite = "library:write"
+    case scrobbleWrite = "scrobble:write"
+}
+
+/// Which outside caller a token is for. Only Stremio exists until OUT-004.
+enum AgentTokenKind: String, Codable, Sendable {
+    case stremio
+}
+
+/// One agent token as its owner sees it. The secret is never stored, only its SHA-256.
+struct AgentToken: Sendable, Equatable {
+    var id: UUID
+    var name: String
+    var kind: AgentTokenKind
+    var scopes: Set<AgentScope>
+    var createdAt: Date
+    var lastUsedAt: Date?
+}
+
+protocol AgentTokenStore: Sendable {
+    func create(_ token: AgentToken, tokenHash: String, userID: UserID) async throws
+    /// Tokens not revoked, newest first.
+    func tokens(userID: UserID) async throws -> [AgentToken]
+    /// True when the user's token existed and was live.
+    func revoke(id: UUID, userID: UserID, now: Date) async throws -> Bool
+    /// The live token with this hash and its owner; nil when unknown, revoked or expired.
+    func token(forHash hash: String, now: Date) async throws -> (token: AgentToken, userID: UserID)?
+    func touch(id: UUID, at date: Date) async throws
+}
+
 struct Stores: Sendable {
     var health: any DatabaseHealth
     var users: any UserStore
@@ -283,4 +333,6 @@ struct Stores: Sendable {
     var importJobs: any ImportJobStore
     var trakt: any TraktStore
     var push: any PushStore
+    var agentTokens: any AgentTokenStore
+    var watchEvents: any WatchEventStore
 }

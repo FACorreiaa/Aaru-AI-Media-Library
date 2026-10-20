@@ -30,7 +30,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | User import — primary | Trakt OAuth |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
-| Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs only) |
+| Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | Realtime (P6) | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server` |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
 | Push (P4) | APNSwift, per-device environment |
@@ -172,13 +172,15 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 
 ## Later phases (after the P2 gate, see `BACKLOG.md`)
 
-- P3 Tracking: scrobble ingest, Plex/Jellyfin webhooks, Stremio addon (catalogs only), one-way push to Trakt/MAL/AniList
+- P3 Tracking: scrobble ingest, Plex/Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events), one-way push to Trakt/MAL/AniList
 - P4 Social: profiles, friends, blocks, invites, friend activity and "Today" stories, push, shared lists
 - P5 Gamification: points ledger, levels, streaks, badges, friends-only leaderboard, stats
 - P6 Realtime: WebSocket gateway, libsignal DMs, watch-together rooms, SharePlay
 - P7 Agent surfaces (M13/M14)
 
 Do not write code for a later phase before the P2 gate, and do not add empty abstractions for it.
+Owner's exceptions are recorded in `BACKLOG.md` decisions (Recap 2026-10-16; Stremio tokens,
+scrobble service and addon 2026-10-19).
 
 ## Out of scope (do not add unless asked)
 

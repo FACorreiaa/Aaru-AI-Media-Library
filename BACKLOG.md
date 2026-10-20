@@ -41,6 +41,27 @@ library layer stay separate, external IDs stored whenever known, no second backe
   recommendations engine; nothing personalised ("because you watched…") is allowed under this
   item. Posters stay hotlinked catalog URLs.
 
+## Decisions recorded 2026-10-19
+
+- **Episodes and Stremio are built before the P2 gate**, by the owner's call, with 0 strangers
+  (flagged; the owner chose). Episodes first: stills and synopses on title detail, real anime
+  episode names (CAT-010), a scheduled show refresh that also loads imported shows (JOB-001's
+  second kind), and the title room (`SeasonMap` + an episode sheet) on iOS, Mac and the web.
+- **Un-deferred for Stremio:** OUT-001 (minimal: `kind = stremio` tokens only, no AG-001 tool
+  layer, no OAuth), OUT-002 (minimal: the token named on journal rows), SCR-001 as a service
+  only, and SCR-003. `POST /v1/scrobble/*` HTTP routes wait for SCR-002 or the first bridge.
+- **Stremio sends playback events now.** stremio-core PR #1070 (merged 2026-10-02, core-web
+  v0.64) lets an addon declare `player` and `library` resources and receive plain GETs:
+  `player/{type}/{videoId}/action=start|pause|stop&currentTime=ms&duration=ms.json` and
+  `library/{type}/{metaId}/action=libraryAdd|libraryRemove|watched|unwatched[&videoId=…].json`.
+  Confirmed on Stremio Web and Stremio 5 desktop; Android and iOS unverified. This closes
+  SCR-003's OPEN item: the addon serves catalogs plus `player` and `library` events. No
+  subtitles-request inference, no Trakt re-read (that is two-way sync), and **no `stream`
+  resource, ever**.
+- The addon lives at `/stremio/{token}/…` outside `/v1` (the protocol fixes the paths). Its
+  token has `library:read` + `scrobble:write`; `library:write` is opt-in and only admits
+  `unwatched` and `libraryAdd`. `libraryRemove` is always ignored: Aaru is the source of truth.
+
 ## Decisions recorded 2026-10-16
 
 - **The Recap (GAM-006a) is built before the P2 gate**, by the owner's call, with 0 strangers.
@@ -536,6 +557,14 @@ table, recorded in PRV-001). Catalog data only: no user rows, no scraping. No ke
 **Done when:** a mapped AniList id from the dataset resolves to its TMDB show in production,
 and re-running the load is idempotent.
 
+**Progress 2026-10-20:** built. `aaru --anime-mappings <path|url|default>` loads Fribb's
+`anime-list-full.json` in one transaction (20,874 AniList rows, 6,958 with a TMDB show on
+2026-10-20); re-running changes nothing. Only TMDB TV ids are kept (films would attach to the
+wrong show). anime-offline-database stays out until Fribb's gaps are measured (its ODbL
+share-alike is a real duty). Unmapped anime now get episode names from AniList's
+`streamingEpisodes` titles. Still to do: the monthly CronJob in the infra repo, and the first
+production load.
+
 ---
 
 ## P1 · M4 — Library
@@ -972,6 +1001,12 @@ worker's job runnable again; 3 attempts with 30 s/60 s backoff, then `failed` wi
 Both done-when conditions are tests. Generalise when a second job kind (show refresh, journal
 pruning) arrives.
 
+**Progress 2026-10-20:** show refresh built as a periodic loop (`CatalogRefreshService`), not as
+`import_jobs` rows: it has no payload or owner, so the hydration timestamps are the queue. Every
+5 minutes it refreshes up to 40 tracked shows, never-loaded first (imported shows land here), then
+shows past their CAT-006 window; a failed show waits an hour. Calendar and Up Next still load up to
+10 never-loaded shows per request so a first view after an import is not empty.
+
 ### IMP-001 · Import job contract · M
 **Needs:** JOB-001.
 `GET /v1/imports`, `GET /v1/imports/{id}`. Every importer reports
@@ -1334,6 +1369,15 @@ Activity via push (needs SOC-005).
 **Done when:** a start → pause → stop at 85% produces one watched episode and one journal row,
 a duplicate stop is a no-op, and a token without `scrobble:write` gets 403.
 
+**Progress 2026-10-20 (service only):** `ScrobbleService` + `watch_events` built; Stremio's
+`player` events are its first caller (SCR-003), and `POST /v1/scrobble/*` waits for SCR-002.
+One open session per user, source and item; the longest non-zero duration wins, so Stremio's
+first `start` with duration 0 still counts. `stop` at ≥ 80% ticks the episode (or finishes the
+movie) through `LibraryService` as the token's caller; already watched, short of 80%, unknown
+duration, or a second `stop` within 10 minutes writes nothing. A title not in the library is
+added (in progress / finished) and then ticked: two journal rows, not one. Unknown ids are kept
+as unmatched rows with no library write. The 403 condition lives in the Stremio adapter.
+
 ### SCR-002 · Plex and Jellyfin webhooks · M
 **Needs:** SCR-001.
 `POST /v1/scrobble/hooks/plex/{token}` (multipart JSON; `media.play`, `media.pause`,
@@ -1346,18 +1390,49 @@ test, and an unknown guid lands as an unmatched scrobble the user can resolve.
 
 ### SCR-003 · Stremio addon · L
 **Needs:** UPN-001, OUT-001. Promotes MOAT-001.
-Served by `aaru-server` under `/stremio/{token}/` (manifest, `catalog`, `meta`), not a second
-service. Catalogs: Watchlist, Continue Watching, This week (CAL-001). Configure page in
-`aaru-client` mints a read-scoped token and shows the install URL. **No `stream` resource,
-ever** — Aaru does not touch stream sources.
+Served by `aaru-server` under `/stremio/{token}/` (manifest, `catalog`, `meta`, `player`,
+`library`), not a second service. Catalogs: Continue watching, Next 7 days (CAL-001), Wishlist.
+Settings in `aaru-client` and the Apple app mint a `kind = stremio` token (`library:read` +
+`scrobble:write`, opt-in `library:write`) and show the install URL. `player` events go to the
+SCR-001 service; `library` `watched` marks tick; `libraryRemove` is ignored. **No `stream`
+resource, ever** — Aaru does not touch stream sources.
 
 **Done when:** installing the addon in Stremio shows the user's Continue Watching catalog, the
 manifest declares no `stream` resource, and revoking the token empties the catalogs.
 
-**OPEN:** scrobbling from Stremio. Addons receive no playback events; Simkl-style inference
-from `meta` requests marks "watched" on open, which is wrong more often than right.
-Recommendation: catalogs only for now. Do **not** route Stremio → Trakt → Aaru by re-reading
-Trakt — that is two-way sync. Revisit after SCR-001 ships.
+**Progress 2026-10-20:** server built (`Sources/App/Stremio`). One hand-written `/stremio/**`
+route: CORS on every answer (errors too), `Cache-Control: private`, 120 requests a minute per
+token. Manifest `com.aaruapp.library`: `catalog`, `meta` (`aaru:` only), `player` and `library`
+(`tt`, `aaru:`); catalogs Continue watching, Next 7 days, and a movie and a series Wishlist
+(`skip`, up to 2,000). Items use the IMDb id when known so Cinemeta and stream addons recognise
+them, else `aaru:{titleId}` with Aaru's own `meta` and `videos`. Events follow the 2026-10-19
+decision; a missing `scrobble:write` is 403. A revoked token gets a 404 manifest and empty
+catalogs. Route and parser tests cover each done-when line. Not yet tried in a real Stremio
+client.
+
+**Progress 2026-10-20 (Settings):** web (`components/StremioSection.tsx`) and Apple
+(`Settings/StremioSection.swift`) connect, show the install links once, list links with last
+use, and revoke. The catalog is named Wishlist (id `aaru-wishlist`), the domain word.
+
+**Manual check 2026-10-20 (Stremio Web, local server):** install from the web install link; all
+four rows render (the board loads rows lazily, as they scroll into view); an `aaru:` show opens
+with Aaru's own `meta` and episode list; "Mark as watched" sends `library … action=watched`
+for both `aaru:` and `tt` ids and journals one "Stremio: …" action; "Mark as non-watched"
+unticks (with `library:write`); "Mark rest as watched" sends every episode id in one request
+and journals one action for the ones that changed; after revoke and a reload the rows are
+empty. Chrome asks for local-network access before an HTTPS page may call `127.0.0.1`, so
+local testing needs that permission. Not checked: `player` events (playing needs a stream
+addon and Stremio's streaming server) and Stremio 5 desktop (needs the deployed HTTPS API).
+Aaru's ticks do not show as watched in Stremio; nothing writes Stremio's own watched state.
+
+Traefik on `maat` keeps `RequestPath` in its JSON access log and Alloy ships it to Grafana
+Cloud, so the token would leave the cluster; infra PR LuminaVault/LuminaVaultInfra#362 masks
+it before remote write. Ship that before anyone connects Stremio. Traefik's security headers
+leave CORS alone.
+
+**Resolved 2026-10-19:** Stremio core 0.64 sends `player` and `library` events to addons
+that declare them (see the decisions above). Do **not** route Stremio → Trakt → Aaru by
+re-reading Trakt — that is two-way sync.
 
 ### SCR-004 · Push history to Trakt · M
 **Needs:** IMP-002, SCR-001. Promotes MOAT-003.
@@ -1779,6 +1854,14 @@ the central rate limiter per X-002.
 refused on the next call; deleting the account deletes its tokens; and the secret is
 unrecoverable from the database.
 
+**Progress 2026-10-20 (minimal, for Stremio):** server built. `agent_tokens` adds a `kind`
+(`stremio` only until OUT-004) so Settings can list Stremio links; `imports:write` is not
+mintable yet. Secrets are `aaru_st_` + 32 random bytes, stored as SHA-256; `last_used_at` is
+written at most hourly; 120 requests per token per minute. `POST` answers the Stremio manifest,
+`stremio://` and Stremio Web install links (`PUBLIC_BASE_URL`, default
+`https://api.aaruapp.com`). Request logs redact `/stremio/<token>/` and the Trakt callback's
+query. All done-when conditions are server tests; the Settings UI comes with SCR-003.
+
 ### OUT-002 · Action provenance for external callers · S
 **Needs:** AUD-001, OUT-001.
 `actions.actor` gains `external_agent`; `actions` gains a nullable `agentTokenId`. The undo
@@ -1786,6 +1869,11 @@ ribbon shows which agent made the write. Revoking a token leaves its history rea
 
 **Done when:** a write made over MCP produces one journal row naming its token, the ribbon
 renders that name, and revoking the token does not alter or hide the row.
+
+**Progress 2026-10-20 (minimal):** built. `actions.agent_token_id` (set null on delete); writes
+take a `Caller` (`.user` by default, `.agent(token)` for outside callers) so the row is
+`external_agent` and the summary starts with the token's name ("Stremio: marked S1E2 of X
+watched"). `GET /v1/actions` returns `agentName`, still readable after revoke. Undo is unchanged.
 
 ### OUT-003 · App Intents and Shortcuts · M
 **Needs:** AG-002, APP-003.
@@ -1833,6 +1921,7 @@ they are now scheduled. IDs stay so history reads.
 
 ### MOAT-001 · Stremio addon exposing an Aaru library · promoted
 Now **SCR-003** (P3). Catalogs only, token in the addon URL, no `stream` resource.
+Built 2026-10-20 ahead of the gate (owner's call), with `player`/`library` events; see SCR-003.
 
 ### MOAT-002 · Watch-state write-back from a player · promoted
 Now **SCR-001** + **SCR-002** (P3). It is not two-way sync: a player *sends* a watch event into

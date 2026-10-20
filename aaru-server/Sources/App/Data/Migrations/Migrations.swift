@@ -22,6 +22,10 @@ let allMigrations: [any Migration] = [
     AddGoogleProvider(),
     AddTitleArtwork(),
     AddEpisodeWatchDateKnown(),
+    AddEpisodeDetail(),
+    CreateAgentTokens(),
+    AddActionAgentToken(),
+    CreateWatchEvents(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

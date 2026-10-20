@@ -146,12 +146,6 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func apply(_: LibraryOp, userID _: UserID, actor _: Actor, kind _: String, summary _: String) async throws
-        -> ActionRecord
-    {
-        throw Touched()
-    }
-
     func item(id _: LibraryItemID, userID _: UserID) async throws -> LibraryItem? {
         throw Touched()
     }
@@ -353,7 +347,9 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         stats: untouched,
         importJobs: untouched,
         trakt: untouched,
-        push: untouched
+        push: untouched,
+        agentTokens: untouched,
+        watchEvents: untouched
     )
 }
 

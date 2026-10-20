@@ -131,14 +131,16 @@ struct PostgresTitleStore: TitleStore {
             try await sql.raw("""
             INSERT INTO show_episodes
                 (id, title_id, season, episode, name, overview, airs_at, airs_at_exact, runtime_minutes,
-                 tmdb_episode_id)
+                 tmdb_episode_id, still_url)
             VALUES (\(bind: UUID()), \(bind: id.rawValue), \(bind: episode.season), \(bind: episode.episode),
                     \(bind: episode.name), \(bind: episode.overview), \(bind: episode.airsAt),
-                    \(bind: episode.airTimeKnown), \(bind: episode.runtimeMinutes), \(bind: episode.tmdbEpisodeID))
+                    \(bind: episode.airTimeKnown), \(bind: episode.runtimeMinutes), \(bind: episode.tmdbEpisodeID),
+                    \(bind: episode.stillURL?.absoluteString))
             ON CONFLICT (title_id, season, episode) DO UPDATE SET
                 name = EXCLUDED.name, overview = EXCLUDED.overview,
                 airs_at = EXCLUDED.airs_at, airs_at_exact = EXCLUDED.airs_at_exact,
-                runtime_minutes = EXCLUDED.runtime_minutes, tmdb_episode_id = EXCLUDED.tmdb_episode_id
+                runtime_minutes = EXCLUDED.runtime_minutes, tmdb_episode_id = EXCLUDED.tmdb_episode_id,
+                still_url = EXCLUDED.still_url
             """).run()
         }
         let status = fresh.status
@@ -165,6 +167,36 @@ struct PostgresTitleStore: TitleStore {
         return ids.compactMap { byID[$0] }
     }
 
+    func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID] {
+        struct Row: Decodable { let id: UUID }
+        let airingStale = now.addingTimeInterval(-CatalogService.airingStaleness)
+        let dormantStale = now.addingTimeInterval(-CatalogService.dormantStaleness)
+        let windowStart = now.addingTimeInterval(-CatalogService.airingWindow)
+        let windowEnd = now.addingTimeInterval(CatalogService.airingWindow)
+        return try await sql.raw("""
+        SELECT t.id FROM titles t
+        WHERE t.type = 'show'
+          AND EXISTS (SELECT 1 FROM library_items li
+                      WHERE li.title_id = t.id AND li.status IN ('wishlist', 'in_progress'))
+          AND (t.episodes_attempted_at IS NULL OR t.episodes_attempted_at < \(bind: retryAfter))
+          AND (t.episodes_hydrated_at IS NULL
+               OR t.episodes_hydrated_at < \(bind: dormantStale)
+               OR (t.episodes_hydrated_at < \(bind: airingStale)
+                   AND EXISTS (SELECT 1 FROM show_episodes e
+                               WHERE e.title_id = t.id
+                                 AND e.airs_at BETWEEN \(bind: windowStart) AND \(bind: windowEnd))))
+        ORDER BY t.episodes_hydrated_at NULLS FIRST, t.id
+        LIMIT \(literal: limit)
+        """).all(decoding: Row.self).map { TitleID($0.id) }
+    }
+
+    func markEpisodesAttempted(_ id: TitleID, at date: Date) async throws {
+        try await sql.update("titles")
+            .set("episodes_attempted_at", to: date)
+            .where("id", .equal, id.rawValue)
+            .run()
+    }
+
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode] {
         struct Row: Decodable {
             let season: Int
@@ -175,11 +207,12 @@ struct PostgresTitleStore: TitleStore {
             let runtimeMinutes: Int?
             let tmdbEpisodeId: String?
             let overview: String?
+            let stillUrl: String?
         }
         return try await sql.select()
             .columns(
                 "season", "episode", "name", "airs_at", "airs_at_exact", "runtime_minutes", "tmdb_episode_id",
-                "overview"
+                "overview", "still_url"
             )
             .from("show_episodes")
             .where("title_id", .equal, id.rawValue)
@@ -189,7 +222,8 @@ struct PostgresTitleStore: TitleStore {
                 CatalogEpisode(
                     season: $0.season, episode: $0.episode, name: $0.name, airsAt: $0.airsAt,
                     runtimeMinutes: $0.runtimeMinutes, tmdbEpisodeID: $0.tmdbEpisodeId,
-                    airTimeKnown: $0.airsAtExact, overview: $0.overview
+                    airTimeKnown: $0.airsAtExact, overview: $0.overview,
+                    stillURL: $0.stillUrl.flatMap(URL.init(string:))
                 )
             }
     }
@@ -214,6 +248,31 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
                     tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
                 )
             }
+    }
+
+    func upsertMany(_ mappings: [AnimeMapping]) async throws {
+        let rows = mappings.map {
+            Row(
+                anilist: $0.anilist,
+                mal: $0.mal,
+                anidb: $0.anidb,
+                tvdb: $0.tvdb,
+                tmdb: $0.tmdb,
+                tmdbSeason: $0.tmdbSeason
+            )
+        }
+        try await sql.transaction { sql in
+            for start in stride(from: 0, to: rows.count, by: 1000) {
+                let batch = Array(rows[start ..< min(start + 1000, rows.count)])
+                try await sql.insert(into: "anime_mappings")
+                    .models(batch, keyEncodingStrategy: .convertToSnakeCase, nilEncodingStrategy: .asNil)
+                    .onConflict(with: ["anilist"]) {
+                        $0.set(excludedValueOf: "mal").set(excludedValueOf: "anidb").set(excludedValueOf: "tvdb")
+                            .set(excludedValueOf: "tmdb").set(excludedValueOf: "tmdb_season")
+                    }
+                    .run()
+            }
+        }
     }
 
     func upsert(_ mapping: AnimeMapping) async throws {

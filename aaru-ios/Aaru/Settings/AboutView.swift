@@ -40,6 +40,12 @@ struct AboutView: View {
                     licence: "https://creativecommons.org/licenses/by-sa/4.0/"
                 )
                 CreditLink("Anime data from AniList", url: "https://anilist.co")
+                CreditLink(
+                    "Anime id mappings from Fribb/anime-lists",
+                    detail: "Licensed under MIT",
+                    url: "https://github.com/Fribb/anime-lists",
+                    licence: "https://opensource.org/license/mit"
+                )
                 CreditLink("Book data from Open Library", url: "https://openlibrary.org")
             } header: {
                 Text("Credits")

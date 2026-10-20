@@ -64,6 +64,21 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/devices/{token}`.
     /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)`.
     func unregisterDevice(_ input: Operations.UnregisterDevice.Input) async throws -> Operations.UnregisterDevice.Output
+    /// The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
+    ///
+    /// - Remark: HTTP `GET /v1/agent/tokens`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/get(listAgentTokens)`.
+    func listAgentTokens(_ input: Operations.ListAgentTokens.Input) async throws -> Operations.ListAgentTokens.Output
+    /// Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once.
+    ///
+    /// - Remark: HTTP `POST /v1/agent/tokens`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)`.
+    func createAgentToken(_ input: Operations.CreateAgentToken.Input) async throws -> Operations.CreateAgentToken.Output
+    /// Revoke a token. Its addon stops answering at once.
+    ///
+    /// - Remark: HTTP `DELETE /v1/agent/tokens/{id}`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/{id}/delete(revokeAgentToken)`.
+    func revokeAgentToken(_ input: Operations.RevokeAgentToken.Input) async throws -> Operations.RevokeAgentToken.Output
     /// - Remark: HTTP `GET /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/get(getNotificationSettings)`.
     func getNotificationSettings(_ input: Operations.GetNotificationSettings.Input) async throws -> Operations.GetNotificationSettings.Output
@@ -359,6 +374,39 @@ extension APIProtocol {
         headers: Operations.UnregisterDevice.Input.Headers = .init()
     ) async throws -> Operations.UnregisterDevice.Output {
         try await unregisterDevice(Operations.UnregisterDevice.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
+    ///
+    /// - Remark: HTTP `GET /v1/agent/tokens`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/get(listAgentTokens)`.
+    public func listAgentTokens(headers: Operations.ListAgentTokens.Input.Headers = .init()) async throws -> Operations.ListAgentTokens.Output {
+        try await listAgentTokens(Operations.ListAgentTokens.Input(headers: headers))
+    }
+    /// Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once.
+    ///
+    /// - Remark: HTTP `POST /v1/agent/tokens`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)`.
+    public func createAgentToken(
+        headers: Operations.CreateAgentToken.Input.Headers = .init(),
+        body: Operations.CreateAgentToken.Input.Body
+    ) async throws -> Operations.CreateAgentToken.Output {
+        try await createAgentToken(Operations.CreateAgentToken.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Revoke a token. Its addon stops answering at once.
+    ///
+    /// - Remark: HTTP `DELETE /v1/agent/tokens/{id}`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/{id}/delete(revokeAgentToken)`.
+    public func revokeAgentToken(
+        path: Operations.RevokeAgentToken.Input.Path,
+        headers: Operations.RevokeAgentToken.Input.Headers = .init()
+    ) async throws -> Operations.RevokeAgentToken.Output {
+        try await revokeAgentToken(Operations.RevokeAgentToken.Input(
             path: path,
             headers: headers
         ))
@@ -867,6 +915,164 @@ public enum Servers {
 public enum Components {
     /// Types generated from the `#/components/schemas` section of the OpenAPI document.
     public enum Schemas {
+        /// - Remark: Generated from `#/components/schemas/AgentToken`.
+        public struct AgentToken: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AgentToken/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentToken/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentToken/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case stremio = "stremio"
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentToken/kind`.
+            public var kind: Components.Schemas.AgentToken.KindPayload
+            /// - Remark: Generated from `#/components/schemas/AgentToken/ScopesPayload`.
+            @frozen public enum ScopesPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case library_colon_read = "library:read"
+                case library_colon_write = "library:write"
+                case scrobble_colon_write = "scrobble:write"
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentToken/scopes`.
+            public typealias ScopesPayload = [Components.Schemas.AgentToken.ScopesPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/AgentToken/scopes`.
+            public var scopes: Components.Schemas.AgentToken.ScopesPayload
+            /// - Remark: Generated from `#/components/schemas/AgentToken/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Recorded at most once an hour.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentToken/lastUsedAt`.
+            public var lastUsedAt: Foundation.Date?
+            /// Creates a new `AgentToken`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - kind:
+            ///   - scopes:
+            ///   - createdAt:
+            ///   - lastUsedAt: Recorded at most once an hour.
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                kind: Components.Schemas.AgentToken.KindPayload,
+                scopes: Components.Schemas.AgentToken.ScopesPayload,
+                createdAt: Foundation.Date,
+                lastUsedAt: Foundation.Date? = nil
+            ) {
+                self.id = id
+                self.name = name
+                self.kind = kind
+                self.scopes = scopes
+                self.createdAt = createdAt
+                self.lastUsedAt = lastUsedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case kind
+                case scopes
+                case createdAt
+                case lastUsedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AgentTokenCreate`.
+        public struct AgentTokenCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case stremio = "stremio"
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/kind`.
+            public var kind: Components.Schemas.AgentTokenCreate.KindPayload
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/name`.
+            public var name: Swift.String?
+            /// Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by default; removing from Stremio's library never deletes anything in Aaru.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/allowLibraryWrites`.
+            public var allowLibraryWrites: Swift.Bool?
+            /// Creates a new `AgentTokenCreate`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - name:
+            ///   - allowLibraryWrites: Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by default; removing from Stremio's library never deletes anything in Aaru.
+            public init(
+                kind: Components.Schemas.AgentTokenCreate.KindPayload,
+                name: Swift.String? = nil,
+                allowLibraryWrites: Swift.Bool? = nil
+            ) {
+                self.kind = kind
+                self.name = name
+                self.allowLibraryWrites = allowLibraryWrites
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case name
+                case allowLibraryWrites
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AgentTokenCreated`.
+        public struct AgentTokenCreated: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/token`.
+            public var token: Components.Schemas.AgentToken
+            /// Shown once. Anyone holding it, or the install links, can use the token.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/secret`.
+            public var secret: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/stremio`.
+            public struct StremioPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/stremio/manifestUrl`.
+                public var manifestUrl: Swift.String
+                /// The `stremio://` link that opens the Stremio app.
+                ///
+                /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/stremio/installUrl`.
+                public var installUrl: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/stremio/webInstallUrl`.
+                public var webInstallUrl: Swift.String
+                /// Creates a new `StremioPayload`.
+                ///
+                /// - Parameters:
+                ///   - manifestUrl:
+                ///   - installUrl: The `stremio://` link that opens the Stremio app.
+                ///   - webInstallUrl:
+                public init(
+                    manifestUrl: Swift.String,
+                    installUrl: Swift.String,
+                    webInstallUrl: Swift.String
+                ) {
+                    self.manifestUrl = manifestUrl
+                    self.installUrl = installUrl
+                    self.webInstallUrl = webInstallUrl
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case manifestUrl
+                    case installUrl
+                    case webInstallUrl
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/stremio`.
+            public var stremio: Components.Schemas.AgentTokenCreated.StremioPayload
+            /// Creates a new `AgentTokenCreated`.
+            ///
+            /// - Parameters:
+            ///   - token:
+            ///   - secret: Shown once. Anyone holding it, or the install links, can use the token.
+            ///   - stremio:
+            public init(
+                token: Components.Schemas.AgentToken,
+                secret: Swift.String,
+                stremio: Components.Schemas.AgentTokenCreated.StremioPayload
+            ) {
+                self.token = token
+                self.secret = secret
+                self.stremio = stremio
+            }
+            public enum CodingKeys: String, CodingKey {
+                case token
+                case secret
+                case stremio
+            }
+        }
         /// The one error shape every route returns.
         ///
         /// - Remark: Generated from `#/components/schemas/ErrorResponse`.
@@ -1706,8 +1912,20 @@ public enum Components {
             public var number: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Episode/name`.
             public var name: Swift.String?
+            /// The episode's synopsis, when the catalog has one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Episode/overview`.
+            public var overview: Swift.String?
+            /// A frame from the episode (TMDB, referenced, never hosted).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Episode/stillUrl`.
+            public var stillUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Episode/airsAt`.
             public var airsAt: Foundation.Date?
+            /// True when `airsAt` is the exact broadcast time; false when only the date is known.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Episode/airTimeKnown`.
+            public var airTimeKnown: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/Episode/runtimeMinutes`.
             public var runtimeMinutes: Swift.Int?
             /// Creates a new `Episode`.
@@ -1716,26 +1934,38 @@ public enum Components {
             ///   - season:
             ///   - number:
             ///   - name:
+            ///   - overview: The episode's synopsis, when the catalog has one.
+            ///   - stillUrl: A frame from the episode (TMDB, referenced, never hosted).
             ///   - airsAt:
+            ///   - airTimeKnown: True when `airsAt` is the exact broadcast time; false when only the date is known.
             ///   - runtimeMinutes:
             public init(
                 season: Swift.Int,
                 number: Swift.Int,
                 name: Swift.String? = nil,
+                overview: Swift.String? = nil,
+                stillUrl: Swift.String? = nil,
                 airsAt: Foundation.Date? = nil,
+                airTimeKnown: Swift.Bool,
                 runtimeMinutes: Swift.Int? = nil
             ) {
                 self.season = season
                 self.number = number
                 self.name = name
+                self.overview = overview
+                self.stillUrl = stillUrl
                 self.airsAt = airsAt
+                self.airTimeKnown = airTimeKnown
                 self.runtimeMinutes = runtimeMinutes
             }
             public enum CodingKeys: String, CodingKey {
                 case season
                 case number
                 case name
+                case overview
+                case stillUrl
                 case airsAt
+                case airTimeKnown
                 case runtimeMinutes
             }
         }
@@ -2398,6 +2628,10 @@ public enum Components {
             public var undoneAt: Foundation.Date?
             /// - Remark: Generated from `#/components/schemas/Action/undoOf`.
             public var undoOf: Swift.String?
+            /// The connected app that made it (an agent token's name); absent for your own writes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Action/agentName`.
+            public var agentName: Swift.String?
             /// Creates a new `Action`.
             ///
             /// - Parameters:
@@ -2409,6 +2643,7 @@ public enum Components {
             ///   - createdAt:
             ///   - undoneAt:
             ///   - undoOf:
+            ///   - agentName: The connected app that made it (an agent token's name); absent for your own writes.
             public init(
                 id: Swift.String,
                 actor: Components.Schemas.Action.ActorPayload,
@@ -2417,7 +2652,8 @@ public enum Components {
                 itemIds: [Swift.String],
                 createdAt: Foundation.Date,
                 undoneAt: Foundation.Date? = nil,
-                undoOf: Swift.String? = nil
+                undoOf: Swift.String? = nil,
+                agentName: Swift.String? = nil
             ) {
                 self.id = id
                 self.actor = actor
@@ -2427,6 +2663,7 @@ public enum Components {
                 self.createdAt = createdAt
                 self.undoneAt = undoneAt
                 self.undoOf = undoOf
+                self.agentName = agentName
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -2437,6 +2674,7 @@ public enum Components {
                 case createdAt
                 case undoneAt
                 case undoOf
+                case agentName
             }
         }
         /// - Remark: Generated from `#/components/schemas/ActionList`.
@@ -4786,6 +5024,421 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
+    ///
+    /// - Remark: HTTP `GET /v1/agent/tokens`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/get(listAgentTokens)`.
+    public enum ListAgentTokens {
+        public static let id: Swift.String = "listAgentTokens"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListAgentTokens.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListAgentTokens.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListAgentTokens.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListAgentTokens.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/responses/200/content/json`.
+                    public struct JsonPayload: Codable, Hashable, Sendable {
+                        /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/responses/200/content/json/items`.
+                        public var items: [Components.Schemas.AgentToken]
+                        /// Creates a new `JsonPayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - items:
+                        public init(items: [Components.Schemas.AgentToken]) {
+                            self.items = items
+                        }
+                        public enum CodingKeys: String, CodingKey {
+                            case items
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/responses/200/content/application\/json`.
+                    case json(Operations.ListAgentTokens.Output.Ok.Body.JsonPayload)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Operations.ListAgentTokens.Output.Ok.Body.JsonPayload {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListAgentTokens.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListAgentTokens.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Live tokens.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/tokens/get(listAgentTokens)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListAgentTokens.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListAgentTokens.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/tokens/get(listAgentTokens)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once.
+    ///
+    /// - Remark: HTTP `POST /v1/agent/tokens`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)`.
+    public enum CreateAgentToken {
+        public static let id: Swift.String = "createAgentToken"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/agent/tokens/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateAgentToken.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateAgentToken.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateAgentToken.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/agent/tokens/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/agent/tokens/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.AgentTokenCreate)
+            }
+            public var body: Operations.CreateAgentToken.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateAgentToken.Input.Headers = .init(),
+                body: Operations.CreateAgentToken.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Created: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/agent/tokens/POST/responses/201/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/agent/tokens/POST/responses/201/content/application\/json`.
+                    case json(Components.Schemas.AgentTokenCreated)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AgentTokenCreated {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateAgentToken.Output.Created.Body
+                /// Creates a new `Created`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateAgentToken.Output.Created.Body) {
+                    self.body = body
+                }
+            }
+            /// Minted.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)/responses/201`.
+            ///
+            /// HTTP response code: `201 created`.
+            case created(Operations.CreateAgentToken.Output.Created)
+            /// The associated value of the enum case if `self` is `.created`.
+            ///
+            /// - Throws: An error if `self` is not `.created`.
+            /// - SeeAlso: `.created`.
+            public var created: Operations.CreateAgentToken.Output.Created {
+                get throws {
+                    switch self {
+                    case let .created(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "created",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Revoke a token. Its addon stops answering at once.
+    ///
+    /// - Remark: HTTP `DELETE /v1/agent/tokens/{id}`.
+    /// - Remark: Generated from `#/paths//v1/agent/tokens/{id}/delete(revokeAgentToken)`.
+    public enum RevokeAgentToken {
+        public static let id: Swift.String = "revokeAgentToken"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/agent/tokens/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/agent/tokens/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.RevokeAgentToken.Input.Path
+            /// - Remark: Generated from `#/paths/v1/agent/tokens/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RevokeAgentToken.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RevokeAgentToken.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RevokeAgentToken.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RevokeAgentToken.Input.Path,
+                headers: Operations.RevokeAgentToken.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Revoked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/tokens/{id}/delete(revokeAgentToken)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RevokeAgentToken.Output.NoContent)
+            /// Revoked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/tokens/{id}/delete(revokeAgentToken)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RevokeAgentToken.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/tokens/{id}/delete(revokeAgentToken)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

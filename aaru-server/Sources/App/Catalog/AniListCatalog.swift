@@ -47,11 +47,12 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
         // Known episode count, or as far as the schedule reaches for a show still airing.
         let count = max(media.episodes ?? 0, airsAt.keys.max() ?? 0)
         guard count > 0 else { return CatalogEpisodes(status: media.titleStatus, episodes: []) }
+        let names = Self.episodeNames(media.streamingEpisodes ?? [], count: count)
         let episodes = (1 ... count).map { number in
             CatalogEpisode(
                 season: 1,
                 episode: number,
-                name: nil,
+                name: names[number],
                 airsAt: airsAt[number],
                 runtimeMinutes: media.duration,
                 tmdbEpisodeID: nil,
@@ -63,6 +64,24 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
         )
     }
 
+    /// AniList has no per-episode titles, but its streaming links are titled "Episode 3 - Name".
+    /// Only names are kept (the thumbnails are the streaming site's art), and only when the
+    /// number is inside the show's range; anything else is left unnamed, never guessed.
+    static func episodeNames(_ links: [StreamingEpisode], count: Int) -> [Int: String] {
+        var names: [Int: String] = [:]
+        for link in links {
+            guard let title = link.title,
+                  let match = title.wholeMatch(of: /(?i)episode\s+(\d+)\s*[-–:]\s*(.+)/),
+                  let number = Int(match.1), (1 ... count).contains(number), names[number] == nil
+            else { continue }
+            let name = String(match.2).trimmingCharacters(in: .whitespaces)
+            if !name.isEmpty {
+                names[number] = name
+            }
+        }
+        return names
+    }
+
     // MARK: Plumbing
 
     private func media(for ids: ExternalIDs, withSchedule: Bool = false) async throws -> Media? {
@@ -70,6 +89,7 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
             ? """
             airingSchedule(notYetAired: false, perPage: 50) { nodes { episode airingAt } }
             nextAiringEpisode { episode airingAt }
+            streamingEpisodes { title }
             """
             : ""
         let selector: String
@@ -146,6 +166,10 @@ private struct MediaData: Decodable {
     enum CodingKeys: String, CodingKey { case media = "Media" }
 }
 
+struct StreamingEpisode: Decodable, Sendable {
+    let title: String?
+}
+
 private struct Media: Decodable {
     struct Titles: Decodable {
         let romaji: String?
@@ -181,6 +205,7 @@ private struct Media: Decodable {
     let description: String?
     let airingSchedule: Schedule?
     let nextAiringEpisode: Airing?
+    let streamingEpisodes: [StreamingEpisode]?
 
     var hit: CatalogHit {
         let display = title.english ?? title.romaji ?? title.native ?? "Untitled"

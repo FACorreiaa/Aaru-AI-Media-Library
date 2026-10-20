@@ -42,3 +42,61 @@ export function nextRating(
   const value = star * 2
   return current === value ? null : value
 }
+
+/** Every episode in viewing order: regular seasons ascending, then specials. */
+export function orderedEpisodes(title: TitleDetail | undefined): Episode[] {
+  return orderedSeasons(title).flatMap((season) => season.episodes)
+}
+
+/** The first aired, unwatched episode outside the specials: where the user picks up. */
+export function nextEpisode(
+  title: TitleDetail | undefined,
+  watched: Set<string>,
+  now = new Date(),
+): Episode | undefined {
+  return orderedEpisodes(title).find(
+    (e) =>
+      e.season > 0 &&
+      hasAired(e, now) &&
+      !watched.has(episodeKey(e.season, e.number)),
+  )
+}
+
+export type CellState = 'watched' | 'next' | 'aired' | 'unaired'
+
+/** One season map cell: watched wins, then the next episode, then whether it has aired. */
+export function cellState(
+  episode: Episode,
+  watched: Set<string>,
+  next: Episode | undefined,
+  now = new Date(),
+): CellState {
+  if (watched.has(episodeKey(episode.season, episode.number))) return 'watched'
+  if (next && next.season === episode.season && next.number === episode.number)
+    return 'next'
+  return hasAired(episode, now) ? 'aired' : 'unaired'
+}
+
+/** The episodes either side of one, in viewing order, for the episode sheet. */
+export function neighbours(
+  title: TitleDetail | undefined,
+  season: number,
+  number: number,
+): { previous?: Episode; next?: Episode } {
+  const all = orderedEpisodes(title)
+  const index = all.findIndex((e) => e.season === season && e.number === number)
+  if (index < 0) return {}
+  return { previous: all[index - 1], next: all[index + 1] }
+}
+
+/** "12 Mar 2026", plus the time only when the catalog knows it. */
+export function airLabel(episode: Episode): string | undefined {
+  if (!episode.airsAt) return undefined
+  const date = new Date(episode.airsAt)
+  return date.toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    ...(episode.airTimeKnown ? { hour: 'numeric', minute: '2-digit' } : {}),
+  })
+}

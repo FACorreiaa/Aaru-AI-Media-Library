@@ -162,3 +162,93 @@ struct AddEpisodeWatchDateKnown: SQLMigration {
         "ALTER TABLE episode_progress DROP COLUMN watched_at_known",
     ]
 }
+
+/// A1 · episode stills (TMDB, referenced by URL, never hosted) and when a show's episode
+/// refresh last failed, so the refresh loop backs off. Shows with a TMDB id are backdated to
+/// stale, not cleared: the refresh loop serves never-loaded shows first, then fills stills.
+struct AddEpisodeDetail: SQLMigration {
+    let forward = [
+        "ALTER TABLE show_episodes ADD COLUMN still_url text",
+        "ALTER TABLE titles ADD COLUMN episodes_attempted_at timestamptz",
+        """
+        UPDATE titles SET episodes_hydrated_at = timestamptz '1970-01-01 00:00:00+00'
+        WHERE type = 'show' AND episodes_hydrated_at IS NOT NULL AND tmdb IS NOT NULL
+        """,
+    ]
+    let backward = [
+        "ALTER TABLE titles DROP COLUMN episodes_attempted_at",
+        "ALTER TABLE show_episodes DROP COLUMN still_url",
+    ]
+}
+
+/// OUT-001 (minimal, for Stremio) · per-user agent tokens. Only the SHA-256 of the secret is
+/// stored. `kind` names the outside caller so Settings can list Stremio links without guessing;
+/// revoking keeps the row so journal entries can still name the token.
+struct CreateAgentTokens: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE agent_tokens (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name text NOT NULL CHECK (char_length(name) BETWEEN 1 AND 80),
+            kind text NOT NULL CHECK (kind IN ('stremio')),
+            token_hash text NOT NULL UNIQUE,
+            scopes text[] NOT NULL
+                CHECK (scopes <@ ARRAY['library:read', 'library:write', 'scrobble:write']::text[]),
+            created_at timestamptz NOT NULL DEFAULT now(),
+            last_used_at timestamptz,
+            expires_at timestamptz,
+            revoked_at timestamptz
+        )
+        """,
+        "CREATE INDEX agent_tokens_user ON agent_tokens (user_id) WHERE revoked_at IS NULL",
+    ]
+    let backward = [
+        "DROP TABLE agent_tokens",
+    ]
+}
+
+/// OUT-002 (minimal) · which agent token made a journaled write. Revoking a token keeps its
+/// row, and deleting it only clears this column, so history stays readable.
+struct AddActionAgentToken: SQLMigration {
+    let forward = [
+        "ALTER TABLE actions ADD COLUMN agent_token_id uuid REFERENCES agent_tokens(id) ON DELETE SET NULL",
+    ]
+    let backward = [
+        "ALTER TABLE actions DROP COLUMN agent_token_id",
+    ]
+}
+
+/// SCR-001 (service only) · one row per playback session from a player. A session is open
+/// until `stop`; at most one is open per user, source and item. `title_id` is null when the
+/// player's id resolved to nothing Aaru knows (an unmatched scrobble).
+struct CreateWatchEvents: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE watch_events (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            agent_token_id uuid REFERENCES agent_tokens(id) ON DELETE SET NULL,
+            source text NOT NULL CHECK (source IN ('stremio')),
+            external_ref text NOT NULL,
+            title_id uuid REFERENCES titles(id) ON DELETE SET NULL,
+            season integer,
+            episode integer,
+            state text NOT NULL CHECK (state IN ('playing', 'paused', 'stopped')),
+            position_ms bigint NOT NULL DEFAULT 0,
+            duration_ms bigint NOT NULL DEFAULT 0,
+            started_at timestamptz NOT NULL,
+            updated_at timestamptz NOT NULL,
+            stopped_at timestamptz
+        )
+        """,
+        """
+        CREATE UNIQUE INDEX watch_events_open ON watch_events (user_id, source, external_ref)
+        WHERE stopped_at IS NULL
+        """,
+        "CREATE INDEX watch_events_user ON watch_events (user_id, updated_at DESC)",
+    ]
+    let backward = [
+        "DROP TABLE watch_events",
+    ]
+}
