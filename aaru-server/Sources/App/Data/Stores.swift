@@ -122,7 +122,7 @@ protocol LibraryStore: Sendable {
     /// Throws `StoreConflict` on a duplicate (user, title) and `AppError.notFound` when an
     /// op names an item the user does not own.
     @discardableResult
-    func apply(_ op: LibraryOp, userID: UserID, actor: Actor, kind: String, summary: String) async throws
+    func apply(_ op: LibraryOp, userID: UserID, caller: Caller, kind: String, summary: String) async throws
         -> ActionRecord
     func item(id: LibraryItemID, userID: UserID) async throws -> LibraryItem?
     func item(userID: UserID, titleID: TitleID) async throws -> LibraryItem?
@@ -143,6 +143,15 @@ protocol LibraryStore: Sendable {
     /// Applies the action's inverse and journals that as a new `undo` action. Throws
     /// `ActionConflict` if it was already undone or its target no longer matches.
     func undo(actionID: UUID, userID: UserID) async throws -> ActionRecord
+}
+
+extension LibraryStore {
+    @discardableResult
+    func apply(_ op: LibraryOp, userID: UserID, actor: Actor, kind: String, summary: String) async throws
+        -> ActionRecord
+    {
+        try await apply(op, userID: userID, caller: Caller(actor: actor), kind: kind, summary: summary)
+    }
 }
 
 /// List reads. List writes are `LibraryOp`s through `LibraryStore.apply`.

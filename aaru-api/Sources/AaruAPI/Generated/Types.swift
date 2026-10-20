@@ -2556,6 +2556,10 @@ public enum Components {
             public var undoneAt: Foundation.Date?
             /// - Remark: Generated from `#/components/schemas/Action/undoOf`.
             public var undoOf: Swift.String?
+            /// The connected app that made it (an agent token's name); absent for your own writes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Action/agentName`.
+            public var agentName: Swift.String?
             /// Creates a new `Action`.
             ///
             /// - Parameters:
@@ -2567,6 +2571,7 @@ public enum Components {
             ///   - createdAt:
             ///   - undoneAt:
             ///   - undoOf:
+            ///   - agentName: The connected app that made it (an agent token's name); absent for your own writes.
             public init(
                 id: Swift.String,
                 actor: Components.Schemas.Action.ActorPayload,
@@ -2575,7 +2580,8 @@ public enum Components {
                 itemIds: [Swift.String],
                 createdAt: Foundation.Date,
                 undoneAt: Foundation.Date? = nil,
-                undoOf: Swift.String? = nil
+                undoOf: Swift.String? = nil,
+                agentName: Swift.String? = nil
             ) {
                 self.id = id
                 self.actor = actor
@@ -2585,6 +2591,7 @@ public enum Components {
                 self.createdAt = createdAt
                 self.undoneAt = undoneAt
                 self.undoOf = undoOf
+                self.agentName = agentName
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -2595,6 +2602,7 @@ public enum Components {
                 case createdAt
                 case undoneAt
                 case undoOf
+                case agentName
             }
         }
         /// - Remark: Generated from `#/components/schemas/ActionList`.

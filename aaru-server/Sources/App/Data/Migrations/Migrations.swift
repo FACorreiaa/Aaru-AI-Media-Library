@@ -24,6 +24,7 @@ let allMigrations: [any Migration] = [
     AddEpisodeWatchDateKnown(),
     AddEpisodeDetail(),
     CreateAgentTokens(),
+    AddActionAgentToken(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

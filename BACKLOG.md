@@ -1804,6 +1804,11 @@ ribbon shows which agent made the write. Revoking a token leaves its history rea
 **Done when:** a write made over MCP produces one journal row naming its token, the ribbon
 renders that name, and revoking the token does not alter or hide the row.
 
+**Progress 2026-10-20 (minimal):** built. `actions.agent_token_id` (set null on delete); writes
+take a `Caller` (`.user` by default, `.agent(token)` for outside callers) so the row is
+`external_agent` and the summary starts with the token's name ("Stremio: marked S1E2 of X
+watched"). `GET /v1/actions` returns `agentName`, still readable after revoke. Undo is unchanged.
+
 ### OUT-003 · App Intents and Shortcuts · M
 **Needs:** AG-002, APP-003.
 Each M13 tool is exposed as an App Intent in `aaru-ios`, which yields Siri, Shortcuts,

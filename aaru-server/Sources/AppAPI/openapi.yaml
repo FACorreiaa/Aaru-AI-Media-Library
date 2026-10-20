@@ -1351,6 +1351,9 @@ components:
         createdAt: {type: string, format: date-time}
         undoneAt: {type: string, format: date-time}
         undoOf: {type: string, format: uuid}
+        agentName:
+          type: string
+          description: The connected app that made it (an agent token's name); absent for your own writes.
     ActionList:
       type: object
       required: [items]

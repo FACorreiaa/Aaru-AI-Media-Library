@@ -207,3 +207,14 @@ struct CreateAgentTokens: SQLMigration {
         "DROP TABLE agent_tokens",
     ]
 }
+
+/// OUT-002 (minimal) · which agent token made a journaled write. Revoking a token keeps its
+/// row, and deleting it only clears this column, so history stays readable.
+struct AddActionAgentToken: SQLMigration {
+    let forward = [
+        "ALTER TABLE actions ADD COLUMN agent_token_id uuid REFERENCES agent_tokens(id) ON DELETE SET NULL",
+    ]
+    let backward = [
+        "ALTER TABLE actions DROP COLUMN agent_token_id",
+    ]
+}

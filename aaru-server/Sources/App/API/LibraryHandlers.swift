@@ -224,7 +224,8 @@ extension Components.Schemas.Action {
             itemIds: action.itemIDs.map(\.description),
             createdAt: action.createdAt,
             undoneAt: action.undoneAt,
-            undoOf: action.undoOf?.uuidString
+            undoOf: action.undoOf?.uuidString,
+            agentName: action.agentName
         )
     }
 }

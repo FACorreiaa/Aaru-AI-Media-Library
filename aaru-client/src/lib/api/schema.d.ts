@@ -1081,6 +1081,8 @@ export interface components {
       undoneAt?: string
       /** Format: uuid */
       undoOf?: string
+      /** @description The connected app that made it (an agent token's name); absent for your own writes. */
+      agentName?: string
     }
     ActionList: {
       items: components['schemas']['Action'][]

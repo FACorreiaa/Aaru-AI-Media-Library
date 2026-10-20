@@ -178,7 +178,7 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func apply(_: LibraryOp, userID _: UserID, actor _: Actor, kind _: String, summary _: String) async throws
+    func apply(_: LibraryOp, userID _: UserID, caller _: Caller, kind _: String, summary _: String) async throws
         -> ActionRecord
     {
         throw Touched()

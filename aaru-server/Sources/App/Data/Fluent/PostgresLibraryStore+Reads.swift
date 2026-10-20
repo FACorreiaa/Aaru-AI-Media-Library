@@ -100,16 +100,19 @@ extension PostgresLibraryStore {
             let createdAt: Date
             let undoneAt: Date?
             let undoOf: UUID?
+            let agentName: String?
         }
         return try await sqlDatabase(database).raw("""
-        SELECT id, actor, kind, summary, item_ids, created_at, undone_at, undo_of FROM actions
-        WHERE user_id = \(bind: userID.rawValue)
-        ORDER BY created_at DESC, id DESC LIMIT \(literal: max(1, min(limit, 100)))
+        SELECT a.id, a.actor, a.kind, a.summary, a.item_ids, a.created_at, a.undone_at, a.undo_of,
+               t.name AS agent_name
+        FROM actions a LEFT JOIN agent_tokens t ON t.id = a.agent_token_id
+        WHERE a.user_id = \(bind: userID.rawValue)
+        ORDER BY a.created_at DESC, a.id DESC LIMIT \(literal: max(1, min(limit, 100)))
         """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
             ActionRecord(
                 id: $0.id, actor: Actor(rawValue: $0.actor) ?? .user, kind: $0.kind, summary: $0.summary,
                 itemIDs: $0.itemIds.map(LibraryItemID.init), createdAt: $0.createdAt, undoneAt: $0.undoneAt,
-                undoOf: $0.undoOf
+                undoOf: $0.undoOf, agentName: $0.agentName
             )
         }
     }
