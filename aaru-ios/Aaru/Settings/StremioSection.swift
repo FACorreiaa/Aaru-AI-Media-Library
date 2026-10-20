@@ -23,6 +23,7 @@ struct StremioSection: View {
 
     var body: some View {
         Section {
+            StremioGuide()
             if !loaded, api != nil {
                 ProgressView().frame(maxWidth: .infinity)
             }
@@ -190,5 +191,60 @@ struct StremioSection: View {
             NSPasteboard.general.setString(text, forType: .string)
         #endif
         copied = true
+    }
+}
+
+/// The setup steps, so nobody has to leave the app to learn how the addon works. Same text as
+/// the web's `StremioGuide`.
+private struct StremioGuide: View {
+    private static let steps = [
+        "Choose whether Stremio may also change your library, then tap Connect Stremio.",
+        "Tap Open in Stremio for the desktop app or Install on Stremio Web in a browser. Or copy the link "
+            + "and paste it into the search box on Stremio’s Addons page.",
+        "Approve the install in Stremio. Your rows appear on Stremio’s board and load as you scroll to them.",
+    ]
+
+    private static let behaviour = [
+        "Marking an episode or film watched in Stremio ticks it here. It shows in your history with an undo.",
+        "Finishing an episode in Stremio’s player ticks it too.",
+        "Unmarking and adding titles reach Aaru only if you allowed it when connecting. Removing a title in "
+            + "Stremio never removes it here.",
+        "Aaru adds no streams. You play things with the add-ons you already use.",
+        "What you tick in Aaru does not show as watched in Stremio.",
+        "Works with Stremio Web and Stremio 5 on desktop. The phone and TV apps are not confirmed yet.",
+    ]
+
+    var body: some View {
+        DisclosureGroup("How to set it up") {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(Self.steps.enumerated()), id: \.offset) { index, step in
+                    row("\(index + 1).", step)
+                }
+                heading("What it does")
+                ForEach(Self.behaviour, id: \.self) { line in
+                    row("•", line)
+                }
+                heading("History and lost links")
+                Text(
+                    "Import my Stremio history brings in what you watched before, once: approve the code on "
+                        + "stremio.com, then review the import before anything changes. The install link is shown "
+                        + "only once. If you lose it, revoke it and connect again."
+                )
+            }
+            .font(.subheadline)
+            .foregroundStyle(Color(.muted))
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func row(_ marker: String, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(marker).monospacedDigit()
+            Text(text)
+        }
+    }
+
+    private func heading(_ text: String) -> some View {
+        Text(text).fontWeight(.semibold).foregroundStyle(Color(.ink)).padding(.top, 4)
     }
 }
