@@ -22,6 +22,16 @@ enum MediaKind: String, CaseIterable, Identifiable {
         }
     }
 
+    /// One of them: "Film", "Show", "Anime", "Book".
+    var noun: String {
+        switch self {
+        case .film: "Film"
+        case .show: "Show"
+        case .anime: "Anime"
+        case .book: "Book"
+        }
+    }
+
     var symbol: String {
         switch self {
         case .film: "film"
@@ -56,12 +66,20 @@ extension LibraryStatus: @retroactive Identifiable {
         rawValue
     }
 
-    var label: String {
-        switch self {
-        case .wishlist: "Wishlist"
-        case .inProgress: "In progress"
-        case .finished: "Finished"
-        case .dropped: "Dropped"
+    /// The status in the words of what it is on: "Watching" a show, "Reading" a book. With no
+    /// kind (a mixed shelf, the Any filter) the neutral words.
+    func label(for kind: MediaKind?) -> String {
+        switch (self, kind) {
+        case (.wishlist, .book): "Plan to read"
+        case (.wishlist, .some): "Plan to watch"
+        case (.wishlist, nil): "Planned"
+        case (.inProgress, .book): "Reading"
+        case (.inProgress, .some): "Watching"
+        case (.inProgress, nil): "In progress"
+        case (.finished, .book): "Read"
+        case (.finished, .some): "Watched"
+        case (.finished, nil): "Finished"
+        case (.dropped, _): "Dropped"
         }
     }
 }

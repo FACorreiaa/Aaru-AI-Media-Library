@@ -61,13 +61,14 @@ struct PostgresPushStore: PushStore {
         struct Row: Decodable {
             let userId: UUID
             let titleId: UUID
+            let id: UUID
             let title: String
             let season: Int
             let episode: Int
             let name: String?
         }
         return try await sql.raw("""
-        SELECT li.user_id, li.title_id, t.title, se.season, se.episode, se.name
+        SELECT li.user_id, li.title_id, li.id, t.title, se.season, se.episode, se.name
         FROM show_episodes se
         JOIN titles t ON t.id = se.title_id
         JOIN library_items li ON li.title_id = se.title_id AND li.status = 'in_progress'
@@ -75,7 +76,8 @@ struct PostgresPushStore: PushStore {
         WHERE se.season > 0
           AND se.airs_at > \(bind: since) AND se.airs_at <= \(bind: now)
           AND se.airs_at > ns.airing_since
-          AND EXISTS (SELECT 1 FROM apns_devices d WHERE d.user_id = li.user_id)
+          AND (EXISTS (SELECT 1 FROM apns_devices d WHERE d.user_id = li.user_id)
+               OR EXISTS (SELECT 1 FROM web_push_subscriptions w WHERE w.user_id = li.user_id))
           AND NOT EXISTS (SELECT 1 FROM episode_progress ep WHERE ep.library_item_id = li.id
                           AND ep.season = se.season AND ep.episode = se.episode)
           AND NOT EXISTS (SELECT 1 FROM notifications_sent sent WHERE sent.user_id = li.user_id
@@ -84,7 +86,8 @@ struct PostgresPushStore: PushStore {
         LIMIT 500
         """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
             DueAiring(
-                userID: UserID($0.userId), titleID: TitleID($0.titleId), title: $0.title,
+                userID: UserID($0.userId), titleID: TitleID($0.titleId), libraryItemID: LibraryItemID($0.id),
+                title: $0.title,
                 season: $0.season, episode: $0.episode, episodeName: $0.name
             )
         }
@@ -98,5 +101,40 @@ struct PostgresPushStore: PushStore {
             \(bind: airing.episode))
         ON CONFLICT DO NOTHING RETURNING season
         """).first(decoding: Row.self) != nil
+    }
+
+    func saveWebPush(_ subscription: WebPushSubscription, userID: UserID) async throws {
+        try await sql.raw("""
+        INSERT INTO web_push_subscriptions (endpoint, user_id, p256dh, auth, vapid_key_id, updated_at)
+        VALUES (\(bind: subscription.endpoint), \(bind: userID.rawValue), \(bind: subscription.p256dh),
+            \(bind: subscription.auth), \(bind: subscription.vapidKeyID), now())
+        ON CONFLICT (endpoint) DO UPDATE SET user_id = EXCLUDED.user_id, p256dh = EXCLUDED.p256dh,
+            auth = EXCLUDED.auth, vapid_key_id = EXCLUDED.vapid_key_id, updated_at = now()
+        """).run()
+    }
+
+    func deleteWebPush(endpoint: String, userID: UserID) async throws {
+        try await sql.raw("""
+        DELETE FROM web_push_subscriptions WHERE endpoint = \(bind: endpoint) AND user_id = \(bind: userID.rawValue)
+        """).run()
+    }
+
+    func forgetWebPush(endpoint: String) async throws {
+        try await sql.raw("DELETE FROM web_push_subscriptions WHERE endpoint = \(bind: endpoint)").run()
+    }
+
+    func webPushSubscriptions(userID: UserID) async throws -> [WebPushSubscription] {
+        struct Row: Decodable {
+            let endpoint: String
+            let p256dh: String
+            let auth: String
+            let vapidKeyId: String
+        }
+        return try await sql.raw("""
+        SELECT endpoint, p256dh, auth, vapid_key_id FROM web_push_subscriptions
+        WHERE user_id = \(bind: userID.rawValue) ORDER BY updated_at DESC
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
+            WebPushSubscription(endpoint: $0.endpoint, p256dh: $0.p256dh, auth: $0.auth, vapidKeyID: $0.vapidKeyId)
+        }
     }
 }

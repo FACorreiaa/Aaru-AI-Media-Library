@@ -31,7 +31,7 @@ struct StremioService: Sendable {
         id: "com.aaruapp.library",
         version: "1.0.0",
         name: "Aaru",
-        description: "Your Aaru library in Stremio: continue watching, the week ahead and your wishlist. "
+        description: "Your Aaru library in Stremio: continue watching, the week ahead and what you plan to watch. "
             + "What you watch in Stremio ticks itself off in Aaru.",
         logo: "https://aaruapp.com/icon-512.png",
         resources: [
@@ -45,8 +45,9 @@ struct StremioService: Sendable {
         catalogs: [
             .init(type: "series", id: "aaru-continue", name: "Aaru · Continue watching", extra: nil),
             .init(type: "series", id: "aaru-week", name: "Aaru · Next 7 days", extra: nil),
-            .init(type: "series", id: "aaru-wishlist", name: "Aaru · Wishlist", extra: [.init(name: "skip")]),
-            .init(type: "movie", id: "aaru-wishlist", name: "Aaru · Wishlist", extra: [.init(name: "skip")]),
+            // Ids stay `aaru-wishlist` (installed addons keep working); only the name follows APP-014.
+            .init(type: "series", id: "aaru-wishlist", name: "Aaru · Plan to watch", extra: [.init(name: "skip")]),
+            .init(type: "movie", id: "aaru-wishlist", name: "Aaru · Plan to watch", extra: [.init(name: "skip")]),
         ],
         behaviorHints: .init(configurable: true, configurationRequired: false)
     )

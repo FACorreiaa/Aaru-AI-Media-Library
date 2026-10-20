@@ -57,6 +57,9 @@ struct AppConfig: Sendable {
     var trakt: TraktSettings?
     /// Nil when `APNS_PRIVATE_KEY` is unset: devices still register, no push is sent.
     var push: PushSettings?
+    /// `VAPID_CONFIG`: swift-webpush's VAPID configuration JSON. Nil turns web push off. Generate
+    /// it once; a new key drops every browser subscription.
+    var vapidConfigJSON: String?
     /// Where this API is reachable from outside (`PUBLIC_BASE_URL`), for the Stremio install link.
     var publicBaseURL: URL
 
@@ -77,6 +80,7 @@ struct AppConfig: Sendable {
             ),
             trakt: traktSettings(from: reader),
             push: pushSettings(from: reader),
+            vapidConfigJSON: reader.string(forKey: "vapid.config").flatMap { $0.isEmpty ? nil : $0 },
             publicBaseURL: publicBaseURL(from: reader)
         )
     }

@@ -22,7 +22,7 @@ struct WireContractTests {
     func importSourceRawValuesAreStable() {
         #expect(
             ImportSource.allCases.map(\.rawValue) == [
-                "trakt", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics", "mal_xml",
+                "trakt", "stremio", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics", "mal_xml",
                 "anilist", "csv",
             ]
         )
@@ -30,7 +30,8 @@ struct WireContractTests {
 
     @Test
     func importSourceDeclarationOrderIsTheMergeOrder() {
-        #expect(ImportSource.trakt.mergeRank < ImportSource.imdbCSV.mergeRank)
+        #expect(ImportSource.trakt.mergeRank < ImportSource.stremio.mergeRank)
+        #expect(ImportSource.stremio.mergeRank < ImportSource.imdbCSV.mergeRank)
         #expect(ImportSource.imdbCSV.mergeRank < ImportSource.letterboxdCSV.mergeRank)
         #expect(ImportSource.letterboxdCSV.mergeRank < ImportSource.goodreadsCSV.mergeRank)
         #expect(ImportSource.goodreadsCSV.mergeRank < ImportSource.catList.mergeRank)

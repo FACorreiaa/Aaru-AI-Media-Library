@@ -61,14 +61,18 @@ struct LibraryService: Sendable {
         let snapshot = ItemSnapshot(
             id: LibraryItemID(),
             titleID: title.id,
-            fields: ItemFields(status: status, isOwned: false, finishedAt: status == .finished ? now() : nil),
+            fields: ItemFields(
+                status: status, isOwned: false, finishedAt: status == .finished ? now() : nil,
+                // A wishlist add says nothing yet; an import may still move it forward.
+                statusByHand: caller.actor == .user && status != .wishlist
+            ),
             addedAt: now(),
             watched: []
         )
         do {
             try await stores.library.apply(
                 .insertItem(snapshot), userID: userID, caller: caller, kind: "add",
-                summary: caller.summary("Added \(title.title) to \(status.label)")
+                summary: caller.summary("Added \(title.title) to \(status.label(for: title.type))")
             )
             if title.type == .show {
                 // Fetch episodes now so the calendar and Up Next have them. Best effort:
@@ -122,6 +126,9 @@ struct LibraryService: Sendable {
         if let status = patch.status, status != fields.status {
             fields.status = status
             fields.finishedAt = status == .finished ? now() : nil
+            if caller.actor == .user {
+                fields.statusByHand = true
+            }
         }
         if patch.clear.contains(.rating) {
             fields.rating = nil
@@ -339,7 +346,7 @@ extension LibraryService {
     private static func updateSummary(current: LibraryEntry, fields: ItemFields) -> String {
         let name = current.title.title
         if fields.status != current.fields.status {
-            return "Moved \(name) to \(fields.status.label)"
+            return "Moved \(name) to \(fields.status.label(for: current.title.type))"
         }
         if fields.rating != current.fields.rating {
             return fields.rating.map { "Rated \(name) \(Rating.display($0))" } ?? "Cleared the rating on \(name)"
@@ -368,12 +375,18 @@ extension LibraryEntry {
 }
 
 extension LibraryStatus {
-    var label: String {
-        switch self {
-        case .wishlist: "Wishlist"
-        case .inProgress: "In progress"
-        case .finished: "Finished"
-        case .dropped: "Dropped"
+    /// The status as people read it, per kind (APP-014). The stored value never changes:
+    /// films, shows and anime read Plan to watch / Watching / Watched; books Plan to read /
+    /// Reading / Read.
+    func label(for type: MediaType) -> String {
+        switch (self, type) {
+        case (.wishlist, .book): "Plan to read"
+        case (.wishlist, _): "Plan to watch"
+        case (.inProgress, .book): "Reading"
+        case (.inProgress, _): "Watching"
+        case (.finished, .book): "Read"
+        case (.finished, _): "Watched"
+        case (.dropped, _): "Dropped"
         }
     }
 }

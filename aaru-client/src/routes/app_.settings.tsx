@@ -10,6 +10,7 @@ import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { StremioSection } from '../components/StremioSection'
+import { NotificationsSection } from '../components/NotificationsSection'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
 import { readImportFile } from '../lib/imports/file'
@@ -28,6 +29,7 @@ import {
   signOut,
 } from '../lib/session/session'
 import { listStremio } from '../lib/stremio/server'
+import { getPushSetup } from '../lib/push/server'
 
 // APP-007 on the web: account, imports, connected apps, and the way out.
 const providerNames = {
@@ -42,16 +44,18 @@ export const Route = createFileRoute('/app_/settings')({
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
   },
   loader: async () => {
-    const [account, imports, signIn, stremio] = await Promise.all([
+    const [account, imports, signIn, stremio, push] = await Promise.all([
       getAccount(),
       listImports(),
       getSignInConfig(),
       listStremio(),
+      getPushSetup(),
     ])
     return {
       account,
       imports,
       stremio,
+      push,
       googleClientId: signIn.googleClientId,
     }
   },
@@ -317,6 +321,8 @@ function Settings() {
           </section>
         </Show>
 
+        <NotificationsSection setup={loaded().push} />
+
         <StremioSection links={loaded().stremio} />
 
         <section class="mt-10">
@@ -325,6 +331,12 @@ function Settings() {
             What you watched and read, as a story you can share.
           </p>
           <div class="mt-3 flex flex-wrap gap-2">
+            <Link
+              to="/app/insights"
+              class="rounded-full border border-line px-4 py-2 text-sm font-medium text-accent hover:bg-surface"
+            >
+              Insights
+            </Link>
             <For each={recapShortcuts(new Date())}>
               {(period) => (
                 <Link

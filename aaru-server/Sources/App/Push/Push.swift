@@ -1,3 +1,4 @@
+import AaruCore
 import APNS
 import APNSCore
 import Crypto
@@ -92,24 +93,48 @@ struct AiringNotifier: Sendable {
     static let window: TimeInterval = 2 * 24 * 60 * 60
 
     let stores: Stores
-    /// Nil when no APNs key is configured: devices still register, nothing is sent.
+    /// Nil when no APNs key is configured: devices still register, nothing is sent to them.
     let sender: (any PushSending)?
+    /// Nil when no VAPID key is configured: browsers cannot subscribe.
+    var webPush: (any WebPushSending)?
     var now: @Sendable () -> Date = { Date() }
 
     /// One pass. Returns how many notifications went out.
     @discardableResult
     func runOnce() async throws -> Int {
-        guard let sender else { return 0 }
+        guard sender != nil || webPush != nil else { return 0 }
         let due = try await stores.push.dueAirings(now: now(), since: now().addingTimeInterval(-Self.window))
         var sent = 0
         for airing in due where try await stores.push.claim(airing) {
             let message = Self.message(airing)
-            for device in try await stores.push.devices(userID: airing.userID) {
-                switch try? await sender.send(message, to: device) {
-                case .sent?: sent += 1
-                case .deadToken?: try await stores.push.forget(token: device.token)
-                case nil: continue // one failing device does not stop the others
-                }
+            sent += try await sendToDevices(message, userID: airing.userID)
+            sent += try await sendToBrowsers(message, userID: airing.userID)
+        }
+        return sent
+    }
+
+    /// One failing device or browser never stops the others.
+    private func sendToDevices(_ message: PushMessage, userID: UserID) async throws -> Int {
+        guard let sender else { return 0 }
+        var sent = 0
+        for device in try await stores.push.devices(userID: userID) {
+            switch try? await sender.send(message, to: device) {
+            case .sent?: sent += 1
+            case .deadToken?: try await stores.push.forget(token: device.token)
+            case nil: continue
+            }
+        }
+        return sent
+    }
+
+    private func sendToBrowsers(_ message: PushMessage, userID: UserID) async throws -> Int {
+        guard let webPush else { return 0 }
+        var sent = 0
+        for subscription in try await stores.push.webPushSubscriptions(userID: userID) {
+            switch try? await webPush.send(message, to: subscription) {
+            case .sent?: sent += 1
+            case .deadToken?: try await stores.push.forgetWebPush(endpoint: subscription.endpoint)
+            case nil: continue
             }
         }
         return sent
@@ -123,6 +148,7 @@ struct AiringNotifier: Sendable {
             body: body,
             payload: [
                 "titleId": airing.titleID.description,
+                "libraryItemId": airing.libraryItemID.description,
                 "season": String(airing.season),
                 "episode": String(airing.episode),
             ]

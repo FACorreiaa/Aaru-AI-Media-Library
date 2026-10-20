@@ -93,9 +93,7 @@ struct TitleResolver: Sendable {
         if type == .book {
             return try await catalogs.openLibrary.hydrate(ids: ids, type: type)
         }
-        if let anilist = ids.anilist, let mapping = try await stores.animeMappings.mapping(anilist: anilist),
-           let tmdb = mapping.tmdb
-        {
+        if let mapping = try await animeMapping(ids), let tmdb = mapping.tmdb {
             let mapped = ids.filling(from: ExternalIDs(
                 tmdb: tmdb,
                 tvdb: mapping.tvdb,
@@ -115,6 +113,18 @@ struct TitleResolver: Sendable {
             return try await catalogs.anilist.hydrate(ids: ids, type: type)
         }
         return nil // e.g. a Trakt-only id: Trakt resolution arrives with M8
+    }
+
+    /// The community mapping for an anime: by AniList id, else by MAL id (a MAL export has no
+    /// AniList id, and must still land on the TMDB show a Trakt import created).
+    func animeMapping(_ ids: ExternalIDs) async throws -> AnimeMapping? {
+        if let anilist = ids.anilist, let mapping = try await stores.animeMappings.mapping(anilist: anilist) {
+            return mapping
+        }
+        if let mal = ids.mal {
+            return try await stores.animeMappings.mapping(mal: mal)
+        }
+        return nil
     }
 
     // MARK: By title + year

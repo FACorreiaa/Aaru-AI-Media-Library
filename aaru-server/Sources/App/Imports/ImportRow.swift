@@ -25,6 +25,9 @@ struct ImportRow: Codable, Sendable, Equatable {
     var watched: [EpisodeKey]?
     /// On a source list only: joins that list, never the library.
     var listOnly: Bool?
+    /// Stremio's compressed watched-episode bitfield, still undecoded. The worker turns it into
+    /// `watched` once it has the show's episode list, then clears it.
+    var stremioWatched: String?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)

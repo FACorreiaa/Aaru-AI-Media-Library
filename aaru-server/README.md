@@ -67,6 +67,7 @@ docker build -f aaru-server/Dockerfile -t aaru-server .
 | `apns.private.key` | `APNS_PRIVATE_KEY` | unset → no pushes |
 | `apns.key.id` | `APNS_KEY_ID` | required when the private key is set |
 | `apns.team.id` | `APNS_TEAM_ID` | `84X9WYBF36` |
+| `vapid.config` | `VAPID_CONFIG` | unset → no browser alerts (`/v1/web-push/key` answers 503). swift-webpush's VAPID JSON; generate once, a new key drops every subscription |
 | `trakt.client.id` | `TRAKT_CLIENT_ID` | unset → Trakt connect answers 503 |
 | `trakt.token.key` | `TRAKT_TOKEN_KEY` | required with Trakt: 32 bytes, base64, encrypts tokens at rest |
 | `trakt.redirect.uri` | `TRAKT_REDIRECT_URI` | `https://api.aaruapp.com/v1/imports/trakt/callback` |
