@@ -64,7 +64,7 @@ struct StremioSection: View {
                 )
             } else {
                 Text(
-                    "Your Continue watching, Next 7 days and Wishlist show up in Stremio, and episodes you "
+                    "Your Continue watching, Next 7 days and Plan to watch show up in Stremio, and episodes you "
                         + "play there tick off here. Works with Stremio Web and Stremio 5 desktop."
                 )
             }

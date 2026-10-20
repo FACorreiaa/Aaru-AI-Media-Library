@@ -4,21 +4,28 @@ import Foundation
 /// The last Home load on disk, so Home opens offline like the library (APP-003). Cleared on
 /// sign-out.
 struct HomeCache {
+    /// The newer fields are optional, so a cache written by an older build still opens.
     struct Snapshot: Codable {
         var upNext: Components.Schemas.UpNext
         var airing: [CalendarEntry]
+        /// This month's numbers for the stats strip.
+        var monthStats: Stats?
     }
 
     let url: URL
-    /// Discover rows (DISC-001) load on their own, so they keep their own file.
+    /// Discover rows (DISC-001) load on their own, so they keep their own file. Home and the
+    /// Discover tab share it. The rows carry the caller's `libraryItemId`, so sign-out clears it.
     let discoverURL: URL
+    /// An earlier build's Discover file in another shape; only ever removed.
+    private let legacyDiscoverURL: URL
 
     init(fileManager: FileManager = .default) {
         let base = (try? fileManager.url(
             for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
         )) ?? fileManager.temporaryDirectory
         url = base.appendingPathComponent("home.json")
-        discoverURL = base.appendingPathComponent("discover.json")
+        discoverURL = base.appendingPathComponent("discover-rows.json")
+        legacyDiscoverURL = base.appendingPathComponent("discover.json")
     }
 
     func load() -> Snapshot? {
@@ -44,5 +51,6 @@ struct HomeCache {
     func clear() {
         try? FileManager.default.removeItem(at: url)
         try? FileManager.default.removeItem(at: discoverURL)
+        try? FileManager.default.removeItem(at: legacyDiscoverURL)
     }
 }
