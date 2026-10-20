@@ -1382,7 +1382,13 @@ token. Manifest `com.aaruapp.library`: `catalog`, `meta` (`aaru:` only), `player
 them, else `aaru:{titleId}` with Aaru's own `meta` and `videos`. Events follow the 2026-10-19
 decision; a missing `scrobble:write` is 403. A revoked token gets a 404 manifest and empty
 catalogs. Route and parser tests cover each done-when line. Not yet tried in a real Stremio
-client; the Settings UI is the next slice.
+client.
+
+**Progress 2026-10-20 (Settings):** web (`components/StremioSection.tsx`) and Apple
+(`Settings/StremioSection.swift`) connect, show the install links once, list links with last
+use, and revoke. The catalog is named Wishlist (id `aaru-wishlist`), the domain word. Left: a
+manual run in Stremio Web and Stremio 5 desktop, and checking whether Traefik on `maat` logs
+paths or strips CORS.
 
 **Resolved 2026-10-19:** Stremio core 0.64 sends `player` and `library` events to addons
 that declare them (see the decisions above). Do **not** route Stremio → Trakt → Aaru by
@@ -1874,6 +1880,7 @@ they are now scheduled. IDs stay so history reads.
 
 ### MOAT-001 · Stremio addon exposing an Aaru library · promoted
 Now **SCR-003** (P3). Catalogs only, token in the addon URL, no `stream` resource.
+Built 2026-10-20 ahead of the gate (owner's call), with `player`/`library` events; see SCR-003.
 
 ### MOAT-002 · Watch-state write-back from a player · promoted
 Now **SCR-001** + **SCR-002** (P3). It is not two-way sync: a player *sends* a watch event into

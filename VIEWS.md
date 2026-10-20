@@ -31,7 +31,8 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Mac companion | sidebar + inspector over the same components | same `/v1` | 2 · M7 |
 | Web (`aaru-client`) | same components as SolidJS views | same `/v1` | 2 · WEB-001 |
 | Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
-| Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3) | 2–3 |
+| Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3); Stremio `player` events already fill `watch_events` (2026-10-20) | 2–3 |
+| Connected apps (Settings) | none — a Settings section: connect, one-time install links, live links with last use, revoke | `GET`/`POST /v1/agent/tokens`, `DELETE /v1/agent/tokens/{id}` | 3 · SCR-003 (owner un-deferred 2026-10-19) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
 | Profile and stats | `StatsPanel`, `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |

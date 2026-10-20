@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 16 October 2026._
+_Last updated 20 October 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -30,6 +30,12 @@ keeps the rows it found with that import so you can review the plan before anyth
 The uploaded file itself is not kept. If you connect Trakt, Aaru stores Trakt's access tokens
 encrypted and uses them only to import your history; disconnecting removes them.
 
+**Stremio.** If you connect Stremio, Aaru stores the link only as a one-way hash, with its name,
+what it may do, and when it was last used. While it is connected, Stremio tells Aaru when you
+start, pause and stop playing something, and Aaru keeps that playback session (the title,
+episode, position and length) so it can tick off what you finished. Your changes from Stremio
+appear in your history like any other. Revoking the link in Settings stops all of it.
+
 **Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
 that setting.
 
@@ -44,6 +50,8 @@ Aaru only uses these services, and only for the purpose listed:
 - **Apple** for Sign in with Apple and push notifications; **Google** for Sign in with Google.
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
+- **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
+  what you play; Aaru does not send anything to Stremio's servers.
 - **TMDB, TVmaze, AniList and Open Library** provide catalog data. Aaru's server sends them
   what you search for and catalog ids, never who you are.
 

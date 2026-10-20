@@ -241,6 +241,13 @@ the same cells.
 Tapping the bar flips between time left and end time. Set by a manual check-in in Phase 2 and
 by scrobbles from Plex, Jellyfin or Stremio in Phase 3. The same data drives the Live Activity.
 
+**Stremio, built 2026-10-20.** Settings has a Stremio section on web, iPhone and Mac: connect,
+then the install links (Open in Stremio, Install on Stremio Web, Copy) show once, because they
+carry the secret. Live links list their last use and a Revoke. Writing back to the library
+beyond "watched" is an opt-in at connect time. Stremio's events land as journaled actions
+named "Stremio: …", so the undo ribbon and history treat them like a tap. The card itself is
+not built yet; `watch_events` holds what it will read.
+
 ## 16. Widgets (Phase 2)
 
 Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only
