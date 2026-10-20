@@ -37,7 +37,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
 | Agent model | Pluggable `ModelProviding` in `Server`. Anthropic default, user key supported, spend metered daily |
-| Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`. Not a second backend |
+| Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`, with an OAuth front door (`Sources/App/OAuth`) so Claude can add Aaru as a custom connector. Not a second backend |
 
 ## Repo layout
 

@@ -212,6 +212,12 @@ tap from gone.
 Nothing else in this category can do this, and the reason is boring: every write already
 carries its own inverse. The trust comes from the plumbing, not from a promise.
 
+**Built 2026-10-20.** Until The Field exists, waiting requests pin to the top of Home as
+"Waiting for you", on web and Apple: the caller's name, the summary, a counts line ending
+"nothing changes until you approve", the changes when there are several, then **Approve** and
+**Not this**. The push reads "Laptop wants to change your library" and opens the request. A
+request whose library moved meanwhile says so and applies nothing; ask the agent again.
+
 The feeling to protect: **the buzz is a question, never a receipt.** The moment a notification
 tells you what an agent already did, Aaru is somebody else's app.
 
@@ -325,6 +331,12 @@ Done. Last comes a message to paste into the agent so it checks itself. Live con
 their agent, what they may do and their last use, with a confirmed Revoke. Changes they make
 land as journaled actions named after the connection ("Claude Code: marked S01E01 of X
 watched"), so history and undo treat them like a tap.
+
+**Claude** is first in the list and has no token: its steps say to add Aaru in Claude
+(Settings → Connectors → Add custom connector, with the URL), and Claude sends you to Aaru's
+**consent page**. That page names the app and, in bold, the host it will return you to (apps
+name themselves; the host they cannot fake), then a name for the history, **Allow changes**
+(off), and **Allow** / **Not now**. A signed-out visitor signs in first and lands back on it.
 
 ## 16. Widgets (Phase 2)
 

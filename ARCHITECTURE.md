@@ -140,6 +140,7 @@ PostgreSQL. Suggested tables:
 - `actions` (action journal: one row per mutating library write, with its inverse)
 - `match_aliases` (match ledger: aggregate crosswalk from a source row key to an external id)
 - `watch_events` (one playback session per user, source and player id: state, position, longest known duration, `title_id` null when unmatched; built 2026-10-20 for Stremio)
+- `agent_plans` (an outside agent's change waiting for approval: the op, its basis, status, the token)
 - `agent_tokens` (per-user agent access: `kind` (`stremio`, or an MCP client: `claude_code`, `codex`, `hermes`, `gemini`, `other`), hashed secret, scopes, `lastUsedAt`, revocation)
 - `agent_usage` (model spend per user per day: tokens in and out, cost in cents)
 
@@ -601,13 +602,20 @@ An external caller holding `library:write` cannot write more than one item direc
 a plan id, and the plan waits for the user **in Aaru**:
 
 1. The caller calls a `plan_*` tool; the server returns a plan id and a human summary.
-2. Aaru renders it as a `PlanCard` labelled with the calling token's name. Until push
-   notifications exist, it appears in The Field as a pinned artifact.
+2. Aaru renders it as a `PlanCard` labelled with the calling token's name, and pushes a
+   notification. Until The Field exists, pending plans pin to the top of Home.
 3. The user approves or denies via `POST /v1/plans/{id}/approve` or `/deny`. There is no
    route by which a caller approves its own plan, and no scope grants it.
 4. Apply runs through the same data layer as a tap: one `actions` row, `actor =
    external_agent`, `agentTokenId` set, inverse recorded, undoable.
-5. Denials are journaled too, so the ledger answers what a token tried to do.
+5. Denials are recorded too, on the `agent_plans` row (`status = denied`), so the ledger
+   answers what a token tried to do. The `actions` journal keeps only undoable writes.
+
+Plans are stored as the exact `LibraryOp` batch worked out at proposal time
+(`LibraryService+Prepare.swift`) plus a basis: each touched item's `updated_at` and the titles
+being added. Approval re-checks status, expiry (24 h) and basis inside one transaction, then
+runs the op and journals it (`PostgresPlanStore.approve`). A token has at most 20 plans
+waiting; revoking it expires them.
 
 Rules:
 
@@ -618,6 +626,28 @@ Rules:
 - Agent tokens go through the central rate limiter (X-002). A token is not a bypass.
 - Every rule in "Agent tools" applies unchanged. In particular: deleting `App/MCP` must leave
   every feature reachable through `/v1`.
+
+### OAuth front door (Claude's connector)
+
+Claude (claude.ai, Desktop, mobile) adds a remote MCP server as a custom connector, and a
+connector authenticates with OAuth per the MCP authorization spec. `aaru-server/Sources/App/OAuth`
+is that front door, hand-written like the MCP route:
+
+| Endpoint | Role |
+| --- | --- |
+| `GET /.well-known/oauth-protected-resource[/v1/mcp]` | RFC 9728: the resource is `/v1/mcp`, the issuer is the API |
+| `GET /.well-known/oauth-authorization-server` | RFC 8414 metadata |
+| `POST /oauth/register` | RFC 7591. Every client is public (`none`); https or loopback redirects |
+| `GET /oauth/authorize` | S256 PKCE only. Sets the `aaru_oauth` binding cookie, sends the browser to the web consent page |
+| `POST /oauth/token` | Code (60 s, once) or refresh token (30 days, rotated) for an access token (one hour) |
+| `POST /oauth/revoke` | RFC 7009 |
+| `GET/POST /v1/oauth/requests/{id}[/approve, /deny]` | The consent page's answer: session plus binding |
+
+The consent page lives in `aaru-client` (`/oauth/consent`) and holds no rules: it forwards the
+session and the binding cookie, which the API sets on `OAUTH_COOKIE_DOMAIN` (the parent of the
+API and web hosts). Tokens are `agent_tokens` rows (`issuance = oauth`), so an OAuth client gets
+exactly an MCP token's scopes, lists in Settings, and is revoked the same way. A reused code or a
+replayed refresh token revokes the connection.
 
 ### Model provider
 

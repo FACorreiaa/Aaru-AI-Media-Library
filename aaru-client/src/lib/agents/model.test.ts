@@ -12,8 +12,9 @@ const token = (overrides: Partial<AgentToken> = {}): AgentToken => ({
 })
 
 describe('agents model', () => {
-  it('offers every MCP client, Claude Code first', () => {
+  it('offers every MCP client, Claude first', () => {
     expect(AGENT_KINDS).toEqual([
+      'claude',
       'claude_code',
       'codex',
       'hermes',
@@ -21,6 +22,7 @@ describe('agents model', () => {
       'other',
     ])
     expect(AGENT_KINDS.map(kindLabel)).toEqual([
+      'Claude',
       'Claude Code',
       'Codex',
       'Hermes',
