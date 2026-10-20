@@ -7,5 +7,8 @@ struct AaruWidgetsBundle: WidgetBundle {
         UpNextWidget()
         CountdownWidget()
         WeekWidget()
+        #if os(iOS)
+            NowWatchingLiveActivity()
+        #endif
     }
 }

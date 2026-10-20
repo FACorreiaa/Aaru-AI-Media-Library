@@ -25,6 +25,9 @@ struct AaruApp: App {
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .background {
                         WidgetRefresh.schedule()
+                    } else if phase == .active {
+                        // A "Now watching" activity never outlives its episode by more than the grace.
+                        Task { await NowWatching.endStale() }
                     }
                 }
                 .backgroundTask(.appRefresh(WidgetRefresh.taskID)) {
