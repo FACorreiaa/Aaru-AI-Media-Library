@@ -84,8 +84,8 @@ struct StremioTests {
         #expect(library.route == .resource(
             name: "library", type: "series", id: "tt1", extra: ["action": "watched", "videoId": "tt1:1:1,tt1:1:2"]
         ))
-        #expect(StremioRequest(path: "/stremio/t/catalog/movie/aaru-watchlist/skip=100.json")?.route
-            == .resource(name: "catalog", type: "movie", id: "aaru-watchlist", extra: ["skip": "100"]))
+        #expect(StremioRequest(path: "/stremio/t/catalog/movie/aaru-wishlist/skip=100.json")?.route
+            == .resource(name: "catalog", type: "movie", id: "aaru-wishlist", extra: ["skip": "100"]))
         #expect(StremioRequest(path: "/stremio/t/manifest.json")?.route == .manifest)
         #expect(StremioRequest(path: "/stremio/t/configure")?.route == .configure)
         #expect(StremioRequest(path: "/stremio/t/meta/series/x") == nil, "no .json")
@@ -146,9 +146,9 @@ struct StremioTests {
             #expect(ids.contains(imdb))
             #expect(ids.contains("aaru:\(plainTitle.lowercased())"))
 
-            let movies = try await get(env, "/stremio/\(secret)/catalog/movie/aaru-watchlist.json").json()
+            let movies = try await get(env, "/stremio/\(secret)/catalog/movie/aaru-wishlist.json").json()
             #expect((movies["metas"] as? [[String: Any]])?.compactMap { $0["name"] as? String } == ["Wishlisted"])
-            let skipped = try await get(env, "/stremio/\(secret)/catalog/movie/aaru-watchlist/skip=100.json").json()
+            let skipped = try await get(env, "/stremio/\(secret)/catalog/movie/aaru-wishlist/skip=100.json").json()
             #expect((skipped["metas"] as? [Any])?.isEmpty == true)
 
             let meta = try await get(env, "/stremio/\(secret)/meta/series/aaru%3A\(plainTitle.lowercased()).json")

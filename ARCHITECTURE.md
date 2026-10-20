@@ -652,7 +652,7 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   counts only past the threshold, never on its played flag.
 - **Stremio:** an addon served by `aaru-server` under `/stremio/{token}/manifest.json`, outside
   `/v1` because the protocol fixes the paths. It exposes catalogs (Continue watching, Next 7 days,
-  Watchlist), `meta` for titles without an IMDb id, and receives Stremio's `player` and `library`
+  Wishlist), `meta` for titles without an IMDb id, and receives Stremio's `player` and `library`
   events (stremio-core PR #1070, core-web v0.64, Stremio Web and Stremio 5 desktop). Player events
   feed the scrobble service; `library` `watched` marks tick episodes; `libraryRemove` is always
   ignored. The token is minted in Settings. It serves no streams, ever. No subtitles-request

@@ -1365,7 +1365,7 @@ test, and an unknown guid lands as an unmatched scrobble the user can resolve.
 ### SCR-003 · Stremio addon · L
 **Needs:** UPN-001, OUT-001. Promotes MOAT-001.
 Served by `aaru-server` under `/stremio/{token}/` (manifest, `catalog`, `meta`, `player`,
-`library`), not a second service. Catalogs: Continue watching, Next 7 days (CAL-001), Watchlist.
+`library`), not a second service. Catalogs: Continue watching, Next 7 days (CAL-001), Wishlist.
 Settings in `aaru-client` and the Apple app mint a `kind = stremio` token (`library:read` +
 `scrobble:write`, opt-in `library:write`) and show the install URL. `player` events go to the
 SCR-001 service; `library` `watched` marks tick; `libraryRemove` is ignored. **No `stream`
@@ -1377,7 +1377,7 @@ manifest declares no `stream` resource, and revoking the token empties the catal
 **Progress 2026-10-20:** server built (`Sources/App/Stremio`). One hand-written `/stremio/**`
 route: CORS on every answer (errors too), `Cache-Control: private`, 120 requests a minute per
 token. Manifest `com.aaruapp.library`: `catalog`, `meta` (`aaru:` only), `player` and `library`
-(`tt`, `aaru:`); catalogs Continue watching, Next 7 days, and a movie and a series Watchlist
+(`tt`, `aaru:`); catalogs Continue watching, Next 7 days, and a movie and a series Wishlist
 (`skip`, up to 2,000). Items use the IMDb id when known so Cinemeta and stream addons recognise
 them, else `aaru:{titleId}` with Aaru's own `meta` and `videos`. Events follow the 2026-10-19
 decision; a missing `scrobble:write` is 403. A revoked token gets a 404 manifest and empty

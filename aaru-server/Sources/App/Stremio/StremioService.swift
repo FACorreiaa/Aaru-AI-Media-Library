@@ -14,7 +14,7 @@ struct StremioService: Sendable {
     }
 
     static let pageSize = 100
-    /// Watchlist pages Stremio may ask for, in items.
+    /// Wishlist pages Stremio may ask for, in items.
     static let maxSkip = 2000
     static let types = ["movie", "series"]
     static let configureURL = URL(string: "https://aaruapp.com/app/settings")!
@@ -45,8 +45,8 @@ struct StremioService: Sendable {
         catalogs: [
             .init(type: "series", id: "aaru-continue", name: "Aaru · Continue watching", extra: nil),
             .init(type: "series", id: "aaru-week", name: "Aaru · Next 7 days", extra: nil),
-            .init(type: "series", id: "aaru-watchlist", name: "Aaru · Watchlist", extra: [.init(name: "skip")]),
-            .init(type: "movie", id: "aaru-watchlist", name: "Aaru · Watchlist", extra: [.init(name: "skip")]),
+            .init(type: "series", id: "aaru-wishlist", name: "Aaru · Wishlist", extra: [.init(name: "skip")]),
+            .init(type: "movie", id: "aaru-wishlist", name: "Aaru · Wishlist", extra: [.init(name: "skip")]),
         ],
         behaviorHints: .init(configurable: true, configurationRequired: false)
     )
@@ -68,7 +68,7 @@ struct StremioService: Sendable {
             )
             var seen = Set<TitleID>()
             return entries.filter { seen.insert($0.title.id).inserted }.map { Self.preview($0.title) }
-        case ("aaru-watchlist", "series"), ("aaru-watchlist", "movie"):
+        case ("aaru-wishlist", "series"), ("aaru-wishlist", "movie"):
             let skip = min(max(Int(extra["skip"] ?? "") ?? 0, 0), Self.maxSkip)
             return try await watchlist(userID: userID, type: type == "movie" ? .movie : .show, skip: skip)
         default:
