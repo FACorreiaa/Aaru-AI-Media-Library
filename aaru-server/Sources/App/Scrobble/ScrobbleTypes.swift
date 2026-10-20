@@ -25,6 +25,8 @@ struct PlaybackReport: Sendable {
     var externalRef: String
     var type: MediaType
     var ids: ExternalIDs
+    /// Set when the player already names an Aaru title (Stremio's `aaru:` ids).
+    var titleID: TitleID? = nil
     /// Set for an episode; nil for a movie.
     var episode: EpisodeKey?
     var action: PlaybackAction

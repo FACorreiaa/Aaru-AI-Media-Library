@@ -1374,6 +1374,16 @@ resource, ever** — Aaru does not touch stream sources.
 **Done when:** installing the addon in Stremio shows the user's Continue Watching catalog, the
 manifest declares no `stream` resource, and revoking the token empties the catalogs.
 
+**Progress 2026-10-20:** server built (`Sources/App/Stremio`). One hand-written `/stremio/**`
+route: CORS on every answer (errors too), `Cache-Control: private`, 120 requests a minute per
+token. Manifest `com.aaruapp.library`: `catalog`, `meta` (`aaru:` only), `player` and `library`
+(`tt`, `aaru:`); catalogs Continue watching, Next 7 days, and a movie and a series Watchlist
+(`skip`, up to 2,000). Items use the IMDb id when known so Cinemeta and stream addons recognise
+them, else `aaru:{titleId}` with Aaru's own `meta` and `videos`. Events follow the 2026-10-19
+decision; a missing `scrobble:write` is 403. A revoked token gets a 404 manifest and empty
+catalogs. Route and parser tests cover each done-when line. Not yet tried in a real Stremio
+client; the Settings UI is the next slice.
+
 **Resolved 2026-10-19:** Stremio core 0.64 sends `player` and `library` events to addons
 that declare them (see the decisions above). Do **not** route Stremio → Trakt → Aaru by
 re-reading Trakt — that is two-way sync.

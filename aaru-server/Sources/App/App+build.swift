@@ -148,6 +148,13 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         )
         return Response(status: .found, headers: [.location: next.absoluteString])
     }
+    StremioRoutes(
+        service: StremioService(
+            library: services.library, schedule: services.schedule, catalog: services.catalog,
+            scrobble: services.scrobble
+        ),
+        tokens: services.agentTokens
+    ).register(on: router)
     return router
 }
 

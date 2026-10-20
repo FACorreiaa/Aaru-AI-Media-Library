@@ -39,7 +39,7 @@ struct ScrobbleService: Sendable {
         ) {
             return .stoppedWithoutChange
         }
-        let title = try await resolve(report)
+        let title = try await resolve(MediaRef(titleID: report.titleID, type: report.type, ids: report.ids))
         let session = try await stores.watchEvents.record(
             report, titleID: title?.id, userID: userID, agentTokenID: caller.token.id, now: now
         )
@@ -52,14 +52,15 @@ struct ScrobbleService: Sendable {
             return .unmatched
         }
         guard let progress = session.progress, progress >= Self.watchedThreshold else { return .stoppedWithoutChange }
-        let wrote = try await markWatched(title, episode: report.episode, caller: caller)
+        let wrote = try await markWatched(title, episodes: report.episode.map { [$0] } ?? [], caller: caller)
         return wrote ? .watched : .stoppedWithoutChange
     }
 
-    /// The title the ids name, hydrating it from the catalog when Aaru has not seen it yet.
-    private func resolve(_ report: PlaybackReport) async throws -> Title? {
+    /// The title a ref names, hydrating it from the catalog when Aaru has not seen it yet; nil
+    /// when nothing matches.
+    func resolve(_ ref: MediaRef) async throws -> Title? {
         do {
-            return try await resolver.resolve(MediaRef(type: report.type, ids: report.ids))
+            return try await resolver.resolve(ref)
         } catch is ResolutionError {
             return nil
         } catch let error as ProviderError where error.kind == .notFound {
@@ -67,13 +68,15 @@ struct ScrobbleService: Sendable {
         }
     }
 
-    /// Ticks the episode, or finishes the movie. A title not in the library is added first
-    /// (in progress for a show, finished for a movie). Returns whether anything was written.
-    func markWatched(_ title: Title, episode: EpisodeKey?, caller: AgentCaller) async throws -> Bool {
+    /// Ticks the episodes (one action), or finishes the movie. A title not in the library is
+    /// added first (in progress for a show, finished for a movie). Returns whether anything was
+    /// written. A show with no episodes named writes nothing.
+    func markWatched(_ title: Title, episodes: [EpisodeKey], caller: AgentCaller) async throws -> Bool {
         let by = Caller.agent(caller.token)
         let ref = MediaRef(titleID: title.id, type: title.type)
         let existing = try await stores.library.item(userID: caller.userID, titleID: title.id)
-        if let episode, title.type == .show {
+        if title.type == .show {
+            guard !episodes.isEmpty else { return false }
             let id: LibraryItemID
             if let existing {
                 id = existing.id
@@ -81,7 +84,7 @@ struct ScrobbleService: Sendable {
                 id = try await library.add(ref, status: .inProgress, userID: caller.userID, by: by).item.id
             }
             return try await library.setEpisodes(
-                id, userID: caller.userID, keys: [episode], watched: true, by: by
+                id, userID: caller.userID, keys: episodes, watched: true, by: by
             ) != nil
         }
         guard title.type == .movie else { return false }
