@@ -21,6 +21,8 @@ export default [
       'worker-configuration.d.ts',
       'src/routeTree.gen.ts',
       'src/lib/api/schema.d.ts',
+      // Plain browser JavaScript served as-is, outside the TypeScript project.
+      'public/sw.js',
       '.output/**',
       'dist/**',
     ],

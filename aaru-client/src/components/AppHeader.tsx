@@ -5,6 +5,7 @@ import { Wordmark } from './Brand'
 
 const DESTINATIONS = [
   { to: '/app', label: 'Home', exact: true },
+  { to: '/app/discover', label: 'Discover', exact: false },
   { to: '/app/library', label: 'Library', exact: false },
   { to: '/app/week', label: 'Calendar', exact: false },
   { to: '/app/lists', label: 'Lists', exact: false },
@@ -14,7 +15,7 @@ const DESTINATIONS = [
 
 /**
  * The signed-in web app's navigation, the twin of the Apple apps' tabs and sidebar: Home,
- * Library, Calendar, Lists, Groups, Settings. Search opens in place where the page can host it
+ * Discover, Library, Calendar, Lists, Groups, Settings. Search opens in place where the page can host it
  * (`onSearch`), otherwise on the Library.
  */
 export function AppHeader(props: { onSearch?: () => void; class?: string }) {

@@ -5,8 +5,19 @@ import { badge, metaLine, shortCode } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { kindOf } from '../lib/library/model'
 import type { CatalogHit, LibraryStatus } from '../lib/library/model'
-import { nextLine, remainingLabel, runtimeLabel } from '../lib/home/model'
-import type { ContinueEntry, StartEntry } from '../lib/home/model'
+import { cardBadge } from '../lib/discover/model'
+import {
+  nextLine,
+  remainingLabel,
+  resumeLine,
+  runtimeLabel,
+  unfinishedLabel,
+} from '../lib/home/model'
+import type {
+  ContinueEntry,
+  StartEntry,
+  UnfinishedEntry,
+} from '../lib/home/model'
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 
@@ -212,6 +223,42 @@ export function StartCard(props: { entry: StartEntry }) {
   )
 }
 
+/** Unfinished business: a dropped or long-paused title, why it is here, and where to resume. */
+export function UnfinishedCard(props: {
+  entry: UnfinishedEntry
+  now: Date | null
+}) {
+  const e = () => props.entry
+  const reason = () => {
+    const now = props.now
+    if (e().reason === 'dropped') return 'Dropped'
+    return now ? unfinishedLabel(e(), now) : null
+  }
+  return (
+    <Link
+      to="/app/title/$id"
+      params={{ id: e().libraryItemId }}
+      class="block w-32 shrink-0 snap-start md:w-36"
+    >
+      <div class="relative">
+        <Poster
+          url={e().title.posterUrl}
+          kind={kindOf(e().title.type, e().title.isAnime)}
+        />
+        <Show when={reason()}>
+          {(text) => (
+            <span class={`absolute top-2 left-2 ${chip}`}>{text()}</span>
+          )}
+        </Show>
+      </div>
+      <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
+      <Show when={resumeLine(e())}>
+        {(line) => <p class="text-xs text-muted">{line()}</p>}
+      </Show>
+    </Link>
+  )
+}
+
 /** Calendar row: one coming airing, badged "Tomorrow", "In 3 hours"… */
 export function AiringCard(props: {
   entry: CalendarEntry
@@ -264,23 +311,42 @@ export function AiringCard(props: {
   )
 }
 
-/** DISC-001: a poster from a public row. On the shelf it links to the item; otherwise it
- * carries search's add control and a list button. */
+/** DISC-001: a poster from a public row, on Home and on Discover. On the shelf it links to
+ * the item; otherwise it carries search's add control and a list button. With `today` (the
+ * viewer's local "YYYY-MM-DD"), the art wears the release-date badge. */
 export function DiscoverCard(props: {
   hit: CatalogHit
   rowId: string
   adding: boolean
   onAdd: (status: LibraryStatus) => void
   onList: () => void
+  today?: string | null
 }) {
   const h = () => props.hit
   const kind = () => kindOf(h().type, h().isAnime)
   const meta = () => [h().year, h().byline].filter(Boolean).join(' · ')
+  const dateLabel = () =>
+    props.today ? cardBadge(props.rowId, h().releaseDate, props.today) : null
+  // A component, not one element: the poster is drawn in either branch below.
+  const DateBadge = () => (
+    <Show when={dateLabel()}>
+      {(text) => (
+        <span class="absolute bottom-1.5 left-1.5 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-on-accent">
+          {text()}
+        </span>
+      )}
+    </Show>
+  )
   return (
     <div class="w-32 shrink-0 snap-start md:w-36">
       <Show
         when={h().libraryItemId}
-        fallback={<Poster url={h().posterUrl} kind={kind()} />}
+        fallback={
+          <div class="relative">
+            <Poster url={h().posterUrl} kind={kind()} />
+            <DateBadge />
+          </div>
+        }
       >
         {(id) => (
           <Link
@@ -290,6 +356,7 @@ export function DiscoverCard(props: {
             aria-label={`${h().title}, in your library`}
           >
             <Poster url={h().posterUrl} kind={kind()} />
+            <DateBadge />
             <span
               class="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-accent text-xs font-bold text-on-accent"
               aria-hidden="true"
@@ -303,7 +370,12 @@ export function DiscoverCard(props: {
       <Show when={meta()}>
         <p class="truncate text-xs text-muted">{meta()}</p>
       </Show>
-      <Show when={!h().libraryItemId}>
+      <Show
+        when={!h().libraryItemId}
+        fallback={
+          <p class="mt-2 text-xs font-medium text-accent">On your shelf</p>
+        }
+      >
         <div class="mt-2 flex flex-wrap items-center gap-2">
           <AddControl
             hit={h()}

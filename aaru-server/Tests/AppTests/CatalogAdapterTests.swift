@@ -37,10 +37,33 @@ struct CatalogAdapterTests {
         #expect(hits == [CatalogHit(
             type: .movie, title: "The Matrix", originalTitle: nil, year: 1999,
             posterURL: URL(string: "https://image.tmdb.org/t/p/w500/p.jpg"), overview: "Neo.", byline: nil,
-            ids: ExternalIDs(tmdb: "603", imdb: "tt0133093"), isAnime: false
+            ids: ExternalIDs(tmdb: "603", imdb: "tt0133093"), isAnime: false, releaseDate: "1999-03-30"
         )])
         let query = try #require(stub.requests.first?.url.query)
         #expect(query.contains("api_key=v3key"))
+    }
+
+    @Test("CAT-019: TMDB multi search keeps films and shows, drops people and adult titles, dates each hit")
+    func tmdbMulti() async throws {
+        let stub = transport([
+            "/search/multi": #"""
+            {"results":[
+              {"id":1,"media_type":"movie","title":"Mob Film","release_date":"2025-05-02"},
+              {"id":2,"media_type":"tv","name":"MobLand","first_air_date":"2025-03-30"},
+              {"id":3,"media_type":"person","name":"Tom Hardy"},
+              {"id":4,"media_type":"movie","title":"Adult","adult":true,"release_date":"2020-01-01"},
+              {"id":5,"media_type":"movie","title":"Undated","release_date":""}]}
+            """#,
+            "/movie/1/external_ids": #"{"imdb_id":"tt1"}"#,
+            "/tv/2/external_ids": #"{"imdb_id":"tt2"}"#,
+        ])
+        let hits = try await TMDBCatalog(client: client(stub, "tmdb"), apiKey: "k").searchMulti(query: "mob")
+        #expect(hits.map(\.title) == ["Mob Film", "MobLand", "Undated"])
+        #expect(hits.map(\.type) == [.movie, .show, .movie])
+        #expect(hits.map(\.ids.imdb) == ["tt1", "tt2", nil], "external ids by each hit's own kind")
+        #expect(hits.map(\.releaseDate) == ["2025-05-02", "2025-03-30", nil])
+        #expect(stub.requests.first?.url.path.hasSuffix("/search/multi") == true)
+        #expect(stub.requests.first?.url.query?.contains("include_adult=false") == true)
     }
 
     @Test("A v4 read token goes in the Authorization header, not the URL")
@@ -114,6 +137,20 @@ struct CatalogAdapterTests {
         #expect(hits[0].ids == ExternalIDs(anilist: "16498", mal: "16498"))
         #expect(hits[0].title == "Attack on Titan")
         #expect(stub.requests.first?.method == "POST")
+    }
+
+    @Test("CAT-019: an AniList hit carries its start date only when AniList knows the day")
+    func aniListReleaseDate() async throws {
+        let stub = transport(["": #"""
+        {"data":{"Page":{"media":[
+          {"id":1,"format":"TV","title":{"romaji":"A"},"startDate":{"year":2023,"month":9,"day":29}},
+          {"id":2,"format":"TV","title":{"romaji":"B"},"startDate":{"year":2027,"month":null,"day":null}}]}}}
+        """#])
+        let hits = try await AniListCatalog(client: client(stub, "anilist")).search(query: "x", type: .show)
+        #expect(hits.map(\.releaseDate) == ["2023-09-29", nil])
+        #expect(hits.map(\.year) == [2023, 2027])
+        let body = try #require(stub.requests.first?.body.flatMap { String(bytes: $0, encoding: .utf8) })
+        #expect(body.contains("startDate { year month day }"))
     }
 
     @Test("AniList descriptions reach clients as plain text")

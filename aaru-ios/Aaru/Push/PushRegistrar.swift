@@ -104,5 +104,14 @@
         ) async -> UNNotificationPresentationOptions {
             [.banner, .sound]
         }
+
+        /// A tap on an airing alert opens the show it announced.
+        nonisolated func userNotificationCenter(
+            _: UNUserNotificationCenter,
+            didReceive response: UNNotificationResponse
+        ) async {
+            let id = response.notification.request.content.userInfo["libraryItemId"] as? String
+            await MainActor.run { PushInbox.shared.libraryItemID = id }
+        }
     }
 #endif

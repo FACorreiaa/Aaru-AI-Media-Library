@@ -1,5 +1,6 @@
 import { For, Show, createSignal } from 'solid-js'
 import { canChangeLibrary, lastUsedLabel } from '../lib/stremio/model'
+import { StremioHistoryImport } from './StremioHistoryImport'
 import {
   connectStremio,
   listStremio,
@@ -60,11 +61,13 @@ export function StremioSection(props: { links: AgentToken[] }) {
     <section class="mt-10 rounded-[20px] bg-surface p-5">
       <h2 class="font-display text-xl font-medium">Stremio</h2>
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
-        Your Continue watching, Next 7 days and Wishlist appear as rows in
+        Your Continue watching, Next 7 days and Plan to watch appear as rows in
         Stremio. Finishing an episode there ticks it here, and every change
         shows in your history with an undo. Works with Stremio Web and Stremio 5
         on desktop.
       </p>
+
+      <StremioGuide />
 
       <Show
         when={fresh()}
@@ -167,6 +170,56 @@ export function StremioSection(props: { links: AgentToken[] }) {
           </For>
         </ul>
       </Show>
+
+      <StremioHistoryImport />
     </section>
+  )
+}
+
+const setupSteps = [
+  'Choose whether Stremio may also add titles and unmark episodes, then press Connect Stremio.',
+  'Press Open in Stremio for the desktop app or Install on Stremio Web in a browser. Or copy the link and paste it into the search box on Stremio’s Addons page.',
+  'Approve the install in Stremio. Your rows appear on Stremio’s board and load as you scroll to them.',
+]
+
+const behaviour = [
+  'Marking an episode or film watched in Stremio ticks it here. It shows in your history with an undo.',
+  'Finishing an episode in Stremio’s player ticks it too.',
+  'Unmarking and adding titles reach Aaru only if you allowed it when connecting. Removing a title in Stremio never removes it here.',
+  'Aaru adds no streams. You play things with the add-ons you already use.',
+  'What you tick in Aaru does not show as watched in Stremio.',
+  'Works with Stremio Web and Stremio 5 on desktop. The phone and TV apps are not confirmed yet.',
+]
+
+// The setup steps, so nobody has to leave the app to learn how the addon works.
+function StremioGuide() {
+  return (
+    <details class="group mt-4 rounded-[14px] border border-line">
+      <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+        How to set it up
+        <span
+          aria-hidden="true"
+          class="text-lg leading-none text-muted transition-transform group-open:rotate-45"
+        >
+          +
+        </span>
+      </summary>
+      <div class="max-w-[60ch] px-4 pb-4 text-sm text-muted">
+        <ol class="list-decimal space-y-1.5 pl-5">
+          <For each={setupSteps}>{(step) => <li>{step}</li>}</For>
+        </ol>
+        <h3 class="mt-4 font-semibold text-ink">What it does</h3>
+        <ul class="mt-1.5 list-disc space-y-1.5 pl-5">
+          <For each={behaviour}>{(line) => <li>{line}</li>}</For>
+        </ul>
+        <h3 class="mt-4 font-semibold text-ink">History and lost links</h3>
+        <p class="mt-1.5">
+          Import my Stremio history brings in what you watched before, once:
+          approve the code on stremio.com, then review the import before
+          anything changes. The install link is shown only once. If you lose it,
+          revoke it and connect again.
+        </p>
+      </div>
+    </details>
   )
 }

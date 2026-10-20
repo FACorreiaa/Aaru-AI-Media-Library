@@ -90,6 +90,15 @@ extension PostgresLibraryStore {
         try await Self.watchedKeys(itemID, sql: sqlDatabase(database))
     }
 
+    func statusSetByHand(itemID: LibraryItemID) async throws -> Bool {
+        struct Row: Decodable {
+            let statusByHand: Bool
+        }
+        return try await sqlDatabase(database).raw("""
+        SELECT status_by_hand FROM library_items WHERE id = \(bind: itemID.rawValue)
+        """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)?.statusByHand ?? false
+    }
+
     func actions(userID: UserID, limit: Int) async throws -> [ActionRecord] {
         struct Row: Decodable {
             let id: UUID

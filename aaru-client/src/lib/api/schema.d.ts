@@ -608,6 +608,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/web-push/key': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off. */
+    get: operations['getWebPushKey']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/web-push/subscriptions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Save this browser's push subscription. Saved again, it moves to this user. */
+    put: operations['saveWebPushSubscription']
+    post?: never
+    delete: operations['deleteWebPushSubscription']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/agent/tokens': {
     parameters: {
       query?: never
@@ -666,7 +700,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date. */
+    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date. */
     get: operations['getStats']
     put?: never
     post?: never
@@ -1004,6 +1038,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/stremio/link': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out. */
+    post: operations['startStremioLink']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/stremio/link/{code}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out. */
+    post: operations['pollStremioLink']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/trakt': {
     parameters: {
       query?: never
@@ -1167,7 +1235,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Continue Watching and Start Watching for the home screen, in one call. */
+    /** Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call. */
     get: operations['getUpNext']
     put?: never
     post?: never
@@ -1263,12 +1331,28 @@ export interface components {
       /** Format: date-time */
       connectedAt?: string
     }
+    StremioLink: {
+      code: string
+      /**
+       * Format: uri
+       * @description The stremio.com page where the user approves the code.
+       */
+      link: string
+      /**
+       * Format: uri
+       * @description A QR image of `link`, for scanning with a phone.
+       */
+      qrcode: string
+      /** Format: date-time */
+      expiresAt: string
+    }
     ImportJob: {
       /** Format: uuid */
       id: string
       /** @enum {string} */
       source:
         | 'trakt'
+        | 'stremio'
         | 'imdb_csv'
         | 'letterboxd_csv'
         | 'goodreads_csv'
@@ -1330,6 +1414,18 @@ export interface components {
        */
       environment: 'sandbox' | 'production'
       bundleId: string
+    }
+    WebPushKey: {
+      /** @description VAPID public key, base64url: the browser's applicationServerKey. */
+      publicKey: string
+    }
+    /** @description `PushSubscription.toJSON()` as the browser gives it. */
+    WebPushSubscription: {
+      endpoint: string
+      keys: {
+        p256dh: string
+        auth: string
+      }
     }
     NotificationSettings: {
       /** @description Push when a new episode of a show you are watching airs. */
@@ -1580,9 +1676,13 @@ export interface components {
       ids: components['schemas']['ExternalIds']
       /** @description The caller's library item for this title, when they have one. Discover only. */
       libraryItemId?: string
+      /** @description YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date. */
+      releaseDate?: string
     }
     SearchResults: {
       items: components['schemas']['CatalogHit'][]
+      /** @description True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search. */
+      incomplete: boolean
     }
     DiscoverRow: {
       /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get. */
@@ -1783,11 +1883,31 @@ export interface components {
       /** Format: uuid */
       id: string
       name: string
+      /** @description Superseded by `items`; kept for clients that predate it. */
       titles: components['schemas']['TitleSummary'][]
+      /** @description The members in list order. */
+      items: components['schemas']['ListItem'][]
       /** Format: date-time */
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+    }
+    /** @description One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded. */
+    ListItem: {
+      title: components['schemas']['TitleSummary']
+      entry?: components['schemas']['LibraryEntry']
+      /** @enum {string} */
+      showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
+      nextAiring?: components['schemas']['UpcomingEpisode']
+    }
+    UpcomingEpisode: {
+      season: number
+      number: number
+      episodeName?: string
+      /** Format: date-time */
+      airsAt: string
+      /** @description False when the source gives only a date, as on CalendarEntry. */
+      airTimeKnown: boolean
     }
     CreateList: {
       name: string
@@ -1873,16 +1993,47 @@ export interface components {
     UpNext: {
       continueWatching: components['schemas']['ContinueEntry'][]
       startWatching: components['schemas']['StartEntry'][]
+      counts?: components['schemas']['LibraryCounts']
+      /** @description Unfinished business (UPN-002): every dropped item, and every in-progress item last changed 30 or more days ago that is not in `continueWatching`. Newest change first, at most 20. */
+      unfinished?: components['schemas']['UnfinishedEntry'][]
+    }
+    /** @description The user's library items per status. */
+    LibraryCounts: {
+      wishlist: number
+      inProgress: number
+      finished: number
+      dropped: number
+    }
+    UnfinishedEntry: {
+      /** Format: uuid */
+      libraryItemId: string
+      title: components['schemas']['TitleSummary']
+      /**
+       * @description `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+       * @enum {string}
+       */
+      reason: 'dropped' | 'stalled'
+      /**
+       * Format: date-time
+       * @description The item's last change.
+       */
+      since: string
+      next?: components['schemas']['EpisodeRef']
     }
     /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. */
     Stats: {
+      /** @enum {string} */
+      span: 'month' | 'year' | 'all'
+      /** @description The last year the period touches; for `all`, the current year. */
       year: number
       month?: number
       timeZone: string
-      /** @description The period is not over yet in the user's time zone. */
+      /** @description The period is not over yet in the user's time zone (always true for `all`). */
       isPartial: boolean
       totals: components['schemas']['StatsTotals']
-      /** @description One per month of the year, or one per day of the month, in order. */
+      /** @description Movie, show, anime and book, always all four in that order; they sum to `totals`. */
+      byKind: components['schemas']['StatsKind'][]
+      /** @description One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order. */
       buckets: components['schemas']['StatsBucket'][]
       busiest?: components['schemas']['StatsBucket']
       mostEpisodes?: components['schemas']['StatsBucket']
@@ -1903,6 +2054,16 @@ export interface components {
       /** @description Anime shows and films. Not counted again as shows or movies. */
       animeFinished: number
       booksFinished: number
+    }
+    StatsKind: {
+      /**
+       * @description Anime is its own kind, films and shows alike; never counted again as either.
+       * @enum {string}
+       */
+      kind: 'movie' | 'show' | 'anime' | 'book'
+      episodes: number
+      minutes: number
+      finished: number
     }
     StatsBucket: {
       /** @description First local day of the bucket, YYYY-MM-DD. */
@@ -1929,6 +2090,8 @@ export interface components {
       mean?: number
       highest?: components['schemas']['TitleSummary']
       highestRating?: number
+      /** @description Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9. */
+      distribution: number[]
     }
     StatsMoment: {
       title: components['schemas']['TitleSummary']
@@ -2999,6 +3162,71 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  getWebPushKey: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The key. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WebPushKey']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  saveWebPushSubscription: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebPushSubscription']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteWebPushSubscription: {
+    parameters: {
+      query: {
+        endpoint: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Forgotten. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
   listAgentTokens: {
     parameters: {
       query?: never
@@ -3116,8 +3344,11 @@ export interface operations {
   }
   getStats: {
     parameters: {
-      query: {
-        year: number
+      query?: {
+        /** @description Required unless `span=all`. */
+        year?: number
+        /** @description `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise). */
+        span?: 'all'
         /** @description 1–12. Absent means the whole year. */
         month?: number
         /** @description IANA time zone for day and month boundaries. Absent means UTC. */
@@ -3145,8 +3376,8 @@ export interface operations {
     parameters: {
       query: {
         q: string
-        /** @description `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library. */
-        type: 'movie' | 'show' | 'anime' | 'book'
+        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library. */
+        type: 'all' | 'movie' | 'show' | 'anime' | 'book'
       }
       header?: never
       path?: never
@@ -3154,7 +3385,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Matches, best first. */
+      /** @description Matches, best first. With `all`, exact title matches lead, then TMDB and AniList hits alternate, at most 40; a TMDB show is left out only when an AniList hit in the same results is mapped to it, and that hit then carries `ids.tmdb`. */
       200: {
         headers: {
           [name: string]: unknown
@@ -3758,6 +3989,57 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  startStremioLink: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description A code to approve. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StremioLink']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  pollStremioLink: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        code: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Approved. The library was read and its import queued. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      /** @description Not approved yet. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
   createTraktImport: {
     parameters: {
       query?: never
@@ -4065,7 +4347,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Both rows. */
+      /** @description The home rows. */
       200: {
         headers: {
           [name: string]: unknown
