@@ -5,6 +5,8 @@ import {
   useRouter,
 } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
+import { z } from 'zod'
+import { safeNext } from '../lib/oauth/model'
 import { AppleSignInButton } from '../components/AppleSignInButton'
 import type { AppleCredential } from '../components/AppleSignInButton'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
@@ -24,9 +26,11 @@ import {
 // The web twin of the Apple apps' welcome screen and email sheet (DESIGN.md §0).
 export const Route = createFileRoute('/sign-in')({
   head: () => ({ meta: [{ title: 'Sign in · Aaru' }] }),
-  beforeLoad: async () => {
+  // `next`: where to return after signing in, e.g. an OAuth consent page (OUT-004).
+  validateSearch: z.object({ next: z.string().optional() }),
+  beforeLoad: async ({ search }) => {
     const session = await getSession()
-    if (session.signedIn) throw redirect({ to: '/app' })
+    if (session.signedIn) throw redirect({ href: safeNext(search.next) })
   },
   loader: () => getSignInConfig(),
   component: SignIn,
@@ -38,6 +42,7 @@ function SignIn() {
   const config = Route.useLoaderData()
   const router = useRouter()
   const navigate = useNavigate()
+  const search = Route.useSearch()
   const [step, setStep] = createSignal<Step>('choose')
   const [email, setEmail] = createSignal('')
   const [code, setCode] = createSignal('')
@@ -66,7 +71,7 @@ function SignIn() {
 
   async function signedIn() {
     await router.invalidate()
-    await navigate({ to: '/app' })
+    await navigate({ href: safeNext(search().next) })
   }
 
   const submitEmail = (event: SubmitEvent) => {

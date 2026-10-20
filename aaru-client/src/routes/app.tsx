@@ -3,6 +3,7 @@ import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { SearchPanel } from '../components/SearchPanel'
+import { PlanCard } from '../components/PlanCard'
 import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
 import { cardClass } from '../components/ui/card'
@@ -41,6 +42,8 @@ import type { ListSummary } from '../lib/lists/server'
 import { getStats } from '../lib/recap/server'
 import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { getSession } from '../lib/session/session'
+import { listPendingPlans } from '../lib/plans/server'
+import type { AgentPlan } from '../lib/plans/server'
 import { setEpisode } from '../lib/title/server'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
@@ -76,6 +79,7 @@ function Home() {
   const [discoverReady, setDiscoverReady] = createSignal(false)
   const [searchOpened, setSearchOpened] = createSignal(false)
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
+  const [plans, setPlans] = createSignal<AgentPlan[]>([])
   let dialog: HTMLDialogElement | undefined
   let libraryRequested = false
 
@@ -134,6 +138,15 @@ function Home() {
     }
   }
 
+  /** Agent requests waiting for the user (OUT-004), pinned above everything else. */
+  async function loadPlans() {
+    try {
+      setPlans(await listPendingPlans())
+    } catch {
+      // The requests stay on the server; the next visit shows them.
+    }
+  }
+
   async function loadDiscover() {
     try {
       setDiscover(await getDiscover())
@@ -158,6 +171,7 @@ function Home() {
     const today = localDayKey(current)
     void loadStrip(current)
     void loadDiscover()
+    void loadPlans()
     void loadLists()
     loadLibrary()
     try {
@@ -266,6 +280,25 @@ function Home() {
 
         <Show when={problem()}>
           {(message) => <Alert class="mt-4">{message()}</Alert>}
+        </Show>
+
+        <Show when={plans().length > 0}>
+          <section class="mt-6" aria-label="Waiting for you">
+            <h2 class="font-display text-2xl font-medium">Waiting for you</h2>
+            <div class="mt-3 grid gap-3 md:grid-cols-2">
+              <For each={plans()}>
+                {(plan) => (
+                  <PlanCard
+                    plan={plan}
+                    onDecided={(decided) => {
+                      if (decided.status === 'applied')
+                        void getUpNext().then(showUpNext, () => {})
+                    }}
+                  />
+                )}
+              </For>
+            </div>
+          </section>
         </Show>
 
         <Show when={strip().length > 0}>

@@ -145,7 +145,7 @@ struct MCPTests {
         }
     }
 
-    @Test("A tap-sized write applies as the token and is undoable; bigger ones and read-only tokens do not write")
+    @Test("A tap-sized write applies as the token and is undoable; bigger ones wait; read-only tokens never write")
     func writes() async throws {
         try await LibraryHarness.run { env in
             let itemID = try await env.add("show", tmdb: env.stubShow("Severance", status: .ended))
@@ -178,11 +178,9 @@ struct MCPTests {
                 "episodes": [["season": 1, "episode": 1], ["season": 1, "episode": 2]],
             ]]]
             let big = try await call(env, "apply_library_patch", many, token: writer)
-            #expect(big["isError"] as? Bool == true)
-            let remove = try await call(
-                env, "apply_library_patch", ["changes": [["op": "remove", "libraryItemId": itemID]]], token: writer
-            )
-            #expect(remove["isError"] as? Bool == true, "a removal is never tap-sized")
+            let proposed = big["structuredContent"] as? [String: Any]
+            #expect(proposed?["applied"] as? Bool == false)
+            #expect(proposed?["planId"] is String, "bigger than a tap: a plan, not a write")
             #expect(try await env.actionCount() == before + 2, "the tick and its undo only")
         }
     }

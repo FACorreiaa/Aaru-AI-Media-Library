@@ -43,7 +43,7 @@ struct MCPRoutes: Sendable {
         do {
             guard let secret = AuthMiddleware.bearerToken(request),
                   let caller = try await tokens.authenticate(secret, for: .mcp)
-            else { return Self.unauthorized() }
+            else { return unauthorized() }
             guard await tokens.allow(caller) else {
                 return Self.plain(.tooManyRequests, "Too many requests. Wait a minute.")
             }
@@ -172,9 +172,12 @@ struct MCPRoutes: Sendable {
         )
     }
 
-    private static func unauthorized() -> Response {
-        var response = plain(.unauthorized, "Connect this client in Aaru → Settings → Connections.")
-        response.headers[.wwwAuthenticate] = #"Bearer realm="aaru""#
+    /// Points an OAuth client (Claude's connector) at the resource metadata, so it can sign in.
+    private func unauthorized() -> Response {
+        var response = Self.plain(.unauthorized, "Connect this client in Aaru → Settings → Connections.")
+        let metadata = tokens.publicBaseURL.absoluteString.trimmingSuffix("/")
+            + "/.well-known/oauth-protected-resource/v1/mcp"
+        response.headers[.wwwAuthenticate] = #"Bearer realm="aaru", resource_metadata="\#(metadata)""#
         return response
     }
 }

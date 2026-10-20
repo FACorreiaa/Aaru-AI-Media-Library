@@ -309,20 +309,3 @@ struct CreateStremioLinkRequests: SQLMigration {
     ]
     let backward = ["DROP TABLE stremio_link_requests"]
 }
-
-/// OUT-001 / OUT-004 · tokens for MCP clients. The kind only picks the setup Settings shows;
-/// scopes stay the same three.
-struct AddAgentTokenKinds: SQLMigration {
-    let forward = [
-        "ALTER TABLE agent_tokens DROP CONSTRAINT agent_tokens_kind_check",
-        """
-        ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_kind_check
-            CHECK (kind IN ('stremio', 'claude_code', 'codex', 'hermes', 'gemini', 'other'))
-        """,
-    ]
-    let backward = [
-        "DELETE FROM agent_tokens WHERE kind <> 'stremio'",
-        "ALTER TABLE agent_tokens DROP CONSTRAINT agent_tokens_kind_check",
-        "ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_kind_check CHECK (kind IN ('stremio'))",
-    ]
-}

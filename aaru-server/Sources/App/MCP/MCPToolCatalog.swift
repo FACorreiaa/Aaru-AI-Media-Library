@@ -125,8 +125,8 @@ enum MCPToolCatalog {
         description: """
         Add titles, update status, rating, notes or ownership, tick episodes, or remove items. A \
         single change to one item (at most one episode) applies at once and the user can undo it in \
-        Aaru. Anything larger, and any removal, needs the user's approval in Aaru. Needs a connection \
-        the user allowed to make changes.
+        Aaru. Anything larger, and any removal, is sent to the user to approve in Aaru and answers \
+        applied: false with a planId. Needs a connection the user allowed to make changes.
         """,
         inputSchema: object(
             ["changes": .object([
