@@ -284,6 +284,23 @@ protocol PushStore: Sendable {
     func dueAirings(now: Date, since: Date) async throws -> [DueAiring]
     /// Claims an announcement. False when another run already sent it.
     func claim(_ airing: DueAiring) async throws -> Bool
+    /// A browser subscription belongs to one user: saving it again moves it.
+    func saveWebPush(_ subscription: WebPushSubscription, userID: UserID) async throws
+    func deleteWebPush(endpoint: String, userID: UserID) async throws
+    /// The push service said the subscription is gone (unsubscribed, expired).
+    func forgetWebPush(endpoint: String) async throws
+    func webPushSubscriptions(userID: UserID) async throws -> [WebPushSubscription]
+}
+
+/// One browser's push subscription (W3C Push API), as the browser handed it over.
+struct WebPushSubscription: Sendable, Equatable {
+    var endpoint: String
+    /// The browser's P-256 public key, base64url.
+    var p256dh: String
+    /// The browser's auth secret, base64url.
+    var auth: String
+    /// The VAPID public key it was made with (base64url), so a later key still reaches it.
+    var vapidKeyID: String
 }
 
 /// Everything handlers may touch, injected once at boot.

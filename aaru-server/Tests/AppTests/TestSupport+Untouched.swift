@@ -54,6 +54,22 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func saveWebPush(_: WebPushSubscription, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func deleteWebPush(endpoint _: String, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func forgetWebPush(endpoint _: String) async throws {
+        throw Touched()
+    }
+
+    func webPushSubscriptions(userID _: UserID) async throws -> [WebPushSubscription] {
+        throw Touched()
+    }
+
     func apply(_: LibraryOp, userID _: UserID, caller _: Caller, kind _: String, summary _: String) async throws
         -> ActionRecord
     {

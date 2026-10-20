@@ -41,6 +41,13 @@ library layer stay separate, external IDs stored whenever known, no second backe
   recommendations engine; nothing personalised ("because you watched…") is allowed under this
   item. Posters stay hotlinked catalog URLs.
 
+## Decisions recorded 2026-10-20
+
+- **Web push is un-deferred** (by the owner's call: "notifications working, on web and iOS"):
+  airing alerts reach browsers too, over standard Web Push with a VAPID key (`VAPID_CONFIG`,
+  sealed in `aaru-env`, generated once). Endpoints are limited to the browsers' push services.
+  iPhone and iPad get browser alerts only from Aaru added to the Home Screen.
+
 ## Decisions recorded 2026-10-19
 
 - **Episodes and Stremio are built before the P2 gate**, by the owner's call, with 0 strangers

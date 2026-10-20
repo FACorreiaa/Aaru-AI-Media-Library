@@ -252,3 +252,23 @@ struct CreateWatchEvents: SQLMigration {
         "DROP TABLE watch_events",
     ]
 }
+
+/// Web push (2026-10-20): one row per browser subscription. Deleting the user deletes them.
+struct CreateWebPush: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE web_push_subscriptions (
+            endpoint text PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            p256dh text NOT NULL,
+            auth text NOT NULL,
+            vapid_key_id text NOT NULL,
+            updated_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+        "CREATE INDEX web_push_subscriptions_user ON web_push_subscriptions (user_id)",
+    ]
+    let backward = [
+        "DROP TABLE web_push_subscriptions",
+    ]
+}
