@@ -4,6 +4,8 @@ import {
   airingBadge,
   countChips,
   hoursLabel,
+  markAdded,
+  markOnShelf,
   monthStrip,
   nextLine,
   remainingLabel,
@@ -12,9 +14,10 @@ import {
   unfinishedLabel,
   upcoming,
 } from './model'
-import type { ContinueEntry, UnfinishedEntry } from './model'
+import type { ContinueEntry, DiscoverRow, UnfinishedEntry } from './model'
 import type { Stats } from '../recap/model'
 import type { CalendarEntry } from '../calendar/model'
+import type { LibraryEntry } from '../library/model'
 
 function airing(overrides: Partial<CalendarEntry> = {}): CalendarEntry {
   return {
@@ -262,5 +265,66 @@ describe('unfinished business', () => {
       'Resume at S2 · E3',
     )
     expect(resumeLine(unfinished())).toBeNull()
+  })
+})
+
+describe('markAdded', () => {
+  const hit = (tmdb: string, title: string) => ({
+    type: 'movie' as const,
+    title,
+    isAnime: false,
+    ids: { tmdb },
+  })
+  const rows: DiscoverRow[] = [
+    {
+      id: 'movies_trending',
+      title: 'Trending movies',
+      items: [hit('1', 'A'), hit('2', 'B')],
+    },
+    { id: 'movies_in_theaters', title: 'In theaters', items: [hit('1', 'A')] },
+  ]
+
+  it('links every card for the added title, in every row', () => {
+    const marked = markAdded(rows, 'tmdb:1', 'item-1')
+    expect(marked[0].items.map((h) => h.libraryItemId)).toEqual([
+      'item-1',
+      undefined,
+    ])
+    expect(marked[1].items[0].libraryItemId).toBe('item-1')
+  })
+
+  it('leaves the rows it was given untouched', () => {
+    markAdded(rows, 'tmdb:1', 'item-1')
+    expect(rows[0].items[0].libraryItemId).toBeUndefined()
+  })
+})
+
+describe('markOnShelf', () => {
+  const hit = (ids: Record<string, string>, title: string) => ({
+    type: 'show' as const,
+    title,
+    isAnime: false,
+    ids,
+  })
+  const rows: DiscoverRow[] = [
+    {
+      id: 'tv_trending',
+      title: 'Trending shows',
+      items: [hit({ tmdb: '1', imdb: 'tt1' }, 'A'), hit({ tmdb: '2' }, 'B')],
+    },
+    { id: 'tv_new', title: 'New shows', items: [hit({ imdb: 'tt1' }, 'A')] },
+  ]
+  const entry = {
+    id: 'item-1',
+    title: { ids: { imdb: 'tt1' } },
+  } as unknown as LibraryEntry
+
+  it('links every card sharing any id with the added entry', () => {
+    const marked = markOnShelf(rows, entry)
+    expect(marked[0].items.map((h) => h.libraryItemId)).toEqual([
+      'item-1',
+      undefined,
+    ])
+    expect(marked[1].items[0].libraryItemId).toBe('item-1')
   })
 })

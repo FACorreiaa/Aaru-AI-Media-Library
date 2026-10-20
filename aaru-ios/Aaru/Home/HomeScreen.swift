@@ -2,8 +2,9 @@ import AaruAPI
 import SwiftUI
 
 /// Home (APP-009, APP-013, DESIGN.md §13): this month's numbers and the shelf's counts, then
-/// Continue watching, what airs next, Start watching, Unfinished, Discover's new shows and the
-/// user's lists, as Trakt-style rows of cards. Renders from the cache first, then refreshes.
+/// Continue watching, what airs next, Start watching, Unfinished and the user's lists, as
+/// Trakt-style rows of cards, then Discover's public rows (DISC-001). Renders from the cache
+/// first, then refreshes.
 struct HomeScreen: View {
     let api: Client?
     let library: LibraryModel
@@ -16,6 +17,7 @@ struct HomeScreen: View {
     @State private var model: HomeModel
     @State private var showsSearch = false
     @State private var recap: RecapPeriod?
+    @State private var listTarget: CatalogHit?
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -79,6 +81,13 @@ struct HomeScreen: View {
                     onDismiss: { Task { await model.shelfChanged() } },
                     content: { SearchView(api: api, library: library, lists: lists) }
                 )
+                .sheet(item: $listTarget) { hit in
+                    ListPickerSheet(
+                        ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
+                        titleName: hit.title,
+                        lists: lists
+                    )
+                }
                 .recapStory($recap, api: api)
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: model.problem) { model.problem = nil }
@@ -89,7 +98,7 @@ struct HomeScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if model.isEmpty, model.hasLoaded {
+        if model.isEmpty, model.discover.isEmpty, model.hasLoaded {
             ContentUnavailableView {
                 Label("Add a show to see what's next", systemImage: "sparkles.tv")
             } description: {
@@ -100,21 +109,21 @@ struct HomeScreen: View {
                 Button("Search") { showsSearch = true }
                     .buttonStyle(.bordered)
             }
-        } else if model.isEmpty {
+        } else if model.isEmpty, model.discover.isEmpty {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
+                    if model.isEmpty {
+                        HomeWelcome { showsSearch = true }
+                            .padding(.horizontal, 16)
+                    }
                     if let offered = RecapPeriod.offered(now: .now, calendar: model.calendar) {
                         RecapBanner(period: offered) { recap = offered }
                             .padding(.horizontal, 16)
                     }
                     summary
-                    if model.hasNoShelfRows {
-                        HomeIntroCard(onBrowse: { onSelectTab(.discover) }, onSearch: { showsSearch = true })
-                            .padding(.horizontal, 20)
-                    }
                     if !model.continueWatching.isEmpty {
                         HomeRow(title: "Continue watching") {
                             ForEach(model.continueWatching, id: \.libraryItemId) { entry in
@@ -162,15 +171,6 @@ struct HomeScreen: View {
                             }
                         }
                     }
-                    if !model.newShows.isEmpty {
-                        DiscoverRow(
-                            title: "New shows",
-                            trailing: ("See Discover", { onSelectTab(.discover) }),
-                            hits: model.newShows,
-                            showsDates: true,
-                            api: api, library: library, lists: lists
-                        ) { model.problem = $0 }
-                    }
                     if !lists.lists.isEmpty {
                         HomeRow(title: "Your lists", trailing: ("All lists", { onSelectTab(.lists) })) {
                             ForEach(lists.lists, id: \.id) { list in
@@ -183,6 +183,7 @@ struct HomeScreen: View {
                             }
                         }
                     }
+                    discoverRows
                 }
                 .padding(.vertical, 16)
             }
@@ -206,10 +207,41 @@ struct HomeScreen: View {
     }
 }
 
+extension HomeScreen {
+    /// DISC-001: the public rows, after the user's own. The first one leads to the Discover tab.
+    private var discoverRows: some View {
+        let rows = model.discover.filter { !$0.items.isEmpty }
+        return ForEach(rows, id: \.id) { row in
+            HomeRow(
+                title: row.title,
+                trailing: row.id == rows.first?.id ? ("See Discover", { onSelectTab(.discover) }) : nil
+            ) {
+                ForEach(row.items) { hit in
+                    DiscoverCard(
+                        hit: hit,
+                        libraryItemID: model.libraryItemID(hit),
+                        badge: DiscoverCard.releaseBadge(hit.releaseDate, row: row.id),
+                        width: HomeCardSize.poster.width(compact: compact),
+                        isAdding: model.adding.contains(hit.id)
+                    ) { status in
+                        Task { await model.add(hit, status: status) }
+                    } onAddToList: {
+                        listTarget = hit
+                    }
+                }
+            }
+        }
+    }
+}
+
 // MARK: Previews
 
 #Preview("Home") {
     HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .sample)
+}
+
+#Preview("Home, new account") {
+    HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .newAccount)
 }
 
 #Preview("Home · dark") {

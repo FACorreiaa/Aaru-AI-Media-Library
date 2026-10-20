@@ -2,7 +2,7 @@ import { For, Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { addToLibrary, searchCatalog } from '../lib/library/server'
 import {
   KINDS,
-  idKeys,
+  hitKey,
   isOnShelf,
   kindName,
   kindOf,
@@ -13,9 +13,9 @@ import type {
   LibraryStatus,
   MediaKind,
 } from '../lib/library/model'
+import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 import { AddToListDialog } from './AddToListDialog'
-import { AddControl } from './AddControl'
 
 /** All searches films, shows and anime together; books are never in it, and the last row of
  * an All search offers them instead. */
@@ -80,8 +80,7 @@ export function SearchPanel(props: {
     onCleanup(() => clearTimeout(timer))
   })
 
-  const keyOf = (hit: CatalogHit) =>
-    idKeys(hit.ids).sort()[0] ?? `${hit.title}-${hit.year ?? ''}`
+  const keyOf = hitKey
 
   async function add(hit: CatalogHit, status: LibraryStatus) {
     const key = keyOf(hit)
@@ -208,9 +207,7 @@ export function SearchPanel(props: {
                 </div>
                 <button
                   type="button"
-
                   class="text-sm font-medium text-muted hover:text-ink"
-
                   onClick={() => setListTarget(hit)}
                 >
                   List…
@@ -224,9 +221,8 @@ export function SearchPanel(props: {
                   }
                 >
                   <AddControl
-                    kind={kindOfHit}
-                    id={keyOf(hit)}
-                    busy={adding().has(keyOf(hit))}
+                    hit={hit}
+                    adding={adding().has(keyOf(hit))}
                     onAdd={(status) => void add(hit, status)}
                   />
                 </Show>

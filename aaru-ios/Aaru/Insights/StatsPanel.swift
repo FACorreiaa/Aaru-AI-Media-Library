@@ -115,7 +115,7 @@ private struct ActivityChart: View {
                 x: .value("Period", bucket.start),
                 y: .value("Hours", Double(bucket.minutes) / 60)
             )
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(Color(.accent))
             .cornerRadius(3)
             .accessibilityLabel(label(bucket.start, full: true))
             .accessibilityValue("\(hoursValue(minutes: bucket.minutes)) hours")

@@ -1,0 +1,163 @@
+import AaruAPI
+import SwiftUI
+
+/// `DiscoverCard` (DISC-001): a poster from a public row, on Home and on Discover. Not yet on
+/// the shelf, the poster is an add menu (tap for the wishlist, hold for a status or a list); on
+/// the shelf, it opens the item and wears a check. A release date shows as a badge.
+struct DiscoverCard: View {
+    let hit: CatalogHit
+    /// The caller's item for this title, when they have it.
+    let libraryItemID: String?
+    /// "Tomorrow", "Nov 14", "Out now": see `releaseBadge`.
+    var badge: String?
+    let width: CGFloat
+    let isAdding: Bool
+    let onAdd: (LibraryStatus) -> Void
+    let onAddToList: () -> Void
+
+    private var kind: MediaKind {
+        MediaKind(type: hit._type, isAnime: hit.isAnime)
+    }
+
+    var body: some View {
+        Group {
+            if let libraryItemID {
+                NavigationLink(value: libraryItemID) { card }
+                    .accessibilityLabel("\(hit.title), in your library")
+            } else {
+                Menu {
+                    ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
+                        Button(status.label(for: kind)) { onAdd(status) }
+                    }
+                    Divider()
+                    Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
+                } label: {
+                    card
+                } primaryAction: {
+                    onAdd(.wishlist)
+                }
+                .menuStyle(.button)
+                .disabled(isAdding)
+                .accessibilityLabel(hit.title)
+                .accessibilityHint("Adds as \(LibraryStatus.wishlist.label(for: kind)). Hold for other statuses.")
+            }
+        }
+        .buttonStyle(.plain)
+        .modifier(HoverLift())
+    }
+
+    private var card: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HomeArt(url: hit.posterUrl.flatMap(URL.init(string:)), aspect: 2 / 3)
+                .overlay(alignment: .topTrailing) { shelfMark.padding(6) }
+                .overlay(alignment: .topLeading) {
+                    if let badge {
+                        HomeChip(text: badge, tint: Color(.accent).opacity(0.9)).padding(6)
+                    }
+                }
+                .overlay(alignment: .bottomLeading) {
+                    if let kind = kindChip {
+                        HomeChip(text: kind).padding(6)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(hit.title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                if let detail {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(Color(.muted))
+                        .lineLimit(1)
+                }
+            }
+        }
+        .frame(width: width)
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private var shelfMark: some View {
+        if isAdding {
+            ProgressView()
+                .controlSize(.small)
+                .padding(6)
+                .background(.thinMaterial, in: Circle())
+        } else {
+            Image(systemName: libraryItemID == nil ? "plus" : "checkmark")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(libraryItemID == nil ? Color(.ink) : .white)
+                .frame(width: 26, height: 26)
+                .background(
+                    libraryItemID == nil ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color(.accent)),
+                    in: Circle()
+                )
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// Rows mix kinds only for anime films; say "Film" there so a poster is not mistaken.
+    private var kindChip: String? {
+        hit.isAnime && hit._type == .movie ? "Film" : nil
+    }
+
+    /// "2026", or "2026 · James Clear" for a book.
+    private var detail: String? {
+        let parts = [hit.year.map(String.init), hit.byline].compactMap(\.self)
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// The row whose past release dates read "Out now"; elsewhere a past date shows nothing.
+    nonisolated static let inTheatersRow = "movies_in_theaters"
+
+    /// "Today", "Tomorrow", "In 3 days", "Nov 14" from a `YYYY-MM-DD` release date, and
+    /// "Out now" for a past one in theaters. Nil when there is no date or it cannot be read.
+    static func releaseBadge(
+        _ releaseDate: String?, row: String, now: Date = .now, calendar: Calendar = .current
+    ) -> String? {
+        let parts = releaseDate?.split(separator: "-").compactMap { Int($0) } ?? []
+        guard parts.count == 3,
+              let day = calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+        else { return nil }
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: day).day ?? 0
+        switch days {
+        case ..<0: return row == inTheatersRow ? "Out now" : nil
+        case 0: return "Today"
+        case 1: return "Tomorrow"
+        case 2 ... 6: return "In \(days) days"
+        default:
+            let sameYear = calendar.component(.year, from: now) == parts[0]
+            return day.formatted(sameYear ? .dateTime.month(.abbreviated).day() : .dateTime.month(.abbreviated).year())
+        }
+    }
+}
+
+/// The empty-library header above Discover: what Home becomes once something is tracked.
+struct HomeWelcome: View {
+    let onSearch: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: "sparkles.tv")
+                .font(.title2)
+                .foregroundStyle(Color(.accent))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Add a show to see what's next")
+                    .font(.subheadline.weight(.semibold))
+                Text("Pick from the rows below or search. What you watch and what airs next land here.")
+                    .font(.caption)
+                    .foregroundStyle(Color(.muted))
+            }
+            Spacer(minLength: 8)
+            Button("Search", action: onSearch)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+        }
+        .padding(14)
+        .background(Color(.medallion).opacity(0.35), in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .contain)
+    }
+}

@@ -1,213 +1,187 @@
 import AaruCore
 import Foundation
+import Logging
 
-/// One catalog list Discover shows (CAT-020). Catalog data only: the same for every user.
-enum DiscoverFeed: Sendable, Equatable {
-    /// TMDB `trending/all/week`, films and shows.
-    case trending
-    /// TMDB `discover/movie` by popularity, first released in [from, until].
-    case upcomingMovies(from: LocalDay, until: LocalDay)
-    /// TMDB `discover/tv` by popularity, first aired in [from, until].
-    case newShows(from: LocalDay, until: LocalDay)
-    /// TMDB `tv/on_the_air`: shows with an episode in the next seven days.
-    case onTheAir
-    /// AniList's anime of one season, by popularity.
-    case animeSeason(AnimeSeason)
-}
-
-protocol DiscoverFeeds: Sendable {
-    /// The provider's list for `feed`. A feed the provider does not serve is a `ProviderError`.
-    func discover(_ feed: DiscoverFeed) async throws -> [CatalogHit]
-}
-
-/// A broadcast season as AniList counts it: winter is December to February, so December
-/// already belongs to the next year's winter.
-struct AnimeSeason: Sendable, Equatable, Hashable {
-    enum Name: String, Sendable, CaseIterable {
-        case winter, spring, summer, fall
-    }
-
-    var name: Name
-    var year: Int
-
-    /// The season `now` falls in, by the UTC calendar.
-    static func current(now: Date) -> AnimeSeason {
-        let day = LocalDay(now, in: .gmt)
-        switch day.month {
-        case 12: return AnimeSeason(name: .winter, year: day.year + 1)
-        case 1 ... 2: return AnimeSeason(name: .winter, year: day.year)
-        case 3 ... 5: return AnimeSeason(name: .spring, year: day.year)
-        case 6 ... 8: return AnimeSeason(name: .summer, year: day.year)
-        default: return AnimeSeason(name: .fall, year: day.year)
-        }
-    }
-
-    /// The season after this one; fall rolls over into next year's winter.
-    var next: AnimeSeason {
-        switch name {
-        case .winter: AnimeSeason(name: .spring, year: year)
-        case .spring: AnimeSeason(name: .summer, year: year)
-        case .summer: AnimeSeason(name: .fall, year: year)
-        case .fall: AnimeSeason(name: .winter, year: year + 1)
-        }
-    }
-}
-
-/// Discover's sections, as clients name them.
-enum DiscoverSectionID: String, Sendable, CaseIterable {
-    case trending
-    case upcomingMovies = "upcoming_movies"
-    case newShows = "new_shows"
-    case onTheAir = "on_the_air"
+/// A provider-curated public list for Home (DISC-001): trending, airing, this season. The
+/// same for every user; nothing here reads a library or a per-user signal, so it is not a
+/// recommendations engine. Cases are in display order.
+enum DiscoverList: String, Sendable, CaseIterable {
+    case tvTrending = "tv_trending"
     case animeSeason = "anime_season"
-    case animeNextSeason = "anime_next_season"
-}
+    case moviesTrending = "movies_trending"
+    case tvOnAir = "tv_on_air"
+    case animeTrending = "anime_trending"
+    case tvNew = "tv_new"
+    case moviesInTheaters = "movies_in_theaters"
+    case booksTrending = "books_trending"
 
-/// One served section. Holds catalog hits and nothing about any user.
-struct DiscoverSection: Sendable, Equatable {
-    var id: DiscoverSectionID
-    /// The anime sections only.
-    var animeSeason: AnimeSeason?
-    var items: [CatalogHit]
-    var fetchedAt: Date
-}
-
-/// Discover's sections, cached per process (copies `AppleJWKSCache`'s shape): fresh for `ttl`,
-/// served stale for up to `staleIfError` while the provider fails, and fetched once however many
-/// requests arrive together. Keys and values are catalog data; no user ever reaches it.
-actor DiscoverCache {
-    private let ttl: TimeInterval
-    private let staleIfError: TimeInterval
-    private var entries: [String: DiscoverSection] = [:]
-    private var inFlight: [String: Task<DiscoverSection, any Error>] = [:]
-
-    init(ttl: TimeInterval = 6 * 60 * 60, staleIfError: TimeInterval = 24 * 60 * 60) {
-        self.ttl = ttl
-        self.staleIfError = staleIfError
-    }
-
-    /// The cached section for `key`, or `fetch`'s answer. A failed fetch falls back to an entry
-    /// at most `staleIfError` old, else throws.
-    func section(
-        _ key: String,
-        now: Date,
-        fetch: @escaping @Sendable () async throws -> DiscoverSection
-    ) async throws -> DiscoverSection {
-        if let cached = entries[key], now.timeIntervalSince(cached.fetchedAt) < ttl {
-            return cached
-        }
-        let task: Task<DiscoverSection, any Error>
-        let owner: Bool
-        if let running = inFlight[key] {
-            task = running
-            owner = false
-        } else {
-            // Unstructured on purpose: one caller disconnecting must not cancel the fetch the
-            // others are waiting on.
-            task = Task { try await fetch() }
-            inFlight[key] = task
-            owner = true
-        }
-        do {
-            let fresh = try await task.value
-            if owner {
-                entries[key] = fresh
-                inFlight[key] = nil
-            }
-            return fresh
-        } catch {
-            if owner {
-                inFlight[key] = nil
-            }
-            if let stale = entries[key], now.timeIntervalSince(stale.fetchedAt) <= staleIfError {
-                return stale
-            }
-            throw error
+    func title(now: Date) -> String {
+        switch self {
+        case .tvTrending: "Trending shows"
+        case .animeSeason:
+            AnimeSeason.current(now).map { "\($0.season.displayName) \($0.year) anime" } ?? "This season's anime"
+        case .moviesTrending: "Trending movies"
+        case .tvOnAir: "On the air"
+        case .animeTrending: "Trending anime"
+        case .tvNew: "New shows"
+        case .moviesInTheaters: "In theaters"
+        case .booksTrending: "Trending books"
         }
     }
 }
 
-/// CAT-020: catalog lists to add from without typing. Not a recommendations engine: nothing here
-/// reads a library or differs between users.
+/// A provider that serves some of the Discover lists.
+protocol DiscoverListing: Sendable {
+    var discoverLists: Set<DiscoverList> { get }
+    func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit]
+}
+
+/// The anime broadcast season (AniList's `MediaSeason`), by calendar quarter in UTC.
+enum AnimeSeason: String, Sendable {
+    case winter, spring, summer, fall
+
+    static func current(_ date: Date) -> (season: AnimeSeason, year: Int)? {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        let parts = calendar.dateComponents([.year, .month], from: date)
+        guard let year = parts.year, let month = parts.month else { return nil }
+        let season: AnimeSeason = switch month {
+        case 1 ... 3: .winter
+        case 4 ... 6: .spring
+        case 7 ... 9: .summer
+        default: .fall
+        }
+        return (season, year)
+    }
+
+    var anilist: String {
+        rawValue.uppercased()
+    }
+
+    var displayName: String {
+        rawValue.capitalized
+    }
+}
+
+struct DiscoverItem: Sendable, Equatable {
+    var hit: CatalogHit
+    /// The caller's item for this title, when they have it.
+    var libraryItemID: LibraryItemID?
+}
+
+struct DiscoverRow: Sendable, Equatable {
+    var list: DiscoverList
+    var title: String
+    var items: [DiscoverItem]
+}
+
+/// Discover rows (DISC-001): provider lists cached for every user, then marked against the
+/// caller's library in one query.
 struct DiscoverService: Sendable {
-    /// Upcoming films: released today through this many days ahead.
-    static let upcomingDays = 60
-    /// New shows: first aired from a week ago to a month ahead.
-    static let newShowsDays = -7 ... 30
+    /// Provider lists move daily at most; six hours keeps Home fresh and providers quiet.
+    static let ttl: TimeInterval = 6 * 60 * 60
+    /// After a failed fetch, wait this long before asking that provider again.
+    static let retryAfter: TimeInterval = 5 * 60
+    static let rowLimit = 20
 
-    let tmdb: any DiscoverFeeds
-    let anilist: any DiscoverFeeds
+    let stores: Stores
+    let sources: [DiscoverList: any DiscoverListing]
     let cache: DiscoverCache
     var now: @Sendable () -> Date = { Date() }
 
-    /// The requested sections in order. A section whose provider fails (with nothing cached) is
-    /// left out; when every requested section fails, the first failure is thrown (502).
-    func sections(_ ids: [DiscoverSectionID]) async throws -> [DiscoverSection] {
+    /// `providers` are the catalog adapters; those that list nothing are skipped.
+    init(stores: Stores, providers: [any Sendable], cache: DiscoverCache = DiscoverCache()) {
+        self.stores = stores
+        self.cache = cache
+        var sources: [DiscoverList: any DiscoverListing] = [:]
+        for case let provider as any DiscoverListing in providers {
+            for list in provider.discoverLists where sources[list] == nil {
+                sources[list] = provider
+            }
+        }
+        self.sources = sources
+    }
+
+    func rows(userID: UserID) async throws -> [DiscoverRow] {
         let now = now()
-        let results = await withTaskGroup(of: (Int, Result<DiscoverSection, any Error>).self) { group in
-            for (index, id) in ids.enumerated() {
+        let lists = await withTaskGroup(of: (DiscoverList, [CatalogHit]).self) { group in
+            for (list, source) in sources {
                 group.addTask {
-                    do {
-                        return try await (index, .success(section(id, now: now)))
-                    } catch {
-                        return (index, .failure(error))
-                    }
+                    let hits = await cache.hits(list, now: now) { try await source.list(list, now: now) }
+                    return (list, hits ?? [])
                 }
             }
-            var results: [(Int, Result<DiscoverSection, any Error>)] = []
-            for await result in group {
-                results.append(result)
+            var lists: [DiscoverList: [CatalogHit]] = [:]
+            for await (list, hits) in group {
+                lists[list] = hits
             }
-            return results.sorted { $0.0 < $1.0 }.map(\.1)
+            return lists
         }
-        let served = results.compactMap { try? $0.get() }
-        if served.isEmpty, !ids.isEmpty {
-            try Task.checkCancellation()
-            for case let .failure(error) in results {
-                throw error
-            }
+        // A poster-less card reads as broken on a poster row.
+        let ordered = DiscoverList.allCases.compactMap { list -> (DiscoverList, [CatalogHit])? in
+            let hits = (lists[list] ?? []).filter { $0.posterURL != nil }.prefix(Self.rowLimit)
+            return hits.isEmpty ? nil : (list, Array(hits))
         }
-        return served
-    }
-
-    private func section(_ id: DiscoverSectionID, now: Date) async throws -> DiscoverSection {
-        let source = source(id, now: now)
-        let season = source.season
-        let key = season.map { "\(id.rawValue):\($0.name.rawValue)-\($0.year)" } ?? id.rawValue
-        return try await cache.section(key, now: now) {
-            let items = try await source.provider.discover(source.feed)
-            return DiscoverSection(id: id, animeSeason: season, items: items, fetchedAt: now)
+        let keys = Set(ordered.flatMap { $0.1.flatMap(\.catalogKeys) })
+        let owned = try await stores.library.itemIDs(userID: userID, matching: keys)
+        return ordered.map { list, hits in
+            DiscoverRow(list: list, title: list.title(now: now), items: hits.map { hit in
+                DiscoverItem(hit: hit, libraryItemID: hit.catalogKeys.lazy.compactMap { owned[$0] }.first)
+            })
         }
     }
+}
 
-    /// Which provider serves a section, with what query.
-    private struct Source {
-        var provider: any DiscoverFeeds
-        var feed: DiscoverFeed
-        var season: AnimeSeason?
+extension CatalogHit {
+    var catalogKeys: [CatalogKey] {
+        let candidates: [(CatalogKey.Provider, String?)] = [
+            (.tmdb, ids.tmdb), (.anilist, ids.anilist), (.openLibrary, ids.openLibrary),
+        ]
+        return candidates.compactMap { provider, id in id.map { CatalogKey(type: type, provider: provider, id: $0) } }
+    }
+}
+
+/// The shared, in-memory list cache. The API runs one replica, so memory is enough; a second
+/// replica would only fetch its own copy.
+actor DiscoverCache {
+    private struct Entry {
+        var hits: [CatalogHit]
+        var fetchedAt: Date
     }
 
-    private func source(_ id: DiscoverSectionID, now: Date) -> Source {
-        let today = LocalDay(now, in: .gmt)
-        switch id {
-        case .trending:
-            return Source(provider: tmdb, feed: .trending)
-        case .upcomingMovies:
-            return Source(
-                provider: tmdb, feed: .upcomingMovies(from: today, until: today.adding(days: Self.upcomingDays))
-            )
-        case .newShows:
-            let from = today.adding(days: Self.newShowsDays.lowerBound)
-            let until = today.adding(days: Self.newShowsDays.upperBound)
-            return Source(provider: tmdb, feed: .newShows(from: from, until: until))
-        case .onTheAir:
-            return Source(provider: tmdb, feed: .onTheAir)
-        case .animeSeason:
-            let season = AnimeSeason.current(now: now)
-            return Source(provider: anilist, feed: .animeSeason(season), season: season)
-        case .animeNextSeason:
-            let season = AnimeSeason.current(now: now).next
-            return Source(provider: anilist, feed: .animeSeason(season), season: season)
+    private var entries: [DiscoverList: Entry] = [:]
+    private var failedAt: [DiscoverList: Date] = [:]
+    private var inFlight: [DiscoverList: Task<[CatalogHit], any Error>] = [:]
+    private let logger = Logger(label: "aaru-server")
+
+    /// Fresh hits, or a refetch shared by every concurrent caller. A failed refetch serves
+    /// the stale copy (nil when there is none) and is not retried for `retryAfter`.
+    func hits(
+        _ list: DiscoverList,
+        now: Date,
+        fetch: @escaping @Sendable () async throws -> [CatalogHit]
+    ) async -> [CatalogHit]? {
+        let cached = entries[list]
+        if let cached, now.timeIntervalSince(cached.fetchedAt) < DiscoverService.ttl {
+            return cached.hits
+        }
+        if let failed = failedAt[list], now.timeIntervalSince(failed) < DiscoverService.retryAfter {
+            return cached?.hits
+        }
+        // Unstructured on purpose: one caller disconnecting must not cancel everyone's fetch.
+        let task = inFlight[list] ?? Task { try await fetch() }
+        inFlight[list] = task
+        do {
+            let hits = try await task.value
+            inFlight[list] = nil
+            failedAt[list] = nil
+            entries[list] = Entry(hits: hits, fetchedAt: now)
+            return hits
+        } catch {
+            inFlight[list] = nil
+            failedAt[list] = now
+            logger.warning("Discover list failed", metadata: ["list": "\(list.rawValue)", "error": "\(error)"])
+            return cached?.hits
         }
     }
 }

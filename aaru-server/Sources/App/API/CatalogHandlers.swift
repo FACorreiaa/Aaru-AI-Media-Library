@@ -8,8 +8,17 @@ extension APIImplementation {
         guard let scope = SearchScope(rawValue: input.query._type.rawValue) else { throw AppError.badRequest() }
         let result = try await catalog.search(query: input.query.q, scope: scope)
         return .ok(.init(body: .json(.init(
-            items: result.hits.map(Components.Schemas.CatalogHit.init), incomplete: result.incomplete
+            items: result.hits.map { Components.Schemas.CatalogHit($0) }, incomplete: result.incomplete
         ))))
+    }
+
+    func getDiscover(_: Operations.GetDiscover.Input) async throws -> Operations.GetDiscover.Output {
+        let rows = try await services.discover.rows(userID: currentUser())
+        return .ok(.init(body: .json(.init(rows: rows.map { row in
+            .init(id: row.list.rawValue, title: row.title, items: row.items.map {
+                Components.Schemas.CatalogHit($0.hit, libraryItemID: $0.libraryItemID)
+            })
+        }))))
     }
 
     func getTitle(_ input: Operations.GetTitle.Input) async throws -> Operations.GetTitle.Output {
@@ -38,7 +47,7 @@ extension Components.Schemas.MediaType {
 }
 
 extension Components.Schemas.CatalogHit {
-    init(_ hit: CatalogHit) {
+    init(_ hit: CatalogHit, libraryItemID: LibraryItemID? = nil) {
         self.init(
             _type: .init(hit.type),
             title: hit.title,
@@ -49,6 +58,7 @@ extension Components.Schemas.CatalogHit {
             byline: hit.byline,
             isAnime: hit.isAnime,
             ids: .init(hit.ids),
+            libraryItemId: libraryItemID?.description,
             releaseDate: hit.releaseDate
         )
     }

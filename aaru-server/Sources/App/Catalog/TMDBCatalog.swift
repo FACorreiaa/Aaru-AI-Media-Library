@@ -1,10 +1,10 @@
 import AaruCore
 import Foundation
 
-/// TMDB adapter (CAT-002): search and detail for movies and shows, external ids,
-/// season/episode lists, and the Discover lists (CAT-020). Poster URLs are referenced, never
-/// downloaded. No TMDB field name leaves this file.
-struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching, DiscoverFeeds {
+/// TMDB adapter (CAT-002): search and detail for movies and shows, external ids, and
+/// season/episode lists. Poster URLs are referenced, never downloaded. No TMDB field
+/// name leaves this file.
+struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching {
     static let baseURL = URL(string: "https://api.themoviedb.org/3")!
     static let imageBase = "https://image.tmdb.org/t/p/w500"
     /// Backdrops render as wide banners, never full-screen: w780 is enough at 3x.
@@ -122,33 +122,6 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching, DiscoverFe
         )
     }
 
-    // MARK: Discover (CAT-020)
-
-    /// Catalog lists, the same for every user. One page each, no IMDb lookups.
-    func discover(_ feed: DiscoverFeed) async throws -> [CatalogHit] {
-        let base = ["include_adult": "false"]
-        switch feed {
-        case .trending:
-            return try await get(SearchPage.self, "trending/all/week", [:]).results.compactMap(\.mixedHit)
-        case let .upcomingMovies(from, until):
-            let query = base.merging([
-                "sort_by": "popularity.desc", "include_video": "false",
-                "primary_release_date.gte": from.description, "primary_release_date.lte": until.description,
-            ]) { $1 }
-            return try await get(SearchPage.self, "discover/movie", query).results.compactMap { $0.hit(type: .movie) }
-        case let .newShows(from, until):
-            let query = base.merging([
-                "sort_by": "popularity.desc", "include_null_first_air_dates": "false",
-                "first_air_date.gte": from.description, "first_air_date.lte": until.description,
-            ]) { $1 }
-            return try await get(SearchPage.self, "discover/tv", query).results.compactMap { $0.hit(type: .show) }
-        case .onTheAir:
-            return try await get(SearchPage.self, "tv/on_the_air", [:]).results.compactMap { $0.hit(type: .show) }
-        case .animeSeason:
-            throw ProviderError(provider: "tmdb", kind: .notFound)
-        }
-    }
-
     // MARK: Plumbing
 
     private static func kind(for type: MediaType) throws -> String {
@@ -173,6 +146,56 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching, DiscoverFe
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try await client.decode(T.self, OutboundRequest(url: url, headers: headers), decoder: decoder)
+    }
+}
+
+// MARK: - Discover (DISC-001)
+
+extension TMDBCatalog: DiscoverListing {
+    /// TV genres a "what to watch" row leaves out: news, soap, talk.
+    static let offRowGenres: Set<Int> = [10763, 10766, 10767]
+    /// "New shows" premiered within this window.
+    static let newShowWindow: TimeInterval = 90 * 24 * 60 * 60
+
+    var discoverLists: Set<DiscoverList> {
+        [.tvTrending, .tvOnAir, .tvNew, .moviesTrending, .moviesInTheaters]
+    }
+
+    func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit] {
+        let type: MediaType
+        let path: String
+        var query = ["include_adult": "false"]
+        switch list {
+        case .tvTrending: (type, path) = (.show, "trending/tv/week")
+        case .tvOnAir: (type, path) = (.show, "tv/on_the_air")
+        case .tvNew:
+            (type, path) = (.show, "discover/tv")
+            query["first_air_date.gte"] = Self.day(now.addingTimeInterval(-Self.newShowWindow))
+            query["first_air_date.lte"] = Self.day(now)
+            query["sort_by"] = "popularity.desc"
+            // Popularity alone surfaces shows nobody has rated yet.
+            query["vote_count.gte"] = "10"
+        case .moviesTrending: (type, path) = (.movie, "trending/movie/week")
+        case .moviesInTheaters: (type, path) = (.movie, "movie/now_playing")
+        default: throw ProviderError(provider: "tmdb", kind: .notFound)
+        }
+        let page = try await get(SearchPage.self, path, query)
+        return page.results.compactMap { entry -> CatalogHit? in
+            guard let hit = entry.hit(type: type) else { return nil }
+            guard type == .show else { return hit }
+            // Anime rows come from AniList, the anime catalog.
+            let genres = Set(entry.genreIds ?? [])
+            return hit.isAnime || !genres.isDisjoint(with: Self.offRowGenres) ? nil : hit
+        }
+    }
+
+    private static func day(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 }
 
@@ -232,7 +255,7 @@ private struct Detail: Decodable {
     let seasons: [SeasonSummary]?
     let externalIds: ExternalIDsBody?
     let imdbId: String?
-    /// Mixed lists only (`search/multi`, `trending/all`): `movie`, `tv` or `person`.
+    /// `search/multi` only: `movie`, `tv` or `person`.
     let mediaType: String?
     let adult: Bool?
 

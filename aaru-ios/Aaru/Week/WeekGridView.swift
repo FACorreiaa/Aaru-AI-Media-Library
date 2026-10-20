@@ -76,7 +76,7 @@ private struct WeekColumn: View {
         .padding(6)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(
-            model.isToday(day) ? Color.accentColor.opacity(0.08) : Color(.ink).opacity(0.03),
+            model.isToday(day) ? Color(.accent).opacity(0.08) : Color(.ink).opacity(0.03),
             in: RoundedRectangle(cornerRadius: 12)
         )
     }
@@ -100,7 +100,7 @@ struct WeekDayHeader: View {
         .foregroundStyle(isToday ? Color(.paper) : Color(.ink))
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(isToday ? Color.accentColor : Color(.surface), in: RoundedRectangle(cornerRadius: 10))
+        .background(isToday ? Color(.accent) : Color(.surface), in: RoundedRectangle(cornerRadius: 10))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(date.formatted(date: .complete, time: .omitted) + (isToday ? ", today" : ""))
     }

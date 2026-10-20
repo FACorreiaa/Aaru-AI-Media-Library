@@ -10,17 +10,22 @@ struct HomeCache {
         var airing: [CalendarEntry]
         /// This month's numbers for the stats strip.
         var monthStats: Stats?
-        /// Discover's "New shows", the teaser that keeps Home from ever being blank.
-        var newShows: [CatalogHit]?
     }
 
     let url: URL
+    /// Discover rows (DISC-001) load on their own, so they keep their own file. Home and the
+    /// Discover tab share it. The rows carry the caller's `libraryItemId`, so sign-out clears it.
+    let discoverURL: URL
+    /// An earlier build's Discover file in another shape; only ever removed.
+    private let legacyDiscoverURL: URL
 
     init(fileManager: FileManager = .default) {
         let base = (try? fileManager.url(
             for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
         )) ?? fileManager.temporaryDirectory
         url = base.appendingPathComponent("home.json")
+        discoverURL = base.appendingPathComponent("discover-rows.json")
+        legacyDiscoverURL = base.appendingPathComponent("discover.json")
     }
 
     func load() -> Snapshot? {
@@ -33,7 +38,19 @@ struct HomeCache {
         try? data.write(to: url, options: [.atomic, .completeFileProtection])
     }
 
+    func loadDiscover() -> [DiscoverRow]? {
+        guard let data = try? Data(contentsOf: discoverURL) else { return nil }
+        return try? JSONDecoder().decode([DiscoverRow].self, from: data)
+    }
+
+    func saveDiscover(_ rows: [DiscoverRow]) {
+        guard let data = try? JSONEncoder().encode(rows) else { return }
+        try? data.write(to: discoverURL, options: [.atomic, .completeFileProtection])
+    }
+
     func clear() {
         try? FileManager.default.removeItem(at: url)
+        try? FileManager.default.removeItem(at: discoverURL)
+        try? FileManager.default.removeItem(at: legacyDiscoverURL)
     }
 }

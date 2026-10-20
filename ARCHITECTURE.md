@@ -227,10 +227,10 @@ DELETE /v1/auth/session
 
 GET    /v1/search?q=&type=all|movie|show|anime|book   # all: CAT-019
 GET    /v1/titles/{id}
-GET    /v1/discover?section=              # CAT-020: catalog-wide lists, same for every user
 
 GET    /v1/calendar?from=&to=             # CAL-001
 GET    /v1/up-next                        # UPN-001; counts + unfinished UPN-002
+GET    /v1/discover                       # DISC-001
 
 GET    /v1/library/items
 POST   /v1/library/items
@@ -344,21 +344,20 @@ Both are derived reads over the user's library. Neither has its own table.
 
 `list_airs` in the tool layer wraps CAL-001.
 
-### Discover (CAT-020)
+### Discover (DISC-001)
 
-`GET /v1/discover[?section=]` is catalog data, like search: the same lists for every user, no
-personalisation, no cross-user data. It is not a recommendations engine. Sections:
-`trending` (TMDB `trending/all/week`), `upcoming_movies` (`discover/movie`, release in the next
-60 days, by popularity), `new_shows` (`discover/tv`, first aired −7…+30 days), `on_the_air`
-(`tv/on_the_air`), and `anime_season` / `anime_next_season` (AniList media by season,
-`POPULARITY_DESC`, `isAdult: false`). `AnimeSeason` follows AniList: winter is December to
-February, so December is the next year's winter. Items are `CatalogHit`s; "On your shelf" is
-decided by the client against its own library.
-
-`DiscoverService` (`Catalog/DiscoverService.swift`, handler `API/DiscoverHandlers.swift`) holds
-a per-process actor cache with the `AppleJWKSCache` shape: 6 h TTL, stale-if-error up to 24 h,
-single-flight, and a payload with no user data in it. A failing section is omitted; every
-section failing is a 502 `provider_unavailable`. Auth is still required.
+`GET /v1/discover` is the one catalog read that is not a search: provider-curated public lists
+for Home, the same for every user. `DiscoverService` (`Catalog/DiscoverService.swift`) asks each
+adapter that conforms to `DiscoverListing` for its lists — TMDB `trending/tv/week`,
+`tv/on_the_air`, `discover/tv` (premiered in the last 90 days), `trending/movie/week`,
+`movie/now_playing`; AniList `Page.media` by `season`/`seasonYear` (popularity) and
+`RELEASING` (trending); Open Library `trending/weekly.json`. A `DiscoverCache` actor holds them
+in memory for 6 h, coalesces concurrent fetches into one, and serves the stale copy (then backs
+off 5 min) when a refresh fails; a provider that fails drops only its rows. The API runs one
+replica, so memory is enough; a second replica would hold its own copy (Valkey if that ever
+matters). After the cache read, one `LibraryStore.itemIDs` query (type + tmdb/anilist/Open
+Library id) sets `libraryItemId` on hits the caller already has. Nothing is personalised and
+nothing is stored.
 
 ### MediaRef
 
@@ -392,8 +391,9 @@ protocol MultiSearching: Sendable {        // TMDB search/multi, for type=all
     func searchMulti(query: String) async throws -> [CatalogHit]
 }
 
-protocol DiscoverFeeds: Sendable {         // TMDB and AniList lists for Discover
-    func discover(_ feed: DiscoverFeed) async throws -> [CatalogHit]
+protocol DiscoverListing: Sendable {       // DISC-001: public lists (TMDB, AniList, Open Library)
+    var discoverLists: Set<DiscoverList> { get }
+    func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit]
 }
 
 protocol UserLibraryImporting: Sendable {
@@ -404,8 +404,9 @@ protocol UserLibraryImporting: Sendable {
 ### TMDB
 
 - Search and detail for `movie` and `show`; `search/multi` for All
-- Discover lists: `trending/all/week`, `discover/movie`, `discover/tv`, `tv/on_the_air`
-  (people and adult titles dropped, no IMDb lookups; global dates, no region)
+- Discover lists (DISC-001): `trending/tv/week`, `tv/on_the_air`, `discover/tv` (premiered in
+  the last 90 days, at least 10 votes), `trending/movie/week`, `movie/now_playing`. Show rows
+  drop anime (AniList serves those) and news, soap and talk genres; no IMDb lookups
 - Season/episode lists when a show is added or when the user opens progress
 - Map `imdb_id` from TMDB external IDs onto `titles.ids`
 
@@ -413,6 +414,7 @@ protocol UserLibraryImporting: Sendable {
 
 - Search and detail for `book`
 - ISBN and cover URL
+- Discover's books row: `trending/weekly.json` (DISC-001)
 
 ### Anime catalog (AniList)
 
@@ -420,8 +422,10 @@ Anime is first-class from Phase 1 (CAT-007…009).
 
 - AniList GraphQL is the anime catalog. Reads need no key. Jikan is not used (it scrapes MAL);
   missing MAL ids stay missing until the anime mapping fills them.
-- Discover's seasonal rows are one `Page { media(season, seasonYear, type: ANIME, isAdult:
-  false, sort: POPULARITY_DESC) }` per season; search hits carry `startDate` as `releaseDate`.
+- Discover's anime rows (DISC-001) are one `Page { media(type: ANIME, isAdult: false, ...) }`
+  each: this season by `season`/`seasonYear` and `POPULARITY_DESC` (seasons by calendar
+  quarter, UTC), and `status: RELEASING` by `TRENDING_DESC`. Search hits carry `startDate` as
+  `releaseDate`.
 - Every anime title stores `anilist`, `mal`, and `anidb` ids when known, plus `tmdb` when a
   cross-id exists.
 - Matching: exact AniList↔TMDB cross-ids first. Never merge an AniList entry and a TMDB entry
@@ -632,7 +636,7 @@ Minimum screens:
 - Sign in
 - Home / library (filter by type and status)
 - Search and add
-- Discover (catalog lists) and Insights (stats), pulled forward 2026-10-20
+- Discover (DISC-001's rows as a tab/page, APP-012) and Insights (stats), pulled forward 2026-10-20
 - Title detail (status, rating, notes, TV episodes)
 - Lists and shelves
 - Undo ribbon over the last write
@@ -837,8 +841,9 @@ journal and saved queries from Phase 1, so it may be pulled forward after the Ph
 before the Phase 2 gate. That includes WebSocket handlers, follow graphs, and points tables
 added "to save time later". Nullable hooks that already exist (such as `visibility`) are
 the only allowance. Exception by the owner's call (2026-10-19): agent tokens for Stremio, the
-scrobble service, and the Stremio addon. And (2026-10-20): Discover, Insights (GAM-006c, part of
-P5's stats) and Home's stats strip, with no new tables.
+scrobble service, and the Stremio addon. And (2026-10-20): Discover rows (DISC-001) and the Discover
+tab/page on them, Insights (GAM-006c, part of P5's stats) and Home's stats strip, with no new
+tables.
 
 ## Deployment
 
@@ -905,7 +910,7 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Host | `maat` cluster, `horus` namespace, via `platform/infra` only |
 | Ownership vs status | Prefer `isOwned` + consumption `status` |
 | Status labels | Stored values fixed; UI labels per kind (Plan to watch / Watching / Watched; Plan to read / Reading / Read) (2026-10-20) |
-| Discover | Catalog data, the same for every user, user-free cache. Not a recommendations engine (2026-10-20) |
+| Discover | DISC-001: provider-curated public rows, the same for every user. The cache holds no user data; `libraryItemId` is marked per caller after it. Not a recommendations engine (2026-10-20) |
 | Shelf vs list | Shelf is a saved query, list is membership. Never merged. |
 | Agent writes | Journaled in `actions` and undoable. No agent-only write path. |
 | Agent UI | Native component catalog only. No model-authored layout. |

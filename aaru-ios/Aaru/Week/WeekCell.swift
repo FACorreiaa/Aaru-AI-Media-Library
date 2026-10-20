@@ -22,7 +22,7 @@ struct WeekCell: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title.title)
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color(.accent))
                     .lineLimit(2)
                 Text(entry.code)
                     .font(.caption.weight(.medium).monospacedDigit())
@@ -96,7 +96,7 @@ private struct WeekBanner: View {
     /// No art: a quiet teal-to-gold wash. The show's name is right below, so no text here.
     private var placeholder: some View {
         LinearGradient(
-            colors: [Color.accentColor.opacity(0.35), Color.weekGold.opacity(0.3)],
+            colors: [Color(.accent).opacity(0.35), Color.weekGold.opacity(0.3)],
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
     }
@@ -114,7 +114,7 @@ private struct WeekTick: View {
             Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
                 .font(.title3)
                 .symbolRenderingMode(.palette)
-                .foregroundStyle(isOn ? Color.white : Color.white, isOn ? Color.accentColor : .clear)
+                .foregroundStyle(isOn ? Color.white : Color.white, isOn ? Color(.accent) : .clear)
                 .background(.black.opacity(0.35), in: Circle())
                 .padding(6)
                 .frame(minWidth: 44, minHeight: 44, alignment: .topLeading)
@@ -155,7 +155,7 @@ extension CalendarEntry {
 
         var tint: Color {
             switch self {
-            case .premiere, .newSeason: .accentColor
+            case .premiere, .newSeason: Color(.accent)
             case .finale: .weekGold
             }
         }

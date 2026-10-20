@@ -1440,7 +1440,9 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Catalog lists to add from without typing (CAT-020): trending, upcoming films, new shows, airing this week, and anime this season and next. Catalog data only, the same for every user (cached for 6 hours); whether a title is on the user's shelf is the client's call.
+    /// Provider-curated public rows for Home (trending, airing, this season).
+    ///
+    /// The same lists for every user, cached by the server. Items the caller already has carry `libraryItemId`. A row whose provider is down is left out.
     ///
     /// - Remark: HTTP `GET /v1/discover`.
     /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
@@ -1458,13 +1460,6 @@ public struct Client: APIProtocol {
                     method: .get
                 )
                 suppressMutabilityWarning(&request)
-                try converter.setQueryItemAsURI(
-                    in: &request,
-                    style: .form,
-                    explode: true,
-                    name: "section",
-                    value: input.query.section
-                )
                 converter.setAcceptHeader(
                     in: &request.headerFields,
                     contentTypes: input.headers.accept
@@ -1485,7 +1480,7 @@ public struct Client: APIProtocol {
                     switch chosenContentType {
                     case "application/json":
                         body = try await converter.getResponseBodyAsJSON(
-                            Components.Schemas.Discover.self,
+                            Components.Schemas.DiscoverRows.self,
                             from: responseBody,
                             transforming: { value in
                                 .json(value)

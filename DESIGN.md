@@ -215,6 +215,13 @@ rows of wide cards, one job per row.
 - **Calendar** (`CalendarRow`) — the next few airings of tracked shows and anime, badged
   `Today` / `New` / `In 3 hours` / `In 2 days`.
 
+- **Discover** (`DiscoverRow`, DISC-001) — after the user's own rows, public poster rows from
+  the catalogs: Trending shows, this season's anime ("Fall 2026 anime"), Trending movies, On
+  the air, Trending anime, New shows, In theaters, Trending books. A card not on the shelf is
+  an add (tap: wishlist; hold or "As…": a status or a list); a card on the shelf wears a check
+  and opens the item. A new account sees a slim "Add a show to see what's next" header above
+  them instead of an empty screen. The same rows for everyone; never "because you watched".
+
 **Added 2026-10-20 (APP-013),** so Home is never blank:
 
 - **This month** — a quiet stats strip (episodes · hours · finished · active days). Tapping it
@@ -224,21 +231,21 @@ rows of wide cards, one job per row.
 - **Unfinished business** (`UnfinishedRow`) — the §1 artifact made real: every dropped item and
   anything in progress untouched for 30 days, "Dropped" or "Paused 6 weeks", with "Resume at
   S2 · E3" for a show. Never a title already in Continue watching.
-- **New shows** (`DiscoverRow`) — a teaser of Discover's `new_shows`, always shown, so a new
-  account has something to add without typing.
 - **Lists** — chips for the user's lists plus "New list".
 
-The empty state's primary action is Discover. On the web, Search opens in place on Home and an
-add shows up in the rows without a reload.
+Discover on Home is DISC-001's rows above, not a separate teaser. On the web, Search opens in
+place on Home and an add shows up in the rows without a reload.
 
 Rows are the Field's artifacts, not new chrome. The composer still sits on top.
 
 ## 13a. Discover (pulled forward 2026-10-20)
 
-Something to add without typing. Rows of posters per section: Trending this week, Coming to
-cinemas, New shows, On the air, Anime this season, Anime next season. Each card carries a kind
-badge and a date badge; a title already tracked reads "On your shelf", anything else offers Add
-(with a status) and Add to list. TMDB and AniList credits sit in the footer.
+Something to add without typing. The Discover tab/page (APP-012) is DISC-001's rows, the ones
+Home shows under the user's own, as a full destination: Trending shows, this season's anime,
+Trending movies, On the air, Trending anime, New shows, In theaters, Trending books. Each card
+carries a kind badge and a date badge; a card the user already has (`libraryItemId`) reads "On
+your shelf" and opens the item, anything else offers Add (with a status) and Add to list. TMDB,
+AniList and Open Library credits sit in the footer.
 
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
 watched", no taste profile, nothing read from other users. A tab on iPhone, a header link on
@@ -364,7 +371,7 @@ Build these as SwiftUI views. The model only returns their names and props.
 | `StartRow` | Wishlist titles with runtime (Phase 2) |
 | `CalendarRow` | Next airings with relative badges (Phase 2) |
 | `NowPlayingCard` | Current watch, progress, ends at (Phase 2) |
-| `DiscoverRow` | Catalog-wide posters to add, not library items (2026-10-20) |
+| `DiscoverRow` | Public provider rows to add from, not library items (DISC-001, 2026-10-20) |
 | `UnfinishedRow` | Dropped or stalled items with a resume point (2026-10-20) |
 | `StreakBar` | Current streak and week ticks (Phase 5) |
 | `FriendStories` | Friends' watches today (Phase 4) |

@@ -9,20 +9,22 @@ render the **Credit** column; `/privacy` names every row that receives user data
 
 | Provider | Used for | Key | Secret | Rate limit (ours) | Terms | Credit Aaru shows |
 | --- | --- | --- | --- | --- | --- | --- |
-| TMDB | Movies and shows: search (incl. `search/multi` for All), details, posters, backdrops, episodes, networks; Discover lists (`trending/all/week`, `discover/movie`, `discover/tv`, `tv/on_the_air`) | v3 key | `TMDB_API_KEY` in `aaru-env` (horus) | 40/s | TMDB API terms: non-commercial on the free tier; logo + notice required, our logo must stay more prominent | TMDB logo and "This product uses the TMDB API but is not endorsed or certified by TMDB." |
+| TMDB | Movies and shows: search (incl. `search/multi` for All), details, posters, backdrops, episodes, networks; Discover rows (trending, on the air, new shows, now playing) | v3 key | `TMDB_API_KEY` in `aaru-env` (horus) | 40/s | TMDB API terms: non-commercial on the free tier; logo + notice required, our logo must stay more prominent | TMDB logo and "This product uses the TMDB API but is not endorsed or certified by TMDB." |
 | TVmaze | Exact air times and networks for TMDB shows (CAT-011) | none | — | 1.8/s (~20 per 10 s per IP) | Data CC BY-SA 4.0; free API, attribution required | "Air times from TVmaze" linking to tvmaze.com, CC BY-SA |
-| AniList | Anime: search, details, banners, exact airing times, episode names from its streaming links; Discover's this-season and next-season lists | none | — | 1.5/s (90/min) | AniList API terms (non-commercial without permission) | "Anime data from AniList" linking to anilist.co |
+| AniList | Anime: search, details, banners, exact airing times, episode names from its streaming links; Discover rows (this season, trending) | none | — | 1.5/s (90/min) | AniList API terms (non-commercial without permission) | "Anime data from AniList" linking to anilist.co |
 | Fribb/anime-lists | AniList → TMDB/TVDB/MAL/AniDB id mappings, so mapped anime use TMDB's episodes (CAT-010). A file loaded by `aaru --anime-mappings`, monthly; no API calls at request time | none | — | one download per load | MIT | "Anime id mappings from Fribb/anime-lists" linking to github.com/Fribb/anime-lists, MIT |
-| Open Library | Books: search, details, covers | none | — | 3/s, contact User-Agent | Internet Archive terms; covers rate-limited | "Book data from Open Library" linking to openlibrary.org |
+| Open Library | Books: search, details, covers; Discover's weekly trending books | none | — | 3/s, contact User-Agent | Internet Archive terms; covers rate-limited | "Book data from Open Library" linking to openlibrary.org |
 
 Commercial use of TMDB and AniList on these keys is **not** allowed: any paid plan in
 `BUSINESS.md` needs a TMDB commercial agreement and AniList's permission first.
 
-Discover (CAT-020, 2026-10-20) calls TMDB and AniList on a per-process server cache: 6 h TTL,
-stale-if-error up to 24 h, one fetch per section however many users ask, and no user data in
-the request or the cache. All search (CAT-019) sends every query to AniList as well as TMDB,
-so AniList answers on a short deadline and a miss leaves `incomplete: true`. The Discover screen
-repeats the TMDB notice and the AniList credit in its footer, besides About.
+Discover rows (DISC-001, 2026-10-20) call TMDB, AniList and Open Library through one in-memory
+server cache: 6 h TTL, one fetch per list however many users ask, the stale copy served (and a
+5 min back-off) when a refresh fails, and no user data in the request or the cache; the
+caller's `libraryItemId` marks are applied after the cache, from Aaru's own database. All
+search (CAT-019) sends every query to AniList as well as TMDB, so AniList answers on a short
+deadline and a miss leaves `incomplete: true`. The Discover screen (APP-012) repeats the TMDB
+notice and the AniList and Open Library credits in its footer, besides About.
 
 ## Account, sign-in and delivery (receive user data)
 

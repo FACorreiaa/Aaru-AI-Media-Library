@@ -73,18 +73,16 @@ func rowsReferencing(_ userID: UserID) async throws -> [String: Int] {
 }
 
 /// A catalog provider with canned answers and call counts. Never reaches the network.
-final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, DiscoverFeeds, @unchecked Sendable {
+final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, @unchecked Sendable {
     // @unchecked: test-only; `lock` guards every mutable field.
     private let lock = NSLock()
     private var searchResults: [String: [CatalogHit]] = [:]
     private var titles: [CatalogTitle] = []
     private var episodeLists: [String: CatalogEpisodes] = [:]
-    private var discoverLists: [String: [CatalogHit]] = [:]
-    private var failingFeeds: Set<String> = []
-    private var feedsAsked: [DiscoverFeed] = []
     private var calls: [String: Int] = [:]
     private var failure: (any Error)?
     private var latency: Duration?
+    private var discoverHits: [DiscoverList: [CatalogHit]] = [:]
 
     static func providers(_ catalog: FakeCatalog) -> CatalogProviders {
         CatalogProviders(tmdb: catalog, anilist: catalog, openLibrary: catalog)
@@ -107,39 +105,9 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, Disco
         lock.withLock { episodeLists[key] = episodes }
     }
 
-    /// Every search and discover call waits this long first (cancellably).
+    /// Every search call waits this long first (cancellably).
     func delay(_ duration: Duration?) {
         lock.withLock { latency = duration }
-    }
-
-    /// Keyed by `FakeCatalog.feedName`.
-    func stubDiscover(_ feed: String, _ hits: [CatalogHit]) {
-        lock.withLock { discoverLists[feed] = hits }
-    }
-
-    /// Makes one discover feed fail while the others answer.
-    func failDiscover(_ feed: String, _ failing: Bool = true) {
-        lock.withLock {
-            if failing {
-                failingFeeds.insert(feed)
-            } else {
-                failingFeeds.remove(feed)
-            }
-        }
-    }
-
-    var discoverFeeds: [DiscoverFeed] {
-        lock.withLock { feedsAsked }
-    }
-
-    static func feedName(_ feed: DiscoverFeed) -> String {
-        switch feed {
-        case .trending: "trending"
-        case .upcomingMovies: "upcomingMovies"
-        case .newShows: "newShows"
-        case .onTheAir: "onTheAir"
-        case .animeSeason: "animeSeason"
-        }
     }
 
     func callCount(_ name: String) -> Int {
@@ -167,20 +135,6 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, Disco
         return lock.withLock { searchResults[query] ?? [] }
     }
 
-    func discover(_ feed: DiscoverFeed) async throws -> [CatalogHit] {
-        try record("discover")
-        let name = Self.feedName(feed)
-        let failing = lock.withLock {
-            feedsAsked.append(feed)
-            return failingFeeds.contains(name)
-        }
-        try await wait()
-        if failing {
-            throw ProviderError(provider: "fake", kind: .unavailable)
-        }
-        return lock.withLock { discoverLists[name] ?? [] }
-    }
-
     private func wait() async throws {
         if let latency = lock.withLock({ latency }) {
             try await Task.sleep(for: latency)
@@ -199,5 +153,20 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, Disco
     func episodes(ids: ExternalIDs) async throws -> CatalogEpisodes? {
         try record("episodes")
         return lock.withLock { ids.tmdb.flatMap { episodeLists[$0] } ?? ids.anilist.flatMap { episodeLists[$0] } }
+    }
+
+    func stubDiscover(_ list: DiscoverList, _ hits: [CatalogHit]) {
+        lock.withLock { discoverHits[list] = hits }
+    }
+}
+
+extension FakeCatalog: DiscoverListing {
+    var discoverLists: Set<DiscoverList> {
+        Set(DiscoverList.allCases)
+    }
+
+    func list(_ list: DiscoverList, now _: Date) async throws -> [CatalogHit] {
+        try record("discover")
+        return lock.withLock { discoverHits[list] ?? [] }
     }
 }

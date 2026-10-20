@@ -1,8 +1,9 @@
 import AaruAPI
 import SwiftUI
 
-/// Discover (APP-012): catalog rows to add from without typing. Renders the cache first, then
-/// refreshes. Credits TMDB and AniList, whose lists these are.
+/// Discover (APP-012, DISC-001): catalog rows to add from without typing, with the same cards as
+/// Home's Discover rows. Renders the cache first, then refreshes. Credits TMDB and AniList, whose
+/// lists these are.
 struct DiscoverScreen: View {
     let api: Client?
     let library: LibraryModel
@@ -10,12 +11,22 @@ struct DiscoverScreen: View {
 
     @State private var model: DiscoverModel
     @State private var showsSearch = false
+    @State private var listTarget: CatalogHit?
+
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var sizeClass
+        private var compact: Bool {
+            sizeClass == .compact
+        }
+    #else
+        private let compact = false
+    #endif
 
     init(api: Client?, library: LibraryModel, lists: ListsModel, model: DiscoverModel? = nil) {
         self.api = api
         self.library = library
         self.lists = lists
-        _model = State(initialValue: model ?? DiscoverModel(api: api))
+        _model = State(initialValue: model ?? DiscoverModel(api: api, library: library))
     }
 
     var body: some View {
@@ -29,8 +40,18 @@ struct DiscoverScreen: View {
                 }
                 .task { await model.loadIfNeeded() }
                 .refreshable { await model.load() }
+                .navigationDestination(for: String.self) { id in
+                    LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
+                }
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library, lists: lists)
+                }
+                .sheet(item: $listTarget) { hit in
+                    ListPickerSheet(
+                        ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
+                        titleName: hit.title,
+                        lists: lists
+                    )
                 }
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: model.problem) { model.problem = nil }
@@ -40,10 +61,10 @@ struct DiscoverScreen: View {
     }
 
     @ViewBuilder private var content: some View {
-        let sections = model.visibleSections
-        if sections.isEmpty, model.isLoading || !model.hasLoaded, model.problem == nil {
+        let rows = model.visibleRows
+        if rows.isEmpty, model.isLoading || !model.hasLoaded, model.problem == nil {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if sections.isEmpty {
+        } else if rows.isEmpty {
             ContentUnavailableView {
                 Label("Nothing to discover right now", systemImage: "binoculars")
             } description: {
@@ -56,13 +77,22 @@ struct DiscoverScreen: View {
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 28) {
-                    ForEach(sections, id: \.id) { section in
-                        DiscoverRow(
-                            title: DiscoverModel.title(for: section),
-                            hits: section.items,
-                            showsDates: DiscoverModel.showsDates(section),
-                            api: api, library: library, lists: lists
-                        ) { model.problem = $0 }
+                    ForEach(rows, id: \.id) { row in
+                        HomeRow(title: row.title) {
+                            ForEach(row.items) { hit in
+                                DiscoverCard(
+                                    hit: hit,
+                                    libraryItemID: model.libraryItemID(hit),
+                                    badge: DiscoverCard.releaseBadge(hit.releaseDate, row: row.id),
+                                    width: HomeCardSize.poster.width(compact: compact),
+                                    isAdding: model.adding.contains(hit.id)
+                                ) { status in
+                                    Task { await model.add(hit, status: status) }
+                                } onAddToList: {
+                                    listTarget = hit
+                                }
+                            }
+                        }
                     }
                     DiscoverCredits()
                 }
@@ -85,4 +115,13 @@ private struct DiscoverCredits: View {
         .buttonStyle(.plain)
         .padding(.horizontal, 20)
     }
+}
+
+// MARK: Previews
+
+#Preview("Discover") {
+    DiscoverScreen(
+        api: nil, library: LibraryModel(), lists: ListsModel(api: nil),
+        model: DiscoverModel(preview: HomeModel.newAccount.discover)
+    )
 }

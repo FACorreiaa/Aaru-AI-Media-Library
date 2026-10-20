@@ -1,28 +1,8 @@
-import type { components } from '../api/schema'
+// Discover's pure part: the date badge on a card. The server names and orders the rows; "today"
+// is the viewer's, so the badge is worked out in the browser from a local `YYYY-MM-DD`.
 
-// Discover's pure parts: what each section is called and the date badge on a card. "Today" is
-// the viewer's, so the badge is worked out in the browser from a local `YYYY-MM-DD`.
-
-export type Discover = components['schemas']['Discover']
-export type DiscoverSection = components['schemas']['DiscoverSection']
-export type DiscoverSectionId = components['schemas']['DiscoverSectionId']
-export type AnimeSeason = components['schemas']['AnimeSeason']
-
-const TITLES: Record<DiscoverSectionId, string> = {
-  trending: 'Trending this week',
-  upcoming_movies: 'Coming to cinemas',
-  new_shows: 'New shows',
-  on_the_air: 'Airing this week',
-  anime_season: 'Anime this season',
-  anime_next_season: 'Anime next season',
-}
-
-const SEASONS: Record<AnimeSeason['season'], string> = {
-  winter: 'Winter',
-  spring: 'Spring',
-  summer: 'Summer',
-  fall: 'Fall',
-}
+/** The one row whose films are opening now: a past date there still says "Out now". */
+const IN_THEATERS = 'movies_in_theaters'
 
 const MONTHS = [
   'Jan',
@@ -38,17 +18,6 @@ const MONTHS = [
   'Nov',
   'Dec',
 ]
-
-/** "Trending this week", "Anime · Fall 2026"… An anime section without its season keeps a
- * plain name. */
-export function sectionTitle(section: {
-  id: DiscoverSectionId
-  animeSeason?: AnimeSeason
-}): string {
-  const season = section.animeSeason
-  if (season) return `Anime · ${SEASONS[season.season]} ${season.year}`
-  return TITLES[section.id]
-}
 
 /** The day difference between two "YYYY-MM-DD" keys (b − a), DST-proof. */
 function daysBetween(a: string, b: string): number {
@@ -77,15 +46,16 @@ export function releaseBadge(
 }
 
 /**
- * The badge a card in this section wears. Coming to cinemas says "Out now" once a film opens;
- * elsewhere a past date says nothing (everything trending is out), only a future one shows.
+ * The badge a card in this row wears. In theaters says "Out now" once a film opens; elsewhere
+ * a past date says nothing (everything trending is out), only a future one shows. Any row id
+ * works, including ones this client does not know yet.
  */
 export function cardBadge(
-  section: DiscoverSectionId,
+  rowId: string,
   releaseDate: string | undefined,
   today: string,
 ): string | null {
   const badge = releaseBadge(releaseDate, today)
-  if (badge === 'Out now' && section !== 'upcoming_movies') return null
+  if (badge === 'Out now' && rowId !== IN_THEATERS) return null
   return badge
 }

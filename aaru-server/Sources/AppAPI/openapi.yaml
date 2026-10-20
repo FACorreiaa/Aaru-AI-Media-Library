@@ -321,23 +321,17 @@ paths:
   /v1/discover:
     get:
       operationId: getDiscover
-      summary: >-
-        Catalog lists to add from without typing (CAT-020): trending, upcoming films, new shows,
-        airing this week, and anime this season and next. Catalog data only, the same for every
-        user (cached for 6 hours); whether a title is on the user's shelf is the client's call.
-      parameters:
-        - name: section
-          in: query
-          description: One section only. Absent means every section, in the enum's order.
-          schema: {$ref: '#/components/schemas/DiscoverSectionId'}
+      summary: Provider-curated public rows for Home (trending, airing, this season).
+      description: >-
+        The same lists for every user, cached by the server. Items the caller already has
+        carry `libraryItemId`. A row whose provider is down is left out.
       responses:
         '200':
-          description: >-
-            The sections that could be served, in order. A section whose provider fails is left
-            out; when every requested section fails the answer is a 502.
+          description: Rows in display order. Empty rows are left out.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Discover'}
+              schema:
+                $ref: '#/components/schemas/DiscoverRows'
         default:
           $ref: '#/components/responses/Error'
   /v1/titles/{id}:
@@ -1182,6 +1176,9 @@ components:
           description: Authors, for books.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
+        libraryItemId:
+          type: string
+          description: The caller's library item for this title, when they have one. Discover only.
         releaseDate:
           type: string
           description: >-
@@ -1199,43 +1196,28 @@ components:
           description: >-
             True when one provider of an `all` search failed or ran out of time, so the items
             come from the other alone. Always false for a single-provider search.
-    DiscoverSectionId:
-      type: string
-      enum: [trending, upcoming_movies, new_shows, on_the_air, anime_season, anime_next_season]
-      description: >-
-        `trending`: TMDB films and shows trending this week. `upcoming_movies`: films first
-        released in the next 60 days. `new_shows`: shows first aired from 7 days ago to 30 days
-        ahead. `on_the_air`: shows with an episode in the next 7 days. `anime_season` /
-        `anime_next_season`: AniList's anime of the current / next season, by popularity.
-    AnimeSeason:
+    DiscoverRow:
       type: object
-      description: A season as AniList counts it; December is already the next year's winter.
-      required: [season, year]
+      required: [id, title, items]
       properties:
-        season:
+        id:
           type: string
-          enum: [winter, spring, summer, fall]
-        year: {type: integer}
-    DiscoverSection:
-      type: object
-      required: [id, items, fetchedAt]
-      properties:
-        id: {$ref: '#/components/schemas/DiscoverSectionId'}
-        animeSeason: {$ref: '#/components/schemas/AnimeSeason'}
+          description: >-
+            Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum:
+            the server may add rows, and clients render any row they get.
+        title:
+          type: string
+          description: Display title, e.g. "Fall 2026 anime".
         items:
           type: array
           items: {$ref: '#/components/schemas/CatalogHit'}
-        fetchedAt:
-          type: string
-          format: date-time
-          description: When the server fetched this list from the provider.
-    Discover:
+    DiscoverRows:
       type: object
-      required: [sections]
+      required: [rows]
       properties:
-        sections:
+        rows:
           type: array
-          items: {$ref: '#/components/schemas/DiscoverSection'}
+          items: {$ref: '#/components/schemas/DiscoverRow'}
     Episode:
       type: object
       required: [season, number, airTimeKnown]

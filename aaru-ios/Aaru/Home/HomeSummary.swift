@@ -152,29 +152,3 @@ struct ListChip: View {
         .accessibilityElement(children: .combine)
     }
 }
-
-/// Home before the user has anything in progress: the ways in, above Discover's teaser.
-struct HomeIntroCard: View {
-    let onBrowse: () -> Void
-    let onSearch: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Add a show to see what's next")
-                .font(.system(.title3, design: .serif, weight: .semibold))
-            Text("Shows you are watching, things to start, and new episodes land here.")
-                .font(.subheadline)
-                .foregroundStyle(Color(.muted))
-            HStack(spacing: 10) {
-                Button("Browse Discover", action: onBrowse)
-                    .buttonStyle(.borderedProminent)
-                Button("Search", action: onSearch)
-                    .buttonStyle(.bordered)
-            }
-            .padding(.top, 4)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color(.surface), in: RoundedRectangle(cornerRadius: 14))
-    }
-}

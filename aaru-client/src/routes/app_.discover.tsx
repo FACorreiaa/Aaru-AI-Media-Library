@@ -1,20 +1,16 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createSignal, onMount } from 'solid-js'
+import { Show, createSignal, onMount } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
-import { DiscoverRow } from '../components/DiscoverRow'
+import { DiscoverRows } from '../components/DiscoverRows'
 import { CREDITS, TMDB_URL } from '../lib/credits'
 import { localDayKey } from '../lib/calendar/model'
-import { sectionTitle } from '../lib/discover/model'
-import type { DiscoverSection } from '../lib/discover/model'
-import { getDiscover } from '../lib/discover/server'
-import { upsert } from '../lib/library/model'
-import type { LibraryEntry } from '../lib/library/model'
-import { getLibrary } from '../lib/library/server'
+import type { DiscoverRow } from '../lib/home/model'
+import { getDiscover } from '../lib/home/server'
 import { getSession } from '../lib/session/session'
 
-// Discover on the web, the twin of the Apple apps' Discover tab: trending, coming to cinemas,
-// new and airing shows, and this and next season's anime, each addable in place. The library
-// comes along so cards already on the shelf say so.
+// Discover on the web, the twin of the Apple apps' Discover tab: the same public rows Home
+// shows under the user's own (DISC-001), on a page of their own, each card addable in place.
+// The server names and orders the rows and marks the titles already on the shelf.
 export const Route = createFileRoute('/app_/discover')({
   head: () => ({ meta: [{ title: 'Discover · Aaru' }] }),
   beforeLoad: async () => {
@@ -22,30 +18,26 @@ export const Route = createFileRoute('/app_/discover')({
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
     return { session }
   },
-  loader: async () => {
-    const [discover, library] = await Promise.all([
-      getDiscover({ data: {} }).then(
-        (d) => ({ sections: d.sections, problem: null }),
-        (err: unknown) => ({
-          sections: [] as DiscoverSection[],
-          problem:
-            err instanceof Error
-              ? err.message
-              : 'Discover is not available right now.',
-        }),
-      ),
-      getLibrary(),
-    ])
-    return { ...discover, library }
-  },
+  loader: () =>
+    getDiscover().then(
+      (rows) => ({ rows, problem: null }),
+      (err: unknown) => ({
+        rows: [] as DiscoverRow[],
+        problem:
+          err instanceof Error
+            ? err.message
+            : 'Discover is not available right now.',
+      }),
+    ),
   component: DiscoverPage,
 })
 
 const ANILIST = CREDITS.find((c) => c.name === 'AniList')?.href
+const OPEN_LIBRARY = CREDITS.find((c) => c.name === 'Open Library')?.href
 
 function DiscoverPage() {
   const loaded = Route.useLoaderData()
-  const [entries, setEntries] = createSignal<LibraryEntry[]>(loaded().library)
+  const [rows, setRows] = createSignal<DiscoverRow[]>(loaded().rows)
   const [today, setToday] = createSignal<string | null>(null)
   const [problem, setProblem] = createSignal<string | null>(loaded().problem)
 
@@ -74,22 +66,12 @@ function DiscoverPage() {
           )}
         </Show>
 
-        <For each={loaded().sections.filter((s) => s.items.length > 0)}>
-          {(section) => (
-            <DiscoverRow
-              section={section.id}
-              title={sectionTitle(section)}
-              items={section.items}
-              entries={entries()}
-              today={today()}
-              onAdded={(entry) => {
-                setProblem(null)
-                setEntries((current) => upsert(current, entry))
-              }}
-              onProblem={setProblem}
-            />
-          )}
-        </For>
+        <DiscoverRows
+          rows={rows()}
+          onRowsChange={setRows}
+          today={today()}
+          onProblem={setProblem}
+        />
 
         <footer class="mt-16 border-t border-line pt-6 text-sm text-muted">
           Lists from{' '}
@@ -99,14 +81,22 @@ function DiscoverPage() {
             class="font-medium text-accent hover:underline"
           >
             TMDB
-          </a>{' '}
-          and{' '}
+          </a>
+          ,{' '}
           <a
             href={ANILIST}
             rel="noopener"
             class="font-medium text-accent hover:underline"
           >
             AniList
+          </a>{' '}
+          and{' '}
+          <a
+            href={OPEN_LIBRARY}
+            rel="noopener"
+            class="font-medium text-accent hover:underline"
+          >
+            Open Library
           </a>
           .{' '}
           <Link

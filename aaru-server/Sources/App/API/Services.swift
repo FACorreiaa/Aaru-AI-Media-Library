@@ -29,8 +29,10 @@ struct Services: Sendable {
         return Services(
             auth: auth,
             catalog: catalog,
-            // One cache per process: Services are built once at boot.
-            discover: DiscoverService(tmdb: catalogs.tmdb, anilist: catalogs.anilist, cache: DiscoverCache()),
+            discover: DiscoverService(
+                stores: stores,
+                providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
+            ),
             library: library,
             lists: ListService(stores: stores, resolver: resolver),
             shelves: ShelfService(stores: stores, library: library),

@@ -1,8 +1,8 @@
 import type { components } from '../api/schema'
 import { entryDay, localDayKey } from '../calendar/model'
 import type { CalendarEntry } from '../calendar/model'
-import { statusLabel } from '../library/model'
-import type { LibraryStatus } from '../library/model'
+import { hitKey, idKeys, statusLabel } from '../library/model'
+import type { LibraryEntry, LibraryStatus } from '../library/model'
 import type { Stats } from '../recap/model'
 
 // APP-009: the Home rows' pure parts (Trakt-style Continue watching, Start watching, and the
@@ -14,6 +14,7 @@ export type StartEntry = components['schemas']['StartEntry']
 export type UpNext = components['schemas']['UpNext']
 export type LibraryCounts = components['schemas']['LibraryCounts']
 export type UnfinishedEntry = components['schemas']['UnfinishedEntry']
+export type DiscoverRow = components['schemas']['DiscoverRow']
 
 const HOUR_MS = 3_600_000
 /** Closer than this, an exactly-timed airing reads "In 3 hours" rather than a day. */
@@ -194,4 +195,34 @@ export function resumeLine(entry: UnfinishedEntry): string | null {
   return entry.next
     ? `Resume at S${entry.next.season} · E${entry.next.number}`
     : null
+}
+
+/** DISC-001: after an add, every card for that title links to the new item. No refetch. */
+export function markAdded(
+  rows: DiscoverRow[],
+  key: string,
+  libraryItemId: string,
+): DiscoverRow[] {
+  return rows.map((row) => ({
+    ...row,
+    items: row.items.map((hit) =>
+      hitKey(hit) === key ? { ...hit, libraryItemId } : hit,
+    ),
+  }))
+}
+
+/** After an add from Search, the Discover cards for that title link to the new entry too. */
+export function markOnShelf(
+  rows: DiscoverRow[],
+  entry: LibraryEntry,
+): DiscoverRow[] {
+  const keys = new Set(idKeys(entry.title.ids))
+  return rows.map((row) => ({
+    ...row,
+    items: row.items.map((hit) =>
+      idKeys(hit.ids).some((key) => keys.has(key))
+        ? { ...hit, libraryItemId: entry.id }
+        : hit,
+    ),
+  }))
 }

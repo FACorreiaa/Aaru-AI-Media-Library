@@ -3,7 +3,7 @@ import Foundation
 
 /// AniList adapter (CAT-007): the anime catalog, over GraphQL. Reads need no key.
 /// Each AniList entry is one season/cour, so its episodes are season 1.
-struct AniListCatalog: CatalogSearching, EpisodeListing, DiscoverFeeds {
+struct AniListCatalog: CatalogSearching, EpisodeListing {
     static let endpoint = URL(string: "https://graphql.anilist.co")!
 
     let client: ProviderClient
@@ -24,21 +24,6 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, DiscoverFeeds {
           Page(perPage: 20) { media(search: $search, type: ANIME, sort: SEARCH_MATCH) { \(Self.mediaFields) } }
         }
         """, variables: ["search": .string(query)])
-        return body.page.media.map(\.hit)
-    }
-
-    /// CAT-020: one season's anime by popularity. Adult entries are never asked for.
-    func discover(_ feed: DiscoverFeed) async throws -> [CatalogHit] {
-        guard case let .animeSeason(season) = feed else { throw ProviderError(provider: "anilist", kind: .notFound) }
-        let body = try await post(SearchData.self, """
-        query ($season: MediaSeason, $year: Int) {
-          Page(perPage: 20) {
-            media(season: $season, seasonYear: $year, type: ANIME, isAdult: false, sort: POPULARITY_DESC) {
-              \(Self.mediaFields)
-            }
-          }
-        }
-        """, variables: ["season": .string(season.name.rawValue.uppercased()), "year": .int(season.year)])
         return body.page.media.map(\.hit)
     }
 
@@ -288,6 +273,37 @@ enum AniListText {
         text = text.replacingOccurrences(of: "[ \\t]+\n", with: "\n", options: .regularExpression)
         text = text.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+// MARK: Discover (DISC-001)
+
+extension AniListCatalog: DiscoverListing {
+    var discoverLists: Set<DiscoverList> {
+        [.animeSeason, .animeTrending]
+    }
+
+    func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit] {
+        let filter: String
+        switch list {
+        case .animeSeason:
+            guard let current = AnimeSeason.current(now) else { return [] }
+            filter = "season: \(current.season.anilist), seasonYear: \(current.year), sort: POPULARITY_DESC"
+        case .animeTrending:
+            filter = "status: RELEASING, sort: TRENDING_DESC"
+        default:
+            throw ProviderError(provider: "anilist", kind: .notFound)
+        }
+        let body = try await post(SearchData.self, """
+        query {
+          Page(perPage: 20) {
+            media(type: ANIME, isAdult: false, format_in: [TV, TV_SHORT, ONA, MOVIE], \(filter)) {
+              \(Self.mediaFields)
+            }
+          }
+        }
+        """, variables: [:])
+        return body.page.media.map(\.hit)
     }
 }
 

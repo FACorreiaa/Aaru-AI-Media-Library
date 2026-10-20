@@ -266,7 +266,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Catalog lists to add from without typing (CAT-020): trending, upcoming films, new shows, airing this week, and anime this season and next. Catalog data only, the same for every user (cached for 6 hours); whether a title is on the user's shelf is the client's call. */
+    /**
+     * Provider-curated public rows for Home (trending, airing, this season).
+     * @description The same lists for every user, cached by the server. Items the caller already has carry `libraryItemId`. A row whose provider is down is left out.
+     */
     get: operations['getDiscover']
     put?: never
     post?: never
@@ -942,6 +945,8 @@ export interface components {
       byline?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
+      /** @description The caller's library item for this title, when they have one. Discover only. */
+      libraryItemId?: string
       /** @description YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date. */
       releaseDate?: string
     }
@@ -950,35 +955,15 @@ export interface components {
       /** @description True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search. */
       incomplete: boolean
     }
-    /**
-     * @description `trending`: TMDB films and shows trending this week. `upcoming_movies`: films first released in the next 60 days. `new_shows`: shows first aired from 7 days ago to 30 days ahead. `on_the_air`: shows with an episode in the next 7 days. `anime_season` / `anime_next_season`: AniList's anime of the current / next season, by popularity.
-     * @enum {string}
-     */
-    DiscoverSectionId:
-      | 'trending'
-      | 'upcoming_movies'
-      | 'new_shows'
-      | 'on_the_air'
-      | 'anime_season'
-      | 'anime_next_season'
-    /** @description A season as AniList counts it; December is already the next year's winter. */
-    AnimeSeason: {
-      /** @enum {string} */
-      season: 'winter' | 'spring' | 'summer' | 'fall'
-      year: number
-    }
-    DiscoverSection: {
-      id: components['schemas']['DiscoverSectionId']
-      animeSeason?: components['schemas']['AnimeSeason']
+    DiscoverRow: {
+      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get. */
+      id: string
+      /** @description Display title, e.g. "Fall 2026 anime". */
+      title: string
       items: components['schemas']['CatalogHit'][]
-      /**
-       * Format: date-time
-       * @description When the server fetched this list from the provider.
-       */
-      fetchedAt: string
     }
-    Discover: {
-      sections: components['schemas']['DiscoverSection'][]
+    DiscoverRows: {
+      rows: components['schemas']['DiscoverRow'][]
     }
     Episode: {
       season: number
@@ -1805,23 +1790,20 @@ export interface operations {
   }
   getDiscover: {
     parameters: {
-      query?: {
-        /** @description One section only. Absent means every section, in the enum's order. */
-        section?: components['schemas']['DiscoverSectionId']
-      }
+      query?: never
       header?: never
       path?: never
       cookie?: never
     }
     requestBody?: never
     responses: {
-      /** @description The sections that could be served, in order. A section whose provider fails is left out; when every requested section fails the answer is a 502. */
+      /** @description Rows in display order. Empty rows are left out. */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['Discover']
+          'application/json': components['schemas']['DiscoverRows']
         }
       }
       default: components['responses']['Error']

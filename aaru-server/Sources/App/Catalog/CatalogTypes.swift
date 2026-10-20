@@ -84,8 +84,8 @@ protocol EpisodeListing: Sendable {
 /// The adapters, by role. Search scope `anime` goes to AniList; movie/show to TMDB;
 /// book to Open Library; `all` to TMDB's multi search and AniList together.
 struct CatalogProviders: Sendable {
-    var tmdb: any CatalogSearching & EpisodeListing & MultiSearching & DiscoverFeeds
-    var anilist: any CatalogSearching & EpisodeListing & DiscoverFeeds
+    var tmdb: any CatalogSearching & EpisodeListing & MultiSearching
+    var anilist: any CatalogSearching & EpisodeListing
     var openLibrary: any CatalogSearching
     /// Exact air times for TMDB's date-only episodes (TVmaze, CAT-011). Optional: without it the
     /// calendar shows dates.

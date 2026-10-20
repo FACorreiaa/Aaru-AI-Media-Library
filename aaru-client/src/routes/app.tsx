@@ -1,7 +1,7 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
-import { DiscoverRow } from '../components/DiscoverRow'
+import { DiscoverRows } from '../components/DiscoverRows'
 import { SearchPanel } from '../components/SearchPanel'
 import {
   AiringCard,
@@ -18,19 +18,19 @@ import {
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { getCalendar } from '../lib/calendar/server'
-import { getDiscover } from '../lib/discover/server'
 import {
   AIRING_DAYS,
   advance,
   airingBadge,
   countChips,
+  markOnShelf,
   monthStrip,
   upcoming,
 } from '../lib/home/model'
-import type { ContinueEntry, UpNext } from '../lib/home/model'
-import { getUpNext } from '../lib/home/server'
+import type { ContinueEntry, DiscoverRow, UpNext } from '../lib/home/model'
+import { getDiscover, getUpNext } from '../lib/home/server'
 import { upsert } from '../lib/library/model'
-import type { CatalogHit, LibraryEntry } from '../lib/library/model'
+import type { LibraryEntry } from '../lib/library/model'
 import { getLibrary } from '../lib/library/server'
 import { getLists } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
@@ -41,9 +41,9 @@ import { setEpisode } from '../lib/title/server'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
 // watching come with the page; the calendar row loads in the browser, which knows the
-// viewer's "today", as do this month's stats, the New shows teaser and the list chips. Each
-// of those hides itself if it fails. Search opens in place; it and the teaser share the
-// library for their "On your shelf" marks.
+// viewer's "today", as do this month's stats, Discover's public rows (DISC-001) and the list
+// chips, so a cold provider cache never holds the page. Each of those hides itself if it
+// fails. Search opens in place and shares the library for its "On your shelf" marks.
 export const Route = createFileRoute('/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
   beforeLoad: async () => {
@@ -62,13 +62,14 @@ function Home() {
   const [unfinished, setUnfinished] = createSignal(loaded().unfinished ?? [])
   const [counts, setCounts] = createSignal(loaded().counts)
   const [strip, setStrip] = createSignal<string[]>([])
-  const [teaser, setTeaser] = createSignal<CatalogHit[]>([])
   const [lists, setLists] = createSignal<ListSummary[] | null>(null)
   const [airings, setAirings] = createSignal<CalendarEntry[]>([])
   const [now, setNow] = createSignal<Date | null>(null)
   const [airingsReady, setAiringsReady] = createSignal(false)
   const [busy, setBusy] = createSignal<ReadonlySet<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [discover, setDiscover] = createSignal<DiscoverRow[]>([])
+  const [discoverReady, setDiscoverReady] = createSignal(false)
   const [searchOpened, setSearchOpened] = createSignal(false)
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   let dialog: HTMLDialogElement | undefined
@@ -101,10 +102,11 @@ function Home() {
     setCounts(fresh.counts)
   }
 
-  /** A title added from Search or the teaser: mark it on the shelf and refresh the rows. */
+  /** A title added from Search or a Discover row: mark it on the shelf and refresh the rows. */
   async function added(entry: LibraryEntry) {
     setProblem(null)
     setEntries((current) => upsert(current, entry))
+    setDiscover((rows) => markOnShelf(rows, entry))
     try {
       showUpNext(await getUpNext())
     } catch {
@@ -128,12 +130,13 @@ function Home() {
     }
   }
 
-  async function loadTeaser() {
+  async function loadDiscover() {
     try {
-      const discover = await getDiscover({ data: { section: 'new_shows' } })
-      setTeaser(discover.sections[0]?.items.slice(0, 10) ?? [])
+      setDiscover(await getDiscover())
     } catch {
-      setTeaser([])
+      // Discover is extra: the user's own rows stand without it.
+    } finally {
+      setDiscoverReady(true)
     }
   }
 
@@ -150,7 +153,7 @@ function Home() {
     setNow(current)
     const today = localDayKey(current)
     void loadStrip(current)
-    void loadTeaser()
+    void loadDiscover()
     void loadLists()
     loadLibrary()
     try {
@@ -375,53 +378,6 @@ function Home() {
           </Row>
         </Show>
 
-        <Show when={empty()}>
-          <div class="mx-auto mt-16 max-w-sm text-center">
-            <h2 class="font-display text-2xl font-medium">
-              Add a show to see what’s next
-            </h2>
-            <p class="mt-2 text-muted">
-              Shows you are watching, what you want to start, and what airs this
-              week land here.
-            </p>
-            <div class="mt-6 flex items-center justify-center gap-3">
-              <Link
-                to="/app/discover"
-                class="rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
-              >
-                Discover
-              </Link>
-              <button
-                type="button"
-                onClick={openSearch}
-                class="rounded-full border border-line px-6 py-3 font-semibold hover:bg-surface"
-              >
-                Search
-              </button>
-            </div>
-          </div>
-        </Show>
-
-        <Show when={teaser().length > 0}>
-          <DiscoverRow
-            section="new_shows"
-            title="New shows"
-            items={teaser()}
-            entries={entries()}
-            today={now() ? localDayKey(now() as Date) : null}
-            onAdded={(entry) => void added(entry)}
-            onProblem={setProblem}
-            action={
-              <Link
-                to="/app/discover"
-                class="text-sm font-medium text-accent hover:underline"
-              >
-                See Discover
-              </Link>
-            }
-          />
-        </Show>
-
         <Show when={lists()}>
           {(all) => (
             <section class="mt-10" aria-labelledby="home-lists">
@@ -455,6 +411,70 @@ function Home() {
               </div>
             </section>
           )}
+        </Show>
+
+        <Show when={empty() && (!discoverReady() || discover().length > 0)}>
+          <div class="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[20px] bg-surface p-5">
+            <div>
+              <h2 class="font-display text-xl font-medium">
+                Add a show to see what’s next
+              </h2>
+              <p class="mt-1 text-sm text-muted">
+                Pick from the rows below, browse Discover, or search. What you
+                watch and what airs next land here.
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <Link
+                to="/app/discover"
+                class="rounded-full border border-line px-5 py-2 text-sm font-semibold hover:bg-paper"
+              >
+                Discover
+              </Link>
+              <button
+                type="button"
+                onClick={openSearch}
+                class="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-on-accent"
+              >
+                Search
+              </button>
+            </div>
+          </div>
+        </Show>
+
+        <DiscoverRows
+          rows={discover()}
+          onRowsChange={setDiscover}
+          today={now() ? localDayKey(now() as Date) : null}
+          onAdded={(entry) => void added(entry)}
+          onProblem={setProblem}
+        />
+
+        <Show when={empty() && discoverReady() && discover().length === 0}>
+          <div class="mx-auto mt-16 max-w-sm text-center">
+            <h2 class="font-display text-2xl font-medium">
+              Add a show to see what’s next
+            </h2>
+            <p class="mt-2 text-muted">
+              Shows you are watching, what you want to start, and what airs this
+              week land here.
+            </p>
+            <div class="mt-6 flex items-center justify-center gap-3">
+              <Link
+                to="/app/discover"
+                class="rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
+              >
+                Discover
+              </Link>
+              <button
+                type="button"
+                onClick={openSearch}
+                class="rounded-full border border-line px-6 py-3 font-semibold hover:bg-surface"
+              >
+                Search
+              </button>
+            </div>
+          </div>
         </Show>
       </main>
 

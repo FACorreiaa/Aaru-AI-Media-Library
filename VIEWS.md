@@ -16,8 +16,8 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; this-month strip, status count chips, `UnfinishedRow`, `DiscoverRow` teaser, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats` (month), `GET /v1/discover?section=new_shows`, `GET /v1/lists` | 2 · M7, APP-013 |
-| Discover | `DiscoverRow` per section, add with status or to a list | `GET /v1/discover[?section=]`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · CAT-020 / APP-012 (pulled forward 2026-10-20) |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; this-month strip, status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats` (month), `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
+| Discover | `DiscoverRow` per DISC-001 row, add with status or to a list | `GET /v1/discover`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20) |
 | Insights | `StatsPanel` (month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all` | 2 · GAM-006c (pulled forward 2026-10-20) |
 | Lists | `Shelf` rendering a list's items | `GET /v1/lists`, `/v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
 | Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
@@ -72,8 +72,8 @@ refuses and substitutes the nearest catalog piece.
 | `ContinueRow` | In-progress titles | ordered `libraryItemId`, next `EpisodeKey`, time left, remaining count + duration, `isFinale` |
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |
+| `DiscoverRow` | Public catalog rows on Home and Discover (DISC-001) | row id + title, `CatalogHit`s (a `MediaRef` each) with `libraryItemId` when on the shelf, kind badge, date badge; each a `DiscoverCard` (poster, add or open) |
 | `NowPlayingCard` | Current watch | `libraryItemId`, `EpisodeKey`, progress, started at, ends at, source (check-in / scrobble). Rendered on iOS as the "Now watching" Live Activity (`NowWatchingAttributes`, WID-005) |
-| `DiscoverRow` | Catalog-wide posters to add | section id (+ anime season), `CatalogHit`s (a `MediaRef` each, never a `libraryItemId`), kind badge, date badge; "On your shelf" decided by the client |
 | `UnfinishedRow` | Dropped or stalled items | ordered `libraryItemId`, reason (`dropped` / `stalled`), since, next `EpisodeKey` for shows |
 | `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
@@ -101,13 +101,16 @@ The eleven new components add product, not agent reach, and each has a reason:
 - `RecapStory` (GAM-006a, the twenty-first, added 2026-10-16) — the Recap is a full-screen,
   tap-through story with a share image; no grid or row of the twenty can play a sequence. It is
   read-only, so the agent may open it ("show me my October") but it writes nothing.
-- `DiscoverRow` and `UnfinishedRow` (2026-10-20, twenty-two and twenty-three) — an empty
-  library left every row blank and Unfinished business (`DESIGN.md` §1) had no renderer.
-  `DiscoverRow` is the only row of catalog hits rather than library items, so it carries a
-  `MediaRef` and adds through the same `POST /v1/library/items` a search hit uses (rule 6
-  below). It is catalog data, the same for every user, never a recommendation. `UnfinishedRow`
-  is `ContinueRow`'s shape over `dropped` and 30-day-stalled items. `StatsPanel` is pulled
-  forward from Phase 5 as Insights (GAM-006c), with no new component.
+- `DiscoverRow` (DISC-001, the twenty-second, added 2026-10-20) — a new account's Home had
+  nothing to show; these are public catalog rows (trending, this season), the same for
+  everyone. It is the only row of catalog hits rather than library items, so each card carries
+  a `MediaRef` and adds through the same `POST /v1/library/items` a search hit uses (rule 6
+  below); a hit the caller already has carries `libraryItemId` and opens the item. Home renders
+  the rows, and the Discover tab/page (APP-012) shows the same rows as a destination; the agent
+  does not emit them, since it would be recommending.
+- `UnfinishedRow` (2026-10-20, the twenty-third) — Unfinished business (`DESIGN.md` §1) had no
+  renderer. It is `ContinueRow`'s shape over `dropped` and 30-day-stalled items. `StatsPanel`
+  is pulled forward from Phase 5 as Insights (GAM-006c), with no new component.
 
 The agent may emit the read-only social components but never initiates a friend request, a
 message, or a room invite: those are user acts with no agent write path. A twenty-fourth
