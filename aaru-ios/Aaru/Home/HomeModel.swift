@@ -310,9 +310,15 @@ extension HomeModel {
 
     /// "Today · New", "In 3 hours", "Tomorrow", "In 2 days". Hours only for exact air times.
     func airingLabel(_ entry: CalendarEntry) -> String {
-        let current = now()
-        if entry.airTimeKnown, entry.airsAt > current {
-            let minutes = Int(entry.airsAt.timeIntervalSince(current) / 60)
+        Self.airingLabel(airsAt: entry.airsAt, airTimeKnown: entry.airTimeKnown, now: now(), calendar: calendar)
+    }
+
+    /// The same words for any airing, such as a list row's next episode (LST-003).
+    nonisolated static func airingLabel(airsAt: Date, airTimeKnown: Bool, now current: Date, calendar: Calendar)
+        -> String
+    {
+        if airTimeKnown, airsAt > current {
+            let minutes = Int(airsAt.timeIntervalSince(current) / 60)
             if minutes < 60 {
                 return "In \(max(1, minutes)) min"
             }
@@ -322,7 +328,9 @@ extension HomeModel {
             }
         }
         let today = calendar.startOfDay(for: current)
-        let day = entry.day(in: calendar)
+        // A date-only air date is midnight UTC of that date, so it is read in UTC.
+        let reader = airTimeKnown ? calendar : CalendarFeed.utcCalendar
+        let day = reader.dateComponents([.year, .month, .day], from: airsAt)
         guard let airDate = calendar.date(from: DateComponents(year: day.year, month: day.month, day: day.day))
         else { return "" }
         let days = calendar.dateComponents([.day], from: today, to: airDate).day ?? 0

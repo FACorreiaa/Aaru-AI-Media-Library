@@ -1236,11 +1236,31 @@ export interface components {
       /** Format: uuid */
       id: string
       name: string
+      /** @description Superseded by `items`; kept for clients that predate it. */
       titles: components['schemas']['TitleSummary'][]
+      /** @description The members in list order. */
+      items: components['schemas']['ListItem'][]
       /** Format: date-time */
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+    }
+    /** @description One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded. */
+    ListItem: {
+      title: components['schemas']['TitleSummary']
+      entry?: components['schemas']['LibraryEntry']
+      /** @enum {string} */
+      showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
+      nextAiring?: components['schemas']['UpcomingEpisode']
+    }
+    UpcomingEpisode: {
+      season: number
+      number: number
+      episodeName?: string
+      /** Format: date-time */
+      airsAt: string
+      /** @description False when the source gives only a date, as on CalendarEntry. */
+      airTimeKnown: boolean
     }
     CreateList: {
       name: string

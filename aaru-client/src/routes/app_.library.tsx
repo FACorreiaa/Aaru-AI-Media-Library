@@ -1,6 +1,7 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { z } from 'zod'
+import { AddToListDialog } from '../components/AddToListDialog'
 import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
 import { SearchPanel } from '../components/SearchPanel'
@@ -65,7 +66,13 @@ function Library() {
     })
   }
   const [layout, setLayout] = createSignal<Layout>('grid')
+  // The entry whose "List…" was clicked: the picker adds its title to a list.
+  const [listTarget, setListTarget] = createSignal<LibraryEntry | null>(null)
   let dialog: HTMLDialogElement | undefined
+
+  function chooseList(libraryItemId: string) {
+    setListTarget(entries().find((e) => e.id === libraryItemId) ?? null)
+  }
 
   onMount(() => {
     setLayout(readLayout())
@@ -208,11 +215,11 @@ function Library() {
               <ul class="mt-8 divide-y divide-line">
                 <For each={rows()}>
                   {(row) => (
-                    <li>
+                    <li class="flex items-center gap-4">
                       <Link
                         to="/app/title/$id"
                         params={{ id: row.id }}
-                        class="flex items-center gap-4 py-3"
+                        class="flex min-w-0 flex-1 items-center gap-4 py-3"
                       >
                         <Poster
                           url={row.posterUrl}
@@ -236,6 +243,13 @@ function Library() {
                           </p>
                         </div>
                       </Link>
+                      <button
+                        type="button"
+                        class="shrink-0 text-sm font-medium text-muted hover:text-ink"
+                        onClick={() => chooseList(row.id)}
+                      >
+                        List…
+                      </button>
                     </li>
                   )}
                 </For>
@@ -259,6 +273,13 @@ function Library() {
                         {row.detail ?? statusLabel(row.status, row.kind)}
                       </p>
                     </Link>
+                    <button
+                      type="button"
+                      class="mt-1 text-xs font-medium text-muted hover:text-ink"
+                      onClick={() => chooseList(row.id)}
+                    >
+                      List…
+                    </button>
                   </li>
                 )}
               </For>
@@ -282,6 +303,15 @@ function Library() {
           onClose={() => dialog?.close()}
         />
       </dialog>
+      <Show when={listTarget()}>
+        {(entry) => (
+          <AddToListDialog
+            mediaRef={{ titleId: entry().title.id, type: entry().title.type }}
+            titleName={entry().title.title}
+            onClose={() => setListTarget(null)}
+          />
+        )}
+      </Show>
     </div>
   )
 }

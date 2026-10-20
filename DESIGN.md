@@ -119,6 +119,12 @@ Classic filters are how a shelf is edited, not how you enter the app.
 Visual cue: Letterboxd lists + Ryot filters, presented as pages of reeds rather than a
 spreadsheet.
 
+A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
+library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
+reads "On this list" once it is there. Every library row also offers "Add to list". A list row
+says what the title is doing: show status (Returning, Ended…), the next episode and when it
+airs, and the library status and progress when the title is on the shelf (LST-003).
+
 ## 7. Catch-up calendar
 
 You came from Pogdesign CAT. Steal the *feeling*, not the site.

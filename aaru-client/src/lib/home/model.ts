@@ -59,7 +59,7 @@ function daysBetween(a: string, b: string): number {
  * hours. Null for an airing before today.
  */
 export function airingBadge(
-  entry: CalendarEntry,
+  entry: Pick<CalendarEntry, 'airsAt' | 'airTimeKnown'>,
   now: Date,
   timeZone?: string,
 ): string | null {

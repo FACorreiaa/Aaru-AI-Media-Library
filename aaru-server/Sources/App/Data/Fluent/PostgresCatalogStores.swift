@@ -167,6 +167,39 @@ struct PostgresTitleStore: TitleStore {
         return ids.compactMap { byID[$0] }
     }
 
+    func airing(ids: [TitleID], now: Date) async throws -> [TitleID: TitleAiring] {
+        struct Row: Decodable {
+            let id: UUID
+            let status: String?
+            let season: Int?
+            let episode: Int?
+            let name: String?
+            let airsAt: Date?
+            let airsAtExact: Bool?
+        }
+        guard !ids.isEmpty else { return [:] }
+        let rows = try await sql.raw("""
+        SELECT t.id, t.status, next.season, next.episode, next.name, next.airs_at, next.airs_at_exact
+        FROM titles t
+        LEFT JOIN LATERAL (
+            SELECT se.season, se.episode, se.name, se.airs_at, se.airs_at_exact FROM show_episodes se
+            WHERE se.title_id = t.id AND se.season > 0 AND se.airs_at > \(bind: now)
+            ORDER BY se.airs_at, se.season, se.episode LIMIT 1
+        ) next ON true
+        WHERE t.type = 'show' AND t.id = ANY(\(bind: ids.map(\.rawValue)))
+        """).all(decoding: Row.self, keyDecodingStrategy: snake)
+        return Dictionary(uniqueKeysWithValues: rows.map { row in
+            var next: CatalogEpisode?
+            if let season = row.season, let episode = row.episode {
+                next = CatalogEpisode(
+                    season: season, episode: episode, name: row.name, airsAt: row.airsAt,
+                    airTimeKnown: row.airsAtExact ?? false
+                )
+            }
+            return (TitleID(row.id), TitleAiring(status: row.status.flatMap(TitleStatus.init(rawValue:)), next: next))
+        })
+    }
+
     func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID] {
         struct Row: Decodable { let id: UUID }
         let airingStale = now.addingTimeInterval(-CatalogService.airingStaleness)
@@ -176,8 +209,9 @@ struct PostgresTitleStore: TitleStore {
         return try await sql.raw("""
         SELECT t.id FROM titles t
         WHERE t.type = 'show'
-          AND EXISTS (SELECT 1 FROM library_items li
-                      WHERE li.title_id = t.id AND li.status IN ('wishlist', 'in_progress'))
+          AND (EXISTS (SELECT 1 FROM library_items li
+                       WHERE li.title_id = t.id AND li.status IN ('wishlist', 'in_progress'))
+               OR EXISTS (SELECT 1 FROM list_items lst WHERE lst.title_id = t.id))
           AND (t.episodes_attempted_at IS NULL OR t.episodes_attempted_at < \(bind: retryAfter))
           AND (t.episodes_hydrated_at IS NULL
                OR t.episodes_hydrated_at < \(bind: dormantStale)
