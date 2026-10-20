@@ -34,7 +34,7 @@ struct RecapShareCard: View {
         .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
         .foregroundStyle(Color(.paper))
         .background(LinearGradient(
-            colors: [Color.accentColor, Color(.ink)], startPoint: .topLeading, endPoint: .bottomTrailing
+            colors: [Color(.accent), Color(.ink)], startPoint: .topLeading, endPoint: .bottomTrailing
         ))
     }
 }

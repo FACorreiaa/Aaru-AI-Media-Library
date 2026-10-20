@@ -27,12 +27,12 @@ struct WeekDayPager: View {
                             .font(.system(.headline, design: .rounded, weight: .bold))
                             .monospacedDigit()
                         Circle()
-                            .fill(model.entries(on: day).isEmpty ? .clear : Color.accentColor)
+                            .fill(model.entries(on: day).isEmpty ? .clear : Color(.accent))
                             .frame(width: 4, height: 4)
                     }
                     .frame(maxWidth: .infinity, minHeight: 52)
-                    .foregroundStyle(isSelected ? Color(.paper) : model.isToday(day) ? Color.accentColor : Color(.ink))
-                    .background(isSelected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 10))
+                    .foregroundStyle(isSelected ? Color(.paper) : model.isToday(day) ? Color(.accent) : Color(.ink))
+                    .background(isSelected ? Color(.accent) : .clear, in: RoundedRectangle(cornerRadius: 10))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

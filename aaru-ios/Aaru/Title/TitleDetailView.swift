@@ -113,7 +113,7 @@ struct TitleDetailView: View {
                             .font(.footnote)
                             .foregroundStyle(Color(.muted))
                     }
-                    .tint(Color.accentColor)
+                    .tint(Color(.accent))
                 }
             }
         }
@@ -241,7 +241,7 @@ private struct EpisodeRow: View {
                     } else {
                         Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
                             .font(.title3)
-                            .foregroundStyle(isWatched ? Color.accentColor : Color(.muted))
+                            .foregroundStyle(isWatched ? Color(.accent) : Color(.muted))
                     }
                 }
                 .frame(width: 26)
@@ -288,7 +288,7 @@ private struct RatingStars: View {
                 } label: {
                     Image(systemName: (rating ?? 0) >= value ? "star.fill"
                         : (rating ?? 0) >= value - 1 ? "star.leadinghalf.filled" : "star")
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color(.accent))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("\(star) star\(star == 1 ? "" : "s")")

@@ -64,7 +64,7 @@ struct HomeArt: View {
                         image.resizable().scaledToFill()
                     } else {
                         LinearGradient(
-                            colors: [Color.accentColor.opacity(0.35), Color.weekGold.opacity(0.3)],
+                            colors: [Color(.accent).opacity(0.35), Color.weekGold.opacity(0.3)],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         )
                     }

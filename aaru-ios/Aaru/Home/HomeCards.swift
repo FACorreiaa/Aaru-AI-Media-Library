@@ -22,7 +22,7 @@ struct ContinueCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.title.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color(.accent))
                         .lineLimit(1)
                     Text(episodeLine)
                         .font(.caption)
@@ -33,7 +33,7 @@ struct ContinueCard: View {
                 Button(action: onCheck) {
                     Image(systemName: isPending ? "checkmark.circle.fill" : "checkmark.circle")
                         .font(.title2)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color(.accent))
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                 }
@@ -127,7 +127,7 @@ struct AiringCard: View {
                     aspect: 16 / 6
                 )
                 .overlay(alignment: .topLeading) {
-                    HomeChip(text: when, tint: isSoon ? Color.accentColor : .black.opacity(0.55)).padding(6)
+                    HomeChip(text: when, tint: isSoon ? Color(.accent) : .black.opacity(0.55)).padding(6)
                 }
                 .overlay(alignment: .topTrailing) {
                     if let badge = entry.badge {
@@ -138,7 +138,7 @@ struct AiringCard: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(entry.title.title)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color(.accent))
                         .lineLimit(1)
                     Text([entry.code, entry.episodeName].compactMap(\.self).joined(separator: " · "))
                         .font(.caption2)
