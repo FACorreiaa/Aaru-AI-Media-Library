@@ -51,33 +51,68 @@ struct LocalDay: Sendable, Hashable, Comparable, CustomStringConvertible {
     }
 }
 
-/// One calendar year, or one month of it, in one time zone.
+/// One calendar year, one month of it, or all time, in one time zone.
 struct StatsPeriod: Sendable, Equatable {
-    var year: Int
-    var month: Int?
-    var timeZone: TimeZone
+    enum Span: String, Sendable {
+        case month, year, all
+    }
 
+    /// The earliest day any period reaches (`StatsService.years`' lower bound).
+    static let firstDay = LocalDay(year: 1900, month: 1, day: 1)
+
+    let span: Span
+    /// The last year the period touches: the year asked for, or this year for all time.
+    let year: Int
+    let month: Int?
+    let timeZone: TimeZone
     /// First day of the period.
-    var start: LocalDay {
-        LocalDay(year: year, month: month ?? 1, day: 1)
-    }
-
+    let start: LocalDay
     /// First day after the period.
-    var end: LocalDay {
-        start.adding(months: month == nil ? 12 : 1)
+    let end: LocalDay
+    /// All time: the first year with activity, where the yearly buckets start. Else `year`.
+    var firstYear: Int
+
+    init(year: Int, month: Int?, timeZone: TimeZone) {
+        span = month == nil ? .year : .month
+        self.year = year
+        self.month = month
+        self.timeZone = timeZone
+        start = LocalDay(year: year, month: month ?? 1, day: 1)
+        end = start.adding(months: month == nil ? 12 : 1)
+        firstYear = year
     }
 
-    /// Months of the year, or days of the month, in order.
+    /// Everything through the end of `today`'s year, one bucket per year. It ends where the
+    /// year's own period ends, so all time is exactly the years summed.
+    init(allTimeUntil today: LocalDay, timeZone: TimeZone) {
+        span = .all
+        year = today.year
+        month = nil
+        self.timeZone = timeZone
+        start = Self.firstDay
+        end = LocalDay(year: today.year + 1, month: 1, day: 1)
+        firstYear = today.year
+    }
+
+    /// Months of the year, days of the month, or years from `firstYear`, in order.
     var bucketStarts: [LocalDay] {
-        if month == nil {
+        switch span {
+        case .all:
+            return (min(firstYear, year) ... year).map { LocalDay(year: $0, month: 1, day: 1) }
+        case .year:
             return (0 ..< 12).map { start.adding(months: $0) }
+        case .month:
+            return Array(sequence(first: start) { $0.adding(days: 1) }.prefix { $0 < end })
         }
-        return Array(sequence(first: start) { $0.adding(days: 1) }.prefix { $0 < end })
     }
 
     /// The bucket a day falls in.
     func bucket(of day: LocalDay) -> LocalDay {
-        month == nil ? LocalDay(year: day.year, month: day.month, day: 1) : day
+        switch span {
+        case .all: LocalDay(year: day.year, month: 1, day: 1)
+        case .year: LocalDay(year: day.year, month: day.month, day: 1)
+        case .month: day
+        }
     }
 }
 
@@ -102,7 +137,7 @@ protocol StatsStore: Sendable {
         -> [StatsActivity]
 }
 
-/// GAM-006a: what one user watched and read in a period. Derived only from their own library.
+/// GAM-006a/c: what one user watched and read in a period. Derived only from their own library.
 struct PeriodStats: Sendable, Equatable {
     struct Totals: Sendable, Equatable {
         var episodesWatched = 0
@@ -142,6 +177,21 @@ struct PeriodStats: Sendable, Equatable {
         var mean: Double?
         var highest: Title?
         var highestRating: Double?
+        /// Ten bins on the 1–10 scale: bin `n` holds ratings in (n, n + 1], so a half star
+        /// rounds up (7.5 is an 8) and 1 is the first bin.
+        var distribution = Array(repeating: 0, count: 10)
+    }
+
+    /// The four kinds a person counts in: anime is its own kind, whatever its type.
+    enum Kind: String, Sendable, CaseIterable {
+        case movie, show, anime, book
+    }
+
+    struct KindTotals: Sendable, Equatable {
+        var kind: Kind
+        var episodes = 0
+        var minutes = 0
+        var finished = 0
     }
 
     struct Moment: Sendable, Equatable {
@@ -152,6 +202,8 @@ struct PeriodStats: Sendable, Equatable {
     var period: StatsPeriod
     var isPartial: Bool
     var totals: Totals
+    /// Movie, show, anime, book, always all four; they sum to `totals`.
+    var byKind: [KindTotals]
     var buckets: [Bucket]
     var busiest: Bucket?
     /// Most episodes; nil when none, or when the top count is shared.

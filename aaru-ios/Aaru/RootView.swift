@@ -13,6 +13,8 @@ struct RootView: View {
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var tab: AppTab = .home
+    /// Library's kind and status filter, here so Home's count chips can set it.
+    @State private var libraryFilter = LibraryFilter()
     @State private var errorMessage: String?
     /// A title a widget asked to open (`aaru://title/{id}`).
     @State private var linkedTitle: LinkedTitle?
@@ -26,21 +28,10 @@ struct RootView: View {
             if session.isSignedIn {
                 // A sidebar on Mac and iPad, a tab bar on iPhone.
                 TabView(selection: $tab) {
-                    Tab("Home", systemImage: "house", value: AppTab.home) {
-                        HomeScreen(api: api, library: library, lists: lists) { tab = .calendar }
-                    }
-                    Tab("Library", systemImage: "books.vertical", value: AppTab.library) {
-                        LibraryView(api: api, library: library, lists: lists)
-                    }
-                    Tab("Calendar", systemImage: "calendar", value: AppTab.calendar) {
-                        CalendarScreen(api: api, library: library, lists: lists)
-                    }
-                    Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
-                        SettingsView(
-                            api: api, imports: imports, library: library, lists: lists,
-                            onSignOut: { Task { await flow.signOut() } },
-                            onDeleteAccount: { await flow.deleteAccount() }
-                        )
+                    ForEach(AppTab.allCases) { destination in
+                        Tab(destination.title, systemImage: destination.symbol, value: destination) {
+                            screen(for: destination)
+                        }
                     }
                 }
                 .tabViewStyle(.sidebarAdaptable)
@@ -95,6 +86,7 @@ struct RootView: View {
                 WidgetSnapshotStore.clear()
                 WidgetCenter.shared.reloadAllTimelines()
                 tab = .home
+                libraryFilter = LibraryFilter()
                 linkedTitle = nil
             }
         }
@@ -116,8 +108,66 @@ struct RootView: View {
         }
     }
 
-    enum AppTab: Hashable {
-        case home, library, calendar, settings
+    /// The app's destinations, in tab-bar and sidebar order.
+    enum AppTab: String, CaseIterable, Identifiable {
+        case home, discover, library, calendar, lists, settings
+
+        var id: String {
+            rawValue
+        }
+
+        var title: String {
+            switch self {
+            case .home: "Home"
+            case .discover: "Discover"
+            case .library: "Library"
+            case .calendar: "Calendar"
+            case .lists: "Lists"
+            case .settings: "Settings"
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .home: "house"
+            case .discover: "binoculars"
+            case .library: "books.vertical"
+            case .calendar: "calendar"
+            case .lists: "list.bullet.rectangle"
+            case .settings: "gearshape"
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func screen(for destination: AppTab) -> some View {
+        switch destination {
+        case .home:
+            HomeScreen(
+                api: api, library: library, lists: lists,
+                onSelectTab: { tab = $0 },
+                onShowLibrary: { status in
+                    libraryFilter = LibraryFilter(status: status)
+                    tab = .library
+                }
+            )
+        case .discover:
+            DiscoverScreen(api: api, library: library, lists: lists)
+        case .library:
+            LibraryView(api: api, library: library, lists: lists, filter: $libraryFilter)
+        case .calendar:
+            CalendarScreen(api: api, library: library, lists: lists)
+        case .lists:
+            NavigationStack {
+                ListsView(lists: lists, library: library, api: api)
+            }
+        case .settings:
+            SettingsView(
+                api: api, imports: imports, library: library, lists: lists,
+                onSignOut: { Task { await flow.signOut() } },
+                onDeleteAccount: { await flow.deleteAccount() }
+            )
+        }
     }
 
     struct LinkedTitle: Identifiable {

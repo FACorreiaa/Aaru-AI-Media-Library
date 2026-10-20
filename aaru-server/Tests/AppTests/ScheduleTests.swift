@@ -140,4 +140,80 @@ struct ScheduleTests {
             #expect(row["isFinale"] as? Bool == true)
         }
     }
+
+    /// A book the fake catalog can hydrate, added with `status`; returns the item id.
+    func addBook(_ env: LibraryHarness, _ name: String, status: String) async throws -> String {
+        let olid = uniqueID("OL")
+        env.fake.stubTitle(CatalogTitle(
+            hit: CatalogHit(
+                type: .book, title: name, originalTitle: nil, year: 2001, posterURL: nil, overview: nil,
+                byline: nil, ids: ExternalIDs(openLibrary: olid), isAnime: false
+            ),
+            status: nil, runtimeMinutes: nil
+        ))
+        let reply = try await env.send(.post, "/v1/library/items", json: [
+            "mediaRef": ["type": "book", "ids": ["openLibrary": olid]], "status": status,
+        ])
+        return try #require(try reply.json()["id"] as? String)
+    }
+
+    /// Backdates an item's last change by `days`.
+    func touch(_ itemID: String, daysAgo days: Int) async throws {
+        let id = try #require(UUID(uuidString: itemID))
+        try await withSQL { sql in
+            try await sql.raw("""
+            UPDATE library_items SET updated_at = now() - \(bind: days)::int * interval '1 day' WHERE id = \(bind: id)
+            """).run()
+        }
+    }
+
+    @Test("UPN-002: counts per status, for the caller only")
+    func counts() async throws {
+        try await LibraryHarness.run { env in
+            _ = try await env.add("movie", tmdb: env.stubMovie("Plan"))
+            _ = try await env.add("movie", tmdb: env.stubMovie("Seen"), status: "finished")
+            _ = try await env.add("movie", tmdb: env.stubMovie("Quit"), status: "dropped")
+            _ = try await addBook(env, "Reading", status: "in_progress")
+            let (_, other) = try await signedInUser(env.stores)
+            _ = try await env.send(.post, "/v1/library/items", json: [
+                "mediaRef": ["type": "movie", "ids": ["tmdb": env.stubMovie("Theirs")]], "status": "dropped",
+            ], token: other)
+
+            let counts = try await env.send(.get, "/v1/up-next").json()["counts"] as? [String: Int]
+            #expect(counts == ["wishlist": 1, "inProgress": 1, "finished": 1, "dropped": 1])
+        }
+    }
+
+    @Test("UPN-002: dropped items and 30-day-old progress are unfinished; never also in Continue watching")
+    func unfinished() async throws {
+        try await LibraryHarness.run { env in
+            let dropped = try await env.add(
+                "show", tmdb: stubAiring(env, "Lost Cause", days: [-30, -23]), status: "dropped"
+            )
+            let stale = try await addBook(env, "Old Book", status: "in_progress")
+            let fresh = try await addBook(env, "Recent Book", status: "in_progress")
+            // In progress, untouched for 40 days, but with an aired episode to watch: Continue watching.
+            let continuing = try await env.add(
+                "show", tmdb: stubAiring(env, "Paused Show", days: [-60, -50]), status: "in_progress"
+            )
+            try await touch(stale, daysAgo: 31)
+            try await touch(fresh, daysAgo: 29)
+            try await touch(continuing, daysAgo: 40)
+            try await touch(dropped, daysAgo: 2)
+            let (_, other) = try await signedInUser(env.stores)
+            _ = try await env.send(.post, "/v1/library/items", json: [
+                "mediaRef": ["type": "movie", "ids": ["tmdb": env.stubMovie("Their Drop")]], "status": "dropped",
+            ], token: other)
+
+            let home = try await env.send(.get, "/v1/up-next").json()
+            let rows = try #require(home["unfinished"] as? [[String: Any]])
+            #expect(rows.compactMap { $0["libraryItemId"] as? String } == [dropped, stale], "newest change first")
+            #expect(rows.compactMap { $0["reason"] as? String } == ["dropped", "stalled"])
+            #expect((rows.first?["next"] as? [String: Any])?["number"] as? Int == 1, "a show resumes where it stopped")
+            #expect(rows.last?["next"] == nil)
+            #expect(rows.allSatisfy { $0["since"] is String })
+            let continued = home["continueWatching"] as? [[String: Any]]
+            #expect(continued?.compactMap { $0["libraryItemId"] as? String } == [continuing])
+        }
+    }
 }

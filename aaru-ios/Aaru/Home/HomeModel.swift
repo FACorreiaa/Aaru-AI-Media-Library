@@ -4,11 +4,15 @@ import Observation
 
 typealias ContinueEntry = Components.Schemas.ContinueEntry
 typealias StartEntry = Components.Schemas.StartEntry
+typealias UnfinishedEntry = Components.Schemas.UnfinishedEntry
+typealias LibraryCounts = Components.Schemas.LibraryCounts
 typealias DiscoverRow = Components.Schemas.DiscoverRow
 
-/// Home (APP-009): Continue watching and Start watching from `/v1/up-next`, and the next two
-/// weeks of airings from `/v1/calendar`, then Discover's public rows from `/v1/discover`
-/// (DISC-001). The last good load is cached so Home opens offline.
+/// Home (APP-009, APP-013): Continue watching, Start watching, Unfinished and the status counts
+/// from `/v1/up-next`; the next two weeks of airings from `/v1/calendar`; this month's numbers
+/// from `/v1/me/stats`; then Discover's public rows from `/v1/discover` (DISC-001). Each part
+/// loads on its own, so one failing keeps the rest. The last good load is cached so Home opens
+/// offline.
 @MainActor
 @Observable
 final class HomeModel {
@@ -16,6 +20,9 @@ final class HomeModel {
     private(set) var startWatching: [StartEntry] = []
     /// Unwatched episodes of tracked shows airing from today on, in air order.
     private(set) var upcoming: [CalendarEntry] = []
+    private(set) var unfinished: [UnfinishedEntry] = []
+    private(set) var counts: LibraryCounts?
+    private(set) var monthStats: Stats?
     /// Trending and this-season rows, the same for everyone. Below the user's own rows, and
     /// all a new account sees.
     private(set) var discover: [DiscoverRow] = []
@@ -32,6 +39,12 @@ final class HomeModel {
     @ObservationIgnored private let cache: HomeCache?
     @ObservationIgnored let calendar: Calendar
     @ObservationIgnored private let now: () -> Date
+    /// What the cache holds, updated part by part as loads land.
+    @ObservationIgnored private var snapshot: HomeCache.Snapshot?
+    /// The library revision the last load started at: a write after it means Home is stale.
+    @ObservationIgnored private var loadedRevision: Int?
+    /// A shelf change arrived while a load was running; run once more when it ends.
+    @ObservationIgnored private var reloadQueued = false
 
     /// Cards in the Calendar row; the full list is one tap away.
     nonisolated static let upcomingLimit = 12
@@ -49,6 +62,7 @@ final class HomeModel {
         self.calendar = calendar
         self.now = now
         if let snapshot = cache?.load() {
+            self.snapshot = snapshot
             apply(snapshot)
         }
         discover = cache?.loadDiscover() ?? []
@@ -62,8 +76,9 @@ final class HomeModel {
         hasLoaded = true
     }
 
+    /// Nothing of the user's own: no rows from the library. Discover's rows may still be there.
     var isEmpty: Bool {
-        continueWatching.isEmpty && startWatching.isEmpty && upcoming.isEmpty
+        continueWatching.isEmpty && startWatching.isEmpty && upcoming.isEmpty && unfinished.isEmpty
     }
 
     // MARK: Loading
@@ -73,18 +88,47 @@ final class HomeModel {
         await load()
     }
 
-    /// Every read at once. Any failing keeps whatever is on screen; Discover failing never
-    /// touches the user's own rows.
+    /// The library changed (an add, a tick, a sync). Refetches unless a load already started after
+    /// the change; one arriving mid-load runs once more when that load ends. Before the first
+    /// load has been tried there is nothing to refresh: that load is on its way.
+    func shelfChanged() async {
+        guard let library, let loadedRevision, library.revision != loadedRevision else { return }
+        if isLoading {
+            reloadQueued = true
+            return
+        }
+        await load()
+    }
+
+    /// Every part at once. Any one failing keeps whatever is on screen for it; Discover failing
+    /// never touches the user's own rows.
     func load() async {
         guard let api, !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
-        async let discoverRows = Self.fetchDiscover(api)
-        await loadOwnRows(api)
-        if let rows = await discoverRows {
-            discover = rows
-            cache?.saveDiscover(rows)
-        }
+        repeat {
+            reloadQueued = false
+            loadedRevision = library?.revision ?? 0
+            async let discoverRows = Self.fetchDiscover(api)
+            async let stats: Void = loadMonthStats(api)
+            let coreLoaded = await loadCore(api)
+            await stats
+            if let rows = await discoverRows {
+                discover = rows
+                cache?.saveDiscover(rows)
+            }
+            if let snapshot, let cache {
+                cache.save(snapshot)
+                if coreLoaded {
+                    // Previews pass no cache; only the real Home feeds the widgets (WID-001).
+                    WidgetSync.publish(WidgetSync.snapshot(
+                        upNext: snapshot.upNext,
+                        airing: snapshot.airing,
+                        now: now()
+                    ))
+                }
+            }
+        } while reloadQueued
     }
 
     private nonisolated static func fetchDiscover(_ api: Client) async -> [DiscoverRow]? {
@@ -92,7 +136,8 @@ final class HomeModel {
         return try? response.body.json.rows
     }
 
-    private func loadOwnRows(_ api: Client) async {
+    /// Up next and the calendar together: the rows that are the user's own. False when they failed.
+    private func loadCore(_ api: Client) async -> Bool {
         // The widgets' window: from this week's Monday (or yesterday — a date-only air date is
         // midnight UTC, "yesterday" west of Greenwich) to two weeks out. Home keeps only today on.
         let window = WidgetSync.window(now: now(), calendar: calendar)
@@ -102,30 +147,46 @@ final class HomeModel {
             let (upNext, airing) = try await (upNextOutput, calendarOutput)
             guard case let .ok(upNextResponse) = upNext, case let .ok(airingResponse) = airing else {
                 problem = "Home could not be loaded."
-                return
+                return false
             }
-            let snapshot = try HomeCache.Snapshot(
+            var next = try HomeCache.Snapshot(
                 upNext: upNextResponse.body.json,
                 airing: airingResponse.body.json.items
             )
-            apply(snapshot)
-            if let cache {
-                cache.save(snapshot)
-                // Previews pass no cache; only the real Home feeds the widgets (WID-001).
-                WidgetSync.publish(WidgetSync.snapshot(upNext: snapshot.upNext, airing: snapshot.airing, now: now()))
-            }
+            next.monthStats = snapshot?.monthStats
+            snapshot = next
+            apply(next)
             hasLoaded = true
             problem = nil
+            return true
         } catch {
             problem = hasLoaded || !isEmpty
                 ? "Offline. Showing Home from the last load."
                 : "Aaru could not reach the server."
+            return false
         }
+    }
+
+    /// This month's numbers. A failure leaves the strip as it was and says nothing: the strip is
+    /// a summary, not something the user asked for.
+    private func loadMonthStats(_ api: Client) async {
+        let parts = calendar.dateComponents([.year, .month], from: now())
+        let query = Operations.GetStats.Input.Query(
+            year: parts.year, month: parts.month, tz: calendar.timeZone.identifier
+        )
+        guard case let .ok(response) = try? await api.getStats(query: query),
+              let stats = try? response.body.json
+        else { return }
+        monthStats = stats
+        snapshot?.monthStats = stats
     }
 
     private func apply(_ snapshot: HomeCache.Snapshot) {
         continueWatching = snapshot.upNext.continueWatching
         startWatching = snapshot.upNext.startWatching
+        unfinished = snapshot.upNext.unfinished ?? []
+        counts = snapshot.upNext.counts
+        monthStats = snapshot.monthStats
         let today = CalendarDay(calendar.dateComponents([.year, .month, .day], from: now()))
         upcoming = snapshot.airing
             .filter { !$0.watched && $0.day(in: calendar) >= today }
@@ -151,33 +212,14 @@ final class HomeModel {
         hit.libraryItemId ?? library?.entry(matching: hit)?.id
     }
 
-    /// Adds a Discover hit with a status, as search does. The card turns into a link to it.
+    /// Adds a Discover hit with a status, as search does. The card turns into a link to it (the
+    /// shelf now has it), and the revision bump reloads Home once.
     func add(_ hit: CatalogHit, status: LibraryStatus) async {
-        guard let api, !adding.contains(hit.id) else { return }
+        guard let api, let library, !adding.contains(hit.id) else { return }
         problem = nil
         adding.insert(hit.id)
         defer { adding.remove(hit.id) }
-        let ref = Components.Schemas.MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year)
-        do {
-            switch try await api.addLibraryItem(body: .json(.init(mediaRef: ref, status: status))) {
-            case let .ok(response):
-                let entry = try response.body.json
-                library?.upsert(entry)
-                mark(hit, libraryItemID: entry.id)
-            case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "\(hit.title) could not be added."
-            }
-        } catch {
-            problem = "\(hit.title) was not added. Aaru could not reach the server."
-        }
-    }
-
-    private func mark(_ hit: CatalogHit, libraryItemID: String) {
-        for row in discover.indices {
-            for item in discover[row].items.indices where discover[row].items[item].id == hit.id {
-                discover[row].items[item].libraryItemId = libraryItemID
-            }
-        }
+        problem = await library.add(hit, status: status, api: api)
     }
 
     // MARK: Checking
@@ -201,13 +243,15 @@ final class HomeModel {
             case let .ok(response):
                 var forShelf = try response.body.json
                 forShelf.watchedEpisodes = nil
+                // Refetches for the real next card; HomeScreen's revision observer then finds
+                // this load already started and does not run a second one.
                 library?.upsert(forShelf)
                 #if os(iOS)
                     await NowWatching.episodeWatched(
                         libraryItemId: id, season: entry.next.season, episode: entry.next.number
                     )
                 #endif
-                await load()
+                await shelfChanged()
             case let .default(_, error):
                 continueWatching = before
                 problem = (try? error.body.json.message) ?? Self.notSaved(entry)
@@ -248,8 +292,21 @@ final class HomeModel {
     private static func notSaved(_ entry: ContinueEntry) -> String {
         "\(entry.title.title) S\(entry.next.season) E\(entry.next.number) was not saved."
     }
+}
 
-    // MARK: Labels
+// MARK: Labels
+
+extension HomeModel {
+    /// "Dropped", or "Paused 6 weeks" for a show left alone since `since`.
+    func unfinishedLabel(_ entry: UnfinishedEntry) -> String {
+        switch entry.reason {
+        case .dropped: return "Dropped"
+        case .stalled:
+            let days = calendar.dateComponents([.day], from: entry.since, to: now()).day ?? 0
+            let weeks = max(1, days / 7)
+            return weeks == 1 ? "Paused 1 week" : "Paused \(weeks) weeks"
+        }
+    }
 
     /// "Today · New", "In 3 hours", "Tomorrow", "In 2 days". Hours only for exact air times.
     func airingLabel(_ entry: CalendarEntry) -> String {

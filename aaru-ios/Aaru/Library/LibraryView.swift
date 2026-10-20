@@ -1,16 +1,22 @@
 import AaruAPI
 import SwiftUI
 
+/// What the shelf is narrowed to. Owned by the root so Home's count chips can set it.
+struct LibraryFilter: Equatable {
+    var kind: MediaKind?
+    var status: LibraryStatus?
+}
+
 /// APP-003: the shelf. Filter by kind and status, poster grid or list, readable offline.
 struct LibraryView: View {
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
+    @Binding var filter: LibraryFilter
 
     @AppStorage("library.layout") private var layout = Layout.grid
-    @State private var kind: MediaKind?
-    @State private var status: LibraryStatus?
     @State private var showsSearch = false
+    @State private var showsInsights = false
     @State private var recap: RecapPeriod?
 
     enum Layout: String {
@@ -18,7 +24,7 @@ struct LibraryView: View {
     }
 
     private var rows: [LibraryRow] {
-        library.rows(kind: kind, status: status)
+        library.rows(kind: filter.kind, status: filter.status)
     }
 
     var body: some View {
@@ -37,6 +43,7 @@ struct LibraryView: View {
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library, lists: lists)
                 }
+                .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api) }
                 .recapStory($recap, api: api)
                 .background(Color(.paper))
         }
@@ -90,21 +97,24 @@ struct LibraryView: View {
         VStack(spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    FilterChip(title: "All", isOn: kind == nil) { kind = nil }
+                    FilterChip(title: "All", isOn: filter.kind == nil) { filter.kind = nil }
                     ForEach(MediaKind.allCases) { option in
-                        FilterChip(title: option.label, isOn: kind == option) { kind = option }
+                        FilterChip(title: option.label, isOn: filter.kind == option) { filter.kind = option }
                     }
                     Menu {
-                        Picker("Status", selection: $status) {
+                        Picker("Status", selection: $filter.status) {
                             Text("Any status").tag(LibraryStatus?.none)
-                            ForEach(LibraryStatus.allCases) { Text($0.label).tag(Optional($0)) }
+                            ForEach(LibraryStatus.allCases) { Text($0.label(for: filter.kind)).tag(Optional($0)) }
                         }
                     } label: {
-                        Label(status?.label ?? "Any status", systemImage: "line.3.horizontal.decrease")
-                            .font(.subheadline.weight(.medium))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.18)))
+                        Label(
+                            filter.status?.label(for: filter.kind) ?? "Any status",
+                            systemImage: "line.3.horizontal.decrease"
+                        )
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.18)))
                     }
                     .menuStyle(.button)
                     .buttonStyle(.plain)
@@ -125,13 +135,6 @@ struct LibraryView: View {
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
-            NavigationLink {
-                ListsView(lists: lists, library: library, api: api)
-            } label: {
-                Label("Lists", systemImage: "list.bullet.rectangle")
-            }
-        }
-        ToolbarItem(placement: .primaryAction) {
             Button("Search", systemImage: "magnifyingglass") { showsSearch = true }
                 .keyboardShortcut("f", modifiers: .command)
         }
@@ -142,6 +145,7 @@ struct LibraryView: View {
                     Label("List", systemImage: "list.bullet").tag(Layout.list)
                 }
                 Divider()
+                Button("Insights", systemImage: "chart.bar") { showsInsights = true }
                 Menu("Recaps", systemImage: "sparkles") {
                     ForEach(RecapPeriod.shortcuts(now: .now, calendar: .aaru)) { period in
                         Button(period.label) { recap = period }
@@ -181,7 +185,7 @@ private struct PosterCard: View {
             Text(row.title)
                 .font(.footnote.weight(.medium))
                 .lineLimit(2)
-            Text(row.detail ?? row.status.label)
+            Text(row.detail ?? row.status.label(for: row.kind))
                 .font(.caption2)
                 .foregroundStyle(Color(.muted))
                 .lineLimit(1)
@@ -202,7 +206,7 @@ private struct LibraryListRow: View {
                 Text([row.year.map(String.init), row.kind.label].compactMap(\.self).joined(separator: " · "))
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
-                Text([row.status.label, row.detail].compactMap(\.self).joined(separator: " · "))
+                Text([row.status.label(for: row.kind), row.detail].compactMap(\.self).joined(separator: " · "))
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
             }
