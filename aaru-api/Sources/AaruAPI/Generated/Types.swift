@@ -197,6 +197,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/anilist`.
     /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
     func createAniListImport(_ input: Operations.CreateAniListImport.Input) async throws -> Operations.CreateAniListImport.Output
+    /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)`.
+    func startStremioLink(_ input: Operations.StartStremioLink.Input) async throws -> Operations.StartStremioLink.Output
+    /// Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link/{code}`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)`.
+    func pollStremioLink(_ input: Operations.PollStremioLink.Input) async throws -> Operations.PollStremioLink.Output
     /// Import the connected Trakt account. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/trakt`.
@@ -739,6 +749,26 @@ extension APIProtocol {
         try await createAniListImport(Operations.CreateAniListImport.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)`.
+    public func startStremioLink(headers: Operations.StartStremioLink.Input.Headers = .init()) async throws -> Operations.StartStremioLink.Output {
+        try await startStremioLink(Operations.StartStremioLink.Input(headers: headers))
+    }
+    /// Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link/{code}`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)`.
+    public func pollStremioLink(
+        path: Operations.PollStremioLink.Input.Path,
+        headers: Operations.PollStremioLink.Input.Headers = .init()
+    ) async throws -> Operations.PollStremioLink.Output {
+        try await pollStremioLink(Operations.PollStremioLink.Input(
+            path: path,
+            headers: headers
         ))
     }
     /// Import the connected Trakt account. Read and matched in the background, written only after approval.
@@ -1293,6 +1323,45 @@ public enum Components {
                 case connectedAt
             }
         }
+        /// - Remark: Generated from `#/components/schemas/StremioLink`.
+        public struct StremioLink: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StremioLink/code`.
+            public var code: Swift.String
+            /// The stremio.com page where the user approves the code.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StremioLink/link`.
+            public var link: Swift.String
+            /// A QR image of `link`, for scanning with a phone.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StremioLink/qrcode`.
+            public var qrcode: Swift.String
+            /// - Remark: Generated from `#/components/schemas/StremioLink/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// Creates a new `StremioLink`.
+            ///
+            /// - Parameters:
+            ///   - code:
+            ///   - link: The stremio.com page where the user approves the code.
+            ///   - qrcode: A QR image of `link`, for scanning with a phone.
+            ///   - expiresAt:
+            public init(
+                code: Swift.String,
+                link: Swift.String,
+                qrcode: Swift.String,
+                expiresAt: Foundation.Date
+            ) {
+                self.code = code
+                self.link = link
+                self.qrcode = qrcode
+                self.expiresAt = expiresAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case code
+                case link
+                case qrcode
+                case expiresAt
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ImportJob`.
         public struct ImportJob: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ImportJob/id`.
@@ -1300,6 +1369,7 @@ public enum Components {
             /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
             @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case trakt = "trakt"
+                case stremio = "stremio"
                 case imdbCsv = "imdb_csv"
                 case letterboxdCsv = "letterboxd_csv"
                 case goodreadsCsv = "goodreads_csv"
@@ -9640,6 +9710,317 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)`.
+    public enum StartStremioLink {
+        public static let id: Swift.String = "startStremioLink"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/stremio/link/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.StartStremioLink.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.StartStremioLink.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.StartStremioLink.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.StartStremioLink.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/stremio/link/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/stremio/link/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.StremioLink)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.StremioLink {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.StartStremioLink.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.StartStremioLink.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// A code to approve.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.StartStremioLink.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.StartStremioLink.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link/{code}`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)`.
+    public enum PollStremioLink {
+        public static let id: Swift.String = "pollStremioLink"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/path/code`.
+                public var code: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - code:
+                public init(code: Swift.String) {
+                    self.code = code
+                }
+            }
+            public var path: Operations.PollStremioLink.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PollStremioLink.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PollStremioLink.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.PollStremioLink.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.PollStremioLink.Input.Path,
+                headers: Operations.PollStremioLink.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/stremio/link/{code}/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.PollStremioLink.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.PollStremioLink.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Approved. The library was read and its import queued.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.PollStremioLink.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.PollStremioLink.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Not approved yet.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.PollStremioLink.Output.NoContent)
+            /// Not approved yet.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.PollStremioLink.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

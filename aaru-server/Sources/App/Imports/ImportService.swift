@@ -16,6 +16,8 @@ struct ImportService: Sendable {
     var trakt: TraktImport?
     /// Public AniList lists (IMP-014). Nil when the catalog is a test fake.
     var anilistLists: (any AniListListReading)?
+    /// Stremio's account API and Cinemeta, for history imports (IMP-016). Nil in most tests.
+    var stremio: StremioAccount?
     var now: @Sendable () -> Date = { Date() }
 
     // MARK: Requests
@@ -86,6 +88,9 @@ struct ImportService: Sendable {
                 try await stores.importJobs.appendRows(fetched, jobID: job.id)
                 stored = try await stores.importJobs.rows(jobID: job.id)
             }
+            if job.source == .stremio {
+                stored = try await expandStremioWatched(stored)
+            }
             let rows = try await plan(stored, userID: job.userID)
             job.state = .planned
             job.stats = Self.stats(rows)
@@ -153,6 +158,7 @@ extension ImportService {
         case .letterboxdCSV: "Letterboxd"
         case .goodreadsCSV: "Goodreads"
         case .trakt: "Trakt"
+        case .stremio: "Stremio"
         case .catList, .catICS: "Pogdesign CAT"
         case .malXML: "MyAnimeList"
         case .anilist: "AniList"

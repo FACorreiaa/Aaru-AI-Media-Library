@@ -37,7 +37,8 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         )
     }
     let services = Services.make(
-        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, publicBaseURL: config.publicBaseURL
+        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
+        publicBaseURL: config.publicBaseURL
     )
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
@@ -180,6 +181,18 @@ func makeAuthService(config: AppConfig, stores: Stores, transport: any HTTPTrans
             audiences: config.googleAudiences,
             jwks: AppleJWKSCache(transport: transport, url: GoogleIdentityVerifier.keysURL)
         )
+    )
+}
+
+/// Stremio's account API (a few calls per import) and Cinemeta (one call per show in a library).
+func makeStremioAccount(_ transport: any HTTPTransport) -> StremioAccount {
+    func client(_ name: String, perSecond: Double) -> ProviderClient {
+        ProviderClient(name: name, transport: transport, pacer: RequestPacer(requestsPerSecond: perSecond, burst: 5))
+    }
+    return StremioAccount(
+        link: client("stremio-link", perSecond: 2),
+        api: client("stremio", perSecond: 2),
+        cinemeta: client("cinemeta", perSecond: 5)
     )
 }
 

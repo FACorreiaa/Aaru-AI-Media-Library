@@ -1,5 +1,6 @@
 import { For, Show, createSignal } from 'solid-js'
 import { canChangeLibrary, lastUsedLabel } from '../lib/stremio/model'
+import { StremioHistoryImport } from './StremioHistoryImport'
 import {
   connectStremio,
   listStremio,
@@ -167,6 +168,8 @@ export function StremioSection(props: { links: AgentToken[] }) {
           </For>
         </ul>
       </Show>
+
+      <StremioHistoryImport />
     </section>
   )
 }

@@ -36,6 +36,11 @@ start, pause and stop playing something, and Aaru keeps that playback session (t
 episode, position and length) so it can tick off what you finished. Your changes from Stremio
 appear in your history like any other. Revoking the link in Settings stops all of it.
 
+**Importing your Stremio history.** If you choose to, you approve a code on stremio.com (your
+Stremio password never reaches Aaru). Aaru then reads your Stremio library once, signs that
+session out at once, and does not keep Stremio's session key. What it read becomes an import you
+review like any other.
+
 **Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
 that setting.
 
@@ -51,7 +56,9 @@ Aaru only uses these services, and only for the purpose listed:
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
-  what you play; Aaru does not send anything to Stremio's servers.
+  what you play. If you import your Stremio history, Aaru's server reads your Stremio library
+  once with the code you approved, then signs out. Aaru also asks Stremio's public catalog
+  (Cinemeta) for a show's episode list by its IMDb id, never who you are.
 - **TMDB, TVmaze, AniList and Open Library** provide catalog data. Aaru's server sends them
   what you search for and catalog ids, never who you are.
 

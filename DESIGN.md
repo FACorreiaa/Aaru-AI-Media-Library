@@ -255,6 +255,12 @@ beyond "watched" is an opt-in at connect time. Stremio's events land as journale
 named "Stremio: …", so the undo ribbon and history treat them like a tap. The card itself is
 not built yet; `watch_events` holds what it will read.
 
+The same section offers **Import my Stremio history** (IMP-016): a sheet (web: an inline panel)
+with the code in large monospace, an "Approve on stremio.com" button and a QR for approving
+from another device, and a quiet "Waiting for approval…" line. It polls on its own and, once
+approved, opens the import's plan, which is approved like any other import. Nothing is written
+before that approval.
+
 ## 16. Widgets (Phase 2)
 
 Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only

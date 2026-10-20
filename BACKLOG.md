@@ -47,6 +47,11 @@ library layer stay separate, external IDs stored whenever known, no second backe
   progress to finished, never backward, never out of dropped, and never past a status the user
   chose. Fill-empty stays the rule for ratings and dates. Owner's call after the multi-source
   audit (IMP-004).
+- **Stremio history import (IMP-016), by the owner's call:** the addon only sees playback after it
+  is installed, so past history comes from Stremio's account API through its device-link code: the
+  user approves on stremio.com, Aaru reads the library once, logs the session out and never stores
+  the key. The API is unofficial; it is used once per import, never polled or synced (still no
+  two-way sync). An export-file fallback follows once a real export is in hand.
 
 ## Decisions recorded 2026-10-19
 
@@ -173,6 +178,7 @@ with every provider stubbed.
 | CAL-001, UPN-001 | Done. Network comes from TMDB's first network / AniList's first streaming link (2026-10-15); TVmaze (CAT-011, built 2026-10-16) refines TMDB dates to exact times and the network; its CC BY-SA credit still needs the About screen (PRV-001). Shows hydrate when added; refreshing every tracked show on its staleness window needs a job (JOB-001). |
 | Account export | Built 2026-10-16: `GET /v1/me/export` (JSON: everything incl. watched episodes, lists, shelves; CSV: one row per item in the generic-import columns, so it re-imports; formula cells defused). Settings → Export your data on iPhone/iPad/Mac (save panel) and web (`/app/export`, native download). Privacy policy updated. |
 | IMP-013, IMP-014 | Built 2026-10-16: MyAnimeList XML upload (`source=mal`, `application/xml`; clients gunzip `.xml.gz`) and AniList by username (`POST /v1/imports/anilist`, read in the worker; private list / unknown user fails with a clear message). Both resolve through AniList, so the same anime from both is one title. Also (owner's ask): `source=auto` detects MAL-format XML / IMDb / Letterboxd / Goodreads, and any other CSV imports by its column names (title, year, type, IMDb/TMDB/TVDB/MAL/AniList ids, ISBN, status words, ratings on 5/10/100 scales). IMP-012 TV Time still waits for real exports. |
+| IMP-016 Stremio history | Built 2026-10-20 (server, iPhone, iPad, Mac, web): Settings → Stremio → "Import my Stremio history" shows a code + QR, polls every 3 s, then opens the import's plan. Watched films, in-progress titles, wishlist, and ticked episodes (bitfield over Cinemeta's list). Checked with stub transports and a live link-code create/read only; not yet against a real account's library. The export-file fallback waits for a real export. |
 | PRV-001, LAND-003 | Built 2026-10-16: `docs/providers.md` (register) and `docs/privacy.md` (policy, rendered at `aaruapp.com/privacy`); `/about` and the Apple About screen show the TMDB logo + notice, TVmaze (CC BY-SA), AniList, Open Library. `privacy@aaruapp.com` needs Cloudflare Email Routing. No self-serve export yet (policy says "ask us"). |
 | APP-009 Home rows | Built 2026-10-16 on iPhone, iPad, Mac and web: Home is the first destination (Home · Library · Calendar; web library moved to `/app/library`). Continue watching (one-tap check advances optimistically), Airing soon / Coming up (badges from `airTimeKnown`), Start watching. Apple renders from a disk cache first; the web has no offline cache yet. In-progress movies are not in Continue watching (server returns shows only). Checked with sample data only. |
 | WID-001…004, WID-006 | Built 2026-10-16 (iOS + macOS, one extension): App Group snapshot (`Shared/WidgetSnapshot.swift`) written after every Home load and tick, an hourly `BGAppRefreshTask` on iOS, cleared on sign-out. Up Next (small/medium/large) with an interactive "mark watched" App Intent that calls the same PUT with the shared Keychain token, advances optimistically and restores on failure; Next Episode countdown (small + Lock Screen accessories on iOS; entries at each air time flip to "Out now"); This Week (large/extra large, Monday-first, deep links `aaru://title/{id}`). Not yet seen on a device; no undo ribbon for widget ticks; the large Up Next has no progress bar (the snapshot has no episode totals). WID-005 (Live Activity) is next. |
@@ -1213,6 +1219,18 @@ MAL → AniList. `CLAUDE.md` and `ARCHITECTURE.md` carry the same order.
 
 **Progress 2026-10-20:** MAL rows also resolve through the anime mapping (by MAL id), so MAL after
 a Trakt import lands on the same TMDB show (IMP-004's 2026-10-20 note).
+
+### IMP-016 · Stremio history import · M
+**Needs:** IMP-001, SCR-003.
+Past Stremio history through Stremio's device-link code: approve on stremio.com, one library
+read, logout, key discarded. Shows tick from the watched bitfield over Cinemeta's episode list.
+Second in the merge order (after Trakt).
+
+**Done when:** a real Stremio account imports its watched movies, ticked episodes and in-progress
+shows, and running it again plans only skips and updates.
+
+Export-file fallback (`/v1/imports/csv` with a Stremio JSON export, same mapper): waits for a
+real export sample.
 
 ---
 

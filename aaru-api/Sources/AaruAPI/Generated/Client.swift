@@ -3441,6 +3441,164 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/post(startStremioLink)`.
+    public func startStremioLink(_ input: Operations.StartStremioLink.Input) async throws -> Operations.StartStremioLink.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.StartStremioLink.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/imports/stremio/link",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.StartStremioLink.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.StremioLink.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/stremio/link/{code}`.
+    /// - Remark: Generated from `#/paths//v1/imports/stremio/link/{code}/post(pollStremioLink)`.
+    public func pollStremioLink(_ input: Operations.PollStremioLink.Input) async throws -> Operations.PollStremioLink.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.PollStremioLink.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/imports/stremio/link/{}",
+                    parameters: [
+                        input.path.code
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 202:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.PollStremioLink.Output.Accepted.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ImportJob.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .accepted(.init(body: body))
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Import the connected Trakt account. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/trakt`.

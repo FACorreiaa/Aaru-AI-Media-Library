@@ -13,6 +13,7 @@ render the **Credit** column; `/privacy` names every row that receives user data
 | TVmaze | Exact air times and networks for TMDB shows (CAT-011) | none | — | 1.8/s (~20 per 10 s per IP) | Data CC BY-SA 4.0; free API, attribution required | "Air times from TVmaze" linking to tvmaze.com, CC BY-SA |
 | AniList | Anime: search, details, banners, exact airing times, episode names from its streaming links; Discover rows (this season, trending) | none | — | 1.5/s (90/min) | AniList API terms (non-commercial without permission) | "Anime data from AniList" linking to anilist.co |
 | Fribb/anime-lists | AniList → TMDB/TVDB/MAL/AniDB id mappings, so mapped anime use TMDB's episodes (CAT-010). A file loaded by `aaru --anime-mappings`, monthly; no API calls at request time | none | — | one download per load | MIT | "Anime id mappings from Fribb/anime-lists" linking to github.com/Fribb/anime-lists, MIT |
+| Cinemeta (Stremio) | A show's episode list, to read Stremio's watched-episode field during a Stremio history import (IMP-016) | none | — | 5/s, User-Agent | Stremio's public addon; no published terms | none |
 | Open Library | Books: search, details, covers; Discover's weekly trending books | none | — | 3/s, contact User-Agent | Internet Archive terms; covers rate-limited | "Book data from Open Library" linking to openlibrary.org |
 
 Commercial use of TMDB and AniList on these keys is **not** allowed: any paid plan in
@@ -25,6 +26,7 @@ Commercial use of TMDB and AniList on these keys is **not** allowed: any paid pl
 | Apple | Sign in with Apple; push notifications (APNs) | Team key (APNs) | `APNS_PRIVATE_KEY` in `aaru-env`, `APNS_KEY_ID` env | Apple ID sign-in token; device push token + notification text |
 | Google | Sign in with Google | none (public client ids) | `GOOGLE_CLIENT_IDS` env | Google sign-in token |
 | Resend | Sign-in emails (code + link) | API key | `RESEND_API_KEY` in `aaru-env` | Email address and the sign-in email |
+| Stremio (optional, per user) | Importing a user's Stremio history once (IMP-016): `link.stremio.com` device-link code, `api.strem.io` library read + logout. Unofficial API | none | — | The approved link code; the session key is used for one read and never stored |
 | Trakt (optional, per user) | Importing a user's Trakt history (IMP-002/003) | OAuth client | `TRAKT_*` (not configured yet) | The user's Trakt authorisation; tokens stored encrypted |
 
 ## Hosting

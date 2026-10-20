@@ -46,6 +46,7 @@ extension ImportJob {
         case .letterboxdCsv: "Letterboxd"
         case .goodreadsCsv: "Goodreads"
         case .trakt: "Trakt"
+        case .stremio: "Stremio"
         case .catList, .catIcs: "Pogdesign CAT"
         case .malXml: "MyAnimeList"
         case .anilist: "AniList"
@@ -136,6 +137,50 @@ final class ImportsModel {
             problem = "The import did not start. Aaru could not reach the server."
         }
         return nil
+    }
+
+    /// IMP-016: a code the user approves on stremio.com. No Stremio password reaches Aaru.
+    func startStremioImport() async -> Components.Schemas.StremioLink? {
+        guard let api else { return nil }
+        problem = nil
+        do {
+            switch try await api.startStremioLink() {
+            case let .ok(response):
+                return try response.body.json
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "Stremio could not be reached. Try again in a minute."
+            }
+        } catch {
+            problem = "Stremio could not be reached. Aaru could not reach the server."
+        }
+        return nil
+    }
+
+    enum StremioPoll {
+        case pending
+        case imported(ImportJob)
+        case failed
+    }
+
+    /// Pending until the code is approved; then the server has read the library once and queued it.
+    func pollStremioImport(code: String) async -> StremioPoll {
+        guard let api else { return .failed }
+        do {
+            switch try await api.pollStremioLink(path: .init(code: code)) {
+            case .noContent:
+                return .pending
+            case let .accepted(response):
+                let job = try response.body.json
+                jobs.insert(job, at: 0)
+                return .imported(job)
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "Your Stremio history could not be imported."
+            }
+        } catch {
+            // A dropped connection while waiting is not the end: ask again on the next tick.
+            return .pending
+        }
+        return .failed
     }
 
     func detail(_ id: String) async -> ImportDetail? {
