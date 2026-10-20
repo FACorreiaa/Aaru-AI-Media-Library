@@ -36,5 +36,8 @@ describe('agents model', () => {
     expect(
       accessLabel(token({ scopes: ['library:read', 'library:write'] })),
     ).toBe('Can change one item at a time')
+    expect(
+      accessLabel(token({ scopes: ['library:read', 'imports:write'] })),
+    ).toBe('Read only · can send imports')
   })
 })

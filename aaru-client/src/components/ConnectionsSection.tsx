@@ -21,6 +21,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
   const [kind, setKind] = createSignal<AgentKind>('claude')
   const [name, setName] = createSignal('')
   const [allowWrites, setAllowWrites] = createSignal(false)
+  const [allowImports, setAllowImports] = createSignal(false)
   const [busy, setBusy] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
   const [fresh, setFresh] = createSignal<AgentConnection | null>(null)
@@ -40,6 +41,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
             kind: kind(),
             name: name() || undefined,
             allowLibraryWrites: allowWrites(),
+            allowImports: allowImports(),
           },
         }),
       )
@@ -130,6 +132,22 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                   <span class="block text-xs text-muted">
                     One item at a time, as a tap would. It can never remove
                     anything or change many items at once.
+                  </span>
+                </span>
+              </label>
+              <label class="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  class="mt-0.5"
+                  checked={allowImports()}
+                  onChange={(e) => setAllowImports(e.currentTarget.checked)}
+                />
+                <span>
+                  Allow imports
+                  <span class="block text-xs text-muted">
+                    It can hand Aaru a list (IMDb, Letterboxd, Goodreads,
+                    MyAnimeList, any CSV). You review the import here before
+                    anything is added.
                   </span>
                 </span>
               </label>

@@ -6,6 +6,8 @@ enum AgentScope: String, Codable, Sendable, CaseIterable {
     case libraryRead = "library:read"
     case libraryWrite = "library:write"
     case scrobbleWrite = "scrobble:write"
+    /// Queue an import for the user to review (`plan_import`). Never an apply.
+    case importsWrite = "imports:write"
 }
 
 /// The Stremio addon, or an MCP client (OUT-004): MCP kinds differ only in their setup steps.

@@ -44,9 +44,13 @@ struct AgentTokenService: Sendable {
     let limiter = FixedWindowRateLimiter(limit: requestsPerMinute, window: 60)
     var now: @Sendable () -> Date = { Date() }
 
-    func create(userID: UserID, kind: AgentTokenKind, name: String?, allowLibraryWrites: Bool) async throws
-        -> MintedAgentToken
-    {
+    func create(
+        userID: UserID,
+        kind: AgentTokenKind,
+        name: String?,
+        allowLibraryWrites: Bool,
+        allowImports: Bool = false
+    ) async throws -> MintedAgentToken {
         guard kind != .claude else {
             throw AppError(
                 status: .unprocessableContent, code: "validation_failed",
@@ -65,6 +69,9 @@ struct AgentTokenService: Sendable {
         var scopes: Set<AgentScope> = kind.group == .stremio ? [.libraryRead, .scrobbleWrite] : [.libraryRead]
         if allowLibraryWrites {
             scopes.insert(.libraryWrite)
+        }
+        if allowImports, kind.group == .mcp {
+            scopes.insert(.importsWrite)
         }
         let token = AgentToken(
             id: UUID(), name: trimmed.isEmpty ? kind.label : trimmed, kind: kind, scopes: scopes,

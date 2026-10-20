@@ -26,7 +26,11 @@ const labels: Record<AgentToken['kind'], string> = {
 export const kindLabel = (kind: AgentToken['kind']) => labels[kind]
 
 /** What a connection may do, in the words Settings uses. */
-export const accessLabel = (token: AgentToken) =>
-  token.scopes.includes('library:write')
+export function accessLabel(token: AgentToken): string {
+  const access = token.scopes.includes('library:write')
     ? 'Can change one item at a time'
     : 'Read only'
+  return token.scopes.includes('imports:write')
+    ? `${access} · can send imports`
+    : access
+}

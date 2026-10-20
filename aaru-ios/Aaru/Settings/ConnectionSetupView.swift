@@ -13,6 +13,7 @@ struct ConnectionSetupView: View {
     @State private var kind: Kind = .claude
     @State private var name = ""
     @State private var allowsLibraryWrites = false
+    @State private var allowsImports = false
     @State private var preview: Components.Schemas.AgentSetup?
     @State private var created: Components.Schemas.AgentTokenCreated?
     @State private var working = false
@@ -46,6 +47,10 @@ struct ConnectionSetupView: View {
                             Toggle(isOn: $allowsLibraryWrites) {
                                 Text("Allow changes")
                                 Text("One item at a time, as a tap would. Bigger changes wait for your approval.")
+                            }
+                            Toggle(isOn: $allowsImports) {
+                                Text("Allow imports")
+                                Text("It can hand Aaru a list to import. You review it here before anything is added.")
                             }
                         }
                     }
@@ -147,7 +152,8 @@ struct ConnectionSetupView: View {
         guard let tokenKind = Components.Schemas.AgentTokenKind(rawValue: kind.rawValue) else { return }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let body = Components.Schemas.AgentTokenCreate(
-            kind: tokenKind, name: trimmed.isEmpty ? nil : trimmed, allowLibraryWrites: allowsLibraryWrites
+            kind: tokenKind, name: trimmed.isEmpty ? nil : trimmed, allowLibraryWrites: allowsLibraryWrites,
+            allowImports: allowsImports
         )
         do {
             switch try await api.createAgentToken(body: .json(body)) {
