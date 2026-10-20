@@ -61,13 +61,14 @@ struct PostgresPushStore: PushStore {
         struct Row: Decodable {
             let userId: UUID
             let titleId: UUID
+            let id: UUID
             let title: String
             let season: Int
             let episode: Int
             let name: String?
         }
         return try await sql.raw("""
-        SELECT li.user_id, li.title_id, t.title, se.season, se.episode, se.name
+        SELECT li.user_id, li.title_id, li.id, t.title, se.season, se.episode, se.name
         FROM show_episodes se
         JOIN titles t ON t.id = se.title_id
         JOIN library_items li ON li.title_id = se.title_id AND li.status = 'in_progress'
@@ -84,7 +85,8 @@ struct PostgresPushStore: PushStore {
         LIMIT 500
         """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
             DueAiring(
-                userID: UserID($0.userId), titleID: TitleID($0.titleId), title: $0.title,
+                userID: UserID($0.userId), titleID: TitleID($0.titleId), libraryItemID: LibraryItemID($0.id),
+                title: $0.title,
                 season: $0.season, episode: $0.episode, episodeName: $0.name
             )
         }

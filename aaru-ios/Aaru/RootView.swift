@@ -95,6 +95,12 @@ struct RootView: View {
                 linkedTitle = nil
             }
         }
+        // A tapped notification, possibly from before the app was running.
+        .onChange(of: PushInbox.shared.libraryItemID, initial: true) { _, id in
+            guard session.isSignedIn, let id else { return }
+            linkedTitle = LinkedTitle(id: id)
+            PushInbox.shared.libraryItemID = nil
+        }
         .onOpenURL { url in
             guard session.isSignedIn, let id = WidgetLink.libraryItemId(in: url) else { return }
             linkedTitle = LinkedTitle(id: id)

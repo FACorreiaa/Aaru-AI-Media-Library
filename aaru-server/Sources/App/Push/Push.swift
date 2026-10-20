@@ -123,6 +123,7 @@ struct AiringNotifier: Sendable {
             body: body,
             payload: [
                 "titleId": airing.titleID.description,
+                "libraryItemId": airing.libraryItemID.description,
                 "season": String(airing.season),
                 "episode": String(airing.episode),
             ]
