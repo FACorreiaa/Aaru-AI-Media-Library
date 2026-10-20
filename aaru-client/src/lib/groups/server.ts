@@ -1,8 +1,8 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { z } from 'zod'
 import { api } from '../api/client'
-import { errorMessage } from '../api/errors'
-import { sessionRejected, sessionToken } from '../session/guard'
+import { sessionToken } from '../session/guard'
+import { check, checkEmpty } from './responses'
 import type { components } from '../api/schema'
 
 // GRP-001…GRP-003 on the web, over the same `/v1/groups/*` and `/v1/group-invites/*` routes as
@@ -22,24 +22,6 @@ export type GroupsState = {
   me: Me
   groups: GroupSummary[]
   invites: GroupInvite[]
-}
-
-export function check<T>(
-  result: { data?: T; error?: unknown; response: Response },
-  fallback: string,
-): T {
-  if (result.response.status === 401) sessionRejected()
-  if (result.data === undefined)
-    throw new Error(errorMessage(result.error, fallback))
-  return result.data
-}
-
-export function checkEmpty(
-  result: { error?: unknown; response: Response },
-  fallback: string,
-) {
-  if (result.response.status === 401) sessionRejected()
-  if (!result.response.ok) throw new Error(errorMessage(result.error, fallback))
 }
 
 const uuid = z.string().uuid()
