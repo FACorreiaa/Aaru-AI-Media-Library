@@ -110,6 +110,8 @@ struct AnimeMapping: Sendable, Equatable {
 
 protocol AnimeMappingStore: Sendable {
     func mapping(anilist: String) async throws -> AnimeMapping?
+    /// The first mapping with this MAL id: a MAL export carries no AniList id.
+    func mapping(mal: String) async throws -> AnimeMapping?
     /// The mappings known for any of these AniList ids, in one query.
     func mappings(anilist: [String]) async throws -> [AnimeMapping]
     func upsert(_ mapping: AnimeMapping) async throws
@@ -128,6 +130,8 @@ protocol LibraryStore: Sendable {
         -> ActionRecord
     func item(id: LibraryItemID, userID: UserID) async throws -> LibraryItem?
     func item(userID: UserID, titleID: TitleID) async throws -> LibraryItem?
+    /// Whether the user set the item's status themselves (imports never move it then).
+    func statusSetByHand(itemID: LibraryItemID) async throws -> Bool
     func entry(id: LibraryItemID, userID: UserID, now: Date) async throws -> LibraryEntry?
     func entries(
         userID: UserID,

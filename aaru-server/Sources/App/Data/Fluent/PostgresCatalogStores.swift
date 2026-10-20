@@ -239,8 +239,17 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
     }
 
     func mapping(anilist: String) async throws -> AnimeMapping? {
+        try await first(where: "anilist", equals: anilist)
+    }
+
+    func mapping(mal: String) async throws -> AnimeMapping? {
+        try await first(where: "mal", equals: mal)
+    }
+
+    private func first(where column: String, equals value: String) async throws -> AnimeMapping? {
         try await sql.select().columns(SQLLiteral.all).from("anime_mappings")
-            .where("anilist", .equal, anilist)
+            .where(SQLIdentifier(column), .equal, SQLBind(value))
+            .orderBy("anilist")
             .first(decoding: Row.self, keyDecodingStrategy: snake)
             .map {
                 AnimeMapping(

@@ -10,6 +10,9 @@ struct ItemFields: Codable, Sendable, Equatable {
     var finishedAt: Date?
     var bookPage: Int?
     var bookPercent: Double?
+    /// The user chose this status themselves, so an import never moves it. `nil` leaves the
+    /// stored flag as it is; inverses carry the stored value, so undo restores it.
+    var statusByHand: Bool?
 }
 
 /// Everything needed to recreate a deleted item, including its episode ticks.

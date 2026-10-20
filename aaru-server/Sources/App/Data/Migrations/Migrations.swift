@@ -26,6 +26,7 @@ let allMigrations: [any Migration] = [
     CreateAgentTokens(),
     AddActionAgentToken(),
     CreateWatchEvents(),
+    AddStatusByHand(),
     CreateWebPush(),
 ]
 
