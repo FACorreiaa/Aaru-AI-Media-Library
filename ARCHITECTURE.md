@@ -225,11 +225,11 @@ POST   /v1/auth/apple
 POST   /v1/auth/email/...
 DELETE /v1/auth/session
 
-GET    /v1/search?q=&type=movie|show|book&anime=
+GET    /v1/search?q=&type=all|movie|show|anime|book   # all: CAT-019
 GET    /v1/titles/{id}
 
 GET    /v1/calendar?from=&to=             # CAL-001
-GET    /v1/up-next                        # UPN-001
+GET    /v1/up-next                        # UPN-001; counts + unfinished UPN-002
 GET    /v1/discover                       # DISC-001
 
 GET    /v1/library/items
@@ -255,7 +255,7 @@ GET    /v1/shelves/{id}/items             # same DTO as GET /v1/library/items
 GET    /v1/actions?limit=                 # action journal, newest first
 POST   /v1/actions/{id}/undo
 
-GET    /v1/me/stats?year=&month=&tz=      # GAM-006a: one year or month, in the user's time zone
+GET    /v1/me/stats?year=&month=&span=&tz=  # GAM-006a/c: a year, a month or span=all, in the user's time zone
 
 GET    /v1/imports
 POST   /v1/imports/trakt/connect          # start OAuth
@@ -283,12 +283,20 @@ POST   /v1/mcp                            # streamable HTTP, exposes the tool la
 
 Search hits are catalog projections, not library items. The client calls `POST /library/items` with a `MediaRef` (Aaru title id or provider id + type).
 
+`type=all` (CAT-019, the clients' default) runs TMDB `search/multi` (films and shows; people
+and adult titles dropped) and AniList in parallel, AniList on a short deadline. Books are never
+in All: Open Library is the slowest and noisiest provider, so clients end the list with a
+"Search Books for 'x'" row. One provider failing returns the other's hits with
+`incomplete: true`; both failing is a 502. The only dedupe is `anime_mappings`, and only for
+shows: a TMDB show is dropped when an AniList hit in the same results maps to its tmdb id, and
+that hit gains `ids.tmdb`. Nothing is merged on a name. Hits carry an optional `releaseDate`.
+
 Later-phase route groups, each added with its phase and never before:
 `/v1/scrobble/*` and `/v1/webhooks/{plex|jellyfin}` (3), `/v1/agent/tokens` and the Stremio
 addon at `/stremio/{token}/*` (3, pulled forward 2026-10-19; outside `/v1` because the Stremio
 protocol fixes the paths), `/v1/social/*`
 and `/v1/devices/apns` (4), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
-with GAM-006a), `/v1/ws`,
+with GAM-006a and grew with GAM-006c, 2026-10-20), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*`, `/v1/rooms/*` (6).
 
 ### Recap stats (GAM-006a)
@@ -303,6 +311,13 @@ An import's ticks are marked in the same transaction (`now()` is the transaction
 `watched_at = now()` picks out exactly the rows it wrote); a snapshot insert (undoing a delete)
 writes them unknown. A finish at exactly 00:00 UTC is a date-only import and keeps its UTC day
 in every time zone.
+
+Insights (GAM-006c) reads the same rows. `year` is optional; `span=all` runs from the first
+active year to the end of the current one with one bucket per year (422 with `year` or `month`;
+a request with neither `year` nor `span` is a 422 too), so all-time totals equal the years summed. The
+response adds `span` (`month` | `year` | `all`), `byKind` (`movie` | `show` | `anime` | `book`:
+episodes, minutes, finished) and `ratings.distribution`: ten bins, index `ceil(rating) - 1`,
+so a 7.5 counts as an 8. No new query and no table.
 
 ### Calendar and Up Next
 
@@ -320,6 +335,12 @@ Both are derived reads over the user's library. Neither has its own table.
   episode, runtime, episodes left and time left ("10 left · 8h 40m"), and a finale flag
   (last episode of the season). Ordered by last activity. It feeds `ContinueRow`, the Up Next
   widget, and the Live Activity.
+- **UPN-002** adds two optional fields. `counts` is items per status (`wishlist`,
+  `inProgress`, `finished`, `dropped`) for Home's chips. `unfinished` feeds `UnfinishedRow`:
+  every `dropped` item and every `in_progress` item whose `updated_at` is at least 30 days old
+  (`reason` `dropped` | `stalled`, `since`, and `next` for a show's next aired episode), never
+  one already in Continue watching, newest first, at most 20. Stalled reads `updated_at`, so a
+  rating edit or an import makes an item fresh again.
 
 `list_airs` in the tool layer wraps CAL-001.
 
@@ -366,6 +387,15 @@ protocol CatalogSearching: Sendable {
     func hydrate(ids: ExternalIDs, type: MediaType) async throws -> CatalogTitle
 }
 
+protocol MultiSearching: Sendable {        // TMDB search/multi, for type=all
+    func searchMulti(query: String) async throws -> [CatalogHit]
+}
+
+protocol DiscoverListing: Sendable {       // DISC-001: public lists (TMDB, AniList, Open Library)
+    var discoverLists: Set<DiscoverList> { get }
+    func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit]
+}
+
 protocol UserLibraryImporting: Sendable {
     func importLibrary(userId: UUID, credential: ImportCredential) async throws -> ImportResult
 }
@@ -373,7 +403,10 @@ protocol UserLibraryImporting: Sendable {
 
 ### TMDB
 
-- Search and detail for `movie` and `show`
+- Search and detail for `movie` and `show`; `search/multi` for All
+- Discover lists (DISC-001): `trending/tv/week`, `tv/on_the_air`, `discover/tv` (premiered in
+  the last 90 days, at least 10 votes), `trending/movie/week`, `movie/now_playing`. Show rows
+  drop anime (AniList serves those) and news, soap and talk genres; no IMDb lookups
 - Season/episode lists when a show is added or when the user opens progress
 - Map `imdb_id` from TMDB external IDs onto `titles.ids`
 
@@ -381,6 +414,7 @@ protocol UserLibraryImporting: Sendable {
 
 - Search and detail for `book`
 - ISBN and cover URL
+- Discover's books row: `trending/weekly.json` (DISC-001)
 
 ### Anime catalog (AniList)
 
@@ -388,6 +422,10 @@ Anime is first-class from Phase 1 (CAT-007…009).
 
 - AniList GraphQL is the anime catalog. Reads need no key. Jikan is not used (it scrapes MAL);
   missing MAL ids stay missing until the anime mapping fills them.
+- Discover's anime rows (DISC-001) are one `Page { media(type: ANIME, isAdult: false, ...) }`
+  each: this season by `season`/`seasonYear` and `POPULARITY_DESC` (seasons by calendar
+  quarter, UTC), and `status: RELEASING` by `TRENDING_DESC`. Search hits carry `startDate` as
+  `releaseDate`.
 - Every anime title stores `anilist`, `mal`, and `anidb` ids when known, plus `tmdb` when a
   cross-id exists.
 - Matching: exact AniList↔TMDB cross-ids first. Never merge an AniList entry and a TMDB entry
@@ -600,6 +638,7 @@ Minimum screens:
 - Sign in
 - Home / library (filter by type and status)
 - Search and add
+- Discover (DISC-001's rows as a tab/page, APP-012) and Insights (stats), pulled forward 2026-10-20
 - Title detail (status, rating, notes, TV episodes)
 - Lists and shelves
 - Undo ribbon over the last write
@@ -670,7 +709,7 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   counts only past the threshold, never on its played flag.
 - **Stremio:** an addon served by `aaru-server` under `/stremio/{token}/manifest.json`, outside
   `/v1` because the protocol fixes the paths. It exposes catalogs (Continue watching, Next 7 days,
-  Wishlist), `meta` for titles without an IMDb id, and receives Stremio's `player` and `library`
+  Plan to watch; ids unchanged since 2026-10-20's relabel), `meta` for titles without an IMDb id, and receives Stremio's `player` and `library`
   events (stremio-core PR #1070, core-web v0.64, Stremio Web and Stremio 5 desktop). Player events
   feed the scrobble service; `library` `watched` marks tick episodes; `libraryRemove` is always
   ignored. The token is minted in Settings. It serves no streams, ever. No subtitles-request
@@ -804,7 +843,9 @@ journal and saved queries from Phase 1, so it may be pulled forward after the Ph
 before the Phase 2 gate. That includes WebSocket handlers, follow graphs, and points tables
 added "to save time later". Nullable hooks that already exist (such as `visibility`) are
 the only allowance. Exception by the owner's call (2026-10-19): agent tokens for Stremio, the
-scrobble service, and the Stremio addon.
+scrobble service, and the Stremio addon. And (2026-10-20): Discover rows (DISC-001) and the Discover
+tab/page on them, Insights (GAM-006c, part of P5's stats) and Home's stats strip, with no new
+tables.
 
 ## Deployment
 
@@ -870,6 +911,8 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Points | Append-only ledger with dedupe keys; totals are a cache (2026-10-09) |
 | Host | `maat` cluster, `horus` namespace, via `platform/infra` only |
 | Ownership vs status | Prefer `isOwned` + consumption `status` |
+| Status labels | Stored values fixed; UI labels per kind (Plan to watch / Watching / Watched; Plan to read / Reading / Read) (2026-10-20) |
+| Discover | DISC-001: provider-curated public rows, the same for every user. The cache holds no user data; `libraryItemId` is marked per caller after it. Not a recommendations engine (2026-10-20) |
 | Shelf vs list | Shelf is a saved query, list is membership. Never merged. |
 | Agent writes | Journaled in `actions` and undoable. No agent-only write path. |
 | Agent UI | Native component catalog only. No model-authored layout. |

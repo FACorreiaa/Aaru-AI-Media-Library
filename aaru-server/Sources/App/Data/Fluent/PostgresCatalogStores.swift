@@ -259,6 +259,19 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
             }
     }
 
+    func mappings(anilist ids: [String]) async throws -> [AnimeMapping] {
+        guard !ids.isEmpty else { return [] }
+        return try await sql.select().columns(SQLLiteral.all).from("anime_mappings")
+            .where("anilist", .in, ids)
+            .all(decoding: Row.self, keyDecodingStrategy: snake)
+            .map {
+                AnimeMapping(
+                    anilist: $0.anilist, mal: $0.mal, anidb: $0.anidb, tvdb: $0.tvdb,
+                    tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
+                )
+            }
+    }
+
     func upsertMany(_ mappings: [AnimeMapping]) async throws {
         let rows = mappings.map {
             Row(

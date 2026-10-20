@@ -102,7 +102,7 @@ struct ImportMergeTests {
                 env, .letterboxdCSV, [row(.movie, film, status: .finished, rating: 7, finishedAt: watched)]
             )
             #expect(plan.first?.outcome == .update)
-            #expect(plan.first?.reason == "Moves it to Finished and adds the rating and finish date.")
+            #expect(plan.first?.reason == "Moves it to Watched and adds the rating and finish date.")
             let item = try await item(env, film, .movie)
             #expect(item.status == .finished && item.finishedAt == watched && item.rating?.value == 7)
         }

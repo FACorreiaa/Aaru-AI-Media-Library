@@ -2,14 +2,22 @@ import { describe, expect, it } from 'vitest'
 import {
   advance,
   airingBadge,
+  countChips,
+  hoursLabel,
   markAdded,
+  markOnShelf,
+  monthStrip,
   nextLine,
   remainingLabel,
+  resumeLine,
   runtimeLabel,
+  unfinishedLabel,
   upcoming,
 } from './model'
-import type { ContinueEntry, DiscoverRow } from './model'
+import type { ContinueEntry, DiscoverRow, UnfinishedEntry } from './model'
+import type { Stats } from '../recap/model'
 import type { CalendarEntry } from '../calendar/model'
+import type { LibraryEntry } from '../library/model'
 
 function airing(overrides: Partial<CalendarEntry> = {}): CalendarEntry {
   return {
@@ -160,6 +168,106 @@ describe('continue watching tick', () => {
   })
 })
 
+function monthStats(totals: Partial<Stats['totals']> = {}): Stats {
+  return {
+    span: 'month',
+    year: 2026,
+    month: 10,
+    timeZone: 'Europe/Lisbon',
+    isPartial: true,
+    totals: {
+      episodesWatched: 0,
+      minutesWatched: 0,
+      activeDays: 0,
+      moviesFinished: 0,
+      showsFinished: 0,
+      animeFinished: 0,
+      booksFinished: 0,
+      ...totals,
+    },
+    byKind: [],
+    buckets: [],
+    topTitles: [],
+    ratings: { count: 0, distribution: Array<number>(10).fill(0) },
+  }
+}
+
+describe('this month strip', () => {
+  it('reads episodes, hours, finished and active days', () => {
+    expect(
+      monthStrip(
+        monthStats({
+          episodesWatched: 12,
+          minutesWatched: 540,
+          activeDays: 5,
+          moviesFinished: 1,
+          booksFinished: 1,
+        }),
+      ),
+    ).toEqual(['12 episodes', '9 hours', '2 finished', '5 active days'])
+  })
+
+  it('leaves out zeros, and is empty for a month with nothing tracked', () => {
+    expect(monthStrip(monthStats({ booksFinished: 1, activeDays: 1 }))).toEqual(
+      ['1 finished', '1 active day'],
+    )
+    expect(monthStrip(monthStats())).toEqual([])
+  })
+
+  it('reads minutes under an hour', () => {
+    expect(hoursLabel(45)).toBe('45 min')
+    expect(hoursLabel(60)).toBe('1 hour')
+  })
+})
+
+describe('status count chips', () => {
+  it('uses the neutral words and skips empty statuses', () => {
+    expect(
+      countChips({ wishlist: 12, inProgress: 3, finished: 0, dropped: 1 }),
+    ).toEqual([
+      { status: 'wishlist', label: 'Planned', count: 12 },
+      { status: 'in_progress', label: 'In progress', count: 3 },
+      { status: 'dropped', label: 'Dropped', count: 1 },
+    ])
+    expect(countChips(undefined)).toEqual([])
+  })
+})
+
+describe('unfinished business', () => {
+  const now = new Date('2026-10-20T12:00:00Z')
+  function unfinished(
+    overrides: Partial<UnfinishedEntry> = {},
+  ): UnfinishedEntry {
+    return {
+      libraryItemId: 'item',
+      title: { id: 't', type: 'show', title: 'Andor', isAnime: false, ids: {} },
+      reason: 'stalled',
+      since: '2026-09-08T12:00:00Z',
+      ...overrides,
+    }
+  }
+
+  it('says why the title is there', () => {
+    expect(unfinishedLabel(unfinished({ reason: 'dropped' }), now)).toBe(
+      'Dropped',
+    )
+    expect(unfinishedLabel(unfinished(), now)).toBe('Paused 6 weeks')
+    expect(
+      unfinishedLabel(unfinished({ since: '2026-10-15T12:00:00Z' }), now),
+    ).toBe('Paused 1 week')
+    expect(
+      unfinishedLabel(unfinished({ since: '2026-06-20T12:00:00Z' }), now),
+    ).toBe('Paused 4 months')
+  })
+
+  it('says where to resume when the next episode is known', () => {
+    expect(resumeLine(unfinished({ next: { season: 2, number: 3 } }))).toBe(
+      'Resume at S2 · E3',
+    )
+    expect(resumeLine(unfinished())).toBeNull()
+  })
+})
+
 describe('markAdded', () => {
   const hit = (tmdb: string, title: string) => ({
     type: 'movie' as const,
@@ -188,5 +296,35 @@ describe('markAdded', () => {
   it('leaves the rows it was given untouched', () => {
     markAdded(rows, 'tmdb:1', 'item-1')
     expect(rows[0].items[0].libraryItemId).toBeUndefined()
+  })
+})
+
+describe('markOnShelf', () => {
+  const hit = (ids: Record<string, string>, title: string) => ({
+    type: 'show' as const,
+    title,
+    isAnime: false,
+    ids,
+  })
+  const rows: DiscoverRow[] = [
+    {
+      id: 'tv_trending',
+      title: 'Trending shows',
+      items: [hit({ tmdb: '1', imdb: 'tt1' }, 'A'), hit({ tmdb: '2' }, 'B')],
+    },
+    { id: 'tv_new', title: 'New shows', items: [hit({ imdb: 'tt1' }, 'A')] },
+  ]
+  const entry = {
+    id: 'item-1',
+    title: { ids: { imdb: 'tt1' } },
+  } as unknown as LibraryEntry
+
+  it('links every card sharing any id with the added entry', () => {
+    const marked = markOnShelf(rows, entry)
+    expect(marked[0].items.map((h) => h.libraryItemId)).toEqual([
+      'item-1',
+      undefined,
+    ])
+    expect(marked[1].items[0].libraryItemId).toBe('item-1')
   })
 })

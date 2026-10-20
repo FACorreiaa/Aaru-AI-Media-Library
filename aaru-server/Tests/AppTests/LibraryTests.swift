@@ -243,4 +243,35 @@ struct ProgressTests {
             #expect(progress["page"] == nil, "setting one clears the other")
         }
     }
+
+    @Test("APP-014: journal summaries name the status per kind; the stored value stays wishlist")
+    func statusLabels() async throws {
+        try await LibraryHarness.run { env in
+            let movie = try await env.add("movie", tmdb: env.stubMovie("Dune"))
+            let olid = uniqueID("OL")
+            env.fake.stubTitle(CatalogTitle(
+                hit: CatalogHit(
+                    type: .book, title: "The Hobbit", originalTitle: nil, year: 1937, posterURL: nil, overview: nil,
+                    byline: nil, ids: ExternalIDs(openLibrary: olid), isAnime: false
+                ),
+                status: nil, runtimeMinutes: nil
+            ))
+            let book = try #require(try await env.send(.post, "/v1/library/items", json: [
+                "mediaRef": ["type": "book", "ids": ["openLibrary": olid]],
+            ]).json()["id"] as? String)
+            _ = try await env.send(.patch, "/v1/library/items/\(book)", json: ["status": "in_progress"])
+            _ = try await env.send(.patch, "/v1/library/items/\(book)", json: ["status": "finished"])
+            _ = try await env.send(.patch, "/v1/library/items/\(movie)", json: ["status": "finished"])
+
+            let journal = try await env.send(.get, "/v1/actions?limit=10").json()
+            let actions = try #require(journal["items"] as? [[String: Any]])
+            #expect(actions.compactMap { $0["summary"] as? String } == [
+                "Moved Dune to Watched", "Moved The Hobbit to Read", "Moved The Hobbit to Reading",
+                "Added The Hobbit to Plan to read", "Added Dune to Plan to watch",
+            ])
+            #expect(try await env.send(.get, "/v1/library/items/\(movie)").json()["status"] as? String == "finished")
+            let added = try await env.send(.get, "/v1/library/items?status=wishlist").json()
+            #expect((added["items"] as? [Any])?.isEmpty == true, "both moved on; the wire word is unchanged")
+        }
+    }
 }

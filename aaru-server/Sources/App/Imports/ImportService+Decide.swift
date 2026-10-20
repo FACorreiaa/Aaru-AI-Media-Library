@@ -47,7 +47,7 @@ extension ImportService {
         if !missing.isEmpty {
             filled.append(missing.count == 1 ? "1 watched episode" : "\(missing.count) watched episodes")
         }
-        guard let reason = Self.reason(moved: moved, filled: filled) else {
+        guard let reason = Self.reason(moved: moved, filled: filled, type: row.type) else {
             return Decision(outcome: .skip, reason: "Already on your shelf; nothing new to add.")
         }
         return Decision(
@@ -68,11 +68,11 @@ extension ImportService {
         return incoming
     }
 
-    private static func reason(moved: LibraryStatus?, filled: [String]) -> String? {
+    private static func reason(moved: LibraryStatus?, filled: [String], type: MediaType) -> String? {
         let adds = filled.isEmpty ? nil : "adds the \(filled.joined(separator: " and "))"
         switch (moved, adds) {
-        case let (status?, adds?): return "Moves it to \(status.label) and \(adds)."
-        case let (status?, nil): return "Moves it to \(status.label)."
+        case let (status?, adds?): return "Moves it to \(status.label(for: type)) and \(adds)."
+        case let (status?, nil): return "Moves it to \(status.label(for: type))."
         case let (nil, adds?): return "A\(adds.dropFirst())."
         case (nil, nil): return nil
         }
