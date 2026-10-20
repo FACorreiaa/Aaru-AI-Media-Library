@@ -1,0 +1,233 @@
+import AaruAPI
+import SwiftUI
+
+/// GRP-004 / GRP-005: the Groups tab. A stack on iPhone (groups → channels → chat); a split
+/// view on iPad and Mac, with groups and their channels in the sidebar and members in the
+/// inspector.
+struct GroupsScreen: View {
+    let groups: GroupsModel
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
+
+    var body: some View {
+        #if os(iOS)
+            if sizeClass == .compact {
+                GroupsStack(groups: groups)
+            } else {
+                GroupsSplit(groups: groups)
+            }
+        #else
+            GroupsSplit(groups: groups)
+        #endif
+    }
+}
+
+private enum GroupRoute: Hashable {
+    case group(String)
+    case channel(group: String, channel: String)
+}
+
+/// iPhone: one column, pushed.
+private struct GroupsStack: View {
+    let groups: GroupsModel
+    @State private var path: [GroupRoute] = []
+    @State private var sheet: GroupSheet?
+    @State private var confirm: GroupConfirm?
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            GroupsHome(
+                groups: groups,
+                onOpen: { path = [.group($0.id)] },
+                onCreate: { sheet = .create }
+            )
+            .navigationDestination(for: GroupRoute.self) { route in
+                switch route {
+                case let .group(groupID):
+                    ChannelListView(
+                        groups: groups, groupID: groupID,
+                        present: { sheet = $0 }, confirm: { confirm = $0 },
+                        onOpen: { path.append(.channel(group: groupID, channel: $0.id)) }
+                    )
+                case let .channel(groupID, channelID):
+                    ChannelDestination(groups: groups, groupID: groupID, channelID: channelID) {
+                        sheet = .members(groupID)
+                    }
+                }
+            }
+        }
+        .safeAreaInset(edge: .bottom) { ProblemBanner(message: groups.problem) { groups.problem = nil } }
+        .modifier(GroupPresentation(
+            groups: groups, sheet: $sheet, confirm: $confirm,
+            onCreated: { detail in
+                let id = detail.group.id
+                path = [.group(id), .channel(group: id, channel: detail.group.defaultChannelId)]
+            },
+            onChannelCreated: { groupID, channel in path.append(.channel(group: groupID, channel: channel.id)) }
+        ))
+        .task { await groups.load() }
+        // Leaving or deleting a group, or being removed, closes it.
+        .onChange(of: groups.groups.map(\.id)) { _, ids in
+            if case let .group(groupID) = path.first, !ids.contains(groupID) {
+                path = []
+            }
+        }
+    }
+}
+
+/// iPad and Mac: groups and channels in the sidebar, the channel in the detail.
+private struct GroupsSplit: View {
+    let groups: GroupsModel
+    @State private var selection: ChannelRef?
+    @State private var collapsed: Set<String> = []
+    @State private var showsMembers = false
+    @State private var sheet: GroupSheet?
+    @State private var confirm: GroupConfirm?
+
+    struct ChannelRef: Hashable {
+        let group: String
+        let channel: String
+    }
+
+    var body: some View {
+        NavigationSplitView {
+            sidebar
+        } detail: {
+            detail
+        }
+        .modifier(GroupPresentation(
+            groups: groups, sheet: $sheet, confirm: $confirm,
+            onCreated: { detail in
+                selection = ChannelRef(group: detail.group.id, channel: detail.group.defaultChannelId)
+            },
+            onChannelCreated: { groupID, channel in selection = ChannelRef(group: groupID, channel: channel.id) }
+        ))
+        .task {
+            await groups.load()
+            await groups.loadAllDetails()
+            if selection == nil, let first = groups.groups.first {
+                selection = ChannelRef(group: first.id, channel: first.defaultChannelId)
+            }
+        }
+        .onChange(of: groups.groups.map(\.id)) { _, ids in
+            if let selection, !ids.contains(selection.group) {
+                self.selection = nil
+            }
+        }
+    }
+
+    private var sidebar: some View {
+        List(selection: $selection) {
+            if groups.needsHandle {
+                HandleNotice()
+            }
+            InvitesSection(groups: groups) { group in
+                selection = ChannelRef(group: group.id, channel: group.defaultChannelId)
+            }
+            ForEach(groups.groups, id: \.id) { group in
+                DisclosureGroup(isExpanded: expanded(group.id)) {
+                    ForEach(groups.details[group.id]?.channels ?? [], id: \.id) { channel in
+                        ChannelRow(channel: channel)
+                            .tag(ChannelRef(group: group.id, channel: channel.id))
+                            .contextMenu {
+                                if group.role.manages {
+                                    Button("Edit channel", systemImage: "pencil") {
+                                        sheet = .editChannel(group.id, channel)
+                                    }
+                                }
+                            }
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Monogram(text: group.monogram, size: 28)
+                        Text(group.name).fontWeight(.semibold).lineLimit(1)
+                        Spacer(minLength: 4)
+                        UnreadBadge(unread: group.unread, mentions: group.mentions)
+                        Menu("Group", systemImage: "ellipsis") {
+                            GroupMenuItems(group: group, present: { sheet = $0 }, confirm: { confirm = $0 })
+                        }
+                        .labelStyle(.iconOnly)
+                        .menuStyle(.button)
+                        .buttonStyle(.borderless)
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                    }
+                    .contextMenu {
+                        GroupMenuItems(group: group, present: { sheet = $0 }, confirm: { confirm = $0 })
+                    }
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        .overlay {
+            if groups.hasLoaded, groups.groups.isEmpty, groups.invites.isEmpty {
+                GroupsEmptyState(canCreate: !groups.needsHandle) { sheet = .create }
+            }
+        }
+        .navigationTitle("Groups")
+        .navigationSplitViewColumnWidth(min: 220, ideal: 260)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("New group", systemImage: "plus") { sheet = .create }.disabled(groups.needsHandle)
+            }
+        }
+        .refreshable {
+            await groups.load()
+            await groups.loadAllDetails()
+        }
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        if let selection {
+            ChannelDestination(groups: groups, groupID: selection.group, channelID: selection.channel) {
+                showsMembers.toggle()
+            }
+            .id(selection)
+            .inspector(isPresented: $showsMembers) {
+                MemberList(groups: groups, groupID: selection.group) { sheet = .invite(selection.group) }
+                    .inspectorColumnWidth(min: 220, ideal: 260, max: 320)
+            }
+            .safeAreaInset(edge: .bottom) { ProblemBanner(message: groups.problem) { groups.problem = nil } }
+        } else {
+            ContentUnavailableView(
+                "Pick a channel",
+                systemImage: "number",
+                description: Text("Talk about what you're watching and reading.")
+            )
+            .background(Color(.paper))
+        }
+    }
+
+    private func expanded(_ groupID: String) -> Binding<Bool> {
+        Binding(
+            get: { !collapsed.contains(groupID) },
+            set: { isExpanded in
+                if isExpanded {
+                    collapsed.remove(groupID)
+                } else {
+                    collapsed.insert(groupID)
+                }
+            }
+        )
+    }
+}
+
+/// A channel by id: waits for the group's channels, and says so when the channel is gone.
+private struct ChannelDestination: View {
+    let groups: GroupsModel
+    let groupID: String
+    let channelID: String
+    let onShowMembers: () -> Void
+
+    var body: some View {
+        if let channel = groups.details[groupID]?.channels.first(where: { $0.id == channelID }) {
+            ChannelView(groups: groups, groupID: groupID, channel: channel, onShowMembers: onShowMembers)
+        } else if groups.details[groupID] != nil {
+            ContentUnavailableView("This channel is gone", systemImage: "number")
+        } else {
+            ProgressView().task { await groups.loadDetail(groupID) }
+        }
+    }
+}

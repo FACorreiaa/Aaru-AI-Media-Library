@@ -9,6 +9,7 @@ struct RootView: View {
     let library: LibraryModel
     let lists: ListsModel
     let imports: ImportsModel
+    let groups: GroupsModel
     @Environment(SessionStore.self) private var session
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
@@ -39,8 +40,14 @@ struct RootView: View {
                     Tab("Calendar", systemImage: "calendar", value: AppTab.calendar) {
                         CalendarScreen(api: api, library: library, lists: lists)
                     }
+                    Tab("Groups", systemImage: "bubble.left.and.bubble.right", value: AppTab.groups) {
+                        GroupsScreen(groups: groups)
+                    }
+                    .badge(groups.mentionTotal)
                 }
                 .tabViewStyle(.sidebarAdaptable)
+                // The tab's mention badge needs the counts before the tab is opened.
+                .task { await groups.load() }
                 .sheet(item: $linkedTitle) { link in
                     NavigationStack {
                         LibraryEntryDestination(id: link.id, api: api, library: library, lists: lists)
@@ -88,6 +95,7 @@ struct RootView: View {
                 library.reset()
                 lists.reset()
                 imports.reset()
+                groups.reset()
                 HomeCache().clear()
                 WidgetSnapshotStore.clear()
                 WidgetCenter.shared.reloadAllTimelines()
@@ -114,7 +122,7 @@ struct RootView: View {
     }
 
     enum AppTab: Hashable {
-        case home, library, calendar
+        case home, library, calendar, groups
     }
 
     struct LinkedTitle: Identifiable {
@@ -131,6 +139,9 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil))
-        .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
+    RootView(
+        api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil),
+        groups: GroupsModel(api: nil)
+    )
+    .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
 }
