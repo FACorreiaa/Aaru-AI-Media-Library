@@ -1,0 +1,206 @@
+import { bars, periodLabel } from '../recap/model'
+import type { Bar, Period, Stats } from '../recap/model'
+import type { MediaKind } from '../library/model'
+
+// Insights: the browsable twin of the Recap. One period at a time — a month, a year, or all
+// time — from `/v1/me/stats`, drawn as plain numbers and static bars. Pure parts only.
+
+export type Span = 'month' | 'year' | 'all'
+
+export type InsightsPeriod =
+  | { span: 'month'; year: number; month: number }
+  | { span: 'year'; year: number }
+  | { span: 'all' }
+
+/** What the route's search params may hold; anything missing falls back to this month. */
+export interface InsightsSearch {
+  span?: Span
+  year?: number
+  month?: number
+}
+
+export const SPANS: Array<{ span: Span; label: string }> = [
+  { span: 'month', label: 'Month' },
+  { span: 'year', label: 'Year' },
+  { span: 'all', label: 'All time' },
+]
+
+function thisMonth(now: Date): InsightsPeriod {
+  return { span: 'month', year: now.getFullYear(), month: now.getMonth() + 1 }
+}
+
+/** The period the URL asks for, never past the current month. */
+export function periodFromSearch(
+  search: InsightsSearch,
+  now: Date,
+): InsightsPeriod {
+  const year = now.getFullYear()
+  if (search.span === 'all') return { span: 'all' }
+  if (search.span === 'year')
+    return { span: 'year', year: Math.min(search.year ?? year, year) }
+  if (search.year === undefined || search.month === undefined)
+    return thisMonth(now)
+  const asked = {
+    span: 'month' as const,
+    year: search.year,
+    month: search.month,
+  }
+  return isFuture(asked, now) ? thisMonth(now) : asked
+}
+
+/** The search params for a period: the URL keeps only what the span needs. */
+export function toSearch(period: InsightsPeriod): InsightsSearch {
+  if (period.span === 'all') return { span: 'all' }
+  if (period.span === 'year') return { span: 'year', year: period.year }
+  return { span: 'month', year: period.year, month: period.month }
+}
+
+/** Switching span keeps the year in view: a year opens on its last month (or this one). */
+export function withSpan(
+  period: InsightsPeriod,
+  span: Span,
+  now: Date,
+): InsightsPeriod {
+  const year = period.span === 'all' ? now.getFullYear() : period.year
+  if (span === 'all') return { span: 'all' }
+  if (span === 'year') return { span: 'year', year }
+  if (period.span === 'month') return period
+  return year === now.getFullYear()
+    ? thisMonth(now)
+    : { span: 'month', year, month: 12 }
+}
+
+function isFuture(period: InsightsPeriod, now: Date): boolean {
+  if (period.span === 'all') return false
+  const year = now.getFullYear()
+  if (period.span === 'year') return period.year > year
+  return (
+    period.year > year ||
+    (period.year === year && period.month > now.getMonth() + 1)
+  )
+}
+
+/** One step back or forward; null where there is nowhere to go (all time, or the future). */
+export function shift(
+  period: InsightsPeriod,
+  direction: 1 | -1,
+  now: Date,
+): InsightsPeriod | null {
+  let next: InsightsPeriod
+  if (period.span === 'all') return null
+  if (period.span === 'year') {
+    next = { span: 'year', year: period.year + direction }
+  } else {
+    const index = period.year * 12 + (period.month - 1) + direction
+    next = {
+      span: 'month',
+      year: Math.floor(index / 12),
+      month: (index % 12) + 1,
+    }
+  }
+  if (next.year < 1900 || isFuture(next, now)) return null
+  return next
+}
+
+/** "October 2026", "2026", "All time". */
+export function insightsLabel(period: InsightsPeriod): string {
+  if (period.span === 'all') return 'All time'
+  if (period.span === 'year') return periodLabel({ year: period.year })
+  return periodLabel({ year: period.year, month: period.month })
+}
+
+/** The Recap a period can be played as; all time has none. */
+export function recapPeriod(period: InsightsPeriod): Period | null {
+  if (period.span === 'all') return null
+  if (period.span === 'year') return { year: period.year }
+  return { year: period.year, month: period.month }
+}
+
+/** The `getStats` query for a period in the viewer's time zone. */
+export function statsQuery(
+  period: InsightsPeriod,
+  tz: string,
+): { year?: number; month?: number; span?: 'all'; tz: string } {
+  if (period.span === 'all') return { span: 'all', tz }
+  if (period.span === 'year') return { year: period.year, tz }
+  return { year: period.year, month: period.month, tz }
+}
+
+/** Episodes per bucket. All time has one bucket per year, labelled "2024"; months and years
+ * read as the Recap's do. */
+export function chartBars(stats: Stats): Bar[] {
+  if (stats.span !== 'all') return bars(stats)
+  const tallest = Math.max(1, ...stats.buckets.map((b) => b.episodes))
+  return stats.buckets.map((bucket) => ({
+    label: bucket.start.slice(0, 4),
+    height: bucket.episodes / tallest,
+    busiest: bucket.start === stats.mostEpisodes?.start,
+  }))
+}
+
+/** "45 min", "12 h": the time line of a total. */
+export function timeLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`
+  return `${Math.round(minutes / 60).toLocaleString('en')} h`
+}
+
+export function totals(stats: Stats): Array<{ label: string; value: string }> {
+  const t = stats.totals
+  const finished =
+    t.moviesFinished + t.showsFinished + t.animeFinished + t.booksFinished
+  return [
+    { label: 'Episodes', value: t.episodesWatched.toLocaleString('en') },
+    { label: 'Time', value: timeLabel(t.minutesWatched) },
+    { label: 'Finished', value: finished.toLocaleString('en') },
+    { label: 'Active days', value: t.activeDays.toLocaleString('en') },
+  ]
+}
+
+const KIND_LABELS: Record<
+  Stats['byKind'][number]['kind'],
+  [MediaKind, string]
+> = {
+  movie: ['film', 'Films'],
+  show: ['show', 'Shows'],
+  anime: ['anime', 'Anime'],
+  book: ['book', 'Books'],
+}
+
+export interface KindShare {
+  kind: MediaKind
+  label: string
+  minutes: number
+  episodes: number
+  finished: number
+  /** 0…1 of all minutes in the period. */
+  share: number
+}
+
+/** Films · Shows · Anime · Books, in that order, with each one's share of the time. */
+export function kindShares(stats: Stats): KindShare[] {
+  const total = stats.byKind.reduce((sum, k) => sum + k.minutes, 0)
+  return stats.byKind.map((k) => {
+    const [kind, label] = KIND_LABELS[k.kind]
+    return {
+      kind,
+      label,
+      minutes: k.minutes,
+      episodes: k.episodes,
+      finished: k.finished,
+      share: total > 0 ? k.minutes / total : 0,
+    }
+  })
+}
+
+/** Ten bars for the ratings 1…10 (index n holds ratings up to n + 1), scaled to the tallest. */
+export function ratingBars(
+  distribution: number[],
+): Array<{ label: string; count: number; height: number }> {
+  const counts = Array.from({ length: 10 }, (_, i) => distribution[i] ?? 0)
+  const tallest = Math.max(1, ...counts)
+  return counts.map((count, i) => ({
+    label: `${i + 1}`,
+    count,
+    height: count / tallest,
+  }))
+}

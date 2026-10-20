@@ -33,7 +33,12 @@ function About() {
         from the Egyptian Field of Reeds, a calm place where stories live.
       </p>
 
-      <h2 class="mt-10 font-display text-2xl font-medium">Credits</h2>
+      <h2
+        id="credits"
+        class="mt-10 scroll-mt-6 font-display text-2xl font-medium"
+      >
+        Credits
+      </h2>
       <p class="mt-4 mb-5 leading-relaxed text-muted">
         Titles, artwork and schedules come from these catalogs. Thank you.
       </p>
