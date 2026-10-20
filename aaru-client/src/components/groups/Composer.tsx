@@ -19,6 +19,8 @@ export function Composer(props: {
   members: GroupMember[]
   meId: string
   onSend: (body: string) => void
+  /** Called as the user types; the socket throttles what it sends. */
+  onTyping?: () => void
 }) {
   let box: HTMLTextAreaElement | undefined
   const [text, setText] = createSignal('')
@@ -149,9 +151,10 @@ export function Composer(props: {
           rows={1}
           value={text()}
           placeholder={`Message #${props.channelName}`}
-          onInput={(e) =>
+          onInput={(e) => {
             update(e.currentTarget.value, e.currentTarget.selectionStart)
-          }
+            if (e.currentTarget.value.trim()) props.onTyping?.()
+          }}
           onClick={(e) =>
             setQuery(
               mentionQuery(

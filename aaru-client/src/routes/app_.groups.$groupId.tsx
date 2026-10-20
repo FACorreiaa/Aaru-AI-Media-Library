@@ -3,6 +3,7 @@ import {
   createFileRoute,
   isRedirect,
   redirect,
+  useNavigate,
   useParams,
 } from '@tanstack/solid-router'
 import { Show, createEffect, createSignal, on } from 'solid-js'
@@ -10,11 +11,13 @@ import { ChannelList } from '../components/groups/ChannelList'
 import { InviteDialog } from '../components/groups/dialogs'
 import {
   GroupContext,
+  debounced,
   useShell,
   useVisiblePoll,
 } from '../components/groups/shell'
 import type { GroupScope } from '../components/groups/shell'
 import { getGroup } from '../lib/groups/server'
+import { connectionState, useRealtime } from '../lib/realtime/socket'
 
 // GRP-004 on the web: one group, its channel list beside whatever channel is open. A group you
 // are not in (or that is gone) sends you back to groups home, like a 404.
@@ -37,6 +40,7 @@ function GroupLayout() {
   const [detail, setDetail] = createSignal(loaded())
   const [inviting, setInviting] = createSignal(false)
   const [membersOpen, setMembersOpen] = createSignal(true)
+  let leavingNow = false
   const channelOpen = () =>
     Boolean((params() as { channelId?: string }).channelId)
 
@@ -51,9 +55,70 @@ function GroupLayout() {
     openInvite: () => setInviting(true),
     membersOpen,
     setMembersOpen,
+    leaving: async (action) => {
+      leavingNow = true
+      try {
+        await action()
+      } catch (error) {
+        leavingNow = false
+        throw error
+      }
+    },
   }
 
-  useVisiblePoll(() => scope.refresh(), 15000)
+  // GRP-006: this group's structure refetches on change; a message in another channel bumps
+  // that channel's counts. Removed from the group: back to groups home, said calmly.
+  const navigate = useNavigate()
+  const refreshSoon = debounced(() => scope.refresh().catch(() => {}), 400)
+  useRealtime((event) => {
+    if (event.type === 'ready') return refreshSoon()
+    if (event.groupId !== detail().group.id) return
+    switch (event.type) {
+      case 'group.removed':
+        if (leavingNow) return
+        shell.notify(`You're no longer in ${detail().group.name}.`)
+        void navigate({ to: '/app/groups' })
+        return
+      case 'group.updated':
+      case 'read':
+      case 'message.deleted':
+        refreshSoon()
+        return
+      case 'message.created': {
+        const message = event.message
+        const meId = shell.me().userId
+        const openChannel = (params() as { channelId?: string }).channelId
+        if (
+          !message ||
+          message.author?.userId === meId ||
+          event.channelId === openChannel
+        )
+          return
+        const mentioned = message.mentions.includes(meId)
+        setDetail((current) => ({
+          ...current,
+          channels: current.channels.map((c) =>
+            c.id === event.channelId
+              ? {
+                  ...c,
+                  unread: c.unread + 1,
+                  mentions: c.mentions + (mentioned ? 1 : 0),
+                }
+              : c,
+          ),
+        }))
+        return
+      }
+      default:
+        return
+    }
+  })
+  // Only while the socket is down.
+  useVisiblePoll(
+    () => scope.refresh(),
+    30000,
+    () => connectionState() !== 'open',
+  )
 
   // Phone: the channel list is the page until a channel opens. Tablet: it lives in the drawer.
   const listClass = () => {

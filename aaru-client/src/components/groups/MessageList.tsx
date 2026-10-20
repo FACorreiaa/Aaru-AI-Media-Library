@@ -8,6 +8,7 @@ import {
   createMemo,
   createSignal,
   on,
+  onCleanup,
   onMount,
 } from 'solid-js'
 import {
@@ -30,6 +31,20 @@ import {
   postMessage,
 } from '../../lib/groups/server'
 import type { Channel, GroupMessage } from '../../lib/groups/server'
+import {
+  applyMessageEvent,
+  noteTyping,
+  pruneTyping,
+  settleEcho,
+  typingLine,
+} from '../../lib/realtime/model'
+import type { Typist } from '../../lib/realtime/model'
+import {
+  connectionState,
+  reconnecting,
+  sendTyping,
+  useRealtime,
+} from '../../lib/realtime/socket'
 import { monogram } from '../../lib/social/model'
 import { Composer } from './Composer'
 import { Monogram, useGroup, useShell, useVisiblePoll } from './shell'
@@ -39,7 +54,8 @@ export const PAGE_SIZE = 50
 /**
  * MessageList (GRP-005): one channel's conversation and its composer. Flat rows grouped into
  * runs, day dividers, a "New" line where you stopped reading, pinned to the bottom with "Jump
- * to present". Until the realtime gateway (M3) it polls while the page is visible.
+ * to present". New messages, edits, deletes and typing arrive over the realtime socket
+ * (GRP-006); it polls slowly only while the socket is down.
  */
 export function MessageList(props: {
   channel: Channel
@@ -64,6 +80,9 @@ export function MessageList(props: {
   const [revealed, setRevealed] = createSignal<Set<string>>(new Set())
   const [editing, setEditing] = createSignal<string | null>(null)
   const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null)
+  const [typists, setTypists] = createSignal<Typist[]>([])
+  let pruneTimer: number | undefined
+  onCleanup(() => window.clearTimeout(pruneTimer))
   let scroller: HTMLDivElement | undefined
   let markedId: string | null = null
 
@@ -145,7 +164,8 @@ export function MessageList(props: {
 
   createEffect(on([atBottom, lastId], () => void markRead(), { defer: true }))
 
-  useVisiblePoll(async () => {
+  /** Fetches whatever arrived after the newest message on screen. */
+  async function catchUp() {
     const after = lastId()
     const page = await listMessages({
       data: after ? { ...ref(), after } : { ...ref(), limit: PAGE_SIZE },
@@ -153,9 +173,50 @@ export function MessageList(props: {
     if (page.length === 0) return
     const fresh = page.filter((m) => !messages().some((x) => x.id === m.id))
     setMessages(mergeMessages(messages(), page))
+    for (const message of fresh) setPending((list) => settleEcho(list, message))
     if (!atBottom()) setMissed(missed() + fresh.length)
     void markRead()
-  }, 5000)
+  }
+
+  function schedulePrune() {
+    window.clearTimeout(pruneTimer)
+    const next = Math.min(...typists().map((t) => t.until))
+    if (!Number.isFinite(next)) return
+    pruneTimer = window.setTimeout(
+      () => {
+        setTypists((list) => pruneTyping(list, Date.now()))
+        schedulePrune()
+      },
+      Math.max(0, next - Date.now()) + 50,
+    )
+  }
+
+  useRealtime((event) => {
+    if (event.type === 'ready') {
+      void catchUp().catch(() => {})
+      return
+    }
+    if (event.channelId !== props.channel.id) return
+    if (event.type === 'typing') {
+      if (!event.user || event.user.userId === meId()) return
+      setTypists(noteTyping(typists(), event.user, Date.now()))
+      schedulePrune()
+      return
+    }
+    const next = applyMessageEvent(messages(), event, props.channel.id)
+    if (next === messages()) return
+    const added = event.type === 'message.created' ? event.message : undefined
+    setMessages(next)
+    if (added) {
+      setPending((list) => settleEcho(list, added))
+      setTypists((list) => pruneTyping(list, Date.now(), added.author?.userId))
+      if (!atBottom() && added.author?.userId !== meId())
+        setMissed(missed() + 1)
+    }
+  })
+
+  // Only while the socket is down.
+  useVisiblePoll(catchUp, 30000, () => connectionState() !== 'open')
 
   async function loadOlder() {
     const first = messages()[0] as GroupMessage | undefined
@@ -355,6 +416,14 @@ export function MessageList(props: {
         <span class="flex-1 md:hidden" />
         <Show when={!props.channel.topic}>
           <span class="hidden flex-1 md:block" />
+        </Show>
+        <Show when={reconnecting()}>
+          <span
+            role="status"
+            class="shrink-0 text-xs text-muted motion-safe:animate-pulse"
+          >
+            Reconnecting…
+          </span>
         </Show>
         <details class="group/e2e relative shrink-0">
           <summary class="flex cursor-pointer list-none items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs font-medium text-muted hover:text-ink [&::-webkit-details-marker]:hidden">
@@ -681,11 +750,18 @@ export function MessageList(props: {
           </p>
         )}
       </Show>
+      <p
+        aria-live="polite"
+        class="h-5 truncate px-4 text-xs text-muted md:px-6"
+      >
+        {typingLine(typists()) ?? ''}
+      </p>
       <Composer
         channelName={props.channel.name}
         members={scope.detail().members}
         meId={meId()}
         onSend={send}
+        onTyping={() => sendTyping(groupId(), props.channel.id)}
       />
     </section>
   )

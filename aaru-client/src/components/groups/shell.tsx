@@ -23,6 +23,8 @@ export type Shell = {
   drawer: Accessor<boolean>
   setDrawer: Setter<boolean>
   openCreate: () => void
+  /** A short, calm notice at the bottom of the screen (for example, removed from a group). */
+  notify: (text: string) => void
 }
 
 export const ShellContext = createContext<Shell>()
@@ -42,6 +44,8 @@ export type GroupScope = {
   /** Whether the member column is shown on desktop. */
   membersOpen: Accessor<boolean>
   setMembersOpen: Setter<boolean>
+  /** Runs a leave or delete you started, so its own "removed" event is not announced to you. */
+  leaving: (action: () => Promise<void>) => Promise<void>
 }
 
 export const GroupContext = createContext<GroupScope>()
@@ -53,14 +57,20 @@ export function useGroup(): GroupScope {
 }
 
 /**
- * Runs `tick` every `ms` while the page is visible, and once when it becomes visible again.
- * Until the realtime gateway (M3), this is how a channel stays current.
+ * Runs `tick` every `ms` while the page is visible and `enabled` holds, and once when the page
+ * becomes visible again. With the realtime socket (GRP-006) this is only the fallback for while
+ * the socket is down.
  */
-export function useVisiblePoll(tick: () => Promise<void> | void, ms: number) {
+export function useVisiblePoll(
+  tick: () => Promise<void> | void,
+  ms: number,
+  enabled: () => boolean = () => true,
+) {
   onMount(() => {
     let running = false
     const run = async () => {
-      if (running || document.visibilityState !== 'visible') return
+      if (running || document.visibilityState !== 'visible' || !enabled())
+        return
       running = true
       try {
         await tick()
@@ -80,6 +90,16 @@ export function useVisiblePoll(tick: () => Promise<void> | void, ms: number) {
       document.removeEventListener('visibilitychange', onVisible)
     })
   })
+}
+
+/** Collapses a burst of calls into one, `ms` after the last. */
+export function debounced(action: () => unknown, ms: number): () => void {
+  let timer: number | undefined
+  onCleanup(() => window.clearTimeout(timer))
+  return () => {
+    window.clearTimeout(timer)
+    timer = window.setTimeout(() => void action(), ms)
+  }
 }
 
 /** A round monogram: groups in the rail, people in rows. */

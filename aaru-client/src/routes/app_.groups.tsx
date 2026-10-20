@@ -3,12 +3,17 @@ import {
   createFileRoute,
   redirect,
   useNavigate,
+  useParams,
 } from '@tanstack/solid-router'
-import { Show, createEffect, createSignal, on } from 'solid-js'
+import { Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { GroupRail } from '../components/groups/GroupRail'
 import { NameDialog } from '../components/groups/dialogs'
-import { ShellContext, useVisiblePoll } from '../components/groups/shell'
+import {
+  ShellContext,
+  debounced,
+  useVisiblePoll,
+} from '../components/groups/shell'
 import type { Shell } from '../components/groups/shell'
 import {
   createGroup,
@@ -16,6 +21,7 @@ import {
   listGroups,
   loadGroups,
 } from '../lib/groups/server'
+import { connectionState, useRealtime } from '../lib/realtime/socket'
 import { getSession } from '../lib/session/session'
 
 // GRP-004 on the web: the groups shell. Desktop shows four columns (rail, channels, the
@@ -38,6 +44,11 @@ function GroupsShell() {
   const [invites, setInvites] = createSignal(loaded().invites)
   const [drawer, setDrawer] = createSignal(false)
   const [creating, setCreating] = createSignal(false)
+  const [notice, setNotice] = createSignal<string | null>(null)
+  const params = useParams({ strict: false })
+  const open = () => params() as { groupId?: string; channelId?: string }
+  let noticeTimer: number | undefined
+  onCleanup(() => window.clearTimeout(noticeTimer))
 
   createEffect(
     on(
@@ -67,9 +78,60 @@ function GroupsShell() {
     drawer,
     setDrawer,
     openCreate: () => setCreating(true),
+    notify: (text) => {
+      setNotice(text)
+      window.clearTimeout(noticeTimer)
+      noticeTimer = window.setTimeout(() => setNotice(null), 6000)
+    },
   }
 
-  useVisiblePoll(() => shell.refresh(), 15000)
+  // GRP-006: the socket says what changed; REST says what is true. Structural changes and
+  // reconnects refetch; a new message elsewhere only bumps the rail's counts.
+  const refreshSoon = debounced(() => shell.refresh().catch(() => {}), 400)
+  useRealtime((event) => {
+    switch (event.type) {
+      case 'message.created': {
+        const message = event.message
+        const meId = loaded().me.userId
+        if (!message || message.author?.userId === meId) return
+        // The open channel marks itself read and refreshes the rail.
+        if (
+          event.groupId === open().groupId &&
+          event.channelId === open().channelId
+        )
+          return
+        const mentioned = message.mentions.includes(meId)
+        setGroups((list) =>
+          list.map((g) =>
+            g.id === event.groupId
+              ? {
+                  ...g,
+                  unread: g.unread + 1,
+                  mentions: g.mentions + (mentioned ? 1 : 0),
+                }
+              : g,
+          ),
+        )
+        return
+      }
+      case 'ready':
+      case 'read':
+      case 'message.deleted':
+      case 'group.updated':
+      case 'group.removed':
+      case 'invites.changed':
+        refreshSoon()
+        return
+      default:
+        return
+    }
+  })
+  // Only while the socket is down.
+  useVisiblePoll(
+    () => shell.refresh(),
+    30000,
+    () => connectionState() !== 'open',
+  )
 
   return (
     <ShellContext.Provider value={shell}>
@@ -95,6 +157,16 @@ function GroupsShell() {
           <Outlet />
         </div>
       </div>
+      <Show when={notice()}>
+        {(text) => (
+          <p
+            role="status"
+            class="group-pop fixed bottom-6 left-1/2 z-50 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-sm text-paper shadow-lg"
+          >
+            {text()}
+          </p>
+        )}
+      </Show>
       <Show when={creating()}>
         <NameDialog
           title="New group"

@@ -212,12 +212,14 @@ export function ChannelList(props: { class?: string }) {
             body="You stop seeing its channels. A member can invite you back."
             confirm="Leave"
             danger
-            onConfirm={async () => {
-              await removeGroupMember({
-                data: { groupId: group().id, userId: shell.me().userId },
+            onConfirm={() =>
+              scope.leaving(async () => {
+                await removeGroupMember({
+                  data: { groupId: group().id, userId: shell.me().userId },
+                })
+                await afterLeaving()
               })
-              await afterLeaving()
-            }}
+            }
             onClose={() => setDialog(null)}
           />
         </Match>
@@ -227,10 +229,12 @@ export function ChannelList(props: { class?: string }) {
             body="Every channel and message goes, for everyone. This cannot be undone. To keep the group without you, make someone else the owner from the member list."
             confirm="Delete group"
             danger
-            onConfirm={async () => {
-              await deleteGroup({ data: { groupId: group().id } })
-              await afterLeaving()
-            }}
+            onConfirm={() =>
+              scope.leaving(async () => {
+                await deleteGroup({ data: { groupId: group().id } })
+                await afterLeaving()
+              })
+            }
             onClose={() => setDialog(null)}
           />
         </Match>
