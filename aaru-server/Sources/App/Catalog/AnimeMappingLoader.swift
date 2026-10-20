@@ -10,9 +10,9 @@ enum AnimeMappingLoader {
     static let defaultSource = "https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-full.json"
 
     static func parse(_ data: Data) throws -> [AnimeMapping] {
-        try JSONDecoder().decode([Entry].self, from: data).compactMap { entry in
+        try JSONDecoder().decode([FribbEntry].self, from: data).compactMap { entry in
             guard let anilist = entry.anilistID else { return nil }
-            let tmdb = entry.themoviedbID?.tv
+            let tmdb = entry.themoviedbID?.show
             return AnimeMapping(
                 anilist: String(anilist),
                 mal: entry.malID.map(String.init),
@@ -33,37 +33,43 @@ enum AnimeMappingLoader {
         guard response.status == 200 else { throw ProviderError(provider: "anime-lists", kind: .unavailable) }
         return response.body
     }
+}
 
-    private struct Entry: Decodable {
-        struct TMDB: Decodable {
-            let tv: Int?
+/// One row of Fribb's `anime-list-full.json`.
+private struct FribbEntry: Decodable {
+    let anilistID: Int?
+    let malID: Int?
+    let anidbID: Int?
+    let tvdbID: Int?
+    let themoviedbID: FribbTMDB?
+    let season: FribbSeason?
 
-            init(from decoder: any Decoder) throws {
-                let container = try decoder.container(keyedBy: CodingKeys.self)
-                // A single id, or a list when one entry spans several TMDB records.
-                tv = try (try? container.decodeIfPresent(Int.self, forKey: .tv))
-                    ?? container.decodeIfPresent([Int].self, forKey: .tv)?.first
-            }
-
-            private enum CodingKeys: String, CodingKey { case tv }
-        }
-
-        struct Season: Decodable { let tmdb: Int? }
-
-        let anilistID: Int?
-        let malID: Int?
-        let anidbID: Int?
-        let tvdbID: Int?
-        let themoviedbID: TMDB?
-        let season: Season?
-
-        private enum CodingKeys: String, CodingKey {
-            case anilistID = "anilist_id"
-            case malID = "mal_id"
-            case anidbID = "anidb_id"
-            case tvdbID = "tvdb_id"
-            case themoviedbID = "themoviedb_id"
-            case season
-        }
+    private enum CodingKeys: String, CodingKey {
+        case anilistID = "anilist_id"
+        case malID = "mal_id"
+        case anidbID = "anidb_id"
+        case tvdbID = "tvdb_id"
+        case themoviedbID = "themoviedb_id"
+        case season
     }
+}
+
+private struct FribbTMDB: Decodable {
+    /// The TMDB TV id; a movie id is never read.
+    let show: Int?
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // A single id, or a list when one entry spans several TMDB records.
+        show = try (try? container.decodeIfPresent(Int.self, forKey: .show))
+            ?? container.decodeIfPresent([Int].self, forKey: .show)?.first
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case show = "tv"
+    }
+}
+
+private struct FribbSeason: Decodable {
+    let tmdb: Int?
 }

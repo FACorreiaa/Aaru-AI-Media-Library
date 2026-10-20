@@ -28,9 +28,10 @@ struct AgentTokenTests {
             #expect(stremio["webInstallUrl"]?
                 .hasPrefix("https://web.stremio.com/#/addons?addon=https%3A%2F%2F") == true)
 
+            let tokenID = try #require(UUID(uuidString: id))
             let stored = try await withSQL { sql in
                 try await sql
-                    .raw("SELECT token_hash, scopes FROM agent_tokens WHERE id = \(bind: UUID(uuidString: id)!)")
+                    .raw("SELECT token_hash, scopes FROM agent_tokens WHERE id = \(bind: tokenID)")
                     .first(decoding: HashRow.self, keyDecodingStrategy: .convertFromSnakeCase)
             }
             #expect(stored?.tokenHash == OpaqueToken.hash(secret))

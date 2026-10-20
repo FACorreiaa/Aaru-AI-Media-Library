@@ -18,8 +18,9 @@ struct CatalogRefreshTests {
 
     private func titleID(_ itemID: String) async throws -> TitleID {
         try await withSQL { sql in
+            let id = try #require(UUID(uuidString: itemID))
             let row = try await sql
-                .raw("SELECT title_id FROM library_items WHERE id = \(bind: UUID(uuidString: itemID)!)")
+                .raw("SELECT title_id FROM library_items WHERE id = \(bind: id)")
                 .first(decoding: TitleRow.self, keyDecodingStrategy: .convertFromSnakeCase)
             return try TitleID(#require(row).titleId)
         }
@@ -50,20 +51,14 @@ struct CatalogRefreshTests {
             let stale = try await titleID(env.add("show", tmdb: env.stubShow("Stale", status: .ended)))
             let imported = try await titleID(env.add("show", tmdb: env.stubShow("Imported", status: .ended)))
             let gone = try await titleID(env.add("show", tmdb: env.stubShow("Gone", status: .ended)))
-            let dropped = try await titleID(env.add(
-                "show",
-                tmdb: env.stubShow("Dropped", status: .ended),
-                status: "dropped"
-            ))
+            let droppedTMDB = env.stubShow("Dropped", status: .ended)
+            let dropped = try await titleID(env.add("show", tmdb: droppedTMDB, status: "dropped"))
             try await setState(stale, hydratedAt: now.addingTimeInterval(-40 * Self.day))
             try await setState(imported, hydratedAt: nil)
             try await setState(dropped, hydratedAt: nil)
             // Its last refresh attempt failed ten minutes ago.
-            try await setState(
-                gone,
-                hydratedAt: now.addingTimeInterval(-40 * Self.day),
-                attemptedAt: now.addingTimeInterval(-600)
-            )
+            let monthAgo = now.addingTimeInterval(-40 * Self.day)
+            try await setState(gone, hydratedAt: monthAgo, attemptedAt: now.addingTimeInterval(-600))
 
             let due = try await env.stores.titles.staleTrackedShows(
                 now: now, retryAfter: now.addingTimeInterval(-CatalogRefresher.retryAfter), limit: 100_000
@@ -72,7 +67,10 @@ struct CatalogRefreshTests {
             #expect(!due.contains(gone), "attempted within the hour: backs off")
             #expect(!due.contains(fresh), "inside its window")
             #expect(!due.contains(dropped), "not tracked")
-            #expect(try #require(due.firstIndex(of: imported)) < due.firstIndex(of: stale)!, "never-loaded first")
+            #expect(
+                try #require(due.firstIndex(of: imported)) < #require(due.firstIndex(of: stale)),
+                "never-loaded first"
+            )
 
             var refresher = CatalogRefresher(
                 stores: env.stores,
@@ -84,7 +82,7 @@ struct CatalogRefreshTests {
 
             #expect(try await state(imported).episodesHydratedAt != nil)
             #expect(try await env.stores.titles.episodes(imported).count == 6)
-            #expect(try await state(stale).episodesHydratedAt! > now.addingTimeInterval(-Self.day))
+            #expect(try #require(await state(stale).episodesHydratedAt) > now.addingTimeInterval(-Self.day))
             #expect(try await state(imported).episodesAttemptedAt == now, "every attempt is stamped")
 
             let again = try await env.stores.titles.staleTrackedShows(

@@ -190,9 +190,9 @@ struct PostgresTitleStore: TitleStore {
         """).all(decoding: Row.self).map { TitleID($0.id) }
     }
 
-    func markEpisodesAttempted(_ id: TitleID, at: Date) async throws {
+    func markEpisodesAttempted(_ id: TitleID, at date: Date) async throws {
         try await sql.update("titles")
-            .set("episodes_attempted_at", to: at)
+            .set("episodes_attempted_at", to: date)
             .where("id", .equal, id.rawValue)
             .run()
     }

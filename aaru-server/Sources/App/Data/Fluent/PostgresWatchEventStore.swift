@@ -37,9 +37,9 @@ struct PostgresWatchEventStore: WatchEventStore {
         )
     }
 
-    func close(_ id: UUID, at: Date) async throws {
+    func close(_ id: UUID, at date: Date) async throws {
         try await sql.raw("""
-        UPDATE watch_events SET stopped_at = \(bind: at), state = 'stopped', updated_at = \(bind: at)
+        UPDATE watch_events SET stopped_at = \(bind: date), state = 'stopped', updated_at = \(bind: date)
         WHERE id = \(bind: id)
         """).run()
     }

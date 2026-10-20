@@ -186,26 +186,36 @@ struct StremioService: Sendable {
             _ = try await scrobble.markWatched(title, episodes: episodes, caller: caller)
             return .accepted
         case "unwatched":
-            guard caller.has(.libraryWrite), mediaType == .show, !episodes.isEmpty,
-                  let title = try await scrobble.resolve(mediaRef),
-                  let item = try await scrobble.stores.library.item(userID: caller.userID, titleID: title.id)
-            else { return .ignored }
-            try await library.setEpisodes(
-                item.id, userID: caller.userID, keys: episodes, watched: false, by: .agent(caller.token)
-            )
-            return .accepted
+            guard caller.has(.libraryWrite), mediaType == .show, !episodes.isEmpty else { return .ignored }
+            return try await unwatch(mediaRef, episodes: episodes, caller: caller)
         case "libraryAdd":
-            guard caller.has(.libraryWrite), let title = try await scrobble.resolve(mediaRef) else { return .ignored }
-            if try await scrobble.stores.library.item(userID: caller.userID, titleID: title.id) == nil {
-                _ = try await library.add(
-                    MediaRef(titleID: title.id, type: title.type), status: .wishlist, userID: caller.userID,
-                    by: .agent(caller.token)
-                )
-            }
-            return .accepted
+            guard caller.has(.libraryWrite) else { return .ignored }
+            return try await addToWishlist(mediaRef, caller: caller)
         default:
             return .ignored
         }
+    }
+
+    private func unwatch(_ ref: MediaRef, episodes: [EpisodeKey], caller: AgentCaller) async throws -> EventResult {
+        guard let title = try await scrobble.resolve(ref),
+              let item = try await scrobble.stores.library.item(userID: caller.userID, titleID: title.id)
+        else { return .ignored }
+        try await library.setEpisodes(
+            item.id, userID: caller.userID, keys: episodes, watched: false, by: .agent(caller.token)
+        )
+        return .accepted
+    }
+
+    /// Adds as wishlist when absent; never changes the status of a title already in the library.
+    private func addToWishlist(_ ref: MediaRef, caller: AgentCaller) async throws -> EventResult {
+        guard let title = try await scrobble.resolve(ref) else { return .ignored }
+        if try await scrobble.stores.library.item(userID: caller.userID, titleID: title.id) == nil {
+            _ = try await library.add(
+                MediaRef(titleID: title.id, type: title.type), status: .wishlist, userID: caller.userID,
+                by: .agent(caller.token)
+            )
+        }
+        return .accepted
     }
 
     static func mediaType(_ stremioType: String) -> MediaType? {

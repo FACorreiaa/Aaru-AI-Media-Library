@@ -186,7 +186,7 @@ struct LibraryService: Sendable {
         }
         let verb = watched ? "watched" : "unwatched"
         return try await applyProgress(
-            watch: watched ? [key] : [], unwatch: watched ? [] : [key], show: show, userID: userID,
+            watch: watched ? [key] : [], unwatch: watched ? [] : [key], show: show,
             journal: ("episode", caller.summary("Marked \(key) of \(show.entry.title.title) \(verb)")), caller: caller
         )
     }
@@ -212,7 +212,7 @@ struct LibraryService: Sendable {
         let verb = watched ? "watched" : "unwatched"
         let what = changing.count == 1 ? "\(changing[0])" : "\(changing.count) episodes"
         return try await applyProgress(
-            watch: watched ? changing : [], unwatch: watched ? [] : changing, show: show, userID: userID,
+            watch: watched ? changing : [], unwatch: watched ? [] : changing, show: show,
             journal: ("episode", caller.summary("Marked \(what) of \(show.entry.title.title) \(verb)")),
             caller: caller
         )
@@ -227,7 +227,7 @@ struct LibraryService: Sendable {
             .compactMap { try? EpisodeKey(season: $0.season, episode: $0.episode) }
         let summary = "Marked season \(season) of \(show.entry.title.title) watched (\(aired.count) episodes)"
         return try await applyProgress(
-            watch: aired, unwatch: [], show: show, userID: userID, journal: ("season", summary), caller: .user
+            watch: aired, unwatch: [], show: show, journal: ("season", summary), caller: .user
         )
     }
 
@@ -238,11 +238,11 @@ struct LibraryService: Sendable {
         watch: [EpisodeKey],
         unwatch: [EpisodeKey],
         show: ShowContext,
-        userID: UserID,
         journal: (kind: String, summary: String),
         caller: Caller
     ) async throws -> LibraryEntry {
         let current = show.entry
+        let userID = current.item.userID
         let id = current.item.id
         let titleStatus = show.status
         let op = LibraryOp.setEpisodes(id, watch: watch, unwatch: unwatch)
@@ -292,6 +292,17 @@ struct LibraryService: Sendable {
         return titleStatus == .ended || titleStatus == .canceled
     }
 
+    func actions(userID: UserID, limit: Int) async throws -> [ActionRecord] {
+        try await stores.library.actions(userID: userID, limit: limit)
+    }
+
+    func undo(_ actionID: UUID, userID: UserID) async throws -> ActionRecord {
+        try await stores.library.undo(actionID: actionID, userID: userID)
+    }
+}
+
+/// Field validation and journal wording for `patch`.
+extension LibraryService {
     /// PROG-004: page or percent, never both; each validated by `AaruCore.BookProgress`.
     private func applyBookProgress(_ patch: ItemPatch, to fields: inout ItemFields, type: MediaType) throws {
         let touchesBook = patch.bookPage != nil || patch.bookPercent != nil || patch.clear.contains(.bookProgress)
@@ -340,14 +351,6 @@ struct LibraryService: Sendable {
     }
 
     // MARK: Journal (AUD-002)
-
-    func actions(userID: UserID, limit: Int) async throws -> [ActionRecord] {
-        try await stores.library.actions(userID: userID, limit: limit)
-    }
-
-    func undo(_ actionID: UUID, userID: UserID) async throws -> ActionRecord {
-        try await stores.library.undo(actionID: actionID, userID: userID)
-    }
 }
 
 extension LibraryEntry {

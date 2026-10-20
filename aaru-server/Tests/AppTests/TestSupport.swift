@@ -61,45 +61,8 @@ func withMigratedStores<T>(_ body: (Stores) async throws -> T) async throws -> T
 
 /// A store that must not be touched by the test using it.
 struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, AnimeMappingStore, LibraryStore,
-    ListStore, ShelfStore, ScheduleStore, ImportJobStore, TraktStore, PushStore, AgentTokenStore,
-    WatchEventStore
+    ListStore, ShelfStore, ScheduleStore, ImportJobStore, TraktStore, PushStore
 {
-    func record(
-        _: PlaybackReport, titleID _: TitleID?, userID _: UserID, agentTokenID _: UUID?, now _: Date
-    ) async throws -> WatchSession {
-        throw Touched()
-    }
-
-    func close(_: UUID, at _: Date) async throws {
-        throw Touched()
-    }
-
-    func stoppedRecently(userID _: UserID, source _: WatchSource, externalRef _: String, since _: Date) async throws
-        -> Bool
-    {
-        throw Touched()
-    }
-
-    func create(_: AgentToken, tokenHash _: String, userID _: UserID) async throws {
-        throw Touched()
-    }
-
-    func tokens(userID _: UserID) async throws -> [AgentToken] {
-        throw Touched()
-    }
-
-    func revoke(id _: UUID, userID _: UserID, now _: Date) async throws -> Bool {
-        throw Touched()
-    }
-
-    func token(forHash _: String, now _: Date) async throws -> (token: AgentToken, userID: UserID)? {
-        throw Touched()
-    }
-
-    func touch(id _: UUID, at _: Date) async throws {
-        throw Touched()
-    }
-
     func find(ids _: ExternalIDs, type _: AaruCore.MediaType) async throws -> Title? {
         throw Touched()
     }
@@ -113,18 +76,6 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
     }
 
     func saveEpisodes(_: TitleID, _: CatalogEpisodes, hydratedAt _: Date) async throws {
-        throw Touched()
-    }
-
-    func upsertMany(_: [AnimeMapping]) async throws {
-        throw Touched()
-    }
-
-    func staleTrackedShows(now _: Date, retryAfter _: Date, limit _: Int) async throws -> [TitleID] {
-        throw Touched()
-    }
-
-    func markEpisodesAttempted(_: TitleID, at _: Date) async throws {
         throw Touched()
     }
 
@@ -192,12 +143,6 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
     }
 
     func title(id _: TitleID) async throws -> Title? {
-        throw Touched()
-    }
-
-    func apply(_: LibraryOp, userID _: UserID, caller _: Caller, kind _: String, summary _: String) async throws
-        -> ActionRecord
-    {
         throw Touched()
     }
 

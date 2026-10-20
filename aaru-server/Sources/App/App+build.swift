@@ -19,18 +19,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         return logger
     }()
 
-    if reader.bool(forKey: "db.migrate") == true {
-        let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
-        logger.info("Running database migrations")
-        try await fluent.migrate()
-        try await fluent.shutdown()
-        exit(0)
-    }
-
-    if let source = reader.string(forKey: "anime.mappings") {
-        try await loadAnimeMappings(from: source, reader: reader, logger: logger)
-        exit(0)
-    }
+    try await runOneShotModes(reader: reader, logger: logger)
 
     let config = try AppConfig.load(from: reader)
     let fluent = try await makeFluent(config.postgres, logger: logger)
@@ -71,6 +60,22 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         ],
         logger: logger
     )
+}
+
+/// `db.migrate` and `anime.mappings` do their one job and exit without serving; both need only
+/// Postgres settings.
+func runOneShotModes(reader: ConfigReader, logger: Logger) async throws {
+    if reader.bool(forKey: "db.migrate") == true {
+        let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
+        logger.info("Running database migrations")
+        try await fluent.migrate()
+        try await fluent.shutdown()
+        exit(0)
+    }
+    if let source = reader.string(forKey: "anime.mappings") {
+        try await loadAnimeMappings(from: source, reader: reader, logger: logger)
+        exit(0)
+    }
 }
 
 /// CAT-010 · `aaru --anime-mappings <path|url|default>` loads Fribb's anime list into

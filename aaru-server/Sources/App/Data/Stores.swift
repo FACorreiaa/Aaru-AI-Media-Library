@@ -83,7 +83,7 @@ protocol TitleStore: Sendable {
     /// are skipped so a failing provider is not hammered.
     func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID]
     /// Records an episode refresh attempt, successful or not.
-    func markEpisodesAttempted(_ id: TitleID, at: Date) async throws
+    func markEpisodesAttempted(_ id: TitleID, at date: Date) async throws
 }
 
 extension TitleStore {
@@ -300,7 +300,7 @@ protocol AgentTokenStore: Sendable {
     func revoke(id: UUID, userID: UserID, now: Date) async throws -> Bool
     /// The live token with this hash and its owner; nil when unknown, revoked or expired.
     func token(forHash hash: String, now: Date) async throws -> (token: AgentToken, userID: UserID)?
-    func touch(id: UUID, at: Date) async throws
+    func touch(id: UUID, at date: Date) async throws
 }
 
 struct Stores: Sendable {

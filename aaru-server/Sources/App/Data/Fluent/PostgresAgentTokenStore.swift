@@ -61,7 +61,7 @@ struct PostgresAgentTokenStore: AgentTokenStore {
         return (token, UserID(row.userId))
     }
 
-    func touch(id: UUID, at: Date) async throws {
-        try await sql.raw("UPDATE agent_tokens SET last_used_at = \(bind: at) WHERE id = \(bind: id)").run()
+    func touch(id: UUID, at date: Date) async throws {
+        try await sql.raw("UPDATE agent_tokens SET last_used_at = \(bind: date) WHERE id = \(bind: id)").run()
     }
 }

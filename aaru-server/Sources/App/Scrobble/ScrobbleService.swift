@@ -72,7 +72,7 @@ struct ScrobbleService: Sendable {
     /// added first (in progress for a show, finished for a movie). Returns whether anything was
     /// written. A show with no episodes named writes nothing.
     func markWatched(_ title: Title, episodes: [EpisodeKey], caller: AgentCaller) async throws -> Bool {
-        let by = Caller.agent(caller.token)
+        let agent = Caller.agent(caller.token)
         let ref = MediaRef(titleID: title.id, type: title.type)
         let existing = try await stores.library.item(userID: caller.userID, titleID: title.id)
         if title.type == .show {
@@ -81,19 +81,19 @@ struct ScrobbleService: Sendable {
             if let existing {
                 id = existing.id
             } else {
-                id = try await library.add(ref, status: .inProgress, userID: caller.userID, by: by).item.id
+                id = try await library.add(ref, status: .inProgress, userID: caller.userID, by: agent).item.id
             }
             return try await library.setEpisodes(
-                id, userID: caller.userID, keys: episodes, watched: true, by: by
+                id, userID: caller.userID, keys: episodes, watched: true, by: agent
             ) != nil
         }
         guard title.type == .movie else { return false }
         guard let existing else {
-            _ = try await library.add(ref, status: .finished, userID: caller.userID, by: by)
+            _ = try await library.add(ref, status: .finished, userID: caller.userID, by: agent)
             return true
         }
         guard existing.status != .finished else { return false }
-        _ = try await library.patch(existing.id, userID: caller.userID, patch: ItemPatch(status: .finished), by: by)
+        _ = try await library.patch(existing.id, userID: caller.userID, patch: ItemPatch(status: .finished), by: agent)
         return true
     }
 }

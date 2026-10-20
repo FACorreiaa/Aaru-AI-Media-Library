@@ -53,34 +53,40 @@ struct StremioRoutes: Sendable {
                 headers: [.location: StremioService.configureURL.absoluteString, .accessControlAllowOrigin: "*"]
             )
         case let .resource(name, type, id, extra):
-            switch name {
-            case "catalog":
-                // A revoked or unknown token sees empty catalogs rather than an error.
-                var metas: [StremioMetaPreview] = []
-                if let caller {
-                    metas = try await service.catalog(id: id, type: type, extra: extra, caller: caller)
-                }
-                return Self.json(StremioCatalogResponse(metas: metas), status: .ok, maxAge: 60)
-            case "meta":
-                guard let caller, let meta = try await service.meta(id: id, caller: caller) else {
-                    return Self.json(StremioMessage(err: "Unknown title."), status: .notFound, maxAge: 0)
-                }
-                return Self.json(StremioMetaResponse(meta: meta), status: .ok, maxAge: 3600)
-            case "player", "library":
-                guard let caller else {
-                    return Self.json(StremioMessage(err: "This Aaru link was revoked."), status: .notFound, maxAge: 0)
-                }
-                let result = name == "player"
-                    ? try await service.player(type: type, videoID: id, extra: extra, caller: caller)
-                    : try await service.library(type: type, metaID: id, extra: extra, caller: caller)
-                if result == .forbidden {
-                    return Self.json(StremioMessage(err: "This link may not do that."), status: .forbidden, maxAge: 0)
-                }
-                return Self.json(StremioMessage(), status: .ok, maxAge: 0)
-            default:
-                // `stream` and `subtitles` included: Aaru serves neither.
-                return Self.json(StremioMessage(err: "Not supported."), status: .notFound, maxAge: 0)
+            return try await resource(name, type: type, id: id, extra: extra, caller: caller)
+        }
+    }
+
+    private func resource(
+        _ name: String, type: String, id: String, extra: [String: String], caller: AgentCaller?
+    ) async throws -> Response {
+        switch name {
+        case "catalog":
+            // A revoked or unknown token sees empty catalogs rather than an error.
+            var metas: [StremioMetaPreview] = []
+            if let caller {
+                metas = try await service.catalog(id: id, type: type, extra: extra, caller: caller)
             }
+            return Self.json(StremioCatalogResponse(metas: metas), status: .ok, maxAge: 60)
+        case "meta":
+            guard let caller, let meta = try await service.meta(id: id, caller: caller) else {
+                return Self.json(StremioMessage(err: "Unknown title."), status: .notFound, maxAge: 0)
+            }
+            return Self.json(StremioMetaResponse(meta: meta), status: .ok, maxAge: 3600)
+        case "player", "library":
+            guard let caller else {
+                return Self.json(StremioMessage(err: "This Aaru link was revoked."), status: .notFound, maxAge: 0)
+            }
+            let result = name == "player"
+                ? try await service.player(type: type, videoID: id, extra: extra, caller: caller)
+                : try await service.library(type: type, metaID: id, extra: extra, caller: caller)
+            if result == .forbidden {
+                return Self.json(StremioMessage(err: "This link may not do that."), status: .forbidden, maxAge: 0)
+            }
+            return Self.json(StremioMessage(), status: .ok, maxAge: 0)
+        default:
+            // `stream` and `subtitles` included: Aaru serves neither.
+            return Self.json(StremioMessage(err: "Not supported."), status: .notFound, maxAge: 0)
         }
     }
 

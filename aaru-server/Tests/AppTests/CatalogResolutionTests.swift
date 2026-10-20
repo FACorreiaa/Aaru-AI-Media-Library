@@ -18,6 +18,12 @@ struct CatalogResolutionTests {
         )
     }
 
+    func episode(season: Int, name: String, airsAt: Date?) -> CatalogEpisode {
+        CatalogEpisode(
+            season: season, episode: 1, name: name, airsAt: airsAt, runtimeMinutes: 50, tmdbEpisodeID: nil
+        )
+    }
+
     @Test("CAT-005: concurrent resolutions of one MediaRef produce exactly one titles row")
     func concurrentResolution() async throws {
         try await withMigratedStores { stores in
@@ -170,22 +176,8 @@ struct CatalogResolutionTests {
             #expect(stored.stillURL?.absoluteString == "https://image.tmdb.org/t/p/w300/pilot.jpg")
 
             fake.stubEpisodes(tmdb, CatalogEpisodes(status: .returning, episodes: [
-                CatalogEpisode(
-                    season: 1,
-                    episode: 1,
-                    name: "Pilot",
-                    airsAt: longAgo,
-                    runtimeMinutes: 50,
-                    tmdbEpisodeID: nil
-                ),
-                CatalogEpisode(
-                    season: 2,
-                    episode: 1,
-                    name: "Revival",
-                    airsAt: nil,
-                    runtimeMinutes: 50,
-                    tmdbEpisodeID: nil
-                ),
+                episode(season: 1, name: "Pilot", airsAt: longAgo),
+                episode(season: 2, name: "Revival", airsAt: nil),
             ]))
             clock.advance(by: CatalogService.dormantStaleness + 60)
             let refreshed = try await service.detail(show.id)

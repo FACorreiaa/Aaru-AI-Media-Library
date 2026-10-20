@@ -115,7 +115,7 @@ struct StremioTests {
             let manifest = try got.json()
             let resources = (manifest["resources"] as? [[String: Any]] ?? []).compactMap { $0["name"] as? String }
             #expect(resources == ["catalog", "meta", "player", "library"])
-            #expect(!String(decoding: got.body, as: UTF8.self).contains("stream"))
+            #expect(String(bytes: got.body, encoding: .utf8)?.contains("stream") == false)
             #expect((manifest["catalogs"] as? [Any])?.count == 4)
 
             let options = try await get(env, "/stremio/\(secret)/manifest.json", method: .options)

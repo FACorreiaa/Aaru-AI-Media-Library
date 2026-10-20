@@ -26,7 +26,7 @@ struct PlaybackReport: Sendable {
     var type: MediaType
     var ids: ExternalIDs
     /// Set when the player already names an Aaru title (Stremio's `aaru:` ids).
-    var titleID: TitleID? = nil
+    var titleID: TitleID?
     /// Set for an episode; nil for a movie.
     var episode: EpisodeKey?
     var action: PlaybackAction
@@ -55,7 +55,7 @@ protocol WatchEventStore: Sendable {
         _ report: PlaybackReport, titleID: TitleID?, userID: UserID, agentTokenID: UUID?, now: Date
     ) async throws -> WatchSession
     /// Closes a session.
-    func close(_ id: UUID, at: Date) async throws
+    func close(_ id: UUID, at date: Date) async throws
     /// Whether a session for this item was closed since `since`: a second `stop` is a repeat.
     func stoppedRecently(userID: UserID, source: WatchSource, externalRef: String, since: Date) async throws -> Bool
 }

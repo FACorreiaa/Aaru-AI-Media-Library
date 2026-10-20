@@ -10,15 +10,15 @@ struct StremioManifest: Encodable, Sendable {
         var idPrefixes: [String]?
     }
 
-    struct Catalog: Encodable, Sendable {
-        struct Extra: Encodable, Sendable {
-            var name: String
-        }
+    struct CatalogExtra: Encodable, Sendable {
+        var name: String
+    }
 
+    struct Catalog: Encodable, Sendable {
         var type: String
         var id: String
         var name: String
-        var extra: [Extra]?
+        var extra: [CatalogExtra]?
     }
 
     struct BehaviorHints: Encodable, Sendable {

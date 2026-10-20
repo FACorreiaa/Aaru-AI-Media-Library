@@ -7,17 +7,17 @@ import Testing
 struct AnimeMappingLoaderTests {
     /// Fribb rows: a mapped TV cour, a film (TMDB *movie* id, as a list), a row with no AniList
     /// id, and a TV entry whose TMDB id is a list.
-    func fixture(_ al: [String], tmdb: String, mal: String = "290", anidb: String = "1", tvdb: String = "72025")
+    func fixture(_ anilist: [String], tmdb: String, mal: String = "290", anidb: String = "1", tvdb: String = "72025")
         -> Data
     {
         Data("""
         [
-          {"type":"TV","anilist_id":\(al[0]),"mal_id":\(mal),"anidb_id":\(anidb),"tvdb_id":\(tvdb),
+          {"type":"TV","anilist_id":\(anilist[0]),"mal_id":\(mal),"anidb_id":\(anidb),"tvdb_id":\(tvdb),
            "themoviedb_id":{"tv":\(tmdb)},"season":{"tvdb":2,"tmdb":2}},
-          {"type":"MOVIE","anilist_id":\(al[1]),"mal_id":291,"themoviedb_id":{"movie":[1390599]},
+          {"type":"MOVIE","anilist_id":\(anilist[1]),"mal_id":291,"themoviedb_id":{"movie":[1390599]},
            "season":{"tvdb":0}},
           {"type":"SPECIAL","mal_id":292},
-          {"type":"TV","anilist_id":\(al[2]),"themoviedb_id":{"tv":[\(tmdb),999]},"season":{"tmdb":3}}
+          {"type":"TV","anilist_id":\(anilist[2]),"themoviedb_id":{"tv":[\(tmdb),999]},"season":{"tmdb":3}}
         ]
         """.utf8)
     }
