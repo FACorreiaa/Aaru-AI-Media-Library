@@ -5,7 +5,10 @@ import type { SocialUser } from '../../lib/social/server'
 import { monogram, personLabel } from '../../lib/social/model'
 import { inviteToGroup } from '../../lib/groups/server'
 import type { Channel, GroupDetail } from '../../lib/groups/server'
+import { KIND_OPTIONS, hitRef, kindGlyph } from '../../lib/groups/kinds'
+import type { ChannelKind, MediaRef } from '../../lib/groups/kinds'
 import { Monogram } from './shell'
+import { TitlePicker } from './TitlePicker'
 
 // The groups dialogs: name a group, make or edit a channel, invite friends, confirm. Each is
 // mounted when needed and opens as a modal on mount, like the episode sheet.
@@ -141,29 +144,46 @@ export function NameDialog(props: {
   )
 }
 
-/** Make a text channel, or rename one and set its topic. */
+/** What a new channel is: its kind, name, topic and, for a title channel, its title. */
+export type ChannelInput = {
+  kind: ChannelKind
+  name: string
+  topic: string
+  title?: { ref: MediaRef; name: string }
+}
+
+/**
+ * Make a channel (text, title, watch party or shelf), or rename one and set its topic. A title
+ * channel is named after its title unless named by hand.
+ */
 export function ChannelDialog(props: {
   channel?: Channel
-  onSubmit: (name: string, topic: string) => Promise<void>
+  onSubmit: (input: ChannelInput) => Promise<void>
   onDelete?: () => Promise<void>
   onClose: () => void
 }) {
   let dialog: HTMLDialogElement | undefined
+  const [kind, setKind] = createSignal<ChannelKind>(
+    props.channel?.kind ?? 'text',
+  )
   const [name, setName] = createSignal(props.channel?.name ?? '')
   const [topic, setTopic] = createSignal(props.channel?.topic ?? '')
+  const [title, setTitle] = createSignal<ChannelInput['title']>()
   const [busy, setBusy] = createSignal(false)
   const [confirming, setConfirming] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
   onMount(() => dialog?.showModal())
 
-  const preview = () =>
-    name()
+  const slug = (text: string) =>
+    text
       .toLowerCase()
       .trim()
       .split(/[\s-]+/)
       .map((w) => w.replace(/[^\p{L}\p{N}_]/gu, ''))
       .filter(Boolean)
       .join('-')
+  const preview = () => slug(name()) || slug(title()?.name ?? '')
+  const needsTitle = () => !props.channel && kind() === 'title' && !title()
 
   async function attempt(action: () => Promise<void>) {
     setBusy(true)
@@ -182,47 +202,135 @@ export function ChannelDialog(props: {
     <Frame
       ref={(d) => (dialog = d)}
       label={props.channel ? 'Edit channel' : 'New channel'}
-      title={props.channel ? `#${props.channel.name}` : 'New channel'}
+      title={
+        props.channel
+          ? `${kindGlyph(kind())} ${props.channel.name}`
+          : 'New channel'
+      }
       onClose={props.onClose}
     >
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          void attempt(() => props.onSubmit(name(), topic()))
+          void attempt(() =>
+            props.onSubmit({
+              kind: kind(),
+              name: name(),
+              topic: topic(),
+              title: title(),
+            }),
+          )
         }}
       >
-        <label class="mt-4 block text-sm font-medium">
-          Name
-          <div class="relative">
-            <span
-              aria-hidden="true"
-              class="pointer-events-none absolute top-1/2 left-4 mt-0.5 -translate-y-1/2 text-muted"
-            >
-              #
-            </span>
-            <input
-              value={name()}
-              maxLength={40}
-              autofocus
-              placeholder="movie-night"
-              onInput={(e) => setName(e.currentTarget.value)}
-              class={`${inputClass} pl-8`}
-            />
-          </div>
-        </label>
-        <Show when={preview() && preview() !== name().trim()}>
-          <p class="mt-1 text-xs text-muted">Saved as #{preview()}</p>
+        <Show when={!props.channel}>
+          <fieldset class="mt-4">
+            <legend class="text-sm font-medium">Kind</legend>
+            <div class="mt-1 grid gap-1.5">
+              <For each={KIND_OPTIONS}>
+                {(option) => (
+                  <label
+                    class={`flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2 ${kind() === option.kind ? 'bg-accent/10 ring-1 ring-accent' : 'bg-surface hover:bg-surface/70'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="channel-kind"
+                      value={option.kind}
+                      checked={kind() === option.kind}
+                      onChange={() => setKind(option.kind)}
+                      class="sr-only"
+                    />
+                    <span
+                      aria-hidden="true"
+                      class="mt-0.5 w-4 text-center text-muted"
+                    >
+                      {kindGlyph(option.kind)}
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block text-sm font-semibold">
+                        {option.label}
+                      </span>
+                      <span class="block text-xs text-muted">
+                        {option.hint}
+                      </span>
+                    </span>
+                  </label>
+                )}
+              </For>
+            </div>
+          </fieldset>
+          <Show when={kind() === 'title'}>
+            <div class="mt-4">
+              <Show
+                when={title()}
+                fallback={
+                  <>
+                    <p class="text-sm font-medium">Title</p>
+                    <div class="mt-1">
+                      <TitlePicker
+                        onPick={(hit) =>
+                          setTitle({ ref: hitRef(hit), name: hit.title })
+                        }
+                      />
+                    </div>
+                  </>
+                }
+              >
+                {(picked) => (
+                  <p class="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 text-sm">
+                    <span class="min-w-0 truncate font-semibold">
+                      {picked().name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTitle(undefined)}
+                      class="shrink-0 font-medium text-accent"
+                    >
+                      Change
+                    </button>
+                  </p>
+                )}
+              </Show>
+            </div>
+          </Show>
         </Show>
-        <label class="mt-4 block text-sm font-medium">
-          Topic <span class="font-normal text-muted">(optional)</span>
-          <input
-            value={topic()}
-            maxLength={200}
-            placeholder="What this channel is for"
-            onInput={(e) => setTopic(e.currentTarget.value)}
-            class={inputClass}
-          />
-        </label>
+        <Show when={!needsTitle()}>
+          <label class="mt-4 block text-sm font-medium">
+            Name
+            <Show when={kind() === 'title' && !props.channel}>
+              <span class="font-normal text-muted"> (optional)</span>
+            </Show>
+            <div class="relative">
+              <span
+                aria-hidden="true"
+                class="pointer-events-none absolute top-1/2 left-4 mt-0.5 -translate-y-1/2 text-muted"
+              >
+                {kindGlyph(kind())}
+              </span>
+              <input
+                value={name()}
+                maxLength={40}
+                placeholder={
+                  title() ? slug(title()?.name ?? '') : 'movie-night'
+                }
+                onInput={(e) => setName(e.currentTarget.value)}
+                class={`${inputClass} pl-8`}
+              />
+            </div>
+          </label>
+          <Show when={preview() && preview() !== name().trim()}>
+            <p class="mt-1 text-xs text-muted">Saved as {preview()}</p>
+          </Show>
+          <label class="mt-4 block text-sm font-medium">
+            Topic <span class="font-normal text-muted">(optional)</span>
+            <input
+              value={topic()}
+              maxLength={200}
+              placeholder="What this channel is for"
+              onInput={(e) => setTopic(e.currentTarget.value)}
+              class={inputClass}
+            />
+          </label>
+        </Show>
         <Show when={problem()}>
           {(text) => (
             <p role="alert" class="mt-3 text-sm text-danger">
@@ -233,7 +341,7 @@ export function ChannelDialog(props: {
         <Actions
           busy={busy()}
           submit={props.channel ? 'Save' : 'Create'}
-          disabled={!preview()}
+          disabled={!preview() || needsTitle()}
           onCancel={() => dialog?.close()}
           extra={
             <Show when={props.onDelete}>
@@ -256,7 +364,7 @@ export function ChannelDialog(props: {
                     onClick={() => void attempt(remove())}
                     class="text-sm font-semibold text-danger underline"
                   >
-                    Delete it and its messages
+                    Delete it and everything in it
                   </button>
                 </Show>
               )}

@@ -40,6 +40,7 @@ function message(
     mentionsAgent: false,
     fromBlocked: false,
     deleted: false,
+    veiled: false,
     createdAt: at,
     ...extra,
   }
@@ -55,6 +56,7 @@ function member(
     user: { userId, handle, displayName },
     role,
     joinedAt: '2026-10-01T00:00:00Z',
+    shareProgress: false,
   }
 }
 
@@ -164,6 +166,20 @@ describe('groups polling and optimistic sends', () => {
     const merged = mergeMessages([a, b], [c, editedA])
     expect(merged.map((m) => m.id)).toEqual([a.id, b.id, c.id])
     expect(merged[0].body).toBe('edited')
+  })
+
+  it('keeps the server order for messages sent in the same second', () => {
+    // Ids sort the other way round, as random UUIDs often do.
+    const first = message(ana, '2026-10-20T10:00:00Z', { id: 'ffff' })
+    const second = message(ana, '2026-10-20T10:00:00Z', { id: '0000' })
+    expect(mergeMessages([], [first, second]).map((m) => m.id)).toEqual([
+      'ffff',
+      '0000',
+    ])
+    expect(mergeMessages([first], [second]).map((m) => m.id)).toEqual([
+      'ffff',
+      '0000',
+    ])
   })
 
   it('settles, fails and retries sends by nonce', () => {

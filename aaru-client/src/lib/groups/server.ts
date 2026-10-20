@@ -24,7 +24,7 @@ export type GroupsState = {
   invites: GroupInvite[]
 }
 
-function check<T>(
+export function check<T>(
   result: { data?: T; error?: unknown; response: Response },
   fallback: string,
 ): T {
@@ -34,7 +34,7 @@ function check<T>(
   return result.data
 }
 
-function checkEmpty(
+export function checkEmpty(
   result: { error?: unknown; response: Response },
   fallback: string,
 ) {
@@ -202,15 +202,36 @@ export const declineGroupInvite = createServerFn({ method: 'POST' })
     ),
   )
 
+/** A title by Aaru id, by provider ids, or by title and year, as the server's `MediaRef`. */
+export const mediaRef = z.object({
+  titleId: uuid.optional(),
+  type: z.enum(['movie', 'show', 'book']),
+  ids: z.record(z.string(), z.string()).optional(),
+  title: z.string().optional(),
+  year: z.number().int().optional(),
+})
+
+/** Makes a channel. A title channel takes the title, and its name when none is given. */
 export const createChannel = createServerFn({ method: 'POST' })
   .validator(
-    z.object({ groupId: uuid, name: z.string(), topic: z.string().optional() }),
+    z.object({
+      groupId: uuid,
+      kind: z.enum(['text', 'title', 'watch', 'shelf']).optional(),
+      name: z.string().optional(),
+      topic: z.string().optional(),
+      title: mediaRef.optional(),
+    }),
   )
   .handler(async ({ data }): Promise<Channel> =>
     check(
       await api(sessionToken()).POST('/v1/groups/{groupId}/channels', {
         params: { path: { groupId: data.groupId } },
-        body: { name: data.name, topic: data.topic },
+        body: {
+          kind: data.kind,
+          name: data.name,
+          topic: data.topic,
+          title: data.title,
+        },
       }),
       'The channel was not created.',
     ),
@@ -280,7 +301,19 @@ export const listMessages = createServerFn({ method: 'GET' })
 
 export const postMessage = createServerFn({ method: 'POST' })
   .validator(
-    channelRef.extend({ body: z.string(), clientNonce: z.string().max(64) }),
+    channelRef.extend({
+      body: z.string(),
+      clientNonce: z.string().max(64),
+      // Title channels (GRP-007): a hand stamp, or none at all. Absent: my progress.
+      spoiler: z
+        .object({
+          season: z.number().int().optional(),
+          episode: z.number().int().optional(),
+          ending: z.boolean().optional(),
+        })
+        .optional(),
+      spoilerFree: z.boolean().optional(),
+    }),
   )
   .handler(async ({ data }): Promise<GroupMessage> =>
     check(
@@ -290,7 +323,12 @@ export const postMessage = createServerFn({ method: 'POST' })
           params: {
             path: { groupId: data.groupId, channelId: data.channelId },
           },
-          body: { body: data.body, clientNonce: data.clientNonce },
+          body: {
+            body: data.body,
+            clientNonce: data.clientNonce,
+            spoiler: data.spoiler,
+            spoilerFree: data.spoilerFree,
+          },
         },
       ),
       'The message was not sent.',

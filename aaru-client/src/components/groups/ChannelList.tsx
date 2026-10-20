@@ -10,6 +10,7 @@ import {
 } from '../../lib/groups/server'
 import type { Channel } from '../../lib/groups/server'
 import { ChannelDialog, ConfirmDialog, NameDialog } from './dialogs'
+import { ChannelGlyph } from './ChannelGlyph'
 import { Menu, MenuItem, MentionPill, useGroup, useShell } from './shell'
 
 type Dialog =
@@ -126,7 +127,7 @@ export function ChannelList(props: { class?: string }) {
       <div class="flex-1 overflow-y-auto px-2 py-3">
         <div class="flex items-center justify-between px-2 pb-1">
           <h3 class="text-xs font-semibold tracking-wide text-muted uppercase">
-            Text channels
+            Channels
           </h3>
           <Show when={manages()}>
             <button
@@ -153,9 +154,7 @@ export function ChannelList(props: { class?: string }) {
                     aria-current={active() ? 'page' : undefined}
                     class={`flex min-h-10 items-center gap-2 rounded-lg px-2 md:min-h-8 ${active() ? 'bg-paper text-ink shadow-sm' : channel.unread > 0 ? 'font-semibold text-ink hover:bg-paper/60' : 'text-muted hover:bg-paper/60 hover:text-ink'}`}
                   >
-                    <span aria-hidden="true" class="w-4 text-center text-muted">
-                      #
-                    </span>
+                    <ChannelGlyph channel={channel} />
                     <span class="min-w-0 flex-1 truncate">{channel.name}</span>
                     <Show when={channel.unread > 0 && channel.mentions === 0}>
                       <span class="sr-only">unread</span>
@@ -247,7 +246,7 @@ export function ChannelList(props: { class?: string }) {
           {(open) => (
             <ChannelDialog
               channel={open().channel}
-              onSubmit={async (name, topic) => {
+              onSubmit={async ({ kind, name, topic, title }) => {
                 const existing = open().channel
                 const saved = existing
                   ? await updateChannel({
@@ -261,8 +260,10 @@ export function ChannelList(props: { class?: string }) {
                   : await createChannel({
                       data: {
                         groupId: group().id,
-                        name,
+                        kind,
+                        name: name.trim() || undefined,
                         topic: topic.trim() || undefined,
+                        title: title?.ref,
                       },
                     })
                 await scope.refresh()

@@ -32,6 +32,7 @@ function message(
     mentionsAgent: false,
     fromBlocked: false,
     deleted: false,
+    veiled: false,
     createdAt,
     ...overrides,
   }
@@ -62,6 +63,14 @@ describe('parseEvent', () => {
     expect(parseEvent('{"type":"shout"}')).toBeNull()
     expect(parseEvent('not json')).toBeNull()
     expect(parseEvent('42')).toBeNull()
+  })
+
+  it('reads the shelf and watch-party frames', () => {
+    for (const type of ['shelf.updated', 'watch.updated', 'watch.reaction'])
+      expect(parseEvent(`{"type":"${type}"}`)?.type).toBe(type)
+    expect(parseEvent('{"type":"watch.reaction","emoji":"🔥"}')?.emoji).toBe(
+      '🔥',
+    )
   })
 })
 

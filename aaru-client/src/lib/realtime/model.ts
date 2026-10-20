@@ -31,6 +31,9 @@ const EVENT_TYPES = new Set<RealtimeEvent['type']>([
   'group.updated',
   'group.removed',
   'invites.changed',
+  'shelf.updated',
+  'watch.updated',
+  'watch.reaction',
 ])
 
 /**

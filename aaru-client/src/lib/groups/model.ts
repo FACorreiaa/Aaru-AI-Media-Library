@@ -13,6 +13,9 @@ export type PendingMessage = {
   body: string
   createdAt: string
   state: 'sending' | 'failed'
+  /** Title channels: how it is marked, kept so a retry sends the same. */
+  spoiler?: { season?: number; episode?: number; ending?: boolean }
+  spoilerFree?: boolean
 }
 
 export type TimelineItem =
@@ -142,10 +145,10 @@ export function mergeMessages(
 ): GroupMessage[] {
   const byId = new Map(current.map((m) => [m.id, m]))
   for (const message of incoming) byId.set(message.id, message)
+  // Timestamps arrive in whole seconds, so ties keep the order they came in (the server's
+  // order): the sort is stable, and an id tie-break would scramble same-second messages.
   return [...byId.values()].sort(
-    (a, b) =>
-      Date.parse(a.createdAt) - Date.parse(b.createdAt) ||
-      a.id.localeCompare(b.id),
+    (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt),
   )
 }
 

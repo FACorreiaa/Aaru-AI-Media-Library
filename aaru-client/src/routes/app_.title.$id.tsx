@@ -6,6 +6,7 @@ import {
 } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal } from 'solid-js'
 import { AddToListDialog } from '../components/AddToListDialog'
+import { DiscussButton } from '../components/groups/DiscussButton'
 import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
@@ -202,6 +203,11 @@ function TitleRoom() {
             >
               Add to list
             </button>
+            <DiscussButton
+              titleId={entry().title.id}
+              type={entry().title.type}
+              name={entry().title.title}
+            />
             <Show when={entry().progress && entry().progress!.airedCount > 0}>
               <div class="mt-4 max-w-xs">
                 <div class="h-1.5 overflow-hidden rounded-full bg-surface">

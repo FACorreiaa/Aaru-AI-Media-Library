@@ -9,6 +9,7 @@ import {
 } from './model'
 import type { RealtimeEvent } from './model'
 import { realtimeTicket } from './server'
+import { reactionDue } from '../groups/kinds'
 
 // GRP-006 on the web: one socket for the whole signed-in tab, shared by every pane that
 // subscribes. The first subscriber opens it and the last one closes it. Browser-only.
@@ -28,6 +29,7 @@ let hiddenTimer: number | undefined
 let staleTimer: number | undefined
 let generation = 0
 const lastTyping = new Map<string, number>()
+let lastReaction: number | undefined
 
 /** Where the shared socket is. */
 export const connectionState = state
@@ -164,4 +166,18 @@ export function sendTyping(groupId: string, channelId: string) {
   if (!socket || socket.readyState !== WebSocket.OPEN) return
   lastTyping.set(channelId, now)
   socket.send(JSON.stringify({ type: 'typing', groupId, channelId }))
+}
+
+/** A watch-party reaction, at most once a second; the server drops anything outside its set. */
+export function sendReaction(
+  groupId: string,
+  channelId: string,
+  emoji: string,
+) {
+  const now = Date.now()
+  if (!reactionDue(lastReaction, now)) return false
+  if (!socket || socket.readyState !== WebSocket.OPEN) return false
+  lastReaction = now
+  socket.send(JSON.stringify({ type: 'react', groupId, channelId, emoji }))
+  return true
 }

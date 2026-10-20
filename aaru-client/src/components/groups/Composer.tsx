@@ -1,4 +1,5 @@
 import { For, Show, createSignal } from 'solid-js'
+import type { JSX } from 'solid-js'
 import {
   MAX_MESSAGE_LENGTH,
   applyMention,
@@ -21,6 +22,8 @@ export function Composer(props: {
   onSend: (body: string) => void
   /** Called as the user types; the socket throttles what it sends. */
   onTyping?: () => void
+  /** A control above the box, such as a title channel's spoiler marker. */
+  accessory?: JSX.Element
 }) {
   let box: HTMLTextAreaElement | undefined
   const [text, setText] = createSignal('')
@@ -138,6 +141,9 @@ export function Composer(props: {
             )}
           </For>
         </ul>
+      </Show>
+      <Show when={props.accessory}>
+        <div class="mb-1.5 flex">{props.accessory}</div>
       </Show>
       <div
         class={`flex items-end gap-2 rounded-2xl bg-surface px-3 py-2 focus-within:ring-2 ${tooLong() ? 'ring-2 ring-danger' : 'focus-within:ring-accent'}`}
