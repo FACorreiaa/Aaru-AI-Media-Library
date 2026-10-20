@@ -43,6 +43,7 @@ protocol UserStore: Sendable {
 struct UserProfile: Sendable, Equatable {
     var id: UserID
     var displayName: String?
+    var handle: String?
     var providers: [AuthIdentity.Provider]
 }
 
@@ -335,4 +336,5 @@ struct Stores: Sendable {
     var push: any PushStore
     var agentTokens: any AgentTokenStore
     var watchEvents: any WatchEventStore
+    var social: any SocialStore
 }

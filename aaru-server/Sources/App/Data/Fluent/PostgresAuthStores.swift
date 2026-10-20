@@ -7,12 +7,16 @@ import Foundation
 
 extension PostgresUserStore {
     func profile(_ id: UserID) async throws -> UserProfile? {
-        struct UserRow: Decodable { let displayName: String? }
+        struct UserRow: Decodable {
+            let displayName: String?
+            let handle: String?
+        }
         struct IdentityRow: Decodable { let provider: String }
         let sql = try sqlDatabase(database)
-        guard let user = try await sql.select().column("display_name").from("users")
-            .where("id", .equal, id.rawValue)
-            .first(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase)
+        guard let user = try await sql.raw("""
+        SELECT u.display_name, p.handle FROM users u LEFT JOIN profiles p ON p.user_id = u.id
+        WHERE u.id = \(bind: id.rawValue)
+        """).first(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase)
         else { return nil }
         let identities = try await sql.select().column("provider").from("auth_identities")
             .where("user_id", .equal, id.rawValue)
@@ -21,6 +25,7 @@ extension PostgresUserStore {
         return UserProfile(
             id: id,
             displayName: user.displayName,
+            handle: user.handle,
             providers: identities.compactMap { AuthIdentity.Provider(rawValue: $0.provider) }
         )
     }

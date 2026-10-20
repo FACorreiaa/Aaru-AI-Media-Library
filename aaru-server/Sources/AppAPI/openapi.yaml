@@ -152,6 +152,156 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/profile:
+    put:
+      operationId: updateProfile
+      summary: Claim or change your handle, and optionally your display name. Handles are how friends find you.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProfileUpdate'}
+      responses:
+        '200':
+          description: Your social identity.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUser'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/users/{handle}:
+    get:
+      operationId: getSocialUser
+      summary: The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+      parameters:
+        - {name: handle, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: The user.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friend-requests:
+    get:
+      operationId: listFriendRequests
+      summary: Pending requests to you and from you, newest first.
+      responses:
+        '200':
+          description: Both directions.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FriendRequests'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: sendFriendRequest
+      summary: Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FriendRequestCreate'}
+      responses:
+        '200':
+          description: The user and where you now stand (outgoing or friend).
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friend-requests/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    delete:
+      operationId: withdrawFriendRequest
+      summary: Decline a request to you, or cancel one you sent. The other side is not told.
+      responses:
+        '204':
+          description: Gone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friend-requests/{id}/accept:
+    post:
+      operationId: acceptFriendRequest
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The new friend.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUser'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friends:
+    get:
+      operationId: listFriends
+      summary: Your friends, by handle.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friends/{userId}:
+    delete:
+      operationId: removeFriend
+      summary: Unfriend. Silent; the other side is not told.
+      parameters:
+        - {name: userId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: No longer friends.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/blocks:
+    get:
+      operationId: listBlocks
+      summary: People you blocked.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/blocks/{userId}:
+    parameters:
+      - {name: userId, in: path, required: true, schema: {type: string, format: uuid}}
+    put:
+      operationId: blockUser
+      summary: Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
+      responses:
+        '204':
+          description: Blocked.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unblockUser
+      responses:
+        '204':
+          description: Unblocked. Friendship does not come back.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/reports:
+    post:
+      operationId: reportUser
+      summary: Report a user to Aaru. The user is not told.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReportCreate'}
+      responses:
+        '204':
+          description: Received.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/devices:
     put:
       operationId: registerDevice
@@ -1119,11 +1269,73 @@ components:
           format: uuid
         displayName:
           type: string
+        handle:
+          type: string
+          description: Absent until the user claims one in PUT /v1/me/profile.
         providers:
           type: array
           items:
             type: string
             enum: [apple, email, google]
+    ProfileUpdate:
+      type: object
+      required: [handle]
+      properties:
+        handle: {type: string, description: '3–20 of a–z, 0–9 and _. Stored lowercase.'}
+        displayName: {type: string, description: Absent leaves it unchanged; empty clears it.}
+    SocialUser:
+      type: object
+      required: [userId, handle]
+      properties:
+        userId: {type: string, format: uuid}
+        handle: {type: string}
+        displayName: {type: string}
+    SocialUserView:
+      type: object
+      required: [user, relationship]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        relationship:
+          type: string
+          enum: [none, friend, outgoing, incoming, self]
+    SocialUserList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/SocialUser'}
+    FriendRequest:
+      type: object
+      required: [id, user, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        user: {$ref: '#/components/schemas/SocialUser', description: The other person.}
+        createdAt: {type: string, format: date-time}
+    FriendRequests:
+      type: object
+      required: [incoming, outgoing]
+      properties:
+        incoming:
+          type: array
+          items: {$ref: '#/components/schemas/FriendRequest'}
+        outgoing:
+          type: array
+          items: {$ref: '#/components/schemas/FriendRequest'}
+    FriendRequestCreate:
+      type: object
+      required: [handle]
+      properties:
+        handle: {type: string}
+    ReportCreate:
+      type: object
+      required: [userId, reason]
+      properties:
+        userId: {type: string, format: uuid}
+        reason:
+          type: string
+          enum: [spam, harassment, impersonation, other]
+        note: {type: string, maxLength: 1000}
     ExternalIds:
       type: object
       description: Provider identifiers known for a title. Absent means unknown.

@@ -56,6 +56,62 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
     func deleteAccount(_ input: Operations.DeleteAccount.Input) async throws -> Operations.DeleteAccount.Output
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/profile`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
+    func updateProfile(_ input: Operations.UpdateProfile.Input) async throws -> Operations.UpdateProfile.Output
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    ///
+    /// - Remark: HTTP `GET /v1/social/users/{handle}`.
+    /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
+    func getSocialUser(_ input: Operations.GetSocialUser.Input) async throws -> Operations.GetSocialUser.Output
+    /// Pending requests to you and from you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)`.
+    func listFriendRequests(_ input: Operations.ListFriendRequests.Input) async throws -> Operations.ListFriendRequests.Output
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
+    func sendFriendRequest(_ input: Operations.SendFriendRequest.Input) async throws -> Operations.SendFriendRequest.Output
+    /// Decline a request to you, or cancel one you sent. The other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friend-requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)`.
+    func withdrawFriendRequest(_ input: Operations.WithdrawFriendRequest.Input) async throws -> Operations.WithdrawFriendRequest.Output
+    /// - Remark: HTTP `POST /v1/social/friend-requests/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)`.
+    func acceptFriendRequest(_ input: Operations.AcceptFriendRequest.Input) async throws -> Operations.AcceptFriendRequest.Output
+    /// Your friends, by handle.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)`.
+    func listFriends(_ input: Operations.ListFriends.Input) async throws -> Operations.ListFriends.Output
+    /// Unfriend. Silent; the other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friends/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)`.
+    func removeFriend(_ input: Operations.RemoveFriend.Input) async throws -> Operations.RemoveFriend.Output
+    /// People you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/social/blocks`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)`.
+    func listBlocks(_ input: Operations.ListBlocks.Input) async throws -> Operations.ListBlocks.Output
+    /// Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
+    ///
+    /// - Remark: HTTP `PUT /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)`.
+    func blockUser(_ input: Operations.BlockUser.Input) async throws -> Operations.BlockUser.Output
+    /// - Remark: HTTP `DELETE /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)`.
+    func unblockUser(_ input: Operations.UnblockUser.Input) async throws -> Operations.UnblockUser.Output
+    /// Report a user to Aaru. The user is not told.
+    ///
+    /// - Remark: HTTP `POST /v1/social/reports`.
+    /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)`.
+    func reportUser(_ input: Operations.ReportUser.Input) async throws -> Operations.ReportUser.Output
     /// Register this device for pushes. A token registered again moves to this user.
     ///
     /// - Remark: HTTP `PUT /v1/devices`.
@@ -353,6 +409,140 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
     public func deleteAccount(headers: Operations.DeleteAccount.Input.Headers = .init()) async throws -> Operations.DeleteAccount.Output {
         try await deleteAccount(Operations.DeleteAccount.Input(headers: headers))
+    }
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/profile`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
+    public func updateProfile(
+        headers: Operations.UpdateProfile.Input.Headers = .init(),
+        body: Operations.UpdateProfile.Input.Body
+    ) async throws -> Operations.UpdateProfile.Output {
+        try await updateProfile(Operations.UpdateProfile.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    ///
+    /// - Remark: HTTP `GET /v1/social/users/{handle}`.
+    /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
+    public func getSocialUser(
+        path: Operations.GetSocialUser.Input.Path,
+        headers: Operations.GetSocialUser.Input.Headers = .init()
+    ) async throws -> Operations.GetSocialUser.Output {
+        try await getSocialUser(Operations.GetSocialUser.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Pending requests to you and from you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)`.
+    public func listFriendRequests(headers: Operations.ListFriendRequests.Input.Headers = .init()) async throws -> Operations.ListFriendRequests.Output {
+        try await listFriendRequests(Operations.ListFriendRequests.Input(headers: headers))
+    }
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
+    public func sendFriendRequest(
+        headers: Operations.SendFriendRequest.Input.Headers = .init(),
+        body: Operations.SendFriendRequest.Input.Body
+    ) async throws -> Operations.SendFriendRequest.Output {
+        try await sendFriendRequest(Operations.SendFriendRequest.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Decline a request to you, or cancel one you sent. The other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friend-requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)`.
+    public func withdrawFriendRequest(
+        path: Operations.WithdrawFriendRequest.Input.Path,
+        headers: Operations.WithdrawFriendRequest.Input.Headers = .init()
+    ) async throws -> Operations.WithdrawFriendRequest.Output {
+        try await withdrawFriendRequest(Operations.WithdrawFriendRequest.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `POST /v1/social/friend-requests/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)`.
+    public func acceptFriendRequest(
+        path: Operations.AcceptFriendRequest.Input.Path,
+        headers: Operations.AcceptFriendRequest.Input.Headers = .init()
+    ) async throws -> Operations.AcceptFriendRequest.Output {
+        try await acceptFriendRequest(Operations.AcceptFriendRequest.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Your friends, by handle.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)`.
+    public func listFriends(headers: Operations.ListFriends.Input.Headers = .init()) async throws -> Operations.ListFriends.Output {
+        try await listFriends(Operations.ListFriends.Input(headers: headers))
+    }
+    /// Unfriend. Silent; the other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friends/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)`.
+    public func removeFriend(
+        path: Operations.RemoveFriend.Input.Path,
+        headers: Operations.RemoveFriend.Input.Headers = .init()
+    ) async throws -> Operations.RemoveFriend.Output {
+        try await removeFriend(Operations.RemoveFriend.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// People you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/social/blocks`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)`.
+    public func listBlocks(headers: Operations.ListBlocks.Input.Headers = .init()) async throws -> Operations.ListBlocks.Output {
+        try await listBlocks(Operations.ListBlocks.Input(headers: headers))
+    }
+    /// Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
+    ///
+    /// - Remark: HTTP `PUT /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)`.
+    public func blockUser(
+        path: Operations.BlockUser.Input.Path,
+        headers: Operations.BlockUser.Input.Headers = .init()
+    ) async throws -> Operations.BlockUser.Output {
+        try await blockUser(Operations.BlockUser.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `DELETE /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)`.
+    public func unblockUser(
+        path: Operations.UnblockUser.Input.Path,
+        headers: Operations.UnblockUser.Input.Headers = .init()
+    ) async throws -> Operations.UnblockUser.Output {
+        try await unblockUser(Operations.UnblockUser.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Report a user to Aaru. The user is not told.
+    ///
+    /// - Remark: HTTP `POST /v1/social/reports`.
+    /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)`.
+    public func reportUser(
+        headers: Operations.ReportUser.Input.Headers = .init(),
+        body: Operations.ReportUser.Input.Body
+    ) async throws -> Operations.ReportUser.Output {
+        try await reportUser(Operations.ReportUser.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// Register this device for pushes. A token registered again moves to this user.
     ///
@@ -1662,6 +1852,10 @@ public enum Components {
             public var userId: Swift.String
             /// - Remark: Generated from `#/components/schemas/Me/displayName`.
             public var displayName: Swift.String?
+            /// Absent until the user claims one in PUT /v1/me/profile.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Me/handle`.
+            public var handle: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Me/ProvidersPayload`.
             @frozen public enum ProvidersPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case apple = "apple"
@@ -1677,20 +1871,231 @@ public enum Components {
             /// - Parameters:
             ///   - userId:
             ///   - displayName:
+            ///   - handle: Absent until the user claims one in PUT /v1/me/profile.
             ///   - providers:
             public init(
                 userId: Swift.String,
                 displayName: Swift.String? = nil,
+                handle: Swift.String? = nil,
                 providers: Components.Schemas.Me.ProvidersPayload
             ) {
                 self.userId = userId
                 self.displayName = displayName
+                self.handle = handle
                 self.providers = providers
             }
             public enum CodingKeys: String, CodingKey {
                 case userId
                 case displayName
+                case handle
                 case providers
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ProfileUpdate`.
+        public struct ProfileUpdate: Codable, Hashable, Sendable {
+            /// 3–20 of a–z, 0–9 and _. Stored lowercase.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileUpdate/handle`.
+            public var handle: Swift.String
+            /// Absent leaves it unchanged; empty clears it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileUpdate/displayName`.
+            public var displayName: Swift.String?
+            /// Creates a new `ProfileUpdate`.
+            ///
+            /// - Parameters:
+            ///   - handle: 3–20 of a–z, 0–9 and _. Stored lowercase.
+            ///   - displayName: Absent leaves it unchanged; empty clears it.
+            public init(
+                handle: Swift.String,
+                displayName: Swift.String? = nil
+            ) {
+                self.handle = handle
+                self.displayName = displayName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case handle
+                case displayName
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SocialUser`.
+        public struct SocialUser: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SocialUser/userId`.
+            public var userId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SocialUser/handle`.
+            public var handle: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SocialUser/displayName`.
+            public var displayName: Swift.String?
+            /// Creates a new `SocialUser`.
+            ///
+            /// - Parameters:
+            ///   - userId:
+            ///   - handle:
+            ///   - displayName:
+            public init(
+                userId: Swift.String,
+                handle: Swift.String,
+                displayName: Swift.String? = nil
+            ) {
+                self.userId = userId
+                self.handle = handle
+                self.displayName = displayName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case userId
+                case handle
+                case displayName
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SocialUserView`.
+        public struct SocialUserView: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SocialUserView/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/SocialUserView/relationship`.
+            @frozen public enum RelationshipPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case none = "none"
+                case friend = "friend"
+                case outgoing = "outgoing"
+                case incoming = "incoming"
+                case _self = "self"
+            }
+            /// - Remark: Generated from `#/components/schemas/SocialUserView/relationship`.
+            public var relationship: Components.Schemas.SocialUserView.RelationshipPayload
+            /// Creates a new `SocialUserView`.
+            ///
+            /// - Parameters:
+            ///   - user:
+            ///   - relationship:
+            public init(
+                user: Components.Schemas.SocialUser,
+                relationship: Components.Schemas.SocialUserView.RelationshipPayload
+            ) {
+                self.user = user
+                self.relationship = relationship
+            }
+            public enum CodingKeys: String, CodingKey {
+                case user
+                case relationship
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SocialUserList`.
+        public struct SocialUserList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SocialUserList/items`.
+            public var items: [Components.Schemas.SocialUser]
+            /// Creates a new `SocialUserList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.SocialUser]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendRequest`.
+        public struct FriendRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendRequest/id`.
+            public var id: Swift.String
+            /// The other person.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendRequest/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/FriendRequest/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Creates a new `FriendRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - user: The other person.
+            ///   - createdAt:
+            public init(
+                id: Swift.String,
+                user: Components.Schemas.SocialUser,
+                createdAt: Foundation.Date
+            ) {
+                self.id = id
+                self.user = user
+                self.createdAt = createdAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case user
+                case createdAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendRequests`.
+        public struct FriendRequests: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendRequests/incoming`.
+            public var incoming: [Components.Schemas.FriendRequest]
+            /// - Remark: Generated from `#/components/schemas/FriendRequests/outgoing`.
+            public var outgoing: [Components.Schemas.FriendRequest]
+            /// Creates a new `FriendRequests`.
+            ///
+            /// - Parameters:
+            ///   - incoming:
+            ///   - outgoing:
+            public init(
+                incoming: [Components.Schemas.FriendRequest],
+                outgoing: [Components.Schemas.FriendRequest]
+            ) {
+                self.incoming = incoming
+                self.outgoing = outgoing
+            }
+            public enum CodingKeys: String, CodingKey {
+                case incoming
+                case outgoing
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendRequestCreate`.
+        public struct FriendRequestCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendRequestCreate/handle`.
+            public var handle: Swift.String
+            /// Creates a new `FriendRequestCreate`.
+            ///
+            /// - Parameters:
+            ///   - handle:
+            public init(handle: Swift.String) {
+                self.handle = handle
+            }
+            public enum CodingKeys: String, CodingKey {
+                case handle
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ReportCreate`.
+        public struct ReportCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ReportCreate/userId`.
+            public var userId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ReportCreate/reason`.
+            @frozen public enum ReasonPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case spam = "spam"
+                case harassment = "harassment"
+                case impersonation = "impersonation"
+                case other = "other"
+            }
+            /// - Remark: Generated from `#/components/schemas/ReportCreate/reason`.
+            public var reason: Components.Schemas.ReportCreate.ReasonPayload
+            /// - Remark: Generated from `#/components/schemas/ReportCreate/note`.
+            public var note: Swift.String?
+            /// Creates a new `ReportCreate`.
+            ///
+            /// - Parameters:
+            ///   - userId:
+            ///   - reason:
+            ///   - note:
+            public init(
+                userId: Swift.String,
+                reason: Components.Schemas.ReportCreate.ReasonPayload,
+                note: Swift.String? = nil
+            ) {
+                self.userId = userId
+                self.reason = reason
+                self.note = note
+            }
+            public enum CodingKeys: String, CodingKey {
+                case userId
+                case reason
+                case note
             }
         }
         /// Provider identifiers known for a title. Absent means unknown.
@@ -4771,6 +5176,1611 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/profile`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
+    public enum UpdateProfile {
+        public static let id: Swift.String = "updateProfile"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/profile/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateProfile.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateProfile.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateProfile.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/profile/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/profile/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.ProfileUpdate)
+            }
+            public var body: Operations.UpdateProfile.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.UpdateProfile.Input.Headers = .init(),
+                body: Operations.UpdateProfile.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/profile/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/profile/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUser)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUser {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateProfile.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateProfile.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Your social identity.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateProfile.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateProfile.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    ///
+    /// - Remark: HTTP `GET /v1/social/users/{handle}`.
+    /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
+    public enum GetSocialUser {
+        public static let id: Swift.String = "getSocialUser"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/path/handle`.
+                public var handle: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - handle:
+                public init(handle: Swift.String) {
+                    self.handle = handle
+                }
+            }
+            public var path: Operations.GetSocialUser.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSocialUser.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSocialUser.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSocialUser.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetSocialUser.Input.Path,
+                headers: Operations.GetSocialUser.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUserView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUserView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSocialUser.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSocialUser.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The user.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSocialUser.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSocialUser.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Pending requests to you and from you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)`.
+    public enum ListFriendRequests {
+        public static let id: Swift.String = "listFriendRequests"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriendRequests.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriendRequests.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListFriendRequests.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListFriendRequests.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friend-requests/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.FriendRequests)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.FriendRequests {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListFriendRequests.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListFriendRequests.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Both directions.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListFriendRequests.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListFriendRequests.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
+    public enum SendFriendRequest {
+        public static let id: Swift.String = "sendFriendRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SendFriendRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SendFriendRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SendFriendRequest.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.FriendRequestCreate)
+            }
+            public var body: Operations.SendFriendRequest.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SendFriendRequest.Input.Headers = .init(),
+                body: Operations.SendFriendRequest.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUserView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUserView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SendFriendRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SendFriendRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The user and where you now stand (outgoing or friend).
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SendFriendRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SendFriendRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Decline a request to you, or cancel one you sent. The other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friend-requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)`.
+    public enum WithdrawFriendRequest {
+        public static let id: Swift.String = "withdrawFriendRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.WithdrawFriendRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.WithdrawFriendRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.WithdrawFriendRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.WithdrawFriendRequest.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.WithdrawFriendRequest.Input.Path,
+                headers: Operations.WithdrawFriendRequest.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.WithdrawFriendRequest.Output.NoContent)
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.WithdrawFriendRequest.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `POST /v1/social/friend-requests/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)`.
+    public enum AcceptFriendRequest {
+        public static let id: Swift.String = "acceptFriendRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.AcceptFriendRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AcceptFriendRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AcceptFriendRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AcceptFriendRequest.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.AcceptFriendRequest.Input.Path,
+                headers: Operations.AcceptFriendRequest.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUser)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUser {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AcceptFriendRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AcceptFriendRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The new friend.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AcceptFriendRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AcceptFriendRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your friends, by handle.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)`.
+    public enum ListFriends {
+        public static let id: Swift.String = "listFriends"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friends/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriends.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriends.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListFriends.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListFriends.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friends/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friends/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUserList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUserList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListFriends.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListFriends.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListFriends.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListFriends.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Unfriend. Silent; the other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friends/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)`.
+    public enum RemoveFriend {
+        public static let id: Swift.String = "removeFriend"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/DELETE/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - userId:
+                public init(userId: Swift.String) {
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.RemoveFriend.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveFriend.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveFriend.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RemoveFriend.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RemoveFriend.Input.Path,
+                headers: Operations.RemoveFriend.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// No longer friends.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RemoveFriend.Output.NoContent)
+            /// No longer friends.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RemoveFriend.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// People you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/social/blocks`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)`.
+    public enum ListBlocks {
+        public static let id: Swift.String = "listBlocks"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/blocks/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListBlocks.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListBlocks.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListBlocks.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListBlocks.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/blocks/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/blocks/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUserList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUserList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListBlocks.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListBlocks.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListBlocks.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListBlocks.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
+    ///
+    /// - Remark: HTTP `PUT /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)`.
+    public enum BlockUser {
+        public static let id: Swift.String = "blockUser"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/PUT/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - userId:
+                public init(userId: Swift.String) {
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.BlockUser.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.BlockUser.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.BlockUser.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.BlockUser.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.BlockUser.Input.Path,
+                headers: Operations.BlockUser.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Blocked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.BlockUser.Output.NoContent)
+            /// Blocked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.BlockUser.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `DELETE /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)`.
+    public enum UnblockUser {
+        public static let id: Swift.String = "unblockUser"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/DELETE/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - userId:
+                public init(userId: Swift.String) {
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.UnblockUser.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UnblockUser.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UnblockUser.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UnblockUser.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.UnblockUser.Input.Path,
+                headers: Operations.UnblockUser.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Unblocked. Friendship does not come back.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.UnblockUser.Output.NoContent)
+            /// Unblocked. Friendship does not come back.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.UnblockUser.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Report a user to Aaru. The user is not told.
+    ///
+    /// - Remark: HTTP `POST /v1/social/reports`.
+    /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)`.
+    public enum ReportUser {
+        public static let id: Swift.String = "reportUser"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/reports/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ReportUser.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ReportUser.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ReportUser.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/social/reports/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/reports/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ReportCreate)
+            }
+            public var body: Operations.ReportUser.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ReportUser.Input.Headers = .init(),
+                body: Operations.ReportUser.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Received.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.ReportUser.Output.NoContent)
+            /// Received.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.ReportUser.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

@@ -141,6 +141,180 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Claim or change your handle, and optionally your display name. Handles are how friends find you. */
+    put: operations['updateProfile']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/users/{handle}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. */
+    get: operations['getSocialUser']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/friend-requests': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Pending requests to you and from you, newest first. */
+    get: operations['listFriendRequests']
+    put?: never
+    /** Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. */
+    post: operations['sendFriendRequest']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/friend-requests/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Decline a request to you, or cancel one you sent. The other side is not told. */
+    delete: operations['withdrawFriendRequest']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/friend-requests/{id}/accept': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['acceptFriendRequest']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/friends': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your friends, by handle. */
+    get: operations['listFriends']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/friends/{userId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Unfriend. Silent; the other side is not told. */
+    delete: operations['removeFriend']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/blocks': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** People you blocked. */
+    get: operations['listBlocks']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/blocks/{userId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        userId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other. */
+    put: operations['blockUser']
+    post?: never
+    delete: operations['unblockUser']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/reports': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Report a user to Aaru. The user is not told. */
+    post: operations['reportUser']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/devices': {
     parameters: {
       query?: never
@@ -918,7 +1092,51 @@ export interface components {
       /** Format: uuid */
       userId: string
       displayName?: string
+      /** @description Absent until the user claims one in PUT /v1/me/profile. */
+      handle?: string
       providers: ('apple' | 'email' | 'google')[]
+    }
+    ProfileUpdate: {
+      /** @description 3–20 of a–z, 0–9 and _. Stored lowercase. */
+      handle: string
+      /** @description Absent leaves it unchanged; empty clears it. */
+      displayName?: string
+    }
+    SocialUser: {
+      /** Format: uuid */
+      userId: string
+      handle: string
+      displayName?: string
+    }
+    SocialUserView: {
+      user: components['schemas']['SocialUser']
+      /** @enum {string} */
+      relationship: 'none' | 'friend' | 'outgoing' | 'incoming' | 'self'
+    }
+    SocialUserList: {
+      items: components['schemas']['SocialUser'][]
+    }
+    FriendRequest: {
+      /** Format: uuid */
+      id: string
+      /** @description The other person. */
+      user: components['schemas']['SocialUser']
+      /** Format: date-time */
+      createdAt: string
+    }
+    FriendRequests: {
+      incoming: components['schemas']['FriendRequest'][]
+      outgoing: components['schemas']['FriendRequest'][]
+    }
+    FriendRequestCreate: {
+      handle: string
+    }
+    ReportCreate: {
+      /** Format: uuid */
+      userId: string
+      /** @enum {string} */
+      reason: 'spam' | 'harassment' | 'impersonation' | 'other'
+      note?: string
     }
     /** @description Provider identifiers known for a title. Absent means unknown. */
     ExternalIds: {
@@ -1518,6 +1736,272 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateProfile: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProfileUpdate']
+      }
+    }
+    responses: {
+      /** @description Your social identity. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialUser']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSocialUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        handle: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The user. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialUserView']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listFriendRequests: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Both directions. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FriendRequests']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  sendFriendRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FriendRequestCreate']
+      }
+    }
+    responses: {
+      /** @description The user and where you now stand (outgoing or friend). */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialUserView']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  withdrawFriendRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Gone. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  acceptFriendRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The new friend. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialUser']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listFriends: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialUserList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  removeFriend: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        userId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description No longer friends. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listBlocks: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialUserList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  blockUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        userId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Blocked. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  unblockUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        userId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Unblocked. Friendship does not come back. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  reportUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReportCreate']
+      }
+    }
+    responses: {
+      /** @description Received. */
       204: {
         headers: {
           [name: string]: unknown

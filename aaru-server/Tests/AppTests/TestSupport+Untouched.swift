@@ -60,3 +60,73 @@ extension UntouchedStore {
         throw Touched()
     }
 }
+
+extension UntouchedStore: SocialStore {
+    func socialUser(_: UserID) async throws -> SocialUser? {
+        throw Touched()
+    }
+
+    func socialUser(handle _: String) async throws -> SocialUser? {
+        throw Touched()
+    }
+
+    func saveProfile(_: UserID, handle _: String, displayName _: String??) async throws {
+        throw Touched()
+    }
+
+    func isBlocked(_: UserID, _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func areFriends(_: UserID, _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func pendingRequest(sender _: UserID, recipient _: UserID) async throws -> UUID? {
+        throw Touched()
+    }
+
+    func createRequest(id _: UUID, sender _: UserID, recipient _: UserID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func incomingRequests(_: UserID) async throws -> [FriendRequest] {
+        throw Touched()
+    }
+
+    func outgoingRequests(_: UserID) async throws -> [FriendRequest] {
+        throw Touched()
+    }
+
+    func acceptRequest(id _: UUID, recipient _: UserID, now _: Date) async throws -> UserID? {
+        throw Touched()
+    }
+
+    func deleteRequest(id _: UUID, party _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func friends(_: UserID) async throws -> [SocialUser] {
+        throw Touched()
+    }
+
+    func unfriend(_: UserID, _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func block(_: UserID, _: UserID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func unblock(_: UserID, _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func blocked(by _: UserID) async throws -> [SocialUser] {
+        throw Touched()
+    }
+
+    func report(_: UserReport) async throws {
+        throw Touched()
+    }
+}

@@ -27,6 +27,7 @@ extension APIImplementation {
                 account: .init(
                     userId: profile.id.description,
                     displayName: profile.displayName,
+                    handle: profile.handle,
                     providers: profile.providers.compactMap { .init(rawValue: $0.rawValue) }
                 ),
                 library: library,

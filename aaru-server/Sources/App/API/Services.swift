@@ -14,6 +14,7 @@ struct Services: Sendable {
     var traktConnect: TraktConnectService
     var agentTokens: AgentTokenService
     var scrobble: ScrobbleService
+    var social: SocialService
 
     /// `trakt` is nil when Trakt is not configured; connect then answers 503.
     static func make(
@@ -45,7 +46,8 @@ struct Services: Sendable {
             ),
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
-            scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver)
+            scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
+            social: SocialService(stores: stores)
         )
     }
 

@@ -26,7 +26,8 @@ extension Stores {
             trakt: PostgresTraktStore(sql: sql),
             push: PostgresPushStore(sql: sql),
             agentTokens: PostgresAgentTokenStore(sql: sql),
-            watchEvents: PostgresWatchEventStore(sql: sql)
+            watchEvents: PostgresWatchEventStore(sql: sql),
+            social: PostgresSocialStore(database: database)
         )
     }
 }
@@ -37,7 +38,7 @@ func sqlDatabase(_ database: any Database) throws -> any SQLDatabase {
 }
 
 /// Runs a write and turns a unique/foreign-key violation into `StoreConflict`.
-private func mappingConflicts<T>(_ message: String, _ body: () async throws -> T) async throws -> T {
+func mappingConflicts<T>(_ message: String, _ body: () async throws -> T) async throws -> T {
     do {
         return try await body()
     } catch let error as any DatabaseError where error.isConstraintFailure {
