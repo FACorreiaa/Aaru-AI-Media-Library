@@ -15,15 +15,20 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppExportRouteImport } from './routes/app_.export'
+import { Route as AppGroupsRouteImport } from './routes/app_.groups'
 import { Route as AppLibraryRouteImport } from './routes/app_.library'
 import { Route as AppRecapRouteImport } from './routes/app_.recap'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
+import { Route as AppGroupsIndexRouteImport } from './routes/app_.groups.index'
+import { Route as AppGroupsGroupIdRouteImport } from './routes/app_.groups.$groupId'
 import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
 import { Route as AppListsIndexRouteImport } from './routes/app_.lists.index'
 import { Route as AppListsIdRouteImport } from './routes/app_.lists.$id'
 import { Route as AppTitleIdRouteImport } from './routes/app_.title.$id'
+import { Route as AppGroupsGroupIdIndexRouteImport } from './routes/app_.groups.$groupId.index'
+import { Route as AppGroupsGroupIdChannelIdRouteImport } from './routes/app_.groups.$groupId.$channelId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -55,6 +60,11 @@ const AppExportRoute = AppExportRouteImport.update({
   path: '/app/export',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppGroupsRoute = AppGroupsRouteImport.update({
+  id: '/app_/groups',
+  path: '/app/groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppLibraryRoute = AppLibraryRouteImport.update({
   id: '/app_/library',
   path: '/app/library',
@@ -80,6 +90,16 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/auth/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppGroupsIndexRoute = AppGroupsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppGroupsRoute,
+} as any)
+const AppGroupsGroupIdRoute = AppGroupsGroupIdRouteImport.update({
+  id: '/$groupId',
+  path: '/$groupId',
+  getParentRoute: () => AppGroupsRoute,
+} as any)
 const AppImportsIdRoute = AppImportsIdRouteImport.update({
   id: '/app_/imports/$id',
   path: '/app/imports/$id',
@@ -100,6 +120,17 @@ const AppTitleIdRoute = AppTitleIdRouteImport.update({
   path: '/app/title/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppGroupsGroupIdIndexRoute = AppGroupsGroupIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppGroupsGroupIdRoute,
+} as any)
+const AppGroupsGroupIdChannelIdRoute =
+  AppGroupsGroupIdChannelIdRouteImport.update({
+    id: '/$channelId',
+    path: '/$channelId',
+    getParentRoute: () => AppGroupsGroupIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,15 +139,20 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
   '/app/export': typeof AppExportRoute
+  '/app/groups': typeof AppGroupsRouteWithChildren
   '/app/library': typeof AppLibraryRoute
   '/app/recap': typeof AppRecapRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/app/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
+  '/app/groups/': typeof AppGroupsIndexRoute
   '/app/lists/': typeof AppListsIndexRoute
+  '/app/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
+  '/app/groups/$groupId/': typeof AppGroupsGroupIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,7 +169,10 @@ export interface FileRoutesByTo {
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/title/$id': typeof AppTitleIdRoute
+  '/app/groups': typeof AppGroupsIndexRoute
   '/app/lists': typeof AppListsIndexRoute
+  '/app/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
+  '/app/groups/$groupId': typeof AppGroupsGroupIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,15 +182,20 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
   '/app_/export': typeof AppExportRoute
+  '/app_/groups': typeof AppGroupsRouteWithChildren
   '/app_/library': typeof AppLibraryRoute
   '/app_/recap': typeof AppRecapRoute
   '/app_/settings': typeof AppSettingsRoute
   '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/app_/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app_/imports/$id': typeof AppImportsIdRoute
   '/app_/lists/$id': typeof AppListsIdRoute
   '/app_/title/$id': typeof AppTitleIdRoute
+  '/app_/groups/': typeof AppGroupsIndexRoute
   '/app_/lists/': typeof AppListsIndexRoute
+  '/app_/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
+  '/app_/groups/$groupId/': typeof AppGroupsGroupIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -162,15 +206,20 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sign-in'
     | '/app/export'
+    | '/app/groups'
     | '/app/library'
     | '/app/recap'
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
+    | '/app/groups/$groupId'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/title/$id'
+    | '/app/groups/'
     | '/app/lists/'
+    | '/app/groups/$groupId/$channelId'
+    | '/app/groups/$groupId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -187,7 +236,10 @@ export interface FileRouteTypes {
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/title/$id'
+    | '/app/groups'
     | '/app/lists'
+    | '/app/groups/$groupId/$channelId'
+    | '/app/groups/$groupId'
   id:
     | '__root__'
     | '/'
@@ -196,15 +248,20 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sign-in'
     | '/app_/export'
+    | '/app_/groups'
     | '/app_/library'
     | '/app_/recap'
     | '/app_/settings'
     | '/app_/week'
     | '/auth/verify'
+    | '/app_/groups/$groupId'
     | '/app_/imports/$id'
     | '/app_/lists/$id'
     | '/app_/title/$id'
+    | '/app_/groups/'
     | '/app_/lists/'
+    | '/app_/groups/$groupId/$channelId'
+    | '/app_/groups/$groupId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -214,6 +271,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
   AppExportRoute: typeof AppExportRoute
+  AppGroupsRoute: typeof AppGroupsRouteWithChildren
   AppLibraryRoute: typeof AppLibraryRoute
   AppRecapRoute: typeof AppRecapRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -269,6 +327,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AppExportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app_/groups': {
+      id: '/app_/groups'
+      path: '/app/groups'
+      fullPath: '/app/groups'
+      preLoaderRoute: typeof AppGroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app_/library': {
       id: '/app_/library'
       path: '/app/library'
@@ -304,6 +369,20 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app_/groups/': {
+      id: '/app_/groups/'
+      path: '/'
+      fullPath: '/app/groups/'
+      preLoaderRoute: typeof AppGroupsIndexRouteImport
+      parentRoute: typeof AppGroupsRoute
+    }
+    '/app_/groups/$groupId': {
+      id: '/app_/groups/$groupId'
+      path: '/$groupId'
+      fullPath: '/app/groups/$groupId'
+      preLoaderRoute: typeof AppGroupsGroupIdRouteImport
+      parentRoute: typeof AppGroupsRoute
+    }
     '/app_/imports/$id': {
       id: '/app_/imports/$id'
       path: '/app/imports/$id'
@@ -332,8 +411,49 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AppTitleIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app_/groups/$groupId/': {
+      id: '/app_/groups/$groupId/'
+      path: '/'
+      fullPath: '/app/groups/$groupId/'
+      preLoaderRoute: typeof AppGroupsGroupIdIndexRouteImport
+      parentRoute: typeof AppGroupsGroupIdRoute
+    }
+    '/app_/groups/$groupId/$channelId': {
+      id: '/app_/groups/$groupId/$channelId'
+      path: '/$channelId'
+      fullPath: '/app/groups/$groupId/$channelId'
+      preLoaderRoute: typeof AppGroupsGroupIdChannelIdRouteImport
+      parentRoute: typeof AppGroupsGroupIdRoute
+    }
   }
 }
+
+interface AppGroupsGroupIdRouteChildren {
+  AppGroupsGroupIdChannelIdRoute: typeof AppGroupsGroupIdChannelIdRoute
+  AppGroupsGroupIdIndexRoute: typeof AppGroupsGroupIdIndexRoute
+}
+
+const AppGroupsGroupIdRouteChildren: AppGroupsGroupIdRouteChildren = {
+  AppGroupsGroupIdChannelIdRoute: AppGroupsGroupIdChannelIdRoute,
+  AppGroupsGroupIdIndexRoute: AppGroupsGroupIdIndexRoute,
+}
+
+const AppGroupsGroupIdRouteWithChildren =
+  AppGroupsGroupIdRoute._addFileChildren(AppGroupsGroupIdRouteChildren)
+
+interface AppGroupsRouteChildren {
+  AppGroupsGroupIdRoute: typeof AppGroupsGroupIdRouteWithChildren
+  AppGroupsIndexRoute: typeof AppGroupsIndexRoute
+}
+
+const AppGroupsRouteChildren: AppGroupsRouteChildren = {
+  AppGroupsGroupIdRoute: AppGroupsGroupIdRouteWithChildren,
+  AppGroupsIndexRoute: AppGroupsIndexRoute,
+}
+
+const AppGroupsRouteWithChildren = AppGroupsRoute._addFileChildren(
+  AppGroupsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -342,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
   AppExportRoute: AppExportRoute,
+  AppGroupsRoute: AppGroupsRouteWithChildren,
   AppLibraryRoute: AppLibraryRoute,
   AppRecapRoute: AppRecapRoute,
   AppSettingsRoute: AppSettingsRoute,

@@ -85,7 +85,10 @@ export function SocialSection(props: {
   }
 
   return (
-    <section class="mt-10 rounded-[20px] bg-surface p-5">
+    <section
+      id="profile"
+      class="mt-10 scroll-mt-6 rounded-[20px] bg-surface p-5"
+    >
       <h2 class="font-display text-xl font-medium">Profile and friends</h2>
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
         Friends find you by your exact handle. Nobody can search or browse for
