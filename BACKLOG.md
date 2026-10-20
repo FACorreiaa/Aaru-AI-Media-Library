@@ -967,6 +967,12 @@ worker's job runnable again; 3 attempts with 30 s/60 s backoff, then `failed` wi
 Both done-when conditions are tests. Generalise when a second job kind (show refresh, journal
 pruning) arrives.
 
+**Progress 2026-10-20:** show refresh built as a periodic loop (`CatalogRefreshService`), not as
+`import_jobs` rows: it has no payload or owner, so the hydration timestamps are the queue. Every
+5 minutes it refreshes up to 40 tracked shows, never-loaded first (imported shows land here), then
+shows past their CAT-006 window; a failed show waits an hour. Calendar and Up Next still load up to
+10 never-loaded shows per request so a first view after an import is not empty.
+
 ### IMP-001 · Import job contract · M
 **Needs:** JOB-001.
 `GET /v1/imports`, `GET /v1/imports/{id}`. Every importer reports

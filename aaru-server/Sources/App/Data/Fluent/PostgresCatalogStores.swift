@@ -167,6 +167,36 @@ struct PostgresTitleStore: TitleStore {
         return ids.compactMap { byID[$0] }
     }
 
+    func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID] {
+        struct Row: Decodable { let id: UUID }
+        let airingStale = now.addingTimeInterval(-CatalogService.airingStaleness)
+        let dormantStale = now.addingTimeInterval(-CatalogService.dormantStaleness)
+        let windowStart = now.addingTimeInterval(-CatalogService.airingWindow)
+        let windowEnd = now.addingTimeInterval(CatalogService.airingWindow)
+        return try await sql.raw("""
+        SELECT t.id FROM titles t
+        WHERE t.type = 'show'
+          AND EXISTS (SELECT 1 FROM library_items li
+                      WHERE li.title_id = t.id AND li.status IN ('wishlist', 'in_progress'))
+          AND (t.episodes_attempted_at IS NULL OR t.episodes_attempted_at < \(bind: retryAfter))
+          AND (t.episodes_hydrated_at IS NULL
+               OR t.episodes_hydrated_at < \(bind: dormantStale)
+               OR (t.episodes_hydrated_at < \(bind: airingStale)
+                   AND EXISTS (SELECT 1 FROM show_episodes e
+                               WHERE e.title_id = t.id
+                                 AND e.airs_at BETWEEN \(bind: windowStart) AND \(bind: windowEnd))))
+        ORDER BY t.episodes_hydrated_at NULLS FIRST, t.id
+        LIMIT \(literal: limit)
+        """).all(decoding: Row.self).map { TitleID($0.id) }
+    }
+
+    func markEpisodesAttempted(_ id: TitleID, at: Date) async throws {
+        try await sql.update("titles")
+            .set("episodes_attempted_at", to: at)
+            .where("id", .equal, id.rawValue)
+            .run()
+    }
+
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode] {
         struct Row: Decodable {
             let season: Int

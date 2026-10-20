@@ -32,8 +32,9 @@ struct ScheduleService: Sendable {
         return try await (continuing, starting)
     }
 
-    /// Shows added before their episodes could be fetched (a provider was down) get one
-    /// attempt here. Stale-window refreshes across the library belong to a job (JOB-001).
+    /// Shows whose episodes were never loaded (an import, a provider down at add time) get one
+    /// attempt here, so a first calendar after an import is not empty. Stale-window refreshes
+    /// belong to `CatalogRefresher`.
     private func hydrateNewShows(userID: UserID) async throws {
         let pending = try await stores.schedule.unhydratedTrackedShows(userID: userID, limit: Self.hydrationBudget)
         for titleID in pending {

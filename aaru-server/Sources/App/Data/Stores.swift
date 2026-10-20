@@ -78,6 +78,12 @@ protocol TitleStore: Sendable {
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode]
     /// The titles with these ids, in the order given; unknown ids are skipped.
     func titles(ids: [TitleID]) async throws -> [Title]
+    /// Shows someone tracks (wishlist or in progress) whose episodes were never loaded or are
+    /// past their staleness window, never-loaded first. Shows attempted since `retryAfter`
+    /// are skipped so a failing provider is not hammered.
+    func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID]
+    /// Records an episode refresh attempt, successful or not.
+    func markEpisodesAttempted(_ id: TitleID, at: Date) async throws
 }
 
 extension TitleStore {

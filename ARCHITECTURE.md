@@ -776,15 +776,18 @@ Phase 7 keeps its existing scope and spec
 journal and saved queries from Phase 1, so it may be pulled forward after the Phase 2 gate.
 
 **Gate rule:** no social, gamification, realtime, messaging, or scrobble code is written
-before the Phase 2 gate. Exception by the owner's call (2026-10-19): agent tokens for Stremio,
-the scrobble service, and the Stremio addon. That includes WebSocket handlers, follow graphs, and points tables
+before the Phase 2 gate. That includes WebSocket handlers, follow graphs, and points tables
 added "to save time later". Nullable hooks that already exist (such as `visibility`) are
-the only allowance.
+the only allowance. Exception by the owner's call (2026-10-19): agent tokens for Stremio, the
+scrobble service, and the Stremio addon.
 
 ## Deployment
 
 One backend. API and workers run as one binary at first (`Application` + job consumer
-in-process); split the workers when imports block request latency.
+in-process); split the workers when imports block request latency. Background services in the
+same process: `ImportWorker`, the airing notifier (every 10 minutes) and `CatalogRefreshService`
+(every 5 minutes: up to 40 tracked shows per pass, never-loaded first, then past their CAT-006
+window; an attempt is stamped on `titles.episodes_attempted_at` and not retried for an hour).
 
 ### Infra
 

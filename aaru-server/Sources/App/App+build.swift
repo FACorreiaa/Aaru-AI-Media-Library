@@ -57,6 +57,10 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
                 notifier: AiringNotifier(stores: stores, sender: makePushSender(config.push, logger: logger)),
                 logger: logger
             ),
+            CatalogRefreshService(
+                refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
+                logger: logger
+            ),
         ],
         logger: logger
     )

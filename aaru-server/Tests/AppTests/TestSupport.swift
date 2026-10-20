@@ -79,6 +79,14 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
+    func staleTrackedShows(now _: Date, retryAfter _: Date, limit _: Int) async throws -> [TitleID] {
+        throw Touched()
+    }
+
+    func markEpisodesAttempted(_: TitleID, at _: Date) async throws {
+        throw Touched()
+    }
+
     func episodes(_: TitleID) async throws -> [CatalogEpisode] {
         throw Touched()
     }
