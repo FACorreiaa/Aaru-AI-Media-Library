@@ -110,7 +110,7 @@ struct RootView: View {
 
     /// The app's destinations, in tab-bar and sidebar order.
     enum AppTab: String, CaseIterable, Identifiable {
-        case home, discover, library, calendar, lists
+        case home, discover, library, calendar, lists, settings
 
         var id: String {
             rawValue
@@ -123,6 +123,7 @@ struct RootView: View {
             case .library: "Library"
             case .calendar: "Calendar"
             case .lists: "Lists"
+            case .settings: "Settings"
             }
         }
 
@@ -133,6 +134,7 @@ struct RootView: View {
             case .library: "books.vertical"
             case .calendar: "calendar"
             case .lists: "list.bullet.rectangle"
+            case .settings: "gearshape"
             }
         }
     }
@@ -152,17 +154,19 @@ struct RootView: View {
         case .discover:
             DiscoverScreen(api: api, library: library, lists: lists)
         case .library:
-            LibraryView(
-                api: api, library: library, lists: lists, imports: imports, filter: $libraryFilter,
-                onSignOut: { Task { await flow.signOut() } },
-                onDeleteAccount: { await flow.deleteAccount() }
-            )
+            LibraryView(api: api, library: library, lists: lists, filter: $libraryFilter)
         case .calendar:
             CalendarScreen(api: api, library: library, lists: lists)
         case .lists:
             NavigationStack {
                 ListsView(lists: lists, library: library, api: api)
             }
+        case .settings:
+            SettingsView(
+                api: api, imports: imports, library: library, lists: lists,
+                onSignOut: { Task { await flow.signOut() } },
+                onDeleteAccount: { await flow.deleteAccount() }
+            )
         }
     }
 

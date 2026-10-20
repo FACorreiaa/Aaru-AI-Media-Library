@@ -12,15 +12,11 @@ struct LibraryView: View {
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
-    let imports: ImportsModel
     @Binding var filter: LibraryFilter
-    var onSignOut: () -> Void
-    var onDeleteAccount: () async -> String?
 
     @AppStorage("library.layout") private var layout = Layout.grid
     @State private var showsSearch = false
     @State private var showsInsights = false
-    @State private var showsSettings = false
     @State private var recap: RecapPeriod?
 
     enum Layout: String {
@@ -43,12 +39,6 @@ struct LibraryView: View {
                     if let entry = library.entry(id) {
                         TitleDetailView(entry: entry, api: api, library: library, lists: lists)
                     }
-                }
-                .sheet(isPresented: $showsSettings) {
-                    SettingsView(
-                        api: api, imports: imports, library: library, lists: lists,
-                        onSignOut: onSignOut, onDeleteAccount: onDeleteAccount
-                    )
                 }
                 .sheet(isPresented: $showsSearch) {
                     SearchView(api: api, library: library, lists: lists)
@@ -161,8 +151,6 @@ struct LibraryView: View {
                         Button(period.label) { recap = period }
                     }
                 }
-                Button("Settings and imports", systemImage: "gearshape") { showsSettings = true }
-                Button("Sign out", role: .destructive, action: onSignOut)
             }
         }
     }
