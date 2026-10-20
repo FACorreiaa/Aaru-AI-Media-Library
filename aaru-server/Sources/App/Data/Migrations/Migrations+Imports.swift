@@ -252,3 +252,25 @@ struct CreateWatchEvents: SQLMigration {
         "DROP TABLE watch_events",
     ]
 }
+
+/// Multi-source imports (2026-10-20): an import may move a status forward, never past one the
+/// user chose. The backfill marks items whose status a user edit changed and that still hold it.
+struct AddStatusByHand: SQLMigration {
+    let forward = [
+        "ALTER TABLE library_items ADD COLUMN status_by_hand boolean NOT NULL DEFAULT false",
+        """
+        UPDATE library_items li SET status_by_hand = true
+        WHERE EXISTS (
+            SELECT 1 FROM actions a
+            WHERE a.user_id = li.user_id AND li.id = ANY(a.item_ids) AND a.kind = 'update'
+                AND a.actor = 'user' AND a.undone_at IS NULL
+                AND a.inverse #>> '{setFields,_1,status}' IS DISTINCT FROM li.status
+        )
+        """,
+        "CREATE INDEX anime_mappings_mal ON anime_mappings (mal) WHERE mal IS NOT NULL",
+    ]
+    let backward = [
+        "DROP INDEX anime_mappings_mal",
+        "ALTER TABLE library_items DROP COLUMN status_by_hand",
+    ]
+}

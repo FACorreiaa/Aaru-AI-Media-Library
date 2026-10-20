@@ -69,6 +69,13 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **The iPhone tab bar stops at five**: Home · Discover · Library · Calendar · Lists. Insights
   is not a tab; it opens from Home's stats strip and next to Recap.
 
+## Decisions recorded 2026-10-20
+
+- **Imports move status forward only.** A later import may take a title from wishlist to in
+  progress to finished, never backward, never out of dropped, and never past a status the user
+  chose. Fill-empty stays the rule for ratings and dates. Owner's call after the multi-source
+  audit (IMP-004).
+
 ## Decisions recorded 2026-10-19
 
 - **Episodes and Stremio are built before the P2 gate**, by the owner's call, with 0 strangers
@@ -1114,6 +1121,16 @@ test asserts that on a title present in both.
 rating survives, an empty one is filled, a status is never overwritten). The Trakt half waits for
 IMP-002/003.
 
+**Correction and progress 2026-10-20:** the 2026-10-15 test only covered a manual add followed by
+Goodreads. An audit found status stuck at its first import (an IMDb watchlist title stayed
+wishlist after Letterboxd said watched), MAL rows after Trakt creating a second, AniList-backed
+copy of the show, and later AniList seasons ticked as season 1 or skipped. Now, by the owner's
+choice: status moves forward only (wishlist → in progress → finished), never backward, never out
+of dropped, never past a status the user set (`status_by_hand`, backfilled from the journal, undo
+restores it). MAL ids resolve through `anime_mappings`, and rows for one title merge, each season
+ticked where its mapping says. `ImportMergeTests` covers same-source-twice, wishlist then
+finished, dropped and hand-set statuses staying, undo, Trakt then MAL, and two AniList seasons.
+
 ---
 
 ## P2 · M9 — File imports
@@ -1227,6 +1244,9 @@ as IMP-013; AniList's score format is normalised to Aaru's 1–10.
 
 Merge order for one account becomes Trakt → IMDb → Letterboxd → Goodreads → CAT → TV Time →
 MAL → AniList. `CLAUDE.md` and `ARCHITECTURE.md` carry the same order.
+
+**Progress 2026-10-20:** MAL rows also resolve through the anime mapping (by MAL id), so MAL after
+a Trakt import lands on the same TMDB show (IMP-004's 2026-10-20 note).
 
 ---
 

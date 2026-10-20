@@ -61,7 +61,11 @@ struct LibraryService: Sendable {
         let snapshot = ItemSnapshot(
             id: LibraryItemID(),
             titleID: title.id,
-            fields: ItemFields(status: status, isOwned: false, finishedAt: status == .finished ? now() : nil),
+            fields: ItemFields(
+                status: status, isOwned: false, finishedAt: status == .finished ? now() : nil,
+                // A wishlist add says nothing yet; an import may still move it forward.
+                statusByHand: caller.actor == .user && status != .wishlist
+            ),
             addedAt: now(),
             watched: []
         )
@@ -122,6 +126,9 @@ struct LibraryService: Sendable {
         if let status = patch.status, status != fields.status {
             fields.status = status
             fields.finishedAt = status == .finished ? now() : nil
+            if caller.actor == .user {
+                fields.statusByHand = true
+            }
         }
         if patch.clear.contains(.rating) {
             fields.rating = nil
