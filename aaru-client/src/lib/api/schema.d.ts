@@ -4,2445 +4,2455 @@
  */
 
 export interface paths {
-    "/v1/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Liveness and database reachability. Unauthenticated. */
-        get: operations["getHealth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/auth/apple": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Exchange a Sign in with Apple identity token for a session. */
-        post: operations["signInWithApple"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/auth/google": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Exchange a Google ID token for a session. Creates the account on first use. */
-        post: operations["signInWithGoogle"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/me/identities/google": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Link a Google account to the signed-in account. Refused if it belongs to another account. */
-        post: operations["linkGoogle"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/auth/email/link": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Email a one-time sign-in link. Same answer whether or not an account exists. */
-        post: operations["requestMagicLink"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/auth/email/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use. */
-        post: operations["verifyMagicLink"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/auth/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** End the current session. */
-        delete: operations["signOut"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The signed-in account. */
-        get: operations["getMe"];
-        put?: never;
-        post?: never;
-        /** Delete the account and everything that belongs to it. */
-        delete: operations["deleteAccount"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/devices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Register this device for pushes. A token registered again moves to this user. */
-        put: operations["registerDevice"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/devices/{token}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["unregisterDevice"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/me/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["getNotificationSettings"];
-        put: operations["updateNotificationSettings"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/me/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date. */
-        get: operations["getStats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Search the catalog. Results are catalog projections, never library rows. */
-        get: operations["searchCatalog"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/titles/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A title from the catalog. Shows include their seasons and episodes. */
-        get: operations["getTitle"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/library/items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The user's library, most recently updated first. Shelves use the same filters. */
-        get: operations["listLibraryItems"];
-        put?: never;
-        /** Add a title to the library. Adding the same title again returns the existing item. */
-        post: operations["addLibraryItem"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/library/items/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get: operations["getLibraryItem"];
-        put?: never;
-        post?: never;
-        delete: operations["deleteLibraryItem"];
-        options?: never;
-        head?: never;
-        patch: operations["updateLibraryItem"];
-        trace?: never;
-    };
-    "/v1/library/items/{id}/episodes/{season}/{episode}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["setEpisodeWatched"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/library/items/{id}/seasons/{season}/watched": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark every aired episode of a season watched, as one undoable action. */
-        post: operations["markSeasonWatched"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/library/sync": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Items changed and ids deleted since a previous sync token (all items when absent). */
-        get: operations["syncLibrary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/actions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The action journal, newest first. Backs the undo ribbon. */
-        get: operations["listActions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/actions/{id}/undo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Apply an action's inverse. Journaled as its own action; undoing twice is 409. */
-        post: operations["undoAction"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/lists": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listLists"];
-        put?: never;
-        post: operations["createList"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/lists/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get: operations["getList"];
-        put?: never;
-        post?: never;
-        delete: operations["deleteList"];
-        options?: never;
-        head?: never;
-        patch: operations["renameList"];
-        trace?: never;
-    };
-    "/v1/lists/{id}/items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a title to a list. It need not be in the library. */
-        post: operations["addListItem"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/lists/{id}/items/{titleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["removeListItem"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/lists/{id}/order": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["reorderList"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The user's imports, newest first. */
-        get: operations["listImports"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/me/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
-         * @description `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
-         */
-        get: operations["exportAccount"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload an export file. It is parsed now, matched in the background, and written only after approval. */
-        post: operations["createCSVImport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/anilist": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Import a public AniList anime list by username. Read and matched in the background, written only after approval. */
-        post: operations["createAniListImport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/trakt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Import the connected Trakt account. Read and matched in the background, written only after approval. */
-        post: operations["createTraktImport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/trakt/connect": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`. */
-        post: operations["connectTrakt"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/trakt/connection": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["getTraktConnection"];
-        put?: never;
-        post?: never;
-        /** Forget the Trakt tokens. Imported items stay. */
-        delete: operations["disconnectTrakt"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        /** One import with every row and what its plan does with it. */
-        get: operations["getImport"];
-        put?: never;
-        post?: never;
-        /** Discard an import. Library items it already created stay; undo the import action for those. */
-        delete: operations["deleteImport"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/{id}/apply": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Approve the plan. Writes it as one undoable action. */
-        post: operations["applyImport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/shelves": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listShelves"];
-        put?: never;
-        post: operations["createShelf"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/shelves/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["deleteShelf"];
-        options?: never;
-        head?: never;
-        patch: operations["updateShelf"];
-        trace?: never;
-    };
-    "/v1/shelves/{id}/items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The shelf's query, resolved now. Same DTO as GET /v1/library/items. */
-        get: operations["listShelfItems"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/calendar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC. */
-        get: operations["getCalendar"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/up-next": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Continue Watching and Start Watching for the home screen, in one call. */
-        get: operations["getUpNext"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-}
-export type webhooks = Record<string, never>;
-export interface components {
-    schemas: {
-        /** @description The one error shape every route returns. */
-        ErrorResponse: {
-            /** @description Stable machine-readable code, e.g. `not_found`, `validation_failed`. */
-            code: string;
-            /** @description Human-readable explanation. Never contains internal detail. */
-            message: string;
-            /** @description Optional per-field detail, keyed by request field name (e.g. `rating`). */
-            details?: {
-                [key: string]: string;
-            };
-        };
-        /**
-         * @description Cursor pagination envelope. List routes return `{ items: [...], page: PageInfo }`.
-         *     Cursors are keyed on `(updated_at, id)`; a null `nextCursor` means the last page.
-         */
-        PageInfo: {
-            nextCursor?: string | null;
-        };
-        AppleSignInRequest: {
-            /** @description The JWT from ASAuthorizationAppleIDCredential / Sign in with Apple JS. */
-            identityToken: string;
-            /** @description The raw nonce whose SHA-256 the client sent to Apple. */
-            nonce: string;
-            /** @description Apple sends the name only on the first authorization; pass it then. */
-            displayName?: string;
-        };
-        MagicLinkRequest: {
-            email: string;
-        };
-        /** @description Either `token` (from the link) or `email` and `code` (from the same email). */
-        MagicLinkVerifyRequest: {
-            token?: string;
-            email?: string;
-            /** @description Six digits; spaces and dashes are ignored. */
-            code?: string;
-        };
-        TraktConnectRequest: {
-            /** @description Where the browser goes after Trakt (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
-            returnTo: string;
-        };
-        TraktConnectStart: {
-            authorizeUrl: string;
-        };
-        TraktConnection: {
-            connected: boolean;
-            username?: string;
-            /** Format: date-time */
-            connectedAt?: string;
-        };
-        ImportJob: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            source: "trakt" | "imdb_csv" | "letterboxd_csv" | "goodreads_csv" | "cat_list" | "cat_ics" | "mal_xml" | "anilist" | "csv";
-            /**
-             * @description `planned` waits for approval; nothing is written before it.
-             * @enum {string}
-             */
-            state: "queued" | "running" | "planned" | "succeeded" | "failed" | "partial";
-            stats: components["schemas"]["ImportStats"];
-            errorSummary?: string;
-            /** @description The uploaded file's name, or the AniList username for an `anilist` import. */
-            filename?: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        ImportStats: {
-            created: number;
-            updated: number;
-            skipped: number;
-            unmatched: number;
-        };
-        ImportList: {
-            items: components["schemas"]["ImportJob"][];
-        };
-        ImportRow: {
-            index: number;
-            title: string;
-            year?: number;
-            author?: string;
-            type: components["schemas"]["MediaType"];
-            sourceKey?: string;
-            ids?: components["schemas"]["ExternalIds"];
-            status?: components["schemas"]["LibraryStatus"];
-            rating?: number;
-            /** @enum {string} */
-            outcome: "pending" | "create" | "update" | "skip" | "unmatched";
-            reason?: string;
-            /** Format: uuid */
-            titleId?: string;
-        };
-        ImportDetail: {
-            job: components["schemas"]["ImportJob"];
-            rows: components["schemas"]["ImportRow"][];
-        };
-        DeviceRegistration: {
-            /** @description The APNs device token */
-            token: string;
-            /**
-             * @description `sandbox` for Xcode builds; `production` for TestFlight and the App Store.
-             * @enum {string}
-             */
-            environment: "sandbox" | "production";
-            bundleId: string;
-        };
-        NotificationSettings: {
-            /** @description Push when a new episode of a show you are watching airs. */
-            airing: boolean;
-        };
-        GoogleSignInRequest: {
-            idToken: string;
-            /** @description The nonce sent with the Google sign-in, if any. Must come back in the token. */
-            nonce?: string;
-        };
-        Session: {
-            /** @description Bearer token, sent in the Authorization header as `Bearer <token>`. */
-            token: string;
-            /** Format: uuid */
-            userId: string;
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        Me: {
-            /** Format: uuid */
-            userId: string;
-            displayName?: string;
-            providers: ("apple" | "email" | "google")[];
-        };
-        /** @description Provider identifiers known for a title. Absent means unknown. */
-        ExternalIds: {
-            tmdb?: string;
-            imdb?: string;
-            trakt?: string;
-            tvdb?: string;
-            isbn?: string;
-            openLibrary?: string;
-            anilist?: string;
-            mal?: string;
-            anidb?: string;
-        };
-        /** @enum {string} */
-        MediaType: "movie" | "show" | "book";
-        CatalogHit: {
-            type: components["schemas"]["MediaType"];
-            title: string;
-            originalTitle?: string;
-            year?: number;
-            posterUrl?: string;
-            overview?: string;
-            /** @description Authors, for books. */
-            byline?: string;
-            isAnime: boolean;
-            ids: components["schemas"]["ExternalIds"];
-        };
-        SearchResults: {
-            items: components["schemas"]["CatalogHit"][];
-        };
-        Episode: {
-            season: number;
-            number: number;
-            name?: string;
-            /** @description The episode's synopsis, when the catalog has one. */
-            overview?: string;
-            /** @description A frame from the episode (TMDB, referenced, never hosted). */
-            stillUrl?: string;
-            /** Format: date-time */
-            airsAt?: string;
-            /** @description True when `airsAt` is the exact broadcast time; false when only the date is known. */
-            airTimeKnown: boolean;
-            runtimeMinutes?: number;
-        };
-        Season: {
-            number: number;
-            episodes: components["schemas"]["Episode"][];
-        };
-        TitleDetail: {
-            /** Format: uuid */
-            id: string;
-            type: components["schemas"]["MediaType"];
-            title: string;
-            originalTitle?: string;
-            year?: number;
-            synopsis?: string;
-            posterUrl?: string;
-            isAnime: boolean;
-            ids: components["schemas"]["ExternalIds"];
-            /** @enum {string} */
-            status?: "upcoming" | "returning" | "ended" | "canceled";
-            runtimeMinutes?: number;
-            /** @description Shows only. */
-            seasons?: components["schemas"]["Season"][];
-        };
-        /** @enum {string} */
-        LibraryStatus: "wishlist" | "in_progress" | "finished" | "dropped";
-        /** @description A title by Aaru id, by provider ids, or by title + year. */
-        MediaRef: {
-            /** Format: uuid */
-            titleId?: string;
-            type: components["schemas"]["MediaType"];
-            ids?: components["schemas"]["ExternalIds"];
-            title?: string;
-            year?: number;
-        };
-        AddLibraryItem: {
-            mediaRef: components["schemas"]["MediaRef"];
-            status?: components["schemas"]["LibraryStatus"];
-        };
-        LibraryItemPatch: {
-            status?: components["schemas"]["LibraryStatus"];
-            /** @description 1–10 in 0.5 steps. */
-            rating?: number;
-            notes?: string;
-            isOwned?: boolean;
-            bookPage?: number;
-            bookPercent?: number;
-            /** @description Fields to empty. */
-            clear?: ("rating" | "notes" | "bookProgress")[];
-        };
-        EpisodeWatched: {
-            watched: boolean;
-        };
-        EpisodeRef: {
-            season: number;
-            number: number;
-        };
-        /** @description Specials (season 0) are not counted. */
-        ShowProgress: {
-            watchedCount: number;
-            airedCount: number;
-            nextEpisode?: components["schemas"]["EpisodeRef"];
-        };
-        BookProgress: {
-            page?: number;
-            percent?: number;
-        };
-        TitleSummary: {
-            /** Format: uuid */
-            id: string;
-            type: components["schemas"]["MediaType"];
-            title: string;
-            originalTitle?: string;
-            year?: number;
-            posterUrl?: string;
-            /** @description Wide art (TMDB backdrop, AniList banner), for banners such as the week grid. */
-            backdropUrl?: string;
-            /** @description Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll"). */
-            network?: string;
-            isAnime: boolean;
-            ids: components["schemas"]["ExternalIds"];
-        };
-        LibraryEntry: {
-            /** Format: uuid */
-            id: string;
-            title: components["schemas"]["TitleSummary"];
-            status: components["schemas"]["LibraryStatus"];
-            rating?: number;
-            notes?: string;
-            isOwned: boolean;
-            /** Format: date-time */
-            addedAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            /** Format: date-time */
-            finishedAt?: string;
-            progress?: components["schemas"]["ShowProgress"];
-            bookProgress?: components["schemas"]["BookProgress"];
-            /**
-             * @description Every watched episode of a show, in order. Only on single-item responses (the item,
-             *     and episode and season writes); lists and sync leave it out.
-             */
-            watchedEpisodes?: components["schemas"]["EpisodeRef"][];
-        };
-        AccountExport: {
-            /** Format: date-time */
-            exportedAt: string;
-            account: components["schemas"]["Me"];
-            /** @description Every library item; shows carry `watchedEpisodes`. */
-            library: components["schemas"]["LibraryEntry"][];
-            lists: {
-                name: string;
-                /** Format: date-time */
-                createdAt: string;
-                items: components["schemas"]["TitleSummary"][];
-            }[];
-            shelves: components["schemas"]["Shelf"][];
-        };
-        LibraryPage: {
-            items: components["schemas"]["LibraryEntry"][];
-            page: components["schemas"]["PageInfo"];
-        };
-        LibrarySync: {
-            items: components["schemas"]["LibraryEntry"][];
-            deleted: string[];
-            token: string;
-        };
-        Action: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            actor: "user" | "agent" | "external_agent";
-            kind: string;
-            summary: string;
-            itemIds: string[];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            undoneAt?: string;
-            /** Format: uuid */
-            undoOf?: string;
-        };
-        ActionList: {
-            items: components["schemas"]["Action"][];
-        };
-        ListSummary: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            itemCount: number;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        ListList: {
-            items: components["schemas"]["ListSummary"][];
-        };
-        ListDetail: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            titles: components["schemas"]["TitleSummary"][];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        CreateList: {
-            name: string;
-        };
-        RenameList: {
-            name: string;
-        };
-        AddListItem: {
-            mediaRef: components["schemas"]["MediaRef"];
-        };
-        ListOrder: {
-            titleIds: string[];
-        };
-        /** @description The same filters GET /v1/library/items accepts. */
-        ShelfFilter: {
-            type?: components["schemas"]["MediaType"];
-            anime?: boolean;
-            status?: components["schemas"]["LibraryStatus"];
-            owned?: boolean;
-            /** Format: uuid */
-            list?: string;
-        };
-        Shelf: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            filter: components["schemas"]["ShelfFilter"];
-            isPinned: boolean;
-        };
-        ShelfList: {
-            items: components["schemas"]["Shelf"][];
-        };
-        CreateShelf: {
-            name: string;
-            filter: components["schemas"]["ShelfFilter"];
-            isPinned?: boolean;
-        };
-        UpdateShelf: {
-            name?: string;
-            filter?: components["schemas"]["ShelfFilter"];
-            isPinned?: boolean;
-        };
-        CalendarEntry: {
-            /** Format: uuid */
-            libraryItemId: string;
-            title: components["schemas"]["TitleSummary"];
-            season: number;
-            number: number;
-            episodeName?: string;
-            /** @description The episode's synopsis, when the catalog has one (TMDB; AniList has none). */
-            episodeOverview?: string;
-            /** Format: date-time */
-            airsAt: string;
-            /** @description False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time. */
-            airTimeKnown: boolean;
-            runtimeMinutes?: number;
-            watched: boolean;
-            /** @enum {string} */
-            kind: "premiere" | "finale" | "regular";
-        };
-        Calendar: {
-            items: components["schemas"]["CalendarEntry"][];
-        };
-        ContinueEntry: {
-            /** Format: uuid */
-            libraryItemId: string;
-            title: components["schemas"]["TitleSummary"];
-            next: components["schemas"]["EpisodeRef"];
-            nextName?: string;
-            nextRuntimeMinutes?: number;
-            /** @description Aired, unwatched episodes including the next one. Specials excluded. */
-            remainingCount: number;
-            remainingMinutes: number;
-            /** @description The next episode is the last of its season. */
-            isFinale: boolean;
-        };
-        StartEntry: {
-            /** Format: uuid */
-            libraryItemId: string;
-            title: components["schemas"]["TitleSummary"];
-            runtimeMinutes?: number;
-        };
-        UpNext: {
-            continueWatching: components["schemas"]["ContinueEntry"][];
-            startWatching: components["schemas"]["StartEntry"][];
-        };
-        Stats: {
-            year: number;
-            month?: number;
-            timeZone: string;
-            /** @description The period is not over yet in the user's time zone. */
-            isPartial: boolean;
-            totals: components["schemas"]["StatsTotals"];
-            /** @description One per month of the year, or one per day of the month, in order. */
-            buckets: components["schemas"]["StatsBucket"][];
-            busiest?: components["schemas"]["StatsBucket"];
-            longestRun?: components["schemas"]["StatsRun"];
-            /** @description Most time spent, at most five. */
-            topTitles: components["schemas"]["StatsTitle"][];
-            ratings: components["schemas"]["StatsRatings"];
-            first?: components["schemas"]["StatsMoment"];
-            last?: components["schemas"]["StatsMoment"];
-        };
-        StatsTotals: {
-            episodesWatched: number;
-            /** @description Episode runtimes plus finished movies. Books have no minutes. */
-            minutesWatched: number;
-            activeDays: number;
-            moviesFinished: number;
-            showsFinished: number;
-            /** @description Anime shows and films. Not counted again as shows or movies. */
-            animeFinished: number;
-            booksFinished: number;
-        };
-        StatsBucket: {
-            /** @description First local day of the bucket, YYYY-MM-DD. */
-            start: string;
-            episodes: number;
-            minutes: number;
-            finished: number;
-        };
-        StatsRun: {
-            days: number;
-            /** @description YYYY-MM-DD */
-            start: string;
-            /** @description YYYY-MM-DD, inclusive. */
-            end: string;
-        };
-        StatsTitle: {
-            title: components["schemas"]["TitleSummary"];
-            episodes: number;
-            minutes: number;
-        };
-        StatsRatings: {
-            /** @description Titles finished in the period that have a rating. */
-            count: number;
-            mean?: number;
-            highest?: components["schemas"]["TitleSummary"];
-            highestRating?: number;
-        };
-        StatsMoment: {
-            title: components["schemas"]["TitleSummary"];
-            /** Format: date-time */
-            at: string;
-        };
-        Health: {
-            /** @enum {string} */
-            status: "ok" | "unavailable";
-        };
-    };
-    responses: {
-        /** @description Any error, in the shared shape. */
-        Error: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-    };
+  '/v1/health': {
     parameters: {
-        /** @description Opaque cursor from a previous page's `page.nextCursor`. */
-        Cursor: string;
-        Limit: number;
-    };
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Liveness and database reachability. Unauthenticated. */
+    get: operations['getHealth']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/auth/apple': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Exchange a Sign in with Apple identity token for a session. */
+    post: operations['signInWithApple']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/auth/google': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Exchange a Google ID token for a session. Creates the account on first use. */
+    post: operations['signInWithGoogle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/identities/google': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Link a Google account to the signed-in account. Refused if it belongs to another account. */
+    post: operations['linkGoogle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/auth/email/link': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Email a one-time sign-in link. Same answer whether or not an account exists. */
+    post: operations['requestMagicLink']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/auth/email/verify': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use. */
+    post: operations['verifyMagicLink']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/auth/session': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** End the current session. */
+    delete: operations['signOut']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The signed-in account. */
+    get: operations['getMe']
+    put?: never
+    post?: never
+    /** Delete the account and everything that belongs to it. */
+    delete: operations['deleteAccount']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/devices': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Register this device for pushes. A token registered again moves to this user. */
+    put: operations['registerDevice']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/devices/{token}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['unregisterDevice']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/notifications': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['getNotificationSettings']
+    put: operations['updateNotificationSettings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/stats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a). Derived only from their own library. Imported history counts only where it carries a real date. */
+    get: operations['getStats']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Search the catalog. Results are catalog projections, never library rows. */
+    get: operations['searchCatalog']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/titles/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** A title from the catalog. Shows include their seasons and episodes. */
+    get: operations['getTitle']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/library/items': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The user's library, most recently updated first. Shelves use the same filters. */
+    get: operations['listLibraryItems']
+    put?: never
+    /** Add a title to the library. Adding the same title again returns the existing item. */
+    post: operations['addLibraryItem']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/library/items/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    get: operations['getLibraryItem']
+    put?: never
+    post?: never
+    delete: operations['deleteLibraryItem']
+    options?: never
+    head?: never
+    patch: operations['updateLibraryItem']
+    trace?: never
+  }
+  '/v1/library/items/{id}/episodes/{season}/{episode}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['setEpisodeWatched']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/library/items/{id}/seasons/{season}/watched': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Mark every aired episode of a season watched, as one undoable action. */
+    post: operations['markSeasonWatched']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/library/sync': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Items changed and ids deleted since a previous sync token (all items when absent). */
+    get: operations['syncLibrary']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/actions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The action journal, newest first. Backs the undo ribbon. */
+    get: operations['listActions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/actions/{id}/undo': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Apply an action's inverse. Journaled as its own action; undoing twice is 409. */
+    post: operations['undoAction']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/lists': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['listLists']
+    put?: never
+    post: operations['createList']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/lists/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    get: operations['getList']
+    put?: never
+    post?: never
+    delete: operations['deleteList']
+    options?: never
+    head?: never
+    patch: operations['renameList']
+    trace?: never
+  }
+  '/v1/lists/{id}/items': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Add a title to a list. It need not be in the library. */
+    post: operations['addListItem']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/lists/{id}/items/{titleId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['removeListItem']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/lists/{id}/order': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['reorderList']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The user's imports, newest first. */
+    get: operations['listImports']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/export': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
+     * @description `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
+     */
+    get: operations['exportAccount']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/csv': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Upload an export file. It is parsed now, matched in the background, and written only after approval. */
+    post: operations['createCSVImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/anilist': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import a public AniList anime list by username. Read and matched in the background, written only after approval. */
+    post: operations['createAniListImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/trakt': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import the connected Trakt account. Read and matched in the background, written only after approval. */
+    post: operations['createTraktImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/trakt/connect': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`. */
+    post: operations['connectTrakt']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/trakt/connection': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['getTraktConnection']
+    put?: never
+    post?: never
+    /** Forget the Trakt tokens. Imported items stay. */
+    delete: operations['disconnectTrakt']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    /** One import with every row and what its plan does with it. */
+    get: operations['getImport']
+    put?: never
+    post?: never
+    /** Discard an import. Library items it already created stay; undo the import action for those. */
+    delete: operations['deleteImport']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/{id}/apply': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Approve the plan. Writes it as one undoable action. */
+    post: operations['applyImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/shelves': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['listShelves']
+    put?: never
+    post: operations['createShelf']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/shelves/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['deleteShelf']
+    options?: never
+    head?: never
+    patch: operations['updateShelf']
+    trace?: never
+  }
+  '/v1/shelves/{id}/items': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The shelf's query, resolved now. Same DTO as GET /v1/library/items. */
+    get: operations['listShelfItems']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/calendar': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC. */
+    get: operations['getCalendar']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/up-next': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Continue Watching and Start Watching for the home screen, in one call. */
+    get: operations['getUpNext']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
-export type $defs = Record<string, never>;
+export type webhooks = Record<string, never>
+export interface components {
+  schemas: {
+    /** @description The one error shape every route returns. */
+    ErrorResponse: {
+      /** @description Stable machine-readable code, e.g. `not_found`, `validation_failed`. */
+      code: string
+      /** @description Human-readable explanation. Never contains internal detail. */
+      message: string
+      /** @description Optional per-field detail, keyed by request field name (e.g. `rating`). */
+      details?: {
+        [key: string]: string
+      }
+    }
+    /**
+     * @description Cursor pagination envelope. List routes return `{ items: [...], page: PageInfo }`.
+     *     Cursors are keyed on `(updated_at, id)`; a null `nextCursor` means the last page.
+     */
+    PageInfo: {
+      nextCursor?: string | null
+    }
+    AppleSignInRequest: {
+      /** @description The JWT from ASAuthorizationAppleIDCredential / Sign in with Apple JS. */
+      identityToken: string
+      /** @description The raw nonce whose SHA-256 the client sent to Apple. */
+      nonce: string
+      /** @description Apple sends the name only on the first authorization; pass it then. */
+      displayName?: string
+    }
+    MagicLinkRequest: {
+      email: string
+    }
+    /** @description Either `token` (from the link) or `email` and `code` (from the same email). */
+    MagicLinkVerifyRequest: {
+      token?: string
+      email?: string
+      /** @description Six digits; spaces and dashes are ignored. */
+      code?: string
+    }
+    TraktConnectRequest: {
+      /** @description Where the browser goes after Trakt (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
+      returnTo: string
+    }
+    TraktConnectStart: {
+      authorizeUrl: string
+    }
+    TraktConnection: {
+      connected: boolean
+      username?: string
+      /** Format: date-time */
+      connectedAt?: string
+    }
+    ImportJob: {
+      /** Format: uuid */
+      id: string
+      /** @enum {string} */
+      source:
+        | 'trakt'
+        | 'imdb_csv'
+        | 'letterboxd_csv'
+        | 'goodreads_csv'
+        | 'cat_list'
+        | 'cat_ics'
+        | 'mal_xml'
+        | 'anilist'
+        | 'csv'
+      /**
+       * @description `planned` waits for approval; nothing is written before it.
+       * @enum {string}
+       */
+      state:
+        'queued' | 'running' | 'planned' | 'succeeded' | 'failed' | 'partial'
+      stats: components['schemas']['ImportStats']
+      errorSummary?: string
+      /** @description The uploaded file's name, or the AniList username for an `anilist` import. */
+      filename?: string
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+    }
+    ImportStats: {
+      created: number
+      updated: number
+      skipped: number
+      unmatched: number
+    }
+    ImportList: {
+      items: components['schemas']['ImportJob'][]
+    }
+    ImportRow: {
+      index: number
+      title: string
+      year?: number
+      author?: string
+      type: components['schemas']['MediaType']
+      sourceKey?: string
+      ids?: components['schemas']['ExternalIds']
+      status?: components['schemas']['LibraryStatus']
+      rating?: number
+      /** @enum {string} */
+      outcome: 'pending' | 'create' | 'update' | 'skip' | 'unmatched'
+      reason?: string
+      /** Format: uuid */
+      titleId?: string
+    }
+    ImportDetail: {
+      job: components['schemas']['ImportJob']
+      rows: components['schemas']['ImportRow'][]
+    }
+    DeviceRegistration: {
+      /** @description The APNs device token */
+      token: string
+      /**
+       * @description `sandbox` for Xcode builds; `production` for TestFlight and the App Store.
+       * @enum {string}
+       */
+      environment: 'sandbox' | 'production'
+      bundleId: string
+    }
+    NotificationSettings: {
+      /** @description Push when a new episode of a show you are watching airs. */
+      airing: boolean
+    }
+    GoogleSignInRequest: {
+      idToken: string
+      /** @description The nonce sent with the Google sign-in, if any. Must come back in the token. */
+      nonce?: string
+    }
+    Session: {
+      /** @description Bearer token, sent in the Authorization header as `Bearer <token>`. */
+      token: string
+      /** Format: uuid */
+      userId: string
+      /** Format: date-time */
+      expiresAt: string
+    }
+    Me: {
+      /** Format: uuid */
+      userId: string
+      displayName?: string
+      providers: ('apple' | 'email' | 'google')[]
+    }
+    /** @description Provider identifiers known for a title. Absent means unknown. */
+    ExternalIds: {
+      tmdb?: string
+      imdb?: string
+      trakt?: string
+      tvdb?: string
+      isbn?: string
+      openLibrary?: string
+      anilist?: string
+      mal?: string
+      anidb?: string
+    }
+    /** @enum {string} */
+    MediaType: 'movie' | 'show' | 'book'
+    CatalogHit: {
+      type: components['schemas']['MediaType']
+      title: string
+      originalTitle?: string
+      year?: number
+      posterUrl?: string
+      overview?: string
+      /** @description Authors, for books. */
+      byline?: string
+      isAnime: boolean
+      ids: components['schemas']['ExternalIds']
+    }
+    SearchResults: {
+      items: components['schemas']['CatalogHit'][]
+    }
+    Episode: {
+      season: number
+      number: number
+      name?: string
+      /** @description The episode's synopsis, when the catalog has one. */
+      overview?: string
+      /** @description A frame from the episode (TMDB, referenced, never hosted). */
+      stillUrl?: string
+      /** Format: date-time */
+      airsAt?: string
+      /** @description True when `airsAt` is the exact broadcast time; false when only the date is known. */
+      airTimeKnown: boolean
+      runtimeMinutes?: number
+    }
+    Season: {
+      number: number
+      episodes: components['schemas']['Episode'][]
+    }
+    TitleDetail: {
+      /** Format: uuid */
+      id: string
+      type: components['schemas']['MediaType']
+      title: string
+      originalTitle?: string
+      year?: number
+      synopsis?: string
+      posterUrl?: string
+      isAnime: boolean
+      ids: components['schemas']['ExternalIds']
+      /** @enum {string} */
+      status?: 'upcoming' | 'returning' | 'ended' | 'canceled'
+      runtimeMinutes?: number
+      /** @description Shows only. */
+      seasons?: components['schemas']['Season'][]
+    }
+    /** @enum {string} */
+    LibraryStatus: 'wishlist' | 'in_progress' | 'finished' | 'dropped'
+    /** @description A title by Aaru id, by provider ids, or by title + year. */
+    MediaRef: {
+      /** Format: uuid */
+      titleId?: string
+      type: components['schemas']['MediaType']
+      ids?: components['schemas']['ExternalIds']
+      title?: string
+      year?: number
+    }
+    AddLibraryItem: {
+      mediaRef: components['schemas']['MediaRef']
+      status?: components['schemas']['LibraryStatus']
+    }
+    LibraryItemPatch: {
+      status?: components['schemas']['LibraryStatus']
+      /** @description 1–10 in 0.5 steps. */
+      rating?: number
+      notes?: string
+      isOwned?: boolean
+      bookPage?: number
+      bookPercent?: number
+      /** @description Fields to empty. */
+      clear?: ('rating' | 'notes' | 'bookProgress')[]
+    }
+    EpisodeWatched: {
+      watched: boolean
+    }
+    EpisodeRef: {
+      season: number
+      number: number
+    }
+    /** @description Specials (season 0) are not counted. */
+    ShowProgress: {
+      watchedCount: number
+      airedCount: number
+      nextEpisode?: components['schemas']['EpisodeRef']
+    }
+    BookProgress: {
+      page?: number
+      percent?: number
+    }
+    TitleSummary: {
+      /** Format: uuid */
+      id: string
+      type: components['schemas']['MediaType']
+      title: string
+      originalTitle?: string
+      year?: number
+      posterUrl?: string
+      /** @description Wide art (TMDB backdrop, AniList banner), for banners such as the week grid. */
+      backdropUrl?: string
+      /** @description Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll"). */
+      network?: string
+      isAnime: boolean
+      ids: components['schemas']['ExternalIds']
+    }
+    LibraryEntry: {
+      /** Format: uuid */
+      id: string
+      title: components['schemas']['TitleSummary']
+      status: components['schemas']['LibraryStatus']
+      rating?: number
+      notes?: string
+      isOwned: boolean
+      /** Format: date-time */
+      addedAt: string
+      /** Format: date-time */
+      updatedAt: string
+      /** Format: date-time */
+      finishedAt?: string
+      progress?: components['schemas']['ShowProgress']
+      bookProgress?: components['schemas']['BookProgress']
+      /**
+       * @description Every watched episode of a show, in order. Only on single-item responses (the item,
+       *     and episode and season writes); lists and sync leave it out.
+       */
+      watchedEpisodes?: components['schemas']['EpisodeRef'][]
+    }
+    AccountExport: {
+      /** Format: date-time */
+      exportedAt: string
+      account: components['schemas']['Me']
+      /** @description Every library item; shows carry `watchedEpisodes`. */
+      library: components['schemas']['LibraryEntry'][]
+      lists: {
+        name: string
+        /** Format: date-time */
+        createdAt: string
+        items: components['schemas']['TitleSummary'][]
+      }[]
+      shelves: components['schemas']['Shelf'][]
+    }
+    LibraryPage: {
+      items: components['schemas']['LibraryEntry'][]
+      page: components['schemas']['PageInfo']
+    }
+    LibrarySync: {
+      items: components['schemas']['LibraryEntry'][]
+      deleted: string[]
+      token: string
+    }
+    Action: {
+      /** Format: uuid */
+      id: string
+      /** @enum {string} */
+      actor: 'user' | 'agent' | 'external_agent'
+      kind: string
+      summary: string
+      itemIds: string[]
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      undoneAt?: string
+      /** Format: uuid */
+      undoOf?: string
+    }
+    ActionList: {
+      items: components['schemas']['Action'][]
+    }
+    ListSummary: {
+      /** Format: uuid */
+      id: string
+      name: string
+      itemCount: number
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+    }
+    ListList: {
+      items: components['schemas']['ListSummary'][]
+    }
+    ListDetail: {
+      /** Format: uuid */
+      id: string
+      name: string
+      titles: components['schemas']['TitleSummary'][]
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+    }
+    CreateList: {
+      name: string
+    }
+    RenameList: {
+      name: string
+    }
+    AddListItem: {
+      mediaRef: components['schemas']['MediaRef']
+    }
+    ListOrder: {
+      titleIds: string[]
+    }
+    /** @description The same filters GET /v1/library/items accepts. */
+    ShelfFilter: {
+      type?: components['schemas']['MediaType']
+      anime?: boolean
+      status?: components['schemas']['LibraryStatus']
+      owned?: boolean
+      /** Format: uuid */
+      list?: string
+    }
+    Shelf: {
+      /** Format: uuid */
+      id: string
+      name: string
+      filter: components['schemas']['ShelfFilter']
+      isPinned: boolean
+    }
+    ShelfList: {
+      items: components['schemas']['Shelf'][]
+    }
+    CreateShelf: {
+      name: string
+      filter: components['schemas']['ShelfFilter']
+      isPinned?: boolean
+    }
+    UpdateShelf: {
+      name?: string
+      filter?: components['schemas']['ShelfFilter']
+      isPinned?: boolean
+    }
+    CalendarEntry: {
+      /** Format: uuid */
+      libraryItemId: string
+      title: components['schemas']['TitleSummary']
+      season: number
+      number: number
+      episodeName?: string
+      /** @description The episode's synopsis, when the catalog has one (TMDB; AniList has none). */
+      episodeOverview?: string
+      /** Format: date-time */
+      airsAt: string
+      /** @description False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time. */
+      airTimeKnown: boolean
+      runtimeMinutes?: number
+      watched: boolean
+      /** @enum {string} */
+      kind: 'premiere' | 'finale' | 'regular'
+    }
+    Calendar: {
+      items: components['schemas']['CalendarEntry'][]
+    }
+    ContinueEntry: {
+      /** Format: uuid */
+      libraryItemId: string
+      title: components['schemas']['TitleSummary']
+      next: components['schemas']['EpisodeRef']
+      nextName?: string
+      nextRuntimeMinutes?: number
+      /** @description Aired, unwatched episodes including the next one. Specials excluded. */
+      remainingCount: number
+      remainingMinutes: number
+      /** @description The next episode is the last of its season. */
+      isFinale: boolean
+    }
+    StartEntry: {
+      /** Format: uuid */
+      libraryItemId: string
+      title: components['schemas']['TitleSummary']
+      runtimeMinutes?: number
+    }
+    UpNext: {
+      continueWatching: components['schemas']['ContinueEntry'][]
+      startWatching: components['schemas']['StartEntry'][]
+    }
+    Stats: {
+      year: number
+      month?: number
+      timeZone: string
+      /** @description The period is not over yet in the user's time zone. */
+      isPartial: boolean
+      totals: components['schemas']['StatsTotals']
+      /** @description One per month of the year, or one per day of the month, in order. */
+      buckets: components['schemas']['StatsBucket'][]
+      busiest?: components['schemas']['StatsBucket']
+      longestRun?: components['schemas']['StatsRun']
+      /** @description Most time spent, at most five. */
+      topTitles: components['schemas']['StatsTitle'][]
+      ratings: components['schemas']['StatsRatings']
+      first?: components['schemas']['StatsMoment']
+      last?: components['schemas']['StatsMoment']
+    }
+    StatsTotals: {
+      episodesWatched: number
+      /** @description Episode runtimes plus finished movies. Books have no minutes. */
+      minutesWatched: number
+      activeDays: number
+      moviesFinished: number
+      showsFinished: number
+      /** @description Anime shows and films. Not counted again as shows or movies. */
+      animeFinished: number
+      booksFinished: number
+    }
+    StatsBucket: {
+      /** @description First local day of the bucket, YYYY-MM-DD. */
+      start: string
+      episodes: number
+      minutes: number
+      finished: number
+    }
+    StatsRun: {
+      days: number
+      /** @description YYYY-MM-DD */
+      start: string
+      /** @description YYYY-MM-DD, inclusive. */
+      end: string
+    }
+    StatsTitle: {
+      title: components['schemas']['TitleSummary']
+      episodes: number
+      minutes: number
+    }
+    StatsRatings: {
+      /** @description Titles finished in the period that have a rating. */
+      count: number
+      mean?: number
+      highest?: components['schemas']['TitleSummary']
+      highestRating?: number
+    }
+    StatsMoment: {
+      title: components['schemas']['TitleSummary']
+      /** Format: date-time */
+      at: string
+    }
+    Health: {
+      /** @enum {string} */
+      status: 'ok' | 'unavailable'
+    }
+  }
+  responses: {
+    /** @description Any error, in the shared shape. */
+    Error: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorResponse']
+      }
+    }
+  }
+  parameters: {
+    /** @description Opaque cursor from a previous page's `page.nextCursor`. */
+    Cursor: string
+    Limit: number
+  }
+  requestBodies: never
+  headers: never
+  pathItems: never
+}
+export type $defs = Record<string, never>
 export interface operations {
-    getHealth: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The server is up and can reach its database. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Health"];
-                };
-            };
-            /** @description The server is up but a dependency is not reachable. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Health"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    signInWithApple: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AppleSignInRequest"];
-            };
-        };
-        responses: {
-            /** @description Signed in. The token is shown once. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Session"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    signInWithGoogle: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GoogleSignInRequest"];
-            };
-        };
-        responses: {
-            /** @description Signed in. The token is shown once. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Session"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    linkGoogle: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GoogleSignInRequest"];
-            };
-        };
-        responses: {
-            /** @description Linked. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Me"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    requestMagicLink: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MagicLinkRequest"];
-            };
-        };
-        responses: {
-            /** @description The link was sent (or would have been). */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    verifyMagicLink: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MagicLinkVerifyRequest"];
-            };
-        };
-        responses: {
-            /** @description Signed in. The token is shown once. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Session"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    signOut: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Signed out. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The account. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Me"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    deleteAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    registerDevice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeviceRegistration"];
-            };
-        };
-        responses: {
-            /** @description Registered. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    unregisterDevice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Forgotten. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getNotificationSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The user's notification choices. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationSettings"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    updateNotificationSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotificationSettings"];
-            };
-        };
-        responses: {
-            /** @description Saved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationSettings"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getStats: {
-        parameters: {
-            query: {
-                year: number;
-                /** @description 1–12. Absent means the whole year. */
-                month?: number;
-                /** @description IANA time zone for day and month boundaries. Absent means UTC. */
-                tz?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The period's stats. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Stats"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    searchCatalog: {
-        parameters: {
-            query: {
-                q: string;
-                /** @description `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library. */
-                type: "movie" | "show" | "anime" | "book";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Matches, best first. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchResults"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getTitle: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The title. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TitleDetail"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    listLibraryItems: {
-        parameters: {
-            query?: {
-                type?: components["schemas"]["MediaType"];
-                anime?: boolean;
-                status?: components["schemas"]["LibraryStatus"];
-                owned?: boolean;
-                list?: string;
-                /** @description Opaque cursor from a previous page's `page.nextCursor`. */
-                cursor?: components["parameters"]["Cursor"];
-                limit?: components["parameters"]["Limit"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description One page. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LibraryPage"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    addLibraryItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddLibraryItem"];
-            };
-        };
-        responses: {
-            /** @description The item. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LibraryEntry"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getLibraryItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The item. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LibraryEntry"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    deleteLibraryItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Removed. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    updateLibraryItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LibraryItemPatch"];
-            };
-        };
-        responses: {
-            /** @description The updated item. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LibraryEntry"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    setEpisodeWatched: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                season: number;
-                episode: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EpisodeWatched"];
-            };
-        };
-        responses: {
-            /** @description The item with updated progress. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LibraryEntry"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    markSeasonWatched: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                season: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The item with updated progress. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LibraryEntry"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    syncLibrary: {
-        parameters: {
-            query?: {
-                since?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The changes and the token for next time. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LibrarySync"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    listActions: {
-        parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Actions. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ActionList"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    undoAction: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The undo, as an action. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Action"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    listLists: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListList"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    createList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateList"];
-            };
-        };
-        responses: {
-            /** @description The new list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListDetail"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListDetail"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    deleteList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    renameList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RenameList"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListDetail"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    addListItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddListItem"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListDetail"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    removeListItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                titleId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListDetail"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    reorderList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ListOrder"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListDetail"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    listImports: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Up to 50 imports. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportList"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    exportAccount: {
-        parameters: {
-            query?: {
-                format?: "json" | "csv";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The export, as a download. */
-            200: {
-                headers: {
-                    "Content-Disposition"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountExport"];
-                    "text/csv": string;
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    createCSVImport: {
-        parameters: {
-            query: {
-                /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`). */
-                source: "auto" | "imdb" | "letterboxd" | "goodreads" | "mal" | "csv";
-                /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
-                filename?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "text/csv": string;
-                "application/xml": string;
-            };
-        };
-        responses: {
-            /** @description Queued for matching. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJob"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    createAniListImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description AniList username: 2–20 letters, digits or underscores. */
-                    username: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Queued. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJob"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    createTraktImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Queued. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJob"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    connectTrakt: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TraktConnectRequest"];
-            };
-        };
-        responses: {
-            /** @description Where to send the browser. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TraktConnectStart"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getTraktConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Whether Trakt is connected. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TraktConnection"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    disconnectTrakt: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Disconnected. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The import. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportDetail"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    deleteImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Discarded. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    applyImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Applied. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJob"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    listShelves: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShelfList"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    createShelf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateShelf"];
-            };
-        };
-        responses: {
-            /** @description The new shelf. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Shelf"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    deleteShelf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    updateShelf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateShelf"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Shelf"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    listShelfItems: {
-        parameters: {
-            query?: {
-                /** @description Opaque cursor from a previous page's `page.nextCursor`. */
-                cursor?: components["parameters"]["Cursor"];
-                limit?: components["parameters"]["Limit"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LibraryPage"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getCalendar: {
-        parameters: {
-            query: {
-                from: string;
-                to: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Episodes, by air time. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Calendar"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    getUpNext: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Both rows. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpNext"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
+  getHealth: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The server is up and can reach its database. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Health']
+        }
+      }
+      /** @description The server is up but a dependency is not reachable. */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Health']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  signInWithApple: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AppleSignInRequest']
+      }
+    }
+    responses: {
+      /** @description Signed in. The token is shown once. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Session']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  signInWithGoogle: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GoogleSignInRequest']
+      }
+    }
+    responses: {
+      /** @description Signed in. The token is shown once. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Session']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  linkGoogle: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GoogleSignInRequest']
+      }
+    }
+    responses: {
+      /** @description Linked. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Me']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  requestMagicLink: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MagicLinkRequest']
+      }
+    }
+    responses: {
+      /** @description The link was sent (or would have been). */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  verifyMagicLink: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MagicLinkVerifyRequest']
+      }
+    }
+    responses: {
+      /** @description Signed in. The token is shown once. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Session']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  signOut: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Signed out. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getMe: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The account. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Me']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteAccount: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  registerDevice: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DeviceRegistration']
+      }
+    }
+    responses: {
+      /** @description Registered. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  unregisterDevice: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        token: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Forgotten. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getNotificationSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The user's notification choices. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NotificationSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateNotificationSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['NotificationSettings']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NotificationSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getStats: {
+    parameters: {
+      query: {
+        year: number
+        /** @description 1–12. Absent means the whole year. */
+        month?: number
+        /** @description IANA time zone for day and month boundaries. Absent means UTC. */
+        tz?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The period's stats. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Stats']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  searchCatalog: {
+    parameters: {
+      query: {
+        q: string
+        /** @description `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library. */
+        type: 'movie' | 'show' | 'anime' | 'book'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Matches, best first. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SearchResults']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTitle: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The title. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TitleDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listLibraryItems: {
+    parameters: {
+      query?: {
+        type?: components['schemas']['MediaType']
+        anime?: boolean
+        status?: components['schemas']['LibraryStatus']
+        owned?: boolean
+        list?: string
+        /** @description Opaque cursor from a previous page's `page.nextCursor`. */
+        cursor?: components['parameters']['Cursor']
+        limit?: components['parameters']['Limit']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description One page. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibraryPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  addLibraryItem: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AddLibraryItem']
+      }
+    }
+    responses: {
+      /** @description The item. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibraryEntry']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getLibraryItem: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The item. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibraryEntry']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteLibraryItem: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateLibraryItem: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LibraryItemPatch']
+      }
+    }
+    responses: {
+      /** @description The updated item. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibraryEntry']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  setEpisodeWatched: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+        season: number
+        episode: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EpisodeWatched']
+      }
+    }
+    responses: {
+      /** @description The item with updated progress. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibraryEntry']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  markSeasonWatched: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+        season: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The item with updated progress. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibraryEntry']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  syncLibrary: {
+    parameters: {
+      query?: {
+        since?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The changes and the token for next time. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibrarySync']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listActions: {
+    parameters: {
+      query?: {
+        limit?: components['parameters']['Limit']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Actions. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ActionList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  undoAction: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The undo, as an action. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Action']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listLists: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createList: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateList']
+      }
+    }
+    responses: {
+      /** @description The new list. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getList: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteList: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  renameList: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RenameList']
+      }
+    }
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  addListItem: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AddListItem']
+      }
+    }
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  removeListItem: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+        titleId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  reorderList: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ListOrder']
+      }
+    }
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listImports: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Up to 50 imports. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  exportAccount: {
+    parameters: {
+      query?: {
+        format?: 'json' | 'csv'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The export, as a download. */
+      200: {
+        headers: {
+          'Content-Disposition'?: string
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountExport']
+          'text/csv': string
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createCSVImport: {
+    parameters: {
+      query: {
+        /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`). */
+        source: 'auto' | 'imdb' | 'letterboxd' | 'goodreads' | 'mal' | 'csv'
+        /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
+        filename?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'text/csv': string
+        'application/xml': string
+      }
+    }
+    responses: {
+      /** @description Queued for matching. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createAniListImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description AniList username: 2–20 letters, digits or underscores. */
+          username: string
+        }
+      }
+    }
+    responses: {
+      /** @description Queued. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createTraktImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Queued. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  connectTrakt: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TraktConnectRequest']
+      }
+    }
+    responses: {
+      /** @description Where to send the browser. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TraktConnectStart']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTraktConnection: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Whether Trakt is connected. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TraktConnection']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  disconnectTrakt: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Disconnected. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The import. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Discarded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  applyImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Applied. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listShelves: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ShelfList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createShelf: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateShelf']
+      }
+    }
+    responses: {
+      /** @description The new shelf. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Shelf']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteShelf: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateShelf: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateShelf']
+      }
+    }
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Shelf']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listShelfItems: {
+    parameters: {
+      query?: {
+        /** @description Opaque cursor from a previous page's `page.nextCursor`. */
+        cursor?: components['parameters']['Cursor']
+        limit?: components['parameters']['Limit']
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibraryPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getCalendar: {
+    parameters: {
+      query: {
+        from: string
+        to: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Episodes, by air time. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Calendar']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getUpNext: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Both rows. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UpNext']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
 }
