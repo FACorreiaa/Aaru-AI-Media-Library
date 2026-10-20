@@ -7,18 +7,18 @@ import { cn } from '../../lib/cn'
 // solid-ui's Button, on Aaru's tokens. A `Link` that looks like a button takes
 // `class={buttonVariants({ ... })}` instead of a polymorphic `as`.
 export const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[transform,background-color,color] disabled:pointer-events-none disabled:opacity-50 motion-safe:active:scale-[0.98]',
+  'inline-flex items-center justify-center gap-2 rounded-full transition-[transform,background-color,color] disabled:pointer-events-none disabled:opacity-50 motion-safe:active:scale-[0.98]',
   {
     variants: {
       variant: {
-        primary: 'bg-accent text-on-accent',
-        outline: 'border border-ink/25 hover:bg-surface',
-        quiet: 'border border-line hover:bg-surface',
-        ink: 'bg-ink text-paper',
-        danger: 'bg-danger text-on-accent',
-        'danger-outline': 'border border-danger/50 text-danger',
-        ghost: 'text-muted hover:text-ink',
-        soft: 'hover:bg-surface',
+        primary: 'bg-accent font-semibold text-on-accent',
+        outline: 'border border-ink/25 font-semibold hover:bg-surface',
+        quiet: 'border border-line font-semibold hover:bg-surface',
+        ink: 'bg-ink font-semibold text-paper',
+        danger: 'bg-danger font-semibold text-on-accent',
+        'danger-outline': 'border border-danger/50 font-semibold text-danger',
+        ghost: 'font-medium text-muted hover:text-ink',
+        soft: 'font-medium hover:bg-surface',
       },
       size: {
         xs: 'px-3 py-1 text-xs',

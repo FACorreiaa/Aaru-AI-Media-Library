@@ -1,6 +1,8 @@
 import { For, Show, createSignal } from 'solid-js'
 import { canChangeLibrary, lastUsedLabel } from '../lib/stremio/model'
 import { StremioHistoryImport } from './StremioHistoryImport'
+import { Button, buttonVariants } from './ui/button'
+import { Card } from './ui/card'
 import {
   connectStremio,
   listStremio,
@@ -58,7 +60,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
   }
 
   return (
-    <section class="mt-10 rounded-[20px] bg-surface p-5">
+    <Card class="mt-10 p-5">
       <h2 class="font-display text-xl font-medium">Stremio</h2>
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
         Your Continue watching, Next 7 days and Plan to watch appear as rows in
@@ -87,19 +89,18 @@ export function StremioSection(props: { links: AgentToken[] }) {
                 </span>
               </span>
             </label>
-            <button
-              type="button"
-              class="min-h-11 self-start rounded-full border border-ink/25 px-5 text-sm font-semibold disabled:opacity-50"
+            <Button
+              class="self-start"
               disabled={busy()}
               onClick={() => void connect()}
             >
               {busy() ? 'Connecting…' : 'Connect Stremio'}
-            </button>
+            </Button>
           </div>
         }
       >
         {(connection) => (
-          <div class="mt-4 flex flex-col gap-3 rounded-[14px] border border-line p-4">
+          <div class="mt-4 flex flex-col gap-3 rounded-panel border border-line p-4">
             <p class="text-sm font-medium">
               Anyone with this link can see your library and mark things
               watched. Treat it like a password; it is shown only now.
@@ -107,7 +108,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
             <div class="flex flex-wrap gap-2">
               <a
                 href={connection().stremio.installUrl}
-                class="min-h-11 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent"
+                class={buttonVariants({ variant: 'primary' })}
               >
                 Open in Stremio
               </a>
@@ -115,17 +116,15 @@ export function StremioSection(props: { links: AgentToken[] }) {
                 href={connection().stremio.webInstallUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="min-h-11 rounded-full border border-ink/25 px-5 py-2.5 text-sm font-semibold"
+                class={buttonVariants()}
               >
                 Install on Stremio Web
               </a>
-              <button
-                type="button"
-                class="min-h-11 rounded-full border border-ink/25 px-5 text-sm font-semibold"
+              <Button
                 onClick={() => void copy(connection().stremio.manifestUrl)}
               >
                 {copied() ? 'Copied' : 'Copy link'}
-              </button>
+              </Button>
             </div>
             <button
               type="button"
@@ -158,13 +157,14 @@ export function StremioSection(props: { links: AgentToken[] }) {
                     {canChangeLibrary(link) ? ' · can add titles' : ''}
                   </span>
                 </span>
-                <button
-                  type="button"
-                  class="shrink-0 rounded-full border border-danger/50 px-4 py-1.5 text-sm font-semibold text-danger"
+                <Button
+                  variant="danger-outline"
+                  size="sm"
+                  class="shrink-0"
                   onClick={() => void revoke(link)}
                 >
                   Revoke
-                </button>
+                </Button>
               </li>
             )}
           </For>
@@ -172,7 +172,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
       </Show>
 
       <StremioHistoryImport />
-    </section>
+    </Card>
   )
 }
 
@@ -194,7 +194,7 @@ const behaviour = [
 // The setup steps, so nobody has to leave the app to learn how the addon works.
 function StremioGuide() {
   return (
-    <details class="group mt-4 rounded-[14px] border border-line">
+    <details class="group mt-4 rounded-panel border border-line">
       <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
         How to set it up
         <span

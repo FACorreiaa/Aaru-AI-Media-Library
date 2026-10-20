@@ -1,6 +1,7 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
+import { Button } from '../components/ui/button'
 import {
   createList,
   deleteList,
@@ -81,13 +82,9 @@ function Lists() {
             onInput={(e) => setName(e.currentTarget.value)}
             class="min-h-11 flex-1 rounded-full border-0 bg-surface px-5 text-base focus:ring-2 focus:ring-accent"
           />
-          <button
-            type="submit"
-            disabled={!name().trim()}
-            class="rounded-full bg-accent px-5 font-semibold text-on-accent disabled:opacity-40"
-          >
+          <Button type="submit" variant="primary" disabled={!name().trim()}>
             Create
-          </button>
+          </Button>
         </form>
         <Show when={problem()}>
           {(message) => (

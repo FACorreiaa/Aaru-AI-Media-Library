@@ -2,6 +2,9 @@ import { For, Show, createResource, createSignal } from 'solid-js'
 import { AGENT_KINDS, accessLabel, kindLabel } from '../lib/agents/model'
 import type { AgentKind } from '../lib/agents/model'
 import { lastUsedLabel } from '../lib/stremio/model'
+import { cn } from '../lib/cn'
+import { Button } from './ui/button'
+import { cardClass } from './ui/card'
 import {
   createConnection,
   getSetup,
@@ -65,7 +68,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
   }
 
   return (
-    <section class="mt-10 rounded-[20px] bg-surface p-5">
+    <section class={cn(cardClass, 'mt-10 p-5')}>
       <h2 class="font-display text-xl font-medium">Connections</h2>
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
         Let an AI agent read your library over MCP: what you are watching, what
@@ -113,7 +116,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                   type="text"
                   maxLength={80}
                   placeholder={kindLabel(kind())}
-                  class="min-h-11 max-w-sm rounded-[10px] border border-line bg-paper px-3"
+                  class="min-h-11 max-w-sm rounded-field border border-line bg-paper px-3"
                   value={name()}
                   onInput={(e) => setName(e.currentTarget.value)}
                 />
@@ -133,20 +136,20 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                   </span>
                 </span>
               </label>
-              <button
-                type="button"
-                class="min-h-11 self-start rounded-full bg-accent px-5 text-sm font-semibold text-on-accent disabled:opacity-50"
+              <Button
+                variant="primary"
+                class="self-start"
                 disabled={busy()}
                 onClick={() => void create()}
               >
                 {busy() ? 'Creating…' : `Connect ${kindLabel(kind())}`}
-              </button>
+              </Button>
             </Show>
           </div>
         }
       >
         {(connection) => (
-          <div class="mt-4 flex flex-col gap-3 rounded-[14px] border border-line p-4">
+          <div class="mt-4 flex flex-col gap-3 rounded-panel border border-line p-4">
             <p class="text-sm font-medium">
               Your token is in the steps below. Anyone with it can read your
               library, so treat it like a password; it is shown only now.
@@ -188,30 +191,27 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                 <Show
                   when={confirming() === token.id}
                   fallback={
-                    <button
-                      type="button"
-                      class="shrink-0 rounded-full border border-danger/50 px-4 py-1.5 text-sm font-semibold text-danger"
+                    <Button
+                      variant="danger-outline"
+                      size="sm"
+                      class="shrink-0"
                       onClick={() => setConfirming(token.id)}
                     >
                       Revoke
-                    </button>
+                    </Button>
                   }
                 >
                   <span class="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      class="rounded-full bg-danger px-4 py-1.5 text-sm font-semibold text-on-accent"
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => void revoke(token)}
                     >
                       Revoke now
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold"
-                      onClick={() => setConfirming(null)}
-                    >
+                    </Button>
+                    <Button size="sm" onClick={() => setConfirming(null)}>
                       Keep
-                    </button>
+                    </Button>
                   </span>
                 </Show>
               </li>
@@ -257,7 +257,7 @@ function CopyBlock(props: { text: string; wrap?: boolean }) {
     }
   }
   return (
-    <div class="relative rounded-[10px] bg-paper">
+    <div class="relative rounded-field bg-paper">
       <pre
         class="overflow-x-auto p-3 pr-20 font-mono text-xs"
         classList={{ 'whitespace-pre-wrap': props.wrap }}

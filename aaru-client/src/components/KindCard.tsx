@@ -67,7 +67,7 @@ export function KindCard(props: { kind: Kind }) {
         <For each={props.kind.covers}>
           {(cover, index) => (
             <div
-              class={`absolute bottom-0 overflow-hidden rounded-[10px] bg-paper shadow-[0_14px_28px_-16px_rgb(15_34_36/0.55)] ring-1 ring-line ${width()} ${aspect()} ${placement[props.kind.shape][index()]} ${turn[index()]}`}
+              class={`absolute bottom-0 overflow-hidden rounded-field bg-paper shadow-[0_14px_28px_-16px_rgb(15_34_36/0.55)] ring-1 ring-line ${width()} ${aspect()} ${placement[props.kind.shape][index()]} ${turn[index()]}`}
             >
               {'url' in cover ? (
                 <CoverImage cover={cover} />
