@@ -268,6 +268,8 @@ struct PushDevice: Sendable, Equatable {
 struct DueAiring: Sendable, Equatable {
     var userID: UserID
     var titleID: TitleID
+    /// The user's library item for the show: what a tap on the alert opens.
+    var libraryItemID: LibraryItemID
     var title: String
     var season: Int
     var episode: Int
