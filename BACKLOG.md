@@ -1387,9 +1387,23 @@ client.
 
 **Progress 2026-10-20 (Settings):** web (`components/StremioSection.tsx`) and Apple
 (`Settings/StremioSection.swift`) connect, show the install links once, list links with last
-use, and revoke. The catalog is named Wishlist (id `aaru-wishlist`), the domain word. Left: a
-manual run in Stremio Web and Stremio 5 desktop, and checking whether Traefik on `maat` logs
-paths or strips CORS.
+use, and revoke. The catalog is named Wishlist (id `aaru-wishlist`), the domain word.
+
+**Manual check 2026-10-20 (Stremio Web, local server):** install from the web install link; all
+four rows render (the board loads rows lazily, as they scroll into view); an `aaru:` show opens
+with Aaru's own `meta` and episode list; "Mark as watched" sends `library … action=watched`
+for both `aaru:` and `tt` ids and journals one "Stremio: …" action; "Mark as non-watched"
+unticks (with `library:write`); "Mark rest as watched" sends every episode id in one request
+and journals one action for the ones that changed; after revoke and a reload the rows are
+empty. Chrome asks for local-network access before an HTTPS page may call `127.0.0.1`, so
+local testing needs that permission. Not checked: `player` events (playing needs a stream
+addon and Stremio's streaming server) and Stremio 5 desktop (needs the deployed HTTPS API).
+Aaru's ticks do not show as watched in Stremio; nothing writes Stremio's own watched state.
+
+Traefik on `maat` keeps `RequestPath` in its JSON access log and Alloy ships it to Grafana
+Cloud, so the token would leave the cluster; infra PR LuminaVault/LuminaVaultInfra#362 masks
+it before remote write. Ship that before anyone connects Stremio. Traefik's security headers
+leave CORS alone.
 
 **Resolved 2026-10-19:** Stremio core 0.64 sends `player` and `library` events to addons
 that declare them (see the decisions above). Do **not** route Stremio → Trakt → Aaru by

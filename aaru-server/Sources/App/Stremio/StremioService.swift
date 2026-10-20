@@ -31,7 +31,7 @@ struct StremioService: Sendable {
         id: "com.aaruapp.library",
         version: "1.0.0",
         name: "Aaru",
-        description: "Your Aaru library in Stremio: continue watching, the week ahead and your watchlist. "
+        description: "Your Aaru library in Stremio: continue watching, the week ahead and your wishlist. "
             + "What you watch in Stremio ticks itself off in Aaru.",
         logo: "https://aaruapp.com/icon-512.png",
         resources: [
@@ -70,13 +70,13 @@ struct StremioService: Sendable {
             return entries.filter { seen.insert($0.title.id).inserted }.map { Self.preview($0.title) }
         case ("aaru-wishlist", "series"), ("aaru-wishlist", "movie"):
             let skip = min(max(Int(extra["skip"] ?? "") ?? 0, 0), Self.maxSkip)
-            return try await watchlist(userID: userID, type: type == "movie" ? .movie : .show, skip: skip)
+            return try await wishlist(userID: userID, type: type == "movie" ? .movie : .show, skip: skip)
         default:
             return []
         }
     }
 
-    private func watchlist(userID: UserID, type: MediaType, skip: Int) async throws -> [StremioMetaPreview] {
+    private func wishlist(userID: UserID, type: MediaType, skip: Int) async throws -> [StremioMetaPreview] {
         var titles: [Title] = []
         var cursor: String?
         repeat {
