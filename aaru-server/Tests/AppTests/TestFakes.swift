@@ -73,7 +73,7 @@ func rowsReferencing(_ userID: UserID) async throws -> [String: Int] {
 }
 
 /// A catalog provider with canned answers and call counts. Never reaches the network.
-final class FakeCatalog: CatalogSearching, EpisodeListing, @unchecked Sendable {
+final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, @unchecked Sendable {
     // @unchecked: test-only; `lock` guards every mutable field.
     private let lock = NSLock()
     private var searchResults: [String: [CatalogHit]] = [:]
@@ -81,6 +81,7 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, @unchecked Sendable {
     private var episodeLists: [String: CatalogEpisodes] = [:]
     private var calls: [String: Int] = [:]
     private var failure: (any Error)?
+    private var latency: Duration?
     private var discoverHits: [DiscoverList: [CatalogHit]] = [:]
 
     static func providers(_ catalog: FakeCatalog) -> CatalogProviders {
@@ -104,6 +105,11 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, @unchecked Sendable {
         lock.withLock { episodeLists[key] = episodes }
     }
 
+    /// Every search call waits this long first (cancellably).
+    func delay(_ duration: Duration?) {
+        lock.withLock { latency = duration }
+    }
+
     func callCount(_ name: String) -> Int {
         lock.withLock { calls[name, default: 0] }
     }
@@ -119,7 +125,20 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, @unchecked Sendable {
 
     func search(query: String, type _: AaruCore.MediaType) async throws -> [CatalogHit] {
         try record("search")
+        try await wait()
         return lock.withLock { searchResults[query] ?? [] }
+    }
+
+    func searchMulti(query: String) async throws -> [CatalogHit] {
+        try record("searchMulti")
+        try await wait()
+        return lock.withLock { searchResults[query] ?? [] }
+    }
+
+    private func wait() async throws {
+        if let latency = lock.withLock({ latency }) {
+            try await Task.sleep(for: latency)
+        }
     }
 
     func hydrate(ids: ExternalIDs, type: AaruCore.MediaType) async throws -> CatalogTitle? {

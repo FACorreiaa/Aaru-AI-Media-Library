@@ -48,3 +48,57 @@ extension APIImplementation {
         return try await .ok(.init(body: .json(.init(airing: stores.push.airingEnabled(userID: userID)))))
     }
 }
+
+// MARK: Web push
+
+extension APIImplementation {
+    func getWebPushKey(_: Operations.GetWebPushKey.Input) async throws -> Operations.GetWebPushKey.Output {
+        _ = try currentUser()
+        guard let webPush = services.webPush else { throw Self.webPushOff }
+        return .ok(.init(body: .json(.init(publicKey: webPush.publicKey))))
+    }
+
+    func saveWebPushSubscription(_ input: Operations.SaveWebPushSubscription.Input) async throws
+        -> Operations.SaveWebPushSubscription.Output
+    {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        guard let webPush = services.webPush else { throw Self.webPushOff }
+        guard WebPushEndpoints.isAllowed(body.endpoint) else {
+            throw AppError(
+                status: .unprocessableContent, code: "validation_failed",
+                message: "That is not a browser push service.", details: ["endpoint": "Not a known push service."]
+            )
+        }
+        let keys = [body.keys.p256dh, body.keys.auth]
+        guard keys.allSatisfy({ (16 ... 200).contains($0.count) && $0.allSatisfy(Self.isBase64URL) }) else {
+            throw AppError(
+                status: .unprocessableContent, code: "validation_failed",
+                message: "Those subscription keys are not valid.",
+                details: ["keys": "base64url, as the browser gave them."]
+            )
+        }
+        try await stores.push.saveWebPush(
+            WebPushSubscription(
+                endpoint: body.endpoint, p256dh: body.keys.p256dh, auth: body.keys.auth,
+                vapidKeyID: webPush.publicKey
+            ),
+            userID: currentUser()
+        )
+        return .noContent(.init())
+    }
+
+    func deleteWebPushSubscription(_ input: Operations.DeleteWebPushSubscription.Input) async throws
+        -> Operations.DeleteWebPushSubscription.Output
+    {
+        try await stores.push.deleteWebPush(endpoint: input.query.endpoint, userID: currentUser())
+        return .noContent(.init())
+    }
+
+    private static let webPushOff = AppError(
+        status: .serviceUnavailable, code: "push_unavailable", message: "Browser notifications are not set up yet."
+    )
+
+    private static func isBase64URL(_ character: Character) -> Bool {
+        character.isASCII && (character.isLetter || character.isNumber || "-_=".contains(character))
+    }
+}

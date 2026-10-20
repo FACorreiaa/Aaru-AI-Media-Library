@@ -119,6 +119,12 @@ Classic filters are how a shelf is edited, not how you enter the app.
 Visual cue: Letterboxd lists + Ryot filters, presented as pages of reeds rather than a
 spreadsheet.
 
+A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
+library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
+reads "On this list" once it is there. Every library row also offers "Add to list". A list row
+says what the title is doing: show status (Returning, Ended…), the next episode and when it
+airs, and the library status and progress when the title is on the shelf (LST-003).
+
 ## 7. Catch-up calendar
 
 You came from Pogdesign CAT. Steal the *feeling*, not the site.
@@ -222,7 +228,45 @@ rows of wide cards, one job per row.
   and opens the item. A new account sees a slim "Add a show to see what's next" header above
   them instead of an empty screen. The same rows for everyone; never "because you watched".
 
+**Added 2026-10-20 (APP-013),** so Home is never blank:
+
+- **This month** — a quiet stats strip (episodes · hours · finished · active days). Tapping it
+  opens Insights. Hidden while the month is all zeros.
+- **Status counts** — one chip per status with its per-kind label and count; a tap opens
+  Library filtered to it.
+- **Unfinished business** (`UnfinishedRow`) — the §1 artifact made real: every dropped item and
+  anything in progress untouched for 30 days, "Dropped" or "Paused 6 weeks", with "Resume at
+  S2 · E3" for a show. Never a title already in Continue watching.
+- **Lists** — chips for the user's lists plus "New list".
+
+Discover on Home is DISC-001's rows above, not a separate teaser. On the web, Search opens in
+place on Home and an add shows up in the rows without a reload.
+
 Rows are the Field's artifacts, not new chrome. The composer still sits on top.
+
+## 13a. Discover (pulled forward 2026-10-20)
+
+Something to add without typing. The Discover tab/page (APP-012) is DISC-001's rows, the ones
+Home shows under the user's own, as a full destination: Trending shows, this season's anime,
+Trending movies, On the air, Trending anime, New shows, In theaters, Trending books. Each card
+carries a kind badge and a date badge; a card the user already has (`libraryItemId`) reads "On
+your shelf" and opens the item, anything else offers Add (with a status) and Add to list. TMDB,
+AniList and Open Library credits sit in the footer.
+
+It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
+watched", no taste profile, nothing read from other users. A tab on iPhone, a header link on
+the web.
+
+## 13b. Insights (pulled forward 2026-10-20)
+
+The Recap's numbers, browsable instead of played. `StatsPanel`: a month / year / all time
+switch, totals, bars per bucket, by kind (films, shows, anime, books), the top titles, a
+ratings histogram, and the longest run. Opened from Home's stats strip and next to Recap
+(Library's More menu on Apple, Settings on the web); "Play as story" hands a month or year to
+the Recap. Not a tab.
+
+Static: bars are drawn at their final height, nothing counts up. The Recap motion rules (§17)
+still apply to anything that ever moves here.
 
 ## 14. Week grid (Phase 2)
 
@@ -253,7 +297,15 @@ then the install links (Open in Stremio, Install on Stremio Web, Copy) show once
 carry the secret. Live links list their last use and a Revoke. Writing back to the library
 beyond "watched" is an opt-in at connect time. Stremio's events land as journaled actions
 named "Stremio: …", so the undo ribbon and history treat them like a tap. The card itself is
-not built yet; `watch_events` holds what it will read.
+not built yet; `watch_events` holds what it will read. Under the intro, a collapsed "How to set it
+up" lists the install steps, what Stremio's marks do here, where it works, and that a lost link is
+revoked and made again; the same text on web and Apple.
+
+The same section offers **Import my Stremio history** (IMP-016): a sheet (web: an inline panel)
+with the code in large monospace, an "Approve on stremio.com" button and a QR for approving
+from another device, and a quiet "Waiting for approval…" line. It polls on its own and, once
+approved, opens the import's plan, which is approved like any other import. Nothing is written
+before that approval.
 
 ## 16. Widgets (Phase 2)
 
@@ -281,7 +333,9 @@ ship before the Phase 2 gate.
   avatars, tap into a full-height card per title a friend watched today ("Kevin · Watched S2 ·
   E9 · 12:11 PM"), with a bookmark to add it to your wishlist.
 - **Profile and stats** (`StatsPanel`, Phase 5) — MAL-style numbers: days watched, episodes,
-  mean score, genre and format breakdown. The Year in Review shipped early as the Recap (below).
+  mean score, genre and format breakdown. The Year in Review shipped early as the Recap (below),
+  and `StatsPanel` itself as Insights (§13b, 2026-10-20); genres and the profile placement stay
+  in Phase 5.
 - **Badges** (`BadgeShelf`, Phase 5) — discovery badges and milestone badges, tiered.
 - **Leaderboard** (Phase 5) — friends only, weekly, opt-in. Never global.
 - **Watch channel** (`WatchPanel`, with groups since 2026-10-20; was the Phase 6 Room) — watch
@@ -371,10 +425,12 @@ Build these as SwiftUI views. The model only returns their names and props.
 | `StartRow` | Wishlist titles with runtime (Phase 2) |
 | `CalendarRow` | Next airings with relative badges (Phase 2) |
 | `NowPlayingCard` | Current watch, progress, ends at (Phase 2) |
+| `DiscoverRow` | Public provider rows to add from, not library items (DISC-001, 2026-10-20) |
+| `UnfinishedRow` | Dropped or stalled items with a resume point (2026-10-20) |
 | `StreakBar` | Current streak and week ticks (Phase 5) |
 | `FriendStories` | Friends' watches today (Phase 4) |
 | `BadgeShelf` | Earned badges (Phase 5) |
-| `StatsPanel` | Profile numbers (Phase 5) |
+| `StatsPanel` | Insights: month, year or all-time numbers (GAM-006c, 2026-10-20; profile placement Phase 5) |
 | `RecapStory` | A month or year as a story (GAM-006a) |
 | `WatchPanel` | Watch-together session in a group (was `RoomPanel`) |
 | `ConversationView` | E2E conversation (Phase 6) |

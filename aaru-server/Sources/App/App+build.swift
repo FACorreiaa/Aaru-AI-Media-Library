@@ -1,5 +1,6 @@
 import Configuration
 import FluentPostgresDriver
+import FluentSQL
 import Foundation
 import Hummingbird
 import HummingbirdCore
@@ -38,9 +39,12 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             settings: settings
         )
     }
-    let services = Services.make(
-        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, publicBaseURL: config.publicBaseURL
+    let webPush = makeWebPushSender(config.vapidConfigJSON, logger: logger)
+    var services = Services.make(
+        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
+        publicBaseURL: config.publicBaseURL
     )
+    services.webPush = webPush
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -54,20 +58,33 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             )
         ),
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        services: [
-            fluent,
-            ImportWorker(imports: services.imports, logger: logger),
-            AiringNotifierService(
-                notifier: AiringNotifier(stores: stores, sender: makePushSender(config.push, logger: logger)),
-                logger: logger
+        // The web push manager finishes in-flight sends on shutdown.
+        services: backgroundServices(
+            fluent: fluent, stores: stores, services: services,
+            airing: AiringNotifier(
+                stores: stores,
+                sender: makePushSender(config.push, logger: logger),
+                webPush: webPush
             ),
-            CatalogRefreshService(
-                refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
-                logger: logger
-            ),
-        ],
+            logger: logger
+        ) + [webPush?.manager].compactMap(\.self),
         logger: logger
     )
+}
+
+/// Everything that runs beside the HTTP server: the database, and the workers.
+func backgroundServices(
+    fluent: Fluent, stores: Stores, services: Services, airing: AiringNotifier, logger: Logger
+) -> [any Service] {
+    [
+        fluent,
+        ImportWorker(imports: services.imports, logger: logger),
+        AiringNotifierService(notifier: airing, logger: logger),
+        CatalogRefreshService(
+            refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
+            logger: logger
+        ),
+    ]
 }
 
 /// HTTP/1 with the `/v1/ws` upgrade (GRP-006). A ping every 25 s keeps a proxy with a 60 s idle
@@ -84,6 +101,7 @@ func realtimeServer(_ realtime: RealtimeRoutes) -> HTTPServerBuilder {
 func runOneShotModes(reader: ConfigReader, logger: Logger) async throws {
     if reader.bool(forKey: "db.migrate") == true {
         let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
+        try await waitForDatabase(fluent, logger: logger)
         logger.info("Running database migrations")
         try await fluent.migrate()
         try await fluent.shutdown()
@@ -100,6 +118,7 @@ func runOneShotModes(reader: ConfigReader, logger: Logger) async throws {
 func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger) async throws {
     let fluent = try await makeFluent(PostgresSettings.load(from: reader), logger: logger)
     do {
+        try await waitForDatabase(fluent, logger: logger)
         let resolved = source == "default" || source.isEmpty ? AnimeMappingLoader.defaultSource : source
         var transport = AsyncHTTPTransport(client: .shared)
         transport.maxBodyBytes = 64 * 1024 * 1024
@@ -115,6 +134,27 @@ func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger
     }
 }
 
+/// A fresh pod can be refused by Postgres for its first seconds while the network policy that
+/// admits it is still being programmed. One-shot modes start talking to the database at once,
+/// so they wait here (up to `attempts` × `delay`) instead of crashing on the first refusal.
+func waitForDatabase(
+    _ fluent: Fluent,
+    attempts: Int = 10,
+    delay: Duration = .seconds(3),
+    logger: Logger
+) async throws {
+    guard let sql = fluent.db() as? any SQLDatabase else { throw MigrationNeedsSQL() }
+    for attempt in 1 ... attempts {
+        do {
+            try await sql.raw("SELECT 1").run()
+            return
+        } catch where attempt < attempts {
+            logger.notice("Database not reachable yet, retrying", metadata: ["attempt": "\(attempt)"])
+            try await Task.sleep(for: delay)
+        }
+    }
+}
+
 /// The APNs sender, or nil (with a notice) when no key is configured or the key does not parse.
 func makePushSender(_ settings: PushSettings?, logger: Logger) -> (any PushSending)? {
     guard let settings else {
@@ -125,6 +165,20 @@ func makePushSender(_ settings: PushSettings?, logger: Logger) -> (any PushSendi
         return try APNSPushSender(settings: settings)
     } catch {
         logger.error("Push disabled: APNS_PRIVATE_KEY is not a valid .p8 key")
+        return nil
+    }
+}
+
+/// The web push sender, or nil (with a notice) when `VAPID_CONFIG` is unset or does not parse.
+func makeWebPushSender(_ json: String?, logger: Logger) -> WebPushSender? {
+    guard let json else {
+        logger.notice("Web push disabled: VAPID_CONFIG is not set")
+        return nil
+    }
+    do {
+        return try WebPushSender(configurationJSON: json, logger: logger)
+    } catch {
+        logger.error("Web push disabled: VAPID_CONFIG is not a valid VAPID configuration")
         return nil
     }
 }
@@ -197,6 +251,18 @@ func makeAuthService(config: AppConfig, stores: Stores, transport: any HTTPTrans
             audiences: config.googleAudiences,
             jwks: AppleJWKSCache(transport: transport, url: GoogleIdentityVerifier.keysURL)
         )
+    )
+}
+
+/// Stremio's account API (a few calls per import) and Cinemeta (one call per show in a library).
+func makeStremioAccount(_ transport: any HTTPTransport) -> StremioAccount {
+    func client(_ name: String, perSecond: Double) -> ProviderClient {
+        ProviderClient(name: name, transport: transport, pacer: RequestPacer(requestsPerSecond: perSecond, burst: 5))
+    }
+    return StremioAccount(
+        link: client("stremio-link", perSecond: 2),
+        api: client("stremio", perSecond: 2),
+        cinemeta: client("cinemeta", perSecond: 5)
     )
 }
 

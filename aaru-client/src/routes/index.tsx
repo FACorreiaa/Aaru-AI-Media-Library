@@ -27,7 +27,7 @@ export const Route = createFileRoute('/')({
   component: Landing,
 })
 
-const statuses = ['Wishlist', 'In progress', 'Finished', 'Dropped']
+const statuses = ['Plan to watch', 'Watching', 'Watched', 'Dropped']
 
 const faqs: Array<[string, string]> = [
   [

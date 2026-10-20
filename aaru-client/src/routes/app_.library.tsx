@@ -1,15 +1,16 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { z } from 'zod'
+import { AddToListDialog } from '../components/AddToListDialog'
 import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
 import { SearchPanel } from '../components/SearchPanel'
 import { getLibrary } from '../lib/library/server'
 import {
   KINDS,
-  STATUSES,
   shelf,
   statusLabel,
+  statusOptions,
   upsert,
 } from '../lib/library/model'
 import type {
@@ -20,11 +21,16 @@ import type {
 import { getSession } from '../lib/session/session'
 
 // APP-003 on the web: the shelf, at parity with the Apple apps' `LibraryView`. `?search=true`
-// opens Search on arrival (the header's Search everywhere else lands here).
+// opens Search on arrival; `?status=` opens the shelf filtered to one status (Home's count
+// chips link there).
 export const Route = createFileRoute('/app_/library')({
   head: () => ({ meta: [{ title: 'Library · Aaru' }] }),
   validateSearch: z.object({
     search: z.boolean().optional().catch(undefined),
+    status: z
+      .enum(['wishlist', 'in_progress', 'finished', 'dropped'])
+      .optional()
+      .catch(undefined),
   }),
   beforeLoad: async () => {
     const session = await getSession()
@@ -51,16 +57,32 @@ function Library() {
   const navigate = Route.useNavigate()
   const [entries, setEntries] = createSignal<LibraryEntry[]>(loaded())
   const [kind, setKind] = createSignal<MediaKind | null>(null)
-  const [status, setStatus] = createSignal<LibraryStatus | null>(null)
+  // The status filter lives in the URL, so a link can open the shelf already filtered.
+  const status = () => search().status ?? null
+  function setStatus(next: LibraryStatus | null) {
+    void navigate({
+      search: (prev) => ({ ...prev, status: next ?? undefined }),
+      replace: true,
+    })
+  }
   const [layout, setLayout] = createSignal<Layout>('grid')
+  // The entry whose "List…" was clicked: the picker adds its title to a list.
+  const [listTarget, setListTarget] = createSignal<LibraryEntry | null>(null)
   let dialog: HTMLDialogElement | undefined
+
+  function chooseList(libraryItemId: string) {
+    setListTarget(entries().find((e) => e.id === libraryItemId) ?? null)
+  }
 
   onMount(() => {
     setLayout(readLayout())
     if (search().search) {
       dialog?.showModal()
       // Back does not reopen it.
-      void navigate({ search: {}, replace: true })
+      void navigate({
+        search: (prev) => ({ ...prev, search: undefined }),
+        replace: true,
+      })
     }
   })
 
@@ -121,8 +143,14 @@ function Library() {
             }
           >
             <option value="">Any status</option>
-            <For each={STATUSES}>
-              {(s) => <option value={s.status}>{s.label}</option>}
+            <For each={statusOptions(kind())}>
+              {(s) => (
+                // `selected` on the option: the select's value is applied before the
+                // options exist.
+                <option value={s.status} selected={s.status === status()}>
+                  {s.label}
+                </option>
+              )}
             </For>
           </select>
           <div class="ml-auto flex overflow-hidden rounded-full border border-line text-sm">
@@ -187,11 +215,11 @@ function Library() {
               <ul class="mt-8 divide-y divide-line">
                 <For each={rows()}>
                   {(row) => (
-                    <li>
+                    <li class="flex items-center gap-4">
                       <Link
                         to="/app/title/$id"
                         params={{ id: row.id }}
-                        class="flex items-center gap-4 py-3"
+                        class="flex min-w-0 flex-1 items-center gap-4 py-3"
                       >
                         <Poster
                           url={row.posterUrl}
@@ -209,12 +237,19 @@ function Library() {
                               .join(' · ')}
                           </p>
                           <p class="text-sm text-muted">
-                            {[statusLabel(row.status), row.detail]
+                            {[statusLabel(row.status, row.kind), row.detail]
                               .filter(Boolean)
                               .join(' · ')}
                           </p>
                         </div>
                       </Link>
+                      <button
+                        type="button"
+                        class="shrink-0 text-sm font-medium text-muted hover:text-ink"
+                        onClick={() => chooseList(row.id)}
+                      >
+                        List…
+                      </button>
                     </li>
                   )}
                 </For>
@@ -235,9 +270,16 @@ function Library() {
                         {row.title}
                       </p>
                       <p class="truncate text-xs text-muted">
-                        {row.detail ?? statusLabel(row.status)}
+                        {row.detail ?? statusLabel(row.status, row.kind)}
                       </p>
                     </Link>
+                    <button
+                      type="button"
+                      class="mt-1 text-xs font-medium text-muted hover:text-ink"
+                      onClick={() => chooseList(row.id)}
+                    >
+                      List…
+                    </button>
                   </li>
                 )}
               </For>
@@ -261,6 +303,15 @@ function Library() {
           onClose={() => dialog?.close()}
         />
       </dialog>
+      <Show when={listTarget()}>
+        {(entry) => (
+          <AddToListDialog
+            mediaRef={{ titleId: entry().title.id, type: entry().title.type }}
+            titleName={entry().title.title}
+            onClose={() => setListTarget(null)}
+          />
+        )}
+      </Show>
     </div>
   )
 }

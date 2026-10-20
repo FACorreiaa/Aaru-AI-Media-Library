@@ -29,13 +29,13 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
-| User import — primary | Trakt OAuth |
+| User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | Realtime | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
 | Groups | Friends-only spaces with channels (`text`, `title`, `watch`, `shelf`) and `#general`. Server-visible messages in Postgres; `@aaru` replies through `ModelProviding` (pulled forward 2026-10-20) |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
-| Push (P4) | APNSwift, per-device environment |
+| Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20) |
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
 | Agent model | Pluggable `ModelProviding` in `Server`. Anthropic default, user key supported, spend metered daily |
@@ -129,7 +129,10 @@ Use these words in code, APIs, and UI:
 
 - **Title** — a movie, show, anime, or book in the catalog
 - **Library item** — a user’s relationship to a title
-- **Status** — consumption only: `wishlist` | `in_progress` | `finished` | `dropped`
+- **Status** — consumption only: `wishlist` | `in_progress` | `finished` | `dropped`. These
+  stored values never change; UI labels are per kind: films, shows and anime read Plan to
+  watch / Watching / Watched / Dropped, books Plan to read / Reading / Read / Dropped, no kind
+  Planned / In progress / Finished / Dropped
 - **Owned** — separate `isOwned` flag; do not overload status
 - **Progress** — episode ticks for TV; page/percentage optional for books
 - **List** — user-curated collection of library items, stored as membership rows
@@ -139,6 +142,9 @@ Use these words in code, APIs, and UI:
 - **Import job** — one run of Trakt or a CSV/list ingest
 - **Capture** — one-shot intake of pasted text, an image, or a URL. It is an *import source*,
   not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never writes unplanned
+- **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
+  theaters, this season's anime, trending books), the same for every user. Shown on Home and
+  as the Discover tab/page. Catalog data like search, never a recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer
 - **Approval** — the user's yes to a plan an agent proposed. Approval happens inside Aaru; no
@@ -179,7 +185,7 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 6. Manual lists.
 7. iOS + Mac clients on the JSON API: home rows, week grid, widgets, Live Activity.
 8. Web client (`aaru-client`) on the same API.
-9. Trakt OAuth import; CSV import for IMDb, Letterboxd, Goodreads; CAT list + ICS; TV Time, MAL, AniList.
+9. Trakt OAuth import; Stremio history by link code; CSV import for IMDb, Letterboxd, Goodreads; CAT list + ICS; TV Time, MAL, AniList.
 
 ## Later phases (after the P2 gate, see `BACKLOG.md`)
 
@@ -191,15 +197,16 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 
 Do not write code for a later phase before the P2 gate, and do not add empty abstractions for it.
 Owner's exceptions are recorded in `BACKLOG.md` decisions (Recap 2026-10-16; Stremio tokens,
-scrobble service and addon 2026-10-19; Discover and groups, with minimal friends, the groups
-gateway and a minimal model provider, 2026-10-20).
+scrobble service and addon 2026-10-19; Discover rows (DISC-001), the Discover tab, Insights
+and Home stats 2026-10-20; groups, with minimal friends, the groups gateway and a minimal model
+provider, 2026-10-20).
 
 ## Out of scope (do not add unless asked)
 
 - Two-way sync with any provider, or a conflict engine
 - A documented public API with third-party clients, quotas, and a deprecation policy
-- Recommendations engine. Provider-curated public rows on Home (trending, this season,
-  DISC-001) are allowed; anything personalised is not
+- Recommendations engine. Provider-curated public rows on Home and the Discover tab
+  (trending, this season, DISC-001) are allowed; anything personalised is not
 - A global or public activity feed; public profile pages indexed by search engines
 - Serializd / SIMKL integrations
 - Music, manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`
@@ -212,14 +219,15 @@ gateway and a minimal model provider, 2026-10-20).
 When implementing multi-source import for one account, apply in this order and skip sources the user did not connect:
 
 1. Trakt
-2. IMDb CSV
-3. Letterboxd CSV
-4. Goodreads CSV
-5. CAT show list / ICS
-6. TV Time export
-7. MyAnimeList XML
-8. AniList list
-9. Any other CSV (generic, by column names): fills gaps only
+2. Stremio history (link code)
+3. IMDb CSV
+4. Letterboxd CSV
+5. Goodreads CSV
+6. CAT show list / ICS
+7. TV Time export
+8. MyAnimeList XML
+9. AniList list
+10. Any other CSV (generic, by column names): fills gaps only
 
 Capture is **not** in this order. It is a user-triggered one-shot, applied when the user asks
 and never as part of reconciling an account's connected sources.
@@ -227,6 +235,12 @@ and never as part of reconciling an account's connected sources.
 Scrobbles are not in this order either: they are live events, applied as they arrive.
 
 Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name.
+
+Merging sources (owner, 2026-10-20): an import fills empty fields and adds missing ticks, and may
+move a status forward (`wishlist` → `in_progress` → `finished`). It never moves one backward, never
+out of `dropped`, and never past a status the user chose themselves (`library_items.status_by_hand`).
+Anime from MAL or AniList resolves to the TMDB show through `anime_mappings` (by AniList id, else MAL
+id); entries for later seasons tick the TMDB season they map to and merge into one row.
 
 ## Architecture
 

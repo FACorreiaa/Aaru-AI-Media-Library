@@ -42,11 +42,46 @@ struct StartEntry: Sendable, Equatable {
     var runtimeMinutes: Int?
 }
 
+/// How many of the user's items are in each status (UPN-002).
+struct LibraryCounts: Sendable, Equatable {
+    var wishlist = 0
+    var inProgress = 0
+    var finished = 0
+    var dropped = 0
+}
+
+/// Unfinished business (UPN-002): a dropped item, or one in progress and untouched for a while.
+struct UnfinishedEntry: Sendable, Equatable {
+    enum Reason: String, Sendable {
+        case dropped, stalled
+    }
+
+    var libraryItemID: LibraryItemID
+    var title: Title
+    var reason: Reason
+    /// The item's last change.
+    var since: Date
+    /// Shows only: the first aired episode not yet watched.
+    var next: EpisodeKey?
+}
+
+/// Everything the home screen's rows need, in one answer.
+struct UpNext: Sendable, Equatable {
+    var continueWatching: [ContinueEntry]
+    var startWatching: [StartEntry]
+    var counts: LibraryCounts
+    var unfinished: [UnfinishedEntry]
+}
+
 protocol ScheduleStore: Sendable {
     /// Episodes of the user's tracked shows (wishlist or in progress) airing in [from, to).
     func calendar(userID: UserID, from: Date, until: Date, now: Date) async throws -> [CalendarEntry]
     func continueWatching(userID: UserID, now: Date, limit: Int) async throws -> [ContinueEntry]
     func startWatching(userID: UserID, limit: Int) async throws -> [StartEntry]
+    func libraryCounts(userID: UserID) async throws -> LibraryCounts
+    /// Every dropped item, and in-progress items last changed before `stalledBefore` that are not
+    /// in Continue watching (a show with an aired, unwatched episode). Newest change first.
+    func unfinished(userID: UserID, stalledBefore: Date, now: Date, limit: Int) async throws -> [UnfinishedEntry]
     /// Tracked shows whose episodes were never fetched.
     func unhydratedTrackedShows(userID: UserID, limit: Int) async throws -> [TitleID]
 }

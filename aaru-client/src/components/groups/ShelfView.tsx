@@ -193,7 +193,10 @@ export function ShelfView(props: {
                         >
                           {(status) => (
                             <span class="rounded-full bg-accent/12 px-2.5 py-1 text-xs font-medium text-accent">
-                              {statusLabel(status())}
+                              {statusLabel(
+                                status(),
+                                kindOf(item.title.type, item.title.isAnime),
+                              )}
                             </span>
                           )}
                         </Show>

@@ -86,7 +86,10 @@ describe('progress labels', () => {
     expect(
       progressLabel({ user, status: 'in_progress', season: 1, episode: 3 }),
     ).toBe('S1E3')
-    expect(progressLabel({ user, status: 'wishlist' })).toBe('Wishlist')
+    expect(progressLabel({ user, status: 'wishlist' })).toBe('Planned')
+    expect(progressLabel({ user, status: 'wishlist' }, 'show')).toBe(
+      'Plan to watch',
+    )
   })
 })
 

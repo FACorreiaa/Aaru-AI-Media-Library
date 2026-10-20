@@ -17,7 +17,10 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon` (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next`, `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports` | 2 · M7 |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; this-month strip, status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats` (month), `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
+| Discover | `DiscoverRow` per DISC-001 row, add with status or to a list | `GET /v1/discover`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20) |
+| Insights | `StatsPanel` (month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all` | 2 · GAM-006c (pulled forward 2026-10-20) |
+| Lists | `Shelf` rendering a list's items: show status, next airing, library status and progress (LST-003) | `GET /v1/lists`, `GET /v1/lists/{id}` (`items`), `POST /v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
 | Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
@@ -33,10 +36,11 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Web (`aaru-client`) | same components as SolidJS views | same `/v1` | 2 · WEB-001 |
 | Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
 | Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3); Stremio `player` events already fill `watch_events` (2026-10-20) | 2–3 |
+| Settings | none — account, notifications, imports, connected apps, export, delete account. A tab on Apple (plus Cmd-, on Mac), `/app/settings` on the web | `GET /v1/me`, `/v1/me/notifications`, `/v1/imports`, `/v1/agent/tokens` | 2 · APP-007 |
 | Connected apps (Settings) | none — a Settings section: connect, one-time install links, live links with last use, revoke | `GET`/`POST /v1/agent/tokens`, `DELETE /v1/agent/tokens/{id}` | 3 · SCR-003 (owner un-deferred 2026-10-19) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
-| Profile and stats | `StatsPanel`, `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
+| Profile and stats | `StatsPanel` (already on Insights), `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
 | Leaderboard | `Shelf`-like ranked list, friends only | leaderboard route | 5 · GAM-005 |
 | Groups | `GroupRail`, `ChannelList`, `MessageList`, `MemberList`, `SpoilerVeil`; agent replies inside `MessageList` carry `TitleCard`, `CalendarRow`, `Shelf` | `/v1/groups/*`, `/v1/group-invites/*`, `/v1/realtime/ticket`, `/v1/ws` | 4 · GRP-001…GRP-012 (pulled forward 2026-10-20) |
 | Watch channel | `WatchPanel` above the channel's `MessageList` | `/v1/groups/{id}/channels/{cid}/session` + `/v1/ws` | 4 · GRP-009 (absorbs ROOM-001) |
@@ -71,12 +75,13 @@ refuses and substitutes the nearest catalog piece.
 | `ContinueRow` | In-progress titles | ordered `libraryItemId`, next `EpisodeKey`, time left, remaining count + duration, `isFinale` |
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |
-| `DiscoverRow` | Public catalog rows on Home (DISC-001) | row id + title, `CatalogHit`s with `libraryItemId` when on the shelf; each a `DiscoverCard` (poster, add or open) |
+| `DiscoverRow` | Public catalog rows on Home and Discover (DISC-001) | row id + title, `CatalogHit`s (a `MediaRef` each) with `libraryItemId` when on the shelf, kind badge, date badge; each a `DiscoverCard` (poster, add or open) |
 | `NowPlayingCard` | Current watch | `libraryItemId`, `EpisodeKey`, progress, started at, ends at, source (check-in / scrobble). Rendered on iOS as the "Now watching" Live Activity (`NowWatchingAttributes`, WID-005) |
+| `UnfinishedRow` | Dropped or stalled items | ordered `libraryItemId`, reason (`dropped` / `stalled`), since, next `EpisodeKey` for shows |
 | `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
 | `BadgeShelf` | Earned badges | badge ids, tier, earned at |
-| `StatsPanel` | Profile numbers | days watched, episodes, mean score, breakdowns |
+| `StatsPanel` | Insights, later profile numbers | span (`month` / `year` / `all`), totals, buckets, by kind, top titles, ratings distribution (10 bins), longest run; static. Genres and mean score on a profile in 5 |
 | `RecapStory` | A month or year as a story | `year`, optional `month`; the deck is built on the device from `/v1/me/stats` |
 | `GroupRail` | The groups you are in | group ids, names, monogram, unread flag, mention count, selected group |
 | `ChannelList` | A group's channels | group id, channels by kind (`text` / `title` / `watch` / `shelf`) with name, title poster for `title`, unread flag, mention count; `#general` first |
@@ -107,10 +112,17 @@ The eleven new components add product, not agent reach, and each has a reason:
   read-only, so the agent may open it ("show me my October") but it writes nothing.
 - `DiscoverRow` (DISC-001, the twenty-second, added 2026-10-20) — a new account's Home had
   nothing to show; these are public catalog rows (trending, this season), the same for
-  everyone. Home renders them; the agent does not emit them, since it would be recommending.
+  everyone. It is the only row of catalog hits rather than library items, so each card carries
+  a `MediaRef` and adds through the same `POST /v1/library/items` a search hit uses (rule 6
+  below); a hit the caller already has carries `libraryItemId` and opens the item. Home renders
+  the rows, and the Discover tab/page (APP-012) shows the same rows as a destination; the agent
+  does not emit them, since it would be recommending.
+- `UnfinishedRow` (2026-10-20, the twenty-third) — Unfinished business (`DESIGN.md` §1) had no
+  renderer. It is `ContinueRow`'s shape over `dropped` and 30-day-stalled items. `StatsPanel`
+  is pulled forward from Phase 5 as Insights (GAM-006c), with no new component.
 
 - `GroupRail`, `ChannelList`, `MessageList`, `MemberList`, `SpoilerVeil` (GRP-004/005/007, the
-  twenty-third to twenty-seventh, added 2026-10-20) — groups are a new object: a place where
+  twenty-fourth to twenty-eighth, added 2026-10-20) — groups are a new object: a place where
   friends talk, with channels. No existing piece can hold a conversation (`ConversationView` is
   E2E and one-to-one), and a spoiler guard needs its own renderer so every surface veils the
   same way. The composer lives inside `MessageList`; it is not the agent's Composer surface.
@@ -120,7 +132,7 @@ The agent may emit the read-only social components. It posts in a group channel 
 reply to an explicit `@aaru` mention, and only with catalog components whose buttons are the
 viewer's own taps. It never starts a thread, never sends a DM, and never sends a friend request,
 a group invite or a room invite: those are user acts with no agent write path. A
-twenty-eighth component still needs a paragraph here.
+twenty-ninth component still needs a paragraph here.
 
 ---
 
@@ -194,7 +206,8 @@ Client work follows the server, per `CLAUDE.md`: table, then DTO, then screen.
    2026-10-20): `GroupRail`, `ChannelList`, `MessageList`, `MemberList` by hand first, then
    `SpoilerVeil` and `WatchPanel` with the channel kinds, then `@aaru` replies rendering
    `TitleCard`, `CalendarRow` and `Shelf` in `MessageList`.
-7. **Phase 5** — `StreakBar`, `BadgeShelf`, `StatsPanel`, streak widget.
+7. **Phase 5** — `StreakBar`, `BadgeShelf`, streak widget (`StatsPanel` came early as
+   Insights, 2026-10-20; Phase 5 adds genres and the profile).
 8. **Phase 6** — `ConversationView` on the WebSocket gateway (`WatchPanel` shipped with groups).
 9. **Phase 7 · M13** — composer, `PlanCard`, `TonightStrip`, and the tool layer
    (`search_titles`, `read_library`, `plan_import`, `apply_library_patch`, `list_airs`) on top
@@ -211,9 +224,10 @@ allowed to emit it. That is what keeps a failed model call from producing a dead
 
 ## Open
 
-- **M7 shell.** `DESIGN.md` makes The Field the primary home. `BACKLOG.md` M7 currently
-  describes classic library screens. Recommendation: build M7 as the component set plus a
-  simple vertical home, and let M13 add the composer on top — not a tab bar that later gets
-  replaced.
+- ~~**M7 shell.**~~ Closed 2026-10-20. The Field stays a vertical Home the composer lands on
+  in M13, and the iPhone tab bar is capped at five destinations: Home · Discover · Library ·
+  Calendar · Lists (sidebar on iPad and Mac, header links on web). Insights opens from Home's
+  stats strip and next to Recap; it is not a tab. These are destinations, not the media-type
+  tabs `DESIGN.md` "Do not" rules out.
 - **Where `saved_queries` live.** Server-side (syncs across devices, agent can create them)
   vs client-side. Recommendation: server, because the agent creates them.

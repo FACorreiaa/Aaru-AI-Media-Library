@@ -1,5 +1,6 @@
 import type { components } from '../api/schema'
 import { statusLabel } from '../library/model'
+import type { MediaKind } from '../library/model'
 
 // GRP-007…GRP-009 on the web: the pure half of title, shelf and watch channels. The server
 // decides what is veiled, who may start a party and when it starts; these only label, count
@@ -118,13 +119,16 @@ export function stampLabel(stamp?: SpoilerStamp): string | null {
   return null
 }
 
-/** Where someone is in a title: "S1E3", "Finished", "Wishlist", or "Not started". */
-export function progressLabel(progress?: MemberProgress): string {
+/** Where someone is in a title: "S1E3", "Finished", "Plan to watch", or "Not started". */
+export function progressLabel(
+  progress?: MemberProgress,
+  kind: MediaKind | null = null,
+): string {
   if (!progress?.status) return 'Not started'
   if (progress.status === 'finished') return 'Finished'
   if (progress.season !== undefined && progress.episode !== undefined)
     return episodeCode(progress.season, progress.episode)
-  return statusLabel(progress.status)
+  return statusLabel(progress.status, kind)
 }
 
 // MARK: Watch parties
