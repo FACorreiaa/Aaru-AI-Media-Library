@@ -66,6 +66,7 @@ export const uploadImport = createServerFn({ method: 'POST' })
         'imdb',
         'letterboxd',
         'netflix',
+        'tvtime',
         'goodreads',
         'mal',
       ]),

@@ -184,6 +184,11 @@ private extension String {
 enum ImportFormatDetector {
     static func detect(_ text: String) throws -> ImportSource {
         let start = text.drop { $0.isWhitespace || $0 == "\u{FEFF}" }
+        if start.hasPrefix("PK\u{03}\u{04}") {
+            throw ImportFormatError(
+                message: "This is a .zip file. Unzip it and upload the CSV files inside, one at a time."
+            )
+        }
         if start.hasPrefix("<") {
             guard text.contains("<myanimelist") else {
                 throw ImportFormatError(
@@ -208,6 +213,9 @@ enum ImportFormatDetector {
         }
         if headers == ["Title", "Date"] {
             return .netflixCSV
+        }
+        if TVTimeCSVParser.layout(headers) != nil {
+            return .tvTimeCSV
         }
         return .genericCSV
     }

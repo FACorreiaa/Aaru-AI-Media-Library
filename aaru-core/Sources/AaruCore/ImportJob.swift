@@ -16,7 +16,9 @@ public enum ImportSource: String, Codable, Hashable, Sendable, CaseIterable {
     /// Netflix's viewing activity download, one profile (IMP-018). Names only, so after every
     /// source that carries ids.
     case netflixCSV = "netflix_csv"
-    /// MyAnimeList's XML list export (IMP-013). TV Time (IMP-012) slots in before it.
+    /// One CSV from TV Time's export, the in-app one or the GDPR one (IMP-012).
+    case tvTimeCSV = "tvtime_csv"
+    /// MyAnimeList's XML list export (IMP-013).
     case malXML = "mal_xml"
     /// A public AniList list, read by username (IMP-014).
     case anilist
