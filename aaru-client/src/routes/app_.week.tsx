@@ -15,7 +15,7 @@ import {
   onCleanup,
   onMount,
 } from 'solid-js'
-import { z } from 'zod'
+import { optionalEnum } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { MonthCalendar } from '../components/MonthCalendar'
 import { WeekGrid } from '../components/WeekGrid'
@@ -54,7 +54,9 @@ type View = 'week' | 'month'
 
 export const Route = createFileRoute('/app_/week')({
   head: () => ({ meta: [{ title: 'Calendar · Aaru' }] }),
-  validateSearch: z.object({ view: z.enum(['week', 'month']).optional() }),
+  validateSearch: (search): { view?: 'week' | 'month' } => ({
+    view: optionalEnum(search.view, ['week', 'month']),
+  }),
   beforeLoad: async () => {
     const session = await getSession()
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
