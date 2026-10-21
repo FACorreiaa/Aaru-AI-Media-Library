@@ -12,6 +12,7 @@ struct AaruApp: App {
     init() {
         // Posters are referenced by catalog URL, never re-hosted; keep them warm on disk.
         URLCache.shared = URLCache(memoryCapacity: 64 << 20, diskCapacity: 512 << 20)
+        AaruType.registerFonts()
     }
 
     var body: some Scene {
@@ -24,6 +25,7 @@ struct AaruApp: App {
                 )
                 .environment(services.session)
                 .tint(Color(.accent))
+                .appliesAppearance()
             }
         #endif
     }
@@ -39,6 +41,7 @@ struct AaruApp: App {
             // iOS 26, so the brand teal is set here. Views use `Color(.accent)`, never
             // `Color.accentColor`.
             .tint(Color(.accent))
+            .appliesAppearance()
             .task { WidgetCenter.shared.reloadAllTimelines() }
         }
         #if os(iOS)

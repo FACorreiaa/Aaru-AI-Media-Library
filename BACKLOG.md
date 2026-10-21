@@ -36,6 +36,17 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-21
 
+- **Mindspace redesign, and Tonight pulled forward client-composed (owner, 2026-10-21).** Aaru
+  keeps its name, marks and teal → gold, and gets one visual language on both clients (DESIGN.md
+  "Mindspace"): shared tokens generated from `design/tokens.json` with an AA contrast gate,
+  Newsreader bundled for headings, a System / Light / Dark setting per device, and texture
+  (pinstripe, grain, edge light) on the Field and the Title room only. The first slice is the
+  design system, the Field and the Title room on web, iPhone, iPad and Mac; lists, library,
+  calendar, import detail, plans, widgets and the settings/groups palette follow as small PRs.
+  **Tonight** (`TonightStrip`) is an owner exception before M13: composed on the device from
+  Continue watching and today's airings, no new endpoint, no ranking, no reject. The agent's
+  Tonight stays M13. No API, auth, import, permission or persistence change.
+
 - **Music scrobbling (MUS-004…008) is built before the P2 gate**, by the owner's call, after
   albums (MUS-001). Aaru speaks ListenBrainz's submit protocol at `/listenbrainz/1/`, so the
   scrobblers people already use send their listens with a music token: Web Scrobbler (YouTube,

@@ -68,9 +68,11 @@ export function AppHeader(props: { onSearch?: () => void; class?: string }) {
             <Link
               to={d.to}
               activeOptions={{ exact: d.exact, includeSearch: false }}
-              class="shrink-0 rounded-full px-3 py-1.5 text-muted hover:bg-surface hover:text-ink"
+              class="relative shrink-0 rounded-full px-3 py-1.5 text-muted hover:bg-surface hover:text-ink"
+              // The current place wears a gold point of light under its name.
               activeProps={{
-                class: 'bg-surface !text-ink',
+                class:
+                  'bg-surface !text-ink after:absolute after:bottom-0.5 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-gold',
                 'aria-current': 'page',
               }}
             >

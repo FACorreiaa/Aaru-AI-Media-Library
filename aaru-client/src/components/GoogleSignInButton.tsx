@@ -1,4 +1,5 @@
 import { onMount } from 'solid-js'
+import { resolvedScheme } from '../lib/appearance'
 
 /** Google Identity Services, loaded only where the button shows. */
 const SDK = 'https://accounts.google.com/gsi/client?hl=en'
@@ -62,9 +63,7 @@ export function GoogleSignInButton(props: {
       })
       id.renderButton(host, {
         type: 'standard',
-        theme: window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'filled_black'
-          : 'outline',
+        theme: resolvedScheme() === 'dark' ? 'filled_black' : 'outline',
         size: 'large',
         shape: 'pill',
         text: props.text ?? 'continue_with',

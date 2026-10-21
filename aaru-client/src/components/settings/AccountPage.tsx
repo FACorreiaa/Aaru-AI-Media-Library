@@ -1,6 +1,7 @@
 import { useNavigate, useRouter } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
 import { GoogleSignInButton } from '../GoogleSignInButton'
+import { AppearanceSection } from '../AppearanceSection'
 import { NotificationsSection } from '../NotificationsSection'
 import { SocialSection } from '../SocialSection'
 import { Alert } from '../ui/alert'
@@ -97,6 +98,8 @@ export function AccountPage(props: { data: AccountPageData }) {
       />
 
       <NotificationsSection setup={props.data.push} />
+
+      <AppearanceSection />
     </>
   )
 }

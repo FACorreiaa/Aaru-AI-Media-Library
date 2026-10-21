@@ -12,6 +12,7 @@ import {
   createSignal,
   on,
   onCleanup,
+  onMount,
 } from 'solid-js'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
@@ -22,6 +23,10 @@ import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
 import { Button } from '../components/ui/button'
 import { Card, cardClass } from '../components/ui/card'
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '../components/ui/segmented-control'
 import { Switch } from '../components/ui/switch'
 import { Toaster, dismissToast, showToast } from '../components/ui/toast'
 import { cn } from '../lib/cn'
@@ -59,6 +64,16 @@ export const Route = createFileRoute('/app_/title/$id')({
   component: TitleRoom,
 })
 
+/** The room's hairline pitches (see `.atmos`), stable per title: each room has its own rhythm. */
+function roomCode(id: string) {
+  let hash = 0
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return {
+    '--code-a': `${5 + (hash % 5)}px`,
+    '--code-b': `${13 + ((hash >> 4) % 11)}px`,
+  }
+}
+
 const watchedSet = (entry: LibraryEntry) =>
   new Set(
     (entry.watchedEpisodes ?? []).map((e) => episodeKey(e.season, e.number)),
@@ -77,6 +92,13 @@ function TitleRoom() {
   const [pageNumber, setPageNumber] = createSignal(
     page().entry.bookProgress?.page?.toString() ?? '',
   )
+
+  // A server-rendered <textarea> carries `value` only as an attribute, which the browser
+  // ignores, and hydration does not set the property: a saved note looked empty after a load.
+  let notesField: HTMLTextAreaElement | undefined
+  onMount(() => {
+    if (notesField) notesField.value = notes()
+  })
 
   const [opened, setOpened] = createSignal<Episode | null>(null)
   const [retrying, setRetrying] = createSignal(false)
@@ -202,9 +224,17 @@ function TitleRoom() {
       .filter(Boolean)
       .join(' · ')
 
+  const backdrop = () => entry().title.backdropUrl
+  const progress = () => {
+    const p = entry().progress
+    return p && p.airedCount > 0 ? p : null
+  }
+  /** The next aired, unwatched episode, for the room's one obvious action. */
+  const nextUp = () => (entry().title.type === 'show' ? upNext() : undefined)
+
   return (
     <div class="min-h-[100dvh]">
-      <header class="mx-auto flex h-18 max-w-4xl items-center justify-between px-5 md:px-8">
+      <header class="mx-auto flex h-18 max-w-6xl items-center justify-between px-5 md:px-8">
         <Wordmark to="/app" />
         <Link
           to="/app/library"
@@ -214,47 +244,66 @@ function TitleRoom() {
         </Link>
       </header>
 
-      <main class="mx-auto max-w-4xl px-5 pb-20 md:px-8">
+      <main class="mx-auto max-w-6xl px-5 pb-20 md:px-8">
         <Show
           when={isAlbum()}
           fallback={
-            <section class="mt-4 flex gap-6">
-              <Poster
-                url={entry().title.posterUrl}
-                kind={kind()}
-                class="w-28 shrink-0 md:w-40"
-              />
-              <div class="min-w-0">
-                <h1 class="font-display text-3xl leading-tight font-medium tracking-tight md:text-4xl">
-                  {entry().title.title}
-                </h1>
-                <p class="mt-2 text-muted">{meta()}</p>
-                <Button size="sm" class="mt-4" onClick={() => setPicking(true)}>
-                  Add to list
-                </Button>
-                <DiscussButton
-                  titleId={entry().title.id}
-                  type={entry().title.type}
-                  name={entry().title.title}
-                />
-                <Show
-                  when={entry().progress && entry().progress!.airedCount > 0}
-                >
-                  <div class="mt-4 max-w-xs">
-                    <div class="h-1.5 overflow-hidden rounded-full bg-surface">
-                      <div
-                        class="h-full rounded-full bg-accent transition-[width]"
-                        style={{
-                          width: `${(entry().progress!.watchedCount / entry().progress!.airedCount) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <p class="mt-2 text-sm text-muted">
-                      {entry().progress!.watchedCount} of{' '}
-                      {entry().progress!.airedCount} episodes
-                    </p>
-                  </div>
+            // The room's hero: the title's wide art fading into the paper, over the room's
+            // own hairline rhythm (seeded by the title), with the poster and name standing in
+            // front of it. Capped in height so the controls stay on the first screen.
+            <section>
+              <div
+                class="atmos relative h-[clamp(180px,30vh,320px)] overflow-hidden rounded-card"
+                style={roomCode(entry().title.id)}
+              >
+                <Show when={backdrop()}>
+                  {(url) => (
+                    <img
+                      src={url()}
+                      alt=""
+                      decoding="async"
+                      class="absolute inset-0 h-full w-full object-cover"
+                    />
+                  )}
                 </Show>
+                <div class="veil absolute inset-0" />
+              </div>
+              {/* On a phone only the poster steps into the art and the name sits under it, so a
+                  long title never lies across the picture. */}
+              <div class="relative -mt-12 flex items-start gap-5 px-1 md:-mt-28 md:items-end md:gap-7 md:px-6">
+                <Poster
+                  url={entry().title.posterUrl}
+                  kind={kind()}
+                  class="fringe w-24 shrink-0 rounded-field md:w-40"
+                />
+                <div class="min-w-0 pt-14 pb-1 md:pt-0">
+                  <h1
+                    class="line-clamp-3 font-display text-3xl leading-tight font-medium tracking-tight text-balance md:text-5xl"
+                    title={entry().title.title}
+                  >
+                    {entry().title.title}
+                  </h1>
+                  <p class="mt-2 text-sm text-muted tabular-nums md:text-base">
+                    {meta()}
+                  </p>
+                  <Show when={progress()}>
+                    {(p) => (
+                      <div class="mt-3 max-w-xs">
+                        <div class="h-1 overflow-hidden rounded-full bg-line">
+                          <div
+                            class="h-full rounded-full bg-accent transition-[width]"
+                            style={{
+                              width: `${(p().watchedCount / p().airedCount) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <p class="mt-1.5 text-xs text-muted tabular-nums">
+                          {p().watchedCount} of {p().airedCount} episodes
+                        </p>
+                      </div>
+                    )}
+                  </Show>
+                </div>
               </div>
             </section>
           }
@@ -277,182 +326,225 @@ function TitleRoom() {
           </AlbumHeader>
         </Show>
 
-        <Card class="mt-8 grid gap-4 p-5 sm:grid-cols-2">
-          <label class="flex items-center justify-between gap-4 text-sm font-medium">
-            Status
-            <select
-              class="rounded-full border-0 bg-paper py-1.5 pr-8 pl-4 text-sm focus:ring-2 focus:ring-accent"
-              value={entry().status}
-              onChange={(e) => {
-                const status = e.currentTarget.value as LibraryStatus
-                void update({ status }, { status })
-              }}
-            >
-              <For each={statusOptions(kind())}>
-                {(s) => (
-                  // `selected` on the option, not `value` on the select: the value would be
-                  // applied before the options exist and show the first one.
-                  <option
-                    value={s.status}
-                    selected={s.status === entry().status}
-                  >
-                    {s.label}
-                  </option>
+        {/* What a visit is usually for, in one row: the next episode, where it stands on
+            the shelf, and the two ways to take it elsewhere. */}
+        <div class="mt-6 flex flex-wrap items-center gap-2">
+          <Show when={nextUp()}>
+            {(episode) => (
+              <Button
+                variant="primary"
+                disabled={pending().has(
+                  episodeKey(episode().season, episode().number),
                 )}
-              </For>
-            </select>
-          </label>
-          <div class="flex items-center justify-between gap-4 text-sm font-medium">
-            Rating
-            <div class="flex gap-1" role="group" aria-label="Rating">
-              <For each={[1, 2, 3, 4, 5]}>
-                {(star) => (
-                  <button
-                    type="button"
-                    aria-label={`${star} star${star === 1 ? '' : 's'}`}
-                    aria-pressed={(entry().rating ?? 0) >= star * 2}
-                    class="text-xl leading-none text-accent"
-                    onClick={() => {
-                      const rating = nextRating(entry().rating, star)
-                      void (rating === null
-                        ? update({ clear: ['rating'] }, { rating: undefined })
-                        : update({ rating }, { rating }))
-                    }}
-                  >
-                    {(entry().rating ?? 0) >= star * 2 ? '★' : '☆'}
-                  </button>
-                )}
-              </For>
-            </div>
-          </div>
-          <Switch
-            class="flex items-center justify-between gap-4 text-sm font-medium"
-            checked={entry().isOwned}
-            onChange={(isOwned) => void update({ isOwned }, { isOwned })}
-            label="Owned"
-            trackLast
-          />
-          <Show when={entry().title.type === 'book'}>
-            <form
-              class="flex items-center justify-between gap-4 text-sm font-medium"
-              onSubmit={(e) => {
-                e.preventDefault()
-                const bookPage = Number.parseInt(pageNumber(), 10)
-                if (Number.isFinite(bookPage)) {
-                  void update(
-                    { bookPage },
-                    { bookProgress: { page: bookPage } },
-                  )
-                }
-              }}
-            >
-              <label for="page">Page</label>
-              <input
-                id="page"
-                inputmode="numeric"
-                class="w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm focus:ring-2 focus:ring-accent"
-                value={pageNumber()}
-                onInput={(e) => setPageNumber(e.currentTarget.value)}
-              />
-            </form>
-          </Show>
-        </Card>
-
-        <section class="mt-8">
-          <label for="notes" class="font-display text-xl font-medium">
-            Notes
-          </label>
-          <textarea
-            id="notes"
-            rows="3"
-            placeholder="Anything worth remembering"
-            class="mt-3 w-full rounded-panel border-0 bg-surface px-4 py-3 text-base focus:ring-2 focus:ring-accent"
-            value={notes()}
-            onInput={(e) => setNotes(e.currentTarget.value)}
-          />
-          <Show when={notes() !== (entry().notes ?? '')}>
-            <Button
-              size="sm"
-              class="mt-2"
-              onClick={() => {
-                const text = notes().trim()
-                void (text
-                  ? update({ notes: text }, { notes: text })
-                  : update({ clear: ['notes'] }, { notes: undefined }))
-              }}
-            >
-              Save note
-            </Button>
-          </Show>
-        </section>
-
-        <Show when={title()?.synopsis}>
-          <section class="mt-8">
-            <h2 class="font-display text-xl font-medium">About</h2>
-            <p class="mt-3 max-w-[65ch] leading-relaxed text-muted">
-              {title()?.synopsis}
-            </p>
-          </section>
-        </Show>
-
-        <Show when={isAlbum()}>
-          <Tracklist tracks={title()?.tracks} />
-        </Show>
-
-        <Show when={entry().title.type === 'show'}>
-          <Show when={page().titleError}>
-            {(message) => (
-              <Card class="mt-10 flex items-center gap-4 p-5">
-                <p class="text-sm text-muted">{message()}</p>
-                <Button
-                  size="sm"
-                  class="ml-auto"
-                  disabled={retrying()}
-                  onClick={() => void retry()}
-                >
-                  Try again
-                </Button>
-              </Card>
+                onClick={() => void toggle(episode().season, episode().number)}
+              >
+                Mark S{episode().season} · E{episode().number} watched
+              </Button>
             )}
           </Show>
-          <Show when={title() && seasons().length === 0}>
-            <p class="mt-10 text-sm text-muted">
-              No episodes are listed for this show yet.
-            </p>
+          <SegmentedControl
+            class="flex flex-wrap gap-1.5"
+            aria-label="Status"
+            value={entry().status}
+            onChange={(next) => {
+              const status = next as LibraryStatus
+              void update({ status }, { status })
+            }}
+          >
+            <For each={statusOptions(kind())}>
+              {(option) => (
+                <SegmentedControlItem
+                  value={option.status}
+                  variant="chip"
+                  class="min-h-11 px-4 text-sm"
+                >
+                  {option.label}
+                </SegmentedControlItem>
+              )}
+            </For>
+          </SegmentedControl>
+          <Show when={!isAlbum()}>
+            <Button variant="quiet" onClick={() => setPicking(true)}>
+              Add to list
+            </Button>
+            <DiscussButton
+              titleId={entry().title.id}
+              type={entry().title.type}
+              name={entry().title.title}
+            />
           </Show>
-          <Show when={seasons().length > 0}>
-            <section class="mt-10">
-              <h2 class="font-display text-xl font-medium">Episodes</h2>
-              <div class="mt-3">
-                <SeasonMap
-                  seasons={seasons()}
-                  watched={watched()}
-                  pending={pending()}
-                  next={upNext()}
-                  onToggle={toggle}
-                />
-              </div>
-            </section>
-            <section class="mt-4 flex flex-col gap-4">
-              <For each={seasons()}>
-                {(season) => (
-                  <SeasonBlock
-                    season={season}
-                    open={season.number === openSeason()}
-                    watched={watched()}
-                    pending={pending()}
-                    canMarkAll={airedKeys(title(), season.number).some(
-                      (k) => !watched().has(k),
-                    )}
-                    onToggle={toggle}
-                    onMarkAll={markAll}
-                    onOpen={setOpened}
-                  />
+        </div>
+
+        <div class="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div class="flex min-w-0 flex-col gap-8">
+            <Show when={entry().title.type !== 'show' && title()?.synopsis}>
+              <section>
+                <h2 class="eyebrow">About</h2>
+                <p class="mt-3 max-w-[65ch] text-lg leading-relaxed">
+                  {title()?.synopsis}
+                </p>
+              </section>
+            </Show>
+
+            <Show when={isAlbum()}>
+              <Tracklist tracks={title()?.tracks} />
+            </Show>
+
+            <Show when={entry().title.type === 'show'}>
+              <Show when={page().titleError}>
+                {(message) => (
+                  <Card class="flex items-center gap-4 p-5">
+                    <p class="text-sm text-muted">{message()}</p>
+                    <Button
+                      size="sm"
+                      class="ml-auto"
+                      disabled={retrying()}
+                      onClick={() => void retry()}
+                    >
+                      Try again
+                    </Button>
+                  </Card>
                 )}
-              </For>
+              </Show>
+              <Show when={title() && seasons().length === 0}>
+                <p class="text-sm text-muted">
+                  No episodes are listed for this show yet.
+                </p>
+              </Show>
+              <Show when={seasons().length > 0}>
+                <section>
+                  <h2 class="eyebrow">Episodes</h2>
+                  <div class="mt-3">
+                    <SeasonMap
+                      seasons={seasons()}
+                      watched={watched()}
+                      pending={pending()}
+                      next={upNext()}
+                      onToggle={toggle}
+                    />
+                  </div>
+                </section>
+                <section class="-mt-4 flex flex-col gap-4">
+                  <For each={seasons()}>
+                    {(season) => (
+                      <SeasonBlock
+                        season={season}
+                        open={season.number === openSeason()}
+                        watched={watched()}
+                        pending={pending()}
+                        canMarkAll={airedKeys(title(), season.number).some(
+                          (k) => !watched().has(k),
+                        )}
+                        onToggle={toggle}
+                        onMarkAll={markAll}
+                        onOpen={setOpened}
+                      />
+                    )}
+                  </For>
+                </section>
+              </Show>
+            </Show>
+          </div>
+
+          <aside class="flex flex-col gap-8" aria-label="Your notes">
+            <Card class="flex flex-col gap-4 p-5">
+              <div class="flex items-center justify-between gap-4 text-sm font-medium">
+                Rating
+                <div class="flex gap-1" role="group" aria-label="Rating">
+                  <For each={[1, 2, 3, 4, 5]}>
+                    {(star) => (
+                      <button
+                        type="button"
+                        aria-label={`${star} star${star === 1 ? '' : 's'}`}
+                        aria-pressed={(entry().rating ?? 0) >= star * 2}
+                        class="text-xl leading-none text-gold"
+                        onClick={() => {
+                          const rating = nextRating(entry().rating, star)
+                          void (rating === null
+                            ? update(
+                                { clear: ['rating'] },
+                                { rating: undefined },
+                              )
+                            : update({ rating }, { rating }))
+                        }}
+                      >
+                        {(entry().rating ?? 0) >= star * 2 ? '★' : '☆'}
+                      </button>
+                    )}
+                  </For>
+                </div>
+              </div>
+              <Switch
+                class="flex items-center justify-between gap-4 text-sm font-medium"
+                checked={entry().isOwned}
+                onChange={(isOwned) => void update({ isOwned }, { isOwned })}
+                label="Owned"
+                trackLast
+              />
+              <Show when={entry().title.type === 'book'}>
+                <form
+                  class="flex items-center justify-between gap-4 text-sm font-medium"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    const bookPage = Number.parseInt(pageNumber(), 10)
+                    if (Number.isFinite(bookPage)) {
+                      void update(
+                        { bookPage },
+                        { bookProgress: { page: bookPage } },
+                      )
+                    }
+                  }}
+                >
+                  <label for="page">Page</label>
+                  <input
+                    id="page"
+                    inputmode="numeric"
+                    class="w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm focus:ring-2 focus:ring-accent"
+                    value={pageNumber()}
+                    onInput={(e) => setPageNumber(e.currentTarget.value)}
+                  />
+                </form>
+              </Show>
+            </Card>
+            <section>
+              <label for="notes" class="eyebrow">
+                Notes
+              </label>
+              <textarea
+                ref={notesField}
+                id="notes"
+                rows="3"
+                placeholder="Anything worth remembering"
+                class="mt-3 w-full rounded-panel border-0 bg-surface px-4 py-3 text-base focus:ring-2 focus:ring-accent"
+                value={notes()}
+                onInput={(e) => setNotes(e.currentTarget.value)}
+              />
+              <Show when={notes() !== (entry().notes ?? '')}>
+                <Button
+                  size="sm"
+                  class="mt-2"
+                  onClick={() => {
+                    const text = notes().trim()
+                    void (text
+                      ? update({ notes: text }, { notes: text })
+                      : update({ clear: ['notes'] }, { notes: undefined }))
+                  }}
+                >
+                  Save note
+                </Button>
+              </Show>
             </section>
-          </Show>
-        </Show>
+
+            <Show when={entry().title.type === 'show' && title()?.synopsis}>
+              <section>
+                <h2 class="eyebrow">About</h2>
+                <p class="mt-3 leading-relaxed text-muted">
+                  {title()?.synopsis}
+                </p>
+              </section>
+            </Show>
+          </aside>
+        </div>
         <Show when={opened()}>
           {(episode) => (
             <EpisodeSheet

@@ -93,6 +93,7 @@ cd aaru-client && npm run dev
 cd aaru-client && npm run check && npm run lint && npm run typecheck
 cd aaru-client && npm test
 cd aaru-client && npm run api:generate   # after any openapi.yaml change
+cd aaru-client && npm run tokens         # after any design/tokens.json change (web CSS + Apple colour sets)
 cd aaru-client && npm run build && npm run size   # JS/CSS budget per route (size-budget.json)
 
 # Browser extension

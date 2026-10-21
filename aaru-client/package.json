@@ -13,7 +13,9 @@
     "test": "vitest run",
     "api:generate": "npx --yes openapi-typescript@7.13.0 ../aaru-server/Sources/AppAPI/openapi.yaml -o src/lib/api/schema.d.ts && prettier --write src/lib/api/schema.d.ts",
     "cf:types": "wrangler types --strict-vars false",
-    "size": "node scripts/size-budget.mjs"
+    "size": "node scripts/size-budget.mjs",
+    "tokens": "node ../scripts/generate-tokens.mjs",
+    "tokens:check": "node ../scripts/generate-tokens.mjs --check"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.26.0",
