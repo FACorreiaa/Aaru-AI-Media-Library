@@ -1,7 +1,8 @@
 import AaruAPI
 import SwiftUI
 
-/// Settings → Account: who you are, how you sign in, friends, and notifications.
+/// Settings → Account: who you are, how you sign in, friends, notifications, and the city Aaru
+/// looks for concerts around.
 struct AccountSettings: View {
     let api: Client?
     let imports: ImportsModel
@@ -19,6 +20,7 @@ struct AccountSettings: View {
                 Button("Sign out", action: onSignOut)
             }
             FriendsSection(api: api)
+            ConcertPlaceSection(api: api) { imports.problem = $0 }
             #if os(iOS)
                 if let push = PushRegistrar.current {
                     NotificationsSection(push: push)

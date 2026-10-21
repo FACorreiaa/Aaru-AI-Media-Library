@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 20 October 2026._
+_Last updated 21 October 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -81,6 +81,12 @@ browser's push service (Google, Mozilla, Apple or Microsoft) and the keys that e
 only your browser can read it. Turning alerts off in that browser, or deleting your account, removes
 it.
 
+**Concerts.** If you choose a city for "Concerts near", Aaru stores its name, region, country and
+a position rounded to about a kilometre, until you remove it in Settings. "Use my location"
+asks your device for an approximate position once; it is rounded the same way, used for that
+one search, and never stored or logged. To find concerts by your artists, Aaru looks up the
+artists of the albums in your library; that list is catalog data, not about you.
+
 **Catalog data** (titles, posters, episode lists) is shared by everyone and is not about you.
 
 ## Who else is involved
@@ -100,8 +106,13 @@ Aaru only uses these services, and only for the purpose listed:
   what you play. If you import your Stremio history, Aaru's server reads your Stremio library
   once with the code you approved, then signs out. Aaru also asks Stremio's public catalog
   (Cinemeta) for a show's episode list by its IMDb id, never who you are.
-- **TMDB, TVmaze, AniList and Open Library** provide catalog data. Aaru's server sends them
-  what you search for and catalog ids, never who you are.
+- **TMDB, TVmaze, AniList, Open Library, MusicBrainz and ListenBrainz** provide catalog data.
+  Aaru's server sends them what you search for and catalog ids, never who you are.
+- **Ticketmaster** lists concerts. Aaru's server sends it an area of about 5 km around your
+  city or approximate position, a distance, and artist names from albums people have added,
+  never who you are. Tickets are bought on Ticketmaster's site, under its own terms.
+- **Open-Meteo** turns the city you type for "Concerts near" into a place. It receives that
+  text only.
 
 ## How long it is kept
 

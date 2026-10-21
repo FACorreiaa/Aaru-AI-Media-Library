@@ -78,6 +78,14 @@ func backgroundServices(
             refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
             logger: logger
         ),
+        ConcertRefreshService(
+            refresher: ConcertRefresher(
+                stores: stores,
+                artists: services.catalog.catalogs.music as? any AlbumArtistListing,
+                listing: services.concerts.listing
+            ),
+            logger: logger
+        ),
     ] + (services.agentReplies.map { [AgentReplyWorker(replies: $0, logger: logger)] } ?? [])
         + (services.catalog.catalogs.recordings.map {
             [ListenResolverService(resolver: ListenResolver(stores: stores, recordings: $0), logger: logger)]
@@ -315,16 +323,7 @@ func makeCATCalendarFeed(_ transport: any HTTPTransport) -> CATCalendarFeed {
 
 /// One `ProviderClient` (and so one rate pacer) per provider, shared by every caller.
 func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> CatalogProviders {
-    let musicBrainz = MusicBrainzCatalog(
-        // MusicBrainz allows one request a second per client: album search and listen lookups
-        // (MUS-006) share this one.
-        client: ProviderClient(
-            name: "musicbrainz",
-            transport: transport,
-            pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
-        ),
-        userAgent: config.openLibraryUserAgent
-    )
+    let musicBrainz = makeMusicBrainz(userAgent: config.openLibraryUserAgent, transport)
     return CatalogProviders(
         tmdb: TMDBCatalog(
             client: ProviderClient(
@@ -367,6 +366,19 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
             ),
             userAgent: config.openLibraryUserAgent
         ),
-        recordings: musicBrainz
+        recordings: musicBrainz,
+        concerts: config.concertsAPIKey.map { makeConcertListing(apiKey: $0, transport) },
+        places: makePlaceSearch(transport)
+    )
+}
+
+/// MusicBrainz allows one request a second per client: album search, listen lookups (MUS-006) and
+/// concert artists (MUS-003) share this one.
+func makeMusicBrainz(userAgent: String, _ transport: any HTTPTransport) -> MusicBrainzCatalog {
+    MusicBrainzCatalog(
+        client: ProviderClient(
+            name: "musicbrainz", transport: transport, pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
+        ),
+        userAgent: userAgent
     )
 }

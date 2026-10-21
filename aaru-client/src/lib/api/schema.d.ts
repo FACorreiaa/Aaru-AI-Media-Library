@@ -1097,6 +1097,82 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/concerts/near': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
+     * @description POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a kilometre) and used for this request only: never stored, never logged. With no coordinates the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in the same area, cached by the server and linked out to Ticketmaster for tickets.
+     */
+    post: operations['getConcertsNear']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/concerts/artists': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Upcoming concerts by the artists of the user's albums (MUS-003).
+     * @description Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
+     */
+    get: operations['getArtistConcerts']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/concerts/places': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Cities matching what the user typed, for the "Concerts near" picker (MUS-003). */
+    get: operations['searchConcertPlaces']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/concert-place': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The saved "Concerts near" city, and whether concerts are on at all. */
+    get: operations['getConcertPlace']
+    /** Saves the "Concerts near" city, rounded to two decimals. */
+    put: operations['saveConcertPlace']
+    post?: never
+    /** Forgets the "Concerts near" city. */
+    delete: operations['deleteConcertPlace']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}': {
     parameters: {
       query?: never
@@ -2361,6 +2437,80 @@ export interface components {
       /** @description The provider's count for the whole season, when it gives one. */
       total?: number
       /** @description The provider did not answer and nothing was cached; not an empty season. */
+      unavailable: boolean
+    }
+    /** @description One music event from Ticketmaster. Tickets are bought there, never in Aaru. */
+    Concert: {
+      id: string
+      name: string
+      /** @description The acts on the bill, headliner first. */
+      artists: string[]
+      /**
+       * Format: date-time
+       * @description The exact start, when announced.
+       */
+      startsAt?: string
+      /** @description The day at the venue, YYYY-MM-DD. */
+      localDate: string
+      /** @description The time at the venue, HH:mm, when announced. */
+      localTime?: string
+      venue?: string
+      city?: string
+      country?: string
+      /** @description From the searched point. Absent for an artist's concerts. */
+      distanceKm?: number
+      /** @description Ticketmaster's event page. */
+      url: string
+      /** @description Ticketmaster's image for the event, referenced, never hosted. */
+      imageUrl?: string
+    }
+    ConcertPlace: {
+      /** @description 1 to 200 characters. */
+      name: string
+      region?: string
+      country?: string
+      /** @description ISO 3166-1 alpha-2. */
+      countryCode?: string
+      /** @description Rounded to two decimals by the server. */
+      latitude: number
+      /** @description Rounded to two decimals by the server. */
+      longitude: number
+    }
+    ConcertPlaceList: {
+      items: components['schemas']['ConcertPlace'][]
+    }
+    ConcertPlaceSetting: {
+      place?: components['schemas']['ConcertPlace']
+      /** @description False when concerts are off on this server; clients hide the Concerts view. */
+      available: boolean
+    }
+    ConcertsNearRequest: {
+      /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
+      latitude?: number
+      longitude?: number
+      /** @enum {integer} */
+      radiusKm: 25 | 50 | 100
+      /**
+       * @description 1-based, at most 10.
+       * @default 1
+       */
+      page: number
+    }
+    ConcertPage: {
+      place?: components['schemas']['ConcertPlace']
+      radiusKm: number
+      items: components['schemas']['Concert'][]
+      page: number
+      hasMore: boolean
+      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+      unavailable: boolean
+    }
+    ArtistConcerts: {
+      items: components['schemas']['Concert'][]
+      /** @description Library artists Ticketmaster knows. */
+      matched: number
+      /** @description Library artists not looked up yet. */
+      pending: number
       unavailable: boolean
     }
     Episode: {
@@ -4754,6 +4904,141 @@ export interface operations {
         content: {
           'application/json': components['schemas']['SeasonPage']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getConcertsNear: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConcertsNearRequest']
+      }
+    }
+    responses: {
+      /** @description The page. `unavailable` when concerts are off or the provider is down. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getArtistConcerts: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The concerts. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ArtistConcerts']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  searchConcertPlaces: {
+    parameters: {
+      query: {
+        /** @description 2 to 100 characters. Not logged. */
+        q: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Up to eight places, best first. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertPlaceList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getConcertPlace: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The setting. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertPlaceSetting']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  saveConcertPlace: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConcertPlace']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertPlaceSetting']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteConcertPlace: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed, or there was none. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

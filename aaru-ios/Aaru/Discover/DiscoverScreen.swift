@@ -3,10 +3,11 @@ import SwiftUI
 
 /// Discover (APP-012, DISC-001): catalog rows to add from without typing, with the same cards as
 /// Home's Discover rows. Renders the cache first, then refreshes. Credits TMDB and AniList, whose
-/// lists these are. A segmented control switches Today's rows for the Seasons view (DISC-002).
+/// lists these are. A segmented control switches Today's rows for the Seasons view (DISC-002)
+/// and, when the server has concerts on, the Concerts view (MUS-003).
 struct DiscoverScreen: View {
     enum Section: String, CaseIterable, Identifiable {
-        case today, seasons
+        case today, seasons, concerts
 
         var id: String {
             rawValue
@@ -16,6 +17,7 @@ struct DiscoverScreen: View {
             switch self {
             case .today: "Today"
             case .seasons: "Seasons"
+            case .concerts: "Concerts"
             }
         }
     }
@@ -26,6 +28,7 @@ struct DiscoverScreen: View {
 
     @State private var model: DiscoverModel
     @State private var seasons: SeasonModel
+    @State private var concerts: ConcertsModel
     @State private var section: Section = .today
     @State private var showsSearch = false
     @State private var listTarget: CatalogHit?
@@ -45,6 +48,7 @@ struct DiscoverScreen: View {
         self.lists = lists
         _model = State(initialValue: model ?? DiscoverModel(api: api, library: library))
         _seasons = State(initialValue: SeasonModel(api: api, library: library))
+        _concerts = State(initialValue: ConcertsModel(api: api))
     }
 
     var body: some View {
@@ -54,6 +58,8 @@ struct DiscoverScreen: View {
                 case .today: content
                 case .seasons:
                     SeasonBrowser(model: seasons, compact: compact) { listTarget = $0 }
+                case .concerts:
+                    ConcertsView(model: concerts)
                 }
             }
             .navigationTitle("Discover")
@@ -74,6 +80,12 @@ struct DiscoverScreen: View {
                     }
                 }
                 .task { await model.loadIfNeeded() }
+                .task { await concerts.loadSetting() }
+                .onChange(of: concerts.available) { _, available in
+                    if !available, section == .concerts {
+                        section = .today
+                    }
+                }
                 .refreshable { await model.load() }
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
@@ -92,6 +104,7 @@ struct DiscoverScreen: View {
                     switch section {
                     case .today: ProblemBanner(message: model.problem) { model.problem = nil }
                     case .seasons: ProblemBanner(message: seasons.problem) { seasons.problem = nil }
+                    case .concerts: ProblemBanner(message: concerts.problem) { concerts.problem = nil }
                     }
                 }
                 .background(Color(.paper))
@@ -103,9 +116,14 @@ struct DiscoverScreen: View {
         section = .seasons
     }
 
+    /// Concerts only when the server has them on.
+    private var sections: [Section] {
+        Section.allCases.filter { $0 != .concerts || concerts.available }
+    }
+
     private var sectionPicker: some View {
         Picker("Discover", selection: $section) {
-            ForEach(Section.allCases) { section in
+            ForEach(sections) { section in
                 Text(section.label).tag(section)
             }
         }

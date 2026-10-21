@@ -56,6 +56,8 @@ struct AboutView: View {
                 CreditLink("Music data from MusicBrainz", url: "https://musicbrainz.org")
                 CreditLink("Album rows from ListenBrainz", url: "https://listenbrainz.org")
                 CreditLink("Covers from the Cover Art Archive", url: "https://coverartarchive.org")
+                CreditLink("Concerts from Ticketmaster", url: "https://www.ticketmaster.com")
+                CreditLink("City search by Open-Meteo", url: "https://open-meteo.com")
                 CreditLink(
                     "History import from Trakt",
                     detail: "Aaru uses Trakt but is not endorsed or certified by Trakt.",

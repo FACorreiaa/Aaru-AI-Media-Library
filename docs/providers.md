@@ -30,6 +30,19 @@ search (CAT-019) sends every query to AniList as well as TMDB, so AniList answer
 deadline and a miss leaves `incomplete: true`. The Discover screen (APP-012) repeats the TMDB
 notice and the AniList and Open Library credits in its footer, besides About.
 
+## Concerts (MUS-003; receive a place, never who is asking)
+
+| Provider | Used for | Key | Secret | Rate limit (ours) | Terms | Credit Aaru shows |
+| --- | --- | --- | --- | --- | --- | --- |
+| Ticketmaster Discovery API | Music events near a point and by performer; performers by name with their MusicBrainz links | free key | `TICKETMASTER_API_KEY` in `aaru-env` | 4/s; stops at 4,500 calls a UTC day (limit 5,000) | Cache only for short periods (6 h), link to Ticketmaster for tickets, no resale of the data, disclose in the privacy policy | "Concerts from Ticketmaster" under the list and in About |
+| Open-Meteo geocoding | The "Concerts near" city picker: a typed city name to a point | none | — | 2/s | Free for non-commercial use; revisit before any paid plan | "City search by Open-Meteo" in About |
+
+Ticketmaster receives a 5-character geohash cell (about 5 km across) and a radius, never the
+rounded position itself and never a user id. One-off positions ("Use my location") are rounded
+to two decimals on the device, sent in a POST body, used once and never stored or logged. The
+saved city is stored rounded and deleted with the account. Open-Meteo receives only the text
+typed into the city search; that route's query is dropped from Aaru's request log.
+
 ## Account, sign-in and delivery (receive user data)
 
 | Provider | Used for | Key | Secret | Data it receives |

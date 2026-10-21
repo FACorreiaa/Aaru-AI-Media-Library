@@ -5,7 +5,7 @@ import Foundation
 /// and a tracklist from the release group's earliest official release. Covers are Cover Art
 /// Archive URLs, referenced, never downloaded. MusicBrainz allows one request a second and
 /// asks every client to identify itself.
-struct MusicBrainzCatalog: CatalogSearching, TrackListing {
+struct MusicBrainzCatalog: CatalogSearching, TrackListing, AlbumArtistListing {
     static let baseURL = URL(string: "https://musicbrainz.org/ws/2")!
     /// The types Aaru tracks: albums and EPs, not singles, broadcasts or compilations of others.
     static let trackedTypes: Set<String> = ["Album", "EP"]
@@ -43,6 +43,21 @@ struct MusicBrainzCatalog: CatalogSearching, TrackListing {
         hit.ids = hit.ids.filling(from: ids)
         let genres = (group.genres ?? []).sorted { $0.count > $1.count }.prefix(5).map(\.name)
         return CatalogTitle(hit: hit, status: nil, runtimeMinutes: nil, genres: genres)
+    }
+
+    /// MUS-003: the album's credited artists, for matching concerts by MusicBrainz id.
+    func artists(releaseGroup mbid: String) async throws -> [MusicArtist]? {
+        let group: ReleaseGroup
+        do {
+            group = try await get(ReleaseGroup.self, "release-group/\(mbid)", ["inc": "artist-credits"])
+        } catch let error as ProviderError where error.kind == .notFound {
+            return nil
+        }
+        var seen = Set<String>()
+        return (group.artistCredit ?? []).compactMap { credit in
+            guard let artist = credit.artist, seen.insert(artist.id).inserted else { return nil }
+            return MusicArtist(musicbrainzID: artist.id.lowercased(), name: artist.name)
+        }
     }
 
     func tracks(ids: ExternalIDs) async throws -> [AlbumTrack]? {

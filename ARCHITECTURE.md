@@ -482,6 +482,29 @@ protocol UserLibraryImporting: Sendable {
   new listens as they are stored; a miss is asked again after 30 days. It uses the same
   `MusicBrainzCatalog`, so album search and lookups share the one-a-second pacer. A listen's
   `albumRef` points at the album by MusicBrainz id, and by Aaru's title id once it is in the catalog
+- `artists(releaseGroup:)` (MUS-003) gives an album's credited artists by MBID for concerts
+
+### Concerts (MUS-003)
+
+`Sources/App/Concerts/`, behind `ConcertListing` (named for the job). `TicketmasterConcerts`
+calls Discovery v2 with `TICKETMASTER_API_KEY`; without the key `CatalogProviders.concerts` is
+nil and every concert answer is `unavailable` (`GET /v1/me/concert-place` says `available: false`
+and clients hide the view). Paced at 4/s; a `CallBudget` stops at 4,500 calls a UTC day.
+
+- **Near a place.** `POST /v1/concerts/near` (POST so a position never sits in a URL). A one-off
+  position is rounded to two decimals (`GeoPoint`) and used once; otherwise the saved city
+  (`concert_places`, one row a user, rounded, deleted with the account); neither is 409
+  `no_place`. Ticketmaster gets only the 5-character geohash cell (~5 km) plus the radius
+  (25/50/100 km); the cell also keys `ConcertCache` (6 h, stale served on failure, 500 entries).
+  Nothing logs the point; the cache's failure log names only the kind of query.
+- **Your artists on tour.** `album_artists` links albums to `music_artists` (MBID, name,
+  `performer_id`). `ConcertRefreshService` runs `ConcertRefresher` every 30 minutes: albums in
+  someone's library without artists get them from MusicBrainz (stamped `titles.artists_checked_at`
+  even when empty), then up to 20 artists are matched by searching Ticketmaster performers by name
+  and keeping only one whose `externalLinks.musicbrainz` carries the same MBID; rechecked after 30
+  days. `GET /v1/concerts/artists` asks for the user's matched performers 20 ids a call, cached.
+- **City picker.** `GET /v1/concerts/places?q=` → `OpenMeteoPlaces` (no key). The request log
+  drops this route's query. `PUT`/`DELETE /v1/me/concert-place` save and forget the city.
 
 ### Anime catalog (AniList)
 

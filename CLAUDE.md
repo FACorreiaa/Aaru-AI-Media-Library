@@ -33,6 +33,8 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
+| Concerts | Ticketmaster Discovery API v2 (`TICKETMASTER_API_KEY`, free, 5,000 calls/day; Aaru stops at 4,500), behind `ConcertListing`; off without the key. Tickets link out (MUS-003) |
+| Geocoding | Open-Meteo geocoding (no key, non-commercial) for the "Concerts near" city only (MUS-003) |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble — music | ListenBrainz's submit protocol at `/listenbrainz/1/` with music tokens only (MUS-005, owner 2026-10-21): Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin's plugin. No Spotify OAuth, no native Apple Music path |
@@ -148,6 +150,11 @@ Use these words in code, APIs, and UI:
   Dropped
 - **Album** — one MusicBrainz release group of type Album or EP: the tracked unit of music.
   Status, rating and notes only; its tracklist is catalog data, never ticked
+- **Concert** — one music event from the concert provider, near a place or by an artist of the
+  user's albums (matched by MusicBrainz artist id, never by name). Catalog data linked out for
+  tickets; Aaru sells nothing and stores no event past the cache. A position used to find
+  concerts is rounded to two decimals and never stored; the saved "Concerts near" city is the
+  only place kept, and the user removes it in Settings
 - **Owned** — separate `isOwned` flag; do not overload status
 - **Progress** — episode ticks for TV; page/percentage optional for books
 - **List** — user-curated collection of library items, stored as membership rows

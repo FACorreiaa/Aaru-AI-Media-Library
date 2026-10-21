@@ -19,6 +19,7 @@ struct Services: Sendable {
     var oauth: OAuthService
     var social: SocialService
     var groups: GroupService
+    var concerts: ConcertService
     /// Open sockets and browser tickets (GRP-006). One per process.
     var realtime: RealtimeHub
     /// `@aaru` answers; nil when no model is configured (GRP-011).
@@ -80,6 +81,7 @@ struct Services: Sendable {
             ),
             social: SocialService(stores: stores),
             groups: groups,
+            concerts: ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places),
             realtime: realtime,
             agentReplies: model.map {
                 AgentReplyService(

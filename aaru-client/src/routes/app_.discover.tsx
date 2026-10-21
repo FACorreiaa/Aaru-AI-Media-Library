@@ -1,5 +1,13 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { Show, Suspense, createSignal, lazy, onMount } from 'solid-js'
+import {
+  Match,
+  Show,
+  Suspense,
+  Switch,
+  createSignal,
+  lazy,
+  onMount,
+} from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { Alert } from '../components/ui/alert'
@@ -9,6 +17,10 @@ import {
 } from '../components/ui/segmented-control'
 import { CREDITS, TMDB_URL } from '../lib/credits'
 import { localDayKey } from '../lib/calendar/model'
+import type { ConcertPlaceSetting } from '../lib/concerts/model'
+import { parseView, shownView } from '../lib/concerts/view'
+import type { DiscoverView } from '../lib/concerts/view'
+import { getConcertPlace } from '../lib/concerts/server'
 import type { DiscoverRow } from '../lib/home/model'
 import { getDiscover } from '../lib/home/server'
 import { seasonOf } from '../lib/discover/season'
@@ -16,10 +28,15 @@ import type { SeasonKey, SeasonKind } from '../lib/discover/season'
 import { optionalEnum, optionalInt } from '../lib/search-params'
 import { getSession } from '../lib/session/session'
 
-// The Seasons view loads on its own, the first time someone opens it.
+// The Seasons and Concerts views load on their own, the first time someone opens them.
 const SeasonBrowser = lazy(() =>
   import('../components/SeasonBrowser').then((m) => ({
     default: m.SeasonBrowser,
+  })),
+)
+const ConcertList = lazy(() =>
+  import('../components/ConcertList').then((m) => ({
+    default: m.ConcertList,
   })),
 )
 
@@ -27,17 +44,18 @@ const SeasonBrowser = lazy(() =>
 // shows under the user's own (DISC-001), on a page of their own, each card addable in place.
 // The server names and orders the rows and marks the titles already on the shelf.
 // `?view=seasons` is DISC-002's Seasons view: one season of anime, shows or films at a time.
+// `?view=concerts` is MUS-003's Concerts view, offered only where the server has concerts on.
 export const Route = createFileRoute('/app_/discover')({
   head: () => ({ meta: [{ title: 'Discover · Aaru' }] }),
   validateSearch: (
     search,
   ): {
-    view?: 'today' | 'seasons'
+    view?: DiscoverView
     kind?: SeasonKind
     season?: SeasonKey['season']
     year?: number
   } => ({
-    view: optionalEnum(search.view, ['today', 'seasons']),
+    view: parseView(search.view),
     kind: optionalEnum(search.kind, [
       'anime',
       'shows_new',
@@ -52,17 +70,23 @@ export const Route = createFileRoute('/app_/discover')({
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
     return { session }
   },
-  loader: () =>
-    getDiscover().then(
-      (rows) => ({ rows, problem: null }),
-      (err: unknown) => ({
-        rows: [] as DiscoverRow[],
-        problem:
-          err instanceof Error
-            ? err.message
-            : 'Discover is not available right now.',
-      }),
-    ),
+  loader: async () => {
+    const [discover, concerts] = await Promise.all([
+      getDiscover().then(
+        (rows) => ({ rows, problem: null }),
+        (err: unknown) => ({
+          rows: [] as DiscoverRow[],
+          problem:
+            err instanceof Error
+              ? err.message
+              : 'Discover is not available right now.',
+        }),
+      ),
+      // Concerts are an extra: without an answer the Concerts view stays hidden.
+      getConcertPlace().catch((): ConcertPlaceSetting | null => null),
+    ])
+    return { ...discover, concerts }
+  },
   component: DiscoverPage,
 })
 
@@ -76,11 +100,15 @@ function DiscoverPage() {
   const [rows, setRows] = createSignal<DiscoverRow[]>(loaded().rows)
   const [today, setToday] = createSignal<string | null>(null)
   const [problem, setProblem] = createSignal<string | null>(loaded().problem)
+  const [concerts, setConcerts] = createSignal<ConcertPlaceSetting | null>(
+    loaded().concerts,
+  )
 
   // The release badges count days from the viewer's today, which only the browser knows.
   onMount(() => setToday(localDayKey(new Date())))
 
-  const view = () => search().view ?? 'today'
+  const concertsOn = () => concerts()?.available === true
+  const view = () => shownView(search().view, concertsOn())
   // Until the browser says, the server's day stands in: it only picks the default season.
   const day = () => today() ?? localDayKey(new Date())
   const season = (): SeasonKey => {
@@ -113,7 +141,8 @@ function DiscoverPage() {
           value={view()}
           onChange={(next) =>
             void navigate({
-              search: next === 'seasons' ? { view: 'seasons' } : {},
+              search:
+                next === 'seasons' || next === 'concerts' ? { view: next } : {},
               replace: true,
             })
           }
@@ -132,14 +161,22 @@ function DiscoverPage() {
           >
             Seasons
           </SegmentedControlItem>
+          <Show when={concertsOn()}>
+            <SegmentedControlItem
+              value="concerts"
+              variant="surface"
+              class="px-4 py-1.5"
+            >
+              Concerts
+            </SegmentedControlItem>
+          </Show>
         </SegmentedControl>
 
         <Show when={problem()}>
           {(message) => <Alert class="mt-4">{message()}</Alert>}
         </Show>
 
-        <Show
-          when={view() === 'seasons'}
+        <Switch
           fallback={
             <DiscoverRows
               rows={rows()}
@@ -149,16 +186,29 @@ function DiscoverPage() {
             />
           }
         >
-          <Suspense>
-            <SeasonBrowser
-              kind={search().kind ?? 'anime'}
-              season={season()}
-              today={day()}
-              onChange={showSeason}
-              onProblem={setProblem}
-            />
-          </Suspense>
-        </Show>
+          <Match when={view() === 'seasons'}>
+            <Suspense>
+              <SeasonBrowser
+                kind={search().kind ?? 'anime'}
+                season={season()}
+                today={day()}
+                onChange={showSeason}
+                onProblem={setProblem}
+              />
+            </Suspense>
+          </Match>
+          <Match when={view() === 'concerts' && concerts()}>
+            {(setting) => (
+              <Suspense>
+                <ConcertList
+                  setting={setting()}
+                  today={day()}
+                  onSettingChange={setConcerts}
+                />
+              </Suspense>
+            )}
+          </Match>
+        </Switch>
 
         <footer class="mt-16 border-t border-line pt-6 text-sm text-muted">
           Lists from{' '}

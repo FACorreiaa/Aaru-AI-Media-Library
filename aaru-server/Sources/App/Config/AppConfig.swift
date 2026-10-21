@@ -74,6 +74,8 @@ struct AppConfig: Sendable {
     var realtimeOrigins: Set<String>
     /// Nil when `ANTHROPIC_API_KEY` is unset: `@aaru` stays off and groups say so (GRP-010).
     var anthropic: AnthropicSettings?
+    /// Nil when `TICKETMASTER_API_KEY` is unset: concerts answer `unavailable` (MUS-003).
+    var concertsAPIKey: String?
 
     static let defaultRealtimeOrigins = "https://aaruapp.com,https://www.aaruapp.com,https://beta.aaruapp.com"
 
@@ -103,7 +105,8 @@ struct AppConfig: Sendable {
                 reader.string(forKey: "realtime.origins", default: defaultRealtimeOrigins).split(separator: ",")
                     .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
             ),
-            anthropic: anthropicSettings(from: reader)
+            anthropic: anthropicSettings(from: reader),
+            concertsAPIKey: reader.string(forKey: "ticketmaster.api.key").flatMap(\.nilIfBlank)
         )
     }
 
