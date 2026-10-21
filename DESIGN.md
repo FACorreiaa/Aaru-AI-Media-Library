@@ -625,7 +625,9 @@ bottom, Insights and Settings.
 Field" (§1). Recap is not a destination: Insights plays it ("Play as story"), Home offers it in
 its window, Your data keeps the shortcuts. The listen log is **Listens** ("All listens ›" from
 Insights and Library's More menu), never "Music", which is the albums kind. An agent's plan is
-"Waiting for you" on Home and "Request" when a push opens one.
+"Waiting for you" on Home and "Request" when a push opens one. In groups, a `shelf` channel
+reads **List** and a Room reads **Watch party**: UI labels only, the stored kinds and code names
+stay `shelf` and `watch` / Room (owner, 2026-10-21).
 
 **Settings: eight pages, in this order.** Each is its own page; none scrolls into the next. A
 new import source or connected app joins its page; it never gets a page of its own.
@@ -673,14 +675,18 @@ Where each existing piece goes:
 
 **What changed from the plan, and why.**
 - iPhone keeps five tabs (above). Lists, not Groups, moves: the Groups badge must stay visible,
-  and a list is a view of the library.
+  and a list is a view of the library. Owner confirmed, 2026-10-21.
 - Appearance had no page: it joins Account as "On this device", and the Mac "General" pane goes.
 - "Concerts near" moves from Account to Friends & privacy → Location: it is the only place Aaru
   stores where you are.
 - Connections also holds the Stremio addon and music scrobblers: they reach Aaru with a token,
   as agents do. Stremio *history* stays in Import.
 - Insights leaves Settings for the sidebar. Your data keeps the recaps as shortcuts and gains
-  History, which every "undo it from your history" line already promises.
+  History, which every "undo it from your history" line already promises. History (with Undo)
+  and Remove from library on the title page are built in this pass on web and Apple (owner,
+  2026-10-21).
+- TV Time joins Import, in its `CLAUDE.md` place, when its import lands (separate PR, with a
+  Bingers import).
 - On the Mac, Delete account folds into Account and Settings leaves the sidebar.
 - The web Calendar route follows its name.
 
