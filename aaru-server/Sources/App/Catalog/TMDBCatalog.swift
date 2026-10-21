@@ -60,7 +60,10 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching {
             let detail = try await get(Detail.self, "\(kind)/\(tmdb)", ["append_to_response": "external_ids"])
             guard var hit = detail.hit(type: type) else { return nil }
             hit.ids = hit.ids.filling(from: ids)
-            return CatalogTitle(hit: hit, status: detail.titleStatus, runtimeMinutes: detail.runtime)
+            return CatalogTitle(
+                hit: hit, status: detail.titleStatus, runtimeMinutes: detail.runtime,
+                genres: detail.genres?.compactMap { $0.name?.nilIfBlank } ?? []
+            )
         } catch let error as ProviderError where error.kind == .notFound {
             return nil
         }
@@ -259,7 +262,11 @@ private struct Detail: Decodable {
     let mediaType: String?
     let adult: Bool?
 
-    struct Genre: Decodable { let id: Int }
+    struct Genre: Decodable {
+        let id: Int
+        let name: String?
+    }
+
     struct Network: Decodable { let name: String }
 
     var backdropURL: URL? {
