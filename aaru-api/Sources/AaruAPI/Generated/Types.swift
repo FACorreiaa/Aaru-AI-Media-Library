@@ -6191,6 +6191,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/episodeOverview`.
             public var episodeOverview: Swift.String?
+            /// The episode's still image (TMDB), when the catalog has one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CalendarEntry/stillUrl`.
+            public var stillUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/airsAt`.
             public var airsAt: Foundation.Date
             /// False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
@@ -6218,6 +6222,7 @@ public enum Components {
             ///   - number:
             ///   - episodeName:
             ///   - episodeOverview: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
+            ///   - stillUrl: The episode's still image (TMDB), when the catalog has one.
             ///   - airsAt:
             ///   - airTimeKnown: False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
             ///   - runtimeMinutes:
@@ -6230,6 +6235,7 @@ public enum Components {
                 number: Swift.Int,
                 episodeName: Swift.String? = nil,
                 episodeOverview: Swift.String? = nil,
+                stillUrl: Swift.String? = nil,
                 airsAt: Foundation.Date,
                 airTimeKnown: Swift.Bool,
                 runtimeMinutes: Swift.Int? = nil,
@@ -6242,6 +6248,7 @@ public enum Components {
                 self.number = number
                 self.episodeName = episodeName
                 self.episodeOverview = episodeOverview
+                self.stillUrl = stillUrl
                 self.airsAt = airsAt
                 self.airTimeKnown = airTimeKnown
                 self.runtimeMinutes = runtimeMinutes
@@ -6255,6 +6262,7 @@ public enum Components {
                 case number
                 case episodeName
                 case episodeOverview
+                case stillUrl
                 case airsAt
                 case airTimeKnown
                 case runtimeMinutes

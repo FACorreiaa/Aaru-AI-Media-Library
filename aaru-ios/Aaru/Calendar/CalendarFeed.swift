@@ -57,6 +57,10 @@ final class CalendarFeed {
     private(set) var pending: Set<String> = []
     /// The last load or tick that failed. Shown until the next action.
     var problem: String?
+    /// Applied to every day's episodes (CAL-003). The screen keeps it in `@AppStorage`.
+    var filter = CalendarFilter()
+    /// The episode whose sheet is open, by `cellID`; the sheet reads it live, so a tick shows.
+    var openedID: String?
 
     @ObservationIgnored private let api: Client?
     @ObservationIgnored private let library: LibraryModel?
@@ -89,13 +93,29 @@ final class CalendarFeed {
     /// The episodes of one day: date-only ones first (they have no time), then by time.
     func entries(on date: Date) -> [CalendarEntry] {
         let key = CalendarDay(calendar.dateComponents([.year, .month, .day], from: date))
-        return entries.filter { $0.day(in: calendar) == key }.sorted { lhs, rhs in
+        return entries.filter { $0.day(in: calendar) == key && filter.matches($0) }.sorted { lhs, rhs in
             if lhs.airTimeKnown != rhs.airTimeKnown {
                 return !lhs.airTimeKnown
             }
             return (lhs.airsAt, lhs.title.title, lhs.season, lhs.number)
                 < (rhs.airsAt, rhs.title.title, rhs.season, rhs.number)
         }
+    }
+
+    /// The open sheet's episode, live.
+    var opened: CalendarEntry? {
+        openedID.flatMap { id in entries.first { $0.cellID == id } }
+    }
+
+    func open(_ entry: CalendarEntry) {
+        openedID = entry.cellID
+    }
+
+    /// Missed (CAL-003): aired in the window and not watched, by show. Hide-watched is moot here.
+    func missed(now: Date = .now) -> [MissedShow] {
+        var filter = filter
+        filter.hideWatched = false
+        return MissedShow.catchUp(entries.filter(filter.matches), now: now)
     }
 
     // MARK: Loading
