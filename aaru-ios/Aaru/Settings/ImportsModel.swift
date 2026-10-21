@@ -89,6 +89,12 @@ final class ImportsModel {
         self.api = api
     }
 
+    /// For previews: these jobs, nothing to fetch.
+    convenience init(preview jobs: [ImportJob]) {
+        self.init(api: nil)
+        self.jobs = jobs
+    }
+
     func load() async {
         guard let api else { return }
         do {

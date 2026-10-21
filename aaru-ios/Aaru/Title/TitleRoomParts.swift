@@ -137,6 +137,7 @@ struct RatingStars: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("\(star) star\(star == 1 ? "" : "s")")
+                .accessibilityAddTraits(rating == value ? .isSelected : [])
             }
         }
         .accessibilityElement(children: .contain)

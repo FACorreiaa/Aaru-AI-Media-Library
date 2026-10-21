@@ -99,3 +99,24 @@ struct TonightCard: View {
         (tonight.primary.title.backdropUrl ?? tonight.primary.title.posterUrl).flatMap(URL.init(string:))
     }
 }
+
+// MARK: Previews
+
+#Preview("Tonight") {
+    if let tonight = HomeModel.sample.tonight {
+        NavigationStack {
+            TonightCard(tonight: tonight, isPending: false) { _ in }
+                .padding(20)
+        }
+    }
+}
+
+#Preview("Tonight, wide · dark", traits: .fixedLayout(width: 900, height: 420)) {
+    if let tonight = HomeModel.sample.tonight {
+        NavigationStack {
+            TonightCard(tonight: tonight, isPending: false, wide: true) { _ in }
+                .padding(20)
+        }
+        .preferredColorScheme(.dark)
+    }
+}

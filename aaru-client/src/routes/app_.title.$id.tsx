@@ -47,6 +47,7 @@ import {
   neighbours,
   nextEpisode,
   nextRating,
+  ratingLabel,
   orderedSeasons,
 } from '../lib/title/model'
 import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
@@ -450,14 +451,20 @@ function TitleRoom() {
             <Card class="flex flex-col gap-4 p-5">
               <div class="flex items-center justify-between gap-4 text-sm font-medium">
                 Rating
-                <div class="flex gap-1" role="group" aria-label="Rating">
+                {/* The group carries the value; only the star equal to it is pressed, and
+                    pressing that one again clears the rating. */}
+                <div
+                  class="-my-2 flex"
+                  role="group"
+                  aria-label={ratingLabel(entry().rating)}
+                >
                   <For each={[1, 2, 3, 4, 5]}>
                     {(star) => (
                       <button
                         type="button"
                         aria-label={`${star} star${star === 1 ? '' : 's'}`}
-                        aria-pressed={(entry().rating ?? 0) >= star * 2}
-                        class="text-xl leading-none text-gold"
+                        aria-pressed={entry().rating === star * 2}
+                        class="grid min-h-11 min-w-8 place-items-center rounded-full text-xl leading-none text-gold"
                         onClick={() => {
                           const rating = nextRating(entry().rating, star)
                           void (rating === null

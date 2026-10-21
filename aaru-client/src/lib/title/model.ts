@@ -43,6 +43,11 @@ export function nextRating(
   return current === value ? null : value
 }
 
+/** The rating group's name with its value, as a screen reader reads it: "Rating, 8 of 10". */
+export function ratingLabel(rating: number | undefined): string {
+  return rating === undefined ? 'Rating, not rated' : `Rating, ${rating} of 10`
+}
+
 /** Every episode in viewing order: regular seasons ascending, then specials. */
 export function orderedEpisodes(title: TitleDetail | undefined): Episode[] {
   return orderedSeasons(title).flatMap((season) => season.episodes)
