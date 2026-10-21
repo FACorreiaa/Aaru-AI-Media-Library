@@ -4693,6 +4693,10 @@ public enum Components {
             public var mal: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ExternalIds/anidb`.
             public var anidb: Swift.String?
+            /// An album's MusicBrainz release-group id (MUS-001).
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExternalIds/musicbrainz`.
+            public var musicbrainz: Swift.String?
             /// Creates a new `ExternalIds`.
             ///
             /// - Parameters:
@@ -4705,6 +4709,7 @@ public enum Components {
             ///   - anilist:
             ///   - mal:
             ///   - anidb:
+            ///   - musicbrainz: An album's MusicBrainz release-group id (MUS-001).
             public init(
                 tmdb: Swift.String? = nil,
                 imdb: Swift.String? = nil,
@@ -4714,7 +4719,8 @@ public enum Components {
                 openLibrary: Swift.String? = nil,
                 anilist: Swift.String? = nil,
                 mal: Swift.String? = nil,
-                anidb: Swift.String? = nil
+                anidb: Swift.String? = nil,
+                musicbrainz: Swift.String? = nil
             ) {
                 self.tmdb = tmdb
                 self.imdb = imdb
@@ -4725,6 +4731,7 @@ public enum Components {
                 self.anilist = anilist
                 self.mal = mal
                 self.anidb = anidb
+                self.musicbrainz = musicbrainz
             }
             public enum CodingKeys: String, CodingKey {
                 case tmdb
@@ -4736,13 +4743,17 @@ public enum Components {
                 case anilist
                 case mal
                 case anidb
+                case musicbrainz
             }
         }
+        /// `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress.
+        ///
         /// - Remark: Generated from `#/components/schemas/MediaType`.
         @frozen public enum MediaType: String, Codable, Hashable, Sendable, CaseIterable {
             case movie = "movie"
             case show = "show"
             case book = "book"
+            case album = "album"
         }
         /// - Remark: Generated from `#/components/schemas/CatalogHit`.
         public struct CatalogHit: Codable, Hashable, Sendable {
@@ -4758,7 +4769,7 @@ public enum Components {
             public var posterUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CatalogHit/overview`.
             public var overview: Swift.String?
-            /// Authors, for books.
+            /// Authors, for books; the artist credit, for albums.
             ///
             /// - Remark: Generated from `#/components/schemas/CatalogHit/byline`.
             public var byline: Swift.String?
@@ -4783,7 +4794,7 @@ public enum Components {
             ///   - year:
             ///   - posterUrl:
             ///   - overview:
-            ///   - byline: Authors, for books.
+            ///   - byline: Authors, for books; the artist credit, for albums.
             ///   - isAnime:
             ///   - ids:
             ///   - libraryItemId: The caller's library item for this title, when they have one. Discover only.
@@ -5124,6 +5135,18 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleDetail/seasons`.
             public var seasons: [Components.Schemas.Season]?
+            /// Authors, for books; the artist credit, for albums.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleDetail/byline`.
+            public var byline: Swift.String?
+            /// Albums only (MUS-001), at most five, most tagged first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleDetail/genres`.
+            public var genres: [Swift.String]?
+            /// Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleDetail/tracks`.
+            public var tracks: [Components.Schemas.AlbumTrack]?
             /// Creates a new `TitleDetail`.
             ///
             /// - Parameters:
@@ -5139,6 +5162,9 @@ public enum Components {
             ///   - status:
             ///   - runtimeMinutes:
             ///   - seasons: Shows only.
+            ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - genres: Albums only (MUS-001), at most five, most tagged first.
+            ///   - tracks: Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet.
             public init(
                 id: Swift.String,
                 _type: Components.Schemas.MediaType,
@@ -5151,7 +5177,10 @@ public enum Components {
                 ids: Components.Schemas.ExternalIds,
                 status: Components.Schemas.TitleDetail.StatusPayload? = nil,
                 runtimeMinutes: Swift.Int? = nil,
-                seasons: [Components.Schemas.Season]? = nil
+                seasons: [Components.Schemas.Season]? = nil,
+                byline: Swift.String? = nil,
+                genres: [Swift.String]? = nil,
+                tracks: [Components.Schemas.AlbumTrack]? = nil
             ) {
                 self.id = id
                 self._type = _type
@@ -5165,6 +5194,9 @@ public enum Components {
                 self.status = status
                 self.runtimeMinutes = runtimeMinutes
                 self.seasons = seasons
+                self.byline = byline
+                self.genres = genres
+                self.tracks = tracks
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -5179,6 +5211,44 @@ public enum Components {
                 case status
                 case runtimeMinutes
                 case seasons
+                case byline
+                case genres
+                case tracks
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AlbumTrack`.
+        public struct AlbumTrack: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AlbumTrack/disc`.
+            public var disc: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/AlbumTrack/position`.
+            public var position: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/AlbumTrack/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AlbumTrack/lengthMs`.
+            public var lengthMs: Swift.Int?
+            /// Creates a new `AlbumTrack`.
+            ///
+            /// - Parameters:
+            ///   - disc:
+            ///   - position:
+            ///   - name:
+            ///   - lengthMs:
+            public init(
+                disc: Swift.Int,
+                position: Swift.Int,
+                name: Swift.String,
+                lengthMs: Swift.Int? = nil
+            ) {
+                self.disc = disc
+                self.position = position
+                self.name = name
+                self.lengthMs = lengthMs
+            }
+            public enum CodingKeys: String, CodingKey {
+                case disc
+                case position
+                case name
+                case lengthMs
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryStatus`.
@@ -5435,6 +5505,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/network`.
             public var network: Swift.String?
+            /// Authors, for books; the artist credit, for albums.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/byline`.
+            public var byline: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/isAnime`.
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/TitleSummary/ids`.
@@ -5450,6 +5524,7 @@ public enum Components {
             ///   - posterUrl:
             ///   - backdropUrl: Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
             ///   - network: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
+            ///   - byline: Authors, for books; the artist credit, for albums.
             ///   - isAnime:
             ///   - ids:
             public init(
@@ -5461,6 +5536,7 @@ public enum Components {
                 posterUrl: Swift.String? = nil,
                 backdropUrl: Swift.String? = nil,
                 network: Swift.String? = nil,
+                byline: Swift.String? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds
             ) {
@@ -5472,6 +5548,7 @@ public enum Components {
                 self.posterUrl = posterUrl
                 self.backdropUrl = backdropUrl
                 self.network = network
+                self.byline = byline
                 self.isAnime = isAnime
                 self.ids = ids
             }
@@ -5484,6 +5561,7 @@ public enum Components {
                 case posterUrl
                 case backdropUrl
                 case network
+                case byline
                 case isAnime
                 case ids
             }
@@ -6650,7 +6728,7 @@ public enum Components {
             public var totals: Components.Schemas.StatsTotals
             /// - Remark: Generated from `#/components/schemas/Stats/prior`.
             public var prior: Components.Schemas.StatsTotals?
-            /// Movie, show, anime and book, always all four in that order; they sum to `totals`.
+            /// Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/byKind`.
             public var byKind: [Components.Schemas.StatsKind]
@@ -6707,7 +6785,7 @@ public enum Components {
             ///   - isPartial: The period is not over yet in the user's time zone (always true for `all`).
             ///   - totals:
             ///   - prior:
-            ///   - byKind: Movie, show, anime and book, always all four in that order; they sum to `totals`.
+            ///   - byKind: Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`.
             ///   - buckets: One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order.
             ///   - busiest:
             ///   - mostEpisodes:
@@ -6839,6 +6917,10 @@ public enum Components {
             public var animeFinished: Swift.Int
             /// - Remark: Generated from `#/components/schemas/StatsTotals/booksFinished`.
             public var booksFinished: Swift.Int
+            /// MUS-001. Albums have no minutes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/albumsFinished`.
+            public var albumsFinished: Swift.Int
             /// Creates a new `StatsTotals`.
             ///
             /// - Parameters:
@@ -6849,6 +6931,7 @@ public enum Components {
             ///   - showsFinished:
             ///   - animeFinished: Anime shows and films. Not counted again as shows or movies.
             ///   - booksFinished:
+            ///   - albumsFinished: MUS-001. Albums have no minutes.
             public init(
                 episodesWatched: Swift.Int,
                 minutesWatched: Swift.Int,
@@ -6856,7 +6939,8 @@ public enum Components {
                 moviesFinished: Swift.Int,
                 showsFinished: Swift.Int,
                 animeFinished: Swift.Int,
-                booksFinished: Swift.Int
+                booksFinished: Swift.Int,
+                albumsFinished: Swift.Int
             ) {
                 self.episodesWatched = episodesWatched
                 self.minutesWatched = minutesWatched
@@ -6865,6 +6949,7 @@ public enum Components {
                 self.showsFinished = showsFinished
                 self.animeFinished = animeFinished
                 self.booksFinished = booksFinished
+                self.albumsFinished = albumsFinished
             }
             public enum CodingKeys: String, CodingKey {
                 case episodesWatched
@@ -6874,6 +6959,7 @@ public enum Components {
                 case showsFinished
                 case animeFinished
                 case booksFinished
+                case albumsFinished
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsKind`.
@@ -6886,6 +6972,7 @@ public enum Components {
                 case show = "show"
                 case anime = "anime"
                 case book = "book"
+                case album = "album"
             }
             /// Anime is its own kind, films and shows alike; never counted again as either.
             ///
@@ -17575,8 +17662,9 @@ public enum Operations {
                     case show = "show"
                     case anime = "anime"
                     case book = "book"
+                    case album = "album"
                 }
-                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
+                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
                 ///
                 /// - Remark: Generated from `#/paths/v1/search/GET/query/type`.
                 public var _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -17584,7 +17672,7 @@ public enum Operations {
                 ///
                 /// - Parameters:
                 ///   - q:
-                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
+                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
                 public init(
                     q: Swift.String,
                     _type: Operations.SearchCatalog.Input.Query._TypePayload

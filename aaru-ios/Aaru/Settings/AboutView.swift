@@ -12,7 +12,7 @@ struct AboutView: View {
                         .scaledToFit()
                         .frame(height: 30)
                         .accessibilityLabel("Aaru")
-                    Text("A private library for everything you watch and read.")
+                    Text("A private library for everything you watch, read and listen to.")
                         .foregroundStyle(Color(.muted))
                 }
                 .padding(.vertical, 6)
@@ -47,6 +47,8 @@ struct AboutView: View {
                     licence: "https://opensource.org/license/mit"
                 )
                 CreditLink("Book data from Open Library", url: "https://openlibrary.org")
+                CreditLink("Music data from MusicBrainz", url: "https://musicbrainz.org")
+                CreditLink("Covers from the Cover Art Archive", url: "https://coverartarchive.org")
                 CreditLink(
                     "History import from Trakt",
                     detail: "Aaru uses Trakt but is not endorsed or certified by Trakt.",

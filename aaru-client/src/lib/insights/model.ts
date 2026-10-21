@@ -213,7 +213,13 @@ export function timeLabel(minutes: number): string {
 type Totals = Stats['totals']
 
 function finishedOf(t: Totals): number {
-  return t.moviesFinished + t.showsFinished + t.animeFinished + t.booksFinished
+  return (
+    t.moviesFinished +
+    t.showsFinished +
+    t.animeFinished +
+    t.booksFinished +
+    t.albumsFinished
+  )
 }
 
 export interface Total {
@@ -276,6 +282,7 @@ const KIND_LABELS: Record<
   show: ['show', 'Shows'],
   anime: ['anime', 'Anime'],
   book: ['book', 'Books'],
+  album: ['album', 'Albums'],
 }
 
 export interface KindShare {
@@ -288,7 +295,8 @@ export interface KindShare {
   share: number
 }
 
-/** Films · Shows · Anime · Books, in that order, with each one's share of the time. */
+/** Films · Shows · Anime · Books, in that order, then Albums when the period finished one,
+ * with each one's share of the time. */
 export function kindShares(stats: Stats): KindShare[] {
   const total = stats.byKind.reduce((sum, k) => sum + k.minutes, 0)
   return stats.byKind.map((k) => {
@@ -302,6 +310,22 @@ export function kindShares(stats: Stats): KindShare[] {
       share: total > 0 ? k.minutes / total : 0,
     }
   })
+}
+
+/** The numbers beside one kind: "12 h · 30 episodes · 2 finished". An album is listened to, and
+ * never counted in time: albums have no minutes. */
+export function kindDetail(kind: KindShare): string {
+  if (kind.kind === 'album')
+    return kind.finished > 0 ? `${kind.finished} listened` : 'Nothing yet'
+  return (
+    [
+      kind.minutes > 0 ? timeLabel(kind.minutes) : null,
+      kind.episodes > 0 ? `${kind.episodes} episodes` : null,
+      kind.finished > 0 ? `${kind.finished} finished` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'Nothing yet'
+  )
 }
 
 /** Ten bars for the ratings 1…10 (index n holds ratings up to n + 1), scaled to the tallest. */

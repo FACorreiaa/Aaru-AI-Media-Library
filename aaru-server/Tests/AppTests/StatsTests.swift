@@ -123,7 +123,8 @@ struct StatsDigestTests {
             period: StatsPeriod(year: 2026, month: nil, timeZone: utc),
             today: day("2026-10-16")
         )
-        #expect(digest.byKind == [
+        // No album finished, so no album row: clients from before MUS-001 know four kinds.
+        #expect(digest.stats(titles: [:]).byKind == [
             PeriodStats.KindTotals(kind: .movie, episodes: 0, minutes: 120, finished: 1),
             PeriodStats.KindTotals(kind: .show, episodes: 2, minutes: 90, finished: 0),
             PeriodStats.KindTotals(kind: .anime, episodes: 0, minutes: 72, finished: 1),
@@ -131,6 +132,25 @@ struct StatsDigestTests {
         ])
         #expect(digest.byKind.map(\.minutes).reduce(0, +) == digest.totals.minutesWatched)
         #expect(digest.distribution == [1, 0, 0, 0, 0, 0, 0, 1, 1, 0])
+    }
+
+    @Test("MUS-001: a finished album counts as a finish and its own kind, with no minutes")
+    func albums() {
+        let album = TitleID(), movie = TitleID()
+        let digest = StatsDigest(
+            [
+                row("2026-07-04", movie, type: .movie, minutes: 120, finished: true),
+                row("2026-07-05", album, type: .album, finished: true, rating: 8),
+            ],
+            period: StatsPeriod(year: 2026, month: nil, timeZone: utc),
+            today: day("2026-10-16")
+        )
+        #expect(digest.totals.albumsFinished == 1)
+        #expect(digest.totals.minutesWatched == 120)
+        #expect(digest.stats(titles: [:]).byKind.last == PeriodStats.KindTotals(
+            kind: .album, episodes: 0, minutes: 0, finished: 1
+        ))
+        #expect(digest.topTitles.map(\.titleID) == [movie], "an album takes no time")
     }
 
     @Test("GAM-006c: ratings bin on the 1–10 scale with half stars rounding up")
@@ -255,7 +275,7 @@ struct StatsTests {
             #expect(reply.status == .ok)
             #expect(try totals(reply) == [
                 "episodesWatched": 3, "minutesWatched": 3 * 45 + 100, "activeDays": 4,
-                "moviesFinished": 1, "showsFinished": 0, "animeFinished": 0, "booksFinished": 0,
+                "moviesFinished": 1, "showsFinished": 0, "animeFinished": 0, "booksFinished": 0, "albumsFinished": 0,
             ])
             let body = try reply.json()
             #expect((body["topTitles"] as? [[String: Any]])?.count == 2)

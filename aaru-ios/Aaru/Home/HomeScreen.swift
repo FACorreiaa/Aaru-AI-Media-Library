@@ -2,7 +2,8 @@ import AaruAPI
 import SwiftUI
 
 /// Home (APP-009, APP-013, DESIGN.md §13): this month's numbers and the shelf's counts, then
-/// Continue watching, what airs next, Start watching, Unfinished and the user's lists, as
+/// Continue watching, the albums being listened to (MUS-001), what airs next, Start watching, Unfinished and the user's
+/// lists, as
 /// Trakt-style rows of cards, then Discover's public rows (DISC-001). Renders from the cache
 /// first, then refreshes.
 struct HomeScreen: View {
@@ -158,6 +159,13 @@ struct HomeScreen: View {
                                         }
                                     }
                                 #endif
+                            }
+                        }
+                    }
+                    if !model.listening.isEmpty {
+                        HomeRow(title: "Listening") {
+                            ForEach(model.listening) { row in
+                                ListeningCard(row: row, width: HomeCardSize.poster.width(compact: compact))
                             }
                         }
                     }

@@ -3,10 +3,11 @@ import { addToList, createList, getLists } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { Button } from './ui/button'
 import { Dialog } from './ui/dialog'
+import type { MediaType } from '../lib/media'
 
 export interface MediaRefInput {
   titleId?: string
-  type: 'movie' | 'show' | 'book'
+  type: MediaType
   ids?: Record<string, string>
   title?: string
   year?: number

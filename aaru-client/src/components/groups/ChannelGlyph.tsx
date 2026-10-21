@@ -2,7 +2,8 @@ import { Show, createSignal } from 'solid-js'
 import { kindGlyph } from '../../lib/groups/kinds'
 import type { Channel } from '../../lib/groups/server'
 
-/** What sits before a channel's name: `#`, ▶ or ▤, or a title channel's tiny poster. */
+/** What sits before a channel's name: `#`, ▶ or ▤, or a title channel's tiny poster (square for
+ * an album). */
 export function ChannelGlyph(props: { channel: Channel; class?: string }) {
   const [failed, setFailed] = createSignal(false)
   return (
@@ -27,7 +28,7 @@ export function ChannelGlyph(props: { channel: Channel; class?: string }) {
         aria-hidden="true"
         loading="lazy"
         onError={() => setFailed(true)}
-        class={`h-5 w-4 shrink-0 rounded-[3px] object-cover ${props.class ?? ''}`}
+        class={`w-4 shrink-0 rounded-[3px] object-cover ${props.channel.title?.type === 'album' ? 'h-4' : 'h-5'} ${props.class ?? ''}`}
       />
     </Show>
   )

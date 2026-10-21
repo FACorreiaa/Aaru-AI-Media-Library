@@ -146,6 +146,7 @@ export function cards(stats: Stats): RecapCard[] {
       { kind: 'show', count: t.showsFinished },
       { kind: 'anime', count: t.animeFinished },
       { kind: 'book', count: t.booksFinished },
+      { kind: 'album', count: t.albumsFinished },
     ] as const
   ).filter((part) => part.count > 0)
   if (parts.length > 0) deck.push({ kind: 'finished', parts: [...parts] })
@@ -182,9 +183,10 @@ const STATS_KINDS: Record<Stats['byKind'][number]['kind'], MediaKind> = {
   show: 'show',
   anime: 'anime',
   book: 'book',
+  album: 'album',
 }
 
-/** Kinds with time, biggest share first. Books have no minutes, so they never show here. */
+/** Kinds with time, biggest share first. Books and albums have no minutes, so never show here. */
 export function kindParts(stats: Stats): KindPart[] {
   const total = stats.byKind.reduce((sum, k) => sum + k.minutes, 0)
   if (total === 0) return []
@@ -207,6 +209,7 @@ const KIND_WORDS: Record<MediaKind, [string, string]> = {
   show: ['show', 'shows'],
   anime: ['anime', 'anime'],
   book: ['book', 'books'],
+  album: ['album', 'albums'],
 }
 
 export function countLabel(kind: MediaKind, count: number): string {
@@ -233,6 +236,8 @@ export function shareLines(stats: Stats): string[] {
     countLabel('book', t.booksFinished),
   ].filter((label) => !label.startsWith('0 '))
   if (finished.length > 0) lines.push(`Finished ${finished.join(', ')}`)
+  if (t.albumsFinished > 0)
+    lines.push(`Listened to ${countLabel('album', t.albumsFinished)}`)
   if (stats.topTitles[0])
     lines.push(`Most watched: ${stats.topTitles[0].title.title}`)
   if (stats.longestRun && stats.longestRun.days > 1)

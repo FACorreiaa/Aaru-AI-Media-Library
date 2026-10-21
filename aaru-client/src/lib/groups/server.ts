@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { z } from 'zod'
+import { MEDIA_TYPES } from '../media'
 import { api } from '../api/client'
 import { sessionToken } from '../session/guard'
 import { check, checkEmpty } from './responses'
@@ -203,7 +204,7 @@ export const declineGroupInvite = createServerFn({ method: 'POST' })
  */
 const mediaRef = z.object({
   titleId: uuid.optional(),
-  type: z.enum(['movie', 'show', 'book']),
+  type: z.enum(MEDIA_TYPES),
   ids: z.record(z.string(), z.string()).optional(),
   title: z.string().optional(),
   year: z.number().int().optional(),

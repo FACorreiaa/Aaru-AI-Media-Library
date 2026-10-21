@@ -54,8 +54,21 @@ extension HomeModel {
                 airing: airing
             ),
             discover: sampleDiscover,
+            listening: sampleListening,
             now: now
         )
+    }
+
+    /// Albums marked Listening (MUS-001), square covers left to the fallback.
+    static var sampleListening: [LibraryRow] {
+        [
+            AlbumSample.entry("OK Computer", artist: "Radiohead", year: 1997),
+            AlbumSample.entry("Blonde", artist: "Frank Ocean", year: 2016),
+            AlbumSample.entry(
+                "Promises", artist: "Floating Points, Pharoah Sanders & London Symphony Orchestra", year: 2021
+            ),
+            AlbumSample.entry("Vespertine", artist: "Björk", year: 2001),
+        ].map(LibraryRow.init)
     }
 
     /// A new account: nothing tracked, only the public rows (DISC-001).

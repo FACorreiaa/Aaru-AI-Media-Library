@@ -2,7 +2,8 @@ import AaruAPI
 import SwiftUI
 
 /// APP-005: the Title room. Status, rating, notes, owned; for shows, the season map (A4) and
-/// seasons with episode ticks. Only the season holding the next episode starts expanded.
+/// seasons with episode ticks. Only the season holding the next episode starts expanded. An album
+/// (MUS-001) leads with its square cover and ends with its tracklist.
 struct TitleDetailView: View {
     @State private var model: TitleDetailModel
     @State private var notes = ""
@@ -15,8 +16,9 @@ struct TitleDetailView: View {
     @State private var expandedSeasons: Set<Int> = []
     private let lists: ListsModel
 
-    init(entry: LibraryEntry, api: Client?, library: LibraryModel, lists: ListsModel) {
-        _model = State(initialValue: TitleDetailModel(entry: entry, api: api, library: library))
+    /// `title` is for previews: the detail already loaded.
+    init(entry: LibraryEntry, api: Client?, library: LibraryModel, lists: ListsModel, title: TitleDetail? = nil) {
+        _model = State(initialValue: TitleDetailModel(entry: entry, api: api, library: library, title: title))
         self.lists = lists
     }
 
@@ -30,8 +32,20 @@ struct TitleDetailView: View {
 
     var body: some View {
         Form {
-            Section { header }
-                .listRowBackground(Color.clear)
+            Section {
+                if kind == .music {
+                    AlbumHeader(
+                        title: entry.title.title,
+                        artist: model.title?.byline ?? entry.title.byline,
+                        year: entry.title.year,
+                        genres: model.title?.genres ?? [],
+                        coverURL: entry.title.posterURL
+                    )
+                } else {
+                    header
+                }
+            }
+            .listRowBackground(Color.clear)
 
             Section {
                 Picker("Status", selection: statusBinding) {
@@ -61,6 +75,10 @@ struct TitleDetailView: View {
                 if notes != (entry.notes ?? "") {
                     Button("Save note") { Task { await saveNotes() } }
                 }
+            }
+
+            if kind == .music {
+                AlbumTracklist(tracks: model.title?.tracks, isLoading: model.title == nil && !model.loadFailed)
             }
 
             if let synopsis = model.title?.synopsis, !synopsis.isEmpty {

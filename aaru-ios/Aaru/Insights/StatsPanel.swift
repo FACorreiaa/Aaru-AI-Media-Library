@@ -44,7 +44,7 @@ struct StatsPanel: View {
 
 extension Components.Schemas.StatsTotals {
     var finished: Int {
-        moviesFinished + showsFinished + animeFinished + booksFinished
+        moviesFinished + showsFinished + animeFinished + booksFinished + albumsFinished
     }
 
     var isZero: Bool {
@@ -260,6 +260,10 @@ private struct KindBreakdown: View {
     }
 
     private func detail(_ entry: Components.Schemas.StatsKind) -> String {
+        // Albums have no episodes and no minutes: only how many were listened to.
+        if entry.kind == .album {
+            return entry.finished == 1 ? "1 album listened" : "\(entry.finished) albums listened"
+        }
         var parts = ["\(entry.finished) finished"]
         if entry.episodes > 0 {
             parts.append(entry.episodes == 1 ? "1 episode" : "\(entry.episodes) episodes")
@@ -352,6 +356,7 @@ extension MediaKind {
         case .show: self = .show
         case .anime: self = .anime
         case .book: self = .book
+        case .album: self = .music
         }
     }
 }

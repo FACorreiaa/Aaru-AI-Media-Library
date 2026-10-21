@@ -135,6 +135,7 @@ extension CatalogHit {
     var catalogKeys: [CatalogKey] {
         let candidates: [(CatalogKey.Provider, String?)] = [
             (.tmdb, ids.tmdb), (.anilist, ids.anilist), (.openLibrary, ids.openLibrary),
+            (.musicbrainz, ids.musicbrainz),
         ]
         return candidates.compactMap { provider, id in id.map { CatalogKey(type: type, provider: provider, id: $0) } }
     }

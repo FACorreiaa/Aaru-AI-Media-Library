@@ -90,7 +90,7 @@ protocol EpisodeListing: Sendable {
 }
 
 /// The adapters, by role. Search scope `anime` goes to AniList; movie/show to TMDB;
-/// book to Open Library; `all` to TMDB's multi search and AniList together.
+/// book to Open Library; album to MusicBrainz; `all` to TMDB's multi search and AniList together.
 struct CatalogProviders: Sendable {
     var tmdb: any CatalogSearching & EpisodeListing & MultiSearching
     var anilist: any CatalogSearching & EpisodeListing
@@ -98,6 +98,8 @@ struct CatalogProviders: Sendable {
     /// Exact air times for TMDB's date-only episodes (TVmaze, CAT-011). Optional: without it the
     /// calendar shows dates.
     var airTimes: (any AirTimeRefining)?
+    /// Albums (MUS-001, MusicBrainz). Optional: without it music search and hydration find nothing.
+    var music: (any CatalogSearching & TrackListing)?
 }
 
 extension Date {

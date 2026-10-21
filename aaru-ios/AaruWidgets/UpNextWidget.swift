@@ -45,8 +45,8 @@ struct UpNextProvider: TimelineProvider {
 }
 
 /// WidgetKit's completion handler, carried into the task that fetches artwork. WidgetKit calls
-/// `getTimeline` once per reload and the handler is called exactly once.
-private struct Delivery: @unchecked Sendable {
+/// `getTimeline` once per reload and the handler is called exactly once. Shared with Listening.
+struct Delivery: @unchecked Sendable {
     let send: (Timeline<SnapshotEntry>) -> Void
 
     init(_ send: @escaping (Timeline<SnapshotEntry>) -> Void) {

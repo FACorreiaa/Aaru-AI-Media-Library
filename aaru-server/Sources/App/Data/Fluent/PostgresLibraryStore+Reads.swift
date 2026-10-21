@@ -134,22 +134,25 @@ extension PostgresLibraryStore {
             let tmdb: String?
             let anilist: String?
             let openLibrary: String?
+            let musicbrainz: String?
         }
         func ids(_ provider: CatalogKey.Provider) -> [String] {
             keys.filter { $0.provider == provider }.map(\.id)
         }
         let rows = try await sqlDatabase(database).raw("""
-        SELECT li.id, t.type, t.tmdb, t.anilist, t.open_library FROM library_items li
+        SELECT li.id, t.type, t.tmdb, t.anilist, t.open_library, t.musicbrainz FROM library_items li
         JOIN titles t ON t.id = li.title_id
         WHERE li.user_id = \(bind: userID.rawValue)
           AND (t.tmdb = ANY(\(bind: ids(.tmdb))) OR t.anilist = ANY(\(bind: ids(.anilist)))
-               OR t.open_library = ANY(\(bind: ids(.openLibrary))))
+               OR t.open_library = ANY(\(bind: ids(.openLibrary)))
+               OR t.musicbrainz = ANY(\(bind: ids(.musicbrainz))))
         """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
         var found: [CatalogKey: LibraryItemID] = [:]
         for row in rows {
             guard let type = MediaType(rawValue: row.type) else { continue }
             let candidates: [(CatalogKey.Provider, String?)] = [
                 (.tmdb, row.tmdb), (.anilist, row.anilist), (.openLibrary, row.openLibrary),
+                (.musicbrainz, row.musicbrainz),
             ]
             for case let (provider, id?) in candidates {
                 let key = CatalogKey(type: type, provider: provider, id: id)
@@ -171,7 +174,8 @@ extension PostgresLibraryStore {
             li.finished_at, li.book_page, li.book_percent,
             (extract(epoch FROM li.updated_at) * 1000000)::bigint AS updated_micros,
             t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.backdrop_url, t.network, t.is_anime,
-            t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn, t.open_library, t.anilist, t.mal, t.anidb,
+            t.byline, t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn, t.open_library, t.anilist, t.mal, t.anidb,
+            t.musicbrainz,
             (SELECT count(*)::int FROM episode_progress ep WHERE ep.library_item_id = li.id AND ep.season > 0)
                 AS watched_count,
             (SELECT count(*)::int FROM show_episodes se WHERE se.title_id = li.title_id AND se.season > 0
@@ -215,7 +219,8 @@ private struct EntryRow: Decodable {
     let backdropUrl: String?
     let network: String?
     let isAnime: Bool
-    let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb: String?
+    let byline: String?
+    let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb, musicbrainz: String?
     let watchedCount: Int
     let airedCount: Int
     let nextSeason: Int?
@@ -238,10 +243,10 @@ private struct EntryRow: Decodable {
         let title = Title(
             id: TitleID(titleId), type: type, title: self.title, originalTitle: originalTitle, year: year,
             synopsis: synopsis, posterURL: posterUrl.flatMap(URL.init(string:)),
-            backdropURL: backdropUrl.flatMap(URL.init(string:)), network: network,
+            backdropURL: backdropUrl.flatMap(URL.init(string:)), network: network, byline: byline,
             ids: ExternalIDs(
                 tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
-                openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb
+                openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb, musicbrainz: musicbrainz
             ),
             isAnime: isAnime
         )
