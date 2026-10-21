@@ -76,6 +76,14 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func booksMissingPageCount(retryAfter _: Date, limit _: Int) async throws -> [Title] {
+        throw Touched()
+    }
+
+    func fillPageCount(_: TitleID, _: Int?, attemptedAt _: Date) async throws {
+        throw Touched()
+    }
+
     func fillGenres(_: TitleID, _: [String], attemptedAt _: Date) async throws {
         throw Touched()
     }

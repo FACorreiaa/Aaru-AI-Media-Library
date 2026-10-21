@@ -2617,6 +2617,8 @@ export interface components {
       network?: string
       /** @description Authors, for books; the artist credit, for albums. */
       byline?: string
+      /** @description Books only, when known (Open Library's median across editions). */
+      pageCount?: number
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
     }

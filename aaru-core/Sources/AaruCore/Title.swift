@@ -22,6 +22,8 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
     public var network: String?
     /// Who made it, as the catalog credits them: an album's artist ("Simon & Garfunkel").
     public var byline: String?
+    /// A book's length in pages (Open Library's median across editions), for a reading bar.
+    public var pageCount: Int?
     public var ids: ExternalIDs
     /// Anime is a facet on `movie`/`show`, not a fourth `MediaType`: an anime series
     /// shares show progress, calendar, Up Next, and widgets with every other show.
@@ -40,6 +42,7 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         backdropURL: URL? = nil,
         network: String? = nil,
         byline: String? = nil,
+        pageCount: Int? = nil,
         ids: ExternalIDs = ExternalIDs(),
         isAnime: Bool = false,
         seasons: [Season]? = nil
@@ -54,6 +57,7 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         self.backdropURL = backdropURL
         self.network = network
         self.byline = byline
+        self.pageCount = pageCount
         self.ids = ids
         self.isAnime = isAnime
         self.seasons = seasons

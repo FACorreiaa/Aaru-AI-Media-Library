@@ -3186,6 +3186,9 @@ components:
         byline:
           type: string
           description: Authors, for books; the artist credit, for albums.
+        pageCount:
+          type: integer
+          description: Books only, when known (Open Library's median across editions).
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
     LibraryEntry:

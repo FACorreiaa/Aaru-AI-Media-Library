@@ -95,6 +95,10 @@ protocol TitleStore: Sendable {
     func titlesMissingGenres(retryAfter: Date, limit: Int) async throws -> [Title]
     /// Stores genres when the title has none yet, and stamps the attempt either way.
     func fillGenres(_ id: TitleID, _ genres: [String], attemptedAt: Date) async throws
+    /// APP-017 backfill: shelved books with no page count, in-progress first, not tried since `retryAfter`.
+    func booksMissingPageCount(retryAfter: Date, limit: Int) async throws -> [Title]
+    /// Stores a page count when none is set yet, and stamps the attempt either way.
+    func fillPageCount(_ id: TitleID, _ pageCount: Int?, attemptedAt: Date) async throws
     func genres(_ id: TitleID) async throws -> [String]
 }
 

@@ -120,6 +120,7 @@ struct TitleResolver: Sendable {
             backdropURL: catalog.hit.backdropURL,
             network: catalog.hit.network,
             byline: catalog.hit.byline,
+            pageCount: catalog.hit.pageCount,
             ids: mergedIDs,
             isAnime: catalog.hit.isAnime
         )

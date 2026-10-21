@@ -174,8 +174,8 @@ backdrop with the title on it; a book card is its cover. Each shows how far alon
 10 episodes" with a bar, "35%", "Page 120") and the one next step: **Watched S1 · E5** ticks the
 next aired episode, **Update page** moves a book, **Finished** / **Mark watched** closes it. A
 kind chip narrows Now with the shelf; another status hides it. Cards scroll sideways on phones
-and sit in a grid wider. A **Listening** group joins when albums land (MUS-001). Book progress
-bars appear only for a percent until books carry a page count.
+and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
+carry Open Library's page count, so a page reads "Page 120 of 412" with its bar.
 
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
 library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit

@@ -104,3 +104,16 @@ struct AddMusicLookups: SQLMigration {
         "DROP TABLE music_lookups",
     ]
 }
+
+/// APP-017 · a book's page count, so "Now" can draw a reading bar from a page. Filled when a book
+/// is added and, for books stored before this, by the catalog refresher; every attempt stamped.
+struct AddTitlePageCount: SQLMigration {
+    let forward = [
+        "ALTER TABLE titles ADD COLUMN page_count integer CHECK (page_count > 0)",
+        "ALTER TABLE titles ADD COLUMN page_count_attempted_at timestamptz",
+    ]
+    let backward = [
+        "ALTER TABLE titles DROP COLUMN page_count_attempted_at",
+        "ALTER TABLE titles DROP COLUMN page_count",
+    ]
+}

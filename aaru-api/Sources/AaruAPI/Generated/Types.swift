@@ -6147,6 +6147,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/byline`.
             public var byline: Swift.String?
+            /// Books only, when known (Open Library's median across editions).
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/pageCount`.
+            public var pageCount: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/isAnime`.
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/TitleSummary/ids`.
@@ -6163,6 +6167,7 @@ public enum Components {
             ///   - backdropUrl: Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
             ///   - network: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
             ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - pageCount: Books only, when known (Open Library's median across editions).
             ///   - isAnime:
             ///   - ids:
             public init(
@@ -6175,6 +6180,7 @@ public enum Components {
                 backdropUrl: Swift.String? = nil,
                 network: Swift.String? = nil,
                 byline: Swift.String? = nil,
+                pageCount: Swift.Int? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds
             ) {
@@ -6187,6 +6193,7 @@ public enum Components {
                 self.backdropUrl = backdropUrl
                 self.network = network
                 self.byline = byline
+                self.pageCount = pageCount
                 self.isAnime = isAnime
                 self.ids = ids
             }
@@ -6200,6 +6207,7 @@ public enum Components {
                 case backdropUrl
                 case network
                 case byline
+                case pageCount
                 case isAnime
                 case ids
             }

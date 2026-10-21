@@ -174,8 +174,8 @@ extension PostgresLibraryStore {
             li.finished_at, li.book_page, li.book_percent,
             (extract(epoch FROM li.updated_at) * 1000000)::bigint AS updated_micros,
             t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.backdrop_url, t.network, t.is_anime,
-            t.byline, t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn, t.open_library, t.anilist, t.mal, t.anidb,
-            t.musicbrainz,
+            t.byline, t.page_count, t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn, t.open_library, t.anilist, t.mal,
+            t.anidb, t.musicbrainz,
             (SELECT count(*)::int FROM episode_progress ep WHERE ep.library_item_id = li.id AND ep.season > 0)
                 AS watched_count,
             (SELECT count(*)::int FROM show_episodes se WHERE se.title_id = li.title_id AND se.season > 0
@@ -220,6 +220,7 @@ private struct EntryRow: Decodable {
     let network: String?
     let isAnime: Bool
     let byline: String?
+    let pageCount: Int?
     let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb, musicbrainz: String?
     let watchedCount: Int
     let airedCount: Int
@@ -244,6 +245,7 @@ private struct EntryRow: Decodable {
             id: TitleID(titleId), type: type, title: self.title, originalTitle: originalTitle, year: year,
             synopsis: synopsis, posterURL: posterUrl.flatMap(URL.init(string:)),
             backdropURL: backdropUrl.flatMap(URL.init(string:)), network: network, byline: byline,
+            pageCount: pageCount,
             ids: ExternalIDs(
                 tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
                 openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb, musicbrainz: musicbrainz
