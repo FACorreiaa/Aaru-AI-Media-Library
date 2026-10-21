@@ -42,6 +42,7 @@ struct SettingsView: View {
                 StremioSection(api: api, imports: imports) { imports.problem = $0 } onImported: { job in
                     path.append(job.id)
                 }
+                ConnectionsSection(api: api) { imports.problem = $0 }
                 ExportDataSection(api: api) { imports.problem = $0 }
                 Section {
                     NavigationLink("About Aaru") { AboutView() }

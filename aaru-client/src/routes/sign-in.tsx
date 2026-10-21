@@ -5,12 +5,15 @@ import {
   useRouter,
 } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
+import { z } from 'zod'
+import { safeNext } from '../lib/oauth/model'
 import { AppleSignInButton } from '../components/AppleSignInButton'
 import type { AppleCredential } from '../components/AppleSignInButton'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import type { GoogleCredential } from '../components/GoogleSignInButton'
 import { MascotMedallion, Wordmark } from '../components/Brand'
 import { LegalLinks } from '../components/LegalPage'
+import { Button } from '../components/ui/button'
 import {
   getSession,
   getSignInConfig,
@@ -23,9 +26,11 @@ import {
 // The web twin of the Apple apps' welcome screen and email sheet (DESIGN.md §0).
 export const Route = createFileRoute('/sign-in')({
   head: () => ({ meta: [{ title: 'Sign in · Aaru' }] }),
-  beforeLoad: async () => {
+  // `next`: where to return after signing in, e.g. an OAuth consent page (OUT-004).
+  validateSearch: z.object({ next: z.string().optional() }),
+  beforeLoad: async ({ search }) => {
     const session = await getSession()
-    if (session.signedIn) throw redirect({ to: '/app' })
+    if (session.signedIn) throw redirect({ href: safeNext(search.next) })
   },
   loader: () => getSignInConfig(),
   component: SignIn,
@@ -37,6 +42,7 @@ function SignIn() {
   const config = Route.useLoaderData()
   const router = useRouter()
   const navigate = useNavigate()
+  const search = Route.useSearch()
   const [step, setStep] = createSignal<Step>('choose')
   const [email, setEmail] = createSignal('')
   const [code, setCode] = createSignal('')
@@ -65,7 +71,7 @@ function SignIn() {
 
   async function signedIn() {
     await router.invalidate()
-    await navigate({ to: '/app' })
+    await navigate({ href: safeNext(search().next) })
   }
 
   const submitEmail = (event: SubmitEvent) => {
@@ -97,9 +103,9 @@ function SignIn() {
     })
 
   const field =
-    'min-h-12 w-full rounded-[14px] border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none'
-  const outline =
-    'flex min-h-13 w-full items-center justify-center rounded-full border border-ink/25 px-6 text-base font-semibold text-ink transition-transform active:scale-[0.98] disabled:opacity-50'
+    'min-h-12 w-full rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none'
+  // As tall as the Apple button above it.
+  const tall = 'min-h-13 w-full text-base'
 
   return (
     <main class="mx-auto grid min-h-[100dvh] max-w-5xl items-center gap-12 px-5 py-10 md:grid-cols-2 md:px-8">
@@ -144,9 +150,9 @@ function SignIn() {
                 />
               )}
             </Show>
-            <button type="button" class={outline} onClick={() => go('email')}>
+            <Button size="lg" class={tall} onClick={() => go('email')}>
               Continue with email
-            </button>
+            </Button>
           </Show>
 
           <Show when={step() === 'email'}>
@@ -172,20 +178,22 @@ function SignIn() {
                   </p>
                 )}
               </Show>
-              <button
+              <Button
                 type="submit"
-                class={outline}
+                size="lg"
+                class={tall}
                 disabled={working() || !email().includes('@')}
               >
                 {working() ? 'Sending…' : 'Send code'}
-              </button>
-              <button
-                type="button"
-                class="text-sm font-medium text-muted hover:text-ink"
+              </Button>
+              <Button
+                variant="ghost"
+                size="bare"
+                class="text-sm"
                 onClick={() => go('choose')}
               >
                 Back
-              </button>
+              </Button>
             </form>
           </Show>
 
@@ -212,23 +220,25 @@ function SignIn() {
                   </p>
                 )}
               </Show>
-              <button
+              <Button
                 type="submit"
-                class={outline}
+                size="lg"
+                class={tall}
                 disabled={working() || code().replace(/\D/g, '').length !== 6}
               >
                 {working() ? 'Signing in…' : 'Sign in'}
-              </button>
-              <button
-                type="button"
-                class="text-sm font-medium text-muted hover:text-ink"
+              </Button>
+              <Button
+                variant="ghost"
+                size="bare"
+                class="text-sm"
                 onClick={() => {
                   setCode('')
                   go('email')
                 }}
               >
                 Use a different email or send a new code
-              </button>
+              </Button>
             </form>
           </Show>
 

@@ -17,7 +17,7 @@ export function Poster(props: {
   const [failed, setFailed] = createSignal(false)
   return (
     <div
-      class={`relative aspect-[2/3] overflow-hidden rounded-[10px] bg-surface ${props.class ?? ''}`}
+      class={`relative aspect-[2/3] overflow-hidden rounded-field bg-surface ${props.class ?? ''}`}
       aria-hidden="true"
     >
       <Show

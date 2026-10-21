@@ -1,6 +1,8 @@
-import { Show, onMount } from 'solid-js'
+import { Show } from 'solid-js'
 import { airLabel, episodeKey, hasAired } from '../lib/title/model'
 import type { Episode } from '../lib/title/model'
+import { Button } from './ui/button'
+import { Dialog } from './ui/dialog'
 
 /** One episode up close: still, synopsis, air date and the same tick as the list. */
 export function EpisodeSheet(props: {
@@ -15,7 +17,6 @@ export function EpisodeSheet(props: {
   onClose: () => void
 }) {
   let dialog: HTMLDialogElement | undefined
-  onMount(() => dialog?.showModal())
 
   const key = () => episodeKey(props.episode.season, props.episode.number)
   const isWatched = () => props.watched.has(key())
@@ -27,10 +28,12 @@ export function EpisodeSheet(props: {
       : `S${props.episode.season} · E${props.episode.number}`
 
   return (
-    <dialog
+    <Dialog
       ref={dialog}
+      openOnMount
+      placement="sheet"
       aria-label={`${props.showTitle}, ${code()}`}
-      class="m-auto w-[min(34rem,calc(100vw-2rem))] overflow-hidden rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
+      class="max-w-[34rem] overflow-hidden"
       onClose={() => props.onClose()}
     >
       <Show
@@ -58,13 +61,14 @@ export function EpisodeSheet(props: {
               {name()}
             </h2>
           </div>
-          <button
-            type="button"
-            class="text-sm font-medium text-muted hover:text-ink"
+          <Button
+            variant="ghost"
+            size="bare"
+            class="text-sm"
             onClick={() => dialog?.close()}
           >
             Close
-          </button>
+          </Button>
         </div>
         <p class="mt-2 text-sm text-muted">
           {[
@@ -104,27 +108,25 @@ export function EpisodeSheet(props: {
                 : 'Not aired yet'}
           </button>
           <span class="ml-auto flex gap-1">
-            <button
-              type="button"
-              class="rounded-full border border-ink/25 px-3 py-1.5 text-sm font-semibold disabled:opacity-30"
+            <Button
+              size="sm"
               aria-label="Previous episode"
               disabled={!props.previous}
               onClick={() => props.previous && props.onSelect(props.previous)}
             >
               ←
-            </button>
-            <button
-              type="button"
-              class="rounded-full border border-ink/25 px-3 py-1.5 text-sm font-semibold disabled:opacity-30"
+            </Button>
+            <Button
+              size="sm"
               aria-label="Next episode"
               disabled={!props.next}
               onClick={() => props.next && props.onSelect(props.next)}
             >
               →
-            </button>
+            </Button>
           </span>
         </div>
       </div>
-    </dialog>
+    </Dialog>
   )
 }
