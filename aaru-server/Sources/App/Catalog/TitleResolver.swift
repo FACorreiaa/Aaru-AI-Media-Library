@@ -213,8 +213,9 @@ struct TitleResolver: Sendable {
     // MARK: By name only
 
     /// A show known only by its name (Pogdesign CAT, IMP-009): the one TMDB show whose normalized
-    /// title equals it, in any year. Two shows with the name (a remake) are ambiguous, never a guess.
-    func resolveShow(named name: String) async throws -> Title {
+    /// title equals it, in any year. Two shows with the name (a remake) are ambiguous, never a guess,
+    /// unless `airing` (from CAT's calendar) is an episode exactly one of them airs that day.
+    func resolveShow(named name: String, airing: ImportAiring? = nil) async throws -> Title {
         let wanted = MatchKey.normalize(name)
         guard !wanted.isEmpty else { throw ResolutionError.notFound }
         let hits = try await catalogs.tmdb.search(query: name, type: .show)
@@ -222,7 +223,35 @@ struct TitleResolver: Sendable {
             hit.type == .show && hit.year != nil && MatchKey.normalize(hit.title) == wanted
         }
         guard !matches.isEmpty else { throw ResolutionError.notFound }
-        guard matches.count == 1 else { throw ResolutionError.ambiguous }
-        return try await resolve(ids: matches[0].ids, type: .show)
+        if matches.count == 1 {
+            return try await resolve(ids: matches[0].ids, type: .show)
+        }
+        guard let airing, let hit = try await airs(airing, among: matches) else { throw ResolutionError.ambiguous }
+        return try await resolve(ids: hit.ids, type: .show)
+    }
+
+    /// More same-name shows than this are not worth reading every episode list for.
+    static let maxAiringCandidates = 4
+
+    /// The one candidate with `airing`'s episode dated within a day of it (calendar times are
+    /// local, catalog dates are UTC days). None or several is no answer.
+    private func airs(_ airing: ImportAiring, among hits: [CatalogHit]) async throws -> CatalogHit? {
+        guard hits.count <= Self.maxAiringCandidates, let day = Date.catalogDay(airing.day),
+              let year = catalogYear(airing.day)
+        else { return nil }
+        var airingHits: [CatalogHit] = []
+        for hit in hits where (hit.year ?? year) <= year {
+            guard let list = try await catalogs.tmdb.episodes(ids: hit.ids) else { continue }
+            let aired = list.episodes.contains { episode in
+                guard episode.season == airing.season, episode.episode == airing.episode,
+                      let airsAt = episode.airsAt
+                else { return false }
+                return abs(airsAt.timeIntervalSince(day)) <= 86400
+            }
+            if aired {
+                airingHits.append(hit)
+            }
+        }
+        return airingHits.count == 1 ? airingHits[0] : nil
     }
 }

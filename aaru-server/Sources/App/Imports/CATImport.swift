@@ -11,17 +11,23 @@ enum CATImport {
     static let maxLines = 2000
     static let maxNameLength = 200
 
-    /// One row per distinct show, in first-seen order. `name` may end in CAT's `(2026)`.
-    static func rows(_ names: [String]) -> [ImportRow] {
-        var seen = Set<String>()
+    /// One row per distinct show, in first-seen order. `name` may end in CAT's `(2026)`. The
+    /// show's first known airing is kept to break a tie between same-name shows.
+    static func rows(_ shows: [(name: String, airing: ImportAiring?)]) -> [ImportRow] {
+        var index: [String: Int] = [:]
         var rows: [ImportRow] = []
-        for raw in names {
+        for (raw, airing) in shows {
             let (title, year) = splitYear(raw)
             let key = "\(MatchKey.normalize(title)):\(year.map(String.init) ?? "-")"
-            guard !title.isEmpty, seen.insert(key).inserted else { continue }
+            guard !title.isEmpty else { continue }
+            if let seen = index[key] {
+                rows[seen].airing = rows[seen].airing ?? airing
+                continue
+            }
+            index[key] = rows.count
             rows.append(ImportRow(
                 sourceKey: "cat:\(raw)", type: .show, title: title, year: year, ids: ExternalIDs(),
-                status: .wishlist, lists: [], nameOnly: year == nil ? true : nil
+                status: .wishlist, lists: [], nameOnly: year == nil ? true : nil, airing: airing
             ))
         }
         return rows
@@ -65,7 +71,7 @@ enum CATListParser {
                 names.append(line)
             }
         }
-        return CATImport.rows(names) + tooLong
+        return CATImport.rows(names.map { ($0, nil) }) + tooLong
     }
 
     /// `- Severance`, `• Severance`, `3. Severance`, `3) Severance` → `Severance`.
@@ -81,31 +87,38 @@ enum CATListParser {
 // MARK: iCal (IMP-010)
 
 /// The user's exported CAT calendar: one event per episode. Every event's `SUMMARY` names its show
-/// and episode; the events collapse to one row per show. A summary with no readable show name is
-/// listed as unmatched, once.
+/// and episode; the events collapse to one row per show, keeping one episode and its `DTSTART` day.
+/// A summary with no readable show name is listed as unmatched, once.
 enum CATCalendarParser {
     static func parse(_ text: String) throws -> [ImportRow] {
         guard isCalendar(text) else {
             throw ImportFormatError(message: "That is not a calendar file. Export the iCal file from CAT.")
         }
-        var names: [String] = []
+        var shows: [(name: String, airing: ImportAiring?)] = []
         var unreadable: [String] = []
-        var inEvent = false
+        var summary: String?
+        var day: String?
         for line in unfolded(text) {
             let upper = line.uppercased()
             if upper == "BEGIN:VEVENT" {
-                inEvent = true
-            } else if upper == "END:VEVENT" {
-                inEvent = false
-            } else if inEvent, let summary = value(of: "SUMMARY", in: line) {
+                (summary, day) = (nil, nil)
+            } else if upper == "END:VEVENT", let summary {
                 if let name = showName(summary) {
-                    names.append(name)
+                    let airing = day.flatMap { day in
+                        episode(summary).map { ImportAiring(season: $0.season, episode: $0.episode, day: day) }
+                    }
+                    shows.append((name, airing))
                 } else if !unreadable.contains(summary) {
                     unreadable.append(summary)
                 }
+            } else if let value = value(of: "SUMMARY", in: line) {
+                // The event's own comes first; a later one belongs to a nested alarm.
+                summary = summary ?? value
+            } else if let value = value(of: "DTSTART", in: line) {
+                day = day ?? calendarDay(value)
             }
         }
-        return CATImport.rows(names) + unreadable.map {
+        return CATImport.rows(shows) + unreadable.map {
             CATImport.unsupported($0, reason: "Couldn't read a show name from “\($0)”.")
         }
     }
@@ -154,12 +167,38 @@ enum CATCalendarParser {
         return result
     }
 
+    /// Where a summary's first `S02E03` or `2x03` starts, and its numbers.
+    private struct EpisodePart {
+        let start: String.Index
+        let season: Int
+        let episode: Int
+
+        init?(_ summary: String) {
+            guard let match = summary.firstMatch(of: /\b[Ss](\d{1,3})\s*[Ee](\d{1,4})\b|\b(\d{1,3})x(\d{1,4})\b/),
+                  let season = (match.1 ?? match.3).flatMap({ Int($0) }),
+                  let episode = (match.2 ?? match.4).flatMap({ Int($0) })
+            else { return nil }
+            (start, self.season, self.episode) = (match.range.lowerBound, season, episode)
+        }
+    }
+
     /// `Severance: S02E03 - Who Is Alive?`, `Severance - 2x03`, `Severance S02E03` → `Severance`.
     static func showName(_ summary: String) -> String? {
-        let pattern = /(.+?)[\s:\-–|]*(?:\b[Ss]\d{1,3}\s*[Ee]\d{1,4}\b|\b\d{1,3}x\d{1,4}\b).*/
-        guard let match = summary.wholeMatch(of: pattern) else { return nil }
-        let name = String(match.1).trimmingCharacters(in: .whitespaces)
+        guard let part = EpisodePart(summary) else { return nil }
+        let name = summary[..<part.start].trimmingCharacters(in: CharacterSet(charactersIn: " \t:-–|"))
         return name.isEmpty ? nil : name
+    }
+
+    /// `S02E03` or `2x03` in a summary.
+    static func episode(_ summary: String) -> (season: Int, episode: Int)? {
+        EpisodePart(summary).map { ($0.season, $0.episode) }
+    }
+
+    /// `20261026T000000`, `20261026T000000Z` or `20261026` → `2026-10-26`. The time is dropped:
+    /// it is CAT's local broadcast time, matched against date-only catalog air dates with a day's slack.
+    static func calendarDay(_ value: String) -> String? {
+        guard let match = value.prefixMatch(of: /(\d{4})(\d{2})(\d{2})/) else { return nil }
+        return "\(match.1)-\(match.2)-\(match.3)"
     }
 }
 

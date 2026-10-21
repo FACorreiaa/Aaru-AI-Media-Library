@@ -31,10 +31,20 @@ struct ImportRow: Codable, Sendable, Equatable {
     /// Pogdesign CAT gives a show's name and nothing else: matched by exact name across every
     /// year, still only when exactly one show has it (IMP-009).
     var nameOnly: Bool?
+    /// One episode CAT's calendar says this show airs. When several shows share the name, the
+    /// one that airs that episode that day is the match (IMP-010).
+    var airing: ImportAiring?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)
     }
+}
+
+/// An episode and the day a calendar says it airs, `YYYY-MM-DD`.
+struct ImportAiring: Codable, Sendable, Equatable {
+    var season: Int
+    var episode: Int
+    var day: String
 }
 
 /// What a plan does with one row.
