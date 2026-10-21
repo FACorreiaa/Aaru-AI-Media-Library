@@ -1,8 +1,8 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
-import { AlertDialog } from '../components/ui/alert-dialog'
-import { Button } from '../components/ui/button'
+import { Button } from '~/components/ui'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import {
   createList,
   deleteList,
@@ -103,7 +103,7 @@ function Lists() {
             onInput={(e) => setName(e.currentTarget.value)}
             class="min-h-11 flex-1 rounded-full border-0 bg-surface px-5 text-base focus:ring-2 focus:ring-accent"
           />
-          <Button type="submit" variant="primary" disabled={!name().trim()}>
+          <Button type="submit" variant="default" disabled={!name().trim()}>
             Create
           </Button>
         </form>
@@ -208,7 +208,7 @@ function Lists() {
             </For>
           </ul>
         </Show>
-        <AlertDialog
+        <ConfirmDialog
           open={pending() !== null}
           title={`Delete ${asked()?.name ?? ''}?`}
           description="The list goes; the titles stay in your library."

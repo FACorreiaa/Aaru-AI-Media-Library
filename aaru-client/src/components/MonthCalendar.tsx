@@ -8,12 +8,10 @@ import {
   monthOf,
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
-import { cn } from '../lib/cn'
+import { cn } from '~/lib/utils'
 import { slideIn } from '../lib/motion'
 import { EpisodeRow } from './calendar/EpisodeRow'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
-import { cardClass } from './ui/card'
+import { Badge, Button, cardClass } from '~/components/ui'
 
 // The month view, after Stremio's calendar (CAL-002): a month of your airings with posters in
 // each day, the neighbouring months one click away, and an agenda from the selected day on.
@@ -198,7 +196,7 @@ function MonthDay(props: {
 function More(props: { count: number }) {
   return (
     <span class="grid aspect-[2/3] place-items-center rounded-thumb bg-ink/10">
-      <Badge size="xs" tone="soft">
+      <Badge size="xs" variant="soft">
         +{props.count}
       </Badge>
     </span>

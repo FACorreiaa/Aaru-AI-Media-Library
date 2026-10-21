@@ -9,7 +9,7 @@ import { Match, Switch, createSignal, onMount } from 'solid-js'
 import { optionalInt } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { RecapStory } from '../components/recap/RecapStory'
-import { Alert } from '../components/ui/alert'
+import { Alert, AlertDescription } from '~/components/ui'
 import { cards } from '../lib/recap/deck'
 import type { RecapCard } from '../lib/recap/deck'
 import { periodLabel } from '../lib/recap/model'
@@ -83,8 +83,10 @@ function Recap() {
           </Match>
           <Match when={state().kind === 'failed' && state()}>
             {(failed) => (
-              <Alert class="mt-4">
-                {(failed() as { message: string }).message}
+              <Alert variant="destructive" class="mt-4">
+                <AlertDescription>
+                  {(failed() as { message: string }).message}
+                </AlertDescription>
               </Alert>
             )}
           </Match>

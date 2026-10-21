@@ -6,10 +6,8 @@ import {
 } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
 import { SettingsPageTitle } from '../components/settings/SettingsNav'
-import { Alert } from '../components/ui/alert'
-import { AlertDialog } from '../components/ui/alert-dialog'
-import { Button } from '../components/ui/button'
-import { Card } from '../components/ui/card'
+import { Alert, AlertDescription, Button, Card } from '~/components/ui'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { TMDB_NOTICE } from '../lib/credits'
 import { deleteAccount } from '../lib/imports/server'
 
@@ -46,10 +44,14 @@ function About() {
     <>
       <SettingsPageTitle title="About" />
       <Show when={problem()}>
-        {(message) => <Alert class="mt-4">{message()}</Alert>}
+        {(message) => (
+          <Alert variant="destructive" class="mt-4">
+            <AlertDescription>{message()}</AlertDescription>
+          </Alert>
+        )}
       </Show>
 
-      <Card class="mt-6 p-5">
+      <Card class="mt-6 block p-5">
         <h3 class="font-display text-xl font-medium">About Aaru</h3>
         <p class="mt-2 text-sm text-muted">{TMDB_NOTICE}</p>
         <div class="mt-4 flex gap-4 text-sm font-semibold">
@@ -77,7 +79,7 @@ function About() {
         >
           Delete account
         </Button>
-        <AlertDialog
+        <ConfirmDialog
           open={confirmingDelete()}
           title="Delete account?"
           description="This cannot be undone. Export your data first if you want to keep it."

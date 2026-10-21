@@ -5,9 +5,7 @@ import { GoogleSignInButton } from '../GoogleSignInButton'
 import { AppearanceSection } from '../AppearanceSection'
 import { NotificationsSection } from '../NotificationsSection'
 import { SocialSection } from '../SocialSection'
-import { Alert } from '../ui/alert'
-import { Button } from '../ui/button'
-import { Card } from '../ui/card'
+import { Alert, AlertDescription, Button, Card } from '~/components/ui'
 import { linkGoogle, signOut } from '../../lib/session/session'
 import type { AccountPageData } from '../../lib/settings/account'
 import { SettingsPageTitle } from './SettingsNav'
@@ -44,10 +42,14 @@ export function AccountPage(props: { data: AccountPageData }) {
     <>
       <SettingsPageTitle title="Account" />
       <Show when={problem()}>
-        {(message) => <Alert class="mt-4">{message()}</Alert>}
+        {(message) => (
+          <Alert variant="destructive" class="mt-4">
+            <AlertDescription>{message()}</AlertDescription>
+          </Alert>
+        )}
       </Show>
 
-      <Card class="mt-6 p-5">
+      <Card class="mt-6 block p-5">
         <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
           <dt class="text-muted">Name</dt>
           <dd>{account().displayName ?? 'Not set'}</dd>
@@ -80,7 +82,7 @@ export function AccountPage(props: { data: AccountPageData }) {
             </div>
           )}
         </Show>
-        <Button size="sm" onClick={leave} class="mt-4">
+        <Button variant="outline" size="sm" onClick={leave} class="mt-4">
           Sign out
         </Button>
       </Card>

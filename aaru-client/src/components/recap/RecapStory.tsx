@@ -4,7 +4,7 @@ import type { Stats } from '../../lib/recap/model'
 import { RecapCardView } from './RecapCards'
 import { prefersReducedMotion } from '../../lib/reduced-motion'
 import { shareRecap } from './share'
-import { Dialog } from '../ui/dialog'
+import { Dialog, DialogContent, DialogPortal } from '~/components/ui'
 
 // GAM-006a: the Recap story. Tap the right of a card to go on, the left to go back, hold to
 // pause; arrows and Esc on a keyboard. Cards advance on their own unless the viewer asked for
@@ -34,7 +34,6 @@ export function RecapStory(props: {
   const still = prefersReducedMotion()
   const last = () => props.deck.length - 1
   let pressedAt = 0
-  let dialog: HTMLDialogElement | undefined
 
   function go(to: number) {
     setIndex(Math.max(0, Math.min(last(), to)))
@@ -97,86 +96,96 @@ export function RecapStory(props: {
 
   return (
     <Dialog
-      ref={dialog}
-      openOnMount
-      placement="full"
-      aria-label="Your recap"
-      onKeyDown={onKeyDown}
-      onClose={() => props.onClose()}
+      open
+      onOpenChange={(open) => {
+        if (!open) props.onClose()
+      }}
     >
-      {/* Focus starts here, not on Close, so Space and the arrows work at once; a tap on the
-          story keeps it here. */}
-      <div
-        autofocus
-        tabindex={-1}
-        class={`flex h-full flex-col outline-none transition-colors duration-500 ${BACKDROPS[index() % BACKDROPS.length]}`}
-      >
-        <div class="mx-auto flex w-full max-w-xl items-center gap-3 px-4 pt-4">
-          <div class="flex flex-1 gap-1" aria-hidden="true">
-            <For each={props.deck}>
-              {(_, i) => (
-                <div class="h-[3px] flex-1 overflow-hidden rounded-full bg-current/25">
-                  <div
-                    class="h-full origin-left bg-current"
-                    style={{ transform: `scaleX(${progress(i())})` }}
-                  />
-                </div>
-              )}
-            </For>
-          </div>
-          <button
-            type="button"
-            class="-mr-2 rounded-full px-3 py-1 text-sm font-medium hover:bg-current/10"
-            onClick={() => dialog?.close()}
-          >
-            Close
-          </button>
-        </div>
-        <p class="sr-only" aria-live="polite">
-          Card {index() + 1} of {props.deck.length}
-        </p>
-        <div
-          class="mx-auto flex w-full max-w-xl flex-1 cursor-pointer flex-col justify-center px-6 pb-16 select-none md:px-8"
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={() => setHeld(false)}
+      <DialogPortal>
+        <DialogContent
+          placement="full"
+          showCloseButton={false}
+          aria-label="Your recap"
+          onKeyDown={onKeyDown}
+          class="block gap-0 p-0"
         >
-          <Show when={props.deck[index()]} keyed>
-            {(card) => (
-              <section class="recap-card">
-                <RecapCardView
-                  card={card}
-                  stats={props.stats}
-                  share={
-                    <div
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onPointerUp={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        type="button"
-                        class="rounded-full border-2 border-current px-6 py-3 font-medium hover:bg-current/10 disabled:opacity-60"
-                        disabled={sharing()}
-                        onClick={share}
-                      >
-                        {sharing() ? 'Making the image…' : 'Share as an image'}
-                      </button>
-                      {/* Always present, so the note is announced when it appears: a toast
-                          region outside this modal would be inert while it is open. */}
-                      <p
-                        role="status"
-                        class="text-sm opacity-80"
-                        classList={{ 'mt-3': !!shareNote() }}
-                      >
-                        {shareNote()}
-                      </p>
+          {/* Focus starts here, not on Close, so Space and the arrows work at once; a tap on the
+          story keeps it here. */}
+          <div
+            autofocus
+            tabindex={-1}
+            class={`flex h-full flex-col outline-none transition-colors duration-500 ${BACKDROPS[index() % BACKDROPS.length]}`}
+          >
+            <div class="mx-auto flex w-full max-w-xl items-center gap-3 px-4 pt-4">
+              <div class="flex flex-1 gap-1" aria-hidden="true">
+                <For each={props.deck}>
+                  {(_, i) => (
+                    <div class="h-[3px] flex-1 overflow-hidden rounded-full bg-current/25">
+                      <div
+                        class="h-full origin-left bg-current"
+                        style={{ transform: `scaleX(${progress(i())})` }}
+                      />
                     </div>
-                  }
-                />
-              </section>
-            )}
-          </Show>
-        </div>
-      </div>
+                  )}
+                </For>
+              </div>
+              <button
+                type="button"
+                class="-mr-2 rounded-full px-3 py-1 text-sm font-medium hover:bg-current/10"
+                onClick={() => props.onClose()}
+              >
+                Close
+              </button>
+            </div>
+            <p class="sr-only" aria-live="polite">
+              Card {index() + 1} of {props.deck.length}
+            </p>
+            <div
+              class="mx-auto flex w-full max-w-xl flex-1 cursor-pointer flex-col justify-center px-6 pb-16 select-none md:px-8"
+              onPointerDown={onPointerDown}
+              onPointerUp={onPointerUp}
+              onPointerCancel={() => setHeld(false)}
+            >
+              <Show when={props.deck[index()]} keyed>
+                {(card) => (
+                  <section class="recap-card">
+                    <RecapCardView
+                      card={card}
+                      stats={props.stats}
+                      share={
+                        <div
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerUp={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            class="rounded-full border-2 border-current px-6 py-3 font-medium hover:bg-current/10 disabled:opacity-60"
+                            disabled={sharing()}
+                            onClick={share}
+                          >
+                            {sharing()
+                              ? 'Making the image…'
+                              : 'Share as an image'}
+                          </button>
+                          {/* Always present, so the note is announced when it appears: a toast
+                          region outside this modal would be inert while it is open. */}
+                          <p
+                            role="status"
+                            class="text-sm opacity-80"
+                            classList={{ 'mt-3': !!shareNote() }}
+                          >
+                            {shareNote()}
+                          </p>
+                        </div>
+                      }
+                    />
+                  </section>
+                )}
+              </Show>
+            </div>
+          </div>
+        </DialogContent>
+      </DialogPortal>
     </Dialog>
   )
 }

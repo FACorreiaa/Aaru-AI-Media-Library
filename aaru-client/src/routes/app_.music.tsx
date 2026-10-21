@@ -2,11 +2,7 @@ import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { For, Show, createResource, createSignal, onMount } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { AlbumLink, Cover, TopList } from '../components/music/TopList'
-import { Button } from '../components/ui/button'
-import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from '../components/ui/segmented-control'
+import { Button, ToggleGroup, ToggleGroupItem } from '~/components/ui'
 import {
   TOP_BY,
   byDay,
@@ -56,27 +52,31 @@ function Music() {
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
           Music
         </h1>
-        <SegmentedControl
+        <ToggleGroup
           class={`${segments} mt-6 md:hidden`}
           aria-label="Show"
           value={view()}
-          onChange={(next) => setView(next as 'recent' | 'top')}
+          onChange={(next: string | null) =>
+            next && setView(next as 'recent' | 'top')
+          }
         >
-          <SegmentedControlItem
+          <ToggleGroupItem
+            size="bare"
             value="recent"
             variant="surface"
             class="px-4 py-1.5"
           >
             Recent
-          </SegmentedControlItem>
-          <SegmentedControlItem
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            size="bare"
             value="top"
             variant="surface"
             class="px-4 py-1.5"
           >
             Top
-          </SegmentedControlItem>
-        </SegmentedControl>
+          </ToggleGroupItem>
+        </ToggleGroup>
         <Show when={now()}>
           {(today) => (
             <div class="mt-6 grid gap-10 md:grid-cols-2">
@@ -180,7 +180,11 @@ function Recent(props: { now: Date }) {
           <p class="mt-4 text-sm text-muted">Loading…</p>
         </Show>
         <Show when={next() && state() === 'ready'}>
-          <Button class="mt-4" onClick={() => void load(next())}>
+          <Button
+            variant="outline"
+            class="mt-4"
+            onClick={() => void load(next())}
+          >
             Load more
           </Button>
         </Show>
@@ -213,42 +217,44 @@ function Top(props: { now: Date }) {
         Top
       </h2>
       <div class="flex flex-wrap gap-2 md:mt-4">
-        <SegmentedControl
+        <ToggleGroup
           class={segments}
           aria-label="Period"
           value={span()}
-          onChange={(next) => setSpan(next as TopSpan)}
+          onChange={(next: string | null) => next && setSpan(next as TopSpan)}
         >
           <For each={SPANS}>
             {(option) => (
-              <SegmentedControlItem
+              <ToggleGroupItem
+                size="bare"
                 value={option.span}
                 variant="surface"
                 class="px-3 py-1.5"
               >
                 {option.label}
-              </SegmentedControlItem>
+              </ToggleGroupItem>
             )}
           </For>
-        </SegmentedControl>
-        <SegmentedControl
+        </ToggleGroup>
+        <ToggleGroup
           class={segments}
           aria-label="Rank"
           value={by()}
-          onChange={(next) => setBy(next as TopBy)}
+          onChange={(next: string | null) => next && setBy(next as TopBy)}
         >
           <For each={TOP_BY}>
             {(option) => (
-              <SegmentedControlItem
+              <ToggleGroupItem
+                size="bare"
                 value={option.by}
                 variant="surface"
                 class="px-3 py-1.5"
               >
                 {option.label}
-              </SegmentedControlItem>
+              </ToggleGroupItem>
             )}
           </For>
-        </SegmentedControl>
+        </ToggleGroup>
       </div>
       <div class="mt-2 min-h-16" aria-busy={top.loading}>
         <Show

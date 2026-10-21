@@ -12,12 +12,18 @@ import {
 } from '../lib/music/model'
 import type { Scrobbler } from '../lib/music/model'
 import { lastUsedLabel } from '../lib/stremio/model'
-import { cn } from '../lib/cn'
-import { AlertDialog } from './ui/alert-dialog'
-import { Button, buttonVariants } from './ui/button'
-import { RadioGroup, RadioGroupItem } from './ui/radio-group'
-import { showToast } from './ui/toast'
-import { cardClass } from './ui/card'
+import { cn } from '~/lib/utils'
+import {
+  Button,
+  buttonVariants,
+  RadioGroup,
+  RadioGroupItem,
+  RadioGroupItemInput,
+  RadioGroupItemLabel,
+  toast,
+  cardClass,
+} from '~/components/ui'
+import { ConfirmDialog } from './ConfirmDialog'
 import {
   connectScrobbler,
   latestListen,
@@ -159,14 +165,17 @@ export function MusicSection(props: {
               <For each={SCROBBLERS}>
                 {(option) => (
                   <RadioGroupItem value={option}>
-                    {scrobblerLabel(option)}
+                    <RadioGroupItemInput />
+                    <RadioGroupItemLabel class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-ink/25 px-4 text-sm font-semibold peer-focus-visible/radio-group:outline-2 peer-focus-visible/radio-group:outline-offset-2 peer-focus-visible/radio-group:outline-accent data-[checked]:border-accent data-[checked]:bg-accent data-[checked]:text-on-accent">
+                      {scrobblerLabel(option)}
+                    </RadioGroupItemLabel>
                   </RadioGroupItem>
                 )}
               </For>
             </RadioGroup>
             <p class="max-w-[60ch] text-sm">{scrobblerSummary(choice())}</p>
             <Button
-              variant="primary"
+              variant="default"
               class="self-start"
               disabled={busy()}
               onClick={() => void connect()}
@@ -185,7 +194,7 @@ export function MusicSection(props: {
               mistake.
             </p>
             <FirstListen waiting={waiting()} heard={heard()} />
-            <Button class="self-start" onClick={done}>
+            <Button variant="outline" class="self-start" onClick={done}>
               Done
             </Button>
           </div>
@@ -224,7 +233,7 @@ export function MusicSection(props: {
           </For>
         </ul>
       </Show>
-      <AlertDialog
+      <ConfirmDialog
         open={pending() !== null}
         title={`Disconnect ${asked()?.name ?? ''}?`}
         description="It stops sending listens at once. Listens already in your log stay."
@@ -253,7 +262,10 @@ function SetupSteps(props: { setup: MusicSetup }) {
                   href={link().url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class={cn(buttonVariants({ size: 'sm' }), 'self-start')}
+                  class={cn(
+                    buttonVariants({ variant: 'outline', size: 'sm' }),
+                    'self-start',
+                  )}
                 >
                   {link().label}
                 </a>
@@ -291,10 +303,10 @@ function CopyField(props: { label: string; value: string; secret?: boolean }) {
       await navigator.clipboard.writeText(props.value)
       setCopied(true)
       // The label change is silent to a screen reader; the toast is announced.
-      showToast(`${props.label} copied.`)
+      toast(`${props.label} copied.`)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      showToast('Copying failed. Select it and copy it yourself.')
+      toast('Copying failed. Select it and copy it yourself.')
     }
   }
   return (

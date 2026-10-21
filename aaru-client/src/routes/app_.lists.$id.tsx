@@ -12,9 +12,8 @@ import {
 import type { JSX } from 'solid-js'
 import { Wordmark } from '../components/Brand'
 import { Poster } from '../components/Poster'
-import { AlertDialog } from '../components/ui/alert-dialog'
-import { Button } from '../components/ui/button'
-import { Dialog } from '../components/ui/dialog'
+import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { KINDS, statusLabel } from '../lib/library/model'
 import { toListRow } from '../lib/lists/model'
 import type { ListRow } from '../lib/lists/model'
@@ -51,7 +50,7 @@ function ListPage() {
   const [removing, setRemoving] = createSignal(false)
   // The last row asked about, so the dialog keeps its title while it fades out.
   const asked = createMemo<ListRow | null>((last) => pending() ?? last, null)
-  let dialog: HTMLDialogElement | undefined
+  const [searchOpen, setSearchOpen] = createSignal(false)
   let list: HTMLOListElement | undefined
   // Each row's element, so a removal can play its exit before it leaves the DOM.
   const rowEls = new Map<string, HTMLLIElement>()
@@ -75,7 +74,7 @@ function ListPage() {
 
   function openSearch() {
     setSearchOpened(true)
-    dialog?.showModal()
+    setSearchOpen(true)
   }
 
   async function move(index: number, by: -1 | 1) {
@@ -138,7 +137,12 @@ function ListPage() {
           <h1 class="font-display text-4xl font-medium tracking-tight">
             {detail().name}
           </h1>
-          <Button size="sm" class="shrink-0" onClick={openSearch}>
+          <Button
+            variant="outline"
+            size="sm"
+            class="shrink-0"
+            onClick={openSearch}
+          >
             Add titles
           </Button>
         </div>
@@ -155,7 +159,7 @@ function ListPage() {
             <div class="mt-16 text-center">
               <p class="text-muted">Nothing on this list yet.</p>
               <Button
-                variant="primary"
+                variant="default"
                 size="lg"
                 class="mt-6"
                 onClick={openSearch}
@@ -268,7 +272,7 @@ function ListPage() {
             </For>
           </ol>
         </Show>
-        <AlertDialog
+        <ConfirmDialog
           open={pending() !== null}
           title={`Remove ${asked()?.title ?? ''} from this list?`}
           confirmLabel="Remove"
@@ -281,24 +285,30 @@ function ListPage() {
         />
       </main>
 
-      <Dialog
-        ref={dialog}
-        aria-label={`Add to ${detail().name}`}
-        class="w-[min(40rem,calc(100vw-2rem))]"
-      >
-        <Show when={searchOpened()}>
-          <Suspense
-            fallback={
-              <p class="px-5 py-8 text-center text-sm text-muted">Loading…</p>
-            }
+      <Dialog open={searchOpen()} onOpenChange={setSearchOpen}>
+        <DialogPortal>
+          <DialogContent
+            showCloseButton={false}
+            aria-label={`Add to ${detail().name}`}
+            class="block gap-0 p-0 w-[min(40rem,calc(100vw-2rem))]"
           >
-            <SearchPanel
-              list={detail()}
-              onListChanged={setDetail}
-              onClose={() => dialog?.close()}
-            />
-          </Suspense>
-        </Show>
+            <Show when={searchOpened()}>
+              <Suspense
+                fallback={
+                  <p class="px-5 py-8 text-center text-sm text-muted">
+                    Loading…
+                  </p>
+                }
+              >
+                <SearchPanel
+                  list={detail()}
+                  onListChanged={setDetail}
+                  onClose={() => setSearchOpen(false)}
+                />
+              </Suspense>
+            </Show>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
     </div>
   )

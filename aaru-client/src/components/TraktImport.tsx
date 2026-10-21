@@ -7,7 +7,7 @@ import {
 } from '../lib/imports/server'
 import type { TraktConnection } from '../lib/imports/server'
 import { TRAKT_NOTICE } from '../lib/credits'
-import { Button } from './ui/button'
+import { Button } from '~/components/ui'
 
 // IMP-002/003: each user connects their own Trakt account (PKCE, tokens kept sealed by the
 // server), then imports it like any other source: matched, planned, approved. Importing again
@@ -61,6 +61,7 @@ export function TraktImport(props: {
               apps.
             </span>
             <Button
+              variant="outline"
               class="self-start"
               disabled={busy() !== undefined}
               onClick={() => void run('connect')}
@@ -78,6 +79,7 @@ export function TraktImport(props: {
         </span>
         <div class="flex flex-wrap items-center gap-3">
           <Button
+            variant="outline"
             disabled={busy() !== undefined}
             onClick={() => void run('import')}
           >

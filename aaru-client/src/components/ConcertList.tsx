@@ -9,7 +9,7 @@ import {
   onMount,
 } from 'solid-js'
 import type { JSX } from 'solid-js'
-import { cn } from '../lib/cn'
+import { cn } from '~/lib/utils'
 import { CREDITS } from '../lib/credits'
 import {
   DEFAULT_RADIUS,
@@ -31,9 +31,13 @@ import type {
 import { getArtistConcerts, getConcertsNear } from '../lib/concerts/server'
 import { play } from '../lib/motion'
 import { CityPicker } from './CityPicker'
-import { Alert } from './ui/alert'
-import { Button, buttonVariants } from './ui/button'
-import { SegmentedControl, SegmentedControlItem } from './ui/segmented-control'
+import {
+  Alert,
+  Button,
+  buttonVariants,
+  ToggleGroup,
+  ToggleGroupItem,
+} from '~/components/ui'
 
 const TICKETMASTER = CREDITS.find((c) => c.name === 'Ticketmaster')?.href
 const UNAVAILABLE = 'Ticketmaster isn’t answering right now.'
@@ -294,24 +298,27 @@ export function ConcertList(props: {
         </div>
 
         <Show when={near().state !== 'no_place'}>
-          <SegmentedControl
+          <ToggleGroup
             class="mt-4 flex w-fit gap-1.5 text-sm"
             aria-label="Distance"
             value={String(radius())}
-            onChange={(next) => setRadius(Number(next) as Radius)}
+            onChange={(next: string | null) =>
+              next && setRadius(Number(next) as Radius)
+            }
           >
             <For each={RADII}>
               {(km) => (
-                <SegmentedControlItem
+                <ToggleGroupItem
+                  size="bare"
                   value={String(km)}
                   variant="chip"
                   class="px-4 py-1.5 tabular-nums whitespace-nowrap"
                 >
                   {km} km
-                </SegmentedControlItem>
+                </ToggleGroupItem>
               )}
             </For>
-          </SegmentedControl>
+          </ToggleGroup>
         </Show>
 
         <Show when={locateProblem()}>
@@ -333,7 +340,7 @@ export function ConcertList(props: {
             </p>
             <div class="mt-4 flex flex-wrap gap-2">
               <Button
-                variant="primary"
+                variant="default"
                 size="sm"
                 onClick={() => setPicking(true)}
               >
@@ -551,7 +558,10 @@ function Quiet(props: { class?: string; children: JSX.Element }) {
 
 function Retry(props: { message: string; onRetry: () => void }) {
   return (
-    <Alert class="mt-3 flex items-center justify-between gap-3">
+    <Alert
+      variant="destructive"
+      class="mt-3 flex items-center justify-between gap-3"
+    >
       <span>{props.message}</span>
       <Button variant="quiet" size="sm" onClick={() => props.onRetry()}>
         Try again

@@ -7,9 +7,16 @@ import {
   saveSubscription,
 } from '../lib/push/server'
 import type { NotificationSettings, PushSetup } from '../lib/push/server'
-import { Button } from './ui/button'
-import { Card } from './ui/card'
-import { Switch } from './ui/switch'
+import {
+  Button,
+  Card,
+  Switch,
+  SwitchControl,
+  SwitchDescription,
+  SwitchInput,
+  SwitchLabel,
+  SwitchThumb,
+} from '~/components/ui'
 
 type SettingKey = keyof NotificationSettings
 
@@ -127,7 +134,7 @@ export function NotificationsSection(props: { setup: PushSetup }) {
   }
 
   return (
-    <Card class="mt-10 p-5">
+    <Card class="mt-10 block p-5">
       <h2 class="font-display text-xl font-medium">Notifications</h2>
       <For each={switches}>
         {(item) => (
@@ -135,9 +142,20 @@ export function NotificationsSection(props: { setup: PushSetup }) {
             class="mt-3 flex items-start gap-3 text-sm"
             checked={settings()[item.key]}
             onChange={(checked) => void toggle(item.key, checked)}
-            label={item.label}
-            description={item.detail}
-          />
+          >
+            <SwitchInput />
+            <SwitchControl>
+              <SwitchThumb />
+            </SwitchControl>
+            <span>
+              <SwitchLabel class="cursor-pointer font-normal">
+                {item.label}
+              </SwitchLabel>
+              <SwitchDescription class="block text-xs">
+                {item.detail}
+              </SwitchDescription>
+            </span>
+          </Switch>
         )}
       </For>
 
@@ -164,6 +182,7 @@ export function NotificationsSection(props: { setup: PushSetup }) {
             </Show>
             <Show when={support() === 'supported'}>
               <Button
+                variant="outline"
                 disabled={busy()}
                 onClick={() =>
                   void (subscribed() ? turnOff() : turnOn(publicKey()))

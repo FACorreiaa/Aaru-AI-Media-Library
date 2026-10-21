@@ -4,7 +4,7 @@ import {
   SettingsRail,
   useSettingsIndex,
 } from '../components/settings/SettingsNav'
-import { Toaster } from '../components/ui/toast'
+import { Toaster } from '~/components/ui'
 import { getSession } from '../lib/session/session'
 
 // APP-007 on the web: Settings in groups. Desktop keeps the groups in a rail beside the page;

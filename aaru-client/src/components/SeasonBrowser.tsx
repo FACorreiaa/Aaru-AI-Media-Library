@@ -15,9 +15,7 @@ import { hitKey } from '../lib/library/model'
 import { play, slideIn } from '../lib/motion'
 import { createDiscoverAdder } from './DiscoverRows'
 import { DiscoverCard } from './HomeRows'
-import { Alert } from './ui/alert'
-import { Button } from './ui/button'
-import { SegmentedControl, SegmentedControlItem } from './ui/segmented-control'
+import { Alert, Button, ToggleGroup, ToggleGroupItem } from '~/components/ui'
 
 const SKELETON_CARDS = 12
 
@@ -188,29 +186,35 @@ export function SeasonBrowser(props: {
       </div>
 
       <div class="mt-6 flex justify-center overflow-x-auto">
-        <SegmentedControl
+        <ToggleGroup
           class="flex shrink-0 gap-1.5 text-sm"
           aria-label="What to list"
           value={props.kind}
-          onChange={(kind) => props.onChange(kind as SeasonKind, props.season)}
+          onChange={(kind: string | null) =>
+            kind && props.onChange(kind as SeasonKind, props.season)
+          }
         >
           <For each={SEASON_KINDS}>
             {(option) => (
-              <SegmentedControlItem
+              <ToggleGroupItem
+                size="bare"
                 value={option.kind}
                 variant="chip"
                 class="px-4 py-1.5 whitespace-nowrap"
               >
                 {option.label}
-              </SegmentedControlItem>
+              </ToggleGroupItem>
             )}
           </For>
-        </SegmentedControl>
+        </ToggleGroup>
       </div>
 
       <Show when={failed()}>
         {(message) => (
-          <Alert class="mt-6 flex items-center justify-between gap-3">
+          <Alert
+            variant="destructive"
+            class="mt-6 flex items-center justify-between gap-3"
+          >
             <span>{message()}</span>
             <Button variant="quiet" size="sm" onClick={retry}>
               Try again

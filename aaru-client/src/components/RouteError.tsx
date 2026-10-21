@@ -1,7 +1,7 @@
 import { useRouter } from '@tanstack/solid-router'
-import { cn } from '../lib/cn'
+import { cn } from '~/lib/utils'
 import { Wordmark } from './Brand'
-import { Button, buttonVariants } from './ui/button'
+import { Button, buttonVariants } from '~/components/ui'
 
 /** The branded fallback when a page cannot load: the message, and a way to try again. */
 export function RouteError(props: { error: unknown }) {
@@ -20,7 +20,7 @@ export function RouteError(props: { error: unknown }) {
       </h1>
       <p class="mt-3 text-muted">{message()}</p>
       <Button
-        variant="primary"
+        variant="default"
         size="lg"
         onClick={() => void router.invalidate()}
         class="mt-8"
@@ -42,7 +42,7 @@ export function NotFound() {
       <p class="mt-3 text-muted">This page does not exist, or it moved.</p>
       <a
         href="/"
-        class={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'mt-8')}
+        class={cn(buttonVariants({ variant: 'default', size: 'lg' }), 'mt-8')}
       >
         Go home
       </a>

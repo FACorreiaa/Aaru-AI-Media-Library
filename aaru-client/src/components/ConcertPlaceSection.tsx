@@ -2,8 +2,7 @@ import { Show, Suspense, createSignal, lazy } from 'solid-js'
 import { placeLabel } from '../lib/concerts/place'
 import type { ConcertPlaceSetting } from '../lib/concerts/model'
 import { deleteConcertPlace } from '../lib/concerts/server'
-import { Button } from './ui/button'
-import { Card } from './ui/card'
+import { Button, Card } from '~/components/ui'
 
 // The picker loads on the first tap: Account is opened far more often than the city changes.
 const CityPicker = lazy(() =>
@@ -33,7 +32,7 @@ export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
   }
 
   return (
-    <Card class="mt-10 p-5">
+    <Card class="mt-10 block p-5">
       <h2 class="font-display text-xl font-medium">Concerts near</h2>
       <Show
         when={setting().place}
@@ -54,7 +53,7 @@ export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
         )}
       </Show>
       <div class="mt-4 flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => setPicking(true)}>
+        <Button variant="outline" size="sm" onClick={() => setPicking(true)}>
           {setting().place ? 'Change' : 'Choose a city'}
         </Button>
         <Show when={setting().place}>

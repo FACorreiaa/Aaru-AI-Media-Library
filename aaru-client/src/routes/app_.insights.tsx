@@ -12,11 +12,12 @@ import { optionalEnum, optionalInt } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { StatsPanel } from '../components/StatsPanel'
 import { MusicInsights } from '../components/music/MusicInsights'
-import { Alert } from '../components/ui/alert'
 import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from '../components/ui/segmented-control'
+  Alert,
+  AlertDescription,
+  ToggleGroup,
+  ToggleGroupItem,
+} from '~/components/ui'
 import {
   SPANS,
   insightsLabel,
@@ -140,12 +141,13 @@ function Insights() {
         </h1>
 
         <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <SegmentedControl
+          <ToggleGroup
             class="flex overflow-hidden rounded-full border border-line text-sm"
             aria-label="Period"
             // '' until the period is known: controlled, with nothing chosen yet.
             value={period()?.span ?? ''}
-            onChange={(span) => {
+            onChange={(span: string | null) => {
+              if (!span) return
               const p = period()
               const current = now()
               const option = SPANS.find((o) => o.span === span)
@@ -154,16 +156,17 @@ function Insights() {
           >
             <For each={SPANS}>
               {(option) => (
-                <SegmentedControlItem
+                <ToggleGroupItem
+                  size="bare"
                   value={option.span}
                   variant="surface"
                   class="px-4 py-1.5"
                 >
                   {option.label}
-                </SegmentedControlItem>
+                </ToggleGroupItem>
               )}
             </For>
-          </SegmentedControl>
+          </ToggleGroup>
           <Show when={period()}>
             {(p) => (
               <div class="flex items-center gap-2">
@@ -199,7 +202,11 @@ function Insights() {
 
         <Switch>
           <Match when={failed()}>
-            {(message) => <Alert class="mt-6">{message()}</Alert>}
+            {(message) => (
+              <Alert variant="destructive" class="mt-6">
+                <AlertDescription>{message()}</AlertDescription>
+              </Alert>
+            )}
           </Match>
           <Match when={ready()}>
             {(stats) => (

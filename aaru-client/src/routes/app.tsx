@@ -13,11 +13,17 @@ import { DiscoverRows } from '../components/DiscoverRows'
 import { LastImportCard } from '../components/LastImportCard'
 import { PlanCard } from '../components/PlanCard'
 import { TonightStrip } from '../components/TonightStrip'
-import { Alert } from '../components/ui/alert'
-import { Button, buttonVariants } from '../components/ui/button'
-import { cardClass } from '../components/ui/card'
-import { Dialog } from '../components/ui/dialog'
-import { cn } from '../lib/cn'
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  buttonVariants,
+  cardClass,
+  Dialog,
+  DialogContent,
+  DialogPortal,
+} from '~/components/ui'
+import { cn } from '~/lib/utils'
 import {
   AiringCard,
   ContinueCard,
@@ -114,12 +120,12 @@ function Home() {
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
   const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
-  let dialog: HTMLDialogElement | undefined
+  const [searchOpen, setSearchOpen] = createSignal(false)
   let libraryRequested = false
 
   function openSearch() {
     setSearchOpened(true)
-    dialog?.showModal()
+    setSearchOpen(true)
     loadLibrary()
   }
 
@@ -364,7 +370,11 @@ function Home() {
         <p class="mt-1 min-h-6 text-muted tabular-nums">{subline()}</p>
 
         <Show when={problem()}>
-          {(message) => <Alert class="mt-4">{message()}</Alert>}
+          {(message) => (
+            <Alert variant="destructive" class="mt-4">
+              <AlertDescription>{message()}</AlertDescription>
+            </Alert>
+          )}
         </Show>
 
         <div class="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr] lg:gap-x-10">
@@ -666,7 +676,7 @@ function Home() {
                 <div class="mt-6 flex items-center justify-center gap-3">
                   <Link
                     to="/app/discover"
-                    class={buttonVariants({ variant: 'primary', size: 'lg' })}
+                    class={buttonVariants({ variant: 'default', size: 'lg' })}
                   >
                     Discover
                   </Link>
@@ -680,24 +690,30 @@ function Home() {
         </div>
       </main>
 
-      <Dialog
-        ref={dialog}
-        aria-label="Search"
-        class="w-[min(40rem,calc(100vw-2rem))]"
-      >
-        <Show when={searchOpened()}>
-          <Suspense
-            fallback={
-              <p class="px-5 py-8 text-center text-sm text-muted">Loading…</p>
-            }
+      <Dialog open={searchOpen()} onOpenChange={setSearchOpen}>
+        <DialogPortal>
+          <DialogContent
+            showCloseButton={false}
+            aria-label="Search"
+            class="block gap-0 p-0 w-[min(40rem,calc(100vw-2rem))]"
           >
-            <SearchPanel
-              entries={entries()}
-              onAdded={(entry) => void added(entry)}
-              onClose={() => dialog?.close()}
-            />
-          </Suspense>
-        </Show>
+            <Show when={searchOpened()}>
+              <Suspense
+                fallback={
+                  <p class="px-5 py-8 text-center text-sm text-muted">
+                    Loading…
+                  </p>
+                }
+              >
+                <SearchPanel
+                  entries={entries()}
+                  onAdded={(entry) => void added(entry)}
+                  onClose={() => setSearchOpen(false)}
+                />
+              </Suspense>
+            </Show>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
     </div>
   )

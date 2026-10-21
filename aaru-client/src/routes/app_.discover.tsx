@@ -10,11 +10,12 @@ import {
 } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
-import { Alert } from '../components/ui/alert'
 import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from '../components/ui/segmented-control'
+  Alert,
+  AlertDescription,
+  ToggleGroup,
+  ToggleGroupItem,
+} from '~/components/ui'
 import { CREDITS, TMDB_URL } from '../lib/credits'
 import { localDayKey } from '../lib/calendar/model'
 import type { ConcertPlaceSetting } from '../lib/concerts/model'
@@ -135,11 +136,12 @@ function DiscoverPage() {
           What is out, coming, and airing now. Add anything in one tap.
         </p>
 
-        <SegmentedControl
+        <ToggleGroup
           class="mt-6 flex w-fit overflow-hidden rounded-full border border-line text-sm"
           aria-label="Discover view"
           value={view()}
-          onChange={(next) =>
+          onChange={(next: string | null) =>
+            next &&
             void navigate({
               search:
                 next === 'seasons' || next === 'concerts' ? { view: next } : {},
@@ -147,33 +149,40 @@ function DiscoverPage() {
             })
           }
         >
-          <SegmentedControlItem
+          <ToggleGroupItem
+            size="bare"
             value="today"
             variant="surface"
             class="px-4 py-1.5"
           >
             Today
-          </SegmentedControlItem>
-          <SegmentedControlItem
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            size="bare"
             value="seasons"
             variant="surface"
             class="px-4 py-1.5"
           >
             Seasons
-          </SegmentedControlItem>
+          </ToggleGroupItem>
           <Show when={concertsOn()}>
-            <SegmentedControlItem
+            <ToggleGroupItem
+              size="bare"
               value="concerts"
               variant="surface"
               class="px-4 py-1.5"
             >
               Concerts
-            </SegmentedControlItem>
+            </ToggleGroupItem>
           </Show>
-        </SegmentedControl>
+        </ToggleGroup>
 
         <Show when={problem()}>
-          {(message) => <Alert class="mt-4">{message()}</Alert>}
+          {(message) => (
+            <Alert variant="destructive" class="mt-4">
+              <AlertDescription>{message()}</AlertDescription>
+            </Alert>
+          )}
         </Show>
 
         <Switch

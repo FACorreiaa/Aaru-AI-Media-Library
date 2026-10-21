@@ -2,13 +2,19 @@ import { For, Show, createMemo, createResource, createSignal } from 'solid-js'
 import { AGENT_KINDS, accessLabel, kindLabel } from '../lib/agents/model'
 import type { AgentKind } from '../lib/agents/model'
 import { lastUsedLabel } from '../lib/stremio/model'
-import { cn } from '../lib/cn'
-import { AlertDialog } from './ui/alert-dialog'
-import { Button, buttonVariants } from './ui/button'
+import { cn } from '~/lib/utils'
+import {
+  Button,
+  buttonVariants,
+  RadioGroup,
+  RadioGroupItem,
+  RadioGroupItemInput,
+  RadioGroupItemLabel,
+  toast,
+  cardClass,
+} from '~/components/ui'
+import { ConfirmDialog } from './ConfirmDialog'
 import { EXTENSION_STORES } from '../lib/agents/extension'
-import { RadioGroup, RadioGroupItem } from './ui/radio-group'
-import { showToast } from './ui/toast'
-import { cardClass } from './ui/card'
 import {
   createConnection,
   getSetup,
@@ -112,7 +118,10 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
               <For each={CHOICES}>
                 {(option) => (
                   <RadioGroupItem value={option}>
-                    {kindLabel(option)}
+                    <RadioGroupItemInput />
+                    <RadioGroupItemLabel class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-ink/25 px-4 text-sm font-semibold peer-focus-visible/radio-group:outline-2 peer-focus-visible/radio-group:outline-offset-2 peer-focus-visible/radio-group:outline-accent data-[checked]:border-accent data-[checked]:bg-accent data-[checked]:text-on-accent">
+                      {kindLabel(option)}
+                    </RadioGroupItemLabel>
                   </RadioGroupItem>
                 )}
               </For>
@@ -168,7 +177,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                 </span>
               </label>
               <Button
-                variant="primary"
+                variant="default"
                 class="self-start"
                 disabled={busy()}
                 onClick={() => void create()}
@@ -232,7 +241,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
           </For>
         </ul>
       </Show>
-      <AlertDialog
+      <ConfirmDialog
         open={pending() !== null}
         title={`Revoke ${asked()?.name ?? ''}?`}
         description="Anything using it stops working at once."
@@ -277,7 +286,7 @@ function ExtensionSteps() {
                 href={store.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                class={buttonVariants()}
+                class={buttonVariants({ variant: 'outline' })}
               >
                 {store.label}
               </a>
@@ -318,7 +327,7 @@ function CopyBlock(props: { text: string; wrap?: boolean }) {
       await navigator.clipboard.writeText(props.text)
       setCopied(true)
       // The label change is silent to a screen reader; the toast is announced.
-      showToast('Copied to the clipboard.')
+      toast('Copied to the clipboard.')
       setTimeout(() => setCopied(false), 2000)
     } catch {
       // Clipboard can be blocked; the text stays selectable.

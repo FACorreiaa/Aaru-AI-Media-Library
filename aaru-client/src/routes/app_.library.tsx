@@ -12,12 +12,14 @@ import { optionalBoolean, optionalEnum } from '../lib/search-params'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
-import { Button } from '../components/ui/button'
-import { Dialog } from '../components/ui/dialog'
 import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from '../components/ui/segmented-control'
+  Button,
+  Dialog,
+  DialogContent,
+  DialogPortal,
+  ToggleGroup,
+  ToggleGroupItem,
+} from '~/components/ui'
 import { getLibrary } from '../lib/library/server'
 import { NowSection } from '../components/library/NowSection'
 import {
@@ -94,12 +96,12 @@ function Library() {
   const [layout, setLayout] = createSignal<Layout>('grid')
   // The entry whose "List…" was clicked: the picker adds its title to a list.
   const [listTarget, setListTarget] = createSignal<LibraryEntry | null>(null)
-  let dialog: HTMLDialogElement | undefined
+  const [searchOpen, setSearchOpen] = createSignal(false)
   // Search mounts on its first open and then stays, keeping its query between opens.
   const [searchOpened, setSearchOpened] = createSignal(false)
   function openSearch() {
     setSearchOpened(true)
-    dialog?.showModal()
+    setSearchOpen(true)
   }
 
   function chooseList(libraryItemId: string) {
@@ -145,33 +147,35 @@ function Library() {
         />
 
         <div class="mt-6 flex flex-wrap items-center gap-2">
-          <SegmentedControl
+          <ToggleGroup
             class="flex flex-wrap gap-2"
             aria-label="Kind"
             value={kind() ?? 'all'}
-            onChange={(next) =>
-              setKind(next === 'all' ? null : (next as MediaKind))
+            onChange={(next: string | null) =>
+              next && setKind(next === 'all' ? null : (next as MediaKind))
             }
           >
-            <SegmentedControlItem
+            <ToggleGroupItem
+              size="bare"
               value="all"
               variant="chip"
               class="px-4 py-1.5 text-sm"
             >
               All
-            </SegmentedControlItem>
+            </ToggleGroupItem>
             <For each={KINDS}>
               {(option) => (
-                <SegmentedControlItem
+                <ToggleGroupItem
+                  size="bare"
                   value={option.kind}
                   variant="chip"
                   class="px-4 py-1.5 text-sm"
                 >
                   {option.label}
-                </SegmentedControlItem>
+                </ToggleGroupItem>
               )}
             </For>
-          </SegmentedControl>
+          </ToggleGroup>
           <label class="sr-only" for="status-filter">
             Status
           </label>
@@ -194,27 +198,31 @@ function Library() {
               )}
             </For>
           </select>
-          <SegmentedControl
+          <ToggleGroup
             class="ml-auto flex overflow-hidden rounded-full border border-line text-sm"
             aria-label="Layout"
             value={layout()}
-            onChange={(next) => chooseLayout(next as Layout)}
+            onChange={(next: string | null) =>
+              next && chooseLayout(next as Layout)
+            }
           >
-            <SegmentedControlItem
+            <ToggleGroupItem
+              size="bare"
               value="grid"
               variant="surface"
               class="px-3 py-1.5"
             >
               Grid
-            </SegmentedControlItem>
-            <SegmentedControlItem
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              size="bare"
               value="list"
               variant="surface"
               class="px-3 py-1.5"
             >
               List
-            </SegmentedControlItem>
-          </SegmentedControl>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
 
         <Show
@@ -241,7 +249,7 @@ function Library() {
                   Search for a film, show, anime, book or album to start.
                 </p>
                 <Button
-                  variant="primary"
+                  variant="default"
                   size="lg"
                   onClick={openSearch}
                   class="mt-6"
@@ -343,24 +351,30 @@ function Library() {
         </Show>
       </main>
 
-      <Dialog
-        ref={dialog}
-        aria-label="Search"
-        class="w-[min(40rem,calc(100vw-2rem))]"
-      >
-        <Show when={searchOpened()}>
-          <Suspense
-            fallback={
-              <p class="px-5 py-8 text-center text-sm text-muted">Loading…</p>
-            }
+      <Dialog open={searchOpen()} onOpenChange={setSearchOpen}>
+        <DialogPortal>
+          <DialogContent
+            showCloseButton={false}
+            aria-label="Search"
+            class="block gap-0 p-0 w-[min(40rem,calc(100vw-2rem))]"
           >
-            <SearchPanel
-              entries={entries()}
-              onAdded={(entry) => setEntries(upsert(entries(), entry))}
-              onClose={() => dialog?.close()}
-            />
-          </Suspense>
-        </Show>
+            <Show when={searchOpened()}>
+              <Suspense
+                fallback={
+                  <p class="px-5 py-8 text-center text-sm text-muted">
+                    Loading…
+                  </p>
+                }
+              >
+                <SearchPanel
+                  entries={entries()}
+                  onAdded={(entry) => setEntries(upsert(entries(), entry))}
+                  onClose={() => setSearchOpen(false)}
+                />
+              </Suspense>
+            </Show>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
       <Show when={listTarget()}>
         {(entry) => (

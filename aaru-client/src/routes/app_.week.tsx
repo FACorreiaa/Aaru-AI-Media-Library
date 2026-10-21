@@ -23,9 +23,12 @@ import {
   CalendarToolbar,
   FilterChips,
 } from '../components/calendar/CalendarToolbar'
-import { Alert } from '../components/ui/alert'
-import { buttonVariants } from '../components/ui/button'
-import { cardClass } from '../components/ui/card'
+import {
+  Alert,
+  AlertDescription,
+  buttonVariants,
+  cardClass,
+} from '~/components/ui'
 import {
   addDays,
   addMonths,
@@ -51,7 +54,7 @@ import type {
 import { getCalendar } from '../lib/calendar/server'
 import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
-import { cn } from '../lib/cn'
+import { cn } from '~/lib/utils'
 import { slideIn } from '../lib/motion'
 
 // APP-010, CAL-002 on the web: what airs from the user's own shows, as CAT's dense week,
@@ -454,7 +457,11 @@ function Calendar() {
         <FilterChips filter={filter()} onFilter={setFilter} />
 
         <Show when={problem()}>
-          {(message) => <Alert class="mt-4">{message()}</Alert>}
+          {(message) => (
+            <Alert variant="destructive" class="mt-4">
+              <AlertDescription>{message()}</AlertDescription>
+            </Alert>
+          )}
         </Show>
 
         <Show when={empty() && !problem()}>
@@ -472,7 +479,7 @@ function Calendar() {
               to="/app/library"
               search={{ search: true }}
               class={cn(
-                buttonVariants({ variant: 'primary', size: 'sm' }),
+                buttonVariants({ variant: 'default', size: 'sm' }),
                 'mt-4',
               )}
             >

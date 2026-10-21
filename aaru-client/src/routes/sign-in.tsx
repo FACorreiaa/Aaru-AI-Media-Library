@@ -13,7 +13,7 @@ import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import type { GoogleCredential } from '../components/GoogleSignInButton'
 import { MascotMedallion, Wordmark } from '../components/Brand'
 import { LegalLinks } from '../components/LegalPage'
-import { Button } from '../components/ui/button'
+import { Button } from '~/components/ui'
 import {
   getSession,
   getSignInConfig,
@@ -152,7 +152,12 @@ function SignIn() {
                 />
               )}
             </Show>
-            <Button size="lg" class={tall} onClick={() => go('email')}>
+            <Button
+              variant="outline"
+              size="lg"
+              class={tall}
+              onClick={() => go('email')}
+            >
               Continue with email
             </Button>
           </Show>
@@ -181,6 +186,7 @@ function SignIn() {
                 )}
               </Show>
               <Button
+                variant="outline"
                 type="submit"
                 size="lg"
                 class={tall}
@@ -223,6 +229,7 @@ function SignIn() {
                 )}
               </Show>
               <Button
+                variant="outline"
                 type="submit"
                 size="lg"
                 class={tall}

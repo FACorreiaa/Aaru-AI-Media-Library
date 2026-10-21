@@ -77,6 +77,21 @@ export const DialogContent = <T extends ValidComponent = 'div'>(
           props.class,
         )}
         {...rest}
+        // Aaru: like the native <dialog>, focus starts on an `autofocus` element when there is
+        // one (a search field), else Kobalte's first tabbable.
+        onOpenAutoFocus={(event: Event) => {
+          const own = merge.onOpenAutoFocus as
+            ((event: Event) => void) | undefined
+          own?.(event)
+          if (event.defaultPrevented) return
+          const target = (
+            event.currentTarget as HTMLElement | null
+          )?.querySelector<HTMLElement>('[autofocus]')
+          if (target) {
+            event.preventDefault()
+            target.focus()
+          }
+        }}
       >
         {props.children}
         <Show when={props.showCloseButton}>

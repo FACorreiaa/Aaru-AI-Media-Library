@@ -25,8 +25,7 @@ import type {
 import { prefersReducedMotion } from '../lib/reduced-motion'
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
-import { Badge, badgeVariants } from './ui/badge'
-import { Button } from './ui/button'
+import { Badge, badgeVariants, Button } from '~/components/ui'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
 // the arrow keys scroll it, and on desktop it has its own back / forward buttons.
@@ -144,7 +143,7 @@ export function Art(props: { sources: (string | undefined)[]; title: string }) {
 }
 
 /** Text on art: a dark scrim chip, legible on any image in either theme. */
-const chip = badgeVariants({ tone: 'scrim' })
+const chip = badgeVariants({ variant: 'scrim' })
 
 /** Continue watching: the next episode of an in-progress show, with a check to mark it. The
  * card hands back its element, so a show that leaves the row can play its exit first. */
@@ -170,7 +169,7 @@ export function ContinueCard(props: {
           title={e().title.title}
         />
         <Show when={e().isFinale}>
-          <Badge tone="ink" class="absolute top-2 right-2">
+          <Badge variant="ink" class="absolute top-2 right-2">
             Finale
           </Badge>
         </Show>
@@ -322,7 +321,7 @@ export function AiringCard(props: {
         <Show when={kind()}>
           {(text) => (
             <Badge
-              tone={e().kind === 'finale' ? 'ink' : 'accent'}
+              variant={e().kind === 'finale' ? 'ink' : 'default'}
               class="absolute top-2 right-2"
             >
               {text()}

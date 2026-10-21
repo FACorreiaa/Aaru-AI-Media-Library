@@ -5,9 +5,8 @@ import { TOP_BY } from '../../lib/music/listening-model'
 import type { TopBy } from '../../lib/music/listening-model'
 import { topListens } from '../../lib/music/listening'
 import type { Stats } from '../../lib/recap/model'
-import { cn } from '../../lib/cn'
-import { cardClass } from '../ui/card'
-import { SegmentedControl, SegmentedControlItem } from '../ui/segmented-control'
+import { cn } from '~/lib/utils'
+import { cardClass, ToggleGroup, ToggleGroupItem } from '~/components/ui'
 import { TopList } from './TopList'
 
 // MUS-008: Insights' Music section. Its own tiles, apart from the library's: listening never
@@ -60,24 +59,25 @@ export function MusicInsights(props: {
         </For>
       </dl>
 
-      <SegmentedControl
+      <ToggleGroup
         class="mt-6 flex w-fit overflow-hidden rounded-full border border-line text-sm"
         aria-label="Top list"
         value={by()}
-        onChange={(next) => setBy(next as TopBy)}
+        onChange={(next: string | null) => next && setBy(next as TopBy)}
       >
         <For each={TOP_BY}>
           {(option) => (
-            <SegmentedControlItem
+            <ToggleGroupItem
+              size="bare"
               value={option.by}
               variant="surface"
               class="px-4 py-1.5"
             >
               {option.label}
-            </SegmentedControlItem>
+            </ToggleGroupItem>
           )}
         </For>
-      </SegmentedControl>
+      </ToggleGroup>
       <div class="mt-2 min-h-16" aria-busy={top.loading}>
         <Show
           when={top()}

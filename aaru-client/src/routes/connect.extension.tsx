@@ -3,7 +3,7 @@ import { Match, Switch, createSignal, onCleanup, onMount } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
-import { Button } from '../components/ui/button'
+import { Button } from '~/components/ui'
 import { connectExtension, revokeConnection } from '../lib/agents/server'
 import {
   CONNECTED,
@@ -155,13 +155,14 @@ function ConnectExtension() {
           </p>
           <div class="mt-6 flex flex-wrap gap-2">
             <Button
-              variant="primary"
+              variant="default"
               disabled={stage() !== 'ready'}
               onClick={() => void approve()}
             >
               {stage() === 'connecting' ? 'Connecting…' : 'Approve'}
             </Button>
             <Button
+              variant="outline"
               disabled={stage() === 'connecting'}
               onClick={() => setStage('declined')}
             >

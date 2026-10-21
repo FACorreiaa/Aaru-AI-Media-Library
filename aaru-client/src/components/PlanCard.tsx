@@ -1,5 +1,5 @@
 import { For, Show, createSignal } from 'solid-js'
-import { Button } from './ui/button'
+import { Button } from '~/components/ui'
 import { countsLine, decidedLabel, expiresLabel } from '../lib/plans/model'
 import { approvePlan, denyPlan } from '../lib/plans/server'
 import type { AgentPlan } from '../lib/plans/server'
@@ -55,13 +55,17 @@ export function PlanCard(props: {
         fallback={
           <div class="mt-4 flex flex-wrap gap-2">
             <Button
-              variant="primary"
+              variant="default"
               disabled={busy()}
               onClick={() => void decide(true)}
             >
               Approve
             </Button>
-            <Button disabled={busy()} onClick={() => void decide(false)}>
+            <Button
+              variant="outline"
+              disabled={busy()}
+              onClick={() => void decide(false)}
+            >
               Not this
             </Button>
           </div>

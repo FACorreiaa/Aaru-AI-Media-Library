@@ -1,9 +1,9 @@
 import { For } from 'solid-js'
 import { cellState, episodeKey } from '../lib/title/model'
 import type { CellState, Episode, Season } from '../lib/title/model'
-import { cn } from '../lib/cn'
+import { cn } from '~/lib/utils'
 import { pop } from '../lib/motion'
-import { cardClass } from './ui/card'
+import { cardClass } from '~/components/ui'
 
 const CELL: Record<CellState, string> = {
   watched: 'bg-accent text-on-accent',

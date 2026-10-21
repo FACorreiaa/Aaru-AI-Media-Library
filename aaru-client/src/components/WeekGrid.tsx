@@ -3,8 +3,14 @@ import { badge, dayParts, episodeCode, metaLine } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { EpisodeRow } from './calendar/EpisodeRow'
 import { WatchButton } from './calendar/WatchButton'
-import { Badge } from './ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import { cn } from '~/lib/utils'
+import {
+  Badge,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '~/components/ui'
 
 // APP-010, CAL-002 · `WeekGrid` (DESIGN.md §14, VIEWS.md): Pogdesign CAT's dense week, in Aaru's
 // palette. Seven columns from 1280px, scroll-snapping columns below that, and on phones a day
@@ -30,14 +36,17 @@ export function WeekGrid(props: WeekGridProps) {
       {/* Phones: a 7-day strip and the chosen day's rows. Tabs are keyed by position, not date,
           so paging the week relabels the same buttons and keyboard focus stays put. */}
       <Tabs
-        class="sm:hidden"
+        class="block sm:hidden"
         value={String(props.days.indexOf(props.selected))}
         onChange={(index) => {
           const day = props.days[Number(index)]
           if (day) props.onSelect(day)
         }}
       >
-        <TabsList class="grid grid-cols-7 gap-1" aria-label="Day">
+        <TabsList
+          class="grid h-auto w-full grid-cols-7 gap-1 rounded-none bg-transparent ring-0"
+          aria-label="Day"
+        >
           <Index each={props.days}>
             {(day, index) => {
               const parts = () => dayParts(day())
@@ -45,16 +54,16 @@ export function WeekGrid(props: WeekGridProps) {
               return (
                 <TabsTrigger
                   value={String(index)}
-                  variant="bare"
                   aria-label={`${parts().weekday} ${parts().day}, ${count()} episodes`}
-                  class="flex min-h-16 flex-col items-center justify-center rounded-field text-xs transition-colors"
-                  classList={{
-                    'bg-ink text-paper': day() === props.selected,
-                    'text-accent font-semibold':
-                      day() !== props.selected && day() === props.today,
-                    'text-muted':
-                      day() !== props.selected && day() !== props.today,
-                  }}
+                  // `cn`, not classList: the trigger's own text colour must lose to these.
+                  class={cn(
+                    'flex h-auto min-h-16 flex-col items-center justify-center gap-0 rounded-field px-0 py-0 text-xs font-normal transition-colors focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+                    day() === props.selected
+                      ? 'bg-ink text-paper'
+                      : day() === props.today
+                        ? 'font-semibold text-accent'
+                        : 'text-muted',
+                  )}
                 >
                   <span>{parts().short}</span>
                   <span class="font-display text-xl leading-tight">
@@ -209,7 +218,7 @@ function EpisodeCell(props: {
         {(text) => (
           <Badge
             size="xs"
-            tone={e().kind === 'finale' ? 'ink' : 'accent'}
+            variant={e().kind === 'finale' ? 'ink' : 'default'}
             class="absolute top-1.5 right-1.5"
           >
             {text()}

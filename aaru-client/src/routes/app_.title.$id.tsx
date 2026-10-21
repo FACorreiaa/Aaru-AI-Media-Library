@@ -21,15 +21,21 @@ import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
-import { Button } from '../components/ui/button'
-import { Card, cardClass } from '../components/ui/card'
 import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from '../components/ui/segmented-control'
-import { Switch } from '../components/ui/switch'
-import { Toaster, dismissToast, showToast } from '../components/ui/toast'
-import { cn } from '../lib/cn'
+  Button,
+  Card,
+  cardClass,
+  ToggleGroup,
+  ToggleGroupItem,
+  Switch,
+  SwitchControl,
+  SwitchInput,
+  SwitchLabel,
+  SwitchThumb,
+  Toaster,
+  toast,
+} from '~/components/ui'
+import { cn } from '~/lib/utils'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
 import { getSession } from '../lib/session/session'
@@ -199,16 +205,15 @@ function TitleRoom() {
   }
 
   // A failed save shows as a toast until the next change starts or it is closed.
-  let problemToast: number | undefined
+  let problemToast: string | number | undefined
   const dismissProblem = () => {
-    if (problemToast !== undefined) dismissToast(problemToast)
+    if (problemToast !== undefined) toast.dismiss(problemToast)
     problemToast = undefined
   }
   createEffect(
     on(problem, (message) => {
       dismissProblem()
-      if (message)
-        problemToast = showToast(message, { tone: 'danger', persistent: true })
+      if (message) problemToast = toast.error(message, { duration: Infinity })
     }),
   )
   onCleanup(dismissProblem)
@@ -316,7 +321,12 @@ function TitleRoom() {
             year={entry().title.year}
             genres={title()?.genres}
           >
-            <Button size="sm" class="mt-4" onClick={() => setPicking(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              class="mt-4"
+              onClick={() => setPicking(true)}
+            >
               Add to list
             </Button>
             <DiscussButton
@@ -333,7 +343,7 @@ function TitleRoom() {
           <Show when={nextUp()}>
             {(episode) => (
               <Button
-                variant="primary"
+                variant="default"
                 disabled={pending().has(
                   episodeKey(episode().season, episode().number),
                 )}
@@ -343,27 +353,29 @@ function TitleRoom() {
               </Button>
             )}
           </Show>
-          <SegmentedControl
+          <ToggleGroup
             class="flex flex-wrap gap-1.5"
             aria-label="Status"
             value={entry().status}
-            onChange={(next) => {
+            onChange={(next: string | null) => {
+              if (!next) return
               const status = next as LibraryStatus
               void update({ status }, { status })
             }}
           >
             <For each={statusOptions(kind())}>
               {(option) => (
-                <SegmentedControlItem
+                <ToggleGroupItem
+                  size="bare"
                   value={option.status}
                   variant="chip"
                   class="min-h-11 px-4 text-sm"
                 >
                   {option.label}
-                </SegmentedControlItem>
+                </ToggleGroupItem>
               )}
             </For>
-          </SegmentedControl>
+          </ToggleGroup>
           <Show when={!isAlbum()}>
             <Button variant="quiet" onClick={() => setPicking(true)}>
               Add to list
@@ -394,9 +406,10 @@ function TitleRoom() {
             <Show when={entry().title.type === 'show'}>
               <Show when={page().titleError}>
                 {(message) => (
-                  <Card class="flex items-center gap-4 p-5">
+                  <Card class="flex-row items-center gap-4 p-5">
                     <p class="text-sm text-muted">{message()}</p>
                     <Button
+                      variant="outline"
                       size="sm"
                       class="ml-auto"
                       disabled={retrying()}
@@ -485,9 +498,13 @@ function TitleRoom() {
                 class="flex items-center justify-between gap-4 text-sm font-medium"
                 checked={entry().isOwned}
                 onChange={(isOwned) => void update({ isOwned }, { isOwned })}
-                label="Owned"
-                trackLast
-              />
+              >
+                <SwitchInput />
+                <SwitchLabel class="cursor-pointer">Owned</SwitchLabel>
+                <SwitchControl>
+                  <SwitchThumb />
+                </SwitchControl>
+              </Switch>
               <Show when={entry().title.type === 'book'}>
                 <form
                   class="flex items-center justify-between gap-4 text-sm font-medium"
@@ -528,6 +545,7 @@ function TitleRoom() {
               />
               <Show when={notes() !== (entry().notes ?? '')}>
                 <Button
+                  variant="outline"
                   size="sm"
                   class="mt-2"
                   onClick={() => {

@@ -2,7 +2,7 @@ import { Show, createSignal } from 'solid-js'
 import { readImportFile } from '../lib/imports/file'
 import { startCatFeedImport, uploadCatImport } from '../lib/imports/server'
 import type { ImportJob } from '../lib/imports/server'
-import { Button } from './ui/button'
+import { Button } from '~/components/ui'
 
 const field =
   'min-h-11 min-w-0 flex-1 rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none'
@@ -61,7 +61,11 @@ export function CatImport(props: { onImported: (job: ImportJob) => void }) {
             value={link()}
             onInput={(e) => setLink(e.currentTarget.value)}
           />
-          <Button type="submit" disabled={busy() || link().trim() === ''}>
+          <Button
+            variant="outline"
+            type="submit"
+            disabled={busy() || link().trim() === ''}
+          >
             Import
           </Button>
         </div>
@@ -93,7 +97,11 @@ export function CatImport(props: { onImported: (job: ImportJob) => void }) {
           onInput={(e) => setList(e.currentTarget.value)}
         />
         <div class="flex flex-wrap items-center gap-2">
-          <Button type="submit" disabled={busy() || list().trim() === ''}>
+          <Button
+            variant="outline"
+            type="submit"
+            disabled={busy() || list().trim() === ''}
+          >
             Import list
           </Button>
           <label class="cursor-pointer text-sm text-accent hover:underline">

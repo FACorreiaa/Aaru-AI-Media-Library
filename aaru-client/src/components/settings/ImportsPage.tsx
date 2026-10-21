@@ -3,9 +3,13 @@ import { For, Show, createSignal } from 'solid-js'
 import { CatImport } from '../CatImport'
 import { StremioHistoryImport } from '../StremioHistoryImport'
 import { TraktImport } from '../TraktImport'
-import { Alert } from '../ui/alert'
-import { Button, buttonVariants } from '../ui/button'
-import { Card } from '../ui/card'
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  buttonVariants,
+  Card,
+} from '~/components/ui'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../../lib/imports/model'
 import { readImportFile } from '../../lib/imports/file'
 import { startAniListImport, uploadImport } from '../../lib/imports/server'
@@ -80,7 +84,11 @@ export function ImportsPage(props: {
       <SettingsPageTitle title="Imports & export" />
 
       <Show when={problem()}>
-        {(message) => <Alert class="mt-4">{message()}</Alert>}
+        {(message) => (
+          <Alert variant="destructive" class="mt-4">
+            <AlertDescription>{message()}</AlertDescription>
+          </Alert>
+        )}
       </Show>
       <Show when={props.traktReturn}>
         {(result) =>
@@ -89,7 +97,9 @@ export function ImportsPage(props: {
               {result().message}
             </p>
           ) : (
-            <Alert class="mt-4">{result().message}</Alert>
+            <Alert variant="destructive" class="mt-4">
+              <AlertDescription>{result().message}</AlertDescription>
+            </Alert>
           )
         }
       </Show>
@@ -155,6 +165,7 @@ export function ImportsPage(props: {
                 }
               />
               <Button
+                variant="outline"
                 type="submit"
                 disabled={anilistBusy() || anilistName().trim() === ''}
               >
@@ -213,7 +224,7 @@ export function ImportsPage(props: {
         </section>
       </Show>
 
-      <Card class="mt-10 p-5">
+      <Card class="mt-10 block p-5">
         <h3 class="font-display text-xl font-medium">Export your data</h3>
         <p class="mt-2 text-sm text-muted">
           Everything Aaru holds for you. The spreadsheet opens anywhere and
@@ -224,14 +235,14 @@ export function ImportsPage(props: {
           <a
             href="/app/export?format=json"
             download=""
-            class={buttonVariants({ size: 'sm' })}
+            class={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             Everything (JSON)
           </a>
           <a
             href="/app/export?format=csv"
             download=""
-            class={buttonVariants({ size: 'sm' })}
+            class={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             Library spreadsheet (CSV)
           </a>

@@ -1,6 +1,6 @@
 import { episodeCode } from '../../lib/calendar/model'
 import type { CalendarEntry } from '../../lib/calendar/model'
-import { cn } from '../../lib/cn'
+import { cn } from '~/lib/utils'
 import { pop } from '../../lib/motion'
 
 /** The calendar's tick: a 44px round toggle, filled once watched. The page owns the state and

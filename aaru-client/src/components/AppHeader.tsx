@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouter } from '@tanstack/solid-router'
 import { For, Show } from 'solid-js'
 import { signOut } from '../lib/session/session'
 import { Wordmark } from './Brand'
-import { Button, buttonVariants } from './ui/button'
+import { Button, buttonVariants } from '~/components/ui'
 
 const DESTINATIONS = [
   { to: '/app', label: 'Home', exact: true },
@@ -29,7 +29,7 @@ export function AppHeader(props: { onSearch?: () => void; class?: string }) {
     await navigate({ to: '/' })
   }
 
-  const searchClass = buttonVariants({ variant: 'primary', size: 'sm' })
+  const searchClass = buttonVariants({ variant: 'default', size: 'sm' })
 
   return (
     <header class={`mx-auto px-4 md:px-8 ${props.class ?? 'max-w-6xl'}`}>
@@ -49,7 +49,7 @@ export function AppHeader(props: { onSearch?: () => void; class?: string }) {
             }
           >
             {(open) => (
-              <Button variant="primary" size="sm" onClick={() => open()()}>
+              <Button variant="default" size="sm" onClick={() => open()()}>
                 Search
               </Button>
             )}

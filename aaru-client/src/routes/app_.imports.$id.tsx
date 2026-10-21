@@ -6,7 +6,7 @@ import {
 } from '@tanstack/solid-router'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { Wordmark } from '../components/Brand'
-import { Button } from '../components/ui/button'
+import { Button } from '~/components/ui'
 import {
   importSteps,
   isWorking,
@@ -163,7 +163,7 @@ function ImportPage() {
         <Show when={planned()}>
           <div class="mt-6 flex flex-wrap items-center gap-3">
             <Button
-              variant="primary"
+              variant="default"
               size="lg"
               disabled={applying()}
               onClick={apply}

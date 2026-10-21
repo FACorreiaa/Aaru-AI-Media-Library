@@ -1,5 +1,8 @@
 import { Toaster as Sonner } from 'somoto'
 
+// Aaru: `toast()` comes through the barrel too, so no caller imports somoto itself.
+export { toast } from 'somoto'
+
 // Aaru: no Kobalte ColorModeProvider (the appearance is Aaru's own, lib/appearance.ts), so
 // the theme follows the system and the colours below come from Aaru's tokens, which already
 // follow a pinned appearance. Toasts are ink on paper's opposite; errors are the danger fill.
@@ -7,6 +10,7 @@ export const Toaster = (props: Parameters<typeof Sonner>[0]) => {
   return (
     <Sonner
       theme="system"
+      position="bottom-center"
       richColors
       icons={{
         success: (

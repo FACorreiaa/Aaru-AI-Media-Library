@@ -3,7 +3,7 @@ import { Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
-import { Button } from '../components/ui/button'
+import { Button } from '~/components/ui'
 import { answerOAuthRequest, getOAuthRequest } from '../lib/oauth/server'
 import { getSession } from '../lib/session/session'
 
@@ -124,13 +124,17 @@ function Consent() {
 
       <div class="mt-6 flex flex-wrap gap-2">
         <Button
-          variant="primary"
+          variant="default"
           disabled={busy()}
           onClick={() => void answer(true)}
         >
           Allow
         </Button>
-        <Button disabled={busy()} onClick={() => void answer(false)}>
+        <Button
+          variant="outline"
+          disabled={busy()}
+          onClick={() => void answer(false)}
+        >
           Not now
         </Button>
       </div>

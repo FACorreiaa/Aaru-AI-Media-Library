@@ -26,8 +26,13 @@ import type {
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 import { AddToListDialog } from './AddToListDialog'
-import { Button } from './ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import {
+  Button,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '~/components/ui'
 
 /** All searches films, shows and anime together; books and albums are never in it, and the last
  * rows of an All search offer them instead. */
@@ -170,7 +175,7 @@ export function SearchPanel(props: {
     <Tabs
       value={kind()}
       onChange={(next) => setKind(next as Scope)}
-      class="flex max-h-[85dvh] w-full flex-col"
+      class="flex max-h-[85dvh] w-full flex-col gap-0"
     >
       <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
         <h2 class="font-display text-2xl font-medium">
@@ -201,12 +206,17 @@ export function SearchPanel(props: {
           class="min-h-12 w-full rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
         />
         <TabsList
-          class="-mx-5 flex gap-2 overflow-x-auto px-5"
+          class="-mx-5 flex h-auto w-auto justify-start gap-2 overflow-x-auto rounded-none bg-transparent px-5 ring-0"
           aria-label="Type"
         >
           <For each={SCOPES}>
             {(option) => (
-              <TabsTrigger value={option.kind}>{option.label}</TabsTrigger>
+              <TabsTrigger
+                value={option.kind}
+                class="h-auto flex-none shrink-0 rounded-full border border-line px-4 py-1.5 text-ink transition-colors hover:bg-surface data-[selected]:border-transparent data-[selected]:bg-ink data-[selected]:text-paper focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                {option.label}
+              </TabsTrigger>
             )}
           </For>
         </TabsList>
@@ -307,6 +317,7 @@ export function SearchPanel(props: {
                           }
                         >
                           <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => void addToTarget(hit, list())}
                           >

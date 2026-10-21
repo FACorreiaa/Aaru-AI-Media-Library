@@ -1,9 +1,7 @@
 import { For, Show, createSignal, lazy } from 'solid-js'
 import { activeCount } from '../../lib/calendar/filters'
 import type { CalendarFilter, CalendarView } from '../../lib/calendar/filters'
-import { Badge } from '../ui/badge'
-import { Button } from '../ui/button'
-import { SegmentedControl, SegmentedControlItem } from '../ui/segmented-control'
+import { Badge, Button, ToggleGroup, ToggleGroupItem } from '~/components/ui'
 
 const FiltersDialog = lazy(() => import('./FiltersDialog'))
 
@@ -34,28 +32,32 @@ export function CalendarToolbar(props: {
 
   return (
     <div class="flex flex-wrap items-center gap-2">
-      <SegmentedControl
+      <ToggleGroup
         class="flex rounded-full border border-line p-0.5"
         aria-label="Calendar view"
         value={props.view}
-        onChange={(next) => props.onView(next as CalendarView)}
+        onChange={(next: string | null) =>
+          next && props.onView(next as CalendarView)
+        }
       >
         <For each={VIEWS}>
           {(option) => (
-            <SegmentedControlItem
+            <ToggleGroupItem
+              size="bare"
+              variant="ink"
               value={option.value}
               class="min-h-9 gap-1.5 px-3 text-sm"
             >
               {option.label}
               <Show when={option.value === 'missed' && props.missedCount > 0}>
-                <Badge size="xs" tone="accent">
+                <Badge size="xs" variant="default">
                   {props.missedCount}
                 </Badge>
               </Show>
-            </SegmentedControlItem>
+            </ToggleGroupItem>
           )}
         </For>
-      </SegmentedControl>
+      </ToggleGroup>
 
       <Show when={props.view !== 'missed'}>
         <nav class="flex items-center gap-1" aria-label="Move through days">

@@ -1,8 +1,7 @@
 import { For, Show, createSignal } from 'solid-js'
 import { canChangeLibrary, lastUsedLabel } from '../lib/stremio/model'
-import { AlertDialog } from './ui/alert-dialog'
-import { Button, buttonVariants } from './ui/button'
-import { Card } from './ui/card'
+import { Button, buttonVariants, Card } from '~/components/ui'
+import { ConfirmDialog } from './ConfirmDialog'
 import {
   connectStremio,
   listStremio,
@@ -66,7 +65,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
   }
 
   return (
-    <Card class="mt-10 p-5">
+    <Card class="mt-10 block p-5">
       <h2 class="font-display text-xl font-medium">Stremio</h2>
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
         Your Continue watching, Next 7 days and Plan to watch appear as rows in
@@ -96,6 +95,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
               </span>
             </label>
             <Button
+              variant="outline"
               class="self-start"
               disabled={busy()}
               onClick={() => void connect()}
@@ -114,7 +114,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
             <div class="flex flex-wrap gap-2">
               <a
                 href={connection().stremio.installUrl}
-                class={buttonVariants({ variant: 'primary' })}
+                class={buttonVariants({ variant: 'default' })}
               >
                 Open in Stremio
               </a>
@@ -122,11 +122,12 @@ export function StremioSection(props: { links: AgentToken[] }) {
                 href={connection().stremio.webInstallUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                class={buttonVariants()}
+                class={buttonVariants({ variant: 'outline' })}
               >
                 Install on Stremio Web
               </a>
               <Button
+                variant="outline"
                 onClick={() => void copy(connection().stremio.manifestUrl)}
               >
                 {copied() ? 'Copied' : 'Copy link'}
@@ -176,7 +177,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
           </For>
         </ul>
       </Show>
-      <AlertDialog
+      <ConfirmDialog
         open={pending() !== null}
         title="Revoke this Stremio link?"
         description="Stremio stops showing your Aaru library."

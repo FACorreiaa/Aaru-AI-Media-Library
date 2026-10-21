@@ -2,7 +2,7 @@ import { Show } from 'solid-js'
 import { badge, metaLine, shortCode } from '../../lib/calendar/model'
 import type { CalendarEntry } from '../../lib/calendar/model'
 import { Poster } from '../Poster'
-import { Badge } from '../ui/badge'
+import { Badge } from '~/components/ui'
 import { WatchButton } from './WatchButton'
 
 /** One episode as a row: poster, show, code and name, network and time, and the tick. The row
@@ -40,7 +40,7 @@ export function EpisodeRow(props: {
               {(text) => (
                 <Badge
                   size="xs"
-                  tone={e().kind === 'finale' ? 'ink' : 'accent'}
+                  variant={e().kind === 'finale' ? 'ink' : 'default'}
                   class="shrink-0"
                 >
                   {text()}
