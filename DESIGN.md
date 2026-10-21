@@ -320,6 +320,18 @@ more" rather than endless scroll. A new season comes in from the side it lies on
 entrance only; a fade with reduced motion). While a season loads, still placeholders at the
 real poster size stand in: nothing shimmers. A provider that is down says so on its own kind.
 
+**Concerts (MUS-003, 2026-10-21).** The control becomes Today | Seasons | Concerts; Concerts is
+absent while the server has no concert provider. Two sections: "Your artists on tour" (artists of
+the user's own albums, like the calendar, so not a recommendation) and "Near <city>" with "Use my
+location" and a 25 · 50 · 100 km switch. A date-led list: each row opens with a ticket-stub date
+block (the day large in the display serif, month and weekday small), then the act, "venue ·
+city" in muted, "distance · time", and "Tickets ↗" out to Ticketmaster. Aaru never sells, holds
+or prices a ticket. Dates and times are the venue's, never converted. On iPhone and Mac a List |
+Map switch shows the searched area as a circle on a map; the web is list only. "Use my location"
+asks for an approximate position once (reduced accuracy on Apple) and says it is not saved; the
+saved city lives in Settings → "Concerts near", with Remove. Placeholders at the real row size
+while loading, no shimmer; a silent provider says so in one line.
+
 ## 13b. Insights (pulled forward 2026-10-20)
 
 The Recap's numbers, browsable instead of played. `StatsPanel`: a 7 days / 30 days / month /

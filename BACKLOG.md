@@ -375,6 +375,7 @@ account or a stranger that has not happened yet.
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
+| MUS-003 | Built, unverified | ConcertTests | Not deployed; needs `TICKETMASTER_API_KEY` sealed; Portugal coverage not probed |
 | MUS-005 | Built, unverified | ListenBrainzRouteTests | Not deployed; not tried with a real scrobbler |
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
@@ -1320,6 +1321,16 @@ Ticketmaster Discovery events near a saved city (Open-Meteo geocoding, rounded t
 or a one-off approximate location sent in a POST body and never stored, 25 · 50 · 100 km; and
 upcoming concerts for artists in the user's library, matched by MusicBrainz artist id only.
 A daily call budget under the 5,000 limit; tickets link out. Discover gains a Concerts view.
+
+As built: `POST /v1/concerts/near` sends Ticketmaster only the point's 5-character geohash cell
+(about 5 km), which also keys a 6 h cache shared by everyone in that cell; the exact rounded
+point is never logged or stored. `GET /v1/concerts/artists` asks for the user's matched artists
+in batches of 20 performer ids. A refresher every 30 minutes fills `album_artists` from
+MusicBrainz (once per album in someone's library) and matches artists to Ticketmaster
+performers (20 a pass, again after 30 days); an artist with no MusicBrainz link on Ticketmaster
+stays unmatched rather than matched by name. The budget stops at 4,500 calls a UTC day and the
+cache serves what it has. The city search (`GET /v1/concerts/places`) goes to Open-Meteo and its
+query is dropped from request logs. Not in the account export, like the other settings.
 
 **Done when:** concerts near a saved city and near "Use my location" list on three clients, and
 an artist in the library with a tour shows under "Your artists on tour".
