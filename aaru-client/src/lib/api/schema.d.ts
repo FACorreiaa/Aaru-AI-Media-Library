@@ -1043,6 +1043,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/discover/season': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * One season's titles for the Seasons view (DISC-002), a page at a time.
+     * @description A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep, fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date, returning shows by an episode airing that season, films by first release. The same lists for every user, cached by the server; items the caller has carry `libraryItemId`.
+     */
+    get: operations['getDiscoverSeason']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}': {
     parameters: {
       query?: never
@@ -2249,6 +2269,26 @@ export interface components {
     }
     DiscoverRows: {
       rows: components['schemas']['DiscoverRow'][]
+    }
+    SeasonPage: {
+      /** @enum {string} */
+      kind: 'anime' | 'shows_new' | 'shows_returning' | 'movies'
+      /** @enum {string} */
+      season: 'winter' | 'spring' | 'summer' | 'fall'
+      year: number
+      /** @description First day of the season, YYYY-MM-DD. */
+      from: string
+      /** @description Last day of the season, YYYY-MM-DD. */
+      until: string
+      /** @description Display name, e.g. "Fall 2026". */
+      title: string
+      items: components['schemas']['CatalogHit'][]
+      page: number
+      hasMore: boolean
+      /** @description The provider's count for the whole season, when it gives one. */
+      total?: number
+      /** @description The provider did not answer and nothing was cached; not an empty season. */
+      unavailable: boolean
     }
     Episode: {
       season: number
@@ -4483,6 +4523,34 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['DiscoverRows']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getDiscoverSeason: {
+    parameters: {
+      query: {
+        kind: 'anime' | 'shows_new' | 'shows_returning' | 'movies'
+        season: 'winter' | 'spring' | 'summer' | 'fall'
+        /** @description 1970 to next year; anything else is 422 `validation_failed`. */
+        year: number
+        /** @description 1-based, at most 20. */
+        page?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The page. `unavailable` when the provider is down and nothing is cached. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SeasonPage']
         }
       }
       default: components['responses']['Error']

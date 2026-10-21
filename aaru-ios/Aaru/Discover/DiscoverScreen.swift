@@ -3,13 +3,30 @@ import SwiftUI
 
 /// Discover (APP-012, DISC-001): catalog rows to add from without typing, with the same cards as
 /// Home's Discover rows. Renders the cache first, then refreshes. Credits TMDB and AniList, whose
-/// lists these are.
+/// lists these are. A segmented control switches Today's rows for the Seasons view (DISC-002).
 struct DiscoverScreen: View {
+    enum Section: String, CaseIterable, Identifiable {
+        case today, seasons
+
+        var id: String {
+            rawValue
+        }
+
+        var label: String {
+            switch self {
+            case .today: "Today"
+            case .seasons: "Seasons"
+            }
+        }
+    }
+
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
 
     @State private var model: DiscoverModel
+    @State private var seasons: SeasonModel
+    @State private var section: Section = .today
     @State private var showsSearch = false
     @State private var listTarget: CatalogHit?
 
@@ -27,13 +44,31 @@ struct DiscoverScreen: View {
         self.library = library
         self.lists = lists
         _model = State(initialValue: model ?? DiscoverModel(api: api, library: library))
+        _seasons = State(initialValue: SeasonModel(api: api, library: library))
     }
 
     var body: some View {
         NavigationStack {
-            content
-                .navigationTitle("Discover")
+            Group {
+                switch section {
+                case .today: content
+                case .seasons:
+                    SeasonBrowser(model: seasons, compact: compact) { listTarget = $0 }
+                }
+            }
+            .navigationTitle("Discover")
+            #if os(iOS)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    sectionPicker
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+                        .background(.bar)
+                }
+            #endif
                 .toolbar {
+                    #if os(macOS)
+                        ToolbarItem(placement: .principal) { sectionPicker.fixedSize() }
+                    #endif
                     ToolbarItem(placement: .primaryAction) {
                         Button("Search", systemImage: "magnifyingglass") { showsSearch = true }
                     }
@@ -54,10 +89,28 @@ struct DiscoverScreen: View {
                     )
                 }
                 .safeAreaInset(edge: .bottom) {
-                    ProblemBanner(message: model.problem) { model.problem = nil }
+                    switch section {
+                    case .today: ProblemBanner(message: model.problem) { model.problem = nil }
+                    case .seasons: ProblemBanner(message: seasons.problem) { seasons.problem = nil }
+                    }
                 }
                 .background(Color(.paper))
         }
+    }
+
+    private func showSeasons(_ kind: SeasonKind) {
+        seasons.kind = kind
+        section = .seasons
+    }
+
+    private var sectionPicker: some View {
+        Picker("Discover", selection: $section) {
+            ForEach(Section.allCases) { section in
+                Text(section.label).tag(section)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
     }
 
     @ViewBuilder private var content: some View {
@@ -78,7 +131,10 @@ struct DiscoverScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 28) {
                     ForEach(rows, id: \.id) { row in
-                        HomeRow(title: row.title) {
+                        HomeRow(
+                            title: row.title,
+                            trailing: row.id == "anime_season" ? ("All seasons", { showSeasons(.anime) }) : nil
+                        ) {
                             ForEach(row.items) { hit in
                                 DiscoverCard(
                                     hit: hit,

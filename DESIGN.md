@@ -133,6 +133,16 @@ Classic filters are how a shelf is edited, not how you enter the app.
 Visual cue: Letterboxd lists + Ryot filters, presented as pages of reeds rather than a
 spreadsheet.
 
+**Now (APP-017, built 2026-10-21).** Library opens with what you are in the middle of, the
+"Now" of §1 made real before The Field: **Watching** (shows, anime, films) and **Reading**
+(books), newest activity first, as big cards, not posters in a grid. A video card is the
+backdrop with the title on it; a book card is its cover. Each shows how far along it is ("4 of
+10 episodes" with a bar, "35%", "Page 120") and the one next step: **Watched S1 · E5** ticks the
+next aired episode, **Update page** moves a book, **Finished** / **Mark watched** closes it. A
+kind chip narrows Now with the shelf; another status hides it. Cards scroll sideways on phones
+and sit in a grid wider. A **Listening** group joins when albums land (MUS-001). Book progress
+bars appear only for a percent until books carry a page count.
+
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
 library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
 reads "On this list" once it is there. Every library row also offers "Add to list". A list row
@@ -288,6 +298,15 @@ AniList and Open Library credits sit in the footer.
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
 watched", no taste profile, nothing read from other users. A tab on iPhone, a header link on
 the web.
+
+**Seasons (DISC-002, 2026-10-21).** A Today | Seasons control sits under the title (pinned under
+the large title on iPhone, in the toolbar on the Mac). Seasons shows one season as an object:
+its name in the display serif as the headline ("Fall 2026"), "Oct – Dec · 84 anime" under it in
+muted, a step to the season either side (a swipe across the name on iPhone), then the kind
+switch (Anime · New shows · Returning · Movies) and a poster grid, popular first, with "Show
+more" rather than endless scroll. A new season comes in from the side it lies on (about 200 ms,
+entrance only; a fade with reduced motion). While a season loads, still placeholders at the
+real poster size stand in: nothing shimmers. A provider that is down says so on its own kind.
 
 ## 13b. Insights (pulled forward 2026-10-20)
 

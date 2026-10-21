@@ -18,7 +18,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
 | The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
-| Discover | `DiscoverRow` per DISC-001 row, add with status or to a list | `GET /v1/discover`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20) |
+| Discover | Today: `DiscoverRow` per DISC-001 row, add with status or to a list. Seasons: `SeasonBrowser` (DISC-002) | `GET /v1/discover`, `GET /v1/discover/season`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20), DISC-002 (2026-10-21) |
 | Insights | `StatsPanel` (7 days / 30 days / month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all|last7|last30` | 2 · GAM-006c (pulled forward 2026-10-20), GAM-006d (2026-10-21) |
 | Lists | `Shelf` rendering a list's items: show status, next airing, library status and progress (LST-003) | `GET /v1/lists`, `GET /v1/lists/{id}` (`items`), `POST /v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
 | Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
@@ -28,6 +28,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
 | Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 |
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
+| Library · Now | `NowCard` (Library only; the agent does not emit it — `TonightStrip` is its agent counterpart) | the synced shelf; `PUT .../episodes/{s}/{e}`, `PATCH /v1/library/items/{id}` | 2 · APP-017 |
 | Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
 | Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage | 2 · M9 |
 | Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | 7 · M13 |
@@ -79,6 +80,7 @@ refuses and substitutes the nearest catalog piece.
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |
 | `DiscoverRow` | Public catalog rows on Home and Discover (DISC-001) | row id + title, `CatalogHit`s (a `MediaRef` each) with `libraryItemId` when on the shelf, kind badge, date badge; each a `DiscoverCard` (poster, add or open) |
+| `SeasonBrowser` | One season of public catalog titles on Discover (DISC-002) | season + year with steps either side, kind (anime, new shows, returning, movies), `CatalogHit` grid with `libraryItemId`, "Show more"; `DiscoverCard` per hit |
 | `NowPlayingCard` | Current watch | `libraryItemId`, `EpisodeKey`, progress, started at, ends at, source (check-in / scrobble). Rendered on iOS as the "Now watching" Live Activity (`NowWatchingAttributes`, WID-005) |
 | `UnfinishedRow` | Dropped or stalled items | ordered `libraryItemId`, reason (`dropped` / `stalled`), since, next `EpisodeKey` for shows |
 | `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
@@ -120,6 +122,9 @@ The eleven new components add product, not agent reach, and each has a reason:
   below); a hit the caller already has carries `libraryItemId` and opens the item. Home renders
   the rows, and the Discover tab/page (APP-012) shows the same rows as a destination; the agent
   does not emit them, since it would be recommending.
+- `SeasonBrowser` (DISC-002, added 2026-10-21) — browsing a season by name needs steps through
+  time and a kind switch, which a row of cards has no place for. The same public `CatalogHit`s
+  and the same add path as `DiscoverRow`; the agent does not emit it either.
 - `UnfinishedRow` (2026-10-20, the twenty-third) — Unfinished business (`DESIGN.md` §1) had no
   renderer. It is `ContinueRow`'s shape over `dropped` and 30-day-stalled items. `StatsPanel`
   is pulled forward from Phase 5 as Insights (GAM-006c), with no new component.

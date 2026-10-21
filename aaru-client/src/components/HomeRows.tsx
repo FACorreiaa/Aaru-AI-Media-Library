@@ -322,6 +322,8 @@ export function DiscoverCard(props: {
   onAdd: (status: LibraryStatus) => void
   onList: () => void
   today?: string | null
+  /** `row` (default) sits in a scrolling row at a fixed width; `grid` fills its grid cell. */
+  layout?: 'row' | 'grid'
 }) {
   const h = () => props.hit
   const kind = () => kindOf(h().type, h().isAnime)
@@ -339,7 +341,11 @@ export function DiscoverCard(props: {
     </Show>
   )
   return (
-    <div class="w-32 shrink-0 snap-start md:w-36">
+    <div
+      class={
+        props.layout === 'grid' ? 'min-w-0' : 'w-32 shrink-0 snap-start md:w-36'
+      }
+    >
       <Show
         when={h().libraryItemId}
         fallback={
