@@ -236,7 +236,7 @@ are on `main` and wait for the next promote PR. Unmerged branches (Groups, realt
 | --- | --- | --- | --- |
 | **P0 — Rails** | 14/16 (1 built, unverified; 1 dropped) | **Met** | Nothing. `INFRA_TOKEN` is unset by choice, so promote PRs are opened by hand and Server Deploy's promote job shows red |
 | **P1 — Basics (API)** | 30/31 (1 built, unverified) | **Met** | Nothing; CAT-010's first production load of the anime mappings is unconfirmed (CronJob first fires 2026-11-02) |
-| **P2 — Clients, widgets, imports** | 29/54 (10 built, unverified; 3 partial; 9 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) built but never run on a real CAT export; unmatched-row triage (IMP-011) open |
+| **P2 — Clients, widgets, imports** | 31/54 (12 built, unverified; 3 partial; 7 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) built but never run on a real CAT export; unmatched-row triage (IMP-011) open |
 | **P3 — Tracking** | 1/6 (1 partial) | Not met | Stremio addon built and deployed (SCR-003) but playback never tried live; no `/v1/scrobble/*` routes, no Plex/Jellyfin |
 | **P4 — Social** | 0/6 (1 partial) | Not met | Only push plumbing (SOC-005, airing alerts) is on `main` |
 | **P5 — Gamification** | 1/9 (1 partial) | Not met | Recap (GAM-006a) only; no points ledger, streaks, badges |
