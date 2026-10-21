@@ -80,3 +80,27 @@ struct AddListens: SQLMigration {
         """,
     ]
 }
+
+/// MUS-006 · what MusicBrainz said about each track, asked once: keyed by the folded artist and
+/// track and the lowercased album, shared by every user's listens. A miss is kept too, so it is
+/// not asked again until it is old. Listens still waiting for an album are indexed for the pass.
+struct AddMusicLookups: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE music_lookups (
+            track_key text NOT NULL,
+            album_key text NOT NULL,
+            recording_mbid text,
+            release_group_mbid text,
+            artist_mbid text,
+            looked_up_at timestamptz NOT NULL,
+            PRIMARY KEY (track_key, album_key)
+        )
+        """,
+        "CREATE INDEX listens_unresolved ON listens (track_key) WHERE release_group_mbid IS NULL",
+    ]
+    let backward = [
+        "DROP INDEX listens_unresolved",
+        "DROP TABLE music_lookups",
+    ]
+}

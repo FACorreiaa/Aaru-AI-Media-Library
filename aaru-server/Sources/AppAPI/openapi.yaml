@@ -3408,6 +3408,11 @@ components:
         originUrl: {type: string, description: Where it played, when the scrobbler said.}
         client: {type: string, description: 'The scrobbler, e.g. "Web Scrobbler".'}
         musicService: {type: string, description: 'Where it was heard, e.g. "YouTube Music".'}
+        albumRef:
+          $ref: '#/components/schemas/MediaRef'
+          description: >-
+            The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is
+            in the catalog, always by its MusicBrainz id. Open or add it like a search hit.
     ListenPage:
       type: object
       required: [items]
