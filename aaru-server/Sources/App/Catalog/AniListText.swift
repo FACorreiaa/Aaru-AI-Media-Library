@@ -7,9 +7,10 @@ enum AniListText {
             of: "<br\\s*/?>", with: "\n", options: [.regularExpression, .caseInsensitive]
         )
         text = text.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        // `&amp;` last, or "&amp;lt;" (a literal "&lt;") would decode twice to "<".
         for (entity, character) in [
-            ("&amp;", "&"), ("&quot;", "\""), ("&#039;", "'"), ("&#39;", "'"), ("&lt;", "<"), ("&gt;", ">"),
-            ("&nbsp;", " "),
+            ("&quot;", "\""), ("&#039;", "'"), ("&#39;", "'"), ("&lt;", "<"), ("&gt;", ">"), ("&nbsp;", " "),
+            ("&amp;", "&"),
         ] {
             text = text.replacingOccurrences(of: entity, with: character)
         }

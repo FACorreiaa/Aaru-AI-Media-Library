@@ -183,6 +183,30 @@ struct ImportFlowTests {
         }
     }
 
+    @Test("JOB-001: a job released at shutdown runs again at once, without spending an attempt")
+    func releasedJobIsClaimedAgain() async throws {
+        try await LibraryHarness.run { env in
+            let job = ImportJob(userID: env.userID, source: .goodreadsCSV, createdAt: .distantPast)
+            try await env.stores.importJobs.insert(job, rows: [])
+            let start = Date()
+            var first: ClaimedImportJob?
+            while let claimed = try await env.stores.importJobs.claimNext(now: start, lease: 60, userID: env.userID) {
+                if claimed.job.id == job.id {
+                    first = claimed; break
+                }
+            }
+            #expect(first?.attempts == 1)
+            try await env.stores.importJobs.release(job.id, now: start)
+            var again: ClaimedImportJob?
+            while let claimed = try await env.stores.importJobs.claimNext(now: start, lease: 60, userID: env.userID) {
+                if claimed.job.id == job.id {
+                    again = claimed; break
+                }
+            }
+            #expect(again?.attempts == 1, "the lease is given back before it runs out")
+        }
+    }
+
     @Test("JOB-001: a job that keeps failing lands in failed with a summary, after retries")
     func failingJobFails() async throws {
         try await LibraryHarness.run { env in
