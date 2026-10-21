@@ -81,6 +81,8 @@ final class AppRouter {
     var showsSettingsSheet = false
     /// Mac: the Settings scene's selected pane.
     var settingsPane: SettingsPage = .account
+    /// Mac: Your data's pane pushes History when this is set (it clears it).
+    var showsHistoryPane = false
     /// Mac: bumped to ask the main window to open the Settings scene.
     private(set) var settingsWindowRequest = 0
 
@@ -103,6 +105,18 @@ final class AppRouter {
             } else {
                 tab = .settings
             }
+        #endif
+    }
+
+    /// Settings → Your data → History: every journaled action, with Undo (UX-060).
+    func openHistory() {
+        #if os(macOS)
+            settingsPane = .data
+            showsHistoryPane = true
+            settingsWindowRequest += 1
+        #else
+            openSettings(.data)
+            settingsPath.append(.history)
         #endif
     }
 
