@@ -269,7 +269,8 @@ rows of wide cards, one job per row.
 
 - **Discover** (`DiscoverRow`, DISC-001) — after the user's own rows, public poster rows from
   the catalogs: Trending shows, this season's anime ("Fall 2026 anime"), Trending movies, On
-  the air, Trending anime, New shows, In theaters, Trending books. A card not on the shelf is
+  the air, Trending anime, New shows, In theaters, Trending books, then New albums and Coming
+  soon (MUS-002, square covers; an upcoming album wears its release day, "Tomorrow", "Oct 30"). A card not on the shelf is
   an add (tap: wishlist; hold or "As…": a status or a list); a card on the shelf wears a check
   and opens the item. A new account sees a slim "Add a show to see what's next" header above
   them instead of an empty screen. The same rows for everyone; never "because you watched".

@@ -353,6 +353,14 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
                 pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
             ),
             userAgent: config.openLibraryUserAgent
+        ),
+        releases: ListenBrainzReleases(
+            client: ProviderClient(
+                name: "listenbrainz",
+                transport: transport,
+                pacer: RequestPacer(requestsPerSecond: 1, burst: 2)
+            ),
+            userAgent: config.openLibraryUserAgent
         )
     )
 }

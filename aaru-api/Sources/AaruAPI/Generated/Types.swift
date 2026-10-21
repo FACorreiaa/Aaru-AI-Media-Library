@@ -4902,7 +4902,7 @@ public enum Components {
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
         public struct DiscoverRow: Codable, Hashable, Sendable {
-            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get.
+            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
             ///
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/id`.
             public var id: Swift.String
@@ -4915,7 +4915,7 @@ public enum Components {
             /// Creates a new `DiscoverRow`.
             ///
             /// - Parameters:
-            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get.
+            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
             ///   - title: Display title, e.g. "Fall 2026 anime".
             ///   - items:
             public init(

@@ -54,6 +54,7 @@ struct AboutView: View {
                 )
                 CreditLink("Book data from Open Library", url: "https://openlibrary.org")
                 CreditLink("Music data from MusicBrainz", url: "https://musicbrainz.org")
+                CreditLink("Album rows from ListenBrainz", url: "https://listenbrainz.org")
                 CreditLink("Covers from the Cover Art Archive", url: "https://coverartarchive.org")
                 CreditLink(
                     "History import from Trakt",

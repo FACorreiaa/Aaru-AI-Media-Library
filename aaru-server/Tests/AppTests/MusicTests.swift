@@ -197,3 +197,112 @@ struct AlbumLibraryTests {
         }
     }
 }
+
+/// ListenBrainz against canned JSON. No network.
+@Suite("ListenBrainz album rows (MUS-002)")
+struct ListenBrainzReleasesTests {
+    static func release(
+        _ group: String, _ name: String, date: String, type: String? = "Album", secondary: String? = nil,
+        artists: [String] = [], cover: Bool = true
+    ) -> String {
+        let mbids = artists.map { "\"\($0)\"" }.joined(separator: ",")
+        let caa = cover
+            ? #""caa_id":123,"caa_release_mbid":"rel-\#(group)""#
+            : #""caa_id":null,"caa_release_mbid":null"#
+        return """
+        {"artist_credit_name":"Artist \(name)","artist_mbids":[\(mbids)],\(caa),"listen_count":0,
+         "release_date":"\(date)","release_group_mbid":"\(group)","release_mbid":"rel-\(group)",
+         "release_group_primary_type":\(type.map { "\"\($0)\"" } ?? "null"),
+         "release_group_secondary_type":\(secondary.map { "\"\($0)\"" } ?? "null"),"release_name":"\(name)"}
+        """
+    }
+
+    /// Fresh releases by the `past` flag; stats by path.
+    func stub(past: [String], future: [String], groups: String, artists: String) -> StubTransport {
+        StubTransport { request in
+            let path = request.url.path
+            let query = request.url.query ?? ""
+            let body: String
+            if path.hasSuffix("explore/fresh-releases") || path.hasSuffix("explore/fresh-releases/") {
+                let list = query.contains("past=true") ? past : future
+                body = #"{"payload":{"releases":[\#(list.joined(separator: ","))],"total_count":\#(list.count)}}"#
+            } else if path.hasSuffix("stats/sitewide/release-groups") {
+                body = #"{"payload":{"release_groups":\#(groups)}}"#
+            } else if path.hasSuffix("stats/sitewide/artists") {
+                body = #"{"payload":{"artists":\#(artists)}}"#
+            } else {
+                return OutboundResponse(status: 404, body: Data())
+            }
+            return OutboundResponse(status: 200, body: Data(body.utf8))
+        }
+    }
+
+    func source(_ stub: StubTransport) -> ListenBrainzReleases {
+        ListenBrainzReleases(
+            client: ProviderClient(
+                name: "listenbrainz", transport: stub, pacer: RequestPacer(requestsPerSecond: 1000, burst: 100)
+            ),
+            userAgent: "Aaru-test"
+        )
+    }
+
+    @Test("New albums: this month's most played that came out lately, albums and EPs with a cover only")
+    func newAlbums() async throws {
+        let stub = stub(
+            past: [
+                Self.release("rg-a", "Dopamine Chamber", date: "2026-10-15"),
+                Self.release("rg-b", "Popstar", date: "2026-09-25", type: "EP"),
+                Self.release("rg-c", "A Single", date: "2026-10-10", type: "Single"),
+                Self.release("rg-d", "Live at Home", date: "2026-10-10", secondary: "Live"),
+                Self.release("rg-e", "No Cover", date: "2026-10-10", cover: false),
+                Self.release("rg-f", "Unplayed", date: "2026-10-12"),
+            ],
+            future: [],
+            groups: #"""
+            [{"release_group_mbid":"old-hit","listen_count":9000},{"release_group_mbid":"rg-b","listen_count":987},
+             {"release_group_mbid":"rg-a","listen_count":2901},{"release_group_mbid":"rg-c","listen_count":5000},
+             {"release_group_mbid":"rg-d","listen_count":4000},{"release_group_mbid":"rg-e","listen_count":3000},
+             {"release_group_mbid":null,"listen_count":100}]
+            """#,
+            artists: "[]"
+        )
+        let hits = try await source(stub).list(.musicNew, now: Date())
+        #expect(hits.map(\.title) == ["Dopamine Chamber", "Popstar"])
+        let first = try #require(hits.first)
+        #expect(first.type == .album && first.ids == ExternalIDs(musicbrainz: "rg-a"))
+        #expect(first.byline == "Artist Dopamine Chamber" && first.year == 2026 && first.releaseDate == "2026-10-15")
+        #expect(first.posterURL?.absoluteString == "https://coverartarchive.org/release/rel-rg-a/123-250.jpg")
+        #expect(stub.requests.allSatisfy { $0.headers.contains { $0 == ("User-Agent", "Aaru-test") } })
+    }
+
+    @Test("Coming soon: releases by this month's most played artists, soonest first; Various Artists never counts")
+    func upcoming() async throws {
+        let stub = stub(
+            past: [],
+            future: [
+                Self.release("rg-late", "Late", date: "2026-11-13", artists: ["u2"]),
+                Self.release("rg-soon", "Soon", date: "2026-10-23", artists: ["paak", "cordae"]),
+                Self.release("rg-va", "Compiled", date: "2026-10-22", artists: [ListenBrainzReleases.variousArtists]),
+                Self.release("rg-nobody", "Nobody", date: "2026-10-22", artists: ["unknown"]),
+                Self.release("rg-tie", "Tie", date: "2026-10-23", artists: ["qotsa"]),
+                Self.release("rg-single", "Single", date: "2026-10-22", type: "Single", artists: ["u2"]),
+            ],
+            groups: "[]",
+            artists: #"""
+            [{"artist_mbid":"qotsa","listen_count":900},{"artist_mbid":"\#(ListenBrainzReleases.variousArtists)",
+              "listen_count":800},{"artist_mbid":"u2","listen_count":700},{"artist_mbid":"cordae","listen_count":600},
+             {"artist_mbid":null,"listen_count":500}]
+            """#
+        )
+        let hits = try await source(stub).list(.musicUpcoming, now: Date())
+        // Same day: the more played artist first (qotsa ranks above cordae).
+        #expect(hits.map(\.title) == ["Tie", "Soon", "Late"])
+    }
+
+    @Test("A list it does not serve is not found")
+    func otherList() async throws {
+        let stub = stub(past: [], future: [], groups: "[]", artists: "[]")
+        await #expect(throws: ProviderError.self) { try await source(stub).list(.booksTrending, now: Date()) }
+        #expect(source(stub).discoverLists == [.musicNew, .musicUpcoming])
+    }
+}

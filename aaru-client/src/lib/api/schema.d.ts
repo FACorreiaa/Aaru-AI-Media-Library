@@ -2301,7 +2301,7 @@ export interface components {
       incomplete: boolean
     }
     DiscoverRow: {
-      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get. */
+      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get. */
       id: string
       /** @description Display title, e.g. "Fall 2026 anime". */
       title: string
