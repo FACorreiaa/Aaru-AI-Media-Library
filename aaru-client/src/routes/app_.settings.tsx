@@ -16,6 +16,7 @@ import { Alert } from '../components/ui/alert'
 import { AlertDialog } from '../components/ui/alert-dialog'
 import { Button, buttonVariants } from '../components/ui/button'
 import { Card } from '../components/ui/card'
+import { Toaster } from '../components/ui/toast'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
 import { readImportFile } from '../lib/imports/file'
@@ -418,6 +419,8 @@ function Settings() {
           />
         </section>
       </main>
+      {/* ConnectionsSection's "Copied" toasts. */}
+      <Toaster />
     </div>
   )
 }

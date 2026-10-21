@@ -23,6 +23,10 @@ import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
 import { cardClass } from '../components/ui/card'
 import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '../components/ui/segmented-control'
+import {
   addDays,
   addMonths,
   daysFrom,
@@ -116,8 +120,15 @@ function Calendar() {
     const onKey = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
         return
+      if (event.defaultPrevented) return
       const target = event.target as HTMLElement | null
-      if (target?.closest('input:not([type=checkbox]), textarea, select'))
+      // Fields keep their keys, the view switch's radios included; the day tabs move their
+      // own selection with the arrows.
+      if (
+        target?.closest(
+          'input:not([type=checkbox]), textarea, select, [role=tablist]',
+        )
+      )
         return
       if (target?.isContentEditable) return
       const key = event.key
@@ -299,28 +310,23 @@ function Calendar() {
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <div
+            <SegmentedControl
               class="flex rounded-full border border-line p-0.5"
-              role="group"
               aria-label="Calendar view"
+              value={view()}
+              onChange={(next) => switchView(next as View)}
             >
               <For each={['week', 'month'] as const}>
                 {(option) => (
-                  <button
-                    type="button"
-                    aria-pressed={view() === option}
-                    class="rounded-full px-3 py-1 text-sm font-medium"
-                    classList={{
-                      'bg-ink text-paper': view() === option,
-                      'text-muted hover:text-ink': view() !== option,
-                    }}
-                    onClick={() => switchView(option)}
+                  <SegmentedControlItem
+                    value={option}
+                    class="px-3 py-1 text-sm"
                   >
                     {option === 'week' ? 'Week' : 'Month'}
-                  </button>
+                  </SegmentedControlItem>
                 )}
               </For>
-            </div>
+            </SegmentedControl>
             <nav class="flex items-center gap-2" aria-label="Days">
               <Show when={view() === 'week'}>
                 <Button

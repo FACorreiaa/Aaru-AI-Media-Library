@@ -1,8 +1,15 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import {
+  For,
+  Show,
+  Suspense,
+  createMemo,
+  createSignal,
+  lazy,
+  onMount,
+} from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
-import { SearchPanel } from '../components/SearchPanel'
 import { PlanCard } from '../components/PlanCard'
 import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
@@ -52,6 +59,11 @@ import { setEpisode } from '../lib/title/server'
 // viewer's "today", as do this month's stats, Discover's public rows (DISC-001) and the list
 // chips, so a cold provider cache never holds the page. Each of those hides itself if it
 // fails. Search opens in place and shares the library for its "On your shelf" marks.
+// Search loads only when it is first opened: it is not part of the page's first paint.
+const SearchPanel = lazy(() =>
+  import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
+)
+
 export const Route = createFileRoute('/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
   beforeLoad: async () => {
@@ -519,11 +531,17 @@ function Home() {
         class="w-[min(40rem,calc(100vw-2rem))]"
       >
         <Show when={searchOpened()}>
-          <SearchPanel
-            entries={entries()}
-            onAdded={(entry) => void added(entry)}
-            onClose={() => dialog?.close()}
-          />
+          <Suspense
+            fallback={
+              <p class="px-5 py-8 text-center text-sm text-muted">Loading…</p>
+            }
+          >
+            <SearchPanel
+              entries={entries()}
+              onAdded={(entry) => void added(entry)}
+              onClose={() => dialog?.close()}
+            />
+          </Suspense>
         </Show>
       </Dialog>
     </div>

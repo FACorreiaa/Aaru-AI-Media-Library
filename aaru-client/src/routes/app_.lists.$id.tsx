@@ -1,9 +1,16 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import {
+  For,
+  Show,
+  Suspense,
+  createMemo,
+  createSignal,
+  lazy,
+  onMount,
+} from 'solid-js'
 import type { JSX } from 'solid-js'
 import { Wordmark } from '../components/Brand'
 import { Poster } from '../components/Poster'
-import { SearchPanel } from '../components/SearchPanel'
 import { AlertDialog } from '../components/ui/alert-dialog'
 import { Button } from '../components/ui/button'
 import { Dialog } from '../components/ui/dialog'
@@ -16,6 +23,11 @@ import { getSession } from '../lib/session/session'
 
 // APP-006 on the web: one list, in order, with remove and move up/down. LST-003: rows carry
 // library status and progress, show status and the next airing; "Add titles" searches into it.
+// Search loads only when it is first opened: it is not part of the page's first paint.
+const SearchPanel = lazy(() =>
+  import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
+)
+
 export const Route = createFileRoute('/app_/lists/$id')({
   head: () => ({ meta: [{ title: 'List · Aaru' }] }),
   beforeLoad: async () => {
@@ -232,11 +244,17 @@ function ListPage() {
         class="w-[min(40rem,calc(100vw-2rem))]"
       >
         <Show when={searchOpened()}>
-          <SearchPanel
-            list={detail()}
-            onListChanged={setDetail}
-            onClose={() => dialog?.close()}
-          />
+          <Suspense
+            fallback={
+              <p class="px-5 py-8 text-center text-sm text-muted">Loading…</p>
+            }
+          >
+            <SearchPanel
+              list={detail()}
+              onListChanged={setDetail}
+              onClose={() => dialog?.close()}
+            />
+          </Suspense>
         </Show>
       </Dialog>
     </div>

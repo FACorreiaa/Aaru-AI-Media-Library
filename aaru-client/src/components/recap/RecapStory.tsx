@@ -159,11 +159,15 @@ export function RecapStory(props: {
                       >
                         {sharing() ? 'Making the image…' : 'Share as an image'}
                       </button>
-                      <Show when={shareNote()}>
-                        {(note) => (
-                          <p class="mt-3 text-sm opacity-80">{note()}</p>
-                        )}
-                      </Show>
+                      {/* Always present, so the note is announced when it appears: a toast
+                          region outside this modal would be inert while it is open. */}
+                      <p
+                        role="status"
+                        class="text-sm opacity-80"
+                        classList={{ 'mt-3': !!shareNote() }}
+                      >
+                        {shareNote()}
+                      </p>
                     </div>
                   }
                 />

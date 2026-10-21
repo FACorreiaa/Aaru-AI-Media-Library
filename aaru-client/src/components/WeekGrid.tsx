@@ -1,5 +1,13 @@
 import { Link } from '@tanstack/solid-router'
-import { For, Show, createSignal } from 'solid-js'
+import {
+  For,
+  Index,
+  Show,
+  createSignal,
+  createUniqueId,
+  onCleanup,
+  onMount,
+} from 'solid-js'
 import {
   badge,
   dayParts,
@@ -9,6 +17,7 @@ import {
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { WatchedCheckbox } from './WatchedCheckbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 
 // APP-010 · `WeekGrid` (DESIGN.md §14, VIEWS.md): Pogdesign CAT's dense week, in Aaru's palette.
 // Seven columns from 1280px, scroll-snapping columns below that, and a day pager on phones.
@@ -26,44 +35,52 @@ export interface WeekGridProps {
 export function WeekGrid(props: WeekGridProps) {
   return (
     <>
-      {/* Phones: a 7-day strip and the chosen day's cells. */}
-      <div class="sm:hidden">
-        <div class="grid grid-cols-7 gap-1" role="tablist" aria-label="Day">
-          <For each={props.days}>
-            {(day) => {
-              const parts = dayParts(day)
-              const chosen = () => day === props.selected
+      {/* Phones: a 7-day strip and the chosen day's cells. Tabs are keyed by position, not
+          date, so paging the week relabels the same buttons and keyboard focus stays put. */}
+      <Tabs
+        class="sm:hidden"
+        value={String(props.days.indexOf(props.selected))}
+        onChange={(index) => {
+          const day = props.days[Number(index)]
+          if (day) props.onSelect(day)
+        }}
+      >
+        <TabsList class="grid grid-cols-7 gap-1" aria-label="Day">
+          <Index each={props.days}>
+            {(day, index) => {
+              const parts = () => dayParts(day())
               return (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={chosen()}
-                  aria-label={`${parts.weekday} ${parts.day}`}
+                <TabsTrigger
+                  value={String(index)}
+                  variant="bare"
+                  aria-label={`${parts().weekday} ${parts().day}`}
                   class="flex flex-col items-center rounded-field py-1.5 text-xs"
                   classList={{
-                    'bg-ink text-paper': chosen(),
                     'text-accent font-semibold':
-                      !chosen() && day === props.today,
-                    'text-muted': !chosen() && day !== props.today,
+                      day() !== props.selected && day() === props.today,
+                    'text-muted':
+                      day() !== props.selected && day() !== props.today,
                   }}
-                  onClick={() => props.onSelect(day)}
                 >
-                  <span>{parts.short}</span>
+                  <span>{parts().short}</span>
                   <span class="font-display text-lg leading-tight">
-                    {parts.day}
+                    {parts().day}
                   </span>
                   <span
                     class="mt-0.5 h-1 w-1 rounded-full"
                     classList={{
-                      'bg-current': (props.byDay.get(day)?.length ?? 0) > 0,
+                      'bg-current': (props.byDay.get(day())?.length ?? 0) > 0,
                     }}
                   />
-                </button>
+                </TabsTrigger>
               )
             }}
-          </For>
-        </div>
-        <div class="mt-3 flex flex-col gap-2" role="tabpanel">
+          </Index>
+        </TabsList>
+        <TabsContent
+          value={String(props.days.indexOf(props.selected))}
+          class="mt-3 flex flex-col gap-2"
+        >
           <For
             each={props.byDay.get(props.selected) ?? []}
             fallback={
@@ -74,10 +91,16 @@ export function WeekGrid(props: WeekGridProps) {
               </p>
             }
           >
-            {(entry) => <EpisodeCell entry={entry} onToggle={props.onToggle} />}
+            {(entry, i) => (
+              <EpisodeCell
+                entry={entry}
+                above={isLastOfMany(i(), props.byDay.get(props.selected))}
+                onToggle={props.onToggle}
+              />
+            )}
           </For>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Tablets scroll the columns; desktops see the whole week. */}
       <div class="hidden gap-3 sm:flex sm:snap-x sm:snap-mandatory sm:overflow-x-auto sm:pb-2 xl:grid xl:grid-cols-7 xl:overflow-visible">
@@ -96,6 +119,9 @@ export function WeekGrid(props: WeekGridProps) {
   )
 }
 
+const isLastOfMany = (index: number, list: unknown[] | undefined) =>
+  !!list && list.length > 1 && index === list.length - 1
+
 function DayColumn(props: {
   day: string
   today: boolean
@@ -106,7 +132,9 @@ function DayColumn(props: {
   return (
     <section
       aria-label={`${parts.weekday} ${parts.day}${props.today ? ', today' : ''}`}
-      class="flex w-64 shrink-0 snap-start flex-col rounded-panel bg-surface xl:w-auto xl:min-w-0"
+      // The minimum height leaves room for a lone cell's tooltip inside the scroller, which
+      // clips; from 1280px nothing scrolls or clips.
+      class="flex min-h-100 w-64 shrink-0 snap-start flex-col rounded-panel bg-surface xl:min-h-0 xl:w-auto xl:min-w-0"
       classList={{ 'ring-2 ring-accent': props.today }}
     >
       <header
@@ -125,7 +153,13 @@ function DayColumn(props: {
           each={props.entries}
           fallback={<p class="px-1 py-3 text-xs text-muted/80">—</p>}
         >
-          {(entry) => <EpisodeCell entry={entry} onToggle={props.onToggle} />}
+          {(entry, i) => (
+            <EpisodeCell
+              entry={entry}
+              above={isLastOfMany(i(), props.entries)}
+              onToggle={props.onToggle}
+            />
+          )}
         </For>
       </div>
     </section>
@@ -134,16 +168,38 @@ function DayColumn(props: {
 
 function EpisodeCell(props: {
   entry: CalendarEntry
+  /** The tooltip opens above: the last cell of a column with more than one. */
+  above?: boolean
   onToggle: (entry: CalendarEntry) => void
 }) {
   const e = () => props.entry
   const code = () => episodeCode(e().season, e().number)
-  const tip = () => `tip-${e().libraryItemId}-${e().season}-${e().number}`
   const label = () => badge(e())
   const meta = () => metaLine(e())
+  const tip = `tip-${createUniqueId()}`
+  // Esc hides the tooltip until the pointer leaves the cell or focus moves out of it. While
+  // only hovered, the key goes to the page, so a window listener is added for that time.
+  const [dismissed, setDismissed] = createSignal(false)
+  const onEscape = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') setDismissed(true)
+  }
+  // Inside onMount: the server has no window.
+  onMount(() =>
+    onCleanup(() => window.removeEventListener('keydown', onEscape)),
+  )
   return (
     <article
       class="group relative rounded-field bg-paper ring-1 transition-opacity"
+      onKeyDown={onEscape}
+      onPointerEnter={() => window.addEventListener('keydown', onEscape)}
+      onPointerLeave={() => {
+        window.removeEventListener('keydown', onEscape)
+        setDismissed(false)
+      }}
+      onFocusOut={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          setDismissed(false)
+      }}
       classList={{
         'opacity-55': e().watched,
         'ring-accent': e().kind === 'premiere',
@@ -171,7 +227,7 @@ function EpisodeCell(props: {
           <Link
             to="/app/title/$id"
             params={{ id: e().libraryItemId }}
-            aria-describedby={tip()}
+            aria-describedby={tip}
             class="block truncate text-sm font-semibold text-accent hover:underline"
           >
             {e().title.title}
@@ -185,27 +241,38 @@ function EpisodeCell(props: {
           </Show>
         </div>
       </div>
+      {/* Shown on hover and focus within the cell (WCAG 1.4.13): the pointer can move onto it
+          (its padding bridges the gap), Esc hides it until the pointer or focus leaves, and it
+          opens below the cell, or above the last one, staying inside the column. */}
       <div
-        id={tip()}
+        id={tip}
         role="tooltip"
-        class="pointer-events-none invisible absolute inset-x-0 top-full z-20 mt-1 rounded-field bg-ink p-3 text-xs leading-relaxed text-paper opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+        class="invisible absolute inset-x-0 z-20 opacity-0 transition-opacity motion-reduce:transition-none"
+        classList={{
+          'top-full pt-1': !props.above,
+          'bottom-full pb-1': props.above,
+          'group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100':
+            !dismissed(),
+        }}
       >
-        <p class="font-semibold">
-          {e().title.title} · {code()}
-        </p>
-        <Show when={e().episodeName}>
-          <p>{e().episodeName}</p>
-        </Show>
-        <Show when={e().episodeOverview}>
-          <p class="mt-1 line-clamp-4 opacity-90">{e().episodeOverview}</p>
-        </Show>
-        <p class="mt-1 opacity-80">
-          {longWhen(e())}
-          <Show when={e().runtimeMinutes}> · {e().runtimeMinutes} min</Show>
-        </p>
-        <Show when={e().watched}>
-          <p class="mt-1 opacity-80">Watched</p>
-        </Show>
+        <div class="rounded-field bg-ink p-3 text-xs leading-relaxed text-paper shadow-lg">
+          <p class="font-semibold">
+            {e().title.title} · {code()}
+          </p>
+          <Show when={e().episodeName}>
+            <p>{e().episodeName}</p>
+          </Show>
+          <Show when={e().episodeOverview}>
+            <p class="mt-1 line-clamp-4 opacity-90">{e().episodeOverview}</p>
+          </Show>
+          <p class="mt-1 opacity-80">
+            {longWhen(e())}
+            <Show when={e().runtimeMinutes}> · {e().runtimeMinutes} min</Show>
+          </p>
+          <Show when={e().watched}>
+            <p class="mt-1 opacity-80">Watched</p>
+          </Show>
+        </div>
       </div>
     </article>
   )

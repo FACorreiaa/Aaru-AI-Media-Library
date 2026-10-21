@@ -103,7 +103,7 @@ function Consent() {
       <label class="mt-4 flex items-start gap-2 text-sm">
         <input
           type="checkbox"
-          class="mt-0.5"
+          class="mt-0.5 accent-accent"
           checked={allowWrites()}
           onChange={(e) => setAllowWrites(e.currentTarget.checked)}
         />

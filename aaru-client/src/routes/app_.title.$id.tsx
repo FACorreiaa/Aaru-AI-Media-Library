@@ -4,7 +4,15 @@ import {
   redirect,
   useRouter,
 } from '@tanstack/solid-router'
-import { For, Show, createMemo, createSignal } from 'solid-js'
+import {
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup,
+} from 'solid-js'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
@@ -12,6 +20,8 @@ import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
 import { Button } from '../components/ui/button'
 import { Card, cardClass } from '../components/ui/card'
+import { Switch } from '../components/ui/switch'
+import { Toaster, dismissToast, showToast } from '../components/ui/toast'
 import { cn } from '../lib/cn'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
@@ -160,6 +170,21 @@ function TitleRoom() {
     }
   }
 
+  // A failed save shows as a toast until the next change starts or it is closed.
+  let problemToast: number | undefined
+  const dismissProblem = () => {
+    if (problemToast !== undefined) dismissToast(problemToast)
+    problemToast = undefined
+  }
+  createEffect(
+    on(problem, (message) => {
+      dismissProblem()
+      if (message)
+        problemToast = showToast(message, { tone: 'danger', persistent: true })
+    }),
+  )
+  onCleanup(dismissProblem)
+
   const meta = () =>
     [
       entry().title.year,
@@ -218,17 +243,6 @@ function TitleRoom() {
           </div>
         </section>
 
-        <Show when={problem()}>
-          {(message) => (
-            <p
-              role="alert"
-              class="fixed inset-x-4 bottom-4 z-20 mx-auto max-w-md rounded-panel bg-danger px-4 py-3 text-sm text-paper shadow-lg"
-            >
-              {message()}
-            </p>
-          )}
-        </Show>
-
         <Card class="mt-8 grid gap-4 p-5 sm:grid-cols-2">
           <label class="flex items-center justify-between gap-4 text-sm font-medium">
             Status
@@ -277,18 +291,13 @@ function TitleRoom() {
               </For>
             </div>
           </div>
-          <label class="flex items-center justify-between gap-4 text-sm font-medium">
-            Owned
-            <input
-              type="checkbox"
-              class="h-5 w-5 rounded text-accent focus:ring-accent"
-              checked={entry().isOwned}
-              onChange={(e) => {
-                const isOwned = e.currentTarget.checked
-                void update({ isOwned }, { isOwned })
-              }}
-            />
-          </label>
+          <Switch
+            class="flex items-center justify-between gap-4 text-sm font-medium"
+            checked={entry().isOwned}
+            onChange={(isOwned) => void update({ isOwned }, { isOwned })}
+            label="Owned"
+            trackLast
+          />
           <Show when={entry().title.type === 'book'}>
             <form
               class="flex items-center justify-between gap-4 text-sm font-medium"
@@ -428,6 +437,7 @@ function TitleRoom() {
           />
         </Show>
       </main>
+      <Toaster />
     </div>
   )
 }
@@ -447,98 +457,100 @@ function SeasonBlock(props: {
       props.watched.has(episodeKey(e.season, e.number)),
     ).length
   return (
-    <details class={cn(cardClass, 'group')} open={props.open}>
-      <summary class="flex cursor-pointer list-none items-center gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
-        <span class="font-medium">
-          {props.season.number === 0
-            ? 'Specials'
-            : `Season ${props.season.number}`}
-        </span>
-        <span class="text-sm text-muted">
-          {count()} of {props.season.episodes.length}
-        </span>
-        <Show when={props.season.number > 0 && props.canMarkAll}>
-          <button
-            type="button"
-            class="ml-auto rounded-full border border-ink/25 px-3 py-1 text-xs font-semibold hover:bg-paper"
-            onClick={(e) => {
-              e.preventDefault()
-              props.onMarkAll(props.season.number)
-            }}
-          >
-            Mark watched
-          </button>
-        </Show>
-      </summary>
-      <ul class="px-2 pb-3">
-        <For each={props.season.episodes}>
-          {(episode) => {
-            const key = () => episodeKey(episode.season, episode.number)
-            const isWatched = () => props.watched.has(key())
-            const aired = hasAired(episode)
-            return (
-              <li
-                class="flex items-center gap-3 rounded-[12px] px-3 py-2 hover:bg-paper/60"
-                classList={{ 'opacity-60': !aired && !isWatched() }}
-              >
-                <input
-                  type="checkbox"
-                  class="h-5 w-5 shrink-0 rounded-full text-accent focus:ring-accent disabled:cursor-not-allowed"
-                  aria-label={`Episode ${episode.number} watched`}
-                  checked={isWatched()}
-                  disabled={
-                    (!aired && !isWatched()) || props.pending.has(key())
-                  }
-                  onChange={() =>
-                    props.onToggle(episode.season, episode.number)
-                  }
-                />
-                <button
-                  type="button"
-                  class="flex min-w-0 flex-1 items-center gap-3 text-left"
-                  onClick={() => props.onOpen(episode)}
+    // "Mark watched" sits over the summary's row, not inside it: a <summary> may not hold
+    // a button, and anything after it inside <details> is hidden while closed. It comes
+    // first in the DOM so the tab order stays next to the summary, before the episodes.
+    <div class={cn(cardClass, 'relative')}>
+      <Show when={props.season.number > 0 && props.canMarkAll}>
+        <button
+          type="button"
+          class="absolute top-[15px] z-10 right-5 rounded-full border border-ink/25 px-3 py-1 text-xs font-semibold hover:bg-paper"
+          onClick={() => props.onMarkAll(props.season.number)}
+        >
+          Mark watched
+        </button>
+      </Show>
+      <details open={props.open}>
+        <summary class="flex h-14 cursor-pointer list-none items-center gap-4 px-5 [&::-webkit-details-marker]:hidden">
+          <span class="font-medium">
+            {props.season.number === 0
+              ? 'Specials'
+              : `Season ${props.season.number}`}
+          </span>
+          <span class="text-sm text-muted">
+            {count()} of {props.season.episodes.length}
+          </span>
+        </summary>
+        <ul class="px-2 pb-3">
+          <For each={props.season.episodes}>
+            {(episode) => {
+              const key = () => episodeKey(episode.season, episode.number)
+              const isWatched = () => props.watched.has(key())
+              const aired = hasAired(episode)
+              return (
+                <li
+                  class="flex items-center gap-3 rounded-[12px] px-3 py-2 hover:bg-paper/60"
+                  classList={{ 'opacity-60': !aired && !isWatched() }}
                 >
-                  <Show
-                    when={episode.stillUrl}
-                    fallback={
-                      <span
-                        class="hidden aspect-video w-20 shrink-0 rounded-[8px] bg-paper sm:block"
-                        aria-hidden="true"
-                      />
+                  <input
+                    type="checkbox"
+                    class="h-5 w-5 shrink-0 accent-accent disabled:cursor-not-allowed"
+                    aria-label={`Episode ${episode.number} watched`}
+                    checked={isWatched()}
+                    disabled={
+                      (!aired && !isWatched()) || props.pending.has(key())
                     }
+                    onChange={() =>
+                      props.onToggle(episode.season, episode.number)
+                    }
+                  />
+                  <button
+                    type="button"
+                    class="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    onClick={() => props.onOpen(episode)}
                   >
-                    {(url) => (
-                      <img
-                        src={url()}
-                        alt=""
-                        loading="lazy"
-                        class="aspect-video w-20 shrink-0 rounded-[8px] bg-paper object-cover"
-                      />
-                    )}
-                  </Show>
-                  <span class="min-w-0 flex-1">
-                    <span class="line-clamp-1">
-                      {episode.number}.{' '}
-                      {episode.name ?? `Episode ${episode.number}`}
+                    <Show
+                      when={episode.stillUrl}
+                      fallback={
+                        <span
+                          class="hidden aspect-video w-20 shrink-0 rounded-[8px] bg-paper sm:block"
+                          aria-hidden="true"
+                        />
+                      }
+                    >
+                      {(url) => (
+                        <img
+                          src={url()}
+                          alt=""
+                          loading="lazy"
+                          class="aspect-video w-20 shrink-0 rounded-[8px] bg-paper object-cover"
+                        />
+                      )}
+                    </Show>
+                    <span class="min-w-0 flex-1">
+                      <span class="line-clamp-1">
+                        {episode.number}.{' '}
+                        {episode.name ?? `Episode ${episode.number}`}
+                      </span>
+                      <Show when={airLabel(episode)}>
+                        <span class="block text-xs text-muted">
+                          {aired ? '' : 'Airs '}
+                          {airLabel(episode)}
+                        </span>
+                      </Show>
+                      <Show when={episode.overview}>
+                        <span class="mt-0.5 line-clamp-1 block text-xs text-muted">
+                          {episode.overview}
+                        </span>
+                      </Show>
                     </span>
-                    <Show when={airLabel(episode)}>
-                      <span class="block text-xs text-muted">
-                        {aired ? '' : 'Airs '}
-                        {airLabel(episode)}
-                      </span>
-                    </Show>
-                    <Show when={episode.overview}>
-                      <span class="mt-0.5 line-clamp-1 block text-xs text-muted">
-                        {episode.overview}
-                      </span>
-                    </Show>
-                  </span>
-                </button>
-              </li>
-            )
-          }}
-        </For>
-      </ul>
-    </details>
+                  </button>
+                </li>
+              )
+            }}
+          </For>
+        </ul>
+      </details>
+    </div>
   )
 }
