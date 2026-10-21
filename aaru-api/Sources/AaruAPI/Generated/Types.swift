@@ -2751,6 +2751,7 @@ public enum Components {
                 case goodreadsCsv = "goodreads_csv"
                 case catList = "cat_list"
                 case catIcs = "cat_ics"
+                case netflixCsv = "netflix_csv"
                 case malXml = "mal_xml"
                 case anilist = "anilist"
                 case csv = "csv"
@@ -20876,11 +20877,12 @@ public enum Operations {
                     case auto = "auto"
                     case imdb = "imdb"
                     case letterboxd = "letterboxd"
+                    case netflix = "netflix"
                     case goodreads = "goodreads"
                     case mal = "mal"
                     case csv = "csv"
                 }
-                /// `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+                /// `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by its column names (`csv`).
                 ///
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
                 public var source: Operations.CreateCSVImport.Input.Query.SourcePayload
@@ -20891,7 +20893,7 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - source: `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+                ///   - source: `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by its column names (`csv`).
                 ///   - filename: The file's name. Letterboxd's watchlist export is told apart by it.
                 public init(
                     source: Operations.CreateCSVImport.Input.Query.SourcePayload,
