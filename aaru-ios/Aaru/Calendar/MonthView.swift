@@ -5,6 +5,9 @@ struct MonthView: View {
     let model: MonthModel
     var onSearch: () -> Void
 
+    /// iPhone: the tapped day, open as a sheet (CAL-003).
+    @State private var openDay: Date?
+
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
         private var isWide: Bool {
@@ -31,7 +34,7 @@ struct MonthView: View {
                 VStack(spacing: 0) {
                     VStack(spacing: 4) {
                         MonthSwitcher(model: model)
-                        MonthGridView(model: model, style: .dots)
+                        MonthGridView(model: model, style: .compact) { openDay = $0 }
                     }
                     .padding(.horizontal, 12)
                     .padding(.bottom, 8)
@@ -41,6 +44,15 @@ struct MonthView: View {
             }
         }
         .toolbar { toolbar }
+        .sheet(isPresented: Binding(get: { openDay != nil }, set: {
+            if !$0 {
+                openDay = nil
+            }
+        })) {
+            if let openDay {
+                DaySheet(day: openDay, feed: model.feed)
+            }
+        }
     }
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {

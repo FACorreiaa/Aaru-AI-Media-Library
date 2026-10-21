@@ -59,7 +59,7 @@ private struct WeekColumn: View {
         let entries = model.entries(on: day)
         LazyVStack(spacing: 8) {
             ForEach(entries, id: \.cellID) { entry in
-                NavigationLink(value: entry.libraryItemId) {
+                Button { model.feed.open(entry) } label: {
                     WeekCell(entry: entry, isPending: model.pending.contains(entry.cellID)) {
                         Task { await model.toggle(entry) }
                     }

@@ -51,6 +51,8 @@ struct WeekView: View {
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
+            Button("Previous week", systemImage: "chevron.left.2") { step(-7) }
+                .keyboardShortcut(.pageUp, modifiers: [])
             Button("Previous day", systemImage: "chevron.left") { step(-1) }
                 .keyboardShortcut(.leftArrow, modifiers: [])
             Button("Today") { goToToday() }
@@ -58,6 +60,8 @@ struct WeekView: View {
                 .disabled(model.containsToday && (isWide || model.calendar.isDateInToday(selection)))
             Button("Next day", systemImage: "chevron.right") { step(1) }
                 .keyboardShortcut(.rightArrow, modifiers: [])
+            Button("Next week", systemImage: "chevron.right.2") { step(7) }
+                .keyboardShortcut(.pageDown, modifiers: [])
         }
     }
 

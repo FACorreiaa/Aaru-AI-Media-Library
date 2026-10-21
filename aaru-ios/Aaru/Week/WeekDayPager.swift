@@ -68,7 +68,7 @@ private struct WeekDayList: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(entries, id: \.cellID) { entry in
-                    NavigationLink(value: entry.libraryItemId) {
+                    Button { model.feed.open(entry) } label: {
                         WeekCell(entry: entry, isPending: model.pending.contains(entry.cellID)) {
                             Task { await model.toggle(entry) }
                         }
