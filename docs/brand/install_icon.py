@@ -1,9 +1,9 @@
-"""Build every app-icon output from the chosen reed icon (variant A) into out/icon/."""
+"""Build every app-icon output from the chosen mascot icon (variant B) into out/icon/."""
 import os
 
 from PIL import Image
 
-import icon_reeds
+import icon_mascot
 from process import beta_band, mac_icon
 
 OUT = "out/icon"
@@ -22,7 +22,7 @@ def iconset(icon, folder):
 
 
 if __name__ == "__main__":
-    icon = icon_reeds.compose(**icon_reeds.VARIANTS["a-dawn-silhouette"])
+    icon = icon_mascot.compose("b-portrait-teal")
     mac = iconset(icon, "AppIcon.appiconset")
     iconset(beta_band(icon), "AppIconBeta.appiconset")
     w = f"{OUT}/web"

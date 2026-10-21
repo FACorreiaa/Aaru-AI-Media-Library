@@ -531,9 +531,10 @@ looking like Aaru.
 Brand: teal → gold, paper-white or deep reed-green dark mode. Assets and how they are made:
 `docs/brand/README.md`. Colour tokens (`Paper`, `Surface`, `Ink`, `Muted`, `Medallion`, accent
 teal) are the same names in the asset catalog and in `aaru-client/src/styles.css`. The
-mascot (a small teal bird with books and a film reel) appears on signed-out surfaces only, always
-on a paper disc. The heron only as a quiet mark
-when the agent is working (breathing reed, not a bouncing dots spinner).
+mascot (a small teal bird with books and a film reel) is the app icon (cropped to the face, on
+deep teal; chosen 2026-10-21) and otherwise appears on signed-out surfaces only, always on a paper
+disc. The heron only as a quiet mark when the agent is working (breathing reed, not a bouncing
+dots spinner).
 
 Research basis (2026-10-09): the user's screenshots of Trakt web home, Trakt "Today" stories
 and the Pogdesign CAT weekly schedule, plus web research on tracker widgets and social
