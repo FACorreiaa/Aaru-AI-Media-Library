@@ -6,7 +6,7 @@ import {
   useRouter,
 } from '@tanstack/solid-router'
 import { For, Show, createSignal, onMount } from 'solid-js'
-import { z } from 'zod'
+import { optionalString } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
@@ -55,7 +55,9 @@ const providerNames = {
 export const Route = createFileRoute('/app_/settings')({
   head: () => ({ meta: [{ title: 'Settings · Aaru' }] }),
   // Trakt's sign-in comes back here with `?trakt=connected|denied|failed`.
-  validateSearch: z.object({ trakt: z.string().optional() }),
+  validateSearch: (search): { trakt?: string } => ({
+    trakt: optionalString(search.trakt),
+  }),
   beforeLoad: async () => {
     const session = await getSession()
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
