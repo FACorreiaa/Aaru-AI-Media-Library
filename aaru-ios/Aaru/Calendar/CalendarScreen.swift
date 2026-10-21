@@ -1,11 +1,12 @@
 import AaruAPI
 import SwiftUI
 
-/// What airs from the user's own shows: the CAT week grid (DESIGN.md §14) or Stremio's month with
-/// its agenda (§7), one switch apart. Both read the same `CalendarFeed`.
+/// What airs from the user's own shows: the CAT week grid (DESIGN.md §14), Stremio's month with
+/// its agenda (§7), or Missed, one switch apart. All read the same `CalendarFeed`; filters apply
+/// to every mode, and any episode opens the episode sheet (CAL-003).
 struct CalendarScreen: View {
     enum Mode: String, CaseIterable, Identifiable {
-        case week, month
+        case week, month, missed
 
         var id: Self {
             self
@@ -15,6 +16,7 @@ struct CalendarScreen: View {
             switch self {
             case .week: "Week"
             case .month: "Month"
+            case .missed: "Missed"
             }
         }
     }
@@ -24,6 +26,10 @@ struct CalendarScreen: View {
     let lists: ListsModel
 
     @AppStorage("calendar.mode") private var mode: Mode = .week
+    @AppStorage("calendar.hideWatched") private var hideWatched = false
+    @AppStorage("calendar.only") private var only: CalendarFilter.Only = .all
+    @AppStorage("calendar.kind") private var kind: CalendarFilter.Kind = .all
+    @State private var path: [String] = []
     @State private var feed: CalendarFeed
     @State private var week: WeekModel
     @State private var month: MonthModel
@@ -40,11 +46,12 @@ struct CalendarScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 switch mode {
                 case .week: WeekView(model: week) { showsSearch = true }
                 case .month: MonthView(model: month) { showsSearch = true }
+                case .missed: CatchUpView(feed: feed) { showsSearch = true }
                 }
             }
             .navigationTitle("Calendar")
@@ -59,7 +66,18 @@ struct CalendarScreen: View {
                         .pickerStyle(.segmented)
                         .fixedSize()
                     }
+                    ToolbarItem(placement: .secondaryAction) { filterMenu }
                 }
+                .sheet(isPresented: Binding(
+                    get: { feed.openedID != nil }, set: {
+                        if !$0 {
+                            feed.openedID = nil
+                        }
+                    }
+                )) {
+                    CalendarEpisodeSheet(feed: feed) { path.append($0) }
+                }
+                .onChange(of: currentFilter, initial: true) { feed.filter = currentFilter }
                 .task(id: mode) { await loadIfNeeded() }
                 .refreshable { await reload() }
                 .navigationDestination(for: String.self) { id in
@@ -75,10 +93,46 @@ struct CalendarScreen: View {
         }
     }
 
+    private var currentFilter: CalendarFilter {
+        CalendarFilter(hideWatched: hideWatched, only: only, kind: kind)
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            Toggle("Hide watched", isOn: $hideWatched)
+            Picker("Episodes", selection: $only) {
+                ForEach(CalendarFilter.Only.allCases) { Text($0.label).tag($0) }
+            }
+            Picker("Kind", selection: $kind) {
+                ForEach(CalendarFilter.Kind.allCases) { Text($0.label).tag($0) }
+            }
+            if currentFilter.isActive {
+                Button("Clear filters", role: .destructive) {
+                    hideWatched = false
+                    only = .all
+                    kind = .all
+                }
+            }
+        } label: {
+            Label(
+                "Filters",
+                systemImage: currentFilter.isActive
+                    ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle"
+            )
+        }
+    }
+
+    private var missedWindow: Range<Date> {
+        let today = feed.calendar.startOfDay(for: .now)
+        let start = feed.calendar.date(byAdding: .day, value: -CatchUpView.days, to: today) ?? today
+        return start ..< Date.now
+    }
+
     private func loadIfNeeded() async {
         switch mode {
         case .week: await week.loadIfNeeded()
         case .month: await month.loadIfNeeded()
+        case .missed: await feed.ensure(missedWindow, fetching: missedWindow)
         }
     }
 
@@ -86,6 +140,7 @@ struct CalendarScreen: View {
         switch mode {
         case .week: await week.load()
         case .month: await month.load()
+        case .missed: await feed.fetch(missedWindow)
         }
     }
 }

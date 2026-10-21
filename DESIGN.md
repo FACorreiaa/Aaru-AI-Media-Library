@@ -155,7 +155,9 @@ Missed is the catch-up list: what aired in the last four weeks without a tick, o
 show, oldest miss first, with how many episodes and how much time it adds up to. **Filters**
 (hide watched, premieres or finales only, shows or anime) apply to every mode, live in the URL,
 and show as removable chips. Every tick is a 44px round toggle that a pending write disables.
-(CAL-002, 2026-10-21.) Agent highlight later: "three premieres, one finale, you are behind on
+(CAL-002 web, CAL-003 iPhone, iPad and Mac, 2026-10-21: the same modes, rows, sheets and filters;
+on Apple the filters are a toolbar menu and the episode sheet has medium and large detents.)
+Agent highlight later: "three premieres, one finale, you are behind on
 two."
 
 ICS import lands here first, then the agent offers to add the missing shows to the library.
