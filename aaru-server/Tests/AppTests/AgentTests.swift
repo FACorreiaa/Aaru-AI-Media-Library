@@ -84,6 +84,7 @@ struct AgentTests {
         #expect(request.url.absoluteString == "http://stub.test/v1/messages")
         #expect(request.headers.contains { $0 == ("x-api-key", "test-key") })
         #expect(request.headers.contains { $0 == ("anthropic-version", "2023-06-01") })
+        #expect(!request.headers.contains { $0.0 == "anthropic-workspace-id" })
         let body = try #require(request.body.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] })
         for banned in ["temperature", "top_p", "top_k"] {
             #expect(body[banned] == nil)
@@ -101,6 +102,20 @@ struct AgentTests {
         await #expect(throws: ModelProviderError(status: 400, outOfCredit: true)) {
             _ = try await provider.complete(ModelRequest(system: "s", turns: [.user("x")], tools: [], maxTokens: 10))
         }
+    }
+
+    @Test("GRP-010: a key not scoped to a workspace sends the workspace id")
+    func workspaceHeader() async throws {
+        let transport = StubTransport { _ in
+            OutboundResponse(status: 200, body: Data(#"{"content":[],"stop_reason":"end_turn"}"#.utf8))
+        }
+        let provider = try AnthropicMessagesProvider(
+            transport: transport, apiKey: "test-key", model: "claude-haiku-5-5",
+            baseURL: #require(URL(string: "http://stub.test")), workspaceID: "wrkspc_test"
+        )
+        _ = try await provider.complete(ModelRequest(system: "s", turns: [.user("x")], tools: [], maxTokens: 10))
+        let request = try #require(transport.requests.first)
+        #expect(request.headers.contains { $0 == ("anthropic-workspace-id", "wrkspc_test") })
     }
 
     @Test("GRP-010: every agent tool reads; none writes")
