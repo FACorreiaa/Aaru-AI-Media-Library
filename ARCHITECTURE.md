@@ -1172,6 +1172,25 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 - Because beta clients hit prod, API changes must stay backward-compatible with the App Store
   build that is live.
 
+### Observability (owner, 2026-10-21)
+
+- **Grafana Cloud.** The cluster's Alloy scrapes `aaru-api` by pod annotation and collects
+  its logs. Probes cover `api.aaruapp.com/v1/health`, `aaruapp.com` and `beta.aaruapp.com`, and
+  the "Apps / Aaru" board and alerts are generated in the infra repo's `observability/`.
+  `/metrics` is served on its own listener (`METRICS_PORT`, 9090), outside the Service and the
+  Ingress, so it is never public. Route labels use the endpoint template, never an id.
+- **Sentry, errors only.** Server, web (browser and Worker), Apple apps and the browser
+  extension report errors and crashes. There is no tracing, no session replay and no PII. URLs
+  lose their query; the extension sends a streaming site's origin only. With no DSN it is a
+  no-op.
+- **PostHog, server only.** A fixed list of product events (`account_created`,
+  `import_completed`, `library_action`, `list_created`, `group_created`, `friend_added`,
+  `agent_plan_decided`) with a few fixed-word properties, keyed by the account UUID, with
+  `$process_person_profile: false` and no IP. Clients send none.
+- `docs/privacy.md` states all of this, and changes before any of it does.
+- `/internal/metrics` (the `{"users": N}` count for facorreia.com/apps, `METRICS_SECRET`) is a
+  separate contract and stays as it is.
+
 ## Decisions already made
 
 | Topic | Decision |
