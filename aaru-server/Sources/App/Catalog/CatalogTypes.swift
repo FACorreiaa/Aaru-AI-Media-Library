@@ -102,6 +102,11 @@ struct CatalogProviders: Sendable {
     var music: (any CatalogSearching & TrackListing)?
     /// Discover's album rows (MUS-002, ListenBrainz). Optional: without it they are not shown.
     var releases: (any DiscoverListing)?
+    /// Concerts (MUS-003, Ticketmaster). Optional: nil without `TICKETMASTER_API_KEY`, and every
+    /// concert answer is then `unavailable`.
+    var concerts: (any ConcertListing)?
+    /// The "Concerts near" city picker (MUS-003, Open-Meteo).
+    var places: (any PlaceSearching)?
 }
 
 extension Date {

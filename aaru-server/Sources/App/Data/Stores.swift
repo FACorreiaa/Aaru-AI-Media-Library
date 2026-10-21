@@ -386,4 +386,5 @@ struct Stores: Sendable {
     var groups: any GroupStore
     var groupKinds: any GroupKindStore
     var agent: any AgentStore
+    var concerts: any ConcertStore
 }

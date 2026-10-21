@@ -24,8 +24,8 @@ struct RedactedLogRequestsMiddleware<Context: RequestContext>: RouterMiddleware 
         return try await next(request, context)
     }
 
-    /// `/stremio/<secret>/…` becomes `/stremio/[token]/…`; the Trakt callback loses its query.
-    /// Any other path keeps its query, as before.
+    /// `/stremio/<secret>/…` becomes `/stremio/[token]/…`; the Trakt callback and the concert
+    /// city search (a place the user typed) lose their query. Any other path keeps its query.
     static func redacted(_ path: String, query: String?) -> String {
         var path = path
         if path.hasPrefix("/stremio/") {
@@ -34,7 +34,7 @@ struct RedactedLogRequestsMiddleware<Context: RequestContext>: RouterMiddleware 
             path = "/stremio/[token]" + tail
             return path
         }
-        if path == "/v1/imports/trakt/callback" {
+        if path == "/v1/imports/trakt/callback" || path == "/v1/concerts/places" {
             return path
         }
         guard let query, !query.isEmpty else { return path }

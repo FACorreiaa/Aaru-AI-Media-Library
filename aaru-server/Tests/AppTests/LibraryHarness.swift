@@ -37,6 +37,7 @@ struct LibraryHarness {
         webPush: (any WebPushSending)? = nil,
         push: (any PushSending)? = nil,
         model: (any ModelProviding)? = nil,
+        concerts: (any ConcertListing)? = nil,
         _ body: @escaping @Sendable (LibraryHarness) async throws -> Void
     ) async throws {
         try await withMigratedStores { stores in
@@ -48,6 +49,7 @@ struct LibraryHarness {
                 model: model
             )
             services.webPush = webPush
+            services.concerts = ConcertService(stores: stores, listing: concerts, places: nil)
             if push != nil || webPush != nil {
                 services.groups.push = UserPush(stores: stores, sender: push, webPush: webPush)
             }

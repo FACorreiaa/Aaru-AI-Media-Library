@@ -386,6 +386,40 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/discover/season`.
     /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)`.
     func getDiscoverSeason(_ input: Operations.GetDiscoverSeason.Input) async throws -> Operations.GetDiscoverSeason.Output
+    /// Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
+    ///
+    /// POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a kilometre) and used for this request only: never stored, never logged. With no coordinates the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in the same area, cached by the server and linked out to Ticketmaster for tickets.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/near`.
+    /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)`.
+    func getConcertsNear(_ input: Operations.GetConcertsNear.Input) async throws -> Operations.GetConcertsNear.Output
+    /// Upcoming concerts by the artists of the user's albums (MUS-003).
+    ///
+    /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
+    ///
+    /// - Remark: HTTP `GET /v1/concerts/artists`.
+    /// - Remark: Generated from `#/paths//v1/concerts/artists/get(getArtistConcerts)`.
+    func getArtistConcerts(_ input: Operations.GetArtistConcerts.Input) async throws -> Operations.GetArtistConcerts.Output
+    /// Cities matching what the user typed, for the "Concerts near" picker (MUS-003).
+    ///
+    /// - Remark: HTTP `GET /v1/concerts/places`.
+    /// - Remark: Generated from `#/paths//v1/concerts/places/get(searchConcertPlaces)`.
+    func searchConcertPlaces(_ input: Operations.SearchConcertPlaces.Input) async throws -> Operations.SearchConcertPlaces.Output
+    /// The saved "Concerts near" city, and whether concerts are on at all.
+    ///
+    /// - Remark: HTTP `GET /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/get(getConcertPlace)`.
+    func getConcertPlace(_ input: Operations.GetConcertPlace.Input) async throws -> Operations.GetConcertPlace.Output
+    /// Saves the "Concerts near" city, rounded to two decimals.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/put(saveConcertPlace)`.
+    func saveConcertPlace(_ input: Operations.SaveConcertPlace.Input) async throws -> Operations.SaveConcertPlace.Output
+    /// Forgets the "Concerts near" city.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)`.
+    func deleteConcertPlace(_ input: Operations.DeleteConcertPlace.Input) async throws -> Operations.DeleteConcertPlace.Output
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -1511,6 +1545,70 @@ extension APIProtocol {
             query: query,
             headers: headers
         ))
+    }
+    /// Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
+    ///
+    /// POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a kilometre) and used for this request only: never stored, never logged. With no coordinates the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in the same area, cached by the server and linked out to Ticketmaster for tickets.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/near`.
+    /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)`.
+    public func getConcertsNear(
+        headers: Operations.GetConcertsNear.Input.Headers = .init(),
+        body: Operations.GetConcertsNear.Input.Body
+    ) async throws -> Operations.GetConcertsNear.Output {
+        try await getConcertsNear(Operations.GetConcertsNear.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Upcoming concerts by the artists of the user's albums (MUS-003).
+    ///
+    /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
+    ///
+    /// - Remark: HTTP `GET /v1/concerts/artists`.
+    /// - Remark: Generated from `#/paths//v1/concerts/artists/get(getArtistConcerts)`.
+    public func getArtistConcerts(headers: Operations.GetArtistConcerts.Input.Headers = .init()) async throws -> Operations.GetArtistConcerts.Output {
+        try await getArtistConcerts(Operations.GetArtistConcerts.Input(headers: headers))
+    }
+    /// Cities matching what the user typed, for the "Concerts near" picker (MUS-003).
+    ///
+    /// - Remark: HTTP `GET /v1/concerts/places`.
+    /// - Remark: Generated from `#/paths//v1/concerts/places/get(searchConcertPlaces)`.
+    public func searchConcertPlaces(
+        query: Operations.SearchConcertPlaces.Input.Query,
+        headers: Operations.SearchConcertPlaces.Input.Headers = .init()
+    ) async throws -> Operations.SearchConcertPlaces.Output {
+        try await searchConcertPlaces(Operations.SearchConcertPlaces.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// The saved "Concerts near" city, and whether concerts are on at all.
+    ///
+    /// - Remark: HTTP `GET /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/get(getConcertPlace)`.
+    public func getConcertPlace(headers: Operations.GetConcertPlace.Input.Headers = .init()) async throws -> Operations.GetConcertPlace.Output {
+        try await getConcertPlace(Operations.GetConcertPlace.Input(headers: headers))
+    }
+    /// Saves the "Concerts near" city, rounded to two decimals.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/put(saveConcertPlace)`.
+    public func saveConcertPlace(
+        headers: Operations.SaveConcertPlace.Input.Headers = .init(),
+        body: Operations.SaveConcertPlace.Input.Body
+    ) async throws -> Operations.SaveConcertPlace.Output {
+        try await saveConcertPlace(Operations.SaveConcertPlace.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Forgets the "Concerts near" city.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)`.
+    public func deleteConcertPlace(headers: Operations.DeleteConcertPlace.Input.Headers = .init()) async throws -> Operations.DeleteConcertPlace.Output {
+        try await deleteConcertPlace(Operations.DeleteConcertPlace.Input(headers: headers))
     }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
@@ -5206,6 +5304,333 @@ public enum Components {
                 case page
                 case hasMore
                 case total
+                case unavailable
+            }
+        }
+        /// One music event from Ticketmaster. Tickets are bought there, never in Aaru.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Concert`.
+        public struct Concert: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Concert/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Concert/name`.
+            public var name: Swift.String
+            /// The acts on the bill, headliner first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Concert/artists`.
+            public var artists: [Swift.String]
+            /// The exact start, when announced.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Concert/startsAt`.
+            public var startsAt: Foundation.Date?
+            /// The day at the venue, YYYY-MM-DD.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Concert/localDate`.
+            public var localDate: Swift.String
+            /// The time at the venue, HH:mm, when announced.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Concert/localTime`.
+            public var localTime: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Concert/venue`.
+            public var venue: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Concert/city`.
+            public var city: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Concert/country`.
+            public var country: Swift.String?
+            /// From the searched point. Absent for an artist's concerts.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Concert/distanceKm`.
+            public var distanceKm: Swift.Double?
+            /// Ticketmaster's event page.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Concert/url`.
+            public var url: Swift.String
+            /// Ticketmaster's image for the event, referenced, never hosted.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Concert/imageUrl`.
+            public var imageUrl: Swift.String?
+            /// Creates a new `Concert`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - artists: The acts on the bill, headliner first.
+            ///   - startsAt: The exact start, when announced.
+            ///   - localDate: The day at the venue, YYYY-MM-DD.
+            ///   - localTime: The time at the venue, HH:mm, when announced.
+            ///   - venue:
+            ///   - city:
+            ///   - country:
+            ///   - distanceKm: From the searched point. Absent for an artist's concerts.
+            ///   - url: Ticketmaster's event page.
+            ///   - imageUrl: Ticketmaster's image for the event, referenced, never hosted.
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                artists: [Swift.String],
+                startsAt: Foundation.Date? = nil,
+                localDate: Swift.String,
+                localTime: Swift.String? = nil,
+                venue: Swift.String? = nil,
+                city: Swift.String? = nil,
+                country: Swift.String? = nil,
+                distanceKm: Swift.Double? = nil,
+                url: Swift.String,
+                imageUrl: Swift.String? = nil
+            ) {
+                self.id = id
+                self.name = name
+                self.artists = artists
+                self.startsAt = startsAt
+                self.localDate = localDate
+                self.localTime = localTime
+                self.venue = venue
+                self.city = city
+                self.country = country
+                self.distanceKm = distanceKm
+                self.url = url
+                self.imageUrl = imageUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case artists
+                case startsAt
+                case localDate
+                case localTime
+                case venue
+                case city
+                case country
+                case distanceKm
+                case url
+                case imageUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertPlace`.
+        public struct ConcertPlace: Codable, Hashable, Sendable {
+            /// 1 to 200 characters.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPlace/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConcertPlace/region`.
+            public var region: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ConcertPlace/country`.
+            public var country: Swift.String?
+            /// ISO 3166-1 alpha-2.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPlace/countryCode`.
+            public var countryCode: Swift.String?
+            /// Rounded to two decimals by the server.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPlace/latitude`.
+            public var latitude: Swift.Double
+            /// Rounded to two decimals by the server.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPlace/longitude`.
+            public var longitude: Swift.Double
+            /// Creates a new `ConcertPlace`.
+            ///
+            /// - Parameters:
+            ///   - name: 1 to 200 characters.
+            ///   - region:
+            ///   - country:
+            ///   - countryCode: ISO 3166-1 alpha-2.
+            ///   - latitude: Rounded to two decimals by the server.
+            ///   - longitude: Rounded to two decimals by the server.
+            public init(
+                name: Swift.String,
+                region: Swift.String? = nil,
+                country: Swift.String? = nil,
+                countryCode: Swift.String? = nil,
+                latitude: Swift.Double,
+                longitude: Swift.Double
+            ) {
+                self.name = name
+                self.region = region
+                self.country = country
+                self.countryCode = countryCode
+                self.latitude = latitude
+                self.longitude = longitude
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case region
+                case country
+                case countryCode
+                case latitude
+                case longitude
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertPlaceList`.
+        public struct ConcertPlaceList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConcertPlaceList/items`.
+            public var items: [Components.Schemas.ConcertPlace]
+            /// Creates a new `ConcertPlaceList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.ConcertPlace]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertPlaceSetting`.
+        public struct ConcertPlaceSetting: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConcertPlaceSetting/place`.
+            public var place: Components.Schemas.ConcertPlace?
+            /// False when concerts are off on this server; clients hide the Concerts view.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPlaceSetting/available`.
+            public var available: Swift.Bool
+            /// Creates a new `ConcertPlaceSetting`.
+            ///
+            /// - Parameters:
+            ///   - place:
+            ///   - available: False when concerts are off on this server; clients hide the Concerts view.
+            public init(
+                place: Components.Schemas.ConcertPlace? = nil,
+                available: Swift.Bool
+            ) {
+                self.place = place
+                self.available = available
+            }
+            public enum CodingKeys: String, CodingKey {
+                case place
+                case available
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertsNearRequest`.
+        public struct ConcertsNearRequest: Codable, Hashable, Sendable {
+            /// Sent with `longitude` for a one-off position; absent uses the saved city.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertsNearRequest/latitude`.
+            public var latitude: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ConcertsNearRequest/longitude`.
+            public var longitude: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ConcertsNearRequest/radiusKm`.
+            @frozen public enum RadiusKmPayload: Int, Codable, Hashable, Sendable, CaseIterable {
+                case _25 = 25
+                case _50 = 50
+                case _100 = 100
+            }
+            /// - Remark: Generated from `#/components/schemas/ConcertsNearRequest/radiusKm`.
+            public var radiusKm: Components.Schemas.ConcertsNearRequest.RadiusKmPayload
+            /// 1-based, at most 10.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertsNearRequest/page`.
+            public var page: Swift.Int?
+            /// Creates a new `ConcertsNearRequest`.
+            ///
+            /// - Parameters:
+            ///   - latitude: Sent with `longitude` for a one-off position; absent uses the saved city.
+            ///   - longitude:
+            ///   - radiusKm:
+            ///   - page: 1-based, at most 10.
+            public init(
+                latitude: Swift.Double? = nil,
+                longitude: Swift.Double? = nil,
+                radiusKm: Components.Schemas.ConcertsNearRequest.RadiusKmPayload,
+                page: Swift.Int? = nil
+            ) {
+                self.latitude = latitude
+                self.longitude = longitude
+                self.radiusKm = radiusKm
+                self.page = page
+            }
+            public enum CodingKeys: String, CodingKey {
+                case latitude
+                case longitude
+                case radiusKm
+                case page
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertPage`.
+        public struct ConcertPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConcertPage/place`.
+            public var place: Components.Schemas.ConcertPlace?
+            /// - Remark: Generated from `#/components/schemas/ConcertPage/radiusKm`.
+            public var radiusKm: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ConcertPage/items`.
+            public var items: [Components.Schemas.Concert]
+            /// - Remark: Generated from `#/components/schemas/ConcertPage/page`.
+            public var page: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ConcertPage/hasMore`.
+            public var hasMore: Swift.Bool
+            /// Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPage/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `ConcertPage`.
+            ///
+            /// - Parameters:
+            ///   - place:
+            ///   - radiusKm:
+            ///   - items:
+            ///   - page:
+            ///   - hasMore:
+            ///   - unavailable: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            public init(
+                place: Components.Schemas.ConcertPlace? = nil,
+                radiusKm: Swift.Int,
+                items: [Components.Schemas.Concert],
+                page: Swift.Int,
+                hasMore: Swift.Bool,
+                unavailable: Swift.Bool
+            ) {
+                self.place = place
+                self.radiusKm = radiusKm
+                self.items = items
+                self.page = page
+                self.hasMore = hasMore
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case place
+                case radiusKm
+                case items
+                case page
+                case hasMore
+                case unavailable
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ArtistConcerts`.
+        public struct ArtistConcerts: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ArtistConcerts/items`.
+            public var items: [Components.Schemas.Concert]
+            /// Library artists Ticketmaster knows.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ArtistConcerts/matched`.
+            public var matched: Swift.Int
+            /// Library artists not looked up yet.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ArtistConcerts/pending`.
+            public var pending: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ArtistConcerts/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `ArtistConcerts`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - matched: Library artists Ticketmaster knows.
+            ///   - pending: Library artists not looked up yet.
+            ///   - unavailable:
+            public init(
+                items: [Components.Schemas.Concert],
+                matched: Swift.Int,
+                pending: Swift.Int,
+                unavailable: Swift.Bool
+            ) {
+                self.items = items
+                self.matched = matched
+                self.pending = pending
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case matched
+                case pending
                 case unavailable
             }
         }
@@ -18867,6 +19292,810 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
+    ///
+    /// POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a kilometre) and used for this request only: never stored, never logged. With no coordinates the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in the same area, cached by the server and linked out to Ticketmaster for tickets.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/near`.
+    /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)`.
+    public enum GetConcertsNear {
+        public static let id: Swift.String = "getConcertsNear"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/concerts/near/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetConcertsNear.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetConcertsNear.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetConcertsNear.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/concerts/near/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/near/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ConcertsNearRequest)
+            }
+            public var body: Operations.GetConcertsNear.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.GetConcertsNear.Input.Headers = .init(),
+                body: Operations.GetConcertsNear.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/near/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/concerts/near/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetConcertsNear.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetConcertsNear.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The page. `unavailable` when concerts are off or the provider is down.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetConcertsNear.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetConcertsNear.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Upcoming concerts by the artists of the user's albums (MUS-003).
+    ///
+    /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
+    ///
+    /// - Remark: HTTP `GET /v1/concerts/artists`.
+    /// - Remark: Generated from `#/paths//v1/concerts/artists/get(getArtistConcerts)`.
+    public enum GetArtistConcerts {
+        public static let id: Swift.String = "getArtistConcerts"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/concerts/artists/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetArtistConcerts.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetArtistConcerts.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetArtistConcerts.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetArtistConcerts.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/artists/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/concerts/artists/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ArtistConcerts)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ArtistConcerts {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetArtistConcerts.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetArtistConcerts.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The concerts.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/artists/get(getArtistConcerts)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetArtistConcerts.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetArtistConcerts.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/artists/get(getArtistConcerts)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Cities matching what the user typed, for the "Concerts near" picker (MUS-003).
+    ///
+    /// - Remark: HTTP `GET /v1/concerts/places`.
+    /// - Remark: Generated from `#/paths//v1/concerts/places/get(searchConcertPlaces)`.
+    public enum SearchConcertPlaces {
+        public static let id: Swift.String = "searchConcertPlaces"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/concerts/places/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// 2 to 100 characters. Not logged.
+                ///
+                /// - Remark: Generated from `#/paths/v1/concerts/places/GET/query/q`.
+                public var q: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - q: 2 to 100 characters. Not logged.
+                public init(q: Swift.String) {
+                    self.q = q
+                }
+            }
+            public var query: Operations.SearchConcertPlaces.Input.Query
+            /// - Remark: Generated from `#/paths/v1/concerts/places/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcertPlaces.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcertPlaces.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchConcertPlaces.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.SearchConcertPlaces.Input.Query,
+                headers: Operations.SearchConcertPlaces.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/places/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/concerts/places/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertPlaceList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertPlaceList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchConcertPlaces.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchConcertPlaces.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Up to eight places, best first.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/places/get(searchConcertPlaces)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchConcertPlaces.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchConcertPlaces.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/places/get(searchConcertPlaces)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The saved "Concerts near" city, and whether concerts are on at all.
+    ///
+    /// - Remark: HTTP `GET /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/get(getConcertPlace)`.
+    public enum GetConcertPlace {
+        public static let id: Swift.String = "getConcertPlace"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/concert-place/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetConcertPlace.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetConcertPlace.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetConcertPlace.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetConcertPlace.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/concert-place/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/concert-place/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertPlaceSetting)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertPlaceSetting {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetConcertPlace.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetConcertPlace.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The setting.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/concert-place/get(getConcertPlace)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetConcertPlace.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetConcertPlace.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/concert-place/get(getConcertPlace)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Saves the "Concerts near" city, rounded to two decimals.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/put(saveConcertPlace)`.
+    public enum SaveConcertPlace {
+        public static let id: Swift.String = "saveConcertPlace"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/concert-place/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SaveConcertPlace.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SaveConcertPlace.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SaveConcertPlace.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/concert-place/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/concert-place/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.ConcertPlace)
+            }
+            public var body: Operations.SaveConcertPlace.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SaveConcertPlace.Input.Headers = .init(),
+                body: Operations.SaveConcertPlace.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/concert-place/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/concert-place/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertPlaceSetting)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertPlaceSetting {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SaveConcertPlace.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SaveConcertPlace.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/concert-place/put(saveConcertPlace)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SaveConcertPlace.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SaveConcertPlace.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/concert-place/put(saveConcertPlace)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Forgets the "Concerts near" city.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/concert-place`.
+    /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)`.
+    public enum DeleteConcertPlace {
+        public static let id: Swift.String = "deleteConcertPlace"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/concert-place/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteConcertPlace.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteConcertPlace.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteConcertPlace.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.DeleteConcertPlace.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Removed, or there was none.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteConcertPlace.Output.NoContent)
+            /// Removed, or there was none.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteConcertPlace.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

@@ -1278,6 +1278,98 @@ paths:
                 $ref: '#/components/schemas/SeasonPage'
         default:
           $ref: '#/components/responses/Error'
+  /v1/concerts/near:
+    post:
+      operationId: getConcertsNear
+      summary: Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
+      description: >-
+        POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a
+        kilometre) and used for this request only: never stored, never logged. With no coordinates
+        the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in
+        the same area, cached by the server and linked out to Ticketmaster for tickets.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConcertsNearRequest'}
+      responses:
+        '200':
+          description: The page. `unavailable` when concerts are off or the provider is down.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConcertPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/concerts/artists:
+    get:
+      operationId: getArtistConcerts
+      summary: Upcoming concerts by the artists of the user's albums (MUS-003).
+      description: >-
+        Derived from the user's own library, like the calendar; dropped albums aside. An artist
+        counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in
+        the last hour may still be `pending`.
+      responses:
+        '200':
+          description: The concerts.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ArtistConcerts'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/concerts/places:
+    get:
+      operationId: searchConcertPlaces
+      summary: Cities matching what the user typed, for the "Concerts near" picker (MUS-003).
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 2 to 100 characters. Not logged.
+          schema: {type: string}
+      responses:
+        '200':
+          description: Up to eight places, best first.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConcertPlaceList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/concert-place:
+    get:
+      operationId: getConcertPlace
+      summary: The saved "Concerts near" city, and whether concerts are on at all.
+      responses:
+        '200':
+          description: The setting.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConcertPlaceSetting'}
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveConcertPlace
+      summary: Saves the "Concerts near" city, rounded to two decimals.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConcertPlace'}
+      responses:
+        '200':
+          description: Saved.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConcertPlaceSetting'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteConcertPlace
+      summary: Forgets the "Concerts near" city.
+      responses:
+        '204':
+          description: Removed, or there was none.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}:
     get:
       operationId: getTitle
@@ -2833,6 +2925,107 @@ components:
         unavailable:
           type: boolean
           description: The provider did not answer and nothing was cached; not an empty season.
+    Concert:
+      type: object
+      description: One music event from Ticketmaster. Tickets are bought there, never in Aaru.
+      required: [id, name, artists, localDate, url]
+      properties:
+        id: {type: string}
+        name: {type: string}
+        artists:
+          type: array
+          description: The acts on the bill, headliner first.
+          items: {type: string}
+        startsAt:
+          type: string
+          format: date-time
+          description: The exact start, when announced.
+        localDate:
+          type: string
+          description: The day at the venue, YYYY-MM-DD.
+        localTime:
+          type: string
+          description: The time at the venue, HH:mm, when announced.
+        venue: {type: string}
+        city: {type: string}
+        country: {type: string}
+        distanceKm:
+          type: number
+          description: From the searched point. Absent for an artist's concerts.
+        url:
+          type: string
+          description: Ticketmaster's event page.
+        imageUrl:
+          type: string
+          description: Ticketmaster's image for the event, referenced, never hosted.
+    ConcertPlace:
+      type: object
+      required: [name, latitude, longitude]
+      properties:
+        name: {type: string, description: '1 to 200 characters.'}
+        region: {type: string}
+        country: {type: string}
+        countryCode: {type: string, description: ISO 3166-1 alpha-2.}
+        latitude: {type: number, description: Rounded to two decimals by the server.}
+        longitude: {type: number, description: Rounded to two decimals by the server.}
+    ConcertPlaceList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ConcertPlace'}
+    ConcertPlaceSetting:
+      type: object
+      required: [available]
+      properties:
+        place: {$ref: '#/components/schemas/ConcertPlace'}
+        available:
+          type: boolean
+          description: False when concerts are off on this server; clients hide the Concerts view.
+    ConcertsNearRequest:
+      type: object
+      required: [radiusKm]
+      properties:
+        latitude:
+          type: number
+          description: Sent with `longitude` for a one-off position; absent uses the saved city.
+        longitude: {type: number}
+        radiusKm:
+          type: integer
+          enum: [25, 50, 100]
+        page:
+          type: integer
+          description: 1-based, at most 10.
+          default: 1
+    ConcertPage:
+      type: object
+      required: [radiusKm, items, page, hasMore, unavailable]
+      properties:
+        place: {$ref: '#/components/schemas/ConcertPlace'}
+        radiusKm: {type: integer}
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Concert'}
+        page: {type: integer}
+        hasMore: {type: boolean}
+        unavailable:
+          type: boolean
+          description: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+    ArtistConcerts:
+      type: object
+      required: [items, matched, pending, unavailable]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Concert'}
+        matched:
+          type: integer
+          description: Library artists Ticketmaster knows.
+        pending:
+          type: integer
+          description: Library artists not looked up yet.
+        unavailable: {type: boolean}
     Episode:
       type: object
       required: [season, number, airTimeKnown]
