@@ -4128,7 +4128,7 @@ public enum Components {
                 case next
             }
         }
-        /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans.
+        /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. `biggestDay` is the single local day with the most time (then episodes), the earliest on a tie.
         ///
         /// - Remark: Generated from `#/components/schemas/Stats`.
         public struct Stats: Codable, Hashable, Sendable {
@@ -4190,6 +4190,27 @@ public enum Components {
             public var first: Components.Schemas.StatsMoment?
             /// - Remark: Generated from `#/components/schemas/Stats/last`.
             public var last: Components.Schemas.StatsMoment?
+            /// GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/topGenres`.
+            public var topGenres: [Components.Schemas.StatsGenre]
+            /// - Remark: Generated from `#/components/schemas/Stats/biggestDay`.
+            public var biggestDay: Components.Schemas.StatsBucket?
+            /// GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/persona`.
+            @frozen public enum PersonaPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case binger = "binger"
+                case bookworm = "bookworm"
+                case anime = "anime"
+                case completionist = "completionist"
+                case explorer = "explorer"
+                case steady = "steady"
+            }
+            /// GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/persona`.
+            public var persona: Components.Schemas.Stats.PersonaPayload?
             /// Creates a new `Stats`.
             ///
             /// - Parameters:
@@ -4211,6 +4232,9 @@ public enum Components {
             ///   - ratings:
             ///   - first:
             ///   - last:
+            ///   - topGenres: GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored.
+            ///   - biggestDay:
+            ///   - persona: GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
             public init(
                 span: Components.Schemas.Stats.SpanPayload,
                 year: Swift.Int,
@@ -4229,7 +4253,10 @@ public enum Components {
                 topTitles: [Components.Schemas.StatsTitle],
                 ratings: Components.Schemas.StatsRatings,
                 first: Components.Schemas.StatsMoment? = nil,
-                last: Components.Schemas.StatsMoment? = nil
+                last: Components.Schemas.StatsMoment? = nil,
+                topGenres: [Components.Schemas.StatsGenre],
+                biggestDay: Components.Schemas.StatsBucket? = nil,
+                persona: Components.Schemas.Stats.PersonaPayload? = nil
             ) {
                 self.span = span
                 self.year = year
@@ -4249,6 +4276,9 @@ public enum Components {
                 self.ratings = ratings
                 self.first = first
                 self.last = last
+                self.topGenres = topGenres
+                self.biggestDay = biggestDay
+                self.persona = persona
             }
             public enum CodingKeys: String, CodingKey {
                 case span
@@ -4269,6 +4299,40 @@ public enum Components {
                 case ratings
                 case first
                 case last
+                case topGenres
+                case biggestDay
+                case persona
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsGenre`.
+        public struct StatsGenre: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/minutes`.
+            public var minutes: Swift.Int
+            /// How many titles in the period carried this genre.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/titles`.
+            public var titles: Swift.Int
+            /// Creates a new `StatsGenre`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - minutes:
+            ///   - titles: How many titles in the period carried this genre.
+            public init(
+                name: Swift.String,
+                minutes: Swift.Int,
+                titles: Swift.Int
+            ) {
+                self.name = name
+                self.minutes = minutes
+                self.titles = titles
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case minutes
+                case titles
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsTotals`.

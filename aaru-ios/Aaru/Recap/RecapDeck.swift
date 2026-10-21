@@ -4,6 +4,8 @@ import Foundation
 typealias Stats = Components.Schemas.Stats
 typealias StatsTitle = Components.Schemas.StatsTitle
 typealias StatsMoment = Components.Schemas.StatsMoment
+typealias StatsGenre = Components.Schemas.StatsGenre
+typealias Persona = Components.Schemas.Stats.PersonaPayload
 typealias TitleSummary = Components.Schemas.TitleSummary
 
 /// One recap: a whole year, or one month of it.
@@ -51,7 +53,7 @@ struct RecapPeriod: Hashable, Identifiable {
     }
 }
 
-/// GAM-006a: one full-screen card of the Recap story.
+/// GAM-006a/e: one full-screen card of the Recap story.
 enum RecapCard {
     struct Bar: Hashable {
         var label: String
@@ -63,12 +65,16 @@ enum RecapCard {
     case intro(heading: String, partial: Bool)
     case time(minutes: Int, caption: String)
     case episodes(count: Int, bars: [Bar], busiest: String?)
+    case biggestDay(day: String, episodes: Int, minutes: Int)
     case top(StatsTitle)
     case topList([StatsTitle])
+    case genres([StatsGenre])
+    case kinds([(kind: MediaKind, share: Double)])
     case finished([(kind: MediaKind, count: Int)])
     case run(days: Int, range: String)
     case ratings(mean: Double, count: Int, highest: TitleSummary?, highestRating: Double?)
     case bookends(first: StatsMoment, last: StatsMoment)
+    case persona(title: String, line: String)
     case summary
 }
 
@@ -100,12 +106,39 @@ enum RecapDeck {
         if totals.episodesWatched > 0 {
             deck.append(.episodes(count: totals.episodesWatched, bars: bars(stats), busiest: busiestLine(stats)))
         }
+        deck += titleCards(stats)
+        deck += closingCards(stats)
+        deck.append(.summary)
+        return deck
+    }
+
+    /// The year's biggest day, then the titles and genres and kinds the time went to.
+    private static func titleCards(_ stats: Stats) -> [RecapCard] {
+        var deck: [RecapCard] = []
+        // A month's bars already show its days; the biggest day is a year's card.
+        if stats.month == nil, let day = stats.biggestDay {
+            deck.append(.biggestDay(day: dayLabel(day.start), episodes: day.episodes, minutes: day.minutes))
+        }
         if let top = stats.topTitles.first {
             deck.append(.top(top))
         }
         if stats.topTitles.count > 1 {
             deck.append(.topList(stats.topTitles))
         }
+        if !stats.topGenres.isEmpty {
+            deck.append(.genres(stats.topGenres))
+        }
+        let kinds = kindShares(stats)
+        if stats.month == nil, kinds.count > 1 {
+            deck.append(.kinds(kinds))
+        }
+        return deck
+    }
+
+    /// What was finished, the run, ratings, bookends, and the year's persona.
+    private static func closingCards(_ stats: Stats) -> [RecapCard] {
+        let totals = stats.totals
+        var deck: [RecapCard] = []
         let parts: [(kind: MediaKind, count: Int)] = [
             (.film, totals.moviesFinished), (.show, totals.showsFinished),
             (.anime, totals.animeFinished), (.book, totals.booksFinished),
@@ -125,8 +158,33 @@ enum RecapDeck {
         if let first = stats.first, let last = stats.last, first.title.id != last.title.id {
             deck.append(.bookends(first: first, last: last))
         }
-        deck.append(.summary)
+        if stats.month == nil, let persona = stats.persona {
+            let words = personaWords(persona)
+            deck.append(.persona(title: words.title, line: words.line))
+        }
         return deck
+    }
+
+    /// GAM-006e: the words for each persona; the twin of the web's `PERSONAS`. The server picks
+    /// one by rule; these are drafts the owner signs off.
+    static func personaWords(_ persona: Persona) -> (title: String, line: String) {
+        switch persona {
+        case .binger: ("The Binger", "When a story grabs you, you stay for the next one.")
+        case .bookworm: ("The Bookworm", "Pages won out over screens.")
+        case .anime: ("The Anime Devotee", "Most of your hours went to anime.")
+        case .completionist: ("The Completionist", "You finish what you start.")
+        case .explorer: ("The Explorer", "Films, shows, anime, books: you went everywhere.")
+        case .steady: ("The Steady One", "A little, often. Stories at your own pace.")
+        }
+    }
+
+    /// Kinds with time, biggest share first. Books have no minutes, so they never show here.
+    static func kindShares(_ stats: Stats) -> [(kind: MediaKind, share: Double)] {
+        let total = stats.byKind.map(\.minutes).reduce(0, +)
+        guard total > 0 else { return [] }
+        return stats.byKind.filter { $0.minutes > 0 }
+            .sorted { $0.minutes > $1.minutes }
+            .map { (MediaKind($0.kind), Double($0.minutes) / Double(total)) }
     }
 
     static func timeCaption(_ minutes: Int) -> String {
@@ -212,6 +270,12 @@ enum RecapDeck {
         }
         if let run = stats.longestRun, run.days > 1 {
             lines.append("\(run.days) days in a row")
+        }
+        if let genre = stats.topGenres.first {
+            lines.append("Top genre: \(genre.name)")
+        }
+        if stats.month == nil, let persona = stats.persona {
+            lines.append(personaWords(persona).title)
         }
         return lines
     }

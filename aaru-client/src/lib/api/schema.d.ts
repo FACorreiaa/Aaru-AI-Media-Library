@@ -1594,7 +1594,7 @@ export interface components {
       since: string
       next?: components['schemas']['EpisodeRef']
     }
-    /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. */
+    /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. `biggestDay` is the single local day with the most time (then episodes), the earliest on a tie. */
     Stats: {
       /** @enum {string} */
       span: 'month' | 'year' | 'all' | 'last7' | 'last30'
@@ -1622,6 +1622,26 @@ export interface components {
       ratings: components['schemas']['StatsRatings']
       first?: components['schemas']['StatsMoment']
       last?: components['schemas']['StatsMoment']
+      /** @description GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored. */
+      topGenres: components['schemas']['StatsGenre'][]
+      biggestDay?: components['schemas']['StatsBucket']
+      /**
+       * @description GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+       * @enum {string}
+       */
+      persona?:
+        | 'binger'
+        | 'bookworm'
+        | 'anime'
+        | 'completionist'
+        | 'explorer'
+        | 'steady'
+    }
+    StatsGenre: {
+      name: string
+      minutes: number
+      /** @description How many titles in the period carried this genre. */
+      titles: number
     }
     StatsTotals: {
       episodesWatched: number

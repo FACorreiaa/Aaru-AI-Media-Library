@@ -18,7 +18,7 @@ struct PostgresStatsStore: StatsStore {
         // that day is the day, in every time zone.
         let query: SQLQueryString = """
         WITH activity AS (
-            SELECT li.title_id, t.type, t.is_anime, li.rating, ep.watched_at AS at,
+            SELECT li.title_id, t.type, t.is_anime, t.genres, li.rating, ep.watched_at AS at,
                 (ep.watched_at AT TIME ZONE \(bind: zone))::date AS day,
                 1 AS episodes, coalesce(se.runtime_minutes, t.runtime_minutes, 0) AS minutes, false AS finished
             FROM episode_progress ep
@@ -28,7 +28,7 @@ struct PostgresStatsStore: StatsStore {
                 AND se.season = ep.season AND se.episode = ep.episode
             WHERE li.user_id = \(bind: userID.rawValue) AND ep.watched_at_known
             UNION ALL
-            SELECT li.title_id, t.type, t.is_anime, li.rating, li.finished_at AS at,
+            SELECT li.title_id, t.type, t.is_anime, t.genres, li.rating, li.finished_at AS at,
                 CASE WHEN li.finished_at AT TIME ZONE 'UTC' = date_trunc('day', li.finished_at AT TIME ZONE 'UTC')
                     THEN (li.finished_at AT TIME ZONE 'UTC')::date
                     ELSE (li.finished_at AT TIME ZONE \(bind: zone))::date END AS day,
@@ -37,12 +37,12 @@ struct PostgresStatsStore: StatsStore {
             FROM library_items li JOIN titles t ON t.id = li.title_id
             WHERE li.user_id = \(bind: userID.rawValue) AND li.status = 'finished' AND li.finished_at IS NOT NULL
         )
-        SELECT day::text AS day, title_id, type, is_anime, rating,
+        SELECT day::text AS day, title_id, type, is_anime, genres, rating,
             sum(episodes)::int AS episodes, sum(minutes)::int AS minutes, bool_or(finished) AS finished,
             min(at) AS first_at, max(at) AS last_at
         FROM activity
         WHERE day >= \(bind: from.description)::date AND day < \(bind: until.description)::date
-        GROUP BY day, title_id, type, is_anime, rating
+        GROUP BY day, title_id, type, is_anime, genres, rating
         ORDER BY day, first_at
         """
         return try await sql.raw(query).all(decoding: ActivityRow.self, keyDecodingStrategy: .convertFromSnakeCase)
@@ -51,7 +51,7 @@ struct PostgresStatsStore: StatsStore {
                 return StatsActivity(
                     day: day, titleID: TitleID(row.titleId), type: type, isAnime: row.isAnime, rating: row.rating,
                     episodes: row.episodes, minutes: row.minutes, finished: row.finished,
-                    firstAt: row.firstAt, lastAt: row.lastAt
+                    firstAt: row.firstAt, lastAt: row.lastAt, genres: row.genres
                 )
             }
     }
@@ -62,6 +62,7 @@ private struct ActivityRow: Decodable {
     let titleId: UUID
     let type: String
     let isAnime: Bool
+    let genres: [String]
     let rating: Double?
     let episodes: Int
     let minutes: Int

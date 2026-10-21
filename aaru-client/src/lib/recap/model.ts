@@ -9,6 +9,8 @@ import type { MediaKind } from '../library/model'
 export type Stats = components['schemas']['Stats']
 export type StatsBucket = components['schemas']['StatsBucket']
 export type StatsTitle = components['schemas']['StatsTitle']
+export type StatsGenre = components['schemas']['StatsGenre']
+export type Persona = NonNullable<Stats['persona']>
 export type TitleSummary = components['schemas']['TitleSummary']
 
 export interface Period {
@@ -27,8 +29,11 @@ export type RecapCard =
   | { kind: 'intro'; heading: string; partial: boolean }
   | { kind: 'time'; minutes: number; caption: string }
   | { kind: 'episodes'; episodes: number; bars: Bar[]; busiest?: string }
+  | { kind: 'biggestDay'; day: string; episodes: number; minutes: number }
   | { kind: 'top'; entry: StatsTitle }
   | { kind: 'topList'; entries: StatsTitle[] }
+  | { kind: 'genres'; genres: StatsGenre[] }
+  | { kind: 'kinds'; parts: KindPart[] }
   | { kind: 'finished'; parts: Array<{ kind: MediaKind; count: number }> }
   | { kind: 'run'; days: number; range: string }
   | {
@@ -43,7 +48,45 @@ export type RecapCard =
       first: { title: TitleSummary; at: string }
       last: { title: TitleSummary; at: string }
     }
+  | { kind: 'persona'; persona: Persona; title: string; line: string }
   | { kind: 'summary' }
+
+/** One kind's share of the period's time, for the kinds card. */
+export interface KindPart {
+  kind: MediaKind
+  minutes: number
+  /** 0…1 of all minutes. */
+  share: number
+}
+
+/** GAM-006e: the words for each persona. The server picks one by rule; these are drafts the
+ * owner signs off. */
+export const PERSONAS: Record<Persona, { title: string; line: string }> = {
+  binger: {
+    title: 'The Binger',
+    line: 'When a story grabs you, you stay for the next one.',
+  },
+  bookworm: {
+    title: 'The Bookworm',
+    line: 'Pages won out over screens.',
+  },
+  anime: {
+    title: 'The Anime Devotee',
+    line: 'Most of your hours went to anime.',
+  },
+  completionist: {
+    title: 'The Completionist',
+    line: 'You finish what you start.',
+  },
+  explorer: {
+    title: 'The Explorer',
+    line: 'Films, shows, anime, books: you went everywhere.',
+  },
+  steady: {
+    title: 'The Steady One',
+    line: 'A little, often. Stories at your own pace.',
+  },
+}
 
 const MONTHS = [
   'January',
@@ -138,10 +181,24 @@ export function cards(stats: Stats): RecapCard[] {
       bars: bars(stats),
       busiest: busiestLine(stats),
     })
+  const biggest = stats.biggestDay
+  // A month's bars already show its days; the biggest day is a year's card.
+  if (!stats.month && biggest)
+    deck.push({
+      kind: 'biggestDay',
+      day: dayLabel(biggest.start),
+      episodes: biggest.episodes,
+      minutes: biggest.minutes,
+    })
   if (stats.topTitles.length > 0)
     deck.push({ kind: 'top', entry: stats.topTitles[0] })
   if (stats.topTitles.length > 1)
     deck.push({ kind: 'topList', entries: stats.topTitles })
+  if (stats.topGenres.length > 0)
+    deck.push({ kind: 'genres', genres: stats.topGenres })
+  const kinds = kindParts(stats)
+  if (!stats.month && kinds.length > 1)
+    deck.push({ kind: 'kinds', parts: kinds })
   const parts = (
     [
       { kind: 'film', count: t.moviesFinished },
@@ -169,8 +226,35 @@ export function cards(stats: Stats): RecapCard[] {
     })
   if (stats.first && stats.last && stats.first.title.id !== stats.last.title.id)
     deck.push({ kind: 'bookends', first: stats.first, last: stats.last })
+  if (!stats.month && stats.persona)
+    deck.push({
+      kind: 'persona',
+      persona: stats.persona,
+      ...PERSONAS[stats.persona],
+    })
   deck.push({ kind: 'summary' })
   return deck
+}
+
+const STATS_KINDS: Record<Stats['byKind'][number]['kind'], MediaKind> = {
+  movie: 'film',
+  show: 'show',
+  anime: 'anime',
+  book: 'book',
+}
+
+/** Kinds with time, biggest share first. Books have no minutes, so they never show here. */
+export function kindParts(stats: Stats): KindPart[] {
+  const total = stats.byKind.reduce((sum, k) => sum + k.minutes, 0)
+  if (total === 0) return []
+  return stats.byKind
+    .filter((k) => k.minutes > 0)
+    .map((k) => ({
+      kind: STATS_KINDS[k.kind],
+      minutes: k.minutes,
+      share: k.minutes / total,
+    }))
+    .sort((a, b) => b.minutes - a.minutes)
 }
 
 export function titleKind(title: TitleSummary): MediaKind {
@@ -212,6 +296,8 @@ export function shareLines(stats: Stats): string[] {
     lines.push(`Most watched: ${stats.topTitles[0].title.title}`)
   if (stats.longestRun && stats.longestRun.days > 1)
     lines.push(`${stats.longestRun.days} days in a row`)
+  if (stats.topGenres[0]) lines.push(`Top genre: ${stats.topGenres[0].name}`)
+  if (!stats.month && stats.persona) lines.push(PERSONAS[stats.persona].title)
   return lines
 }
 

@@ -1,6 +1,7 @@
 import { For, Match, Show, Switch } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { Poster } from '../Poster'
+import { hoursLabel } from '../../lib/home/model'
 import {
   countLabel,
   dayLabel,
@@ -11,7 +12,7 @@ import {
 import type { RecapCard, Stats, StatsTitle } from '../../lib/recap/model'
 import { createCountUp } from './motion'
 
-// GAM-006a: one full-height card of the Recap story per `RecapCard` kind. Entrances are CSS
+// GAM-006a/e: one full-height card of the Recap story per `RecapCard` kind. Entrances are CSS
 // (`.recap-*` in styles.css) and replay each time a card is shown.
 
 function Count(props: { value: number }) {
@@ -153,14 +154,49 @@ export function RecapCardView(props: {
           </>
         )}
       </Match>
+      <Match when={props.card.kind === 'biggestDay' && props.card}>
+        {(card) => (
+          <>
+            <Eyebrow>Your biggest day</Eyebrow>
+            <h2
+              class="recap-rise mt-4 font-display text-6xl leading-none font-medium tracking-tight md:text-7xl"
+              style={{ '--delay': '120ms' }}
+            >
+              {card().day}
+            </h2>
+            <Line>
+              {[
+                card().episodes > 0
+                  ? `${card().episodes} episode${card().episodes === 1 ? '' : 's'}`
+                  : null,
+                card().minutes > 0 ? hoursLabel(card().minutes) : null,
+              ]
+                .filter(Boolean)
+                .join(', ')}{' '}
+              in one day.
+            </Line>
+          </>
+        )}
+      </Match>
       <Match when={props.card.kind === 'top' && props.card}>
         {(card) => (
           <>
             <Eyebrow>Most time with</Eyebrow>
             <div
-              class="recap-pop mt-6 w-40 md:w-48"
+              class="recap-pop relative mt-6 w-40 md:w-48"
               style={{ '--delay': '120ms' }}
             >
+              {/* The poster's own colours, blurred behind it: a glow, not a second image. */}
+              <Show when={card().entry.title.posterUrl}>
+                {(url) => (
+                  <img
+                    src={url()}
+                    alt=""
+                    aria-hidden="true"
+                    class="pointer-events-none absolute inset-0 -z-10 h-full w-full scale-125 object-cover opacity-60 blur-3xl"
+                  />
+                )}
+              </Show>
               <Poster
                 url={card().entry.title.posterUrl}
                 kind={titleKind(card().entry.title)}
@@ -190,6 +226,74 @@ export function RecapCardView(props: {
                 {(entry, i) => <TopRow entry={entry} rank={i() + 1} />}
               </For>
             </ol>
+          </>
+        )}
+      </Match>
+      <Match when={props.card.kind === 'genres' && props.card}>
+        {(card) => (
+          <>
+            <Eyebrow>Your genres</Eyebrow>
+            <ol class="mt-4 space-y-2">
+              <For each={card().genres}>
+                {(genre, i) => (
+                  <li
+                    class="recap-rise flex items-baseline gap-4"
+                    style={{ '--delay': `${120 + i() * 160}ms` }}
+                  >
+                    <span class="w-6 font-display text-2xl tabular-nums opacity-70">
+                      {i() + 1}
+                    </span>
+                    <span class="font-display text-5xl leading-tight font-medium tracking-tight">
+                      {genre.name}
+                    </span>
+                  </li>
+                )}
+              </For>
+            </ol>
+            <Line delay={640}>
+              {hoursLabel(card().genres[0].minutes)} of{' '}
+              {card().genres[0].name.toLowerCase()}, across{' '}
+              {card().genres[0].titles}{' '}
+              {card().genres[0].titles === 1 ? 'title' : 'titles'}.
+            </Line>
+          </>
+        )}
+      </Match>
+      <Match when={props.card.kind === 'kinds' && props.card}>
+        {(card) => (
+          <>
+            <Eyebrow>Where the time went</Eyebrow>
+            <ul class="mt-6 space-y-5">
+              <For each={card().parts}>
+                {(part, i) => (
+                  <li
+                    class="recap-rise"
+                    style={{ '--delay': `${120 + i() * 140}ms` }}
+                  >
+                    <div class="flex items-baseline justify-between gap-4">
+                      <span class="font-display text-3xl capitalize">
+                        {part.kind === 'film'
+                          ? 'Films'
+                          : part.kind === 'show'
+                            ? 'Shows'
+                            : 'Anime'}
+                      </span>
+                      <span class="text-lg tabular-nums opacity-80">
+                        {Math.round(part.share * 100)}%
+                      </span>
+                    </div>
+                    <div class="mt-2 h-2 overflow-hidden rounded-full bg-current/20">
+                      <div
+                        class="h-full rounded-full bg-current"
+                        style={{
+                          width: `${Math.max(2, Math.round(part.share * 100))}%`,
+                        }}
+                      />
+                    </div>
+                  </li>
+                )}
+              </For>
+            </ul>
           </>
         )}
       </Match>
@@ -296,6 +400,20 @@ export function RecapCardView(props: {
                 )}
               </For>
             </div>
+          </>
+        )}
+      </Match>
+      <Match when={props.card.kind === 'persona' && props.card}>
+        {(card) => (
+          <>
+            <Eyebrow>Your {props.stats.year}, in a word</Eyebrow>
+            <h2
+              class="recap-pop mt-4 font-display text-6xl leading-[1.02] font-medium tracking-tight md:text-7xl"
+              style={{ '--delay': '160ms' }}
+            >
+              {card().title}
+            </h2>
+            <Line delay={480}>{card().line}</Line>
           </>
         )}
       </Match>

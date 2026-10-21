@@ -331,6 +331,10 @@ window before it in one `activity` call, splits the rows at the window's first d
 each; the earlier one returns only as `prior` totals, for the clients' deltas. Same rows, same
 rule on imported ticks, no new query and no table.
 
+The Year in Review (GAM-006e) reads `titles.genres` (CAT-018) in the same query and derives
+`topGenres`, `biggestDay` and `persona` in `StatsDigest`. The persona rule lives in the server;
+clients only map its key to words.
+
 ### Calendar and Up Next
 
 Both are derived reads over the user's library. Neither has its own table.

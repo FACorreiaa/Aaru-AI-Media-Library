@@ -47,7 +47,10 @@ extension Components.Schemas.Stats {
                 highestRating: stats.ratings.highestRating, distribution: stats.ratings.distribution
             ),
             first: stats.first.map { .init(title: .init($0.title), at: $0.date) },
-            last: stats.last.map { .init(title: .init($0.title), at: $0.date) }
+            last: stats.last.map { .init(title: .init($0.title), at: $0.date) },
+            topGenres: stats.topGenres.map { .init(name: $0.name, minutes: $0.minutes, titles: $0.titles) },
+            biggestDay: stats.biggestDay.map(Components.Schemas.StatsBucket.init),
+            persona: stats.persona.flatMap { .init(rawValue: $0.rawValue) }
         )
     }
 }

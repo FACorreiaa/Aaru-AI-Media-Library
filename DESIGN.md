@@ -393,6 +393,16 @@ longest run of days, ratings, the first and last title, and a summary that share
 A card with nothing to say is left out, and an empty period gets a sentence, not a story.
 Backdrops cycle Ink, accent and Surface; type is the serif display face.
 
+The Year in Review (GAM-006e, 2026-10-21) adds, for a year only: the biggest day after the
+episodes chart; a soft glow of the top title's own poster behind it (blurred, on screen only);
+the top three genres after the top five (a month gets this card too); where the time went by
+kind; and a persona card before the summary, one of six words the server picks by rule from
+the user's own numbers (The Binger, The Bookworm, The Anime Devotee, The Completionist, The
+Explorer, The Steady One; copy is the owner's to approve). Year order: intro · time · episodes ·
+biggest day · top · top five · genres · kinds · finished · run · ratings · bookends · persona ·
+summary. The share image adds the top genre and the persona, stepping its type down a size past
+five lines; still no posters.
+
 Motion rules (the first written ones; they hold for any later surface):
 - Entrances only. Elements rise in once on a short stagger, numbers count up once, bars grow
   from the baseline once. Nothing loops, pulses or bounces after it lands.
