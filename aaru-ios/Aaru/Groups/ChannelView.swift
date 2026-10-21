@@ -257,7 +257,7 @@ extension ChannelView {
     @ViewBuilder
     private func actions(for message: GroupMessage) -> some View {
         if !message.deleted {
-            Button("Copy text", systemImage: "doc.on.doc") { Clipboard.copy(message.body) }
+            Button("Copy text", systemImage: "doc.on.doc") { Pasteboard.copy(message.body) }
             if message.author?.userId == groups.myUserID {
                 Button("Edit", systemImage: "pencil") {
                     editing = message
