@@ -4807,25 +4807,33 @@ public enum Components {
         public struct SearchResults: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/SearchResults/items`.
             public var items: [Components.Schemas.CatalogHit]
-            /// True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search.
+            /// True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. An `anime` search is also incomplete while AniList is down and TMDB stands in.
             ///
             /// - Remark: Generated from `#/components/schemas/SearchResults/incomplete`.
             public var incomplete: Swift.Bool
+            /// Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchResults/notice`.
+            public var notice: Swift.String?
             /// Creates a new `SearchResults`.
             ///
             /// - Parameters:
             ///   - items:
-            ///   - incomplete: True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search.
+            ///   - incomplete: True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. An `anime` search is also incomplete while AniList is down and TMDB stands in.
+            ///   - notice: Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in.
             public init(
                 items: [Components.Schemas.CatalogHit],
-                incomplete: Swift.Bool
+                incomplete: Swift.Bool,
+                notice: Swift.String? = nil
             ) {
                 self.items = items
                 self.incomplete = incomplete
+                self.notice = notice
             }
             public enum CodingKeys: String, CodingKey {
                 case items
                 case incomplete
+                case notice
             }
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
@@ -4840,25 +4848,33 @@ public enum Components {
             public var title: Swift.String
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/items`.
             public var items: [Components.Schemas.CatalogHit]
+            /// Where a stand-in row came from, e.g. TMDB while AniList is down.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DiscoverRow/note`.
+            public var note: Swift.String?
             /// Creates a new `DiscoverRow`.
             ///
             /// - Parameters:
             ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get.
             ///   - title: Display title, e.g. "Fall 2026 anime".
             ///   - items:
+            ///   - note: Where a stand-in row came from, e.g. TMDB while AniList is down.
             public init(
                 id: Swift.String,
                 title: Swift.String,
-                items: [Components.Schemas.CatalogHit]
+                items: [Components.Schemas.CatalogHit],
+                note: Swift.String? = nil
             ) {
                 self.id = id
                 self.title = title
                 self.items = items
+                self.note = note
             }
             public enum CodingKeys: String, CodingKey {
                 case id
                 case title
                 case items
+                case note
             }
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRows`.

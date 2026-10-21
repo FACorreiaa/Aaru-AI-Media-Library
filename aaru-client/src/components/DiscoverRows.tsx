@@ -71,7 +71,7 @@ export function DiscoverRows(props: {
           in place rather than be redrawn, or each row would lose its scroll position. */}
       <Index each={props.rows.filter((row) => row.items.length > 0)}>
         {(row) => (
-          <Row title={row().title}>
+          <Row title={row().title} note={row().note}>
             <Index each={row().items}>
               {(hit) => (
                 <DiscoverCard

@@ -11,6 +11,10 @@ enum SearchScope: String, Sendable {
 struct CatalogSearchResult: Sendable, Equatable {
     var hits: [CatalogHit]
     var incomplete = false
+    /// Why the hits are partial, when a provider is down, in words a client can show.
+    var notice: String?
+
+    static let aniListDown = "AniList is down right now, so anime results come from TMDB and may be missing some."
 }
 
 /// A title as the detail route returns it: the catalog row plus show state.
@@ -51,7 +55,7 @@ struct CatalogService: Sendable {
         case .all: return try await searchAll(trimmed)
         case .movie: return try await CatalogSearchResult(hits: catalogs.tmdb.search(query: trimmed, type: .movie))
         case .show: return try await CatalogSearchResult(hits: catalogs.tmdb.search(query: trimmed, type: .show))
-        case .anime: return try await CatalogSearchResult(hits: catalogs.anilist.search(query: trimmed, type: .show))
+        case .anime: return try await searchAnime(trimmed)
         case .book: return try await CatalogSearchResult(
                 hits: catalogs.openLibrary.search(query: trimmed, type: .book)
             )
@@ -70,7 +74,7 @@ struct CatalogService: Sendable {
         if needsHydration(state: state, episodes: episodes) {
             let fromAniList = title.isAnime && title.ids.tmdb == nil
             let source: any EpisodeListing = fromAniList ? catalogs.anilist : catalogs.tmdb
-            if var fresh = try await source.episodes(ids: title.ids) {
+            if var fresh = try await freshEpisodes(source, ids: title.ids, stored: episodes) {
                 // AniList times are already exact. TVmaze failing never fails the hydration.
                 if !fromAniList, let airTimes = catalogs.airTimes,
                    let refined = try? await airTimes.refine(fresh, ids: title.ids)
@@ -83,6 +87,30 @@ struct CatalogService: Sendable {
             }
         }
         return TitleDetail(title: title, status: status, runtimeMinutes: state.runtimeMinutes, episodes: episodes)
+    }
+
+    /// The provider's episodes. While AniList is down, a show it already hydrated keeps the
+    /// stored episodes rather than failing; only a never-hydrated show reports the outage.
+    private func freshEpisodes(
+        _ source: any EpisodeListing,
+        ids: ExternalIDs,
+        stored: [CatalogEpisode]
+    ) async throws -> CatalogEpisodes? {
+        do {
+            return try await source.episodes(ids: ids)
+        } catch let error as ProviderError where error.isAniListOutage && !stored.isEmpty {
+            return nil
+        }
+    }
+
+    /// AniList, or while it is down, TMDB's Japanese animation (CAT-021).
+    private func searchAnime(_ query: String) async throws -> CatalogSearchResult {
+        do {
+            return try await CatalogSearchResult(hits: catalogs.anilist.search(query: query, type: .show))
+        } catch let error as ProviderError where error.isAniListOutage {
+            let hits = try await catalogs.tmdb.searchMulti(query: query).filter(\.isAnime)
+            return CatalogSearchResult(hits: hits, incomplete: true, notice: CatalogSearchResult.aniListDown)
+        }
     }
 
     /// Never hydrated, or older than its window: 24h while an episode airs within 30
@@ -120,7 +148,9 @@ extension CatalogService {
         case let (.failure(error), .failure):
             throw error
         case let (.success(video), .failure):
-            return CatalogSearchResult(hits: Self.ranked(video, [], query: query), incomplete: true)
+            return CatalogSearchResult(
+                hits: Self.ranked(video, [], query: query), incomplete: true, notice: CatalogSearchResult.aniListDown
+            )
         case let (.failure, .success(anime)):
             return CatalogSearchResult(hits: Self.ranked([], anime, query: query), incomplete: true)
         case let (.success(video), .success(anime)):

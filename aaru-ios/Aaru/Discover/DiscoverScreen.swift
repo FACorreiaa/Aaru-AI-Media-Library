@@ -78,7 +78,7 @@ struct DiscoverScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 28) {
                     ForEach(rows, id: \.id) { row in
-                        HomeRow(title: row.title) {
+                        HomeRow(title: row.title, note: row.note) {
                             ForEach(row.items) { hit in
                                 DiscoverCard(
                                     hit: hit,

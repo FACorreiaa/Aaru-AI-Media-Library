@@ -30,6 +30,8 @@ import { Button } from './ui/button'
 /** A horizontal row: a heading, an optional action, and cards that snap as they scroll. */
 export function Row(props: {
   title: string
+  /** A line under the title, e.g. why a row is a stand-in. */
+  note?: string
   action?: JSX.Element
   children: JSX.Element
 }) {
@@ -45,9 +47,14 @@ export function Row(props: {
   return (
     <section class="mt-10" aria-labelledby={id}>
       <div class="flex items-end justify-between gap-4">
-        <h2 id={id} class="font-display text-2xl font-medium tracking-tight">
-          {props.title}
-        </h2>
+        <div>
+          <h2 id={id} class="font-display text-2xl font-medium tracking-tight">
+            {props.title}
+          </h2>
+          <Show when={props.note}>
+            {(note) => <p class="mt-1 text-xs text-muted">{note()}</p>}
+          </Show>
+        </div>
         <div class="flex items-center gap-3">
           {props.action}
           <div class="hidden gap-1 md:flex">

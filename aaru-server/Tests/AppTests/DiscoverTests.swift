@@ -121,9 +121,9 @@ struct DiscoverTests {
     func cacheTTL() async {
         let cache = DiscoverCache()
         let counter = Counter()
-        let fetch: @Sendable () async throws -> [CatalogHit] = {
+        let fetch: @Sendable () async throws -> DiscoverFetch = {
             await counter.bump()
-            return [Self.hit("A", tmdb: "1")]
+            return DiscoverFetch(hits: [Self.hit("A", tmdb: "1")])
         }
         _ = await cache.hits(.moviesTrending, now: Self.now, fetch: fetch)
         _ = await cache.hits(.moviesTrending, now: Self.now.addingTimeInterval(60), fetch: fetch)
@@ -136,15 +136,15 @@ struct DiscoverTests {
     func cacheCoalesces() async {
         let cache = DiscoverCache()
         let counter = Counter()
-        let fetch: @Sendable () async throws -> [CatalogHit] = {
+        let fetch: @Sendable () async throws -> DiscoverFetch = {
             await counter.bump()
             try await Task.sleep(for: .milliseconds(30))
-            return [Self.hit("A", tmdb: "1")]
+            return DiscoverFetch(hits: [Self.hit("A", tmdb: "1")])
         }
         async let first = cache.hits(.tvTrending, now: Self.now, fetch: fetch)
         async let second = cache.hits(.tvTrending, now: Self.now, fetch: fetch)
         let results = await [first, second]
-        #expect(results.allSatisfy { $0?.count == 1 })
+        #expect(results.allSatisfy { $0?.hits.count == 1 })
         #expect(await counter.value == 1)
     }
 
@@ -152,14 +152,16 @@ struct DiscoverTests {
     func cacheFailure() async {
         let cache = DiscoverCache()
         let counter = Counter()
-        _ = await cache.hits(.booksTrending, now: Self.now) { [Self.hit("Old", type: .book, tmdb: "1")] }
-        let failing: @Sendable () async throws -> [CatalogHit] = {
+        _ = await cache.hits(.booksTrending, now: Self.now) {
+            DiscoverFetch(hits: [Self.hit("Old", type: .book, tmdb: "1")])
+        }
+        let failing: @Sendable () async throws -> DiscoverFetch = {
             await counter.bump()
             throw ProviderError(provider: "openlibrary", kind: .unavailable)
         }
         let stale = Self.now.addingTimeInterval(DiscoverService.ttl)
         let served = await cache.hits(.booksTrending, now: stale, fetch: failing)
-        #expect(served?.map(\.title) == ["Old"])
+        #expect(served?.hits.map(\.title) == ["Old"])
         let backedOff = await cache.hits(.booksTrending, now: stale.addingTimeInterval(60), fetch: failing)
         #expect(backedOff != nil)
         #expect(await counter.value == 1)
@@ -176,6 +178,37 @@ struct DiscoverTests {
             let rows = try await service.rows(userID: UserID())
             #expect(rows.map(\.list) == [.moviesTrending])
         }
+    }
+
+    @Test("While AniList is down, TMDB's Japanese animation fills the anime rows, briefly cached, with a note")
+    func aniListOutageFallback() async throws {
+        try await withMigratedStores { stores in
+            let fallback = AnimeStandIn()
+            let service = DiscoverService(stores: stores, providers: [DownAniList()], animeFallback: fallback)
+            let rows = try await service.rows(userID: UserID())
+            #expect(Set(rows.map(\.list)) == [.animeSeason, .animeTrending])
+            #expect(rows.allSatisfy { $0.note == DiscoverService.animeFallbackNote })
+            #expect(rows.allSatisfy { $0.items.allSatisfy(\.hit.isAnime) })
+        }
+        let cache = DiscoverCache()
+        let counter = Counter()
+        let fetch: @Sendable () async throws -> DiscoverFetch = {
+            await counter.bump()
+            return DiscoverFetch(hits: [Self.hit("A", tmdb: "1")], ttl: DiscoverService.fallbackTTL)
+        }
+        _ = await cache.hits(.animeSeason, now: Self.now, fetch: fetch)
+        _ = await cache.hits(.animeSeason, now: Self.now.addingTimeInterval(60), fetch: fetch)
+        _ = await cache.hits(.animeSeason, now: Self.now.addingTimeInterval(DiscoverService.fallbackTTL), fetch: fetch)
+        #expect(await counter.value == 2, "a stand-in row is asked for again after 30 minutes, not 6 hours")
+    }
+
+    @Test("TMDB's stand-in anime query: Japanese animation in this season's window, or airing this fortnight")
+    func tmdbAnimeQuery() throws {
+        let season = try TMDBCatalog.animeQuery(.animeSeason, now: Self.now)
+        #expect(season["with_genres"] == "16" && season["with_origin_country"] == "JP")
+        #expect(season["first_air_date.gte"] == "2026-10-01" && season["first_air_date.lte"] == "2026-12-31")
+        let trending = try TMDBCatalog.animeQuery(.animeTrending, now: Self.now)
+        #expect(trending["air_date.gte"] == "2026-10-13" && trending["air_date.lte"] == "2026-10-27")
     }
 
     @Test("GET /v1/discover marks titles in the caller's library and drops poster-less hits")
@@ -234,5 +267,28 @@ private struct HalfBroken: DiscoverListing {
     func list(_ list: DiscoverList, now _: Date) async throws -> [CatalogHit] {
         guard list == .moviesTrending else { throw ProviderError(provider: "tmdb", kind: .unavailable) }
         return [DiscoverTests.hit("Film", tmdb: "1")]
+    }
+}
+
+/// AniList answering "disabled".
+private struct DownAniList: DiscoverListing {
+    var discoverLists: Set<DiscoverList> {
+        [.animeSeason, .animeTrending]
+    }
+
+    func list(_: DiscoverList, now _: Date) async throws -> [CatalogHit] {
+        throw ProviderError(provider: "anilist", kind: .unavailable)
+    }
+}
+
+private struct AnimeStandIn: DiscoverListing {
+    var discoverLists: Set<DiscoverList> {
+        []
+    }
+
+    func list(_ list: DiscoverList, now _: Date) async throws -> [CatalogHit] {
+        var hit = DiscoverTests.hit("Frieren \(list.rawValue)", type: .show, tmdb: "209867")
+        hit.isAnime = true
+        return [hit]
     }
 }

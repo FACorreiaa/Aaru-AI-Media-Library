@@ -458,6 +458,14 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - **Decided 2026-10-09:** anime is an `isAnime` facet on `show`/`movie`, not a fourth
   `MediaType`. Progress, calendar, Up Next, and widgets share one code path, and an anime film
   is still a movie. TMDB hits are flagged when they are Japanese animation.
+- **When AniList is down (CAT-021).** AniList's 403 "API temporarily disabled", or a non-JSON
+  page from its CDN, is an outage (`unavailable`), never `unauthorized`
+  (`AniListCatalog.classify`, a hook on `ProviderClient`). While it lasts, TMDB's Japanese
+  animation stands in: the anime Discover rows come from `discover/tv` (genre 16, origin JP; this
+  season by first air date, trending by air date ± 7 days) with a `note`, cached 30 minutes so
+  AniList's own rows return soon after it recovers; anime search answers TMDB's anime hits,
+  `incomplete`, with a `notice`; a show AniList already hydrated keeps its stored episodes. AniList
+  requests carry the same contact User-Agent as Open Library.
 - Community AniList → TMDB mappings live in `anime_mappings` (CAT-009/010). A mapped AniList
   entry resolves to the TMDB show; an unmapped one stays its own AniList-backed title, whose
   episodes come from AniList's airing schedule (one season per entry), named from AniList's

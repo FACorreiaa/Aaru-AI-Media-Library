@@ -75,6 +75,25 @@ struct CatalogSearchAllTests {
         }
     }
 
+    @Test("CAT-021: while AniList is down, anime search is TMDB's anime, incomplete, with a notice")
+    func animeStandIn() async throws {
+        try await withMigratedStores { stores in
+            let fakes = Fakes()
+            fakes.tmdb.stubSearch("frieren", [
+                hit("Frieren", .show, ids: ExternalIDs(tmdb: uniqueID("tmdb")), anime: true),
+                hit("Frieren: The Documentary", .movie, ids: ExternalIDs(tmdb: uniqueID("tmdb"))),
+            ])
+            fakes.anilist.fail(with: ProviderError(provider: "anilist", kind: .unavailable))
+            let service = CatalogService(stores: stores, catalogs: fakes.providers)
+            let result = try await service.search(query: "frieren", scope: .anime)
+            #expect(result.hits.map(\.title) == ["Frieren"], "anime only")
+            #expect(result.incomplete && result.notice == CatalogSearchResult.aniListDown)
+
+            let all = try await service.search(query: "frieren", scope: .all)
+            #expect(all.notice == CatalogSearchResult.aniListDown)
+        }
+    }
+
     @Test("CAT-019: one provider failing or too slow answers the other's hits, marked incomplete")
     func partial() async throws {
         try await withMigratedStores { stores in

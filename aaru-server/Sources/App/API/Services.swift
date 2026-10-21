@@ -50,7 +50,8 @@ struct Services: Sendable {
             catalog: catalog,
             discover: DiscoverService(
                 stores: stores,
-                providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
+                providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary],
+                animeFallback: catalogs.tmdb as? any DiscoverListing
             ),
             library: library,
             lists: ListService(stores: stores, resolver: resolver, catalog: catalog),

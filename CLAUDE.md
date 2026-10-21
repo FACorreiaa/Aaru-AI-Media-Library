@@ -28,7 +28,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
-| Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover |
+| Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021) |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |

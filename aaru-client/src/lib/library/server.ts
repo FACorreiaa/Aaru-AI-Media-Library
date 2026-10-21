@@ -38,7 +38,11 @@ export const searchCatalog = createServerFn({ method: 'GET' })
     if (response.status === 401) sessionRejected()
     if (!results)
       throw new Error(errorMessage(error, 'Search is not available right now.'))
-    return { items: results.items, incomplete: results.incomplete }
+    return {
+      items: results.items,
+      incomplete: results.incomplete,
+      notice: results.notice,
+    }
   })
 
 const externalIds = z

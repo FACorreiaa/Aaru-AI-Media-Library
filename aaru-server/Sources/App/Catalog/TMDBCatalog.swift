@@ -180,16 +180,40 @@ extension TMDBCatalog: DiscoverListing {
             query["vote_count.gte"] = "10"
         case .moviesTrending: (type, path) = (.movie, "trending/movie/week")
         case .moviesInTheaters: (type, path) = (.movie, "movie/now_playing")
+        case .animeSeason, .animeTrending:
+            // Not in `discoverLists`: AniList serves these. TMDB's Japanese animation stands in
+            // only while AniList is down (CAT-021), so it is an approximation of AniList's rows.
+            (type, path) = (.show, "discover/tv")
+            try query.merge(Self.animeQuery(list, now: now)) { _, new in new }
         default: throw ProviderError(provider: "tmdb", kind: .notFound)
         }
         let page = try await get(SearchPage.self, path, query)
+        let animeRow = list == .animeSeason || list == .animeTrending
         return page.results.compactMap { entry -> CatalogHit? in
-            guard let hit = entry.hit(type: type) else { return nil }
+            guard var hit = entry.hit(type: type) else { return nil }
+            if animeRow {
+                hit.isAnime = true
+                return hit
+            }
             guard type == .show else { return hit }
             // Anime rows come from AniList, the anime catalog.
             let genres = Set(entry.genreIds ?? [])
             return hit.isAnime || !genres.isDisjoint(with: Self.offRowGenres) ? nil : hit
         }
+    }
+
+    /// Japanese animation: this season's premieres, or what aired in the last and next week.
+    static func animeQuery(_ list: DiscoverList, now: Date) throws -> [String: String] {
+        var query = ["with_genres": "16", "with_origin_country": "JP", "sort_by": "popularity.desc"]
+        if list == .animeSeason {
+            guard let window = AnimeSeason.window(now) else { throw ProviderError(provider: "tmdb", kind: .notFound) }
+            query["first_air_date.gte"] = day(window.start)
+            query["first_air_date.lte"] = day(window.end)
+        } else {
+            query["air_date.gte"] = day(now.addingTimeInterval(-7 * 86400))
+            query["air_date.lte"] = day(now.addingTimeInterval(7 * 86400))
+        }
+        return query
     }
 
     private static func day(_ date: Date) -> String {

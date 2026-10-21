@@ -7,6 +7,8 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
     static let endpoint = URL(string: "https://graphql.anilist.co")!
 
     let client: ProviderClient
+    /// AniList asks API users to identify themselves; the same contact string as Open Library.
+    var userAgent = AppConfig.defaultProviderUserAgent
 
     private static let mediaFields = """
     id idMal format status episodes duration genres
@@ -142,25 +144,41 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
         }
     }
 
-    private func post<T: Decodable>(_: T.Type, _ query: String, variables: [String: GraphQLValue]) async throws -> T {
+    func post<T: Decodable>(_: T.Type, _ query: String, variables: [String: GraphQLValue]) async throws -> T {
         let payload = try JSONEncoder().encode(GraphQLRequest(query: query, variables: variables))
         let response = try await client.decode(
             GraphQLResponse<T>.self,
             OutboundRequest(
                 method: "POST",
                 url: Self.endpoint,
-                headers: [("Content-Type", "application/json"), ("Accept", "application/json")],
+                headers: [
+                    ("Content-Type", "application/json"), ("Accept", "application/json"), ("User-Agent", userAgent),
+                ],
                 body: payload
             )
         )
         guard let data = response.data else { throw ProviderError(provider: "anilist", kind: .notFound) }
         return data
     }
+
+    /// AniList's own outage answers: a 401/403 saying the API is disabled, or a non-JSON page from
+    /// the CDN in front of it. Reads need no key, so these are never a refused credential.
+    static func classify(_ response: OutboundResponse) -> ProviderError.Kind? {
+        guard response.status == 401 || response.status == 403 else { return nil }
+        guard let body = try? JSONDecoder().decode(GraphQLErrors.self, from: response.body) else { return .unavailable }
+        let disabled = body.errors?.contains { $0.message?.localizedCaseInsensitiveContains("disabled") == true }
+        return disabled == true ? .unavailable : nil
+    }
 }
 
 // MARK: - AniList wire shapes
 
-private enum GraphQLValue: Encodable {
+private struct GraphQLErrors: Decodable {
+    struct Message: Decodable { let message: String? }
+    let errors: [Message]?
+}
+
+enum GraphQLValue: Encodable {
     case string(String)
     case int(Int)
     case ints([Int])
@@ -318,78 +336,4 @@ extension AniListCatalog: DiscoverListing {
         """, variables: [:])
         return body.page.media.map(\.hit)
     }
-}
-
-// MARK: Lists (IMP-014)
-
-extension AniListCatalog: AniListListReading {
-    func animeRows(userName: String) async throws -> [ImportRow] {
-        let body = try await post(ListData.self, """
-        query ($name: String) {
-          MediaListCollection(userName: $name, type: ANIME) {
-            lists { entries {
-              status progress score(format: POINT_10_DECIMAL)
-              completedAt { year month day }
-              media { id idMal format episodes title { romaji english } startDate { year } }
-            } }
-          }
-        }
-        """, variables: ["name": .string(userName)])
-        return body.collection.lists.flatMap(\.entries).map { entry in
-            let media = entry.media
-            let finished = entry.completedAt.flatMap { date -> Date? in
-                guard let year = date.year, let month = date.month, let day = date.day else { return nil }
-                return Date.catalogDay(String(format: "%04d-%02d-%02d", year, month, day))
-            }
-            let status = AnimeListImport.status(entry.status)
-            let isMovie = media.format == "MOVIE"
-            return ImportRow(
-                sourceKey: "anilist:\(media.id)",
-                type: isMovie ? .movie : .show,
-                title: media.title.english ?? media.title.romaji ?? "Untitled",
-                year: media.startDate?.year,
-                ids: ExternalIDs(anilist: String(media.id), mal: media.idMal.map(String.init)),
-                status: status,
-                rating: AnimeListImport.rating(entry.score),
-                finishedAt: finished,
-                lists: [],
-                watched: AnimeListImport.progress(
-                    entry.progress ?? 0, total: media.episodes, status: status, isMovie: isMovie
-                )
-            )
-        }
-    }
-}
-
-private struct ListData: Decodable {
-    struct Collection: Decodable { let lists: [ListGroup] }
-    struct ListGroup: Decodable { let entries: [ListEntry] }
-
-    let collection: Collection
-
-    enum CodingKeys: String, CodingKey {
-        case collection = "MediaListCollection"
-    }
-}
-
-private struct ListEntry: Decodable {
-    struct FuzzyDate: Decodable { let year, month, day: Int? }
-
-    let status: String
-    let progress: Int?
-    let score: Double?
-    let completedAt: FuzzyDate?
-    let media: ListMedia
-}
-
-private struct ListMedia: Decodable {
-    struct Titles: Decodable { let romaji, english: String? }
-    struct Start: Decodable { let year: Int? }
-
-    let id: Int
-    let idMal: Int?
-    let format: String?
-    let episodes: Int?
-    let title: Titles
-    let startDate: Start?
 }
