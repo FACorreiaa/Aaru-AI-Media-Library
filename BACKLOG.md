@@ -362,6 +362,7 @@ account or a stranger that has not happened yet.
 | GAM-004 | Open | none | |
 | GAM-005 | Open | none | |
 | GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
+| GAM-006e | Done | `feat/year-review`; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
 | GAM-006b | Partial | #43 Insights covers all-time/by-kind | No genres, profile placement, badges |
 | CAT-018 | Done | `feat/store-genres`; GenreTests, CatalogAdapterTests "genre names" | Pulled forward 2026-10-21 for GAM-006e; backfill runs in the catalog refresher |
 | RT-001 | Open | none (PR #48 open) | |
@@ -1997,6 +1998,20 @@ device or simulator, with Reduce Motion on and off.
 **Done when:** stats are derived only from the user's own library, imported and restored
 ticks never count as activity, a tick at 23:30 UTC on Dec 31 lands in the next year east of
 UTC, and the share image contains no other user's data.
+
+### GAM-006e · Year in Review v2 · M · pulled forward 2026-10-21
+**Needs:** GAM-006a, CAT-018.
+`/v1/me/stats` adds `topGenres` (top three by time, films, shows and anime, from CAT-018's
+stored genres), `biggestDay` (the local day with the most time, then episodes, earliest on a
+tie) and `persona` (the first rule that holds: `binger` a day of 6+ episodes or 14 days in a
+row, `bookworm` books are most of 2+ finishes, `anime` anime is most of the time,
+`completionist` 24+ finished, `explorer` 3+ kinds, else `steady`). The year's deck adds biggest
+day, genres, kinds and persona cards; a month adds genres only. The share image adds the top
+genre and the persona.
+
+**Done when:** genres, biggest day and persona come only from the user's own library, imported
+ticks still never count, the persona is the same on every client for the same year, and the
+share image holds no posters and no other user's data.
 
 ### GAM-006b · Profile stats and genres · M
 **Needs:** GAM-001, GAM-006a, CAT-018.

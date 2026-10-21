@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  bars,
-  cards,
-  offeredRecap,
-  periodLabel,
-  shareLines,
-  timeCaption,
-} from './model'
+import { cards, kindParts, shareLines, timeCaption } from './deck'
+import { bars, offeredRecap, periodLabel } from './model'
 import type { Stats, TitleSummary } from './model'
 
 function title(
@@ -69,6 +63,7 @@ function stats(overrides: Partial<Stats> = {}): Stats {
     },
     first: { title: title('Severance'), at: '2026-03-10T12:00:00Z' },
     last: { title: title('Andor'), at: '2026-07-04T12:00:00Z' },
+    topGenres: [],
     ...overrides,
   }
 }
@@ -108,6 +103,7 @@ describe('cards', () => {
         booksFinished: 2,
       },
       topTitles: [],
+      topGenres: [],
       longestRun: { days: 1, start: '2026-05-01', end: '2026-05-01' },
       ratings: { count: 0, distribution: Array<number>(10).fill(0) },
       first: { title: title('Dune'), at: '2026-05-01T00:00:00Z' },
@@ -117,6 +113,87 @@ describe('cards', () => {
       'intro',
       'finished',
       'summary',
+    ])
+  })
+
+  it('adds the year review cards when the server has them (GAM-006e)', () => {
+    const year = stats({
+      biggestDay: {
+        start: '2026-03-10',
+        episodes: 3,
+        minutes: 135,
+        finished: 0,
+      },
+      topGenres: [
+        { name: 'Drama', minutes: 225, titles: 2 },
+        { name: 'Thriller', minutes: 180, titles: 1 },
+      ],
+      byKind: [
+        { kind: 'movie', episodes: 0, minutes: 100, finished: 1 },
+        { kind: 'show', episodes: 5, minutes: 225, finished: 1 },
+        { kind: 'anime', episodes: 0, minutes: 0, finished: 0 },
+        { kind: 'book', episodes: 0, minutes: 0, finished: 2 },
+      ],
+      persona: 'explorer',
+    })
+    expect(cards(year).map((c) => c.kind)).toEqual([
+      'intro',
+      'time',
+      'episodes',
+      'biggestDay',
+      'top',
+      'topList',
+      'genres',
+      'kinds',
+      'finished',
+      'run',
+      'ratings',
+      'bookends',
+      'persona',
+      'summary',
+    ])
+    expect(cards(year).find((c) => c.kind === 'persona')).toMatchObject({
+      title: 'The Explorer',
+    })
+    expect(cards(year).find((c) => c.kind === 'biggestDay')).toMatchObject({
+      day: 'Mar 10',
+    })
+    // A month keeps its shape: genres, but no biggest day, kinds or persona.
+    expect(
+      cards({ ...year, span: 'month', month: 3 }).map((c) => c.kind),
+    ).toEqual([
+      'intro',
+      'time',
+      'episodes',
+      'top',
+      'topList',
+      'genres',
+      'finished',
+      'run',
+      'ratings',
+      'bookends',
+      'summary',
+    ])
+    expect(shareLines(year).slice(-2)).toEqual([
+      'Top genre: Drama',
+      'The Explorer',
+    ])
+  })
+
+  it('splits time by kind, biggest first, leaving out kinds with none', () => {
+    const parts = kindParts(
+      stats({
+        byKind: [
+          { kind: 'movie', episodes: 0, minutes: 100, finished: 1 },
+          { kind: 'show', episodes: 5, minutes: 300, finished: 1 },
+          { kind: 'anime', episodes: 0, minutes: 0, finished: 0 },
+          { kind: 'book', episodes: 0, minutes: 0, finished: 2 },
+        ],
+      }),
+    )
+    expect(parts).toEqual([
+      { kind: 'show', minutes: 300, share: 0.75 },
+      { kind: 'film', minutes: 100, share: 0.25 },
     ])
   })
 

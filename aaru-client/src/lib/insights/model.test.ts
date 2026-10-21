@@ -50,6 +50,7 @@ function stats(overrides: Partial<Stats> = {}): Stats {
       finished: 0,
     },
     topTitles: [],
+    topGenres: [],
     ratings: { count: 0, distribution: Array<number>(10).fill(0) },
     ...overrides,
   }

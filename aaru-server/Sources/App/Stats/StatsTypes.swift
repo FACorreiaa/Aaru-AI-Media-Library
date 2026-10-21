@@ -165,6 +165,8 @@ struct StatsActivity: Sendable, Equatable {
     var finished: Bool
     var firstAt: Date
     var lastAt: Date
+    /// GAM-006e: the title's stored genres (CAT-018); empty for books and titles not yet filled.
+    var genres: [String] = []
 }
 
 protocol StatsStore: Sendable {
@@ -235,6 +237,30 @@ struct PeriodStats: Sendable, Equatable {
         var date: Date
     }
 
+    /// GAM-006e: time spent in one genre, and how many titles carried it.
+    struct GenreTime: Sendable, Equatable {
+        var name: String
+        var minutes: Int
+        var titles: Int
+    }
+
+    /// GAM-006e: one word for how the period went, from the user's own numbers only. The first
+    /// rule that holds wins, in case order. Clients own the words; the server owns the rule.
+    enum Persona: String, Sendable, CaseIterable {
+        /// A day of six or more episodes, or two weeks in a row.
+        case binger
+        /// Books are most of what was finished (at least two).
+        case bookworm
+        /// Anime is most of the time.
+        case anime
+        /// 24 or more titles finished.
+        case completionist
+        /// Three or more kinds of story.
+        case explorer
+        /// Anything else with activity.
+        case steady
+    }
+
     var period: StatsPeriod
     var isPartial: Bool
     var totals: Totals
@@ -251,4 +277,9 @@ struct PeriodStats: Sendable, Equatable {
     var ratings: Ratings
     var first: Moment?
     var last: Moment?
+    /// GAM-006e: the three genres with the most time, films, shows and anime only.
+    var topGenres: [GenreTime] = []
+    /// GAM-006e: the single local day with the most time (then episodes); the earliest on a tie.
+    var biggestDay: Bucket?
+    var persona: Persona?
 }

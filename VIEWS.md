@@ -82,7 +82,7 @@ refuses and substitutes the nearest catalog piece.
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
 | `BadgeShelf` | Earned badges | badge ids, tier, earned at |
 | `StatsPanel` | Insights, later profile numbers | span (`last7` / `last30` / `month` / `year` / `all`), totals with an absolute change against `prior` on rolling spans, buckets, by kind, top titles, ratings distribution (10 bins), longest run; static. Genres and mean score on a profile in 5 |
-| `RecapStory` | A month or year as a story | `year`, optional `month`; the deck is built on the device from `/v1/me/stats` |
+| `RecapStory` | A month or year as a story | `year`, optional `month`; the deck is built on the device from `/v1/me/stats`. A year adds biggest day, genres, kinds and persona cards (GAM-006e) |
 | `RoomPanel` | Watch-together room | `roomId`, title / episode, members + drift, countdown, state |
 | `ConversationView` | E2E conversation | `conversationId`, participants; message bodies decrypt on device only |
 

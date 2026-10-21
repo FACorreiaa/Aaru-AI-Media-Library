@@ -97,6 +97,8 @@ struct StatsService: Sendable {
 /// Everything the stats need, computed from activity rows alone. Titles are looked up after,
 /// only for the few that are shown.
 struct StatsDigest {
+    static let topGenreCount = 3
+
     struct TitleTime: Equatable {
         var titleID: TitleID
         var episodes: Int
@@ -116,6 +118,8 @@ struct StatsDigest {
     var highest: Rated?
     var first: (titleID: TitleID, date: Date)?
     var last: (titleID: TitleID, date: Date)?
+    var topGenres: [PeriodStats.GenreTime] = []
+    var biggestDay: PeriodStats.Bucket?
 
     /// A finished title's rating, and when it finished.
     struct Rated {
@@ -173,6 +177,68 @@ struct StatsDigest {
         }
         // The highest rating; among ties, the latest finish.
         highest = ratings.max { ($0.rating, $0.date) < ($1.rating, $1.date) }
+        topGenres = Self.topGenres(rows)
+        biggestDay = Self.biggestDay(Self.days(rows))
+    }
+
+    /// GAM-006e: time per genre over films, shows and anime, most first, then by titles, then name.
+    static func topGenres(_ rows: [StatsActivity]) -> [PeriodStats.GenreTime] {
+        var perGenre: [String: (minutes: Int, titles: Set<TitleID>)] = [:]
+        for row in rows where row.minutes > 0 && row.type != .book {
+            for genre in Set(row.genres) {
+                perGenre[genre, default: (0, [])].minutes += row.minutes
+                perGenre[genre]?.titles.insert(row.titleID)
+            }
+        }
+        return perGenre.map {
+            PeriodStats.GenreTime(name: $0.key, minutes: $0.value.minutes, titles: $0.value.titles.count)
+        }
+        .sorted { ($0.minutes, $0.titles, $1.name) > ($1.minutes, $1.titles, $0.name) }
+        .prefix(topGenreCount).map(\.self)
+    }
+
+    /// Each active local day's totals.
+    static func days(_ rows: [StatsActivity]) -> [PeriodStats.Bucket] {
+        var perDay: [LocalDay: PeriodStats.Bucket] = [:]
+        for row in rows {
+            perDay[row.day, default: PeriodStats.Bucket(start: row.day)].episodes += row.episodes
+            perDay[row.day]?.minutes += row.minutes
+            if row.finished {
+                perDay[row.day]?.finished += 1
+            }
+        }
+        return Array(perDay.values)
+    }
+
+    /// The day with the most time, then episodes; the earliest among equals. Nil with no time
+    /// and no episodes (a day of finished books alone is not a big day).
+    static func biggestDay(_ days: [PeriodStats.Bucket]) -> PeriodStats.Bucket? {
+        days.filter { $0.minutes > 0 || $0.episodes > 0 }.min {
+            ($1.minutes, $1.episodes, $0.start) < ($0.minutes, $0.episodes, $1.start)
+        }
+    }
+
+    /// GAM-006e: the first persona whose rule holds; nil when nothing happened.
+    func persona() -> PeriodStats.Persona? {
+        let finished = totals.moviesFinished + totals.showsFinished + totals.animeFinished + totals.booksFinished
+        guard totals.activeDays > 0 else { return nil }
+        if (biggestDay?.episodes ?? 0) >= 6 || (longestRun?.days ?? 0) >= 14 {
+            return .binger
+        }
+        if finished >= 2, totals.booksFinished * 2 > finished {
+            return .bookworm
+        }
+        let anime = byKind.first { $0.kind == .anime }?.minutes ?? 0
+        if totals.minutesWatched > 0, anime * 2 > totals.minutesWatched {
+            return .anime
+        }
+        if finished >= 24 {
+            return .completionist
+        }
+        if byKind.count(where: { $0.minutes > 0 || $0.finished > 0 }) >= 3 {
+            return .explorer
+        }
+        return .steady
     }
 
     /// The row's place in `byKind`: anime is anime whatever its type.
@@ -257,7 +323,10 @@ struct StatsDigest {
                 distribution: distribution
             ),
             first: first.flatMap(moment(titles)),
-            last: last.flatMap(moment(titles))
+            last: last.flatMap(moment(titles)),
+            topGenres: topGenres,
+            biggestDay: biggestDay,
+            persona: persona()
         )
     }
 
