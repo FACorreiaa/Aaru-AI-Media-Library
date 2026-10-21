@@ -447,8 +447,21 @@ function Home() {
                     </span>
                     <span class="min-w-0 flex-1">
                       <span class="block text-sm text-muted">Last 7 days</span>
-                      <span class="font-medium">
-                        {week().parts.join(' · ') || 'Nothing tracked yet'}
+                      {/* Each figure keeps its words together; lines break only between them. */}
+                      <span class="font-medium tabular-nums">
+                        <Show
+                          when={week().parts.length > 0}
+                          fallback="Nothing tracked yet"
+                        >
+                          <For each={week().parts}>
+                            {(part, i) => (
+                              <>
+                                {i() > 0 && ' · '}
+                                <span class="whitespace-nowrap">{part}</span>
+                              </>
+                            )}
+                          </For>
+                        </Show>
                       </span>
                     </span>
                     <span class="shrink-0 text-sm font-semibold text-accent">
