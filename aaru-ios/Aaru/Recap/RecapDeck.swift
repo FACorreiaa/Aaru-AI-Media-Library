@@ -139,10 +139,7 @@ enum RecapDeck {
     private static func closingCards(_ stats: Stats) -> [RecapCard] {
         let totals = stats.totals
         var deck: [RecapCard] = []
-        let parts: [(kind: MediaKind, count: Int)] = [
-            (.film, totals.moviesFinished), (.show, totals.showsFinished),
-            (.anime, totals.animeFinished), (.book, totals.booksFinished),
-        ].filter { $0.count >= 1 }
+        let parts = finishedCounts(totals)
         if !parts.isEmpty {
             deck.append(.finished(parts))
         }
@@ -240,8 +237,18 @@ enum RecapDeck {
         case .show: ("show", "shows")
         case .anime: ("anime", "anime")
         case .book: ("book", "books")
+        case .music: ("album", "albums")
         }
         return "\(count) \(count == 1 ? words.0 : words.1)"
+    }
+
+    /// What the period finished, per kind, leaving out kinds with none. Albums (MUS-001) come
+    /// last and only when one was listened to.
+    static func finishedCounts(_ totals: Components.Schemas.StatsTotals) -> [(kind: MediaKind, count: Int)] {
+        [
+            (.film, totals.moviesFinished), (.show, totals.showsFinished),
+            (.anime, totals.animeFinished), (.book, totals.booksFinished), (.music, totals.albumsFinished),
+        ].filter { $0.count >= 1 }
     }
 
     static func ratingLabel(_ rating: Double) -> String {
@@ -258,10 +265,7 @@ enum RecapDeck {
         if totals.episodesWatched > 0 {
             lines.append("\(totals.episodesWatched.formatted()) episodes")
         }
-        let finished = [
-            (MediaKind.film, totals.moviesFinished), (.show, totals.showsFinished),
-            (.anime, totals.animeFinished), (.book, totals.booksFinished),
-        ].filter { $0.1 > 0 }.map { countLabel($0.0, $0.1) }
+        let finished = finishedCounts(totals).map { countLabel($0.kind, $0.count) }
         if !finished.isEmpty {
             lines.append("Finished \(finished.joined(separator: ", "))")
         }

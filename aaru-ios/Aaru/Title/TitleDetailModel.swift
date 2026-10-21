@@ -46,10 +46,12 @@ final class TitleDetailModel {
     @ObservationIgnored private let api: Client?
     @ObservationIgnored private let library: LibraryModel
 
-    init(entry: LibraryEntry, api: Client?, library: LibraryModel) {
+    /// `title` is for previews: the detail already loaded, nothing to fetch.
+    init(entry: LibraryEntry, api: Client?, library: LibraryModel, title: TitleDetail? = nil) {
         self.entry = entry
         self.api = api
         self.library = library
+        self.title = title
     }
 
     var isShow: Bool {
@@ -209,7 +211,12 @@ final class TitleDetailModel {
         defer { isSaving = false }
         do {
             switch try await api.updateLibraryItem(path: .init(id: entry.id), body: .json(patch)) {
-            case let .ok(response): try commit(response.body.json)
+            case let .ok(response):
+                try commit(response.body.json)
+                // An album moving in or out of Listening changes the Listening widget (MUS-001).
+                if patch.status != nil, entry.title._type == .album {
+                    Task { try? await WidgetSync.refresh(api: api) }
+                }
             case let .default(_, error):
                 entry = before
                 problem = (try? error.body.json.message) ?? "That change was not saved."

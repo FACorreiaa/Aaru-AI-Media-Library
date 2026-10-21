@@ -1,7 +1,7 @@
 import Foundation
 
 extension WidgetSnapshot {
-    /// The gallery and previews: a week of plausible shows, no artwork.
+    /// The gallery and previews: a week of plausible shows and a few albums, no artwork.
     static var sample: WidgetSnapshot {
         let now = Date.now
         let calendar = WidgetSnapshot.weekCalendar
@@ -51,6 +51,13 @@ extension WidgetSnapshot {
                 airing("Pluribus", 1, 1, at(5, 3), network: "Apple TV", kind: .premiere),
                 airing("Severance", 2, 8, at(6, 3), network: "Apple TV"),
             ].sorted { $0.airsAt < $1.airsAt },
+            listening: [
+                Album(libraryItemId: "a1", title: "OK Computer", artist: "Radiohead", year: 1997),
+                Album(libraryItemId: "a2", title: "Blonde", artist: "Frank Ocean", year: 2016),
+                Album(libraryItemId: "a3", title: "Vespertine", artist: "Björk", year: 2001),
+                Album(libraryItemId: "a4", title: "In Rainbows", artist: "Radiohead", year: 2007),
+                Album(libraryItemId: "a5", title: "Promises", artist: "Floating Points", year: 2021),
+            ],
             writtenAt: now
         )
     }

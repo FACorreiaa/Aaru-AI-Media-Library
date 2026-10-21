@@ -52,6 +52,20 @@ struct WidgetSnapshot: Codable, Sendable, Equatable {
         }
     }
 
+    /// MUS-001: an album the user is listening to, for the Listening widget.
+    struct Album: Codable, Sendable, Equatable, Identifiable {
+        var libraryItemId: String
+        var title: String
+        var artist: String?
+        var year: Int?
+        /// A square Cover Art Archive cover.
+        var coverURL: URL?
+
+        var id: String {
+            libraryItemId
+        }
+    }
+
     /// A calendar day independent of time zone.
     struct DayKey: Hashable, Comparable, Sendable {
         let year: Int
@@ -72,6 +86,9 @@ struct WidgetSnapshot: Codable, Sendable, Equatable {
     var upNext: [NextEpisode]
     /// From the Monday of this week to two weeks out, in air order.
     var airings: [Airing]
+    /// Albums in progress, most recently touched first. Optional so a snapshot written before
+    /// MUS-001 still decodes; nil reads as none.
+    var listening: [Album]?
     var writtenAt: Date
 
     static let utc: Calendar = {

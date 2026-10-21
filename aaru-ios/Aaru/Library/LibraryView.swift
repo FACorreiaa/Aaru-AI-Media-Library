@@ -68,7 +68,7 @@ struct LibraryView: View {
                 ContentUnavailableView {
                     Label("Your shelf is empty", systemImage: "books.vertical")
                 } description: {
-                    Text("Search for a film, show, anime or book to start.")
+                    Text("Search for a film, show, anime, book or album to start.")
                 } actions: {
                     Button("Search") { showsSearch = true }
                         .buttonStyle(.borderedProminent)
@@ -202,6 +202,12 @@ private struct PosterCard: View {
             Text(row.title)
                 .font(.footnote.weight(.medium))
                 .lineLimit(2)
+            if row.kind == .music, let artist = row.byline {
+                Text(artist)
+                    .font(.caption2)
+                    .foregroundStyle(Color(.muted))
+                    .lineLimit(1)
+            }
             Text(row.detail ?? row.status.label(for: row.kind))
                 .font(.caption2)
                 .foregroundStyle(Color(.muted))
@@ -220,7 +226,7 @@ private struct LibraryListRow: View {
                 .frame(width: 48)
             VStack(alignment: .leading, spacing: 3) {
                 Text(row.title).font(.body.weight(.medium)).lineLimit(2)
-                Text([row.year.map(String.init), row.kind.label].compactMap(\.self).joined(separator: " · "))
+                Text(metaLine)
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
                 Text([row.status.label(for: row.kind), row.detail].compactMap(\.self).joined(separator: " · "))
@@ -230,5 +236,13 @@ private struct LibraryListRow: View {
         }
         .listRowBackground(Color.clear)
         .accessibilityElement(children: .combine)
+    }
+
+    /// "1997 · Films", or "Radiohead · 1997" for an album.
+    private var metaLine: String {
+        let parts = row.kind == .music
+            ? [row.byline, row.year.map(String.init)]
+            : [row.year.map(String.init), row.kind.label]
+        return parts.compactMap(\.self).joined(separator: " · ")
     }
 }

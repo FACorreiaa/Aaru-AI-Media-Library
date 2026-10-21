@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// A 2:3 poster from the catalog URL, with a calm placeholder while it loads or when there is none.
+/// A 2:3 poster (a square cover for an album) from the catalog URL, with a calm placeholder while it loads or when
+/// there is none.
 struct PosterView: View {
     let url: URL?
     let kind: MediaKind
 
     var body: some View {
         Color(.surface)
-            .aspectRatio(2 / 3, contentMode: .fit)
+            .aspectRatio(kind.posterAspect, contentMode: .fit)
             .overlay {
                 AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
                     if let image = phase.image {
