@@ -109,7 +109,8 @@ struct CatalogAdapterTests {
     func openLibrarySearch() async throws {
         let stub = transport(["/search.json": #"""
         {"docs":[{"key":"/works/OL893415W","title":"Dune","first_publish_year":1965,
-                  "isbn":["0441172717","9780441172719"],"cover_i":123,"author_name":["Frank Herbert"]}]}
+                  "isbn":["0441172717","9780441172719"],"cover_i":123,"author_name":["Frank Herbert"],
+                  "number_of_pages_median":412}]}
         """#])
         let hits = try await OpenLibraryCatalog(client: client(stub, "ol"), userAgent: "Aaru-test").search(
             query: "dune",
@@ -117,6 +118,7 @@ struct CatalogAdapterTests {
         )
         #expect(hits.first?.ids == ExternalIDs(isbn: "9780441172719", openLibrary: "OL893415W"))
         #expect(hits.first?.byline == "Frank Herbert")
+        #expect(hits.first?.pageCount == 412)
         #expect(stub.requests.first?.headers.contains { $0 == ("User-Agent", "Aaru-test") } == true)
     }
 

@@ -5,7 +5,7 @@ import Foundation
 /// cover URLs referenced, never downloaded.
 struct OpenLibraryCatalog: CatalogSearching {
     static let baseURL = URL(string: "https://openlibrary.org")!
-    static let fields = "key,title,first_publish_year,isbn,cover_i,author_name"
+    static let fields = "key,title,first_publish_year,isbn,cover_i,author_name,number_of_pages_median"
 
     let client: ProviderClient
     /// Open Library asks API users to identify themselves.
@@ -73,6 +73,7 @@ private struct SearchPage: Decodable {
         let isbn: [String]?
         let coverI: Int?
         let authorName: [String]?
+        let numberOfPagesMedian: Int?
 
         var hit: CatalogHit? {
             guard let title = title?.nilIfBlank, key.hasPrefix("/works/") else { return nil }
@@ -88,7 +89,8 @@ private struct SearchPage: Decodable {
                     isbn: isbn?.lazy.compactMap(ISBN.normalize).first,
                     openLibrary: String(key.dropFirst("/works/".count))
                 ),
-                isAnime: false
+                isAnime: false,
+                pageCount: numberOfPagesMedian.flatMap { $0 > 0 ? $0 : nil }
             )
         }
     }

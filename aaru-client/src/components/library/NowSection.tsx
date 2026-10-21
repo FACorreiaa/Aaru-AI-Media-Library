@@ -119,6 +119,9 @@ function NowCard(props: {
 }) {
   const e = () => props.item.entry
   const isBook = () => props.item.kind === 'book'
+  const isAlbum = () => props.item.kind === 'album'
+  /** Books and albums lead with their cover; video with its backdrop. */
+  const hasCover = () => isBook() || isAlbum()
   const art = () => e().title.backdropUrl ?? e().title.posterUrl
   const [editing, setEditing] = createSignal(false)
   return (
@@ -129,12 +132,12 @@ function NowCard(props: {
       )}
     >
       <Show
-        when={!isBook()}
+        when={!hasCover()}
         fallback={
           <div class="flex gap-4 p-4 pb-0">
             <Poster
               url={e().title.posterUrl}
-              kind="book"
+              kind={props.item.kind}
               class="w-20 shrink-0 shadow-md"
             />
             <div class="min-w-0">
@@ -145,8 +148,8 @@ function NowCard(props: {
               >
                 {e().title.title}
               </Link>
-              <Show when={e().title.year}>
-                <p class="mt-1 text-sm text-muted">{e().title.year}</p>
+              <Show when={e().title.byline ?? e().title.year}>
+                {(line) => <p class="mt-1 text-sm text-muted">{line()}</p>}
               </Show>
             </div>
           </div>
@@ -238,7 +241,11 @@ function NowCard(props: {
                   disabled={props.pending}
                   onClick={() => props.onFinish()}
                 >
-                  {isBook() ? 'Finished' : 'Mark watched'}
+                  {isBook()
+                    ? 'Finished'
+                    : isAlbum()
+                      ? 'Listened'
+                      : 'Mark watched'}
                 </Button>
               </Show>
               <Show when={props.item.next}>

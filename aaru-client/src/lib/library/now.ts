@@ -2,17 +2,17 @@ import { kindOf } from './model'
 import type { LibraryEntry, MediaKind } from './model'
 
 // APP-017: "Now" at the top of Library — what the user is in the middle of, grouped the way they
-// would say it: watching, reading. Derived from the shelf already loaded; nothing extra is
+// would say it: watching, reading, listening. Derived from the shelf already loaded; nothing extra is
 // fetched. Newest activity first.
 
-export type NowGroup = 'watching' | 'reading'
+export type NowGroup = 'watching' | 'reading' | 'listening'
 
 export interface NowItem {
   entry: LibraryEntry
   kind: MediaKind
   /** 0…1 when the share done is known: episodes watched of aired, or a book's percent. */
   done?: number
-  /** "4 of 10 episodes", "Page 120", "35%", or a film's runtime-free "In progress". */
+  /** "4 of 10 episodes", "Page 120 of 412", "35%", or a film's runtime-free "In progress". */
   progressLabel: string
   /** The next episode to tick, for shows and anime. */
   next?: { season: number; number: number; label: string }
@@ -27,12 +27,14 @@ export interface NowSection {
 const TITLES: Record<NowGroup, string> = {
   watching: 'Watching',
   reading: 'Reading',
+  listening: 'Listening',
 }
 
 /** The kinds a group holds, so a kind chip narrows Now to its own group. */
 export const GROUP_KINDS: Record<NowGroup, MediaKind[]> = {
   watching: ['film', 'show', 'anime'],
   reading: ['book'],
+  listening: ['album'],
 }
 
 export function nowItem(entry: LibraryEntry): NowItem {
@@ -63,12 +65,26 @@ export function nowItem(entry: LibraryEntry): NowItem {
       progressLabel: `${Math.round(book.percent)}%`,
     }
   }
+  const pages = entry.title.pageCount
   if (book?.page !== undefined)
-    return { entry, kind, progressLabel: `Page ${book.page}` }
+    return pages
+      ? {
+          entry,
+          kind,
+          done: Math.min(1, book.page / pages),
+          progressLabel: `Page ${book.page} of ${pages}`,
+        }
+      : { entry, kind, progressLabel: `Page ${book.page}` }
+  if (kind === 'album') return { entry, kind, progressLabel: 'Listening' }
   return {
     entry,
     kind,
-    progressLabel: kind === 'book' ? 'Just started' : 'In progress',
+    progressLabel:
+      kind === 'book'
+        ? pages
+          ? `${pages} pages`
+          : 'Just started'
+        : 'In progress',
   }
 }
 

@@ -27,12 +27,17 @@ struct NowItem: Identifiable {
             label = "\(Int(percent.rounded()))%"
             next = nil
         } else if let page = entry.bookProgress?.page {
-            done = nil
-            label = "Page \(page)"
+            let pages = entry.title.pageCount
+            done = pages.map { min(1, Double(page) / Double($0)) }
+            label = pages.map { "Page \(page) of \($0)" } ?? "Page \(page)"
             next = nil
         } else {
             done = nil
-            label = kind == .book ? "Just started" : "In progress"
+            switch kind {
+            case .book: label = entry.title.pageCount.map { "\($0) pages" } ?? "Just started"
+            case .music: label = "Listening"
+            default: label = "In progress"
+            }
             next = nil
         }
     }
@@ -54,8 +59,9 @@ extension LibraryModel {
     func nowGroups(kind: MediaKind?) -> [NowGroup] {
         let items = inProgress.map(NowItem.init).filter { kind == nil || $0.kind == kind }
         return [
-            NowGroup(title: "Watching", items: items.filter { $0.kind != .book }),
+            NowGroup(title: "Watching", items: items.filter { $0.kind != .book && $0.kind != .music }),
             NowGroup(title: "Reading", items: items.filter { $0.kind == .book }),
+            NowGroup(title: "Listening", items: items.filter { $0.kind == .music }),
         ].filter { !$0.items.isEmpty }
     }
 

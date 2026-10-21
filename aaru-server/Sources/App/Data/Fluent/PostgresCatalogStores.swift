@@ -33,6 +33,7 @@ struct PostgresTitleStore: TitleStore {
         let backdropUrl: String?
         let network: String?
         let byline: String?
+        let pageCount: Int?
         let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb, musicbrainz: String?
         let isAnime: Bool
         let status: String?
@@ -54,6 +55,7 @@ struct PostgresTitleStore: TitleStore {
                 backdropURL: backdropUrl.flatMap(URL.init(string:)),
                 network: network,
                 byline: byline,
+                pageCount: pageCount,
                 ids: ExternalIDs(
                     tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
                     openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb, musicbrainz: musicbrainz
@@ -71,7 +73,8 @@ struct PostgresTitleStore: TitleStore {
             originalTitle: title.originalTitle, year: title.year, synopsis: title.synopsis,
             posterUrl: title.posterURL?.absoluteString,
             backdropUrl: title.backdropURL?.absoluteString, network: title.network, byline: title.byline,
-            tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb, isbn: ids.isbn,
+            pageCount: title.pageCount, tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb,
+            isbn: ids.isbn,
             openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb,
             musicbrainz: ids.musicbrainz,
             isAnime: title.isAnime, status: status?.rawValue, runtimeMinutes: runtimeMinutes,

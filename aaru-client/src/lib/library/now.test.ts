@@ -43,6 +43,16 @@ describe('library Now', () => {
     expect(paged.progressLabel).toBe('Page 120')
     expect(paged.done).toBeUndefined()
     expect(nowItem(entry({ title: book })).progressLabel).toBe('Just started')
+    const counted = nowItem(
+      entry({
+        title: { ...book, pageCount: 400 },
+        bookProgress: { page: 100 },
+      }),
+    )
+    expect(counted).toMatchObject({
+      done: 0.25,
+      progressLabel: 'Page 100 of 400',
+    })
   })
 
   it('groups in-progress items, newest first, and narrows to a kind', () => {
@@ -63,8 +73,23 @@ describe('library Now', () => {
       updatedAt: '2026-10-11T00:00:00Z',
     })
     const later = entry({ id: 'w', status: 'wishlist' })
-    const sections = nowSections([entry(), book, film, later])
-    expect(sections.map((s) => s.group)).toEqual(['watching', 'reading'])
+    const album = entry({
+      id: 'a',
+      title: {
+        id: 'a',
+        type: 'album',
+        title: 'Bookends',
+        isAnime: false,
+        ids: {},
+      },
+    })
+    const sections = nowSections([entry(), book, film, later, album])
+    expect(sections.map((s) => s.group)).toEqual([
+      'watching',
+      'reading',
+      'listening',
+    ])
+    expect(sections[2].items[0].progressLabel).toBe('Listening')
     expect(sections[0].items.map((i) => i.entry.id)).toEqual(['f', 'i1'])
     expect(nowSections([entry(), book], 'book').map((s) => s.group)).toEqual([
       'reading',

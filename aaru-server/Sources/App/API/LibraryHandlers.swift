@@ -193,7 +193,7 @@ extension Components.Schemas.TitleSummary {
             id: title.id.description, _type: .init(title.type), title: title.title,
             originalTitle: title.originalTitle, year: title.year, posterUrl: title.posterURL?.absoluteString,
             backdropUrl: title.backdropURL?.absoluteString, network: title.network, byline: title.byline,
-            isAnime: title.isAnime, ids: .init(title.ids)
+            pageCount: title.pageCount, isAnime: title.isAnime, ids: .init(title.ids)
         )
     }
 }

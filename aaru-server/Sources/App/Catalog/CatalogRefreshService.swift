@@ -16,6 +16,8 @@ struct CatalogRefresher: Sendable {
     static let retryAfter: TimeInterval = 60 * 60
     /// A title the provider gave no genres is asked again after a week.
     static let genresRetryAfter: TimeInterval = 7 * 24 * 60 * 60
+    /// Books per pass whose page count is filled; one Open Library read each.
+    var pageCountLimit = 40
 
     let stores: Stores
     let catalog: CatalogService
@@ -51,6 +53,21 @@ struct CatalogRefresher: Sendable {
         }
         return due.count
     }
+
+    /// APP-017 backfill: a page count for shelved books stored before Open Library's was kept,
+    /// in-progress books first. Every attempt is stamped; one without a count is asked again weekly.
+    func fillPageCounts() async throws -> Int {
+        let now = now()
+        let due = try await stores.titles.booksMissingPageCount(
+            retryAfter: now.addingTimeInterval(-Self.genresRetryAfter), limit: pageCountLimit
+        )
+        for book in due {
+            try Task.checkCancellation()
+            let found = try? await catalog.catalogs.openLibrary.hydrate(ids: book.ids, type: .book)
+            try await stores.titles.fillPageCount(book.id, found?.hit.pageCount, attemptedAt: now)
+        }
+        return due.count
+    }
 }
 
 /// Runs the catalog refresher every five minutes in the API process.
@@ -70,6 +87,10 @@ struct CatalogRefreshService: Service {
                     let genres = try await refresher.fillGenres()
                     if genres > 0 {
                         logger.info("Title genres filled", metadata: ["count": "\(genres)"])
+                    }
+                    let pages = try await refresher.fillPageCounts()
+                    if pages > 0 {
+                        logger.info("Book page counts filled", metadata: ["count": "\(pages)"])
                     }
                 } catch is CancellationError {
                     return

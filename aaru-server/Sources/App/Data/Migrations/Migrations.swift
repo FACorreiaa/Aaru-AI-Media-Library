@@ -45,6 +45,7 @@ let allMigrations: [any Migration] = [
     AddListens(),
     AddMusicLookups(),
     AddConcerts(),
+    AddTitlePageCount(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

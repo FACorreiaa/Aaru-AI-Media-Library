@@ -116,9 +116,9 @@ private struct NowCard: View {
     }
 
     @ViewBuilder private var art: some View {
-        if item.kind == .book {
+        if item.kind == .book || item.kind == .music {
             HStack(alignment: .top, spacing: 14) {
-                PosterView(url: title.posterUrl.flatMap(URL.init(string:)), kind: .book)
+                PosterView(url: title.posterUrl.flatMap(URL.init(string:)), kind: item.kind)
                     .frame(width: 76)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .shadow(radius: 3, y: 2)
@@ -127,8 +127,8 @@ private struct NowCard: View {
                         .font(.aaruDisplay(.title3, weight: .semibold))
                         .foregroundStyle(Color(.ink))
                         .lineLimit(3)
-                    if let year = title.year {
-                        Text(String(year)).font(.subheadline).foregroundStyle(Color(.muted))
+                    if let line = title.byline ?? title.year.map(String.init) {
+                        Text(line).font(.subheadline).foregroundStyle(Color(.muted)).lineLimit(2)
                     }
                 }
                 Spacer(minLength: 0)
@@ -203,7 +203,8 @@ private struct NowCard: View {
             }
             if item.next == nil {
                 Button { perform(.finish) } label: {
-                    Text(item.kind == .book ? "Finished" : "Mark watched").frame(minHeight: 30)
+                    Text(item.kind == .book ? "Finished" : item.kind == .music ? "Listened" : "Mark watched")
+                        .frame(minHeight: 30)
                 }
                 .buttonStyle(.bordered)
             }

@@ -18,6 +18,8 @@ struct CatalogHit: Sendable, Equatable {
     /// First release (films) or first air date (shows), `YYYY-MM-DD`; nil when the provider
     /// gives no full date.
     var releaseDate: String?
+    /// Books: pages, the median across editions (Open Library).
+    var pageCount: Int?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)
