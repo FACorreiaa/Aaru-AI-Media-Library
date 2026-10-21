@@ -285,3 +285,70 @@ struct CATImportTests {
         }
     }
 }
+
+// MARK: A real export
+
+extension CATImportTests {
+    /// Trimmed from a real CAT export (2026-10-21). The header's PRODID, which carries the user's
+    /// CAT key and email, is replaced.
+    static let realExport = """
+    BEGIN:VCALENDAR\r
+    VERSION:2.0\r
+    CALSCALE:GREGORIAN\r
+    X-WR-CALDESC:Calendar for TV from Pogdesign\r
+    X-WR-CALNAME:TV Shows\r
+    X-WR-TIMEZONE:Europe/Lisbon\r
+    PRODID:-//Pogdesign//TV//EN\r
+    METHOD:PUBLISH\r
+    BEGIN:VEVENT\r
+    DTSTART:20261026T000000\r
+    DTEND:20261026T003000\r
+    SUMMARY:The Simpsons S38E04 - \\nTreehouse of Horror XXXVII\r
+    URL:https://www.pogdesign.co.uk/cat/The-Simpsons-summary\r
+    UID:THESIMPSONS_38_4\r
+    CATEGORIES: The Simpsons Episodes, TV Shows\r
+    END:VEVENT\r
+    BEGIN:VEVENT\r
+    DTSTART:20261026T010000\r
+    DTEND:20261026T020000\r
+    SUMMARY:Tracker S04E04 - \\nPurification\r
+    DESCRIPTION:When a woman disappears after helping a terrified teenage\r
+      runaway\\, Colter uncovers a disturbing case of abuse and\r
+      embarks on a desperate search to save them both.\r
+    URL:https://www.pogdesign.co.uk/cat/Tracker-summary\r
+    UID:TRACKER_4_4\r
+    END:VEVENT\r
+    BEGIN:VEVENT\r
+    DTSTART:20261102T020000\r
+    SUMMARY:Tracker S04E05 - \\nNeed to Know\r
+    UID:TRACKER_4_5\r
+    END:VEVENT\r
+    BEGIN:VEVENT\r
+    DTSTART:20261022T010000\r
+    SUMMARY:Scrubs (2026) S02E05 - \\nMy Best Friend&#039\\;s Birthday\r
+    URL:https://www.pogdesign.co.uk/cat/Scrubs-2026-summary\r
+    UID:SCRUBS2026_2_5\r
+    END:VEVENT\r
+    BEGIN:VEVENT\r
+    DTSTART:20261022T045900\r
+    SUMMARY:Brothers (2026) S01E06 - \\nThe Dance\r
+    UID:BROTHERS2026_1_6\r
+    END:VEVENT\r
+    END:VCALENDAR\r
+    """
+
+    @Test("A real CAT export: one row per show, CAT's (2026) as the year, each with its first airing")
+    func realExportRows() throws {
+        let rows = try CATCalendarParser.parse(Self.realExport)
+        #expect(rows.map(\.title) == ["The Simpsons", "Tracker", "Scrubs", "Brothers"])
+        #expect(rows.map(\.year) == [nil, nil, 2026, 2026])
+        #expect(rows.map(\.nameOnly) == [true, true, nil, nil])
+        #expect(rows.map(\.airing) == [
+            ImportAiring(season: 38, episode: 4, day: "2026-10-26"),
+            ImportAiring(season: 4, episode: 4, day: "2026-10-26"),
+            ImportAiring(season: 2, episode: 5, day: "2026-10-22"),
+            ImportAiring(season: 1, episode: 6, day: "2026-10-22"),
+        ])
+        #expect(try ImportFormatDetector.detect(Self.realExport) == .catICS)
+    }
+}
