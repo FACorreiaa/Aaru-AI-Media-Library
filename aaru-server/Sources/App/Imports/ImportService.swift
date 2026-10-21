@@ -95,7 +95,10 @@ struct ImportService: Sendable {
                 stored = try await expandStremioWatched(stored)
             }
             let jobID = job.id
-            let rows = try await plan(stored, userID: job.userID) { matched in
+            // The last try plans without AniList if it is still down: the rest of the file is not
+            // held hostage by one provider's outage.
+            let lastTry = claimed.attempts >= Self.maxAttempts
+            let rows = try await plan(stored, userID: job.userID, withoutAniListIfDown: lastTry) { matched in
                 try await stores.importJobs.progress(
                     jobID, matched: matched, lockedUntil: now().addingTimeInterval(Self.lease)
                 )
@@ -177,7 +180,7 @@ extension ImportService {
 
     private static func summary(of error: any Error) -> String {
         if let provider = error as? ProviderError {
-            return "\(provider.provider) could not be reached while matching titles."
+            return "\(provider.displayName) could not be reached while matching titles."
         }
         return "Matching stopped: \(String(describing: error).prefix(200))"
     }

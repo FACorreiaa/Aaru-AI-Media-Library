@@ -204,7 +204,7 @@ struct ImportFlowTests {
             env.fake.fail(with: nil)
             let job = try #require(try await env.send(.get, "/v1/imports/\(id)").json()["job"] as? [String: Any])
             #expect(state == "failed")
-            #expect((job["errorSummary"] as? String)?.contains("openlibrary") == true)
+            #expect((job["errorSummary"] as? String)?.contains("Open Library") == true)
         }
     }
 

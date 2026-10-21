@@ -18,10 +18,13 @@ extension ImportService {
     static let rowsInFlight = 4
 
     /// Matches every row and decides what the approval would do with it. `progress` hears how many
-    /// rows are matched as each chunk finishes (and renews the job's lease).
+    /// rows are matched as each chunk finishes (and renews the job's lease). With
+    /// `withoutAniListIfDown` (a job's last try), an AniList outage leaves only the rows that need
+    /// AniList unmatched, instead of failing the import.
     func plan(
         _ rows: [PlannedRow],
         userID: UserID,
+        withoutAniListIfDown: Bool = false,
         progress: @Sendable (Int) async throws -> Void = { _ in }
     ) async throws -> [PlannedRow] {
         let chunks = stride(from: 0, to: rows.count, by: Self.chunkSize).map { start in
@@ -29,7 +32,7 @@ extension ImportService {
         }
         var matched = 0
         var planned = try await Self.boundedMap(chunks, limit: Self.chunksInFlight) { chunk in
-            try await matchChunk(chunk)
+            try await matchChunk(chunk, withoutAniListIfDown: withoutAniListIfDown)
         } finished: { chunk in
             matched += chunk.count
             try await progress(matched)
@@ -54,12 +57,16 @@ extension ImportService {
     }
 
     /// One chunk: AniList's answers for its MyAnimeList-only rows in one request, then each row.
-    private func matchChunk(_ chunk: [PlannedRow]) async throws -> [PlannedRow] {
-        let resolver = try await resolver.prefetchingMAL(chunk.compactMap { row in
-            row.row.unsupported == nil ? row.row.mediaRef : nil
-        })
+    private func matchChunk(_ chunk: [PlannedRow], withoutAniListIfDown: Bool) async throws -> [PlannedRow] {
+        let refs = chunk.compactMap { row in row.row.unsupported == nil ? row.row.mediaRef : nil }
+        let resolver: TitleResolver
+        do {
+            resolver = try await self.resolver.prefetchingMAL(refs)
+        } catch let error as ProviderError where withoutAniListIfDown && error.isAniListOutage {
+            resolver = self.resolver.withoutAniList(error)
+        }
         return try await Self.boundedMap(chunk, limit: Self.rowsInFlight) { row in
-            try await match(row, with: resolver)
+            try await match(row, with: resolver, withoutAniListIfDown: withoutAniListIfDown)
         }
     }
 
@@ -93,7 +100,9 @@ extension ImportService {
     }
 
     /// Resolves one row to a title, or says why it could not.
-    private func match(_ planned: PlannedRow, with resolver: TitleResolver) async throws -> PlannedRow {
+    private func match(
+        _ planned: PlannedRow, with resolver: TitleResolver, withoutAniListIfDown: Bool
+    ) async throws -> PlannedRow {
         var row = planned
         if let reason = row.row.unsupported {
             row.outcome = .unmatched
@@ -118,6 +127,10 @@ extension ImportService {
         } catch is ValidationError {
             row.outcome = .unmatched
             row.reason = "Not enough to match: the row needs an id or a year."
+        } catch let error as ProviderError where withoutAniListIfDown && error.isAniListOutage {
+            row.outcome = .unmatched
+            row.reason = "AniList was not answering, so this could not be matched. "
+                + "Import the file again later to add it."
         }
         return row
     }

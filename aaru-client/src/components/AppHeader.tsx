@@ -34,7 +34,7 @@ export function AppHeader(props: { onSearch?: () => void; class?: string }) {
   return (
     <header class={`mx-auto px-4 md:px-8 ${props.class ?? 'max-w-6xl'}`}>
       <div class="flex h-16 items-center justify-between gap-4">
-        <Wordmark />
+        <Wordmark to="/app" />
         <div class="flex items-center gap-4 text-sm font-medium">
           <Show
             when={props.onSearch}

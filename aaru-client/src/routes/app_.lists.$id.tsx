@@ -125,7 +125,7 @@ function ListPage() {
   return (
     <div class="min-h-[100dvh]">
       <header class="mx-auto flex h-18 max-w-3xl items-center justify-between px-5 md:px-8">
-        <Wordmark />
+        <Wordmark to="/app" />
         <Link
           to="/app/lists"
           class="text-sm font-medium text-muted hover:text-ink"
