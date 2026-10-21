@@ -60,6 +60,7 @@ export function SearchPanel(props: {
   onMount(() => input?.focus())
   const [hits, setHits] = createSignal<CatalogHit[]>([])
   const [incomplete, setIncomplete] = createSignal(false)
+  const [notice, setNotice] = createSignal<string | undefined>()
   const [searching, setSearching] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
   // Hits being added right now: a second click waits instead of adding twice.
@@ -89,6 +90,7 @@ export function SearchPanel(props: {
         if (ticket === latest) {
           setHits(results.items)
           setIncomplete(results.incomplete)
+          setNotice(results.notice)
           setProblem(null)
         }
       } catch (error) {
@@ -216,7 +218,9 @@ export function SearchPanel(props: {
           )}
         </Show>
         <Show when={incomplete() && !searching()}>
-          <p class="text-sm text-muted">Some results are missing right now.</p>
+          <p class="text-sm text-muted">
+            {notice() ?? 'Some results are missing right now.'}
+          </p>
         </Show>
       </div>
       {/* One panel for every tab: its value follows the selection, so it stays mounted. */}

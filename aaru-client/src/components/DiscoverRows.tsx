@@ -114,6 +114,7 @@ export function DiscoverRows(props: {
         {(row) => (
           <Row
             title={row().title}
+            note={row().note}
             action={
               row().id === 'anime_season' ? (
                 <Link

@@ -180,21 +180,44 @@ extension TMDBCatalog: DiscoverListing {
             query["vote_count.gte"] = "10"
         case .moviesTrending: (type, path) = (.movie, "trending/movie/week")
         case .moviesInTheaters: (type, path) = (.movie, "movie/now_playing")
+        case .animeSeason, .animeTrending:
+            // Not in `discoverLists`: AniList serves these. TMDB's Japanese animation stands in
+            // only while AniList is down (CAT-021), so it is an approximation of AniList's rows.
+            (type, path) = (.show, "discover/tv")
+            try query.merge(Self.animeQuery(list, now: now)) { _, new in new }
         default: throw ProviderError(provider: "tmdb", kind: .notFound)
         }
         let page = try await get(SearchPage.self, path, query)
-        return Self.rowHits(page, type: type)
+        return Self.rowHits(page, type: type, anime: list == .animeSeason || list == .animeTrending)
     }
 
     /// A page as row cards. Anime rows come from AniList, the anime catalog, so TV rows drop
-    /// anime, and news, soap and talk shows.
-    private static func rowHits(_ page: SearchPage, type: MediaType) -> [CatalogHit] {
+    /// anime, and news, soap and talk shows; `anime` keeps them instead, for the stand-in rows.
+    private static func rowHits(_ page: SearchPage, type: MediaType, anime: Bool = false) -> [CatalogHit] {
         page.results.compactMap { entry -> CatalogHit? in
-            guard let hit = entry.hit(type: type) else { return nil }
+            guard var hit = entry.hit(type: type) else { return nil }
+            if anime {
+                hit.isAnime = true
+                return hit
+            }
             guard type == .show else { return hit }
             let genres = Set(entry.genreIds ?? [])
             return hit.isAnime || !genres.isDisjoint(with: Self.offRowGenres) ? nil : hit
         }
+    }
+
+    /// Japanese animation: this season's premieres, or what aired in the last and next week.
+    static func animeQuery(_ list: DiscoverList, now: Date) throws -> [String: String] {
+        var query = ["with_genres": "16", "with_origin_country": "JP", "sort_by": "popularity.desc"]
+        if list == .animeSeason {
+            guard let season = SeasonOfYear.current(now) else { throw ProviderError(provider: "tmdb", kind: .notFound) }
+            query["first_air_date.gte"] = season.days.first
+            query["first_air_date.lte"] = season.days.last
+        } else {
+            query["air_date.gte"] = day(now.addingTimeInterval(-7 * 86400))
+            query["air_date.lte"] = day(now.addingTimeInterval(7 * 86400))
+        }
+        return query
     }
 
     private static func day(_ date: Date) -> String {

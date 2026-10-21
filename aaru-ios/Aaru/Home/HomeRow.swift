@@ -4,6 +4,8 @@ import SwiftUI
 /// sideways. On iPhone a card and a fifth show, so the row reads as scrollable.
 struct HomeRow<Content: View>: View {
     let title: String
+    /// A line under the title, e.g. why a row is a stand-in (AniList down, TMDB filling in).
+    var note: String?
     var trailing: (label: String, action: () -> Void)?
     @ViewBuilder let content: () -> Content
 
@@ -21,6 +23,12 @@ struct HomeRow<Content: View>: View {
                 }
             }
             .padding(.horizontal, 20)
+            if let note {
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(Color(.muted))
+                    .padding(.horizontal, 20)
+            }
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 12) {
                     content()

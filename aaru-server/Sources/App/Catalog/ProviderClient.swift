@@ -83,6 +83,9 @@ struct ProviderClient: Sendable {
     var maxAttempts = 3
     var baseDelay: Duration = .milliseconds(250)
     var sleep: @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
+    /// A provider's own reading of a failed answer, before the status-code rules: AniList says
+    /// "disabled" with a 403, which is an outage, not a refused credential.
+    var classify: (@Sendable (OutboundResponse) -> ProviderError.Kind?)?
 
     /// Longest `Retry-After` honoured; a longer one fails the call so a job can retry later.
     static let maxRetryAfter: Duration = .seconds(60)
@@ -128,6 +131,9 @@ struct ProviderClient: Sendable {
     /// Throws for the answers that asking again would not change: 404, 401/403, any other 4xx
     /// but 429.
     private func refuse(_ response: OutboundResponse) throws {
+        if let kind = classify?(response) {
+            throw ProviderError(provider: name, kind: kind)
+        }
         switch response.status {
         case 404: throw ProviderError(provider: name, kind: .notFound)
         case 401, 403: throw ProviderError(provider: name, kind: .unauthorized)

@@ -133,6 +133,7 @@ struct DiscoverScreen: View {
                     ForEach(rows, id: \.id) { row in
                         HomeRow(
                             title: row.title,
+                            note: row.note,
                             trailing: row.id == "anime_season" ? ("All seasons", { showSeasons(.anime) }) : nil
                         ) {
                             ForEach(row.items) { hit in

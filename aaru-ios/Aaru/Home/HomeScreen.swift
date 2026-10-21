@@ -350,6 +350,7 @@ extension HomeScreen {
         return ForEach(rows, id: \.id) { row in
             HomeRow(
                 title: row.title,
+                note: row.note,
                 trailing: row.id == rows.first?.id ? ("See Discover", { onSelectTab(.discover) }) : nil
             ) {
                 ForEach(row.items) { hit in

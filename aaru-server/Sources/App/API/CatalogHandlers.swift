@@ -8,7 +8,8 @@ extension APIImplementation {
         guard let scope = SearchScope(rawValue: input.query._type.rawValue) else { throw AppError.badRequest() }
         let result = try await catalog.search(query: input.query.q, scope: scope)
         return .ok(.init(body: .json(.init(
-            items: result.hits.map { Components.Schemas.CatalogHit($0) }, incomplete: result.incomplete
+            items: result.hits.map { Components.Schemas.CatalogHit($0) }, incomplete: result.incomplete,
+            notice: result.notice
         ))))
     }
 
@@ -17,7 +18,7 @@ extension APIImplementation {
         return .ok(.init(body: .json(.init(rows: rows.map { row in
             .init(id: row.list.rawValue, title: row.title, items: row.items.map {
                 Components.Schemas.CatalogHit($0.hit, libraryItemID: $0.libraryItemID)
-            })
+            }, note: row.note)
         }))))
     }
 

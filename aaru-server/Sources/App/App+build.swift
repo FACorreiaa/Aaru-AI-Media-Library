@@ -337,10 +337,10 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
         anilist: AniListCatalog(
             // 90 requests/minute.
             client: ProviderClient(
-                name: "anilist",
-                transport: transport,
-                pacer: RequestPacer(requestsPerSecond: 1.5, burst: 5)
-            )
+                name: "anilist", transport: transport, pacer: RequestPacer(requestsPerSecond: 1.5, burst: 5),
+                classify: AniListCatalog.classify
+            ),
+            userAgent: config.openLibraryUserAgent
         ),
         openLibrary: OpenLibraryCatalog(
             client: ProviderClient(

@@ -36,6 +36,12 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-21
 
+- **AniList outage: TMDB stands in (CAT-021).** AniList disabled its whole public API on
+  2026-10-21 ("temporarily disabled due to severe stability issues", HTTP 403 behind
+  Cloudflare). Aaru logged that as `unauthorized`, so the anime rows went empty. Now it reads as
+  an outage, and until AniList returns, TMDB's Japanese animation fills the anime Discover rows
+  (with a note) and anime search (with a notice). The stand-in approximates AniList: a continuing
+  show keeps its first air date, so sequels can miss "this season".
 - **Mindspace redesign, and Tonight pulled forward client-composed (owner, 2026-10-21).** Aaru
   keeps its name, marks and teal → gold, and gets one visual language on both clients (DESIGN.md
   "Mindspace"): shared tokens generated from `design/tokens.json` with an AA contrast gate,
@@ -424,6 +430,7 @@ account or a stranger that has not happened yet.
 | CAT-017 | Deferred | heading "Deferred" | |
 | CAT-019 | Done | #43 5be7fef; CatalogSearchAllTests (Mobland) | Stub tests |
 | CAT-020 | Dropped | superseded by DISC-001 | |
+| CAT-021 | Built | AniListCatalog.classify, TMDB anime stand-in | Stub tests; live AniList outage 2026-10-21 |
 | UPN-002 | Done | #43; ScheduleTests UPN-002 | |
 | GAM-006c | Done | #43; StatsTests "all time equals the years summed" | |
 | GAM-006d | Done | #65; StatsTests GAM-006d, insights/home model tests | iOS not run on a device |

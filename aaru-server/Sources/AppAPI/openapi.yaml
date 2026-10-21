@@ -2779,7 +2779,13 @@ components:
           type: boolean
           description: >-
             True when one provider of an `all` search failed or ran out of time, so the items
-            come from the other alone. Always false for a single-provider search.
+            come from the other alone. An `anime` search is also incomplete while AniList is down
+            and TMDB stands in.
+        notice:
+          type: string
+          description: >-
+            Why the items are partial, in words to show, e.g. AniList being down while TMDB's
+            Japanese animation stands in.
     DiscoverRow:
       type: object
       required: [id, title, items]
@@ -2795,6 +2801,9 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/CatalogHit'}
+        note:
+          type: string
+          description: Where a stand-in row came from, e.g. TMDB while AniList is down.
     DiscoverRows:
       type: object
       required: [rows]
