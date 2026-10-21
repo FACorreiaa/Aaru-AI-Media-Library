@@ -138,7 +138,7 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func insert(_: Title, status _: TitleStatus?, runtimeMinutes _: Int?) async throws {
+    func insert(_: Title, status _: TitleStatus?, runtimeMinutes _: Int?, genres _: [String]) async throws {
         throw Touched()
     }
 

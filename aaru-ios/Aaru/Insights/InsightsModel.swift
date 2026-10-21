@@ -2,9 +2,9 @@ import AaruAPI
 import Foundation
 import Observation
 
-/// The span Insights shows: one month, one year, or everything.
+/// The span Insights shows: the last 7 or 30 days, one month, one year, or everything.
 enum InsightsSpan: String, CaseIterable, Identifiable {
-    case month, year, all
+    case last7, last30, month, year, all
 
     var id: String {
         rawValue
@@ -12,9 +12,26 @@ enum InsightsSpan: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
+        case .last7: "7 days"
+        case .last30: "30 days"
         case .month: "Month"
         case .year: "Year"
         case .all: "All time"
+        }
+    }
+
+    /// GAM-006d: a window ending today, compared with the one before. Nothing to step through.
+    var isRolling: Bool {
+        self == .last7 || self == .last30
+    }
+
+    /// The `span` query a span sends; calendar months and years send a year instead.
+    var query: Operations.GetStats.Input.Query.SpanPayload? {
+        switch self {
+        case .last7: .last7
+        case .last30: .last30
+        case .all: .all
+        case .month, .year: nil
         }
     }
 }
@@ -25,21 +42,23 @@ struct InsightsPeriod: Hashable {
     var year: Int
     var month: Int
 
-    /// "October 2026", "2026", "All time".
+    /// "Last 7 days", "October 2026", "2026", "All time".
     var label: String {
         switch span {
+        case .last7: "Last 7 days"
+        case .last30: "Last 30 days"
         case .month: RecapPeriod(year: year, month: month).label
         case .year: "\(year)"
         case .all: "All time"
         }
     }
 
-    /// The Recap story for this period; none for all time.
+    /// The Recap story for this period; none for all time or a rolling window.
     var recap: RecapPeriod? {
         switch span {
         case .month: RecapPeriod(year: year, month: month)
         case .year: RecapPeriod(year: year)
-        case .all: nil
+        case .all, .last7, .last30: nil
         }
     }
 
@@ -52,7 +71,7 @@ struct InsightsPeriod: Hashable {
             next.year = index / 12
             next.month = index % 12 + 1
         case .year: next.year += delta
-        case .all: break
+        case .all, .last7, .last30: break
         }
         return next
     }
@@ -62,7 +81,7 @@ struct InsightsPeriod: Hashable {
         switch span {
         case .month: (year, month) > (other.year, other.month)
         case .year: year > other.year
-        case .all: false
+        case .all, .last7, .last30: false
         }
     }
 }
@@ -81,12 +100,15 @@ final class InsightsModel {
     @ObservationIgnored private let timeZone: TimeZone
     @ObservationIgnored private let current: InsightsPeriod
 
-    init(api: Client?, now: Date = .now, calendar: Calendar = .current, timeZone: TimeZone = .current) {
+    init(
+        api: Client?, span: InsightsSpan = .month, now: Date = .now, calendar: Calendar = .current,
+        timeZone: TimeZone = .current
+    ) {
         self.api = api
         self.timeZone = timeZone
         let parts = calendar.dateComponents([.year, .month], from: now)
         current = InsightsPeriod(span: .month, year: parts.year ?? 2000, month: parts.month ?? 1)
-        period = current
+        period = current.with(span: span)
     }
 
     /// For previews: one period's stats already in place.
@@ -108,12 +130,12 @@ final class InsightsModel {
         }
     }
 
-    var canStepBack: Bool {
-        span != .all
+    var canStep: Bool {
+        span != .all && !span.isRolling
     }
 
     var canStepForward: Bool {
-        span != .all && !period.stepped(1).isAfter(current.with(span: span))
+        canStep && !period.stepped(1).isAfter(current.with(span: span))
     }
 
     func step(_ delta: Int) {
@@ -128,8 +150,8 @@ final class InsightsModel {
         isLoading = true
         defer { isLoading = false }
         let query = Operations.GetStats.Input.Query(
-            year: wanted.span == .all ? nil : wanted.year,
-            span: wanted.span == .all ? .all : nil,
+            year: wanted.span.query == nil ? wanted.year : nil,
+            span: wanted.span.query,
             month: wanted.span == .month ? wanted.month : nil,
             tz: timeZone.identifier
         )

@@ -996,7 +996,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date. */
+    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date. */
     get: operations['getStats']
     put?: never
     post?: never
@@ -1317,6 +1317,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/cat': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across. */
+    post: operations['createCATImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/cat/feed': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept. */
+    post: operations['createCATFeedImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/anilist': {
     parameters: {
       query?: never
@@ -1412,7 +1446,7 @@ export interface paths {
     get: operations['getTraktConnection']
     put?: never
     post?: never
-    /** Forget the Trakt tokens. Imported items stay. */
+    /** Revoke the Trakt tokens on Trakt, then forget them. Imported items stay. */
     delete: operations['disconnectTrakt']
     options?: never
     head?: never
@@ -2536,20 +2570,25 @@ export interface components {
       since: string
       next?: components['schemas']['EpisodeRef']
     }
-    /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. */
+    /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. `biggestDay` is the single local day with the most time (then episodes), the earliest on a tie. */
     Stats: {
       /** @enum {string} */
-      span: 'month' | 'year' | 'all'
+      span: 'month' | 'year' | 'all' | 'last7' | 'last30'
       /** @description The last year the period touches; for `all`, the current year. */
       year: number
       month?: number
+      /** @description First day of a rolling span (YYYY-MM-DD); absent for calendar spans. */
+      from?: string
+      /** @description Last day of a rolling span (YYYY-MM-DD, inclusive, today); absent for calendar spans. */
+      until?: string
       timeZone: string
       /** @description The period is not over yet in the user's time zone (always true for `all`). */
       isPartial: boolean
       totals: components['schemas']['StatsTotals']
+      prior?: components['schemas']['StatsTotals']
       /** @description Movie, show, anime and book, always all four in that order; they sum to `totals`. */
       byKind: components['schemas']['StatsKind'][]
-      /** @description One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order. */
+      /** @description One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order. */
       buckets: components['schemas']['StatsBucket'][]
       busiest?: components['schemas']['StatsBucket']
       mostEpisodes?: components['schemas']['StatsBucket']
@@ -2559,6 +2598,26 @@ export interface components {
       ratings: components['schemas']['StatsRatings']
       first?: components['schemas']['StatsMoment']
       last?: components['schemas']['StatsMoment']
+      /** @description GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored. */
+      topGenres: components['schemas']['StatsGenre'][]
+      biggestDay?: components['schemas']['StatsBucket']
+      /**
+       * @description GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+       * @enum {string}
+       */
+      persona?:
+        | 'binger'
+        | 'bookworm'
+        | 'anime'
+        | 'completionist'
+        | 'explorer'
+        | 'steady'
+    }
+    StatsGenre: {
+      name: string
+      minutes: number
+      /** @description How many titles in the period carried this genre. */
+      titles: number
     }
     StatsTotals: {
       episodesWatched: number
@@ -4348,10 +4407,10 @@ export interface operations {
   getStats: {
     parameters: {
       query?: {
-        /** @description Required unless `span=all`. */
+        /** @description Required unless `span` is sent. */
         year?: number
-        /** @description `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise). */
-        span?: 'all'
+        /** @description `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. `last7` and `last30` are the 7 or 30 days ending today, one bucket per day, with `prior` holding the window just before. A span takes no `year` or `month` (422 otherwise). */
+        span?: 'all' | 'last7' | 'last30'
         /** @description 1–12. Absent means the whole year. */
         month?: number
         /** @description IANA time zone for day and month boundaries. Absent means UTC. */
@@ -4949,6 +5008,60 @@ export interface operations {
       content: {
         'text/csv': string
         'application/xml': string
+      }
+    }
+    responses: {
+      /** @description Queued for matching. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createCATImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'text/plain': string
+        'text/calendar': string
+      }
+    }
+    responses: {
+      /** @description Queued for matching. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createCATFeedImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description The iCal link from CAT. */
+          url: string
+        }
       }
     }
     responses: {

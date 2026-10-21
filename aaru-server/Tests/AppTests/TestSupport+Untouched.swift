@@ -72,6 +72,18 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func titlesMissingGenres(retryAfter _: Date, limit _: Int) async throws -> [Title] {
+        throw Touched()
+    }
+
+    func fillGenres(_: TitleID, _: [String], attemptedAt _: Date) async throws {
+        throw Touched()
+    }
+
+    func genres(_: TitleID) async throws -> [String] {
+        throw Touched()
+    }
+
     func saveWebPush(_: WebPushSubscription, userID _: UserID) async throws {
         throw Touched()
     }

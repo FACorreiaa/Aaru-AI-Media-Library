@@ -77,7 +77,9 @@ struct TitleResolver: Sendable {
             isAnime: catalog.hit.isAnime
         )
         do {
-            try await stores.titles.insert(title, status: catalog.status, runtimeMinutes: catalog.runtimeMinutes)
+            try await stores.titles.insert(
+                title, status: catalog.status, runtimeMinutes: catalog.runtimeMinutes, genres: catalog.genres
+            )
             return title
         } catch is StoreConflict {
             // A concurrent resolution inserted it first.
@@ -85,6 +87,11 @@ struct TitleResolver: Sendable {
             else { throw ResolutionError.notFound }
             return winner
         }
+    }
+
+    /// CAT-018 backfill: the genres the title's provider lists now; nil when no provider knows it.
+    func genres(of title: Title) async throws -> [String]? {
+        try await hydrate(ids: title.ids, type: title.type)?.genres
     }
 
     /// Which provider knows these ids. Anime with a community TMDB mapping resolves to the
@@ -143,5 +150,21 @@ struct TitleResolver: Sendable {
         guard !matches.isEmpty else { throw ResolutionError.notFound }
         guard matches.count == 1 else { throw ResolutionError.ambiguous }
         return try await resolve(ids: matches[0].ids, type: ref.type)
+    }
+
+    // MARK: By name only
+
+    /// A show known only by its name (Pogdesign CAT, IMP-009): the one TMDB show whose normalized
+    /// title equals it, in any year. Two shows with the name (a remake) are ambiguous, never a guess.
+    func resolveShow(named name: String) async throws -> Title {
+        let wanted = MatchKey.normalize(name)
+        guard !wanted.isEmpty else { throw ResolutionError.notFound }
+        let hits = try await catalogs.tmdb.search(query: name, type: .show)
+        let matches = hits.filter { hit in
+            hit.type == .show && hit.year != nil && MatchKey.normalize(hit.title) == wanted
+        }
+        guard !matches.isEmpty else { throw ResolutionError.notFound }
+        guard matches.count == 1 else { throw ResolutionError.ambiguous }
+        return try await resolve(ids: matches[0].ids, type: .show)
     }
 }

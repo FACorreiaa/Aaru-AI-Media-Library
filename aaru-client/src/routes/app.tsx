@@ -1,8 +1,15 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import {
+  For,
+  Show,
+  Suspense,
+  createMemo,
+  createSignal,
+  lazy,
+  onMount,
+} from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
-import { SearchPanel } from '../components/SearchPanel'
 import { PlanCard } from '../components/PlanCard'
 import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
@@ -30,10 +37,15 @@ import {
   airingBadge,
   countChips,
   markOnShelf,
-  monthStrip,
+  weekStrip,
   upcoming,
 } from '../lib/home/model'
-import type { ContinueEntry, DiscoverRow, UpNext } from '../lib/home/model'
+import type {
+  ContinueEntry,
+  DiscoverRow,
+  UpNext,
+  WeekStrip,
+} from '../lib/home/model'
 import { getDiscover, getUpNext } from '../lib/home/server'
 import { upsert } from '../lib/library/model'
 import type { LibraryEntry } from '../lib/library/model'
@@ -45,6 +57,7 @@ import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { getSession } from '../lib/session/session'
 import { listPendingPlans } from '../lib/plans/server'
 import type { AgentPlan } from '../lib/plans/server'
+import { flip, leave } from '../lib/motion'
 import { setEpisode } from '../lib/title/server'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
@@ -52,6 +65,11 @@ import { setEpisode } from '../lib/title/server'
 // viewer's "today", as do this month's stats, Discover's public rows (DISC-001) and the list
 // chips, so a cold provider cache never holds the page. Each of those hides itself if it
 // fails. Search opens in place and shares the library for its "On your shelf" marks.
+// Search loads only when it is first opened: it is not part of the page's first paint.
+const SearchPanel = lazy(() =>
+  import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
+)
+
 export const Route = createFileRoute('/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
   beforeLoad: async () => {
@@ -69,7 +87,7 @@ function Home() {
   const [starting, setStarting] = createSignal(loaded().startWatching)
   const [unfinished, setUnfinished] = createSignal(loaded().unfinished ?? [])
   const [counts, setCounts] = createSignal(loaded().counts)
-  const [strip, setStrip] = createSignal<string[]>([])
+  const [strip, setStrip] = createSignal<WeekStrip | null>(null)
   const [lists, setLists] = createSignal<ListSummary[] | null>(null)
   const [airings, setAirings] = createSignal<CalendarEntry[]>([])
   const [now, setNow] = createSignal<Date | null>(null)
@@ -123,19 +141,19 @@ function Home() {
     }
   }
 
-  /** This month in numbers, in the viewer's time zone. A failure just leaves the strip out. */
-  async function loadStrip(current: Date) {
+  /** The last 7 days in numbers, in the viewer's time zone. A failure just leaves the strip
+   * out. */
+  async function loadStrip() {
     try {
       const stats = await getStats({
         data: {
-          year: current.getFullYear(),
-          month: current.getMonth() + 1,
+          span: 'last7',
           tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         },
       })
-      setStrip(monthStrip(stats))
+      setStrip(weekStrip(stats))
     } catch {
-      setStrip([])
+      setStrip(null)
     }
   }
 
@@ -170,7 +188,7 @@ function Home() {
     const current = new Date()
     setNow(current)
     const today = localDayKey(current)
-    void loadStrip(current)
+    void loadStrip()
     void loadDiscover()
     void loadPlans()
     void loadLists()
@@ -227,13 +245,19 @@ function Home() {
 
   /** Marks the card's next episode watched: the card advances at once, the server's answer
    * then replaces the guess, and a failed write puts the card back where it was. */
-  async function markWatched(entry: ContinueEntry) {
+  async function markWatched(entry: ContinueEntry, card: HTMLElement) {
     const id = entry.libraryItemId
     if (busy().has(id)) return
     const index = continuing().findIndex((r) => r.libraryItemId === id)
     setBusyFor(id, true)
     setProblem(null)
-    setContinuing((rows) => advance(rows, entry))
+    const step = () => setContinuing((rows) => advance(rows, entry))
+    // The last episode takes the show off the row: it fades out, the cards after it slide in.
+    const row = card.parentElement
+    if (entry.remainingCount <= 1 && row) {
+      await leave(card)
+      void flip(row, step)
+    } else step()
     try {
       await setEpisode({
         data: {
@@ -302,22 +326,47 @@ function Home() {
           </section>
         </Show>
 
-        <Show when={strip().length > 0}>
-          <Link
-            to="/app/insights"
-            class={cn(
-              cardClass,
-              'mt-6 flex items-center justify-between gap-4 px-5 py-4 hover:text-accent',
-            )}
-          >
-            <span class="min-w-0">
-              <span class="block text-sm text-muted">This month</span>
-              <span class="font-medium">{strip().join(' · ')}</span>
-            </span>
-            <span class="shrink-0 text-sm font-semibold text-accent">
-              Insights
-            </span>
-          </Link>
+        <Show when={strip()}>
+          {(week) => (
+            <Link
+              to="/app/insights"
+              search={{ span: 'last7' }}
+              class={cn(
+                cardClass,
+                'mt-6 flex items-center gap-4 px-5 py-4 hover:text-accent',
+              )}
+            >
+              <span
+                class="flex h-8 w-20 shrink-0 items-end gap-[3px] text-accent"
+                aria-hidden="true"
+              >
+                <For each={week().days}>
+                  {(height) => (
+                    <span
+                      class="flex-1 rounded-[2px]"
+                      classList={{
+                        'bg-current': height > 0,
+                        'bg-line': height === 0,
+                      }}
+                      style={{
+                        height:
+                          height > 0 ? `${Math.max(height * 100, 15)}%` : '3px',
+                      }}
+                    />
+                  )}
+                </For>
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm text-muted">Last 7 days</span>
+                <span class="font-medium">
+                  {week().parts.join(' · ') || 'Nothing tracked yet'}
+                </span>
+              </span>
+              <span class="shrink-0 text-sm font-semibold text-accent">
+                Insights
+              </span>
+            </Link>
+          )}
         </Show>
 
         <Show when={chips().length > 0}>
@@ -519,11 +568,17 @@ function Home() {
         class="w-[min(40rem,calc(100vw-2rem))]"
       >
         <Show when={searchOpened()}>
-          <SearchPanel
-            entries={entries()}
-            onAdded={(entry) => void added(entry)}
-            onClose={() => dialog?.close()}
-          />
+          <Suspense
+            fallback={
+              <p class="px-5 py-8 text-center text-sm text-muted">Loading…</p>
+            }
+          >
+            <SearchPanel
+              entries={entries()}
+              onAdded={(entry) => void added(entry)}
+              onClose={() => dialog?.close()}
+            />
+          </Suspense>
         </Show>
       </Dialog>
     </div>

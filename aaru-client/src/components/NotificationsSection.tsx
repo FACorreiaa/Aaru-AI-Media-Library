@@ -9,10 +9,11 @@ import {
 import type { NotificationSettings, PushSetup } from '../lib/push/server'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
+import { Switch } from './ui/switch'
 
-type Switch = keyof NotificationSettings
+type SettingKey = keyof NotificationSettings
 
-const switches: { key: Switch; label: string; detail: string }[] = [
+const switches: { key: SettingKey; label: string; detail: string }[] = [
   {
     key: 'airing',
     label: 'New episodes',
@@ -59,11 +60,15 @@ export function NotificationsSection(props: { setup: PushSetup }) {
     setSubscribed(Boolean(await registration?.pushManager.getSubscription()))
   })
 
-  async function toggle(key: Switch, on: boolean) {
+  async function toggle(key: SettingKey, on: boolean) {
+    const before = settings()
     setProblem(null)
+    // The switch moves at once; the server's answer decides.
+    setSettings({ ...before, [key]: on })
     try {
       setSettings(await saveNotifications({ data: { [key]: on } }))
     } catch (error) {
+      setSettings(before)
       fail(error, 'That was not saved.')
     }
   }
@@ -126,18 +131,13 @@ export function NotificationsSection(props: { setup: PushSetup }) {
       <h2 class="font-display text-xl font-medium">Notifications</h2>
       <For each={switches}>
         {(item) => (
-          <label class="mt-3 flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              class="mt-0.5"
-              checked={settings()[item.key]}
-              onChange={(e) => void toggle(item.key, e.currentTarget.checked)}
-            />
-            <span>
-              {item.label}
-              <span class="block text-xs text-muted">{item.detail}</span>
-            </span>
-          </label>
+          <Switch
+            class="mt-3 flex items-start gap-3 text-sm"
+            checked={settings()[item.key]}
+            onChange={(checked) => void toggle(item.key, checked)}
+            label={item.label}
+            description={item.detail}
+          />
         )}
       </For>
 

@@ -10,11 +10,13 @@ import Testing
 /// IMP-002/003 against a stubbed Trakt. No network, no real client id.
 @Suite("Trakt", .serialized)
 struct TraktTests {
-    /// Canned Trakt: routes by path; `nil` means 404. Records every request.
+    /// Canned Trakt: routes by path (query ignored, except `page` on paged routes); `nil` means
+    /// 404. Records every request.
     final class FakeTrakt: @unchecked Sendable {
-        // @unchecked: test-only; `lock` guards `routes`.
+        // @unchecked: test-only; `lock` guards `routes` and `pages`.
         private let lock = NSLock()
         private var routes: [String: (Int, String)] = [:]
+        private var pages: [String: [String]] = [:]
         let transport: StubTransport
 
         init() {
@@ -30,8 +32,20 @@ struct TraktTests {
             lock.withLock { routes[path] = (status, body) }
         }
 
+        /// A paged list, as Trakt sends it: one body per `page`, with `X-Pagination-Page-Count`.
+        func route(_ path: String, pages bodies: [String]) {
+            lock.withLock { pages[path] = bodies }
+        }
+
         private func answer(_ request: OutboundRequest) -> OutboundResponse {
             let path = String(request.url.path.dropFirst())
+            if let bodies = lock.withLock({ pages[path] }) {
+                let page = Self.query(request, "page").flatMap(Int.init) ?? 1
+                return OutboundResponse(
+                    status: 200, body: Data((bodies.indices.contains(page - 1) ? bodies[page - 1] : "[]").utf8),
+                    headers: [("X-Pagination-Page-Count", String(bodies.count))]
+                )
+            }
             guard let (status, body) = lock.withLock({ routes[path] }) else {
                 return OutboundResponse(status: 404, body: Data())
             }
@@ -207,8 +221,10 @@ struct TraktTests {
             "sync/watched/movies", #"[{"last_watched_at":"2024-02-01T20:00:00.000Z","movie":\#(media("Heat", heat))}]"#
         )
         fake.route("sync/watched/shows", #"[{"show":\#(media("Severance", severance)),"seasons":\#(episodes)}]"#)
-        fake.route("sync/watchlist", #"[{"type":"movie","movie":\#(media("Dune", dune))}]"#)
-        fake.route("sync/ratings", #"[{"type":"movie","rating":9,"movie":\#(media("Heat", heat))}]"#)
+        fake.route("sync/watchlist/movies", #"[{"type":"movie","movie":\#(media("Dune", dune))}]"#)
+        fake.route("sync/watchlist/shows", "[]")
+        fake.route("sync/ratings/movies", #"[{"type":"movie","rating":9,"movie":\#(media("Heat", heat))}]"#)
+        fake.route("sync/ratings/shows", "[]")
         fake.route("users/me/lists", #"[{"name":"Faves","ids":{"trakt":77}}]"#)
         let listed = [media("Heat", heat), media("Arrival", arrival)].map { #"{"type":"movie","movie":\#($0)}"# }
         fake.route("users/me/lists/77/items", "[" + listed.joined(separator: ",") + "]")
@@ -248,8 +264,10 @@ struct TraktTests {
             for path in [
                 "sync/watched/movies",
                 "sync/watched/shows",
-                "sync/watchlist",
-                "sync/ratings",
+                "sync/watchlist/movies",
+                "sync/watchlist/shows",
+                "sync/ratings/movies",
+                "sync/ratings/shows",
                 "users/me/lists",
             ] {
                 fake.route(path, status: 401, "{}")

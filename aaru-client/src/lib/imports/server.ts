@@ -82,6 +82,44 @@ export const uploadImport = createServerFn({ method: 'POST' })
     ),
   )
 
+/** IMP-009/010: Pogdesign CAT, as a pasted show list or the exported iCal file's text. */
+export const uploadCatImport = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      text: z
+        .string()
+        .trim()
+        .min(1, 'Paste your shows, one per line.')
+        .max(MAX_BYTES, 'That file is larger than 5 MB.'),
+    }),
+  )
+  .handler(async ({ data }): Promise<ImportJob> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/cat', {
+        body: data.text as never,
+        bodySerializer: (body: unknown) => body as string,
+        headers: {
+          'Content-Type': /^\uFEFF?\s*BEGIN:VCALENDAR/i.test(data.text)
+            ? 'text/calendar'
+            : 'text/plain',
+        },
+      }),
+      'Those shows could not be imported.',
+    ),
+  )
+
+/** IMP-010: the user's CAT iCal link. The server reads it once; the link is not kept. */
+export const startCatFeedImport = createServerFn({ method: 'POST' })
+  .validator(z.object({ url: z.string().trim().min(1).max(512) }))
+  .handler(async ({ data }): Promise<ImportJob> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/cat/feed', {
+        body: { url: data.url },
+      }),
+      'That CAT link could not be imported.',
+    ),
+  )
+
 /** IMP-014: a public AniList anime list, read by the server in the background. */
 export const startAniListImport = createServerFn({ method: 'POST' })
   .validator(z.object({ username: z.string().trim().min(1).max(40) }))
@@ -93,6 +131,58 @@ export const startAniListImport = createServerFn({ method: 'POST' })
       'That AniList import could not be started.',
     ),
   )
+
+export type TraktConnection = components['schemas']['TraktConnection']
+
+/** IMP-002: whether this account has connected Trakt, and as whom. */
+export const getTraktConnection = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<TraktConnection> =>
+    check(
+      await api(sessionToken()).GET('/v1/imports/trakt/connection'),
+      'Your Trakt connection could not be loaded.',
+    ),
+)
+
+/**
+ * Starts a Trakt sign-in (PKCE, held by the server) and returns Trakt's page to open. Trakt
+ * sends the browser back to `returnTo` with `?trakt=connected|denied|failed`; the server only
+ * accepts Aaru's own origins.
+ */
+export const connectTrakt = createServerFn({ method: 'POST' })
+  .validator(z.object({ returnTo: z.string().url().max(500) }))
+  .handler(
+    async ({ data }): Promise<string> =>
+      check(
+        await api(sessionToken()).POST('/v1/imports/trakt/connect', {
+          body: { returnTo: data.returnTo },
+        }),
+        'Trakt could not be reached. Try again in a minute.',
+      ).authorizeUrl,
+  )
+
+/** IMP-003: the server reads the connected Trakt account in the background, then plans. */
+export const startTraktImport = createServerFn({ method: 'POST' }).handler(
+  async (): Promise<ImportJob> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/trakt'),
+      'That Trakt import could not be started.',
+    ),
+)
+
+/** Revokes Aaru on Trakt (freeing one of the user's app slots) and forgets the tokens. */
+export const disconnectTrakt = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    const result = await api(sessionToken()).DELETE(
+      '/v1/imports/trakt/connection',
+    )
+    if (result.response.status === 401) sessionRejected()
+    if (!result.response.ok) {
+      throw new Error(
+        errorMessage(result.error, 'Trakt was not disconnected. Try again.'),
+      )
+    }
+  },
+)
 
 export type StremioLink = components['schemas']['StremioLink']
 export type StremioPoll =

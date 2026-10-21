@@ -1,11 +1,13 @@
 import { createFileRoute, redirect } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
-import { z } from 'zod'
+import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
 import { Button } from '../components/ui/button'
 import { answerOAuthRequest, getOAuthRequest } from '../lib/oauth/server'
 import { getSession } from '../lib/session/session'
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // OUT-004: an app (Claude's custom connector, or any OAuth MCP client) asks to reach this
 // library. The user names it, chooses whether it may change things, and answers; the browser
@@ -17,7 +19,11 @@ export const Route = createFileRoute('/oauth/consent')({
       { name: 'robots', content: 'noindex' },
     ],
   }),
-  validateSearch: z.object({ request: z.string().uuid() }),
+  validateSearch: (search): { request: string } => {
+    const request = optionalString(search.request)
+    if (!request || !UUID.test(request)) throw new Error('Invalid request id')
+    return { request }
+  },
   beforeLoad: async ({ search }) => {
     const session = await getSession()
     if (!session.signedIn)
@@ -103,7 +109,7 @@ function Consent() {
       <label class="mt-4 flex items-start gap-2 text-sm">
         <input
           type="checkbox"
-          class="mt-0.5"
+          class="mt-0.5 accent-accent"
           checked={allowWrites()}
           onChange={(e) => setAllowWrites(e.currentTarget.checked)}
         />

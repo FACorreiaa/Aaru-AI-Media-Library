@@ -6,7 +6,7 @@ import {
   hoursLabel,
   markAdded,
   markOnShelf,
-  monthStrip,
+  weekStrip,
   nextLine,
   remainingLabel,
   resumeLine,
@@ -168,11 +168,15 @@ describe('continue watching tick', () => {
   })
 })
 
-function monthStats(totals: Partial<Stats['totals']> = {}): Stats {
+function weekStats(
+  totals: Partial<Stats['totals']> = {},
+  minutes: number[] = [0, 0, 0, 0, 0, 0, 0],
+): Stats {
   return {
-    span: 'month',
+    span: 'last7',
     year: 2026,
-    month: 10,
+    from: '2026-10-15',
+    until: '2026-10-21',
     timeZone: 'Europe/Lisbon',
     isPartial: true,
     totals: {
@@ -186,32 +190,47 @@ function monthStats(totals: Partial<Stats['totals']> = {}): Stats {
       ...totals,
     },
     byKind: [],
-    buckets: [],
+    buckets: minutes.map((m, i) => ({
+      start: `2026-10-${15 + i}`,
+      episodes: 0,
+      minutes: m,
+      finished: 0,
+    })),
     topTitles: [],
+    topGenres: [],
     ratings: { count: 0, distribution: Array<number>(10).fill(0) },
   }
 }
 
-describe('this month strip', () => {
+describe('last 7 days strip', () => {
   it('reads episodes, hours, finished and active days', () => {
     expect(
-      monthStrip(
-        monthStats({
+      weekStrip(
+        weekStats({
           episodesWatched: 12,
           minutesWatched: 540,
           activeDays: 5,
           moviesFinished: 1,
           booksFinished: 1,
         }),
-      ),
+      ).parts,
     ).toEqual(['12 episodes', '9 hours', '2 finished', '5 active days'])
   })
 
-  it('leaves out zeros, and is empty for a month with nothing tracked', () => {
-    expect(monthStrip(monthStats({ booksFinished: 1, activeDays: 1 }))).toEqual(
-      ['1 finished', '1 active day'],
-    )
-    expect(monthStrip(monthStats())).toEqual([])
+  it('leaves out zeros, and keeps seven empty days for a quiet week', () => {
+    expect(
+      weekStrip(weekStats({ booksFinished: 1, activeDays: 1 })).parts,
+    ).toEqual(['1 finished', '1 active day'])
+    expect(weekStrip(weekStats())).toEqual({
+      parts: [],
+      days: [0, 0, 0, 0, 0, 0, 0],
+    })
+  })
+
+  it('scales each day to the busiest by time', () => {
+    expect(weekStrip(weekStats({}, [0, 30, 0, 120, 60, 0, 0])).days).toEqual([
+      0, 0.25, 0, 1, 0.5, 0, 0,
+    ])
   })
 
   it('reads minutes under an hour', () => {

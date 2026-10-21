@@ -8,8 +8,9 @@ struct HomeCache {
     struct Snapshot: Codable {
         var upNext: Components.Schemas.UpNext
         var airing: [CalendarEntry]
-        /// This month's numbers for the stats strip.
-        var monthStats: Stats?
+        /// The last 7 days' numbers for the week strip (GAM-006d). A new key, so an older
+        /// build's month numbers are never shown as a week.
+        var weekStats: Stats?
     }
 
     let url: URL

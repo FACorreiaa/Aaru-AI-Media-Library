@@ -4,11 +4,14 @@ import Foundation
 // MARK: AniList (IMP-014)
 
 extension ImportService {
-    /// The uploaded file's rows: MyAnimeList XML or one of the CSV layouts.
+    /// The uploaded file's rows: MyAnimeList XML, a CAT list or calendar, or one of the CSV layouts.
     static func parse(_ text: String, source: ImportSource, filename: String?) throws -> [ImportRow] {
-        source == .malXML
-            ? try MALListParser.parse(text)
-            : try CSVImportParser.parse(text, source: source, filename: filename)
+        switch source {
+        case .malXML: try MALListParser.parse(text)
+        case .catList: try CATListParser.parse(text)
+        case .catICS: try CATCalendarParser.parse(text)
+        default: try CSVImportParser.parse(text, source: source, filename: filename)
+        }
     }
 
     /// AniList usernames: 2–20 letters, digits or underscores.

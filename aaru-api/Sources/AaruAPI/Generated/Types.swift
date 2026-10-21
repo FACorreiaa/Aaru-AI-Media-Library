@@ -352,7 +352,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -459,6 +459,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/csv`.
     /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)`.
     func createCSVImport(_ input: Operations.CreateCSVImport.Input) async throws -> Operations.CreateCSVImport.Output
+    /// Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)`.
+    func createCATImport(_ input: Operations.CreateCATImport.Input) async throws -> Operations.CreateCATImport.Output
+    /// Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat/feed`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)`.
+    func createCATFeedImport(_ input: Operations.CreateCATFeedImport.Input) async throws -> Operations.CreateCATFeedImport.Output
     /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
@@ -487,7 +497,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/get(getTraktConnection)`.
     func getTraktConnection(_ input: Operations.GetTraktConnection.Input) async throws -> Operations.GetTraktConnection.Output
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
@@ -1409,7 +1419,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -1710,6 +1720,32 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)`.
+    public func createCATImport(
+        headers: Operations.CreateCATImport.Input.Headers = .init(),
+        body: Operations.CreateCATImport.Input.Body
+    ) async throws -> Operations.CreateCATImport.Output {
+        try await createCATImport(Operations.CreateCATImport.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat/feed`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)`.
+    public func createCATFeedImport(
+        headers: Operations.CreateCATFeedImport.Input.Headers = .init(),
+        body: Operations.CreateCATFeedImport.Input.Body
+    ) async throws -> Operations.CreateCATFeedImport.Output {
+        try await createCATFeedImport(Operations.CreateCATFeedImport.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
@@ -1768,7 +1804,7 @@ extension APIProtocol {
     public func getTraktConnection(headers: Operations.GetTraktConnection.Input.Headers = .init()) async throws -> Operations.GetTraktConnection.Output {
         try await getTraktConnection(Operations.GetTraktConnection.Input(headers: headers))
     }
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
@@ -6427,7 +6463,7 @@ public enum Components {
                 case next
             }
         }
-        /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner.
+        /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. `biggestDay` is the single local day with the most time (then episodes), the earliest on a tie.
         ///
         /// - Remark: Generated from `#/components/schemas/Stats`.
         public struct Stats: Codable, Hashable, Sendable {
@@ -6436,6 +6472,8 @@ public enum Components {
                 case month = "month"
                 case year = "year"
                 case all = "all"
+                case last7 = "last7"
+                case last30 = "last30"
             }
             /// - Remark: Generated from `#/components/schemas/Stats/span`.
             public var span: Components.Schemas.Stats.SpanPayload
@@ -6445,6 +6483,14 @@ public enum Components {
             public var year: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Stats/month`.
             public var month: Swift.Int?
+            /// First day of a rolling span (YYYY-MM-DD); absent for calendar spans.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/from`.
+            public var from: Swift.String?
+            /// Last day of a rolling span (YYYY-MM-DD, inclusive, today); absent for calendar spans.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/until`.
+            public var until: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Stats/timeZone`.
             public var timeZone: Swift.String
             /// The period is not over yet in the user's time zone (always true for `all`).
@@ -6453,11 +6499,13 @@ public enum Components {
             public var isPartial: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/Stats/totals`.
             public var totals: Components.Schemas.StatsTotals
+            /// - Remark: Generated from `#/components/schemas/Stats/prior`.
+            public var prior: Components.Schemas.StatsTotals?
             /// Movie, show, anime and book, always all four in that order; they sum to `totals`.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/byKind`.
             public var byKind: [Components.Schemas.StatsKind]
-            /// One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order.
+            /// One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/buckets`.
             public var buckets: [Components.Schemas.StatsBucket]
@@ -6477,17 +6525,41 @@ public enum Components {
             public var first: Components.Schemas.StatsMoment?
             /// - Remark: Generated from `#/components/schemas/Stats/last`.
             public var last: Components.Schemas.StatsMoment?
+            /// GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/topGenres`.
+            public var topGenres: [Components.Schemas.StatsGenre]
+            /// - Remark: Generated from `#/components/schemas/Stats/biggestDay`.
+            public var biggestDay: Components.Schemas.StatsBucket?
+            /// GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/persona`.
+            @frozen public enum PersonaPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case binger = "binger"
+                case bookworm = "bookworm"
+                case anime = "anime"
+                case completionist = "completionist"
+                case explorer = "explorer"
+                case steady = "steady"
+            }
+            /// GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/persona`.
+            public var persona: Components.Schemas.Stats.PersonaPayload?
             /// Creates a new `Stats`.
             ///
             /// - Parameters:
             ///   - span:
             ///   - year: The last year the period touches; for `all`, the current year.
             ///   - month:
+            ///   - from: First day of a rolling span (YYYY-MM-DD); absent for calendar spans.
+            ///   - until: Last day of a rolling span (YYYY-MM-DD, inclusive, today); absent for calendar spans.
             ///   - timeZone:
             ///   - isPartial: The period is not over yet in the user's time zone (always true for `all`).
             ///   - totals:
+            ///   - prior:
             ///   - byKind: Movie, show, anime and book, always all four in that order; they sum to `totals`.
-            ///   - buckets: One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order.
+            ///   - buckets: One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order.
             ///   - busiest:
             ///   - mostEpisodes:
             ///   - longestRun:
@@ -6495,13 +6567,19 @@ public enum Components {
             ///   - ratings:
             ///   - first:
             ///   - last:
+            ///   - topGenres: GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored.
+            ///   - biggestDay:
+            ///   - persona: GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
             public init(
                 span: Components.Schemas.Stats.SpanPayload,
                 year: Swift.Int,
                 month: Swift.Int? = nil,
+                from: Swift.String? = nil,
+                until: Swift.String? = nil,
                 timeZone: Swift.String,
                 isPartial: Swift.Bool,
                 totals: Components.Schemas.StatsTotals,
+                prior: Components.Schemas.StatsTotals? = nil,
                 byKind: [Components.Schemas.StatsKind],
                 buckets: [Components.Schemas.StatsBucket],
                 busiest: Components.Schemas.StatsBucket? = nil,
@@ -6510,14 +6588,20 @@ public enum Components {
                 topTitles: [Components.Schemas.StatsTitle],
                 ratings: Components.Schemas.StatsRatings,
                 first: Components.Schemas.StatsMoment? = nil,
-                last: Components.Schemas.StatsMoment? = nil
+                last: Components.Schemas.StatsMoment? = nil,
+                topGenres: [Components.Schemas.StatsGenre],
+                biggestDay: Components.Schemas.StatsBucket? = nil,
+                persona: Components.Schemas.Stats.PersonaPayload? = nil
             ) {
                 self.span = span
                 self.year = year
                 self.month = month
+                self.from = from
+                self.until = until
                 self.timeZone = timeZone
                 self.isPartial = isPartial
                 self.totals = totals
+                self.prior = prior
                 self.byKind = byKind
                 self.buckets = buckets
                 self.busiest = busiest
@@ -6527,14 +6611,20 @@ public enum Components {
                 self.ratings = ratings
                 self.first = first
                 self.last = last
+                self.topGenres = topGenres
+                self.biggestDay = biggestDay
+                self.persona = persona
             }
             public enum CodingKeys: String, CodingKey {
                 case span
                 case year
                 case month
+                case from
+                case until
                 case timeZone
                 case isPartial
                 case totals
+                case prior
                 case byKind
                 case buckets
                 case busiest
@@ -6544,6 +6634,40 @@ public enum Components {
                 case ratings
                 case first
                 case last
+                case topGenres
+                case biggestDay
+                case persona
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsGenre`.
+        public struct StatsGenre: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/minutes`.
+            public var minutes: Swift.Int
+            /// How many titles in the period carried this genre.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/titles`.
+            public var titles: Swift.Int
+            /// Creates a new `StatsGenre`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - minutes:
+            ///   - titles: How many titles in the period carried this genre.
+            public init(
+                name: Swift.String,
+                minutes: Swift.Int,
+                titles: Swift.Int
+            ) {
+                self.name = name
+                self.minutes = minutes
+                self.titles = titles
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case minutes
+                case titles
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsTotals`.
@@ -17105,7 +17229,7 @@ public enum Operations {
             }
         }
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -17114,15 +17238,17 @@ public enum Operations {
         public struct Input: Sendable, Hashable {
             /// - Remark: Generated from `#/paths/v1/me/stats/GET/query`.
             public struct Query: Sendable, Hashable {
-                /// Required unless `span=all`.
+                /// Required unless `span` is sent.
                 ///
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/year`.
                 public var year: Swift.Int?
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/span`.
                 @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
                     case all = "all"
+                    case last7 = "last7"
+                    case last30 = "last30"
                 }
-                /// `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise).
+                /// `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. `last7` and `last30` are the 7 or 30 days ending today, one bucket per day, with `prior` holding the window just before. A span takes no `year` or `month` (422 otherwise).
                 ///
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/span`.
                 public var span: Operations.GetStats.Input.Query.SpanPayload?
@@ -17137,8 +17263,8 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - year: Required unless `span=all`.
-                ///   - span: `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise).
+                ///   - year: Required unless `span` is sent.
+                ///   - span: `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. `last7` and `last30` are the 7 or 30 days ending today, one bucket per day, with `prior` holding the window just before. A span takes no `year` or `month` (422 otherwise).
                 ///   - month: 1–12. Absent means the whole year.
                 ///   - tz: IANA time zone for day and month boundaries. Absent means UTC.
                 public init(
@@ -20898,6 +21024,305 @@ public enum Operations {
             }
         }
     }
+    /// Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)`.
+    public enum CreateCATImport {
+        public static let id: Swift.String = "createCATImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/cat/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCATImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCATImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateCATImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/cat/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/cat/POST/requestBody/content/text\/plain`.
+                case plainText(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/imports/cat/POST/requestBody/content/text\/calendar`.
+                case textCalendar(OpenAPIRuntime.HTTPBody)
+            }
+            public var body: Operations.CreateCATImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateCATImport.Input.Headers = .init(),
+                body: Operations.CreateCATImport.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/cat/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/cat/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateCATImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateCATImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued for matching.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateCATImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateCATImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat/feed`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)`.
+    public enum CreateCATFeedImport {
+        public static let id: Swift.String = "createCATFeedImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCATFeedImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCATFeedImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateCATFeedImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// The iCal link from CAT.
+                    ///
+                    /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/requestBody/json/url`.
+                    public var url: Swift.String
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - url: The iCal link from CAT.
+                    public init(url: Swift.String) {
+                        self.url = url
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case url
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/requestBody/content/application\/json`.
+                case json(Operations.CreateCATFeedImport.Input.Body.JsonPayload)
+            }
+            public var body: Operations.CreateCATFeedImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateCATFeedImport.Input.Headers = .init(),
+                body: Operations.CreateCATFeedImport.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateCATFeedImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateCATFeedImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued for matching.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateCATFeedImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateCATFeedImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
@@ -21762,7 +22187,7 @@ public enum Operations {
             }
         }
     }
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
