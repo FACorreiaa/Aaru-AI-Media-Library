@@ -358,7 +358,7 @@ account or a stranger that has not happened yet.
 | IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |
 | IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
 | IMP-016 | Built, unverified | #46 62dfe1d; Imports/Stremio/*, StremioImportTests | Not deployed; no real account library |
-| IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Not deployed; Apple ledger not run on a device |
+| IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Live 2026-10-21 (API c8b19e7, LuminaVaultInfra#405; web prod); Apple ledger not run on a device |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
