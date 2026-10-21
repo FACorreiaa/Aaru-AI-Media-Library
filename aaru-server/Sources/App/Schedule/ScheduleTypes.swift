@@ -19,6 +19,8 @@ struct CalendarEntry: Sendable, Equatable {
     /// clients show the day without a time.
     var airTimeKnown = false
     var episodeOverview: String?
+    /// The episode's still (TMDB), for the calendar's episode sheet.
+    var stillURL: URL?
 }
 
 /// A show to continue (UPN-001): the next aired episode not yet watched.

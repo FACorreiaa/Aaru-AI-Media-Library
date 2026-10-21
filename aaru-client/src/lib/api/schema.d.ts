@@ -2513,6 +2513,8 @@ export interface components {
       episodeName?: string
       /** @description The episode's synopsis, when the catalog has one (TMDB; AniList has none). */
       episodeOverview?: string
+      /** @description The episode's still image (TMDB), when the catalog has one. */
+      stillUrl?: string
       /** Format: date-time */
       airsAt: string
       /** @description False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time. */

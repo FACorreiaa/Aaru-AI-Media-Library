@@ -12,12 +12,14 @@ const glyph: Record<MediaKind, string> = {
 export function Poster(props: {
   url?: string
   kind: MediaKind
+  /** `thumb` for small posters inside a cell or row. */
+  radius?: 'field' | 'thumb'
   class?: string
 }) {
   const [failed, setFailed] = createSignal(false)
   return (
     <div
-      class={`relative aspect-[2/3] overflow-hidden rounded-field bg-surface ${props.class ?? ''}`}
+      class={`relative aspect-[2/3] overflow-hidden ${props.radius === 'thumb' ? 'rounded-thumb' : 'rounded-field'} bg-surface ${props.class ?? ''}`}
       aria-hidden="true"
     >
       <Show

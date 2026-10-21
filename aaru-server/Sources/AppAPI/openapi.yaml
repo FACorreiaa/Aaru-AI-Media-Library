@@ -3010,6 +3010,9 @@ components:
         episodeOverview:
           type: string
           description: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
+        stillUrl:
+          type: string
+          description: The episode's still image (TMDB), when the catalog has one.
         airsAt: {type: string, format: date-time}
         airTimeKnown:
           type: boolean

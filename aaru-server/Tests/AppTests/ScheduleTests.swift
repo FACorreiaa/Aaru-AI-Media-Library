@@ -71,7 +71,7 @@ struct ScheduleTests {
         }
     }
 
-    @Test("APP-010: calendar rows carry the show's banner, network, and whether the time is exact")
+    @Test("APP-010, CAL-002: calendar rows carry the banner, network, exact-time flag and episode still")
     func artworkAndAirTime() async throws {
         try await LibraryHarness.run { env in
             let tmdb = stubAiring(env, "Andor", days: [1, 2])
@@ -87,7 +87,8 @@ struct ScheduleTests {
                     CatalogEpisode(
                         season: 1, episode: 2, name: "Two", airsAt: now.addingTimeInterval(2 * Self.day),
                         runtimeMinutes: 50, tmdbEpisodeID: nil, airTimeKnown: true,
-                        overview: "Cassian meets Luthen."
+                        overview: "Cassian meets Luthen.",
+                        stillURL: URL(string: "https://image.tmdb.org/t/p/w300/two.jpg")
                     ),
                 ],
                 backdropURL: URL(string: "https://image.tmdb.org/t/p/w780/andor.jpg"),
@@ -102,6 +103,8 @@ struct ScheduleTests {
             let items = try #require(try reply.json()["items"] as? [[String: Any]])
             #expect(items.compactMap { $0["airTimeKnown"] as? Bool } == [false, true])
             #expect(items.last?["episodeOverview"] as? String == "Cassian meets Luthen.")
+            #expect(items.last?["stillUrl"] as? String == "https://image.tmdb.org/t/p/w300/two.jpg")
+            #expect(items.first?["stillUrl"] == nil)
             let title = try #require(items.first?["title"] as? [String: Any])
             #expect(title["backdropUrl"] as? String == "https://image.tmdb.org/t/p/w780/andor.jpg")
             #expect(title["network"] as? String == "Disney+")

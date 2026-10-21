@@ -144,11 +144,19 @@ airs, and the library status and progress when the title is on the shelf (LST-00
 You came from Pogdesign CAT. Steal the *feeling*, not the site.
 
 Month canvas of **your** airings only, shaped like Stremio's calendar: a month switcher with the
-neighbouring months as buttons, poster thumbnails in each day (dots on iPhone and phone web), and
-an agenda beside the grid (below it on phones) grouped by date. Selecting an agenda row expands
-it: episode name, synopsis, network · time, badge, a single "watched" check, and "Open show".
-Week and Month are two modes of one Calendar destination; weeks start on Monday. Agent
-highlight later: "three premieres, one finale, you are behind on two."
+neighbouring months as buttons, poster thumbnails in each day (two small posters and a "+N" on
+phones, three on wider screens), and an agenda beside the grid (below it on phones) grouped by
+date. Agenda rows carry the poster, show, code and name, network · time and the badge; tapping
+one opens the **episode sheet**: the still, the poster, when and where, the synopsis, a watched
+toggle and "Open show". On a phone, tapping a day opens that day as a sheet.
+
+Week, Month and **Missed** are three modes of one Calendar destination; weeks start on Monday.
+Missed is the catch-up list: what aired in the last four weeks without a tick, one card per
+show, oldest miss first, with how many episodes and how much time it adds up to. **Filters**
+(hide watched, premieres or finales only, shows or anime) apply to every mode, live in the URL,
+and show as removable chips. Every tick is a 44px round toggle that a pending write disables.
+(CAL-002, 2026-10-21.) Agent highlight later: "three premieres, one finale, you are behind on
+two."
 
 ICS import lands here first, then the agent offers to add the missing shows to the library.
 
@@ -302,17 +310,19 @@ The `CalendarMonth` (§7) answers "what did I miss." The week grid answers "what
 week," and it is the closest Aaru gets to copying Pogdesign CAT outright, because that page is
 right.
 
-- Seven dense day columns, today highlighted, previous / next day paging.
+- Seven dense day columns, today highlighted, paging by a day (← →) or a week (« », PageUp /
+  PageDown), Today, and a date to jump to.
 - One cell per episode: banner art, show title, `S01E05`, episode name, network · local time.
-- A checkbox on every cell marks it watched in place.
+  Tapping the cell opens the episode sheet (§7); there is no hover-only tooltip.
+- A round 44px tick on every cell marks it watched in place.
 - State colours: watched (dimmed), premiere, finale, today, and new-season. Colours come from
   the brand palette, not CAT's yellow and red.
 - Banner art is the show's backdrop (TMDB) or banner (AniList), then the poster, then a tint.
   Date-only air dates (TMDB) show the day without a time; anime from AniList has exact times.
 - Your shows only. No global schedule.
 
-On Mac and web the grid is the default calendar view. On iPhone it collapses to a day list with
-the same cells.
+On Mac and web the grid is the default calendar view. On iPhone and phone web it collapses to a
+day strip (tall day pills) over that day's episodes as poster rows.
 
 ## 15. Now playing (Phase 2, live in Phase 3)
 
