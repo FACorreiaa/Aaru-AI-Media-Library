@@ -120,6 +120,13 @@ library layer stay separate, external IDs stored whenever known, no second backe
   so "no scraping" stands. Every CAT show is planned `wishlist`, no progress. CAT names carry no ids
   and rarely a year, so they match by exact normalized name and only when one TMDB show has it.
 
+- **Concerts in Portugal need a second provider (MUS-009, owner 2026-10-21).** Probed with the
+  live key the day MUS-003 shipped: Ticketmaster's Discovery API lists 0 music events in
+  Portugal (country and 25/50/100 km around Lisbon and Porto) against 1,215 in Spain (78 within
+  25 km of Madrid). Bandsintown is added behind the same `ConcertListing` once the owner has an
+  app id; Portuguese ticket sites (BOL, Ticketline, Blueticket) have no public API and are not
+  scraped.
+
 ## Decisions recorded 2026-10-20
 
 - **Discover rows on Home (DISC-001), by the owner's call:** a new account opened to an empty
@@ -393,11 +400,12 @@ account or a stranger that has not happened yet.
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
-| MUS-003 | Built, unverified | ConcertTests | Not deployed; needs `TICKETMASTER_API_KEY` sealed; Portugal coverage not probed |
+| MUS-003 | Built, unverified | #105; ConcertTests; deployed f0525f0 (infra #415, key #414) | Not run on a device; Ticketmaster lists nothing in Portugal (MUS-009) |
 | MUS-005 | Built, unverified | ListenBrainzRouteTests | Not deployed; not tried with a real scrobbler |
 | MUS-006 | Built, unverified | RecordingMatchTests, ListenResolverTests | Not deployed; not run against MusicBrainz itself |
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
+| MUS-009 | Not started | — | Waits for a Bandsintown app id |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -1370,6 +1378,20 @@ query is dropped from request logs. Not in the account export, like the other se
 
 **Done when:** concerts near a saved city and near "Use my location" list on three clients, and
 an artist in the library with a tour shows under "Your artists on tour".
+
+### MUS-009 · Concerts from Bandsintown · M
+**Needs:** MUS-003, the owner's Bandsintown app id (partner application), sealed as
+`BANDSINTOWN_APP_ID` in `aaru-env`.
+Ticketmaster has no Portugal listings (decision 2026-10-21). A `BandsintownConcerts` adapter
+behind `ConcertListing` gives upcoming dates per artist, worldwide. "Your artists on tour" asks
+both providers and merges by date, venue and artist. "Near <city>" adds the user's own artists'
+dates within the radius when Ticketmaster has nothing there; Bandsintown cannot list everything
+playing near a place, so the section says it shows only their artists. Artists match by
+MusicBrainz id where Bandsintown gives one, else not at all. Its own call budget and cache;
+tickets link out; credit "Concerts from Bandsintown".
+
+**Done when:** an artist in the library with a Lisbon date shows under "Your artists on tour"
+and under "Near Lisbon" on three clients.
 
 ### MUS-004 · Listening history import · M · pulled forward 2026-10-21
 **Needs:** MUS-005.
