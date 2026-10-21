@@ -10,51 +10,55 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as AboutRouteImport } from './routes/about'
-import { Route as AppRouteImport } from './routes/app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as AppDiscoverRouteImport } from './routes/app_.discover'
+import { Route as ShellAppRouteImport } from './routes/_shell.app'
 import { Route as AppExportRouteImport } from './routes/app_.export'
-import { Route as AppGroupsRouteImport } from './routes/app_.groups'
-import { Route as AppInsightsRouteImport } from './routes/app_.insights'
-import { Route as AppLibraryRouteImport } from './routes/app_.library'
-import { Route as AppMusicRouteImport } from './routes/app_.music'
-import { Route as AppRecapRouteImport } from './routes/app_.recap'
-import { Route as AppSettingsRouteImport } from './routes/app_.settings'
-import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
-import { Route as AppGroupsIndexRouteImport } from './routes/app_.groups.index'
-import { Route as AppGroupsGroupIdRouteImport } from './routes/app_.groups.$groupId'
-import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
-import { Route as AppListsIndexRouteImport } from './routes/app_.lists.index'
-import { Route as AppListsIdRouteImport } from './routes/app_.lists.$id'
-import { Route as AppPlansIdRouteImport } from './routes/app_.plans.$id'
-import { Route as AppSettingsIndexRouteImport } from './routes/app_.settings.index'
-import { Route as AppSettingsAboutRouteImport } from './routes/app_.settings.about'
-import { Route as AppSettingsAccountRouteImport } from './routes/app_.settings.account'
-import { Route as AppSettingsConnectedRouteImport } from './routes/app_.settings.connected'
-import { Route as AppSettingsImportsRouteImport } from './routes/app_.settings.imports'
-import { Route as AppSettingsRecapsRouteImport } from './routes/app_.settings.recaps'
-import { Route as AppTitleIdRouteImport } from './routes/app_.title.$id'
-import { Route as AppGroupsGroupIdIndexRouteImport } from './routes/app_.groups.$groupId.index'
-import { Route as AppGroupsGroupIdChannelIdRouteImport } from './routes/app_.groups.$groupId.$channelId'
+import { Route as ShellAppCalendarRouteImport } from './routes/_shell.app_.calendar'
+import { Route as ShellAppDiscoverRouteImport } from './routes/_shell.app_.discover'
+import { Route as ShellAppGroupsRouteImport } from './routes/_shell.app_.groups'
+import { Route as ShellAppInsightsRouteImport } from './routes/_shell.app_.insights'
+import { Route as ShellAppLibraryRouteImport } from './routes/_shell.app_.library'
+import { Route as ShellAppMusicRouteImport } from './routes/_shell.app_.music'
+import { Route as ShellAppRecapRouteImport } from './routes/_shell.app_.recap'
+import { Route as ShellAppSettingsRouteImport } from './routes/_shell.app_.settings'
+import { Route as ShellAppWeekRouteImport } from './routes/_shell.app_.week'
+import { Route as ShellAppGroupsIndexRouteImport } from './routes/_shell.app_.groups.index'
+import { Route as ShellAppGroupsGroupIdRouteImport } from './routes/_shell.app_.groups.$groupId'
+import { Route as ShellAppImportsIdRouteImport } from './routes/_shell.app_.imports.$id'
+import { Route as ShellAppListsIndexRouteImport } from './routes/_shell.app_.lists.index'
+import { Route as ShellAppListsIdRouteImport } from './routes/_shell.app_.lists.$id'
+import { Route as ShellAppPlansIdRouteImport } from './routes/_shell.app_.plans.$id'
+import { Route as ShellAppSettingsIndexRouteImport } from './routes/_shell.app_.settings.index'
+import { Route as ShellAppSettingsAboutRouteImport } from './routes/_shell.app_.settings.about'
+import { Route as ShellAppSettingsAccountRouteImport } from './routes/_shell.app_.settings.account'
+import { Route as ShellAppSettingsConnectedRouteImport } from './routes/_shell.app_.settings.connected'
+import { Route as ShellAppSettingsConnectionsRouteImport } from './routes/_shell.app_.settings.connections'
+import { Route as ShellAppSettingsDataRouteImport } from './routes/_shell.app_.settings.data'
+import { Route as ShellAppSettingsImportRouteImport } from './routes/_shell.app_.settings.import'
+import { Route as ShellAppSettingsImportsRouteImport } from './routes/_shell.app_.settings.imports'
+import { Route as ShellAppSettingsRecapsRouteImport } from './routes/_shell.app_.settings.recaps'
+import { Route as ShellAppTitleIdRouteImport } from './routes/_shell.app_.title.$id'
+import { Route as ShellAppGroupsGroupIdIndexRouteImport } from './routes/_shell.app_.groups.$groupId.index'
+import { Route as ShellAppGroupsGroupIdChannelIdRouteImport } from './routes/_shell.app_.groups.$groupId.$channelId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShellRoute = ShellRouteImport.update({
+  id: '/_shell',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -67,49 +71,14 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppDiscoverRoute = AppDiscoverRouteImport.update({
-  id: '/app_/discover',
-  path: '/app/discover',
-  getParentRoute: () => rootRouteImport,
+const ShellAppRoute = ShellAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => ShellRoute,
 } as any)
 const AppExportRoute = AppExportRouteImport.update({
   id: '/app_/export',
   path: '/app/export',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppGroupsRoute = AppGroupsRouteImport.update({
-  id: '/app_/groups',
-  path: '/app/groups',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppInsightsRoute = AppInsightsRouteImport.update({
-  id: '/app_/insights',
-  path: '/app/insights',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppLibraryRoute = AppLibraryRouteImport.update({
-  id: '/app_/library',
-  path: '/app/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppMusicRoute = AppMusicRouteImport.update({
-  id: '/app_/music',
-  path: '/app/music',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRecapRoute = AppRecapRouteImport.update({
-  id: '/app_/recap',
-  path: '/app/recap',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/app_/settings',
-  path: '/app/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppWeekRoute = AppWeekRouteImport.update({
-  id: '/app_/week',
-  path: '/app/week',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
@@ -127,193 +96,273 @@ const OauthConsentRoute = OauthConsentRouteImport.update({
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppGroupsIndexRoute = AppGroupsIndexRouteImport.update({
+const ShellAppCalendarRoute = ShellAppCalendarRouteImport.update({
+  id: '/app_/calendar',
+  path: '/app/calendar',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppDiscoverRoute = ShellAppDiscoverRouteImport.update({
+  id: '/app_/discover',
+  path: '/app/discover',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppGroupsRoute = ShellAppGroupsRouteImport.update({
+  id: '/app_/groups',
+  path: '/app/groups',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppInsightsRoute = ShellAppInsightsRouteImport.update({
+  id: '/app_/insights',
+  path: '/app/insights',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppLibraryRoute = ShellAppLibraryRouteImport.update({
+  id: '/app_/library',
+  path: '/app/library',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppMusicRoute = ShellAppMusicRouteImport.update({
+  id: '/app_/music',
+  path: '/app/music',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppRecapRoute = ShellAppRecapRouteImport.update({
+  id: '/app_/recap',
+  path: '/app/recap',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppSettingsRoute = ShellAppSettingsRouteImport.update({
+  id: '/app_/settings',
+  path: '/app/settings',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppWeekRoute = ShellAppWeekRouteImport.update({
+  id: '/app_/week',
+  path: '/app/week',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppGroupsIndexRoute = ShellAppGroupsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppGroupsRoute,
+  getParentRoute: () => ShellAppGroupsRoute,
 } as any)
-const AppGroupsGroupIdRoute = AppGroupsGroupIdRouteImport.update({
+const ShellAppGroupsGroupIdRoute = ShellAppGroupsGroupIdRouteImport.update({
   id: '/$groupId',
   path: '/$groupId',
-  getParentRoute: () => AppGroupsRoute,
+  getParentRoute: () => ShellAppGroupsRoute,
 } as any)
-const AppImportsIdRoute = AppImportsIdRouteImport.update({
+const ShellAppImportsIdRoute = ShellAppImportsIdRouteImport.update({
   id: '/app_/imports/$id',
   path: '/app/imports/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ShellRoute,
 } as any)
-const AppListsIndexRoute = AppListsIndexRouteImport.update({
+const ShellAppListsIndexRoute = ShellAppListsIndexRouteImport.update({
   id: '/app_/lists/',
   path: '/app/lists/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ShellRoute,
 } as any)
-const AppListsIdRoute = AppListsIdRouteImport.update({
+const ShellAppListsIdRoute = ShellAppListsIdRouteImport.update({
   id: '/app_/lists/$id',
   path: '/app/lists/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ShellRoute,
 } as any)
-const AppPlansIdRoute = AppPlansIdRouteImport.update({
+const ShellAppPlansIdRoute = ShellAppPlansIdRouteImport.update({
   id: '/app_/plans/$id',
   path: '/app/plans/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ShellRoute,
 } as any)
-const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+const ShellAppSettingsIndexRoute = ShellAppSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppSettingsRoute,
+  getParentRoute: () => ShellAppSettingsRoute,
 } as any)
-const AppSettingsAboutRoute = AppSettingsAboutRouteImport.update({
+const ShellAppSettingsAboutRoute = ShellAppSettingsAboutRouteImport.update({
   id: '/about',
   path: '/about',
-  getParentRoute: () => AppSettingsRoute,
+  getParentRoute: () => ShellAppSettingsRoute,
 } as any)
-const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
+const ShellAppSettingsAccountRoute = ShellAppSettingsAccountRouteImport.update({
   id: '/account',
   path: '/account',
-  getParentRoute: () => AppSettingsRoute,
+  getParentRoute: () => ShellAppSettingsRoute,
 } as any)
-const AppSettingsConnectedRoute = AppSettingsConnectedRouteImport.update({
-  id: '/connected',
-  path: '/connected',
-  getParentRoute: () => AppSettingsRoute,
+const ShellAppSettingsConnectedRoute =
+  ShellAppSettingsConnectedRouteImport.update({
+    id: '/connected',
+    path: '/connected',
+    getParentRoute: () => ShellAppSettingsRoute,
+  } as any)
+const ShellAppSettingsConnectionsRoute =
+  ShellAppSettingsConnectionsRouteImport.update({
+    id: '/connections',
+    path: '/connections',
+    getParentRoute: () => ShellAppSettingsRoute,
+  } as any)
+const ShellAppSettingsDataRoute = ShellAppSettingsDataRouteImport.update({
+  id: '/data',
+  path: '/data',
+  getParentRoute: () => ShellAppSettingsRoute,
 } as any)
-const AppSettingsImportsRoute = AppSettingsImportsRouteImport.update({
+const ShellAppSettingsImportRoute = ShellAppSettingsImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => ShellAppSettingsRoute,
+} as any)
+const ShellAppSettingsImportsRoute = ShellAppSettingsImportsRouteImport.update({
   id: '/imports',
   path: '/imports',
-  getParentRoute: () => AppSettingsRoute,
+  getParentRoute: () => ShellAppSettingsRoute,
 } as any)
-const AppSettingsRecapsRoute = AppSettingsRecapsRouteImport.update({
+const ShellAppSettingsRecapsRoute = ShellAppSettingsRecapsRouteImport.update({
   id: '/recaps',
   path: '/recaps',
-  getParentRoute: () => AppSettingsRoute,
+  getParentRoute: () => ShellAppSettingsRoute,
 } as any)
-const AppTitleIdRoute = AppTitleIdRouteImport.update({
+const ShellAppTitleIdRoute = ShellAppTitleIdRouteImport.update({
   id: '/app_/title/$id',
   path: '/app/title/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ShellRoute,
 } as any)
-const AppGroupsGroupIdIndexRoute = AppGroupsGroupIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppGroupsGroupIdRoute,
-} as any)
-const AppGroupsGroupIdChannelIdRoute =
-  AppGroupsGroupIdChannelIdRouteImport.update({
+const ShellAppGroupsGroupIdIndexRoute =
+  ShellAppGroupsGroupIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ShellAppGroupsGroupIdRoute,
+  } as any)
+const ShellAppGroupsGroupIdChannelIdRoute =
+  ShellAppGroupsGroupIdChannelIdRouteImport.update({
     id: '/$channelId',
     path: '/$channelId',
-    getParentRoute: () => AppGroupsGroupIdRoute,
+    getParentRoute: () => ShellAppGroupsGroupIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
-  '/app/discover': typeof AppDiscoverRoute
+  '/app': typeof ShellAppRoute
   '/app/export': typeof AppExportRoute
-  '/app/groups': typeof AppGroupsRouteWithChildren
-  '/app/insights': typeof AppInsightsRoute
-  '/app/library': typeof AppLibraryRoute
-  '/app/music': typeof AppMusicRoute
-  '/app/recap': typeof AppRecapRoute
-  '/app/settings': typeof AppSettingsRouteWithChildren
-  '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
-  '/app/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
-  '/app/imports/$id': typeof AppImportsIdRoute
-  '/app/lists/$id': typeof AppListsIdRoute
-  '/app/plans/$id': typeof AppPlansIdRoute
-  '/app/settings/about': typeof AppSettingsAboutRoute
-  '/app/settings/account': typeof AppSettingsAccountRoute
-  '/app/settings/connected': typeof AppSettingsConnectedRoute
-  '/app/settings/imports': typeof AppSettingsImportsRoute
-  '/app/settings/recaps': typeof AppSettingsRecapsRoute
-  '/app/title/$id': typeof AppTitleIdRoute
-  '/app/groups/': typeof AppGroupsIndexRoute
-  '/app/lists/': typeof AppListsIndexRoute
-  '/app/settings/': typeof AppSettingsIndexRoute
-  '/app/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
-  '/app/groups/$groupId/': typeof AppGroupsGroupIdIndexRoute
+  '/app/calendar': typeof ShellAppCalendarRoute
+  '/app/discover': typeof ShellAppDiscoverRoute
+  '/app/groups': typeof ShellAppGroupsRouteWithChildren
+  '/app/insights': typeof ShellAppInsightsRoute
+  '/app/library': typeof ShellAppLibraryRoute
+  '/app/music': typeof ShellAppMusicRoute
+  '/app/recap': typeof ShellAppRecapRoute
+  '/app/settings': typeof ShellAppSettingsRouteWithChildren
+  '/app/week': typeof ShellAppWeekRoute
+  '/app/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
+  '/app/imports/$id': typeof ShellAppImportsIdRoute
+  '/app/lists/$id': typeof ShellAppListsIdRoute
+  '/app/plans/$id': typeof ShellAppPlansIdRoute
+  '/app/settings/about': typeof ShellAppSettingsAboutRoute
+  '/app/settings/account': typeof ShellAppSettingsAccountRoute
+  '/app/settings/connected': typeof ShellAppSettingsConnectedRoute
+  '/app/settings/connections': typeof ShellAppSettingsConnectionsRoute
+  '/app/settings/data': typeof ShellAppSettingsDataRoute
+  '/app/settings/import': typeof ShellAppSettingsImportRoute
+  '/app/settings/imports': typeof ShellAppSettingsImportsRoute
+  '/app/settings/recaps': typeof ShellAppSettingsRecapsRoute
+  '/app/title/$id': typeof ShellAppTitleIdRoute
+  '/app/groups/': typeof ShellAppGroupsIndexRoute
+  '/app/lists/': typeof ShellAppListsIndexRoute
+  '/app/settings/': typeof ShellAppSettingsIndexRoute
+  '/app/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/app/groups/$groupId/': typeof ShellAppGroupsGroupIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
-  '/app/discover': typeof AppDiscoverRoute
+  '/app': typeof ShellAppRoute
   '/app/export': typeof AppExportRoute
-  '/app/insights': typeof AppInsightsRoute
-  '/app/library': typeof AppLibraryRoute
-  '/app/music': typeof AppMusicRoute
-  '/app/recap': typeof AppRecapRoute
-  '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
-  '/app/imports/$id': typeof AppImportsIdRoute
-  '/app/lists/$id': typeof AppListsIdRoute
-  '/app/plans/$id': typeof AppPlansIdRoute
-  '/app/settings/about': typeof AppSettingsAboutRoute
-  '/app/settings/account': typeof AppSettingsAccountRoute
-  '/app/settings/connected': typeof AppSettingsConnectedRoute
-  '/app/settings/imports': typeof AppSettingsImportsRoute
-  '/app/settings/recaps': typeof AppSettingsRecapsRoute
-  '/app/title/$id': typeof AppTitleIdRoute
-  '/app/groups': typeof AppGroupsIndexRoute
-  '/app/lists': typeof AppListsIndexRoute
-  '/app/settings': typeof AppSettingsIndexRoute
-  '/app/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
-  '/app/groups/$groupId': typeof AppGroupsGroupIdIndexRoute
+  '/app/calendar': typeof ShellAppCalendarRoute
+  '/app/discover': typeof ShellAppDiscoverRoute
+  '/app/insights': typeof ShellAppInsightsRoute
+  '/app/library': typeof ShellAppLibraryRoute
+  '/app/music': typeof ShellAppMusicRoute
+  '/app/recap': typeof ShellAppRecapRoute
+  '/app/week': typeof ShellAppWeekRoute
+  '/app/imports/$id': typeof ShellAppImportsIdRoute
+  '/app/lists/$id': typeof ShellAppListsIdRoute
+  '/app/plans/$id': typeof ShellAppPlansIdRoute
+  '/app/settings/about': typeof ShellAppSettingsAboutRoute
+  '/app/settings/account': typeof ShellAppSettingsAccountRoute
+  '/app/settings/connected': typeof ShellAppSettingsConnectedRoute
+  '/app/settings/connections': typeof ShellAppSettingsConnectionsRoute
+  '/app/settings/data': typeof ShellAppSettingsDataRoute
+  '/app/settings/import': typeof ShellAppSettingsImportRoute
+  '/app/settings/imports': typeof ShellAppSettingsImportsRoute
+  '/app/settings/recaps': typeof ShellAppSettingsRecapsRoute
+  '/app/title/$id': typeof ShellAppTitleIdRoute
+  '/app/groups': typeof ShellAppGroupsIndexRoute
+  '/app/lists': typeof ShellAppListsIndexRoute
+  '/app/settings': typeof ShellAppSettingsIndexRoute
+  '/app/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/app/groups/$groupId': typeof ShellAppGroupsGroupIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_shell': typeof ShellRouteWithChildren
   '/about': typeof AboutRoute
-  '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
-  '/app_/discover': typeof AppDiscoverRoute
+  '/_shell/app': typeof ShellAppRoute
   '/app_/export': typeof AppExportRoute
-  '/app_/groups': typeof AppGroupsRouteWithChildren
-  '/app_/insights': typeof AppInsightsRoute
-  '/app_/library': typeof AppLibraryRoute
-  '/app_/music': typeof AppMusicRoute
-  '/app_/recap': typeof AppRecapRoute
-  '/app_/settings': typeof AppSettingsRouteWithChildren
-  '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
-  '/app_/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
-  '/app_/imports/$id': typeof AppImportsIdRoute
-  '/app_/lists/$id': typeof AppListsIdRoute
-  '/app_/plans/$id': typeof AppPlansIdRoute
-  '/app_/settings/about': typeof AppSettingsAboutRoute
-  '/app_/settings/account': typeof AppSettingsAccountRoute
-  '/app_/settings/connected': typeof AppSettingsConnectedRoute
-  '/app_/settings/imports': typeof AppSettingsImportsRoute
-  '/app_/settings/recaps': typeof AppSettingsRecapsRoute
-  '/app_/title/$id': typeof AppTitleIdRoute
-  '/app_/groups/': typeof AppGroupsIndexRoute
-  '/app_/lists/': typeof AppListsIndexRoute
-  '/app_/settings/': typeof AppSettingsIndexRoute
-  '/app_/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
-  '/app_/groups/$groupId/': typeof AppGroupsGroupIdIndexRoute
+  '/_shell/app_/calendar': typeof ShellAppCalendarRoute
+  '/_shell/app_/discover': typeof ShellAppDiscoverRoute
+  '/_shell/app_/groups': typeof ShellAppGroupsRouteWithChildren
+  '/_shell/app_/insights': typeof ShellAppInsightsRoute
+  '/_shell/app_/library': typeof ShellAppLibraryRoute
+  '/_shell/app_/music': typeof ShellAppMusicRoute
+  '/_shell/app_/recap': typeof ShellAppRecapRoute
+  '/_shell/app_/settings': typeof ShellAppSettingsRouteWithChildren
+  '/_shell/app_/week': typeof ShellAppWeekRoute
+  '/_shell/app_/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
+  '/_shell/app_/imports/$id': typeof ShellAppImportsIdRoute
+  '/_shell/app_/lists/$id': typeof ShellAppListsIdRoute
+  '/_shell/app_/plans/$id': typeof ShellAppPlansIdRoute
+  '/_shell/app_/settings/about': typeof ShellAppSettingsAboutRoute
+  '/_shell/app_/settings/account': typeof ShellAppSettingsAccountRoute
+  '/_shell/app_/settings/connected': typeof ShellAppSettingsConnectedRoute
+  '/_shell/app_/settings/connections': typeof ShellAppSettingsConnectionsRoute
+  '/_shell/app_/settings/data': typeof ShellAppSettingsDataRoute
+  '/_shell/app_/settings/import': typeof ShellAppSettingsImportRoute
+  '/_shell/app_/settings/imports': typeof ShellAppSettingsImportsRoute
+  '/_shell/app_/settings/recaps': typeof ShellAppSettingsRecapsRoute
+  '/_shell/app_/title/$id': typeof ShellAppTitleIdRoute
+  '/_shell/app_/groups/': typeof ShellAppGroupsIndexRoute
+  '/_shell/app_/lists/': typeof ShellAppListsIndexRoute
+  '/_shell/app_/settings/': typeof ShellAppSettingsIndexRoute
+  '/_shell/app_/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/_shell/app_/groups/$groupId/': typeof ShellAppGroupsGroupIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
-    | '/app'
     | '/privacy'
     | '/sign-in'
-    | '/app/discover'
+    | '/app'
     | '/app/export'
+    | '/auth/verify'
+    | '/connect/extension'
+    | '/oauth/consent'
+    | '/app/calendar'
+    | '/app/discover'
     | '/app/groups'
     | '/app/insights'
     | '/app/library'
@@ -321,9 +370,6 @@ export interface FileRouteTypes {
     | '/app/recap'
     | '/app/settings'
     | '/app/week'
-    | '/auth/verify'
-    | '/connect/extension'
-    | '/oauth/consent'
     | '/app/groups/$groupId'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -331,6 +377,9 @@ export interface FileRouteTypes {
     | '/app/settings/about'
     | '/app/settings/account'
     | '/app/settings/connected'
+    | '/app/settings/connections'
+    | '/app/settings/data'
+    | '/app/settings/import'
     | '/app/settings/imports'
     | '/app/settings/recaps'
     | '/app/title/$id'
@@ -343,25 +392,29 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
-    | '/app'
     | '/privacy'
     | '/sign-in'
-    | '/app/discover'
+    | '/app'
     | '/app/export'
+    | '/auth/verify'
+    | '/connect/extension'
+    | '/oauth/consent'
+    | '/app/calendar'
+    | '/app/discover'
     | '/app/insights'
     | '/app/library'
     | '/app/music'
     | '/app/recap'
     | '/app/week'
-    | '/auth/verify'
-    | '/connect/extension'
-    | '/oauth/consent'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/plans/$id'
     | '/app/settings/about'
     | '/app/settings/account'
     | '/app/settings/connected'
+    | '/app/settings/connections'
+    | '/app/settings/data'
+    | '/app/settings/import'
     | '/app/settings/imports'
     | '/app/settings/recaps'
     | '/app/title/$id'
@@ -373,62 +426,54 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_shell'
     | '/about'
-    | '/app'
     | '/privacy'
     | '/sign-in'
-    | '/app_/discover'
+    | '/_shell/app'
     | '/app_/export'
-    | '/app_/groups'
-    | '/app_/insights'
-    | '/app_/library'
-    | '/app_/music'
-    | '/app_/recap'
-    | '/app_/settings'
-    | '/app_/week'
     | '/auth/verify'
     | '/connect/extension'
     | '/oauth/consent'
-    | '/app_/groups/$groupId'
-    | '/app_/imports/$id'
-    | '/app_/lists/$id'
-    | '/app_/plans/$id'
-    | '/app_/settings/about'
-    | '/app_/settings/account'
-    | '/app_/settings/connected'
-    | '/app_/settings/imports'
-    | '/app_/settings/recaps'
-    | '/app_/title/$id'
-    | '/app_/groups/'
-    | '/app_/lists/'
-    | '/app_/settings/'
-    | '/app_/groups/$groupId/$channelId'
-    | '/app_/groups/$groupId/'
+    | '/_shell/app_/calendar'
+    | '/_shell/app_/discover'
+    | '/_shell/app_/groups'
+    | '/_shell/app_/insights'
+    | '/_shell/app_/library'
+    | '/_shell/app_/music'
+    | '/_shell/app_/recap'
+    | '/_shell/app_/settings'
+    | '/_shell/app_/week'
+    | '/_shell/app_/groups/$groupId'
+    | '/_shell/app_/imports/$id'
+    | '/_shell/app_/lists/$id'
+    | '/_shell/app_/plans/$id'
+    | '/_shell/app_/settings/about'
+    | '/_shell/app_/settings/account'
+    | '/_shell/app_/settings/connected'
+    | '/_shell/app_/settings/connections'
+    | '/_shell/app_/settings/data'
+    | '/_shell/app_/settings/import'
+    | '/_shell/app_/settings/imports'
+    | '/_shell/app_/settings/recaps'
+    | '/_shell/app_/title/$id'
+    | '/_shell/app_/groups/'
+    | '/_shell/app_/lists/'
+    | '/_shell/app_/settings/'
+    | '/_shell/app_/groups/$groupId/$channelId'
+    | '/_shell/app_/groups/$groupId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ShellRoute: typeof ShellRouteWithChildren
   AboutRoute: typeof AboutRoute
-  AppRoute: typeof AppRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
-  AppDiscoverRoute: typeof AppDiscoverRoute
   AppExportRoute: typeof AppExportRoute
-  AppGroupsRoute: typeof AppGroupsRouteWithChildren
-  AppInsightsRoute: typeof AppInsightsRoute
-  AppLibraryRoute: typeof AppLibraryRoute
-  AppMusicRoute: typeof AppMusicRoute
-  AppRecapRoute: typeof AppRecapRoute
-  AppSettingsRoute: typeof AppSettingsRouteWithChildren
-  AppWeekRoute: typeof AppWeekRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
   ConnectExtensionRoute: typeof ConnectExtensionRoute
   OauthConsentRoute: typeof OauthConsentRoute
-  AppImportsIdRoute: typeof AppImportsIdRoute
-  AppListsIdRoute: typeof AppListsIdRoute
-  AppPlansIdRoute: typeof AppPlansIdRoute
-  AppTitleIdRoute: typeof AppTitleIdRoute
-  AppListsIndexRoute: typeof AppListsIndexRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -440,18 +485,18 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_shell': {
+      id: '/_shell'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ShellRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -468,67 +513,18 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app_/discover': {
-      id: '/app_/discover'
-      path: '/app/discover'
-      fullPath: '/app/discover'
-      preLoaderRoute: typeof AppDiscoverRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_shell/app': {
+      id: '/_shell/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof ShellAppRouteImport
+      parentRoute: typeof ShellRoute
     }
     '/app_/export': {
       id: '/app_/export'
       path: '/app/export'
       fullPath: '/app/export'
       preLoaderRoute: typeof AppExportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app_/groups': {
-      id: '/app_/groups'
-      path: '/app/groups'
-      fullPath: '/app/groups'
-      preLoaderRoute: typeof AppGroupsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app_/insights': {
-      id: '/app_/insights'
-      path: '/app/insights'
-      fullPath: '/app/insights'
-      preLoaderRoute: typeof AppInsightsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app_/library': {
-      id: '/app_/library'
-      path: '/app/library'
-      fullPath: '/app/library'
-      preLoaderRoute: typeof AppLibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app_/music': {
-      id: '/app_/music'
-      path: '/app/music'
-      fullPath: '/app/music'
-      preLoaderRoute: typeof AppMusicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app_/recap': {
-      id: '/app_/recap'
-      path: '/app/recap'
-      fullPath: '/app/recap'
-      preLoaderRoute: typeof AppRecapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app_/settings': {
-      id: '/app_/settings'
-      path: '/app/settings'
-      fullPath: '/app/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app_/week': {
-      id: '/app_/week'
-      path: '/app/week'
-      fullPath: '/app/week'
-      preLoaderRoute: typeof AppWeekRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/verify': {
@@ -552,186 +548,302 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app_/groups/': {
-      id: '/app_/groups/'
+    '/_shell/app_/calendar': {
+      id: '/_shell/app_/calendar'
+      path: '/app/calendar'
+      fullPath: '/app/calendar'
+      preLoaderRoute: typeof ShellAppCalendarRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/discover': {
+      id: '/_shell/app_/discover'
+      path: '/app/discover'
+      fullPath: '/app/discover'
+      preLoaderRoute: typeof ShellAppDiscoverRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/groups': {
+      id: '/_shell/app_/groups'
+      path: '/app/groups'
+      fullPath: '/app/groups'
+      preLoaderRoute: typeof ShellAppGroupsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/insights': {
+      id: '/_shell/app_/insights'
+      path: '/app/insights'
+      fullPath: '/app/insights'
+      preLoaderRoute: typeof ShellAppInsightsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/library': {
+      id: '/_shell/app_/library'
+      path: '/app/library'
+      fullPath: '/app/library'
+      preLoaderRoute: typeof ShellAppLibraryRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/music': {
+      id: '/_shell/app_/music'
+      path: '/app/music'
+      fullPath: '/app/music'
+      preLoaderRoute: typeof ShellAppMusicRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/recap': {
+      id: '/_shell/app_/recap'
+      path: '/app/recap'
+      fullPath: '/app/recap'
+      preLoaderRoute: typeof ShellAppRecapRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/settings': {
+      id: '/_shell/app_/settings'
+      path: '/app/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof ShellAppSettingsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/week': {
+      id: '/_shell/app_/week'
+      path: '/app/week'
+      fullPath: '/app/week'
+      preLoaderRoute: typeof ShellAppWeekRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/groups/': {
+      id: '/_shell/app_/groups/'
       path: '/'
       fullPath: '/app/groups/'
-      preLoaderRoute: typeof AppGroupsIndexRouteImport
-      parentRoute: typeof AppGroupsRoute
+      preLoaderRoute: typeof ShellAppGroupsIndexRouteImport
+      parentRoute: typeof ShellAppGroupsRoute
     }
-    '/app_/groups/$groupId': {
-      id: '/app_/groups/$groupId'
+    '/_shell/app_/groups/$groupId': {
+      id: '/_shell/app_/groups/$groupId'
       path: '/$groupId'
       fullPath: '/app/groups/$groupId'
-      preLoaderRoute: typeof AppGroupsGroupIdRouteImport
-      parentRoute: typeof AppGroupsRoute
+      preLoaderRoute: typeof ShellAppGroupsGroupIdRouteImport
+      parentRoute: typeof ShellAppGroupsRoute
     }
-    '/app_/imports/$id': {
-      id: '/app_/imports/$id'
+    '/_shell/app_/imports/$id': {
+      id: '/_shell/app_/imports/$id'
       path: '/app/imports/$id'
       fullPath: '/app/imports/$id'
-      preLoaderRoute: typeof AppImportsIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof ShellAppImportsIdRouteImport
+      parentRoute: typeof ShellRoute
     }
-    '/app_/lists/': {
-      id: '/app_/lists/'
+    '/_shell/app_/lists/': {
+      id: '/_shell/app_/lists/'
       path: '/app/lists'
       fullPath: '/app/lists/'
-      preLoaderRoute: typeof AppListsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof ShellAppListsIndexRouteImport
+      parentRoute: typeof ShellRoute
     }
-    '/app_/lists/$id': {
-      id: '/app_/lists/$id'
+    '/_shell/app_/lists/$id': {
+      id: '/_shell/app_/lists/$id'
       path: '/app/lists/$id'
       fullPath: '/app/lists/$id'
-      preLoaderRoute: typeof AppListsIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof ShellAppListsIdRouteImport
+      parentRoute: typeof ShellRoute
     }
-    '/app_/plans/$id': {
-      id: '/app_/plans/$id'
+    '/_shell/app_/plans/$id': {
+      id: '/_shell/app_/plans/$id'
       path: '/app/plans/$id'
       fullPath: '/app/plans/$id'
-      preLoaderRoute: typeof AppPlansIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof ShellAppPlansIdRouteImport
+      parentRoute: typeof ShellRoute
     }
-    '/app_/settings/': {
-      id: '/app_/settings/'
+    '/_shell/app_/settings/': {
+      id: '/_shell/app_/settings/'
       path: '/'
       fullPath: '/app/settings/'
-      preLoaderRoute: typeof AppSettingsIndexRouteImport
-      parentRoute: typeof AppSettingsRoute
+      preLoaderRoute: typeof ShellAppSettingsIndexRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
     }
-    '/app_/settings/about': {
-      id: '/app_/settings/about'
+    '/_shell/app_/settings/about': {
+      id: '/_shell/app_/settings/about'
       path: '/about'
       fullPath: '/app/settings/about'
-      preLoaderRoute: typeof AppSettingsAboutRouteImport
-      parentRoute: typeof AppSettingsRoute
+      preLoaderRoute: typeof ShellAppSettingsAboutRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
     }
-    '/app_/settings/account': {
-      id: '/app_/settings/account'
+    '/_shell/app_/settings/account': {
+      id: '/_shell/app_/settings/account'
       path: '/account'
       fullPath: '/app/settings/account'
-      preLoaderRoute: typeof AppSettingsAccountRouteImport
-      parentRoute: typeof AppSettingsRoute
+      preLoaderRoute: typeof ShellAppSettingsAccountRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
     }
-    '/app_/settings/connected': {
-      id: '/app_/settings/connected'
+    '/_shell/app_/settings/connected': {
+      id: '/_shell/app_/settings/connected'
       path: '/connected'
       fullPath: '/app/settings/connected'
-      preLoaderRoute: typeof AppSettingsConnectedRouteImport
-      parentRoute: typeof AppSettingsRoute
+      preLoaderRoute: typeof ShellAppSettingsConnectedRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
     }
-    '/app_/settings/imports': {
-      id: '/app_/settings/imports'
+    '/_shell/app_/settings/connections': {
+      id: '/_shell/app_/settings/connections'
+      path: '/connections'
+      fullPath: '/app/settings/connections'
+      preLoaderRoute: typeof ShellAppSettingsConnectionsRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
+    }
+    '/_shell/app_/settings/data': {
+      id: '/_shell/app_/settings/data'
+      path: '/data'
+      fullPath: '/app/settings/data'
+      preLoaderRoute: typeof ShellAppSettingsDataRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
+    }
+    '/_shell/app_/settings/import': {
+      id: '/_shell/app_/settings/import'
+      path: '/import'
+      fullPath: '/app/settings/import'
+      preLoaderRoute: typeof ShellAppSettingsImportRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
+    }
+    '/_shell/app_/settings/imports': {
+      id: '/_shell/app_/settings/imports'
       path: '/imports'
       fullPath: '/app/settings/imports'
-      preLoaderRoute: typeof AppSettingsImportsRouteImport
-      parentRoute: typeof AppSettingsRoute
+      preLoaderRoute: typeof ShellAppSettingsImportsRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
     }
-    '/app_/settings/recaps': {
-      id: '/app_/settings/recaps'
+    '/_shell/app_/settings/recaps': {
+      id: '/_shell/app_/settings/recaps'
       path: '/recaps'
       fullPath: '/app/settings/recaps'
-      preLoaderRoute: typeof AppSettingsRecapsRouteImport
-      parentRoute: typeof AppSettingsRoute
+      preLoaderRoute: typeof ShellAppSettingsRecapsRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
     }
-    '/app_/title/$id': {
-      id: '/app_/title/$id'
+    '/_shell/app_/title/$id': {
+      id: '/_shell/app_/title/$id'
       path: '/app/title/$id'
       fullPath: '/app/title/$id'
-      preLoaderRoute: typeof AppTitleIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof ShellAppTitleIdRouteImport
+      parentRoute: typeof ShellRoute
     }
-    '/app_/groups/$groupId/': {
-      id: '/app_/groups/$groupId/'
+    '/_shell/app_/groups/$groupId/': {
+      id: '/_shell/app_/groups/$groupId/'
       path: '/'
       fullPath: '/app/groups/$groupId/'
-      preLoaderRoute: typeof AppGroupsGroupIdIndexRouteImport
-      parentRoute: typeof AppGroupsGroupIdRoute
+      preLoaderRoute: typeof ShellAppGroupsGroupIdIndexRouteImport
+      parentRoute: typeof ShellAppGroupsGroupIdRoute
     }
-    '/app_/groups/$groupId/$channelId': {
-      id: '/app_/groups/$groupId/$channelId'
+    '/_shell/app_/groups/$groupId/$channelId': {
+      id: '/_shell/app_/groups/$groupId/$channelId'
       path: '/$channelId'
       fullPath: '/app/groups/$groupId/$channelId'
-      preLoaderRoute: typeof AppGroupsGroupIdChannelIdRouteImport
-      parentRoute: typeof AppGroupsGroupIdRoute
+      preLoaderRoute: typeof ShellAppGroupsGroupIdChannelIdRouteImport
+      parentRoute: typeof ShellAppGroupsGroupIdRoute
     }
   }
 }
 
-interface AppGroupsGroupIdRouteChildren {
-  AppGroupsGroupIdChannelIdRoute: typeof AppGroupsGroupIdChannelIdRoute
-  AppGroupsGroupIdIndexRoute: typeof AppGroupsGroupIdIndexRoute
+interface ShellAppGroupsGroupIdRouteChildren {
+  ShellAppGroupsGroupIdChannelIdRoute: typeof ShellAppGroupsGroupIdChannelIdRoute
+  ShellAppGroupsGroupIdIndexRoute: typeof ShellAppGroupsGroupIdIndexRoute
 }
 
-const AppGroupsGroupIdRouteChildren: AppGroupsGroupIdRouteChildren = {
-  AppGroupsGroupIdChannelIdRoute: AppGroupsGroupIdChannelIdRoute,
-  AppGroupsGroupIdIndexRoute: AppGroupsGroupIdIndexRoute,
+const ShellAppGroupsGroupIdRouteChildren: ShellAppGroupsGroupIdRouteChildren = {
+  ShellAppGroupsGroupIdChannelIdRoute: ShellAppGroupsGroupIdChannelIdRoute,
+  ShellAppGroupsGroupIdIndexRoute: ShellAppGroupsGroupIdIndexRoute,
 }
 
-const AppGroupsGroupIdRouteWithChildren =
-  AppGroupsGroupIdRoute._addFileChildren(AppGroupsGroupIdRouteChildren)
+const ShellAppGroupsGroupIdRouteWithChildren =
+  ShellAppGroupsGroupIdRoute._addFileChildren(
+    ShellAppGroupsGroupIdRouteChildren,
+  )
 
-interface AppGroupsRouteChildren {
-  AppGroupsGroupIdRoute: typeof AppGroupsGroupIdRouteWithChildren
-  AppGroupsIndexRoute: typeof AppGroupsIndexRoute
+interface ShellAppGroupsRouteChildren {
+  ShellAppGroupsGroupIdRoute: typeof ShellAppGroupsGroupIdRouteWithChildren
+  ShellAppGroupsIndexRoute: typeof ShellAppGroupsIndexRoute
 }
 
-const AppGroupsRouteChildren: AppGroupsRouteChildren = {
-  AppGroupsGroupIdRoute: AppGroupsGroupIdRouteWithChildren,
-  AppGroupsIndexRoute: AppGroupsIndexRoute,
+const ShellAppGroupsRouteChildren: ShellAppGroupsRouteChildren = {
+  ShellAppGroupsGroupIdRoute: ShellAppGroupsGroupIdRouteWithChildren,
+  ShellAppGroupsIndexRoute: ShellAppGroupsIndexRoute,
 }
 
-const AppGroupsRouteWithChildren = AppGroupsRoute._addFileChildren(
-  AppGroupsRouteChildren,
+const ShellAppGroupsRouteWithChildren = ShellAppGroupsRoute._addFileChildren(
+  ShellAppGroupsRouteChildren,
 )
 
-interface AppSettingsRouteChildren {
-  AppSettingsAboutRoute: typeof AppSettingsAboutRoute
-  AppSettingsAccountRoute: typeof AppSettingsAccountRoute
-  AppSettingsConnectedRoute: typeof AppSettingsConnectedRoute
-  AppSettingsImportsRoute: typeof AppSettingsImportsRoute
-  AppSettingsRecapsRoute: typeof AppSettingsRecapsRoute
-  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+interface ShellAppSettingsRouteChildren {
+  ShellAppSettingsAboutRoute: typeof ShellAppSettingsAboutRoute
+  ShellAppSettingsAccountRoute: typeof ShellAppSettingsAccountRoute
+  ShellAppSettingsConnectedRoute: typeof ShellAppSettingsConnectedRoute
+  ShellAppSettingsConnectionsRoute: typeof ShellAppSettingsConnectionsRoute
+  ShellAppSettingsDataRoute: typeof ShellAppSettingsDataRoute
+  ShellAppSettingsImportRoute: typeof ShellAppSettingsImportRoute
+  ShellAppSettingsImportsRoute: typeof ShellAppSettingsImportsRoute
+  ShellAppSettingsRecapsRoute: typeof ShellAppSettingsRecapsRoute
+  ShellAppSettingsIndexRoute: typeof ShellAppSettingsIndexRoute
 }
 
-const AppSettingsRouteChildren: AppSettingsRouteChildren = {
-  AppSettingsAboutRoute: AppSettingsAboutRoute,
-  AppSettingsAccountRoute: AppSettingsAccountRoute,
-  AppSettingsConnectedRoute: AppSettingsConnectedRoute,
-  AppSettingsImportsRoute: AppSettingsImportsRoute,
-  AppSettingsRecapsRoute: AppSettingsRecapsRoute,
-  AppSettingsIndexRoute: AppSettingsIndexRoute,
+const ShellAppSettingsRouteChildren: ShellAppSettingsRouteChildren = {
+  ShellAppSettingsAboutRoute: ShellAppSettingsAboutRoute,
+  ShellAppSettingsAccountRoute: ShellAppSettingsAccountRoute,
+  ShellAppSettingsConnectedRoute: ShellAppSettingsConnectedRoute,
+  ShellAppSettingsConnectionsRoute: ShellAppSettingsConnectionsRoute,
+  ShellAppSettingsDataRoute: ShellAppSettingsDataRoute,
+  ShellAppSettingsImportRoute: ShellAppSettingsImportRoute,
+  ShellAppSettingsImportsRoute: ShellAppSettingsImportsRoute,
+  ShellAppSettingsRecapsRoute: ShellAppSettingsRecapsRoute,
+  ShellAppSettingsIndexRoute: ShellAppSettingsIndexRoute,
 }
 
-const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
-  AppSettingsRouteChildren,
-)
+const ShellAppSettingsRouteWithChildren =
+  ShellAppSettingsRoute._addFileChildren(ShellAppSettingsRouteChildren)
+
+interface ShellRouteChildren {
+  ShellAppRoute: typeof ShellAppRoute
+  ShellAppCalendarRoute: typeof ShellAppCalendarRoute
+  ShellAppDiscoverRoute: typeof ShellAppDiscoverRoute
+  ShellAppGroupsRoute: typeof ShellAppGroupsRouteWithChildren
+  ShellAppInsightsRoute: typeof ShellAppInsightsRoute
+  ShellAppLibraryRoute: typeof ShellAppLibraryRoute
+  ShellAppMusicRoute: typeof ShellAppMusicRoute
+  ShellAppRecapRoute: typeof ShellAppRecapRoute
+  ShellAppSettingsRoute: typeof ShellAppSettingsRouteWithChildren
+  ShellAppWeekRoute: typeof ShellAppWeekRoute
+  ShellAppImportsIdRoute: typeof ShellAppImportsIdRoute
+  ShellAppListsIdRoute: typeof ShellAppListsIdRoute
+  ShellAppPlansIdRoute: typeof ShellAppPlansIdRoute
+  ShellAppTitleIdRoute: typeof ShellAppTitleIdRoute
+  ShellAppListsIndexRoute: typeof ShellAppListsIndexRoute
+}
+
+const ShellRouteChildren: ShellRouteChildren = {
+  ShellAppRoute: ShellAppRoute,
+  ShellAppCalendarRoute: ShellAppCalendarRoute,
+  ShellAppDiscoverRoute: ShellAppDiscoverRoute,
+  ShellAppGroupsRoute: ShellAppGroupsRouteWithChildren,
+  ShellAppInsightsRoute: ShellAppInsightsRoute,
+  ShellAppLibraryRoute: ShellAppLibraryRoute,
+  ShellAppMusicRoute: ShellAppMusicRoute,
+  ShellAppRecapRoute: ShellAppRecapRoute,
+  ShellAppSettingsRoute: ShellAppSettingsRouteWithChildren,
+  ShellAppWeekRoute: ShellAppWeekRoute,
+  ShellAppImportsIdRoute: ShellAppImportsIdRoute,
+  ShellAppListsIdRoute: ShellAppListsIdRoute,
+  ShellAppPlansIdRoute: ShellAppPlansIdRoute,
+  ShellAppTitleIdRoute: ShellAppTitleIdRoute,
+  ShellAppListsIndexRoute: ShellAppListsIndexRoute,
+}
+
+const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ShellRoute: ShellRouteWithChildren,
   AboutRoute: AboutRoute,
-  AppRoute: AppRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
-  AppDiscoverRoute: AppDiscoverRoute,
   AppExportRoute: AppExportRoute,
-  AppGroupsRoute: AppGroupsRouteWithChildren,
-  AppInsightsRoute: AppInsightsRoute,
-  AppLibraryRoute: AppLibraryRoute,
-  AppMusicRoute: AppMusicRoute,
-  AppRecapRoute: AppRecapRoute,
-  AppSettingsRoute: AppSettingsRouteWithChildren,
-  AppWeekRoute: AppWeekRoute,
   AuthVerifyRoute: AuthVerifyRoute,
   ConnectExtensionRoute: ConnectExtensionRoute,
   OauthConsentRoute: OauthConsentRoute,
-  AppImportsIdRoute: AppImportsIdRoute,
-  AppListsIdRoute: AppListsIdRoute,
-  AppPlansIdRoute: AppPlansIdRoute,
-  AppTitleIdRoute: AppTitleIdRoute,
-  AppListsIndexRoute: AppListsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

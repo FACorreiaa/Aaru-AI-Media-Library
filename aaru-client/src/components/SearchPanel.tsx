@@ -36,7 +36,7 @@ import {
 
 /** All searches films, shows and anime together; books and albums are never in it, and the last
  * rows of an All search offer them instead. */
-type Scope = MediaKind | 'all'
+export type Scope = MediaKind | 'all'
 
 const SCOPES: Array<{ kind: Scope; label: string }> = [
   { kind: 'all', label: 'All' },
@@ -52,13 +52,15 @@ const PLACEHOLDERS: Partial<Record<Scope, string>> = {
  * `list` (LST-003), each hit adds to that list instead of the library. */
 export function SearchPanel(props: {
   entries?: LibraryEntry[]
+  /** The tab it opens on (UX-087: the empty calendar opens Shows). */
+  scope?: Scope
   onAdded?: (entry: LibraryEntry) => void
   onClose: () => void
   list?: ListDetail
   onListChanged?: (detail: ListDetail) => void
 }) {
   const [query, setQuery] = createSignal('')
-  const [kind, setKind] = createSignal<Scope>('all')
+  const [kind, setKind] = createSignal<Scope>(props.scope ?? 'all')
   let input: HTMLInputElement | undefined
   // The routes load this panel lazily, after their dialog has opened: `autofocus` only acts
   // when the dialog opens, so the first mount focuses the field itself.

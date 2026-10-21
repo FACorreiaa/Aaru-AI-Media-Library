@@ -11,7 +11,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { TMDB_NOTICE } from '../lib/credits'
 import { deleteAccount } from '../lib/imports/server'
 
-export const Route = createFileRoute('/app_/settings/about')({
+export const Route = createFileRoute('/_shell/app_/settings/about')({
   head: () => ({ meta: [{ title: 'About · Settings · Aaru' }] }),
   component: About,
 })

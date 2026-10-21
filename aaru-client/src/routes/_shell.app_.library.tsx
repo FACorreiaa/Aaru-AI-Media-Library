@@ -1,25 +1,10 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import {
-  For,
-  Show,
-  Suspense,
-  createMemo,
-  createSignal,
-  lazy,
-  onMount,
-} from 'solid-js'
+import { Link, createFileRoute } from '@tanstack/solid-router'
+import { useAppShell, useSearchHost } from '../components/shell/context'
+import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { optionalBoolean, optionalEnum } from '../lib/search-params'
 import { AddToListDialog } from '../components/AddToListDialog'
-import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogPortal,
-  ToggleGroup,
-  ToggleGroupItem,
-} from '~/components/ui'
+import { Button, ToggleGroup, ToggleGroupItem } from '~/components/ui'
 import { getLibrary } from '../lib/library/server'
 import { NowSection } from '../components/library/NowSection'
 import {
@@ -34,17 +19,13 @@ import type {
   LibraryStatus,
   MediaKind,
 } from '../lib/library/model'
-import { getSession } from '../lib/session/session'
 
 // APP-003 on the web: the shelf, at parity with the Apple apps' `LibraryView`. `?search=true`
 // opens Search on arrival; `?status=` opens the shelf filtered to one status (Home's count
 // chips link there).
 // Search loads only when it is first opened: it is not part of the page's first paint.
-const SearchPanel = lazy(() =>
-  import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
-)
 
-export const Route = createFileRoute('/app_/library')({
+export const Route = createFileRoute('/_shell/app_/library')({
   head: () => ({ meta: [{ title: 'Library · Aaru' }] }),
   validateSearch: (
     search,
@@ -60,11 +41,6 @@ export const Route = createFileRoute('/app_/library')({
       'dropped',
     ]),
   }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-    return { session }
-  },
   loader: () => getLibrary(),
   component: Library,
 })
@@ -96,12 +72,14 @@ function Library() {
   const [layout, setLayout] = createSignal<Layout>('grid')
   // The entry whose "List…" was clicked: the picker adds its title to a list.
   const [listTarget, setListTarget] = createSignal<LibraryEntry | null>(null)
-  const [searchOpen, setSearchOpen] = createSignal(false)
-  // Search mounts on its first open and then stays, keeping its query between opens.
-  const [searchOpened, setSearchOpened] = createSignal(false)
+  // UX-007: the shell's one Search, lent this page's library for its marks.
+  const shell = useAppShell()
+  useSearchHost({
+    entries,
+    onAdded: (entry) => setEntries(upsert(entries(), entry)),
+  })
   function openSearch() {
-    setSearchOpened(true)
-    setSearchOpen(true)
+    shell.openSearch()
   }
 
   function chooseList(libraryItemId: string) {
@@ -132,10 +110,8 @@ function Library() {
   }
 
   return (
-    <div class="min-h-[100dvh]">
-      <AppHeader onSearch={openSearch} />
-
-      <main class="mx-auto max-w-6xl px-5 pb-16 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
           Library
         </h1>
@@ -349,33 +325,7 @@ function Library() {
             </ul>
           </Show>
         </Show>
-      </main>
-
-      <Dialog open={searchOpen()} onOpenChange={setSearchOpen}>
-        <DialogPortal>
-          <DialogContent
-            showCloseButton={false}
-            aria-label="Search"
-            class="block gap-0 p-0 w-[min(40rem,calc(100vw-2rem))]"
-          >
-            <Show when={searchOpened()}>
-              <Suspense
-                fallback={
-                  <p class="px-5 py-8 text-center text-sm text-muted">
-                    Loading…
-                  </p>
-                }
-              >
-                <SearchPanel
-                  entries={entries()}
-                  onAdded={(entry) => setEntries(upsert(entries(), entry))}
-                  onClose={() => setSearchOpen(false)}
-                />
-              </Suspense>
-            </Show>
-          </DialogContent>
-        </DialogPortal>
-      </Dialog>
+      </div>
       <Show when={listTarget()}>
         {(entry) => (
           <AddToListDialog

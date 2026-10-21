@@ -1,6 +1,5 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js'
-import { AppHeader } from '../components/AppHeader'
 import { Button } from '~/components/ui'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import {
@@ -11,15 +10,10 @@ import {
 } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
-import { getSession } from '../lib/session/session'
 
 // APP-006 on the web: every list, with create, rename and delete.
-export const Route = createFileRoute('/app_/lists/')({
+export const Route = createFileRoute('/_shell/app_/lists/')({
   head: () => ({ meta: [{ title: 'Lists · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
   loader: () => getLists(),
   component: Lists,
 })
@@ -76,9 +70,8 @@ function Lists() {
   }
 
   return (
-    <div class="min-h-[100dvh]">
-      <AppHeader class="max-w-3xl" />
-      <main class="mx-auto max-w-3xl px-5 pb-20 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <h1 class="mt-4 font-display text-4xl font-medium tracking-tight">
           Lists
         </h1>
@@ -230,7 +223,7 @@ function Lists() {
           }}
           onCancel={() => setPending(null)}
         />
-      </main>
+      </div>
     </div>
   )
 }

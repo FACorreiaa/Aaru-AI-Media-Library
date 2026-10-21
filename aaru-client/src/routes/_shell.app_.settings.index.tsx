@@ -5,7 +5,7 @@ import { loadAccountPage } from '../lib/settings/account'
 import { optionalString } from '../lib/search-params'
 
 // A phone sees the list of groups; a desktop sees Account beside the rail.
-export const Route = createFileRoute('/app_/settings/')({
+export const Route = createFileRoute('/_shell/app_/settings/')({
   head: () => ({ meta: [{ title: 'Settings · Aaru' }] }),
   // A Trakt sign-in started before Settings had pages still returns here.
   validateSearch: (search): { trakt?: string } => ({
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/app_/settings/')({
   beforeLoad: ({ search }) => {
     if (search.trakt !== undefined)
       throw redirect({
-        to: '/app/settings/imports',
+        to: '/app/settings/import',
         search: { trakt: search.trakt },
       })
   },

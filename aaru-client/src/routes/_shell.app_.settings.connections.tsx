@@ -8,7 +8,7 @@ import { latestListen, listScrobblers } from '../lib/music/server'
 import { listStremio } from '../lib/stremio/server'
 
 // Apps that reach Aaru with a token of their own: Stremio's addon, music scrobblers and agents.
-export const Route = createFileRoute('/app_/settings/connected')({
+export const Route = createFileRoute('/_shell/app_/settings/connections')({
   head: () => ({ meta: [{ title: 'Connected apps · Settings · Aaru' }] }),
   loader: async () => {
     const [stremio, scrobblers, latest, connections] = await Promise.all([

@@ -1,11 +1,6 @@
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useNavigate,
-} from '@tanstack/solid-router'
+import { createFileRoute, useNavigate } from '@tanstack/solid-router'
+import { BackLink } from '../components/shell/BackLink'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
-import { Wordmark } from '../components/Brand'
 import { Button } from '~/components/ui'
 import {
   importSteps,
@@ -21,16 +16,11 @@ import {
   listImports,
 } from '../lib/imports/server'
 import type { ImportDetail } from '../lib/imports/server'
-import { getSession } from '../lib/session/session'
 
 // APP-007 on the web: one import. A ledger of steps while it is matched (IMP-017), then the
 // plan to approve.
-export const Route = createFileRoute('/app_/imports/$id')({
+export const Route = createFileRoute('/_shell/app_/imports/$id')({
   head: () => ({ meta: [{ title: 'Import · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
   loader: ({ params }) => getImport({ data: { id: params.id } }),
   component: ImportPage,
 })
@@ -83,7 +73,7 @@ function ImportPage() {
     setProblem(null)
     try {
       await discardImport({ data: { id: job().id } })
-      await navigate({ to: '/app/settings/imports' })
+      await navigate({ to: '/app/settings/import' })
     } catch (error) {
       setProblem(
         error instanceof Error
@@ -103,18 +93,9 @@ function ImportPage() {
   )
 
   return (
-    <div class="min-h-[100dvh]">
-      <header class="mx-auto flex h-18 max-w-3xl items-center justify-between px-5 md:px-8">
-        <Wordmark to="/app" />
-        <Link
-          to="/app/settings/imports"
-          hash="imports"
-          class="text-sm font-medium text-muted hover:text-ink"
-        >
-          All imports
-        </Link>
-      </header>
-      <main class="mx-auto max-w-3xl px-5 pb-20 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
+        <BackLink to="/app/settings/import" label="Import" class="-ml-1" />
         <h1 class="mt-4 font-display text-3xl font-medium tracking-tight">
           {job().filename ?? sourceLabel(job())}
         </h1>
@@ -217,7 +198,7 @@ function ImportPage() {
             </Show>
           )}
         </For>
-      </main>
+      </div>
     </div>
   )
 }

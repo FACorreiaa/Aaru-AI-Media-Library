@@ -4,7 +4,7 @@ import { useGroup } from '../components/groups/shell'
 
 // A group with no channel picked. On a phone the channel list (beside this) is the page; on a
 // tablet or desktop there is always a channel open, so this goes to the group's #general.
-export const Route = createFileRoute('/app_/groups/$groupId/')({
+export const Route = createFileRoute('/_shell/app_/groups/$groupId/')({
   component: PickChannel,
 })
 

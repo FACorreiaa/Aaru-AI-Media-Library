@@ -1,14 +1,6 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import {
-  For,
-  Show,
-  Suspense,
-  createMemo,
-  createSignal,
-  lazy,
-  onMount,
-} from 'solid-js'
-import { AppHeader } from '../components/AppHeader'
+import { Link, createFileRoute } from '@tanstack/solid-router'
+import { useAppShell, useSearchHost } from '../components/shell/context'
+import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { LastImportCard } from '../components/LastImportCard'
 import { PlanCard } from '../components/PlanCard'
@@ -19,9 +11,6 @@ import {
   Button,
   buttonVariants,
   cardClass,
-  Dialog,
-  DialogContent,
-  DialogPortal,
 } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import {
@@ -68,7 +57,6 @@ import { getLists } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { getStats } from '../lib/recap/server'
 import { offeredRecap, periodLabel } from '../lib/recap/model'
-import { getSession } from '../lib/session/session'
 import { listPendingPlans } from '../lib/plans/server'
 import type { AgentPlan } from '../lib/plans/server'
 import { flip, leave } from '../lib/motion'
@@ -86,17 +74,9 @@ import { setEpisode } from '../lib/title/server'
 // beside them on a wide screen sits the work happening in the room: requests waiting for the
 // user, the last import, the week in numbers, lists. A phone stacks the same pieces, with
 // requests right under Tonight.
-const SearchPanel = lazy(() =>
-  import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
-)
 
-export const Route = createFileRoute('/app')({
+export const Route = createFileRoute('/_shell/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-    return { session }
-  },
   loader: () => getUpNext(),
   component: Home,
 })
@@ -116,16 +96,19 @@ function Home() {
   const [problem, setProblem] = createSignal<string | null>(null)
   const [discover, setDiscover] = createSignal<DiscoverRow[]>([])
   const [discoverReady, setDiscoverReady] = createSignal(false)
-  const [searchOpened, setSearchOpened] = createSignal(false)
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
   const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
-  const [searchOpen, setSearchOpen] = createSignal(false)
   let libraryRequested = false
 
+  // UX-007: the shell's one Search, lent this page's library for its marks.
+
+  const shell = useAppShell()
+
+  useSearchHost({ entries, onAdded: (entry) => void added(entry) })
+
   function openSearch() {
-    setSearchOpened(true)
-    setSearchOpen(true)
+    shell.openSearch()
     loadLibrary()
   }
 
@@ -359,9 +342,8 @@ function Home() {
   }
 
   return (
-    <div class="atmos min-h-[100dvh]">
-      <AppHeader onSearch={openSearch} />
-      <main class="mx-auto max-w-6xl px-4 pb-16 md:px-8">
+    <div class="atmos flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight md:text-5xl">
           The Field
         </h1>
@@ -589,7 +571,7 @@ function Home() {
                 title="Coming up"
                 action={
                   <Link
-                    to="/app/week"
+                    to="/app/calendar"
                     class="text-sm font-medium text-accent hover:underline"
                   >
                     See calendar
@@ -688,33 +670,7 @@ function Home() {
             </Show>
           </div>
         </div>
-      </main>
-
-      <Dialog open={searchOpen()} onOpenChange={setSearchOpen}>
-        <DialogPortal>
-          <DialogContent
-            showCloseButton={false}
-            aria-label="Search"
-            class="block gap-0 p-0 w-[min(40rem,calc(100vw-2rem))]"
-          >
-            <Show when={searchOpened()}>
-              <Suspense
-                fallback={
-                  <p class="px-5 py-8 text-center text-sm text-muted">
-                    Loading…
-                  </p>
-                }
-              >
-                <SearchPanel
-                  entries={entries()}
-                  onAdded={(entry) => void added(entry)}
-                  onClose={() => setSearchOpen(false)}
-                />
-              </Suspense>
-            </Show>
-          </DialogContent>
-        </DialogPortal>
-      </Dialog>
+      </div>
     </div>
   )
 }

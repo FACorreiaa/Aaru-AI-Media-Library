@@ -1,28 +1,21 @@
-import { Outlet, createFileRoute, redirect } from '@tanstack/solid-router'
-import { AppHeader } from '../components/AppHeader'
+import { Outlet, createFileRoute } from '@tanstack/solid-router'
 import {
   SettingsRail,
   useSettingsIndex,
 } from '../components/settings/SettingsNav'
 import { Toaster } from '~/components/ui'
-import { getSession } from '../lib/session/session'
 
 // APP-007 on the web: Settings in groups. Desktop keeps the groups in a rail beside the page;
 // a phone lists the groups and opens one at a time.
-export const Route = createFileRoute('/app_/settings')({
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
+export const Route = createFileRoute('/_shell/app_/settings')({
   component: SettingsLayout,
 })
 
 function SettingsLayout() {
   const atIndex = useSettingsIndex()
   return (
-    <div class="min-h-[100dvh]">
-      <AppHeader class="max-w-5xl" />
-      <main class="mx-auto max-w-5xl px-5 pb-20 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <h1
           class="mt-4 font-display text-4xl font-medium tracking-tight"
           classList={{ 'max-md:sr-only': !atIndex() }}
@@ -35,7 +28,7 @@ function SettingsLayout() {
             <Outlet />
           </div>
         </div>
-      </main>
+      </div>
       {/* The Connected apps page's "Copied" toasts. */}
       <Toaster />
     </div>

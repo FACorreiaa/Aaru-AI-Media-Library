@@ -11,19 +11,21 @@ import { listMessages } from '../lib/groups/server'
 
 // GRP-005 on the web: one channel, with the member list folding away on the right. A shelf is a
 // list rather than a conversation; title and watch channels put their card above the chat.
-export const Route = createFileRoute('/app_/groups/$groupId/$channelId')({
-  loader: async ({ params }) => ({
-    channelId: params.channelId,
-    messages: await listMessages({
-      data: {
-        groupId: params.groupId,
-        channelId: params.channelId,
-        limit: PAGE_SIZE,
-      },
-    }).catch(() => null),
-  }),
-  component: ChannelPage,
-})
+export const Route = createFileRoute('/_shell/app_/groups/$groupId/$channelId')(
+  {
+    loader: async ({ params }) => ({
+      channelId: params.channelId,
+      messages: await listMessages({
+        data: {
+          groupId: params.groupId,
+          channelId: params.channelId,
+          limit: PAGE_SIZE,
+        },
+      }).catch(() => null),
+    }),
+    component: ChannelPage,
+  },
+)
 
 function ChannelPage() {
   const loaded = Route.useLoaderData()

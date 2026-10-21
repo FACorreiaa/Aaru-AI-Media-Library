@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/solid-router'
 import { AccountPage } from '../components/settings/AccountPage'
 import { loadAccountPage } from '../lib/settings/account'
 
-export const Route = createFileRoute('/app_/settings/account')({
+export const Route = createFileRoute('/_shell/app_/settings/account')({
   head: () => ({ meta: [{ title: 'Account · Settings · Aaru' }] }),
   loader: () => loadAccountPage(),
   component: Account,

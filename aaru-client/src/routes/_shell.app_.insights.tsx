@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/solid-router'
+import { createFileRoute } from '@tanstack/solid-router'
 import {
   For,
   Match,
@@ -9,7 +9,6 @@ import {
   onMount,
 } from 'solid-js'
 import { optionalEnum, optionalInt } from '../lib/search-params'
-import { AppHeader } from '../components/AppHeader'
 import { StatsPanel } from '../components/StatsPanel'
 import { MusicInsights } from '../components/music/MusicInsights'
 import {
@@ -32,11 +31,10 @@ import type { InsightsPeriod } from '../lib/insights/model'
 import { isEmpty } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
 import { getStats } from '../lib/recap/server'
-import { getSession } from '../lib/session/session'
 
 // Insights on the web: the last 7 or 30 days, a month, a year, or all time in numbers, the browsable twin of the
 // Recap story. Stats load in the browser, which knows the viewer's time zone and "this month".
-export const Route = createFileRoute('/app_/insights')({
+export const Route = createFileRoute('/_shell/app_/insights')({
   head: () => ({ meta: [{ title: 'Insights · Aaru' }] }),
   validateSearch: (
     search,
@@ -55,10 +53,6 @@ export const Route = createFileRoute('/app_/insights')({
     year: optionalInt(search.year, 1900, 2200),
     month: optionalInt(search.month, 1, 12),
   }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
   component: Insights,
 })
 
@@ -133,9 +127,8 @@ function Insights() {
     'grid h-9 w-9 place-items-center rounded-full border border-line text-ink hover:bg-surface disabled:opacity-30 disabled:hover:bg-transparent'
 
   return (
-    <div class="min-h-[100dvh]">
-      <AppHeader />
-      <main class="mx-auto max-w-3xl px-4 pb-16 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
           Insights
         </h1>
@@ -241,7 +234,7 @@ function Insights() {
             <p class="mt-10 text-muted">Counting…</p>
           </Match>
         </Switch>
-      </main>
+      </div>
     </div>
   )
 }

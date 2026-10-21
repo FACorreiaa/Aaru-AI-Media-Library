@@ -1,4 +1,4 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import {
   Match,
   Show,
@@ -8,7 +8,6 @@ import {
   lazy,
   onMount,
 } from 'solid-js'
-import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
 import {
   Alert,
@@ -27,7 +26,6 @@ import { getDiscover } from '../lib/home/server'
 import { seasonOf } from '../lib/discover/season'
 import type { SeasonKey, SeasonKind } from '../lib/discover/season'
 import { optionalEnum, optionalInt } from '../lib/search-params'
-import { getSession } from '../lib/session/session'
 
 // The Seasons and Concerts views load on their own, the first time someone opens them.
 const SeasonBrowser = lazy(() =>
@@ -46,7 +44,7 @@ const ConcertList = lazy(() =>
 // The server names and orders the rows and marks the titles already on the shelf.
 // `?view=seasons` is DISC-002's Seasons view: one season of anime, shows or films at a time.
 // `?view=concerts` is MUS-003's Concerts view, offered only where the server has concerts on.
-export const Route = createFileRoute('/app_/discover')({
+export const Route = createFileRoute('/_shell/app_/discover')({
   head: () => ({ meta: [{ title: 'Discover · Aaru' }] }),
   validateSearch: (
     search,
@@ -66,11 +64,6 @@ export const Route = createFileRoute('/app_/discover')({
     season: optionalEnum(search.season, ['winter', 'spring', 'summer', 'fall']),
     year: optionalInt(search.year, 1970, 2200),
   }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-    return { session }
-  },
   loader: async () => {
     const [discover, concerts] = await Promise.all([
       getDiscover().then(
@@ -126,9 +119,8 @@ function DiscoverPage() {
     })
 
   return (
-    <div class="min-h-[100dvh]">
-      <AppHeader />
-      <main class="mx-auto max-w-6xl px-4 pb-16 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
           Discover
         </h1>
@@ -253,7 +245,7 @@ function DiscoverPage() {
             Credits
           </Link>
         </footer>
-      </main>
+      </div>
     </div>
   )
 }

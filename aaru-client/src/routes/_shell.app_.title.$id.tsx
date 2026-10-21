@@ -1,9 +1,5 @@
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useRouter,
-} from '@tanstack/solid-router'
+import { createFileRoute, useRouter } from '@tanstack/solid-router'
+import { BackLink } from '../components/shell/BackLink'
 import {
   For,
   Show,
@@ -17,7 +13,6 @@ import {
 import { AddToListDialog } from '../components/AddToListDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
-import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
@@ -38,7 +33,6 @@ import {
 import { cn } from '~/lib/utils'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
-import { getSession } from '../lib/session/session'
 import {
   getTitlePage,
   markSeason,
@@ -61,12 +55,8 @@ import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
 // APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`. An album
 // (MUS-001) is a big square cover, its artist and genres, then the usual controls and its
 // tracklist: no progress, no episodes.
-export const Route = createFileRoute('/app_/title/$id')({
+export const Route = createFileRoute('/_shell/app_/title/$id')({
   head: () => ({ meta: [{ title: 'Title · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
   loader: ({ params }) => getTitlePage({ data: { id: params.id } }),
   component: TitleRoom,
 })
@@ -239,18 +229,9 @@ function TitleRoom() {
   const nextUp = () => (entry().title.type === 'show' ? upNext() : undefined)
 
   return (
-    <div class="min-h-[100dvh]">
-      <header class="mx-auto flex h-18 max-w-6xl items-center justify-between px-5 md:px-8">
-        <Wordmark to="/app" />
-        <Link
-          to="/app/library"
-          class="text-sm font-medium text-muted hover:text-ink"
-        >
-          Library
-        </Link>
-      </header>
-
-      <main class="mx-auto max-w-6xl px-5 pb-20 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
+        <BackLink to="/app/library" label="Library" class="-ml-1" />
         <Show
           when={isAlbum()}
           fallback={
@@ -591,7 +572,7 @@ function TitleRoom() {
             onClose={() => setPicking(false)}
           />
         </Show>
-      </main>
+      </div>
       <Toaster />
     </div>
   )

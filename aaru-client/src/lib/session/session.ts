@@ -14,7 +14,8 @@ import { SESSION_COOKIE, sessionCookieOptions } from './cookie'
 // its own: every rule lives in aaru-server, exactly as for the Apple apps.
 
 export type Session =
-  { signedIn: false } | { signedIn: true; displayName: string | null }
+  | { signedIn: false }
+  | { signedIn: true; displayName: string | null; handle: string | null }
 
 export const getSession = createServerFn({ method: 'GET' }).handler(
   async (): Promise<Session> => {
@@ -27,10 +28,14 @@ export const getSession = createServerFn({ method: 'GET' }).handler(
         deleteCookie(SESSION_COOKIE, { path: '/' })
         return { signedIn: false }
       }
-      return { signedIn: true, displayName: data?.displayName ?? null }
+      return {
+        signedIn: true,
+        displayName: data?.displayName ?? null,
+        handle: data?.handle ?? null,
+      }
     } catch {
       // An unreachable API keeps the session; only a 401 ends it (as in the Apple apps).
-      return { signedIn: true, displayName: null }
+      return { signedIn: true, displayName: null, handle: null }
     }
   },
 )

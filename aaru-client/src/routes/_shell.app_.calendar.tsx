@@ -1,9 +1,5 @@
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useNavigate,
-} from '@tanstack/solid-router'
+import { createFileRoute, useNavigate } from '@tanstack/solid-router'
+import { useAppShell } from '../components/shell/context'
 import {
   Show,
   batch,
@@ -16,19 +12,13 @@ import {
   onMount,
 } from 'solid-js'
 import { optionalEnum } from '../lib/search-params'
-import { AppHeader } from '../components/AppHeader'
 import { MonthCalendar } from '../components/MonthCalendar'
 import { WeekGrid } from '../components/WeekGrid'
 import {
   CalendarToolbar,
   FilterChips,
 } from '../components/calendar/CalendarToolbar'
-import {
-  Alert,
-  AlertDescription,
-  buttonVariants,
-  cardClass,
-} from '~/components/ui'
+import { Alert, AlertDescription, Button, cardClass } from '~/components/ui'
 import {
   addDays,
   addMonths,
@@ -52,7 +42,6 @@ import type {
   OnlyFilter,
 } from '../lib/calendar/filters'
 import { getCalendar } from '../lib/calendar/server'
-import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
 import { cn } from '~/lib/utils'
 import { slideIn } from '../lib/motion'
@@ -75,7 +64,7 @@ interface Search {
   kind?: KindFilter
 }
 
-export const Route = createFileRoute('/app_/week')({
+export const Route = createFileRoute('/_shell/app_/calendar')({
   head: () => ({ meta: [{ title: 'Calendar · Aaru' }] }),
   validateSearch: (search): Search => ({
     view: optionalEnum(search.view, ['week', 'month', 'missed']),
@@ -83,10 +72,6 @@ export const Route = createFileRoute('/app_/week')({
     only: optionalEnum(search.only, ['premieres', 'finales']),
     kind: optionalEnum(search.kind, ['show', 'anime']),
   }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
   component: Calendar,
 })
 
@@ -120,6 +105,7 @@ const wide = () =>
   window.matchMedia('(min-width: 64rem)').matches
 
 function Calendar() {
+  const shell = useAppShell()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const [view, setView] = createSignal<CalendarView>(search().view ?? 'week')
@@ -419,10 +405,8 @@ function Calendar() {
   const pendingSet = () => pending() as Set<string>
 
   return (
-    <div class="min-h-[100dvh]">
-      <AppHeader class="max-w-[1600px]" />
-
-      <main class="mx-auto max-w-[1600px] px-4 pb-16 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div>
             <h1 class="font-display text-4xl font-medium tracking-tight">
@@ -475,16 +459,15 @@ function Calendar() {
               Shows you add, or mark as watching, appear here as their episodes
               air.
             </p>
-            <Link
-              to="/app/library"
-              search={{ search: true }}
-              class={cn(
-                buttonVariants({ variant: 'default', size: 'sm' }),
-                'mt-4',
-              )}
+            {/* UX-087: Search opens in place, on Shows. */}
+            <Button
+              variant="default"
+              size="sm"
+              class="mt-4"
+              onClick={() => shell.openSearch('show')}
             >
               Find shows to add
-            </Link>
+            </Button>
           </div>
         </Show>
 
@@ -547,7 +530,7 @@ function Calendar() {
             )}
           </Show>
         </div>
-      </main>
+      </div>
 
       <Show when={dayOpen()}>
         {(day) => (

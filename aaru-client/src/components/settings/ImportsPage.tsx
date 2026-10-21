@@ -113,7 +113,7 @@ export function ImportsPage(props: {
         <div class="mt-5 grid gap-3 sm:grid-cols-2">
           <TraktImport
             connection={trakt()}
-            returnTo={() => `${window.location.origin}/app/settings/imports`}
+            returnTo={() => `${window.location.origin}/app/settings/import`}
             onDisconnected={() => setTrakt({ connected: false })}
           />
           <For each={FILE_SOURCES}>

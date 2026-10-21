@@ -1,6 +1,5 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import { For, Show, createResource, createSignal, onMount } from 'solid-js'
-import { AppHeader } from '../components/AppHeader'
 import { AlbumLink, Cover, TopList } from '../components/music/TopList'
 import { Button, ToggleGroup, ToggleGroupItem } from '~/components/ui'
 import {
@@ -12,17 +11,12 @@ import {
 import type { TopBy } from '../lib/music/listening-model'
 import { listListens, topListens } from '../lib/music/listening'
 import type { Listen } from '../lib/music/listening'
-import { getSession } from '../lib/session/session'
 
 // MUS-008: the listening log and its top lists. Recent and Top sit side by side on a wide
 // screen and behind a switch on a phone. Everything loads in the browser, which knows the
 // viewer's time zone.
-export const Route = createFileRoute('/app_/music')({
+export const Route = createFileRoute('/_shell/app_/music')({
   head: () => ({ meta: [{ title: 'Music · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
   component: Music,
 })
 
@@ -46,9 +40,8 @@ function Music() {
   onMount(() => setNow(new Date()))
 
   return (
-    <div class="min-h-[100dvh]">
-      <AppHeader />
-      <main class="mx-auto max-w-5xl px-4 pb-16 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
           Music
         </h1>
@@ -89,7 +82,7 @@ function Music() {
             </div>
           )}
         </Show>
-      </main>
+      </div>
     </div>
   )
 }
@@ -128,7 +121,7 @@ function Recent(props: { now: Date }) {
           <p class="mt-4 text-muted">
             No listens yet.{' '}
             <Link
-              to="/app/settings/connected"
+              to="/app/settings/connections"
               class="font-semibold text-accent hover:underline"
             >
               Connect a scrobbler

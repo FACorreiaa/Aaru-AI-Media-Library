@@ -21,7 +21,7 @@ import { connectionState, useRealtime } from '../lib/realtime/socket'
 
 // GRP-004 on the web: one group, its channel list beside whatever channel is open. A group you
 // are not in (or that is gone) sends you back to groups home, like a 404.
-export const Route = createFileRoute('/app_/groups/$groupId')({
+export const Route = createFileRoute('/_shell/app_/groups/$groupId')({
   loader: async ({ params }) => {
     try {
       return await getGroup({ data: { groupId: params.groupId } })

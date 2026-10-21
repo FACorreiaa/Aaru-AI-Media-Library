@@ -8,7 +8,7 @@ import { personLabel } from '../lib/social/model'
 
 // GRP-004 on the web: groups home. On a phone and tablet it lists your groups; everywhere it
 // holds waiting invites and the way to make a group.
-export const Route = createFileRoute('/app_/groups/')({
+export const Route = createFileRoute('/_shell/app_/groups/')({
   component: GroupsHome,
 })
 

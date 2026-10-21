@@ -3,7 +3,7 @@ import { For } from 'solid-js'
 import { SettingsPageTitle } from '../components/settings/SettingsNav'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
 
-export const Route = createFileRoute('/app_/settings/recaps')({
+export const Route = createFileRoute('/_shell/app_/settings/data')({
   head: () => ({ meta: [{ title: 'Insights & recaps · Settings · Aaru' }] }),
   component: Recaps,
 })

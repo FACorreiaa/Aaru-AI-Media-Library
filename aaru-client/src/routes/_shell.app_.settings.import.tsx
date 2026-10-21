@@ -5,7 +5,7 @@ import { traktResult } from '../lib/imports/model'
 import { getTraktConnection, listImports } from '../lib/imports/server'
 import { optionalString } from '../lib/search-params'
 
-export const Route = createFileRoute('/app_/settings/imports')({
+export const Route = createFileRoute('/_shell/app_/settings/import')({
   head: () => ({ meta: [{ title: 'Imports & export · Settings · Aaru' }] }),
   // Trakt's sign-in comes back here with `?trakt=connected|denied|failed`.
   validateSearch: (search): { trakt?: string } => ({
@@ -30,7 +30,7 @@ function Imports() {
   onMount(() => {
     if (search().trakt !== undefined)
       void navigate({
-        to: '/app/settings/imports',
+        to: '/app/settings/import',
         search: {},
         replace: true,
       })

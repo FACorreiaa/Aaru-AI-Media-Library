@@ -1,4 +1,5 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
+import { BackLink } from '../components/shell/BackLink'
 import {
   For,
   Show,
@@ -10,7 +11,6 @@ import {
   onMount,
 } from 'solid-js'
 import type { JSX } from 'solid-js'
-import { Wordmark } from '../components/Brand'
 import { Poster } from '../components/Poster'
 import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
 import { ConfirmDialog } from '../components/ConfirmDialog'
@@ -20,7 +20,6 @@ import type { ListRow } from '../lib/lists/model'
 import { getList, removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
-import { getSession } from '../lib/session/session'
 
 // APP-006 on the web: one list, in order, with remove and move up/down. LST-003: rows carry
 // library status and progress, show status and the next airing; "Add titles" searches into it.
@@ -29,12 +28,8 @@ const SearchPanel = lazy(() =>
   import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
 )
 
-export const Route = createFileRoute('/app_/lists/$id')({
+export const Route = createFileRoute('/_shell/app_/lists/$id')({
   head: () => ({ meta: [{ title: 'List · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
   loader: ({ params }) => getList({ data: { id: params.id } }),
   component: ListPage,
 })
@@ -122,17 +117,9 @@ function ListPage() {
   }
 
   return (
-    <div class="min-h-[100dvh]">
-      <header class="mx-auto flex h-18 max-w-3xl items-center justify-between px-5 md:px-8">
-        <Wordmark to="/app" />
-        <Link
-          to="/app/lists"
-          class="text-sm font-medium text-muted hover:text-ink"
-        >
-          Lists
-        </Link>
-      </header>
-      <main class="mx-auto max-w-3xl px-5 pb-20 md:px-8">
+    <div class="flex-1">
+      <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
+        <BackLink to="/app/lists" label="Lists" class="-ml-1" />
         <div class="mt-4 flex items-end justify-between gap-4">
           <h1 class="font-display text-4xl font-medium tracking-tight">
             {detail().name}
@@ -283,7 +270,7 @@ function ListPage() {
           }}
           onCancel={() => setPending(null)}
         />
-      </main>
+      </div>
 
       <Dialog open={searchOpen()} onOpenChange={setSearchOpen}>
         <DialogPortal>

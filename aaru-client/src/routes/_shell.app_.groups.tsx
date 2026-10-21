@@ -1,12 +1,10 @@
 import {
   Outlet,
   createFileRoute,
-  redirect,
   useNavigate,
   useParams,
 } from '@tanstack/solid-router'
 import { Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
-import { AppHeader } from '../components/AppHeader'
 import { GroupRail } from '../components/groups/GroupRail'
 import { NameDialog } from '../components/groups/dialogs'
 import {
@@ -22,17 +20,12 @@ import {
   loadGroups,
 } from '../lib/groups/server'
 import { connectionState, useRealtime } from '../lib/realtime/socket'
-import { getSession } from '../lib/session/session'
 
 // GRP-004 on the web: the groups shell. Desktop shows four columns (rail, channels, the
 // channel, members); a tablet folds the rail and channels into a drawer; a phone stacks
 // groups → channels → chat.
-export const Route = createFileRoute('/app_/groups')({
+export const Route = createFileRoute('/_shell/app_/groups')({
   head: () => ({ meta: [{ title: 'Groups · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-  },
   loader: () => loadGroups(),
   component: GroupsShell,
 })
@@ -135,8 +128,7 @@ function GroupsShell() {
 
   return (
     <ShellContext.Provider value={shell}>
-      <div class="flex h-[100dvh] flex-col">
-        <AppHeader class="max-w-none" />
+      <div class="flex h-[calc(100dvh-3.5rem)] flex-col lg:h-[100dvh]">
         <div class="relative flex min-h-0 flex-1 border-t border-line">
           <Show when={drawer()}>
             <button

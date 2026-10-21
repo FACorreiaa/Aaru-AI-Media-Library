@@ -9,17 +9,17 @@ export const SETTINGS_GROUPS = [
     hint: 'Name, sign-in, friends, notifications, appearance and concerts',
   },
   {
-    to: '/app/settings/imports',
+    to: '/app/settings/import',
     label: 'Imports & export',
     hint: 'Trakt, files, AniList, CAT, Stremio history and your data',
   },
   {
-    to: '/app/settings/connected',
+    to: '/app/settings/connections',
     label: 'Connected apps',
     hint: 'Stremio and agents',
   },
   {
-    to: '/app/settings/recaps',
+    to: '/app/settings/data',
     label: 'Insights & recaps',
     hint: 'Your months and years as a story',
   },
