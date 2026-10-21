@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.26.0",
-    "@kobalte/core": "0.13.14",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/solid-query": "5.104.2",
     "@tanstack/solid-router": "1.170.41",

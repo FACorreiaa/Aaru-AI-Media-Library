@@ -1,6 +1,7 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createSignal } from 'solid-js'
+import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
+import { AlertDialog } from '../components/ui/alert-dialog'
 import { Button } from '../components/ui/button'
 import {
   createList,
@@ -9,6 +10,7 @@ import {
   renameList,
 } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
+import { flip, leave } from '../lib/motion'
 import { getSession } from '../lib/session/session'
 
 // APP-006 on the web: every list, with create, rename and delete.
@@ -28,6 +30,25 @@ function Lists() {
   const [name, setName] = createSignal('')
   const [editing, setEditing] = createSignal<string | null>(null)
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [pending, setPending] = createSignal<ListSummary | null>(null)
+  const [deleting, setDeleting] = createSignal(false)
+  // The last list asked about, so the dialog keeps its title while it fades out.
+  const asked = createMemo<ListSummary | null>(
+    (last) => pending() ?? last,
+    null,
+  )
+  let shelf: HTMLUListElement | undefined
+  // Each row's element, so a delete can play its exit before it leaves the DOM.
+  const rowEls = new Map<string, HTMLLIElement>()
+
+  /** After a delete: the row fades out, then the lists below slide up into its place. */
+  async function drop(id: string) {
+    const el = rowEls.get(id)
+    if (el) await leave(el)
+    const mutate = () => setLists(lists().filter((l) => l.id !== id))
+    if (shelf) await flip(shelf, mutate)
+    else mutate()
+  }
 
   const summary = (detail: {
     id: string
@@ -101,10 +122,16 @@ function Lists() {
             </p>
           }
         >
-          <ul class="mt-8 divide-y divide-line">
+          <ul ref={shelf} class="mt-8 divide-y divide-line">
             <For each={lists()}>
               {(list) => (
-                <li class="flex items-center gap-4 py-4">
+                <li
+                  ref={(el) => {
+                    rowEls.set(list.id, el)
+                    onCleanup(() => rowEls.delete(list.id))
+                  }}
+                  class="flex items-center gap-4 py-4"
+                >
                   <Show
                     when={editing() === list.id}
                     fallback={
@@ -172,12 +199,7 @@ function Lists() {
                   <button
                     type="button"
                     class="text-sm text-muted hover:text-danger"
-                    onClick={() =>
-                      void run(async () => {
-                        await deleteList({ data: { id: list.id } })
-                        setLists(lists().filter((l) => l.id !== list.id))
-                      })
-                    }
+                    onClick={() => setPending(list)}
                   >
                     Delete
                   </button>
@@ -186,6 +208,28 @@ function Lists() {
             </For>
           </ul>
         </Show>
+        <AlertDialog
+          open={pending() !== null}
+          title={`Delete ${asked()?.name ?? ''}?`}
+          description="The list goes; the titles stay in your library."
+          confirmLabel="Delete list"
+          busy={deleting()}
+          onConfirm={() => {
+            const list = pending()
+            if (!list) return
+            setDeleting(true)
+            let deleted = false
+            void run(async () => {
+              await deleteList({ data: { id: list.id } })
+              deleted = true
+            }).finally(() => {
+              setDeleting(false)
+              setPending(null)
+              if (deleted) void drop(list.id)
+            })
+          }}
+          onCancel={() => setPending(null)}
+        />
       </main>
     </div>
   )

@@ -70,6 +70,92 @@ body {
   }
 }
 
+/* Modals (components/ui/dialog.tsx) on the native <dialog>. They fade and lift in and out with
+   CSS alone (@starting-style, allow-discrete); browsers without it just show and hide. The page
+   under an open modal does not scroll. */
+@layer components {
+  html:has(dialog.ui-dialog[open]) {
+    overflow: hidden;
+  }
+  .ui-dialog {
+    max-height: 85dvh;
+  }
+  .ui-dialog::backdrop {
+    background: rgb(0 0 0 / 0.4);
+  }
+  .ui-dialog-sheet {
+    margin: auto auto 0;
+    width: 100%;
+    max-width: 40rem;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+  @media (min-width: 40rem) {
+    .ui-dialog-sheet {
+      margin: auto;
+      border-radius: var(--radius-card);
+    }
+  }
+  .ui-dialog-full {
+    margin: 0;
+    width: 100%;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ui-dialog,
+    .ui-dialog::backdrop {
+      transition:
+        opacity 180ms ease-out,
+        transform 180ms cubic-bezier(0.2, 0.7, 0.2, 1),
+        overlay 180ms allow-discrete,
+        display 180ms allow-discrete;
+    }
+    .ui-dialog:not([open]) {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    .ui-dialog:not([open])::backdrop {
+      opacity: 0;
+    }
+    .ui-dialog-sheet:not([open]) {
+      transform: translateY(24px);
+    }
+    .ui-dialog-full:not([open]) {
+      transform: none;
+    }
+    @starting-style {
+      .ui-dialog[open] {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+      }
+      .ui-dialog-sheet[open] {
+        transform: translateY(24px);
+      }
+      .ui-dialog-full[open] {
+        transform: none;
+      }
+      .ui-dialog[open]::backdrop {
+        opacity: 0;
+      }
+    }
+  }
+
+  /* Toasts (components/ui/toast.tsx) rise in; nothing moves with reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    .ui-toast {
+      animation: ui-toast-in 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+  }
+}
+
+@keyframes ui-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 /* Hero entrance only: it orders the first read (headline, then art). No loops. */
 @media (prefers-reduced-motion: no-preference) {
   .rise {

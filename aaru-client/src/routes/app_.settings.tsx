@@ -13,8 +13,10 @@ import { StremioSection } from '../components/StremioSection'
 import { ConnectionsSection } from '../components/ConnectionsSection'
 import { NotificationsSection } from '../components/NotificationsSection'
 import { Alert } from '../components/ui/alert'
+import { AlertDialog } from '../components/ui/alert-dialog'
 import { Button, buttonVariants } from '../components/ui/button'
 import { Card } from '../components/ui/card'
+import { Toaster } from '../components/ui/toast'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
 import { readImportFile } from '../lib/imports/file'
@@ -80,6 +82,7 @@ function Settings() {
   const [uploading, setUploading] = createSignal<FileSource | null>(null)
   const [problem, setProblem] = createSignal<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = createSignal(false)
+  const [deleting, setDeleting] = createSignal(false)
   const [anilistName, setAnilistName] = createSignal('')
   const [anilistBusy, setAnilistBusy] = createSignal(false)
   const [anilistProblem, setAnilistProblem] = createSignal<string | null>(null)
@@ -146,6 +149,7 @@ function Settings() {
 
   async function remove() {
     setProblem(null)
+    setDeleting(true)
     try {
       await deleteAccount()
       await router.invalidate()
@@ -154,6 +158,9 @@ function Settings() {
       setProblem(
         error instanceof Error ? error.message : 'The account was not deleted.',
       )
+    } finally {
+      setDeleting(false)
+      setConfirmingDelete(false)
     }
   }
 
@@ -392,39 +399,28 @@ function Settings() {
             Deletes your library, lists, imports and sessions from Aaru for
             good.
           </p>
-          <Show
-            when={confirmingDelete()}
-            fallback={
-              <Button
-                variant="danger-outline"
-                size="sm"
-                onClick={() => setConfirmingDelete(true)}
-                class="mt-4"
-              >
-                Delete account
-              </Button>
-            }
+          <Button
+            variant="danger-outline"
+            size="sm"
+            onClick={() => setConfirmingDelete(true)}
+            class="mt-4"
           >
-            <div class="mt-4 flex flex-wrap items-center gap-3">
-              <span class="text-sm font-medium">
-                This cannot be undone. Export your data first if you want to
-                keep it.
-              </span>
-              <Button variant="danger" size="sm" onClick={remove}>
-                Delete account and library
-              </Button>
-              <Button
-                variant="ghost"
-                size="bare"
-                onClick={() => setConfirmingDelete(false)}
-                class="text-sm"
-              >
-                Keep it
-              </Button>
-            </div>
-          </Show>
+            Delete account
+          </Button>
+          <AlertDialog
+            open={confirmingDelete()}
+            title="Delete account?"
+            description="This cannot be undone. Export your data first if you want to keep it."
+            confirmLabel="Delete account and library"
+            cancelLabel="Keep it"
+            busy={deleting()}
+            onConfirm={() => void remove()}
+            onCancel={() => setConfirmingDelete(false)}
+          />
         </section>
       </main>
+      {/* ConnectionsSection's "Copied" toasts. */}
+      <Toaster />
     </div>
   )
 }

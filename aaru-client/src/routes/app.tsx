@@ -1,12 +1,20 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import {
+  For,
+  Show,
+  Suspense,
+  createMemo,
+  createSignal,
+  lazy,
+  onMount,
+} from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
-import { SearchPanel } from '../components/SearchPanel'
 import { PlanCard } from '../components/PlanCard'
 import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
 import { cardClass } from '../components/ui/card'
+import { Dialog } from '../components/ui/dialog'
 import { cn } from '../lib/cn'
 import {
   AiringCard,
@@ -44,6 +52,7 @@ import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { getSession } from '../lib/session/session'
 import { listPendingPlans } from '../lib/plans/server'
 import type { AgentPlan } from '../lib/plans/server'
+import { flip, leave } from '../lib/motion'
 import { setEpisode } from '../lib/title/server'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
@@ -51,6 +60,11 @@ import { setEpisode } from '../lib/title/server'
 // viewer's "today", as do this month's stats, Discover's public rows (DISC-001) and the list
 // chips, so a cold provider cache never holds the page. Each of those hides itself if it
 // fails. Search opens in place and shares the library for its "On your shelf" marks.
+// Search loads only when it is first opened: it is not part of the page's first paint.
+const SearchPanel = lazy(() =>
+  import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
+)
+
 export const Route = createFileRoute('/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
   beforeLoad: async () => {
@@ -226,13 +240,19 @@ function Home() {
 
   /** Marks the card's next episode watched: the card advances at once, the server's answer
    * then replaces the guess, and a failed write puts the card back where it was. */
-  async function markWatched(entry: ContinueEntry) {
+  async function markWatched(entry: ContinueEntry, card: HTMLElement) {
     const id = entry.libraryItemId
     if (busy().has(id)) return
     const index = continuing().findIndex((r) => r.libraryItemId === id)
     setBusyFor(id, true)
     setProblem(null)
-    setContinuing((rows) => advance(rows, entry))
+    const step = () => setContinuing((rows) => advance(rows, entry))
+    // The last episode takes the show off the row: it fades out, the cards after it slide in.
+    const row = card.parentElement
+    if (entry.remainingCount <= 1 && row) {
+      await leave(card)
+      void flip(row, step)
+    } else step()
     try {
       await setEpisode({
         data: {
@@ -512,23 +532,25 @@ function Home() {
         </Show>
       </main>
 
-      <dialog
+      <Dialog
         ref={dialog}
         aria-label="Search"
-        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-card bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
-        onClick={(e) => {
-          // A click on the backdrop closes it.
-          if (e.target === dialog) dialog.close()
-        }}
+        class="w-[min(40rem,calc(100vw-2rem))]"
       >
         <Show when={searchOpened()}>
-          <SearchPanel
-            entries={entries()}
-            onAdded={(entry) => void added(entry)}
-            onClose={() => dialog?.close()}
-          />
+          <Suspense
+            fallback={
+              <p class="px-5 py-8 text-center text-sm text-muted">Loading…</p>
+            }
+          >
+            <SearchPanel
+              entries={entries()}
+              onAdded={(entry) => void added(entry)}
+              onClose={() => dialog?.close()}
+            />
+          </Suspense>
         </Show>
-      </dialog>
+      </Dialog>
     </div>
   )
 }

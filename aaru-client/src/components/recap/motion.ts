@@ -1,5 +1,5 @@
 import { createSignal, onCleanup, onMount } from 'solid-js'
-import { prefersReducedMotion } from '../../lib/motion'
+import { prefersReducedMotion } from '../../lib/reduced-motion'
 
 /** A number that counts up from zero once, easing out; the final value at once with reduced motion. */
 export function createCountUp(target: () => number, ms = 1200) {
