@@ -49,6 +49,7 @@ extension AgentTools {
         switch name {
         case "imdb": return .imdbCSV
         case "letterboxd": return .letterboxdCSV
+        case "netflix": return .netflixCSV
         case "goodreads": return .goodreadsCSV
         case "mal": return .malXML
         case "csv": return .genericCSV
@@ -60,7 +61,7 @@ extension AgentTools {
                 throw AgentToolError(message: error.message)
             }
         default:
-            throw AgentToolError(message: "source must be auto, imdb, letterboxd, goodreads, mal, csv or cat.")
+            throw AgentToolError(message: "source must be auto, imdb, letterboxd, netflix, goodreads, mal, csv or cat.")
         }
     }
 }

@@ -13,7 +13,7 @@ extension ImportFileSource: @retroactive Identifiable {
     }
 
     /// What Settings offers. `csv` is reached through `auto`, which detects every format.
-    static let offered: [ImportFileSource] = [.auto, .imdb, .letterboxd, .goodreads, .mal]
+    static let offered: [ImportFileSource] = [.auto, .imdb, .letterboxd, .netflix, .goodreads, .mal]
 
     var label: String {
         switch self {
@@ -21,6 +21,7 @@ extension ImportFileSource: @retroactive Identifiable {
         case .csv: "CSV"
         case .imdb: "IMDb"
         case .letterboxd: "Letterboxd"
+        case .netflix: "Netflix"
         case .goodreads: "Goodreads"
         case .mal: "MyAnimeList"
         }
@@ -29,10 +30,11 @@ extension ImportFileSource: @retroactive Identifiable {
     var hint: String {
         switch self {
         case .auto, .csv:
-            "A CSV from any site (Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML "
+            "A CSV from any site (Netflix, Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML "
                 + "(MyAnimeList, Kitsu, AniList). Aaru reads the columns."
         case .imdb: "Your ratings or watchlist export (CSV)."
         case .letterboxd: "diary.csv, ratings.csv, watched.csv or watchlist.csv from your export."
+        case .netflix: "Account → Profile → Viewing activity → Download all. One profile per file."
         case .goodreads: "goodreads_library_export.csv. Custom shelves become lists."
         case .mal: "On MyAnimeList: Profile → Export → Anime list. The .xml or .xml.gz file."
         }
@@ -48,6 +50,7 @@ extension ImportJob {
         case .trakt: "Trakt"
         case .stremio: "Stremio"
         case .catList, .catIcs: "Pogdesign CAT"
+        case .netflixCsv: "Netflix"
         case .malXml: "MyAnimeList"
         case .anilist: "AniList"
         case .csv: "CSV"

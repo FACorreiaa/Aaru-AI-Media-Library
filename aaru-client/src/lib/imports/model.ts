@@ -6,7 +6,7 @@ export const FILE_SOURCES = [
   {
     source: 'auto',
     label: 'Any site',
-    hint: 'A CSV from any site (Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML (MyAnimeList, Kitsu, AniList). Aaru reads the columns.',
+    hint: 'A CSV from any site (Netflix, Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML (MyAnimeList, Kitsu, AniList). Aaru reads the columns.',
     accept:
       '.csv,.xml,.gz,text/csv,text/plain,application/xml,text/xml,application/gzip',
   },
@@ -20,6 +20,12 @@ export const FILE_SOURCES = [
     source: 'letterboxd',
     label: 'Letterboxd',
     hint: 'diary.csv, ratings.csv, watched.csv or watchlist.csv from your export.',
+    accept: '.csv,text/csv,text/plain',
+  },
+  {
+    source: 'netflix',
+    label: 'Netflix',
+    hint: 'Account → Profile → Viewing activity → Download all. One profile per file.',
     accept: '.csv,text/csv,text/plain',
   },
   {
@@ -44,6 +50,7 @@ const SOURCE_LABELS: Record<ImportJob['source'], string> = {
   stremio: 'Stremio',
   cat_list: 'Pogdesign CAT',
   cat_ics: 'Pogdesign CAT',
+  netflix_csv: 'Netflix',
   mal_xml: 'MyAnimeList',
   anilist: 'AniList',
   csv: 'CSV',

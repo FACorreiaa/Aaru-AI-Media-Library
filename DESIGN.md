@@ -165,7 +165,9 @@ Missed is the catch-up list: what aired in the last four weeks without a tick, o
 show, oldest miss first, with how many episodes and how much time it adds up to. **Filters**
 (hide watched, premieres or finales only, shows or anime) apply to every mode, live in the URL,
 and show as removable chips. Every tick is a 44px round toggle that a pending write disables.
-(CAL-002, 2026-10-21.) Agent highlight later: "three premieres, one finale, you are behind on
+(CAL-002 web, CAL-003 iPhone, iPad and Mac, 2026-10-21: the same modes, rows, sheets and filters;
+on Apple the filters are a toolbar menu and the episode sheet has medium and large detents.)
+Agent highlight later: "three premieres, one finale, you are behind on
 two."
 
 ICS import lands here first, then the agent offers to add the missing shows to the library.
@@ -296,6 +298,15 @@ AniList and Open Library credits sit in the footer.
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
 watched", no taste profile, nothing read from other users. A tab on iPhone, a header link on
 the web.
+
+**Seasons (DISC-002, 2026-10-21).** A Today | Seasons control sits under the title (pinned under
+the large title on iPhone, in the toolbar on the Mac). Seasons shows one season as an object:
+its name in the display serif as the headline ("Fall 2026"), "Oct – Dec · 84 anime" under it in
+muted, a step to the season either side (a swipe across the name on iPhone), then the kind
+switch (Anime · New shows · Returning · Movies) and a poster grid, popular first, with "Show
+more" rather than endless scroll. A new season comes in from the side it lies on (about 200 ms,
+entrance only; a fade with reduced motion). While a season loads, still placeholders at the
+real poster size stand in: nothing shimmers. A provider that is down says so on its own kind.
 
 ## 13b. Insights (pulled forward 2026-10-20)
 

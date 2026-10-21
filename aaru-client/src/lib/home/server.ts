@@ -1,7 +1,9 @@
 import { createServerFn } from '@tanstack/solid-start'
+import { z } from 'zod'
 import { api } from '../api/client'
 import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
+import type { SeasonPage } from '../discover/season'
 import type { DiscoverRow, UpNext } from './model'
 
 // APP-009 on the web: Continue watching and Start watching in one call, as the Apple apps'
@@ -29,3 +31,27 @@ export const getDiscover = createServerFn({ method: 'GET' }).handler(
     return data.rows
   },
 )
+
+/** DISC-002: one page of one season for the Seasons view, the same for everyone. */
+export const getDiscoverSeason = createServerFn({ method: 'GET' })
+  .validator(
+    z.object({
+      kind: z.enum(['anime', 'shows_new', 'shows_returning', 'movies']),
+      season: z.enum(['winter', 'spring', 'summer', 'fall']),
+      year: z.number().int().min(1970).max(2200),
+      page: z.number().int().min(1).max(20).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<SeasonPage> => {
+    const {
+      data: page,
+      error,
+      response,
+    } = await api(sessionToken()).GET('/v1/discover/season', {
+      params: { query: data },
+    })
+    if (response.status === 401) sessionRejected()
+    if (!page)
+      throw new Error(errorMessage(error, 'This season could not be loaded.'))
+    return page
+  })

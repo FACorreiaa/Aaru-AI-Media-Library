@@ -22,9 +22,9 @@
     "/app_/settings": 94157,
     "/app_/title/$id": 85729,
     "/app_/week": 89650,
-    "/auth/verify": 73695,
-    "/oauth/consent": 74526,
-    "/privacy": 77940,
-    "/sign-in": 77025
+    "/auth/verify": 73874,
+    "/oauth/consent": 74707,
+    "/privacy": 78116,
+    "/sign-in": 77203
   }
 }
