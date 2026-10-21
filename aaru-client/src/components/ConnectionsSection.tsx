@@ -4,7 +4,8 @@ import type { AgentKind } from '../lib/agents/model'
 import { lastUsedLabel } from '../lib/stremio/model'
 import { cn } from '../lib/cn'
 import { AlertDialog } from './ui/alert-dialog'
-import { Button } from './ui/button'
+import { Button, buttonVariants } from './ui/button'
+import { EXTENSION_STORES } from '../lib/agents/extension'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import { showToast } from './ui/toast'
 import { cardClass } from './ui/card'
@@ -20,11 +21,20 @@ import type {
   AgentToken,
 } from '../lib/agents/server'
 
+/** The browser extension (SCR-007) is one more choice; it connects from the extension itself. */
+type Choice = AgentKind | 'browser'
+const CHOICES: readonly Choice[] = [...AGENT_KINDS, 'browser']
+
 // OUT-004: connect an AI agent to Aaru over MCP. The token is shown once, inside the steps
-// it fills in, right after creating it.
+// it fills in, right after creating it. SCR-007's browser extension is listed here too.
 export function ConnectionsSection(props: { connections: AgentToken[] }) {
   const [connections, setConnections] = createSignal(props.connections)
-  const [kind, setKind] = createSignal<AgentKind>('claude')
+  const [choice, setChoice] = createSignal<Choice>('claude')
+  // The MCP client picked, or null for the browser extension.
+  const kind = () => {
+    const picked = choice()
+    return picked === 'browser' ? null : picked
+  }
   const [name, setName] = createSignal('')
   const [allowWrites, setAllowWrites] = createSignal(false)
   const [allowImports, setAllowImports] = createSignal(false)
@@ -36,6 +46,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
   // The last token asked about, so the dialog keeps its title while it fades out.
   const asked = createMemo<AgentToken | null>((last) => pending() ?? last, null)
   const [preview] = createResource(kind, (k) => getSetup({ data: { kind: k } }))
+  const mcpKind = () => kind() ?? 'claude'
 
   const fail = (error: unknown, fallback: string) =>
     setProblem(error instanceof Error ? error.message : fallback)
@@ -47,7 +58,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
       setFresh(
         await createConnection({
           data: {
-            kind: kind(),
+            kind: mcpKind(),
             name: name() || undefined,
             allowLibraryWrites: allowWrites(),
             allowImports: allowImports(),
@@ -84,7 +95,8 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
         Let an AI agent read your library over MCP: what you are watching, what
         airs this week, what to add. If you allow changes, it can change one
-        item at a time, and every change shows in your history with an undo.
+        item at a time, and every change shows in your history with an undo. The
+        browser extension marks what you finish on streaming sites.
       </p>
 
       <Show
@@ -94,10 +106,10 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
             <RadioGroup
               aria-label="Agent"
               class="flex flex-wrap gap-2"
-              value={kind()}
-              onChange={(next) => setKind(next as AgentKind)}
+              value={choice()}
+              onChange={(next) => setChoice(next as Choice)}
             >
-              <For each={AGENT_KINDS}>
+              <For each={CHOICES}>
                 {(option) => (
                   <RadioGroupItem value={option}>
                     {kindLabel(option)}
@@ -106,17 +118,19 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
               </For>
             </RadioGroup>
 
-            <Show when={preview()}>
-              {(setup) => <SetupSteps setup={setup()} />}
+            <Show when={kind()} fallback={<ExtensionSteps />}>
+              <Show when={preview()}>
+                {(setup) => <SetupSteps setup={setup()} />}
+              </Show>
             </Show>
 
-            <Show when={preview()?.auth === 'token'}>
+            <Show when={kind() && preview()?.auth === 'token'}>
               <label class="flex flex-col gap-1 text-sm">
                 <span class="font-medium">Name</span>
                 <input
                   type="text"
                   maxLength={80}
-                  placeholder={kindLabel(kind())}
+                  placeholder={kindLabel(mcpKind())}
                   class="min-h-11 max-w-sm rounded-field border border-line bg-paper px-3"
                   value={name()}
                   onInput={(e) => setName(e.currentTarget.value)}
@@ -159,7 +173,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                 disabled={busy()}
                 onClick={() => void create()}
               >
-                {busy() ? 'Creating…' : `Connect ${kindLabel(kind())}`}
+                {busy() ? 'Creating…' : `Connect ${kindLabel(mcpKind())}`}
               </Button>
             </Show>
           </div>
@@ -231,6 +245,47 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
         onCancel={() => setPending(null)}
       />
     </section>
+  )
+}
+
+/** SCR-007: the extension connects itself; Settings only says how. */
+function ExtensionSteps() {
+  return (
+    <div class="flex flex-col gap-3">
+      <p class="max-w-[60ch] text-sm">
+        Finish an episode or a film on Netflix, Disney+ or Prime Video in your
+        browser and it is marked watched here. The extension can’t read your
+        library.
+      </p>
+      <ol class="flex list-decimal flex-col gap-1 pl-5 text-sm">
+        <li>Install Aaru for Chrome or Firefox.</li>
+        <li>Click Aaru in the toolbar, then Connect.</li>
+        <li>Approve on the page it opens.</li>
+      </ol>
+      <Show
+        when={EXTENSION_STORES.length > 0}
+        fallback={
+          <p class="text-xs text-muted">
+            Not in the Chrome Web Store or Firefox Add-ons yet.
+          </p>
+        }
+      >
+        <div class="flex flex-wrap gap-2">
+          <For each={EXTENSION_STORES}>
+            {(store) => (
+              <a
+                href={store.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                class={buttonVariants()}
+              >
+                {store.label}
+              </a>
+            )}
+          </For>
+        </div>
+      </Show>
+    </div>
   )
 }
 

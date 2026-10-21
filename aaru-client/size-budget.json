@@ -23,6 +23,7 @@
     "/app_/title/$id": 85729,
     "/app_/week": 86695,
     "/auth/verify": 73695,
+    "/connect/extension": 74780,
     "/oauth/consent": 74526,
     "/privacy": 77940,
     "/sign-in": 77025

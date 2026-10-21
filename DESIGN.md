@@ -353,6 +353,26 @@ watched"), so history and undo treat them like a tap.
 name themselves; the host they cannot fake), then a name for the history, **Allow changes**
 (off), and **Allow** / **Not now**. A signed-out visitor signs in first and lands back on it.
 
+**Browser extension, 2026-10-21** (SCR-007, owner's choices). It is the last choice in the same
+Connections picker, not a section of its own. Choosing it shows no token: one sentence on what it
+does (finish an episode or a film on Netflix, Disney+ or Prime Video in your browser and it is
+marked watched; it can't read your library), three numbered steps (install for Chrome or Firefox;
+click Aaru in the toolbar, then Connect; approve on the page it opens) and the store buttons once
+they are listed. On iPhone and Mac the row "Browser extension" opens a sheet with the same
+sentence and steps; connecting happens in the desktop browser. Connected browsers list with the
+others ("Chrome on macOS · Marks what you watch · used 2 h ago"), with Revoke.
+
+Connecting is **one click, no secret shown**: the extension opens `/connect/extension`, styled
+like the consent page — "Connect Chrome on macOS to Aaru?", the same sentence, **Approve** /
+**Not now**. Approve stays disabled until the extension answers on the page, so a browser
+without it is told to install it instead of minting a token nobody holds; a token the extension
+does not take within five seconds is revoked. Then: "Connected. You can close this tab."
+
+The extension draws nothing inside the streaming sites. Its toolbar badge is the only signal:
+✓ matched, ? not matched, ! connect again. Its popup shows what is playing now and what Aaru
+matched it to, the last few plays with their result (marked, finished, not matched), and
+Connected · Disconnect, in Aaru's paper and ink with the display serif for the title.
+
 ## 16. Widgets (Phase 2)
 
 Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only

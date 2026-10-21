@@ -1,8 +1,9 @@
 import AaruAPI
 import SwiftUI
 
-/// "Connections" (OUT-004): AI agents that reach the library over MCP. Lists the live ones,
-/// revokes them, and opens the setup sheet that mints a token (GET/POST/DELETE /v1/agent/tokens).
+/// "Connections" (OUT-004): AI agents that reach the library over MCP, and the browser extension
+/// (SCR-007). Lists the live ones, revokes them, and opens the setup sheet that mints an MCP token
+/// (GET/POST/DELETE /v1/agent/tokens). The extension connects from the desktop browser itself.
 struct ConnectionsSection: View {
     let api: Client?
     /// Shows a failure in Settings' problem banner.
@@ -11,6 +12,7 @@ struct ConnectionsSection: View {
     @State private var tokens: [Components.Schemas.AgentToken] = []
     @State private var loaded = false
     @State private var connecting = false
+    @State private var showsExtension = false
     @State private var revoking: Components.Schemas.AgentToken?
 
     var body: some View {
@@ -35,12 +37,18 @@ struct ConnectionsSection: View {
                 Label("Connect an agent", systemImage: "sparkles")
             }
             .disabled(api == nil)
+            Button {
+                showsExtension = true
+            } label: {
+                Label("Browser extension", systemImage: "puzzlepiece.extension")
+            }
         } header: {
             Text("Connections")
         } footer: {
             Text(
                 "Claude, Claude Code, Codex, Hermes, Gemini CLI or any MCP client can read your library. If you allow "
-                    + "changes, it changes one item at a time, and you can undo it here."
+                    + "changes, it changes one item at a time, and you can undo it here. The browser extension marks "
+                    + "what you finish on streaming sites."
             )
         }
         .confirmationDialog(
@@ -64,16 +72,22 @@ struct ConnectionsSection: View {
                 }
             }
         }
+        .sheet(isPresented: $showsExtension) {
+            BrowserExtensionView()
+        }
         .task { await load() }
     }
 
     private func detail(_ token: Components.Schemas.AgentToken) -> Text {
+        let used = token.lastUsedAt.map { Text("used \($0, format: .relative(presentation: .named))") }
+            ?? Text("not used yet")
+        if token.kind == .browser {
+            return Text("Marks what you watch · ") + used
+        }
         var access = token.scopes.contains(.library_colon_write) ? "Can change one item at a time" : "Read only"
         if token.scopes.contains(.imports_colon_write) {
             access += " · can send imports"
         }
-        let used = token.lastUsedAt.map { Text("used \($0, format: .relative(presentation: .named))") }
-            ?? Text("not used yet")
         return Text("\(ConnectionSetupView.label(token.kind)) · \(access) · ") + used
     }
 
@@ -81,12 +95,17 @@ struct ConnectionsSection: View {
         guard let api else { return }
         defer { loaded = true }
         do {
-            switch try await api.listAgentTokens(query: .init(_for: .mcp)) {
-            case let .ok(response):
-                tokens = try response.body.json.items
-            case let .default(_, error):
-                onProblem((try? error.body.json.message) ?? "Your connections could not be loaded.")
+            var live: [Components.Schemas.AgentToken] = []
+            for surface in [Operations.ListAgentTokens.Input.Query.ForPayload.mcp, .scrobble] {
+                switch try await api.listAgentTokens(query: .init(_for: surface)) {
+                case let .ok(response):
+                    live += try response.body.json.items
+                case let .default(_, error):
+                    onProblem((try? error.body.json.message) ?? "Your connections could not be loaded.")
+                    return
+                }
             }
+            tokens = live.sorted { $0.createdAt > $1.createdAt }
         } catch {
             onProblem("Your connections could not be loaded. Aaru could not reach the server.")
         }
