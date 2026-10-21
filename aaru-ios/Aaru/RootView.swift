@@ -21,6 +21,8 @@ struct RootView: View {
     @State private var errorMessage: String?
     /// A title a widget asked to open (`aaru://title/{id}`).
     @State private var linkedTitle: LinkedTitle?
+    /// An agent request a notification asked to open (OUT-004).
+    @State private var linkedPlan: LinkedTitle?
 
     private var flow: AuthFlow {
         AuthFlow(api: api, session: session)
@@ -39,6 +41,11 @@ struct RootView: View {
                     }
                 }
                 .tabViewStyle(.sidebarAdaptable)
+                .sheet(item: $linkedPlan) { link in
+                    if let api {
+                        PlanSheet(api: api, id: link.id) { linkedPlan = nil }
+                    }
+                }
                 // Screens outside the tab (a title's "Discuss in a group…") reach groups through this.
                 .environment(groups)
                 .onChange(of: groups.openRequest) { _, request in
@@ -112,7 +119,13 @@ struct RootView: View {
                 tab = .home
                 libraryFilter = LibraryFilter()
                 linkedTitle = nil
+                linkedPlan = nil
             }
+        }
+        .onChange(of: PushInbox.shared.planID, initial: true) { _, id in
+            guard session.isSignedIn, let id else { return }
+            linkedPlan = LinkedTitle(id: id)
+            PushInbox.shared.planID = nil
         }
         // A tapped notification, possibly from before the app was running.
         .onChange(of: PushInbox.shared.libraryItemID, initial: true) { _, id in

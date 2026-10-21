@@ -18,6 +18,8 @@ struct HomeScreen: View {
     @State private var showsSearch = false
     @State private var recap: RecapPeriod?
     @State private var listTarget: CatalogHit?
+    /// Agent requests waiting for the user (OUT-004), pinned above the rows.
+    @State private var plans: [AgentPlan] = []
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -65,12 +67,16 @@ struct HomeScreen: View {
                     await model.loadIfNeeded()
                     await model.shelfChanged()
                 }
+                .task { await loadPlans() }
                 .task {
                     if !lists.hasLoaded {
                         await lists.load()
                     }
                 }
-                .refreshable { await model.load() }
+                .refreshable {
+                    await model.load()
+                    await loadPlans()
+                }
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
@@ -115,6 +121,19 @@ struct HomeScreen: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
+                    if let api, !plans.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Waiting for you").font(.title2.weight(.medium))
+                            ForEach(plans, id: \.id) { plan in
+                                PlanCardView(api: api, plan: plan) { decided in
+                                    if decided.status == .applied {
+                                        Task { await model.load() }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
                     if model.isEmpty {
                         HomeWelcome { showsSearch = true }
                             .padding(.horizontal, 16)
@@ -191,6 +210,14 @@ struct HomeScreen: View {
     }
 
     /// This month's strip (to Insights) and the shelf's counts (to Library). Each hides at zero.
+    /// A failure leaves the requests on the server; the next appearance shows them.
+    private func loadPlans() async {
+        guard let api, case let .ok(response)? = try? await api.listPlans(query: .init(status: .pending)) else {
+            return
+        }
+        plans = (try? response.body.json.items) ?? plans
+    }
+
     @ViewBuilder private var summary: some View {
         if let totals = model.monthStats?.totals, !totals.isZero {
             NavigationLink {

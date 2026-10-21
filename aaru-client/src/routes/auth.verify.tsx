@@ -7,6 +7,7 @@ import {
 import { Show, createSignal } from 'solid-js'
 import { z } from 'zod'
 import { Wordmark } from '../components/Brand'
+import { Button } from '../components/ui/button'
 import { signInWithEmailLink } from '../lib/session/session'
 
 // The link in the sign-in email (MAGIC_LINK_BASE_URL). The token is spent only when the user
@@ -60,14 +61,15 @@ function VerifyLink() {
         <p class="mt-4 text-lg leading-relaxed text-muted">
           The link works once, for 15 minutes.
         </p>
-        <button
-          type="button"
-          class="mt-10 flex min-h-13 w-full items-center justify-center rounded-full bg-ink px-6 text-base font-semibold text-paper transition-transform active:scale-[0.98] disabled:opacity-50"
+        <Button
+          variant="ink"
+          size="lg"
+          class="mt-10 min-h-13 w-full text-base"
           disabled={working()}
           onClick={() => void continueToAaru()}
         >
           {working() ? 'Signing in…' : 'Continue to Aaru'}
-        </button>
+        </Button>
       </Show>
       <Show when={error()}>
         {(message) => (

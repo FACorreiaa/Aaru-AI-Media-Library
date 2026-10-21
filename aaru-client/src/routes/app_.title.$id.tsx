@@ -11,6 +11,9 @@ import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
+import { Button } from '../components/ui/button'
+import { Card, cardClass } from '../components/ui/card'
+import { cn } from '../lib/cn'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
 import { getSession } from '../lib/session/session'
@@ -194,15 +197,9 @@ function TitleRoom() {
               {entry().title.title}
             </h1>
             <p class="mt-2 text-muted">{meta()}</p>
-            <button
-              type="button"
-
-              class="mt-4 rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold hover:bg-surface"
-
-              onClick={() => setPicking(true)}
-            >
+            <Button size="sm" class="mt-4" onClick={() => setPicking(true)}>
               Add to list
-            </button>
+            </Button>
             <DiscussButton
               titleId={entry().title.id}
               type={entry().title.type}
@@ -231,14 +228,14 @@ function TitleRoom() {
           {(message) => (
             <p
               role="alert"
-              class="fixed inset-x-4 bottom-4 z-20 mx-auto max-w-md rounded-[14px] bg-danger px-4 py-3 text-sm text-paper shadow-lg"
+              class="fixed inset-x-4 bottom-4 z-20 mx-auto max-w-md rounded-panel bg-danger px-4 py-3 text-sm text-paper shadow-lg"
             >
               {message()}
             </p>
           )}
         </Show>
 
-        <section class="mt-8 grid gap-4 rounded-[20px] bg-surface p-5 sm:grid-cols-2">
+        <Card class="mt-8 grid gap-4 p-5 sm:grid-cols-2">
           <label class="flex items-center justify-between gap-4 text-sm font-medium">
             Status
             <select
@@ -322,7 +319,7 @@ function TitleRoom() {
               />
             </form>
           </Show>
-        </section>
+        </Card>
 
         <section class="mt-8">
           <label for="notes" class="font-display text-xl font-medium">
@@ -332,14 +329,14 @@ function TitleRoom() {
             id="notes"
             rows="3"
             placeholder="Anything worth remembering"
-            class="mt-3 w-full rounded-[14px] border-0 bg-surface px-4 py-3 text-base focus:ring-2 focus:ring-accent"
+            class="mt-3 w-full rounded-panel border-0 bg-surface px-4 py-3 text-base focus:ring-2 focus:ring-accent"
             value={notes()}
             onInput={(e) => setNotes(e.currentTarget.value)}
           />
           <Show when={notes() !== (entry().notes ?? '')}>
-            <button
-              type="button"
-              class="mt-2 rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold"
+            <Button
+              size="sm"
+              class="mt-2"
               onClick={() => {
                 const text = notes().trim()
                 void (text
@@ -348,7 +345,7 @@ function TitleRoom() {
               }}
             >
               Save note
-            </button>
+            </Button>
           </Show>
         </section>
 
@@ -364,17 +361,17 @@ function TitleRoom() {
         <Show when={entry().title.type === 'show'}>
           <Show when={page().titleError}>
             {(message) => (
-              <section class="mt-10 flex items-center gap-4 rounded-[20px] bg-surface p-5">
+              <Card class="mt-10 flex items-center gap-4 p-5">
                 <p class="text-sm text-muted">{message()}</p>
-                <button
-                  type="button"
-                  class="ml-auto rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold disabled:opacity-40"
+                <Button
+                  size="sm"
+                  class="ml-auto"
                   disabled={retrying()}
                   onClick={() => void retry()}
                 >
                   Try again
-                </button>
-              </section>
+                </Button>
+              </Card>
             )}
           </Show>
           <Show when={title() && seasons().length === 0}>
@@ -456,7 +453,7 @@ function SeasonBlock(props: {
       props.watched.has(episodeKey(e.season, e.number)),
     ).length
   return (
-    <details class="group rounded-[20px] bg-surface" open={props.open}>
+    <details class={cn(cardClass, 'group')} open={props.open}>
       <summary class="flex cursor-pointer list-none items-center gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
         <span class="font-medium">
           {props.season.number === 0

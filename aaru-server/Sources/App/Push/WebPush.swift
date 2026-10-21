@@ -29,7 +29,9 @@ struct WebPushSender: WebPushSending {
 
     func send(_ message: PushMessage, to subscription: WebPushSubscription) async throws -> PushOutcome {
         let subscriber = try Self.subscriber(subscription)
-        let path = message.payload["libraryItemId"].map { "/app/title/\($0)" } ?? "/app"
+        let path = message.payload["planId"].map { "/app/plans/\($0)" }
+            ?? message.payload["importId"].map { "/app/imports/\($0)" }
+            ?? message.payload["libraryItemId"].map { "/app/title/\($0)" } ?? "/app"
         let notification = WebPush.PushMessage.Notification(
             destination: Self.webApp.appending(path: path),
             title: message.title,
