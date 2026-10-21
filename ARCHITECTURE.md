@@ -866,7 +866,10 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   `LibraryService`. `PostgresListenStore` inserts under a per-user advisory lock and drops a listen
   whose normalized artist and track (`track_key`) is within half its length (≤ 90 s) of a stored
   one, so two scrobblers on one play keep one row. Spotify, Apple Music and YouTube are reached
-  only through those scrobblers and through history imports (MUS-004).
+  only through those scrobblers and through history imports (MUS-004). `MusicSetup` writes each
+  scrobbler's steps once, with the token filled in, and `POST /v1/agent/tokens` answers them in `music`
+  for a music token (MUS-007), so the web and Apple apps show the same ones. The clients disagree on
+  the address (submit URL, root with or without `/`, root plus `1/`); the steps give each its own.
 
 ### Outbound sync
 

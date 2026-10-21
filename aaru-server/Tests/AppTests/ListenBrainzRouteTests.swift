@@ -243,4 +243,38 @@ struct ListenBrainzRouteTests {
             #expect(try await env.send(.get, "/v1/me/listens/top?by=artist").status == .unprocessableContent)
         }
     }
+
+    @Test("A music token is named for its scrobbler and comes with that scrobbler's steps")
+    func musicSetup() async throws {
+        try await LibraryHarness.run { env in
+            let body = try await env.send(.post, "/v1/agent/tokens", json: [
+                "kind": "music", "scrobbler": "web_scrobbler",
+            ]).json()
+            let secret = try #require(body["secret"] as? String)
+            let token = try #require(body["token"] as? [String: Any])
+            #expect(token["name"] as? String == "Web Scrobbler")
+            let music = try #require(body["music"] as? [String: Any])
+            #expect(music["scrobbler"] as? String == "web_scrobbler")
+            #expect(music["submitUrl"] as? String == "https://api.aaruapp.com/listenbrainz/1/submit-listens")
+            #expect(music["baseUrl"] as? String == "https://api.aaruapp.com/listenbrainz/")
+            let steps = try #require(music["steps"] as? [[String: Any]])
+            let fields = steps.flatMap { $0["fields"] as? [[String: Any]] ?? [] }
+            let tokenField = try #require(fields.first { $0["secret"] as? Bool == true })
+            #expect(tokenField["value"] as? String == secret, "the steps carry the real token")
+            #expect(fields.contains { $0["value"] as? String == music["submitUrl"] as? String })
+
+            let other = try await env.send(.post, "/v1/agent/tokens", json: ["kind": "music"]).json()
+            #expect((other["token"] as? [String: Any])?["name"] as? String == "Music scrobbler")
+            #expect((other["music"] as? [String: Any])?["scrobbler"] as? String == "other")
+            let named = try await env.send(.post, "/v1/agent/tokens", json: [
+                "kind": "music", "scrobbler": "pano_scrobbler", "name": "Pixel",
+            ]).json()
+            #expect((named["token"] as? [String: Any])?["name"] as? String == "Pixel")
+
+            let stremio = try await env.send(.post, "/v1/agent/tokens", json: [
+                "kind": "stremio", "scrobbler": "web_scrobbler",
+            ]).json()
+            #expect(stremio["music"] == nil, "only music tokens get music steps")
+        }
+    }
 }

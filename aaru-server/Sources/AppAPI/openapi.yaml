@@ -1973,6 +1973,11 @@ components:
           description: >-
             MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import.
             The import is reviewed and approved in Aaru like any other. Off by default.
+        scrobbler:
+          $ref: '#/components/schemas/MusicScrobbler'
+          description: >-
+            Music tokens only: which scrobbler this token is for. It names the token and picks
+            the setup steps in `music`. `other` when left out.
     AgentPlan:
       type: object
       required: [id, status, agentName, summary, changes, counts, createdAt, expiresAt]
@@ -2039,6 +2044,49 @@ components:
     AgentMCPKind:
       type: string
       enum: [claude, claude_code, codex, hermes, gemini, other]
+    MusicScrobbler:
+      type: string
+      enum: [web_scrobbler, pano_scrobbler, navidrome, jellyfin, other]
+    MusicSetup:
+      type: object
+      description: >-
+        How to point one scrobbler at Aaru (MUS-007): numbered steps, some with a link to
+        open and values to copy. The token appears in full only here, right after minting.
+      required: [scrobbler, title, submitUrl, baseUrl, steps]
+      properties:
+        scrobbler: {$ref: '#/components/schemas/MusicScrobbler'}
+        title: {type: string}
+        submitUrl:
+          type: string
+          description: The full `submit-listens` URL, for clients that ask for it.
+        baseUrl:
+          type: string
+          description: The ListenBrainz-style root, for clients that add `1/submit-listens` themselves.
+        steps:
+          type: array
+          items:
+            type: object
+            required: [text]
+            properties:
+              text: {type: string}
+              link:
+                type: object
+                required: [label, url]
+                properties:
+                  label: {type: string}
+                  url: {type: string}
+              fields:
+                type: array
+                description: Values to copy, each with the label the scrobbler shows next to its field.
+                items:
+                  type: object
+                  required: [label, value]
+                  properties:
+                    label: {type: string}
+                    value: {type: string}
+                    secret:
+                      type: boolean
+                      description: The token. Clients mask it until copied.
     AgentSetup:
       type: object
       description: >-
@@ -2089,6 +2137,7 @@ components:
               description: The `stremio://` link that opens the Stremio app.
             webInstallUrl: {type: string}
         setup: {$ref: '#/components/schemas/AgentSetup'}
+        music: {$ref: '#/components/schemas/MusicSetup'}
     ErrorResponse:
       type: object
       description: The one error shape every route returns.

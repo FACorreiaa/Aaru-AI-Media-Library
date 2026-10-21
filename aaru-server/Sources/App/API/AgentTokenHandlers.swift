@@ -16,8 +16,10 @@ extension APIImplementation {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
         let tokens = services.agentTokens
         guard let kind = AgentTokenKind(rawValue: body.kind.rawValue) else { throw AppError.badRequest() }
+        // A music token is named for its scrobbler unless the user named it.
+        let scrobbler = kind == .music ? MusicScrobbler(body.scrobbler) : nil
         let minted = try await tokens.create(
-            userID: currentUser(), kind: kind, name: body.name,
+            userID: currentUser(), kind: kind, name: body.name ?? scrobbler?.title,
             allowLibraryWrites: body.allowLibraryWrites ?? false, allowImports: body.allowImports ?? false
         )
         return .created(.init(body: .json(.init(
@@ -30,7 +32,10 @@ extension APIImplementation {
                     webInstallUrl: links.webInstallURL.absoluteString
                 )
             },
-            setup: AgentSetup.setup(for: kind, publicBaseURL: tokens.publicBaseURL, secret: minted.secret)
+            setup: AgentSetup.setup(for: kind, publicBaseURL: tokens.publicBaseURL, secret: minted.secret),
+            music: scrobbler.map {
+                MusicSetup.setup(for: $0, publicBaseURL: tokens.publicBaseURL, secret: minted.secret)
+            }
         ))))
     }
 

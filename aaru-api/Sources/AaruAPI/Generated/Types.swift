@@ -2083,6 +2083,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/allowImports`.
             public var allowImports: Swift.Bool?
+            /// Music tokens only: which scrobbler this token is for. It names the token and picks the setup steps in `music`. `other` when left out.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/scrobbler`.
+            public var scrobbler: Components.Schemas.MusicScrobbler?
             /// Creates a new `AgentTokenCreate`.
             ///
             /// - Parameters:
@@ -2090,22 +2094,26 @@ public enum Components {
             ///   - name:
             ///   - allowLibraryWrites: Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default.
             ///   - allowImports: MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default.
+            ///   - scrobbler: Music tokens only: which scrobbler this token is for. It names the token and picks the setup steps in `music`. `other` when left out.
             public init(
                 kind: Components.Schemas.AgentTokenKind,
                 name: Swift.String? = nil,
                 allowLibraryWrites: Swift.Bool? = nil,
-                allowImports: Swift.Bool? = nil
+                allowImports: Swift.Bool? = nil,
+                scrobbler: Components.Schemas.MusicScrobbler? = nil
             ) {
                 self.kind = kind
                 self.name = name
                 self.allowLibraryWrites = allowLibraryWrites
                 self.allowImports = allowImports
+                self.scrobbler = scrobbler
             }
             public enum CodingKeys: String, CodingKey {
                 case kind
                 case name
                 case allowLibraryWrites
                 case allowImports
+                case scrobbler
             }
         }
         /// - Remark: Generated from `#/components/schemas/AgentPlan`.
@@ -2360,6 +2368,152 @@ public enum Components {
             case gemini = "gemini"
             case other = "other"
         }
+        /// - Remark: Generated from `#/components/schemas/MusicScrobbler`.
+        @frozen public enum MusicScrobbler: String, Codable, Hashable, Sendable, CaseIterable {
+            case webScrobbler = "web_scrobbler"
+            case panoScrobbler = "pano_scrobbler"
+            case navidrome = "navidrome"
+            case jellyfin = "jellyfin"
+            case other = "other"
+        }
+        /// How to point one scrobbler at Aaru (MUS-007): numbered steps, some with a link to open and values to copy. The token appears in full only here, right after minting.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MusicSetup`.
+        public struct MusicSetup: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/scrobbler`.
+            public var scrobbler: Components.Schemas.MusicScrobbler
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/title`.
+            public var title: Swift.String
+            /// The full `submit-listens` URL, for clients that ask for it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/submitUrl`.
+            public var submitUrl: Swift.String
+            /// The ListenBrainz-style root, for clients that add `1/submit-listens` themselves.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/baseUrl`.
+            public var baseUrl: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload`.
+            public struct StepsPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/text`.
+                public var text: Swift.String
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/link`.
+                public struct LinkPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/link/label`.
+                    public var label: Swift.String
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/link/url`.
+                    public var url: Swift.String
+                    /// Creates a new `LinkPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - label:
+                    ///   - url:
+                    public init(
+                        label: Swift.String,
+                        url: Swift.String
+                    ) {
+                        self.label = label
+                        self.url = url
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case label
+                        case url
+                    }
+                }
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/link`.
+                public var link: Components.Schemas.MusicSetup.StepsPayloadPayload.LinkPayload?
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/FieldsPayload`.
+                public struct FieldsPayloadPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/FieldsPayload/label`.
+                    public var label: Swift.String
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/FieldsPayload/value`.
+                    public var value: Swift.String
+                    /// The token. Clients mask it until copied.
+                    ///
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/FieldsPayload/secret`.
+                    public var secret: Swift.Bool?
+                    /// Creates a new `FieldsPayloadPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - label:
+                    ///   - value:
+                    ///   - secret: The token. Clients mask it until copied.
+                    public init(
+                        label: Swift.String,
+                        value: Swift.String,
+                        secret: Swift.Bool? = nil
+                    ) {
+                        self.label = label
+                        self.value = value
+                        self.secret = secret
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case label
+                        case value
+                        case secret
+                    }
+                }
+                /// Values to copy, each with the label the scrobbler shows next to its field.
+                ///
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/fields`.
+                public typealias FieldsPayload = [Components.Schemas.MusicSetup.StepsPayloadPayload.FieldsPayloadPayload]
+                /// Values to copy, each with the label the scrobbler shows next to its field.
+                ///
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/fields`.
+                public var fields: Components.Schemas.MusicSetup.StepsPayloadPayload.FieldsPayload?
+                /// Creates a new `StepsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - text:
+                ///   - link:
+                ///   - fields: Values to copy, each with the label the scrobbler shows next to its field.
+                public init(
+                    text: Swift.String,
+                    link: Components.Schemas.MusicSetup.StepsPayloadPayload.LinkPayload? = nil,
+                    fields: Components.Schemas.MusicSetup.StepsPayloadPayload.FieldsPayload? = nil
+                ) {
+                    self.text = text
+                    self.link = link
+                    self.fields = fields
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case text
+                    case link
+                    case fields
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/steps`.
+            public typealias StepsPayload = [Components.Schemas.MusicSetup.StepsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/steps`.
+            public var steps: Components.Schemas.MusicSetup.StepsPayload
+            /// Creates a new `MusicSetup`.
+            ///
+            /// - Parameters:
+            ///   - scrobbler:
+            ///   - title:
+            ///   - submitUrl: The full `submit-listens` URL, for clients that ask for it.
+            ///   - baseUrl: The ListenBrainz-style root, for clients that add `1/submit-listens` themselves.
+            ///   - steps:
+            public init(
+                scrobbler: Components.Schemas.MusicScrobbler,
+                title: Swift.String,
+                submitUrl: Swift.String,
+                baseUrl: Swift.String,
+                steps: Components.Schemas.MusicSetup.StepsPayload
+            ) {
+                self.scrobbler = scrobbler
+                self.title = title
+                self.submitUrl = submitUrl
+                self.baseUrl = baseUrl
+                self.steps = steps
+            }
+            public enum CodingKeys: String, CodingKey {
+                case scrobbler
+                case title
+                case submitUrl
+                case baseUrl
+                case steps
+            }
+        }
         /// How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`.
         ///
         /// - Remark: Generated from `#/components/schemas/AgentSetup`.
@@ -2514,6 +2668,8 @@ public enum Components {
             public var stremio: Components.Schemas.AgentTokenCreated.StremioPayload?
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/setup`.
             public var setup: Components.Schemas.AgentSetup?
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/music`.
+            public var music: Components.Schemas.MusicSetup?
             /// Creates a new `AgentTokenCreated`.
             ///
             /// - Parameters:
@@ -2521,22 +2677,26 @@ public enum Components {
             ///   - secret: Shown once. Anyone holding it, or the install links, can use the token.
             ///   - stremio: Only for a Stremio token.
             ///   - setup:
+            ///   - music:
             public init(
                 token: Components.Schemas.AgentToken,
                 secret: Swift.String,
                 stremio: Components.Schemas.AgentTokenCreated.StremioPayload? = nil,
-                setup: Components.Schemas.AgentSetup? = nil
+                setup: Components.Schemas.AgentSetup? = nil,
+                music: Components.Schemas.MusicSetup? = nil
             ) {
                 self.token = token
                 self.secret = secret
                 self.stremio = stremio
                 self.setup = setup
+                self.music = music
             }
             public enum CodingKeys: String, CodingKey {
                 case token
                 case secret
                 case stremio
                 case setup
+                case music
             }
         }
         /// The one error shape every route returns.
