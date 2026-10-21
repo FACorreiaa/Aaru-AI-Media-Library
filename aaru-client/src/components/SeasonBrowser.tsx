@@ -53,7 +53,18 @@ export function SeasonBrowser(props: {
       (page): page is SeasonPage => page !== undefined,
     )
   const first = () => pageAt(1)
-  const items = () => loaded().flatMap((page) => page.items)
+  // Each title once: popularity can move a title onto the next page between fetches.
+  const items = () => {
+    const seen = new Set<string>()
+    return loaded()
+      .flatMap((page) => page.items)
+      .filter((hit) => {
+        const key = hitKey(hit)
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+  }
   const hasMore = () => loaded().at(-1)?.hasMore ?? false
   const meta = () =>
     [
@@ -89,6 +100,17 @@ export function SeasonBrowser(props: {
     } finally {
       if (request === latest) setLoading(false)
     }
+  }
+
+  /** Drops this season's cached pages and asks again (a provider back, or a failed load). */
+  function retry() {
+    const prefix = pageKey(props.kind, props.season, 0).slice(0, -1)
+    setPages(
+      (current) =>
+        new Map([...current].filter(([key]) => !key.startsWith(prefix))),
+    )
+    setShown(1)
+    void fetchPage(1)
   }
 
   // A new season or kind: back to its first page, fetched unless it is already here, and
@@ -187,13 +209,25 @@ export function SeasonBrowser(props: {
       </div>
 
       <Show when={failed()}>
-        {(message) => <Alert class="mt-6">{message()}</Alert>}
+        {(message) => (
+          <Alert class="mt-6 flex items-center justify-between gap-3">
+            <span>{message()}</span>
+            <Button variant="quiet" size="sm" onClick={retry}>
+              Try again
+            </Button>
+          </Alert>
+        )}
       </Show>
       <Show when={first()?.unavailable}>
-        <p class="mt-8 rounded-panel bg-surface px-4 py-3 text-center text-sm text-muted">
-          {props.kind === 'anime' ? 'AniList' : 'TMDB'} isn’t answering right
-          now. Try this season again in a few minutes.
-        </p>
+        <div class="mt-8 flex flex-col items-center gap-3 rounded-panel bg-surface px-4 py-6 text-center text-sm text-muted">
+          <p>
+            {props.kind === 'anime' ? 'AniList' : 'TMDB'} isn’t answering right
+            now. Try this season again in a few minutes.
+          </p>
+          <Button variant="quiet" size="sm" onClick={retry}>
+            Try again
+          </Button>
+        </div>
       </Show>
 
       <div

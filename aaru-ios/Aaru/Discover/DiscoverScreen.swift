@@ -62,7 +62,7 @@ struct DiscoverScreen: View {
                     sectionPicker
                         .padding(.horizontal, 16)
                         .padding(.bottom, 8)
-                        .background(Color(.paper))
+                        .background(.bar)
                 }
             #endif
                 .toolbar {

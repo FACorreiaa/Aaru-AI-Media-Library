@@ -13,9 +13,11 @@ struct SeasonKey: Hashable {
 
     /// The oldest year the server lists.
     static let firstYear = 1970
+    /// Seasons are Gregorian quarters whatever calendar the viewer uses.
+    static let calendar = Calendar(identifier: .gregorian)
 
     /// The season `date` falls in, in the viewer's calendar.
-    static func containing(_ date: Date, calendar: Calendar = .current) -> SeasonKey {
+    static func containing(_ date: Date, calendar: Calendar = SeasonKey.calendar) -> SeasonKey {
         let parts = calendar.dateComponents([.year, .month], from: date)
         let month = parts.month ?? 1
         return SeasonKey(season: SeasonName.allCases[(month - 1) / 3], year: parts.year ?? 2026)
@@ -34,7 +36,7 @@ struct SeasonKey: Hashable {
     }
 
     /// Whether a step that way stays between 1970 and the year after this one.
-    func canShift(_ direction: Int, now: Date = .now, calendar: Calendar = .current) -> Bool {
+    func canShift(_ direction: Int, now: Date = .now, calendar: Calendar = SeasonKey.calendar) -> Bool {
         let next = shifted(direction)
         return next.year >= Self.firstYear && next.year <= calendar.component(.year, from: now) + 1
     }
@@ -46,7 +48,9 @@ struct SeasonKey: Hashable {
 
     /// "Oct – Dec".
     var months: String {
-        let symbols = Calendar.current.shortMonthSymbols
+        var calendar = Self.calendar
+        calendar.locale = .current
+        let symbols = calendar.shortMonthSymbols
         let first = (SeasonName.allCases.firstIndex(of: season) ?? 0) * 3
         return "\(symbols[first]) – \(symbols[first + 2])"
     }
@@ -104,7 +108,10 @@ final class SeasonModel {
     private(set) var shown = 1
     /// Pages being fetched, by cache key: a fetch for another season never waits on this one.
     private(set) var loading: Set<String> = []
+    /// Pages whose last fetch failed, by cache key: shown in place, on that season only.
+    private(set) var failed: Set<String> = []
     private(set) var adding: Set<String> = []
+    /// An add that failed; season loads report through `firstFailed` instead.
     var problem: String?
 
     @ObservationIgnored private let api: Client?
@@ -136,8 +143,17 @@ final class SeasonModel {
         pages[Self.pageKey(kind, key, 1)]
     }
 
+    /// Whether the current season's first page could not be loaded.
+    var firstFailed: Bool {
+        first == nil && failed.contains(Self.pageKey(kind, key, 1))
+    }
+
+    /// The shown pages' titles, each once: popularity can move a title onto the next page.
     var items: [CatalogHit] {
-        (1 ... shown).compactMap { pages[Self.pageKey(kind, key, $0)] }.flatMap(\.items)
+        var seen: Set<String> = []
+        return (1 ... shown).compactMap { pages[Self.pageKey(kind, key, $0)] }
+            .flatMap(\.items)
+            .filter { seen.insert($0.id).inserted }
     }
 
     var hasMore: Bool {
@@ -153,6 +169,16 @@ final class SeasonModel {
     func load() async {
         shown = 1
         await fetch(page: 1)
+    }
+
+    /// Fetches the current season again, dropping what was cached (Try again, pull to refresh).
+    func reload() async {
+        let prefix = Self.pageKey(kind, key, 0).dropLast()
+        for cached in pages.keys where cached.hasPrefix(prefix) {
+            pages[cached] = nil
+        }
+        failed = failed.filter { !$0.hasPrefix(prefix) }
+        await load()
     }
 
     func loadMore() async {
@@ -183,20 +209,23 @@ final class SeasonModel {
               let querySeason = Operations.GetDiscoverSeason.Input.Query.SeasonPayload(rawValue: key.season.rawValue)
         else { return }
         loading.insert(cacheKey)
+        failed.remove(cacheKey)
         defer { loading.remove(cacheKey) }
-        let title = key.title
         do {
             switch try await api.getDiscoverSeason(query: .init(
                 kind: queryKind, season: querySeason, year: key.year, page: page
             )) {
             case let .ok(response):
                 pages[cacheKey] = try response.body.json
-                problem = nil
             case .default:
-                problem = "\(title) could not be loaded."
+                failed.insert(cacheKey)
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            // Stepping on before a season arrives cancels its fetch; that is not a failure.
+            if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled {
+                return
+            }
+            failed.insert(cacheKey)
         }
     }
 

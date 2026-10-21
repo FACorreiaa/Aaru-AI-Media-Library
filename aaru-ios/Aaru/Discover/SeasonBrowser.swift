@@ -44,7 +44,7 @@ struct SeasonBrowser: View {
             .padding(.vertical, 16)
         }
         .task(id: model.query) { await model.load() }
-        .refreshable { await model.load() }
+        .refreshable { await model.reload() }
     }
 
     // MARK: Header
@@ -65,10 +65,18 @@ struct SeasonBrowser: View {
             .transition(seasonTransition)
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
+            .accessibilityHint("Swipe up or down for another season.")
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: move(1)
+                case .decrement: move(-1)
+                @unknown default: break
+                }
+            }
             step(1)
         }
         .contentShape(Rectangle())
-        .gesture(
+        .simultaneousGesture(
             DragGesture(minimumDistance: 24).onEnded { value in
                 let width = value.translation.width
                 guard abs(width) > abs(value.translation.height), abs(width) > 48 else { return }
@@ -95,9 +103,13 @@ struct SeasonBrowser: View {
 
     private func move(_ direction: Int) {
         guard model.key.canShift(direction) else { return }
+        // The edge first, the season in the next update: the outgoing view must already carry
+        // the new edge, or reversing direction pushes it out the wrong way.
         edge = direction > 0 ? .trailing : .leading
-        withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .snappy(duration: 0.25)) {
-            model.key = model.key.shifted(direction)
+        let next = model.key.shifted(direction)
+        let animation: Animation = reduceMotion ? .easeOut(duration: 0.2) : .snappy(duration: 0.25)
+        Task { @MainActor in
+            withAnimation(animation) { model.key = next }
         }
     }
 
@@ -119,7 +131,7 @@ struct SeasonBrowser: View {
                 } description: {
                     Text("Try \(model.key.title) again in a few minutes.")
                 } actions: {
-                    Button("Try again") { Task { await model.load() } }
+                    Button("Try again") { Task { await model.reload() } }
                         .buttonStyle(.bordered)
                 }
             } else if model.items.isEmpty {
@@ -145,11 +157,11 @@ struct SeasonBrowser: View {
                     }
                 }
             }
-        } else if model.problem != nil, !model.isLoading {
+        } else if model.firstFailed {
             ContentUnavailableView {
                 Label("\(model.key.title) could not be loaded", systemImage: "exclamationmark.triangle")
             } actions: {
-                Button("Try again") { Task { await model.load() } }
+                Button("Try again") { Task { await model.reload() } }
                     .buttonStyle(.bordered)
             }
         } else {
