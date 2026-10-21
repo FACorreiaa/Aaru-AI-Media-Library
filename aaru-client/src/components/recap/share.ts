@@ -1,6 +1,7 @@
 import { shareLines } from '../../lib/recap/deck'
 import { periodLabel } from '../../lib/recap/model'
 import type { Stats } from '../../lib/recap/model'
+import { COLORS } from '../../lib/tokens.gen'
 
 // GAM-006a: the Recap's share image, drawn on a canvas from the user's own numbers. Text and
 // brand colours only: catalog posters are cross-origin and would taint the canvas.
@@ -21,10 +22,18 @@ export async function drawShareImage(stats: Stats): Promise<Blob> {
   canvas.height = HEIGHT
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('This browser cannot draw the share image.')
-  const ink = token('--ink', '#173a3e')
-  const accent = token('--accent', '#1f6970')
-  const paper = token('--on-accent', '#fbf6ec')
-  const display = "ui-serif, 'New York', 'Iowan Old Style', Georgia, serif"
+  const ink = token('--ink', COLORS.ink.light)
+  const accent = token('--accent', COLORS.accent.light)
+  const paper = token('--on-accent', COLORS.onAccent.light)
+  const display =
+    "Newsreader, ui-serif, 'New York', 'Iowan Old Style', Georgia, serif"
+  // A canvas draws with whatever face is ready; wait for the display face (both weights the
+  // card uses) so the image is never the fallback serif. A failed load keeps the fallback.
+  await Promise.all(
+    ['500 132px Newsreader', '600 44px Newsreader'].map((font) =>
+      document.fonts.load(font).catch(() => []),
+    ),
+  )
   const sans = 'system-ui, -apple-system, sans-serif'
 
   const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT)

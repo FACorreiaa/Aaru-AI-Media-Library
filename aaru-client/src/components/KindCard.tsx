@@ -1,12 +1,18 @@
 import { For, Show, createSignal } from 'solid-js'
 import type { Cover, KindCard as Kind, TypeTile } from '../lib/landing/art'
+import { COLORS } from '../lib/tokens.gen'
 
-// Teal → gold, the brand gradient, in three steps so a stack of type tiles reads as three.
+// Teal → gold, the brand gradient, in three steps so a stack of type tiles reads as three. Light
+// token values in either appearance: the tiles are fixed brand art with Paper text. A shade of
+// Ink rises from the foot so the title, which sits there, passes AA on every step.
+const shade = `linear-gradient(to top, ${COLORS.ink.light}73, transparent 60%)`
 const tileTints = [
-  'bg-[linear-gradient(160deg,#13505a_0%,#2f7c7f_100%)]',
-  'bg-[linear-gradient(160deg,#2f7c7f_0%,#8fb5a4_100%)]',
-  'bg-[linear-gradient(160deg,#8fb5a4_0%,#e8cf9f_100%)]',
-]
+  [COLORS.ink.light, COLORS.accent.light],
+  [COLORS.accent.light, COLORS.agent.light],
+  [COLORS.accent.light, COLORS.gold.light],
+].map(
+  ([from, to]) => `${shade}, linear-gradient(160deg, ${from} 0%, ${to} 100%)`,
+)
 
 // Back, middle, front: fanned slightly, front on top, the stack centred in the card.
 const placement = {
@@ -41,7 +47,11 @@ function CoverImage(props: { cover: Cover }) {
 function TypeCover(props: { tile: TypeTile; index: number }) {
   return (
     <span
-      class={`absolute inset-0 flex flex-col justify-between p-3 text-[#fbf6ec] ${tileTints[props.index % tileTints.length]}`}
+      class="absolute inset-0 flex flex-col justify-between p-3"
+      style={{
+        color: COLORS.paper.light,
+        'background-image': tileTints[props.index % tileTints.length],
+      }}
     >
       <span class="text-[10px] font-semibold tracking-[0.14em] uppercase opacity-80">
         {props.tile.caption}

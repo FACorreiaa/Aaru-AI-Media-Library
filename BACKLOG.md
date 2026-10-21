@@ -336,6 +336,7 @@ account or a stranger that has not happened yet.
 | REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
 | REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
 | DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
+| DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
 | SRV-003 | Done | #1; no Fluent import under `Sources/App/API`; `TestFakes.swift` | |
@@ -645,6 +646,21 @@ pull screens and flows for Trakt, TV Time, Serializd, Sequel, Letterboxd and Ani
 and attach findings to `DESIGN.md`.
 
 **Done when:** `DESIGN.md` cites at least one recorded flow per surface it borrows from.
+
+### DSN-002 · Mindspace visual language · L · owner, 2026-10-21
+One visual language on web, iPhone, iPad and Mac (DESIGN.md "Mindspace"). The steps:
+- colours from one file, `design/tokens.json`, generated for both clients and gated at WCAG AA;
+- Newsreader for headings;
+- a System / Light / Dark setting per device;
+- texture on the Field and the Title room only;
+- Tonight composed on the device until M13.
+
+No API, auth, import, permission or persistence change.
+
+**Done when:** every client colour comes from the token file. No hand-written hex, no
+`weekGold`, no `Color.accentColor`. Every heading is in Newsreader, the widgets included. The
+Field and the Title room ship on all clients. The owner has checked the TestFlight build:
+widgets, Dynamic Type at accessibility sizes, VoiceOver, and the Mac window.
 
 ## P0 · M1 — Server foundation
 
