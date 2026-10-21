@@ -238,6 +238,9 @@ protocol ImportJobStore: Sendable {
     func claimNext(now: Date, lease: TimeInterval, userID: UserID?) async throws -> ClaimedImportJob?
     /// Puts a failed attempt back in the queue, not before `notBefore`.
     func retry(_ id: ImportJobID, error: String, notBefore: Date, now: Date) async throws
+    /// The worker's heartbeat while matching: rows matched so far, and a lease pushed forward so a
+    /// long import is never taken for a dead one.
+    func progress(_ id: ImportJobID, matched: Int, lockedUntil: Date) async throws
     func rows(jobID: ImportJobID) async throws -> [PlannedRow]
     /// Stores each row's outcome and the job's new state and stats, and releases the lease.
     func savePlan(_ job: ImportJob, rows: [PlannedRow]) async throws

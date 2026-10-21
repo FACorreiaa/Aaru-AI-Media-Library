@@ -533,7 +533,11 @@ POST /imports/*  →  parse the file (bounded, 5 MB) into import_rows; the file 
                  →  worker (leased: a job whose worker died runs again when the lease ends;
                     3 attempts with backoff, then failed with an errorSummary)
                       1. map each row to MediaRef (exact ids → title+year+type; match_aliases later)
-                      2. hydrate Title (IDs + TMDB/Open Library)
+                      2. hydrate Title (IDs + TMDB/Open Library). IMP-017: rows go in chunks of
+                         50, three chunks in flight, four rows at once inside a chunk; a chunk's
+                         MyAnimeList-only rows are fetched from AniList in one `idMal_in` page.
+                         Each finished chunk writes `import_jobs.rows_matched` and renews the
+                         lease, which is the progress clients show
                       3. merge rows that matched one title (anime seasons tick their TMDB
                          season), then decide: create / update (fill-empty, status forward
                          only, never past one the user chose) / skip / unmatched

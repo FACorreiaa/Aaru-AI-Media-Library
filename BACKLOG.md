@@ -358,6 +358,7 @@ account or a stranger that has not happened yet.
 | IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |
 | IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
 | IMP-016 | Built, unverified | #46 62dfe1d; Imports/Stremio/*, StremioImportTests | Not deployed; no real account library |
+| IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Not deployed; Apple ledger not run on a device |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -1543,6 +1544,19 @@ shows, and running it again plans only skips and updates.
 
 Export-file fallback (`/v1/imports/csv` with a Stremio JSON export, same mapper): waits for a
 real export sample.
+
+### IMP-017 · Import speed and progress · M · 2026-10-21
+**Needs:** IMP-001, IMP-013.
+A 2,001-entry MyAnimeList export sat on "MyAnimeList · Waiting" with nothing else on the page,
+while the worker matched one row at a time (one AniList request per anime, 90 a minute at best).
+Rows now go in chunks of 50, three in flight; a chunk's MyAnimeList-only rows cost one AniList
+`idMal_in` request. Uploads insert rows 500 per statement. `ImportJob` carries `rowsTotal` and
+`rowsMatched`; the web page and the Apple import screen show a `JobLedger` of steps (DESIGN §3)
+instead of a bare state, poll the job list instead of re-reading every row, and let a job still in
+line be cancelled.
+
+**Done when:** a 2,000-entry export shows steady progress and plans in about a minute (local run
+with an empty catalog: 70 s, bounded by AniList's rate; was ~22 min at one request per entry).
 
 ---
 

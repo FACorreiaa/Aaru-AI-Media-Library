@@ -84,6 +84,12 @@ Each step is a row you can tap:
 Partial failure stays visible. "14 unmatched" opens a queue the agent and you finish
 together. GitHub's canvas lesson: durable state, human gates.
 
+Built for file and account imports (IMP-017, web + Apple): Read your file (or library) · Wait for
+a free slot · Match each title to the catalog ("840 of 2,001" with a bar) · Check against your
+shelf · Ready for you to review. Done steps carry a check, the current one a ring, the rest stay
+muted. A retry shows as a pause with its reason, never as an error. Nothing loops; the bar moves
+only when the count does. The page says you can leave, and a job still in line can be cancelled.
+
 ## 4. Title room (deep artifact)
 
 One title is a room, not a settings form.

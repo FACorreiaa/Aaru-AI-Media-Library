@@ -79,6 +79,9 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
     public var filename: String?
     public var createdAt: Date
     public var updatedAt: Date
+    /// The rows read from the file or provider, and how many the worker has matched so far.
+    public var rowsTotal: Int
+    public var rowsMatched: Int
 
     public init(
         id: ImportJobID = ImportJobID(),
@@ -89,7 +92,9 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
         errorSummary: String? = nil,
         filename: String? = nil,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        rowsTotal: Int = 0,
+        rowsMatched: Int = 0
     ) {
         self.id = id
         self.userID = userID
@@ -100,5 +105,7 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
         self.filename = filename
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.rowsTotal = rowsTotal
+        self.rowsMatched = rowsMatched
     }
 }

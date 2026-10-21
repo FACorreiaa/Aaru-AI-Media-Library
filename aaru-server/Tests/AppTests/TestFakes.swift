@@ -73,7 +73,7 @@ func rowsReferencing(_ userID: UserID) async throws -> [String: Int] {
 }
 
 /// A catalog provider with canned answers and call counts. Never reaches the network.
-final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, @unchecked Sendable {
+final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, MALBatchHydrating, @unchecked Sendable {
     // @unchecked: test-only; `lock` guards every mutable field.
     private let lock = NSLock()
     private var searchResults: [String: [CatalogHit]] = [:]
@@ -147,6 +147,20 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, @unch
         try await Task.sleep(for: .milliseconds(5))
         return lock.withLock {
             titles.first { $0.hit.type == type && $0.hit.ids.matches(ids) }
+        }
+    }
+
+    func hydrate(malIDs: [String]) async throws -> [String: CatalogTitle] {
+        try record("hydrateMAL")
+        let wanted = Set(malIDs)
+        return lock.withLock {
+            var found: [String: CatalogTitle] = [:]
+            for title in titles {
+                if let mal = title.hit.ids.mal, wanted.contains(mal), found[mal] == nil {
+                    found[mal] = title
+                }
+            }
+            return found
         }
     }
 

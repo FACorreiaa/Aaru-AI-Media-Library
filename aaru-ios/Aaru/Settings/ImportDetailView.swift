@@ -22,11 +22,27 @@ struct ImportDetailView: View {
             if let job {
                 Section {
                     LabeledContent("Status", value: job.stateLabel)
-                    if job.isWorking {
-                        ProgressView().frame(maxWidth: .infinity)
-                    }
                     if let error = job.errorSummary, job.state == .failed {
                         Text(error).font(.footnote).foregroundStyle(.red)
+                    }
+                }
+                if job.isWorking {
+                    Section {
+                        ImportLedger(steps: job.steps)
+                        if job.state == .queued {
+                            Button("Cancel this import", role: .destructive) {
+                                Task {
+                                    if await imports.discard(id) {
+                                        dismiss()
+                                    }
+                                }
+                            }
+                        }
+                    } footer: {
+                        Text(
+                            "You can leave: the plan waits under Imports, and nothing reaches your shelf "
+                                + "until you approve it."
+                        )
                     }
                 }
                 if !job.isWorking, job.state != .failed {
@@ -87,12 +103,18 @@ struct ImportDetailView: View {
         }
     }
 
-    /// Polls every two seconds while the server is still matching ("live-ish" progress).
+    /// Polls every two seconds while the server is still matching. The job list carries the
+    /// progress; the rows (thousands for a big export) are read once, when matching ends.
     private func poll() async {
-        while !Task.isCancelled {
-            detail = await imports.detail(id)
-            guard detail?.job.isWorking == true else { return }
+        detail = await imports.detail(id)
+        while !Task.isCancelled, detail?.job.isWorking == true {
             try? await Task.sleep(for: .seconds(2))
+            guard let fresh = await imports.job(id) else { continue }
+            if fresh.isWorking {
+                detail?.job = fresh
+            } else {
+                detail = await imports.detail(id)
+            }
         }
     }
 

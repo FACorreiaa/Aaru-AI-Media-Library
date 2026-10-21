@@ -39,6 +39,7 @@ let allMigrations: [any Migration] = [
     AddGroupChannelKinds(),
     AddAgentReplies(),
     AddGroupPush(),
+    AddImportProgress(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

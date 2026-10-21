@@ -369,7 +369,7 @@ function Settings() {
         </section>
 
         <Show when={jobs().length > 0}>
-          <section class="mt-10">
+          <section id="imports" class="mt-10 scroll-mt-6">
             <h2 class="font-display text-2xl font-medium">Imports</h2>
             <ul class="mt-3 divide-y divide-line">
               <For each={jobs()}>

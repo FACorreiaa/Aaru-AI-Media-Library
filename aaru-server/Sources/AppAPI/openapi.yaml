@@ -2067,7 +2067,7 @@ components:
         expiresAt: {type: string, format: date-time}
     ImportJob:
       type: object
-      required: [id, source, state, stats, createdAt, updatedAt]
+      required: [id, source, state, stats, createdAt, updatedAt, rowsTotal, rowsMatched]
       properties:
         id: {type: string, format: uuid}
         source:
@@ -2084,6 +2084,16 @@ components:
           description: The uploaded file's name, or the AniList username for an `anilist` import.
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+        rowsTotal:
+          type: integer
+          description: >-
+            Rows read from the file or provider. 0 for a Trakt or AniList import until the worker
+            has read the account.
+        rowsMatched:
+          type: integer
+          description: >-
+            Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is
+            retried. With `rowsTotal` it is the import's progress.
     ImportStats:
       type: object
       required: [created, updated, skipped, unmatched]

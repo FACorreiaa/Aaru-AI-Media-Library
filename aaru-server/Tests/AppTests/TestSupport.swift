@@ -254,6 +254,10 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
+    func progress(_: ImportJobID, matched _: Int, lockedUntil _: Date) async throws {
+        throw Touched()
+    }
+
     func rows(jobID _: ImportJobID) async throws -> [PlannedRow] {
         throw Touched()
     }

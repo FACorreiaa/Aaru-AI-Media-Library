@@ -164,7 +164,9 @@ extension Components.Schemas.ImportJob {
             errorSummary: job.errorSummary,
             filename: job.filename,
             createdAt: job.createdAt,
-            updatedAt: job.updatedAt
+            updatedAt: job.updatedAt,
+            rowsTotal: job.rowsTotal,
+            rowsMatched: job.rowsMatched
         )
     }
 }
