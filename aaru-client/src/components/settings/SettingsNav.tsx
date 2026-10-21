@@ -6,7 +6,7 @@ export const SETTINGS_GROUPS = [
   {
     to: '/app/settings/account',
     label: 'Account',
-    hint: 'Name, sign-in, friends and notifications',
+    hint: 'Name, sign-in, friends, notifications and appearance',
   },
   {
     to: '/app/settings/imports',

@@ -1,32 +1,60 @@
 @import 'tailwindcss';
 
-/* Brand tokens, the same names as the Apple apps' asset catalog (DESIGN.md "Brand").
-   Paper and teal in light, reed green in dark. */
-:root {
-  --paper: #fbf6ec;
-  --surface: #f3ecdd;
-  --ink: #173a3e;
-  --muted: #4b6668;
-  --accent: #1f6970;
-  --on-accent: #fbf6ec;
-  --line: rgb(23 58 62 / 0.12);
-  --medallion: #fff9ed;
-  --danger: #a33a2c;
-  color-scheme: light dark;
+/* Colour tokens come from design/tokens.json (scripts/generate-tokens.mjs), the same names
+   as the Apple apps' asset catalog (DESIGN.md "Mindspace"). Light follows the system unless
+   <html data-theme> pins it (lib/appearance.ts). */
+@import './tokens.css';
+
+/* Newsreader (OFL, public/fonts/OFL.txt), the display face on every surface. Self-hosted and cut
+   down to what headings use: weight 450–600, optical size fixed at 36, Latin with Latin
+   Extended as its own file the browser fetches only when a title needs it. design/fonts.md
+   has the recipe. */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 450 600;
+  font-display: swap;
+  src: url('/fonts/newsreader-roman.woff2') format('woff2');
+  unicode-range:
+    U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
+    U+2013-2014, U+2018-201A, U+201C-201E, U+2022, U+2026, U+2032-2033, U+20AC,
+    U+2122;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #0f2224;
-    --surface: #16302f;
-    --ink: #ece5d6;
-    --muted: #a9bdb8;
-    --accent: #7cc3b8;
-    --on-accent: #0f2224;
-    --line: rgb(236 229 214 / 0.12);
-    --medallion: #f6eedd;
-    --danger: #f0a493;
-  }
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 450 600;
+  font-display: swap;
+  src: url('/fonts/newsreader-roman-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 450 600;
+  font-display: swap;
+  src: url('/fonts/newsreader-italic.woff2') format('woff2');
+  unicode-range:
+    U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
+    U+2013-2014, U+2018-201A, U+201C-201E, U+2022, U+2026, U+2032-2033, U+20AC,
+    U+2122;
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 450 600;
+  font-display: swap;
+  src: url('/fonts/newsreader-italic-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 @theme inline {
@@ -39,13 +67,18 @@
   --color-line: var(--line);
   --color-medallion: var(--medallion);
   --color-danger: var(--danger);
+  --color-stone: var(--stone);
+  --color-gold: var(--gold);
+  --color-agent: var(--agent);
+  --color-line-strong: var(--line-strong);
   /* Corner radii: cards, panels (callouts, inner boxes), fields. */
   --radius-card: 20px;
   --radius-panel: 14px;
   --radius-field: 10px;
   /* Poster thumbnails inside a cell: calendar days, agenda rows. */
   --radius-thumb: 6px;
-  --font-display: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
+  --font-display:
+    'Newsreader', ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', sans-serif;
@@ -352,5 +385,135 @@ body {
       transform: scale(1.06);
       opacity: 1;
     }
+  }
+}
+
+/* The mindspace layer (DESIGN.md "Mindspace"). Only the Field and the Title room stand in it;
+   every other page is plain paper. All of it is static paint: nothing here animates, and none
+   of it is drawn for viewers who ask for more contrast or force their own colours. */
+
+/* The room's light by the viewer's clock (<html data-daypart>, lib/appearance.ts). */
+:root {
+  --atmos-wash: radial-gradient(
+    120% 70% at 50% 0%,
+    color-mix(in srgb, var(--accent) 6%, transparent),
+    transparent 70%
+  );
+}
+:root[data-daypart='dawn'] {
+  --atmos-wash: radial-gradient(
+    120% 70% at 30% 0%,
+    color-mix(in srgb, var(--gold) 12%, transparent),
+    transparent 70%
+  );
+}
+:root[data-daypart='dusk'] {
+  --atmos-wash: radial-gradient(
+    120% 70% at 70% 0%,
+    color-mix(in srgb, var(--gold) 16%, transparent),
+    transparent 72%
+  );
+}
+:root[data-daypart='night'] {
+  --atmos-wash: radial-gradient(
+    120% 70% at 50% 0%,
+    color-mix(in srgb, var(--accent) 12%, transparent),
+    transparent 70%
+  );
+}
+
+/* Paper with a faint grain, the daypart wash, and along the top edge two sets of hairlines at
+   different pitches: up close they beat against each other like encoded rhythm, from across
+   the room they are reeds. --code-a / --code-b change the pitch (the Title room seeds them). */
+.atmos {
+  background-color: var(--paper);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    var(--atmos-wash),
+    linear-gradient(to bottom, transparent, var(--paper) 100%),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ink) 6%, transparent) 0 1px,
+      transparent 1px var(--code-a, 6px)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ink) 5%, transparent) 0 1px,
+      transparent 1px var(--code-b, 17px)
+    );
+  background-repeat: repeat, no-repeat, no-repeat, repeat-x, repeat-x;
+  background-size:
+    160px 160px,
+    100% 560px,
+    100% 200px,
+    auto 200px,
+    auto 200px;
+}
+
+/* A hairline ring, lit gold along the top edge: the one or two focal pieces on a page. */
+.edge-lit {
+  position: relative;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.edge-lit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--gold) 75%, transparent),
+    transparent 55%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* A soft chromatic edge, teal on one side and gold on the other, and a long low shadow. For
+   the single focal piece (Tonight, the Title room's poster), never a list of cards. */
+.fringe {
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    -1px 0 0 0 color-mix(in srgb, var(--accent) 30%, transparent),
+    1px 0 0 0 color-mix(in srgb, var(--gold) 35%, transparent),
+    0 28px 48px -30px rgb(0 0 0 / 0.45);
+}
+
+/* Art fades into the paper under it (Title room hero, Tonight). */
+.veil {
+  background: linear-gradient(
+    to top,
+    var(--paper) 0%,
+    color-mix(in srgb, var(--paper) 72%, transparent) 38%,
+    transparent 100%
+  );
+}
+
+/* Uppercase label above a heading ("The Field", "Tonight"). */
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .atmos {
+    background-image: none;
+  }
+  .edge-lit::after {
+    display: none;
+  }
+  .edge-lit,
+  .fringe {
+    box-shadow: inset 0 0 0 1px var(--ink);
   }
 }
