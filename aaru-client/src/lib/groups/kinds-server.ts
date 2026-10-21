@@ -5,7 +5,6 @@ import { sessionToken } from '../session/guard'
 import type { components } from '../api/schema'
 import type { LibraryEntry } from '../library/model'
 import { check, checkEmpty } from './responses'
-import { mediaRef } from './server'
 import type { GroupSummary } from './server'
 
 // GRP-007…GRP-009 on the web: the calls behind title, shelf and watch channels. Every rule is
@@ -16,6 +15,14 @@ export type ChannelItem = components['schemas']['ChannelItem']
 export type WatchPartyView = components['schemas']['WatchPartyView']
 
 const uuid = z.string().uuid()
+// The server's `MediaRef`, as in ./server. Private for the same reason: no zod in the browser.
+const mediaRef = z.object({
+  titleId: uuid.optional(),
+  type: z.enum(['movie', 'show', 'book']),
+  ids: z.record(z.string(), z.string()).optional(),
+  title: z.string().optional(),
+  year: z.number().int().optional(),
+})
 const channelRef = z.object({ groupId: uuid, channelId: uuid })
 const path = (data: { groupId: string; channelId: string }) => ({
   params: { path: { groupId: data.groupId, channelId: data.channelId } },

@@ -197,8 +197,11 @@ export const declineGroupInvite = createServerFn({ method: 'POST' })
     ),
   )
 
-/** A title by Aaru id, by provider ids, or by title and year, as the server's `MediaRef`. */
-export const mediaRef = z.object({
+/**
+ * A title by Aaru id, by provider ids, or by title and year, as the server's `MediaRef`. Kept
+ * private: an exported schema survives the server-function split and pulls zod into the browser.
+ */
+const mediaRef = z.object({
   titleId: uuid.optional(),
   type: z.enum(['movie', 'show', 'book']),
   ids: z.record(z.string(), z.string()).optional(),

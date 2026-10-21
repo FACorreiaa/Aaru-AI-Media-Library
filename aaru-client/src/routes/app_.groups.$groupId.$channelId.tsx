@@ -1,11 +1,12 @@
 import { Link, createFileRoute } from '@tanstack/solid-router'
 import { Match, Show, Switch, createMemo, createSignal } from 'solid-js'
 import { MemberList, MemberSheet } from '../components/groups/MemberList'
-import { MessageList, PAGE_SIZE } from '../components/groups/MessageList'
+import { MessageList } from '../components/groups/MessageList'
 import { ShelfView } from '../components/groups/ShelfView'
 import { TitleCard } from '../components/groups/TitleCard'
 import { WatchPanel } from '../components/groups/WatchPanel'
 import { useGroup } from '../components/groups/shell'
+import { PAGE_SIZE } from '../lib/groups/model'
 import { listMessages } from '../lib/groups/server'
 
 // GRP-005 on the web: one channel, with the member list folding away on the right. A shelf is a
