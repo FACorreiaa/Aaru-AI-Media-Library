@@ -54,7 +54,7 @@ struct ChannelView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    channelStart
+                    ChannelStart(channel: channel, model: model)
                     messageRows
                     outboxRows
                     if !model.thinking.isEmpty {
@@ -91,7 +91,8 @@ struct ChannelView: View {
             VStack(spacing: 0) {
                 ChannelHeader(
                     topic: channel.topic,
-                    disconnectedSince: socketOpen ? nil : groups.realtime?.disconnectedSince
+                    disconnectedSince: socketOpen ? nil : groups.realtime?.disconnectedSince,
+                    agent: detail?.agent ?? false
                 )
                 ChannelKindPanel(groups: groups, groupID: groupID, channel: channel)
             }
@@ -155,7 +156,7 @@ struct ChannelView: View {
                 }
             }
             .confirmationDialog(
-                "Delete this message?",
+                "Delete this group message?",
                 isPresented: Binding(get: { deleting != nil }, set: {
                     if !$0 {
                         deleting = nil
@@ -209,28 +210,6 @@ struct ChannelView: View {
 }
 
 extension ChannelView {
-    @ViewBuilder
-    private var channelStart: some View {
-        if model.reachedStart {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("#\(channel.name)").font(.title2.weight(.semibold))
-                Text(channel.isDefault ? "The start of the group." : "The start of #\(channel.name).")
-                    .foregroundStyle(Color(.muted))
-            }
-            .padding(16)
-        } else if model.hasLoaded {
-            Button(model.loadingOlder ? "Loading…" : "Load earlier messages") {
-                Task { await model.loadOlder() }
-            }
-            .buttonStyle(.borderless)
-            .disabled(model.loadingOlder)
-            .frame(maxWidth: .infinity)
-            .padding(12)
-        } else {
-            ProgressView().frame(maxWidth: .infinity).padding(24)
-        }
-    }
-
     private var messageRows: some View {
         ForEach(MessageLine.lines(model.messages, firstUnreadID: model.firstUnreadID)) { line in
             if let day = line.day {
@@ -255,7 +234,8 @@ extension ChannelView {
         if line.message.fromAgent {
             AgentMessageRow(
                 message: line.message, answering: model.messages.first { $0.id == line.message.replyTo },
-                myHandle: groups.myHandle, api: groups.api
+                myHandle: groups.myHandle,
+                onAdd: { await groups.addToMyLibrary($0) }
             )
         } else {
             MessageRow(line: line, myUserID: groups.myUserID, myHandle: groups.myHandle)
@@ -289,17 +269,5 @@ extension ChannelView {
                 Button("Delete", systemImage: "trash", role: .destructive) { deleting = message }
             }
         }
-    }
-}
-
-/// The system pasteboard on either platform.
-enum Clipboard {
-    static func copy(_ string: String) {
-        #if os(iOS)
-            UIPasteboard.general.string = string
-        #else
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(string, forType: .string)
-        #endif
     }
 }

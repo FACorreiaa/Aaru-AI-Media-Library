@@ -64,7 +64,8 @@ private struct GroupsStack: View {
                 let id = detail.group.id
                 path = [.group(id), .channel(group: id, channel: detail.group.defaultChannelId)]
             },
-            onChannelCreated: { groupID, channel in path.append(.channel(group: groupID, channel: channel.id)) }
+            onChannelCreated: { groupID, channel in path.append(.channel(group: groupID, channel: channel.id)) },
+            onShowMembers: { sheet = .members($0) }
         ))
         .task { await groups.load() }
         // Leaving or deleting a group, or being removed, closes it.
@@ -102,12 +103,15 @@ private struct GroupsSplit: View {
         } detail: {
             detail
         }
+        // One banner for the whole split, whichever column caused it (UX-085).
+        .safeAreaInset(edge: .bottom) { ProblemBanner(message: groups.problem) { groups.problem = nil } }
         .modifier(GroupPresentation(
             groups: groups, sheet: $sheet, confirm: $confirm,
             onCreated: { detail in
                 selection = ChannelRef(group: detail.group.id, channel: detail.group.defaultChannelId)
             },
-            onChannelCreated: { groupID, channel in selection = ChannelRef(group: groupID, channel: channel.id) }
+            onChannelCreated: { groupID, channel in selection = ChannelRef(group: groupID, channel: channel.id) },
+            onShowMembers: { present(.members($0)) }
         ))
         .task {
             await groups.load()
@@ -157,26 +161,25 @@ private struct GroupsSplit: View {
                         Text(group.name).fontWeight(.semibold).lineLimit(1)
                         Spacer(minLength: 4)
                         UnreadBadge(unread: group.unread, mentions: group.mentions)
-                        Menu("Group", systemImage: "ellipsis") {
-                            GroupMenuItems(group: group, present: { sheet = $0 }, confirm: { confirm = $0 })
+                        Menu("Actions for \(group.name)", systemImage: "ellipsis") {
+                            GroupMenuItems(group: group, present: present, confirm: { confirm = $0 })
                         }
                         .labelStyle(.iconOnly)
                         .menuStyle(.button)
                         .buttonStyle(.borderless)
                         .menuIndicator(.hidden)
                         .fixedSize()
+                        .help("Group actions")
                     }
                     .contextMenu {
-                        GroupMenuItems(group: group, present: { sheet = $0 }, confirm: { confirm = $0 })
+                        GroupMenuItems(group: group, present: present, confirm: { confirm = $0 })
                     }
                 }
             }
         }
         .listStyle(.sidebar)
         .overlay {
-            if groups.hasLoaded, groups.groups.isEmpty, groups.invites.isEmpty {
-                GroupsEmptyState(canCreate: !groups.needsHandle) { sheet = .create }
-            }
+            GroupsListOverlay(groups: groups) { sheet = .create }
         }
         .navigationTitle("Groups")
         .navigationSplitViewColumnWidth(min: 220, ideal: 260)
@@ -202,14 +205,27 @@ private struct GroupsSplit: View {
                 MemberList(groups: groups, groupID: selection.group) { sheet = .invite(selection.group) }
                     .inspectorColumnWidth(min: 220, ideal: 260, max: 320)
             }
-            .safeAreaInset(edge: .bottom) { ProblemBanner(message: groups.problem) { groups.problem = nil } }
         } else {
             ContentUnavailableView(
                 "Pick a channel",
                 systemImage: "number",
-                description: Text("Talk about what you're watching and reading.")
+                description: Text("Talk about what you're watching, reading and listening to.")
             )
             .background(Color(.paper))
+        }
+    }
+
+    /// In the split, Members is always the inspector, from the menu as from the toolbar
+    /// (UX-085). Members of another group selects that group first.
+    private func present(_ request: GroupSheet) {
+        if case let .members(groupID) = request {
+            if selection?.group != groupID, let group = groups.groups.first(where: { $0.id == groupID }) {
+                collapsed.remove(groupID)
+                selection = ChannelRef(group: groupID, channel: group.defaultChannelId)
+            }
+            showsMembers = true
+        } else {
+            sheet = request
         }
     }
 
@@ -243,6 +259,10 @@ private struct ChannelDestination: View {
             }
         } else if groups.details[groupID] != nil {
             ContentUnavailableView("This channel is gone", systemImage: "number")
+        } else if let problem = groups.detailProblems[groupID] {
+            LoadFailedView(title: "Couldn't open this channel", message: problem) {
+                await groups.loadDetail(groupID)
+            }
         } else {
             ProgressView().task { await groups.loadDetail(groupID) }
         }

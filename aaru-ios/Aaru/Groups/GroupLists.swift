@@ -27,9 +27,7 @@ struct GroupsHome: View {
         .scrollContentBackground(.hidden)
         .background(Color(.paper))
         .overlay {
-            if groups.hasLoaded, groups.groups.isEmpty, groups.invites.isEmpty {
-                GroupsEmptyState(canCreate: !groups.needsHandle, onCreate: onCreate)
-            }
+            GroupsListOverlay(groups: groups, onCreate: onCreate)
         }
         .navigationTitle("Groups")
         .toolbar {
@@ -41,33 +39,60 @@ struct GroupsHome: View {
     }
 }
 
-/// "Make a place to talk with friends."
-struct GroupsEmptyState: View {
-    let canCreate: Bool
+/// What covers the groups list when it has nothing to show: a spinner while the first load
+/// runs, the error with Try again when it failed (UX-063), else the empty state. Never "No
+/// groups yet" for a load that failed.
+struct GroupsListOverlay: View {
+    let groups: GroupsModel
     let onCreate: () -> Void
+
+    var body: some View {
+        if let problem = groups.loadProblem {
+            LoadFailedView(title: "Couldn't load your groups", message: problem) { await groups.load() }
+        } else if !groups.hasLoaded {
+            ProgressView()
+        } else if groups.groups.isEmpty, groups.invites.isEmpty {
+            GroupsEmptyState(needsHandle: groups.needsHandle, onCreate: onCreate)
+        }
+    }
+}
+
+/// "Make a place to talk with friends." Without a handle, the way to get one (UX-074).
+struct GroupsEmptyState: View {
+    let needsHandle: Bool
+    let onCreate: () -> Void
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
         ContentUnavailableView {
             Label("No groups yet", systemImage: "bubble.left.and.bubble.right")
         } description: {
-            Text("Make a place to talk with friends.")
+            Text(needsHandle ? "Choose a handle first, so friends see who is talking." : "Make a place to talk with friends.")
         } actions: {
-            if canCreate {
+            if needsHandle {
+                Button("Choose a handle") { router.openSettings(.account) }
+                    .buttonStyle(.borderedProminent)
+            } else {
                 Button("Create a group", action: onCreate).buttonStyle(.borderedProminent)
+                Button("Add friends") { router.openSettings(.friends) }
             }
         }
     }
 }
 
-/// Groups need a handle, so friends see who is talking.
+/// Groups need a handle, so friends see who is talking. The button opens Settings → Account,
+/// where the handle is chosen (UX-074).
 struct HandleNotice: View {
+    @Environment(AppRouter.self) private var router
+
     var body: some View {
-        Label {
-            Text("Choose a handle first, in Settings → Profile and friends.")
-        } icon: {
-            Image(systemName: "at")
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Groups need a handle, so friends see who is talking.", systemImage: "at")
+                .foregroundStyle(Color(.muted))
+            Button("Choose a handle") { router.openSettings(.account) }
+                .buttonStyle(.borderedProminent)
         }
-        .foregroundStyle(Color(.muted))
+        .padding(.vertical, 4)
     }
 }
 
@@ -204,12 +229,19 @@ struct ChannelListView: View {
                         Text("It's just you so far.")
                     }
                 }
-            } else {
+            } else if groups.detailProblems[groupID] == nil {
                 ProgressView().frame(maxWidth: .infinity)
             }
         }
         .scrollContentBackground(.hidden)
         .background(Color(.paper))
+        .overlay {
+            if detail == nil, let problem = groups.detailProblems[groupID] {
+                LoadFailedView(title: "Couldn't open this group", message: problem) {
+                    await groups.loadDetail(groupID)
+                }
+            }
+        }
         .navigationTitle(detail?.group.name ?? "")
         .toolbar {
             if let group = detail?.group {

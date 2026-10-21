@@ -28,6 +28,11 @@ final class GroupsModel {
     private(set) var myUserID: String?
     private(set) var myHandle: String?
     private(set) var hasLoaded = false
+    /// Why the first load failed; nil once anything has loaded. Screens show it in place of an
+    /// empty list (UX-063), so a failure never reads as "No groups yet".
+    private(set) var loadProblem: String?
+    /// Groups whose channels and members could not be loaded and have nothing on screen yet.
+    private(set) var detailProblems: [String: String] = [:]
     var problem: String?
     /// Set to send the Groups tab to a channel; the tab clears it once it has navigated.
     var openRequest: ChannelOpenRequest?
@@ -67,6 +72,8 @@ final class GroupsModel {
         myUserID = nil
         myHandle = nil
         hasLoaded = false
+        loadProblem = nil
+        detailProblems = [:]
         problem = nil
         openRequest = nil
     }
@@ -91,8 +98,14 @@ final class GroupsModel {
             }
             details = details.filter { id, _ in groups.contains { $0.id == id } }
             hasLoaded = true
+            loadProblem = nil
         } catch {
-            problem = "Your groups could not be loaded. Aaru could not reach the server."
+            let message = "Your groups could not be loaded. Aaru could not reach the server."
+            if hasLoaded {
+                problem = message
+            } else {
+                loadProblem = message
+            }
         }
     }
 
@@ -112,16 +125,18 @@ final class GroupsModel {
             case let .ok(response):
                 let detail = try response.body.json
                 details[groupID] = detail
+                detailProblems[groupID] = nil
                 if let index = groups.firstIndex(where: { $0.id == groupID }) {
                     groups[index] = detail.group
                 }
-            case .default:
-                // Gone, or no longer a member.
-                details[groupID] = nil
-                groups.removeAll { $0.id == groupID }
+            case let .default(status, _) where status == 403 || status == 404:
+                // Gone, or no longer a member: only then does the group leave the list (UX-065).
+                forgetGroup(groupID)
+            case let .default(_, error):
+                detailFailed(groupID, (try? error.body.json.message) ?? "That group could not be loaded.")
             }
         } catch {
-            problem = "That group could not be loaded. Aaru could not reach the server."
+            detailFailed(groupID, "That group could not be loaded. Aaru could not reach the server.")
         }
     }
 
@@ -283,6 +298,17 @@ final class GroupsModel {
     func forgetGroup(_ groupID: String) {
         groups.removeAll { $0.id == groupID }
         details[groupID] = nil
+        detailProblems[groupID] = nil
+    }
+
+    /// A detail that never loaded gets an error in place; one already on screen keeps showing,
+    /// with the reason in the banner.
+    private func detailFailed(_ groupID: String, _ message: String) {
+        if details[groupID] == nil {
+            detailProblems[groupID] = message
+        } else {
+            problem = message
+        }
     }
 
     // MARK: Plumbing
@@ -394,6 +420,22 @@ extension GroupsModel {
                 groups = groups.map { $0.id == groupID ? summary : $0 }
             case let .default(_, error): throw Failure(try? error.body.json)
             }
+        }
+    }
+}
+
+extension GroupsModel {
+    /// A title Aaru pointed to in a group, added to this user's own library as Plan to …: the
+    /// same journaled add as a tap anywhere else. Nil when it was added; else why not.
+    func addToMyLibrary(_ title: TitleSummary) async -> String? {
+        guard let api else { return "This build has no server configured." }
+        do {
+            switch try await api.addLibraryItem(body: .json(.init(mediaRef: title.mediaRef, status: .wishlist))) {
+            case .ok: return nil
+            case let .default(_, error): return (try? error.body.json.message) ?? "Not added."
+            }
+        } catch {
+            return "Aaru could not reach the server."
         }
     }
 }

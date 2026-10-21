@@ -1,4 +1,3 @@
-import AaruAPI
 import SwiftUI
 
 // GRP-011: how `@aaru` appears in a group. Aaru is the heron on its medallion, never a monogram,
@@ -21,10 +20,16 @@ struct AaruAvatar: View {
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
-        .scaleEffect(inhale ? 1.06 : 1)
+        .scaleEffect(inhale && !reduceMotion ? 1.06 : 1)
         .onAppear {
             guard breathing, !reduceMotion else { return }
             withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { inhale = true }
+        }
+        // Turning Reduce Motion on mid-breath stops it at rest.
+        .onChange(of: reduceMotion) { _, reduce in
+            if reduce {
+                inhale = false
+            }
         }
         .accessibilityHidden(true)
     }
@@ -37,7 +42,8 @@ struct AgentMessageRow: View {
     /// The mention it answers, when that message is loaded.
     let answering: GroupMessage?
     let myHandle: String?
-    let api: Client?
+    /// The reader's own add of a title the answer points to; nil when added, else why not.
+    let onAdd: (TitleSummary) async -> String?
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -55,17 +61,17 @@ struct AgentMessageRow: View {
                         .foregroundStyle(Color(.muted))
                 }
                 if let answering, !answering.deleted {
-                    Text("Replying to \(answering.author.map { "@\($0.handle)" } ?? "a message"): \(answering.body)")
+                    Text("Replying to \(answering.author.map { "@\($0.handle)" } ?? "someone"): \(answering.body)")
                         .font(.caption)
                         .foregroundStyle(Color(.muted))
                         .lineLimit(1)
                 }
                 if message.deleted {
-                    Text("Message deleted").italic().foregroundStyle(Color(.muted))
+                    Text("Deleted").italic().foregroundStyle(Color(.muted))
                 } else if message.veiled {
-                    SpoilerReveal(message: message, myHandle: myHandle, api: api)
+                    SpoilerReveal(message: message, myHandle: myHandle, onAdd: onAdd)
                 } else {
-                    AgentBody(message: message, myHandle: myHandle, api: api)
+                    AgentBody(message: message, myHandle: myHandle, onAdd: onAdd)
                 }
             }
             Spacer(minLength: 0)
@@ -82,12 +88,12 @@ struct AgentMessageRow: View {
 private struct SpoilerReveal: View {
     let message: GroupMessage
     let myHandle: String?
-    let api: Client?
+    let onAdd: (TitleSummary) async -> String?
     @State private var shown = false
 
     var body: some View {
         if shown {
-            AgentBody(message: message, myHandle: myHandle, api: api)
+            AgentBody(message: message, myHandle: myHandle, onAdd: onAdd)
         } else {
             SpoilerVeil { shown = true }
         }
@@ -97,7 +103,7 @@ private struct SpoilerReveal: View {
 private struct AgentBody: View {
     let message: GroupMessage
     let myHandle: String?
-    let api: Client?
+    let onAdd: (TitleSummary) async -> String?
 
     var body: some View {
         Text(MentionText.attributed(message.body, myHandle: myHandle))
@@ -106,7 +112,7 @@ private struct AgentBody: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(components, id: \.title.id) { component in
-                        AgentTitleCard(title: component.title, api: api)
+                        AgentTitleCard(title: component.title, onAdd: onAdd)
                     }
                 }
                 .padding(.vertical, 4)
@@ -118,7 +124,8 @@ private struct AgentBody: View {
 /// One title Aaru pointed to. "Add to my library" is the reader's own wishlist add.
 struct AgentTitleCard: View {
     let title: TitleSummary
-    let api: Client?
+    /// Nil when added, else why not.
+    let onAdd: (TitleSummary) async -> String?
     @State private var state = AddState.idle
 
     enum AddState: Equatable {
@@ -131,7 +138,8 @@ struct AgentTitleCard: View {
             PosterView(url: title.posterURL, kind: title.mediaKind)
                 .frame(width: 96)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
-            Text(title.title).font(.caption.weight(.medium)).lineLimit(2)
+                .accessibilityLabel(title.title)
+            Text(title.title).font(.caption.weight(.medium)).lineLimit(3)
             if let year = title.year {
                 Text(String(year)).font(.caption2).foregroundStyle(Color(.muted))
             }
@@ -143,30 +151,29 @@ struct AgentTitleCard: View {
             case .adding:
                 ProgressView().controlSize(.small)
             case let .failed(problem):
-                Text(problem).font(.caption2).foregroundStyle(.red).lineLimit(2)
+                Text(problem).font(.caption2).foregroundStyle(Color(.danger)).lineLimit(2)
             case .idle:
-                if api != nil {
-                    Button("Add to my library", systemImage: "plus") { Task { await add() } }
-                        .font(.caption2.weight(.medium))
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                }
+                Button("Add to my library", systemImage: "plus") { Task { await add() } }
+                    .font(.caption2.weight(.medium))
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
             }
         }
         .frame(width: 104, alignment: .leading)
         .accessibilityElement(children: .contain)
+        .contextMenu {
+            if state == .idle {
+                Button("Add to my library", systemImage: "plus") { Task { await add() } }
+            }
+        }
     }
 
     private func add() async {
-        guard let api else { return }
         state = .adding
-        do {
-            switch try await api.addLibraryItem(body: .json(.init(mediaRef: title.mediaRef, status: .wishlist))) {
-            case .ok: state = .added
-            case let .default(_, error): state = .failed((try? error.body.json.message) ?? "Not added.")
-            }
-        } catch {
-            state = .failed("Aaru could not reach the server.")
+        if let problem = await onAdd(title) {
+            state = .failed(problem)
+        } else {
+            state = .added
         }
     }
 }
@@ -193,10 +200,10 @@ struct AaruMemberRow: View {
         HStack(alignment: .top, spacing: 12) {
             AaruAvatar(size: 32)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Aaru · answers when tagged").lineLimit(1)
+                Text("Aaru · answers when tagged")
                 Text("""
-                Tag @aaru to ask. It reads this channel's recent messages, and your own library when \
-                that helps. It can't change anything.
+                Tag @aaru to ask. It reads this channel's recent group messages, and your own library \
+                when that helps. It can't change anything.
                 """)
                 .font(.caption)
                 .foregroundStyle(Color(.muted))

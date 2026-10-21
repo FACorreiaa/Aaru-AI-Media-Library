@@ -4,18 +4,22 @@ import SwiftUI
 /// A catalog search that picks one title, for title channels, shelves and watch parties. The
 /// same search as Add; picking never touches the library.
 struct TitlePickerSheet: View {
-    let api: Client?
     let navigationTitle: String
     /// True when the pick was used; the sheet then closes.
     let onPick: (CatalogHit) async -> Bool
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var model: TitlePickerModel
     @State private var query = ""
     @State private var kind = MediaKind.show
-    @State private var hits: [CatalogHit] = []
-    @State private var isSearching = false
     @State private var picking: String?
-    @State private var problem: String?
+
+    init(api: Client?, navigationTitle: String, onPick: @escaping (CatalogHit) async -> Bool) {
+        self.navigationTitle = navigationTitle
+        self.onPick = onPick
+        _model = State(initialValue: TitlePickerModel(api: api))
+    }
 
     private struct SearchKey: Equatable {
         let query: String
@@ -25,16 +29,13 @@ struct TitlePickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                Picker("Type", selection: $kind) {
-                    ForEach(MediaKind.allCases) { Text($0.label).tag($0) }
+                KindPicker(kind: $kind, compact: typeSize.isAccessibilitySize)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                if let problem = model.problem {
+                    Text(problem).font(.footnote).foregroundStyle(Color(.danger)).listRowBackground(Color.clear)
                 }
-                .pickerStyle(.segmented)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                if let problem {
-                    Text(problem).font(.footnote).foregroundStyle(.red).listRowBackground(Color.clear)
-                }
-                ForEach(hits, id: \.self) { hit in
+                ForEach(model.hits, id: \.self) { hit in
                     Button {
                         pick(hit)
                     } label: {
@@ -67,15 +68,15 @@ struct TitlePickerSheet: View {
             .scrollContentBackground(.hidden)
             .background(Color(.paper))
             .overlay {
-                if hits.isEmpty, !isSearching, query.count >= 2, problem == nil {
+                if model.hits.isEmpty, !model.isSearching, query.count >= 2, model.problem == nil {
                     ContentUnavailableView.search(text: query)
-                } else if isSearching, hits.isEmpty {
+                } else if model.isSearching, model.hits.isEmpty {
                     ProgressView()
                 }
             }
             .navigationTitle(navigationTitle)
             .searchable(text: $query, prompt: kind.searchPrompt)
-            .task(id: SearchKey(query: query, kind: kind)) { await search() }
+            .task(id: SearchKey(query: query, kind: kind)) { await model.search(query, kind: kind) }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
@@ -98,34 +99,24 @@ struct TitlePickerSheet: View {
             }
         }
     }
+}
 
-    private func search() async {
-        let text = query.trimmingCharacters(in: .whitespaces)
-        guard text.count >= 2, let api else {
-            hits = []
-            problem = nil
-            return
-        }
-        // Debounce: a new keystroke cancels this task before the request goes out.
-        try? await Task.sleep(for: .milliseconds(300))
-        guard !Task.isCancelled else { return }
-        isSearching = true
-        defer { isSearching = false }
-        do {
-            switch try await api.searchCatalog(query: .init(q: text, _type: kind.searchType)) {
-            case let .ok(response):
-                hits = try response.body.json.items
-                problem = nil
-            case let .default(_, error):
-                hits = []
-                problem = (try? error.body.json.message) ?? "Search is not available right now."
+/// Five kinds fit a segmented control until the text is an accessibility size; then a menu.
+private struct KindPicker: View {
+    @Binding var kind: MediaKind
+    let compact: Bool
+
+    var body: some View {
+        if compact {
+            Picker("Type", selection: $kind) {
+                ForEach(MediaKind.allCases) { Text($0.label).tag($0) }
             }
-        } catch is CancellationError {
-            return
-        } catch {
-            if !Task.isCancelled {
-                problem = "Aaru could not reach the server."
+            .pickerStyle(.menu)
+        } else {
+            Picker("Type", selection: $kind) {
+                ForEach(MediaKind.allCases) { Text($0.label).tag($0) }
             }
+            .pickerStyle(.segmented)
         }
     }
 }
