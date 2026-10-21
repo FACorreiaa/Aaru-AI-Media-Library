@@ -1,36 +1,66 @@
 import AaruAPI
 import SwiftUI
 
-/// The Settings rows for friends: your handle, and whether friends see your library (SOC-001).
-struct FriendsSection: View {
-    @State private var model: SocialModel
+/// Settings → Friends & privacy (§18, SOC-001): your handle, the way to Friends, whether friends
+/// see your library, and Location, the one place Aaru stores where you are (UX-022). The friend
+/// lists, invites and requests live on Friends itself.
+struct FriendsPage: View {
+    let social: SocialModel
+    @State private var concerts: ConcertsModel
+    @Environment(AppRouter.self) private var router
 
-    init(api: Client?) {
-        _model = State(initialValue: SocialModel(api: api))
+    init(api: Client?, social: SocialModel) {
+        self.social = social
+        _concerts = State(initialValue: ConcertsModel(api: api))
     }
 
     var body: some View {
-        Section {
-            NavigationLink {
-                ProfileEditor(model: model)
-            } label: {
-                LabeledContent("Handle", value: model.handle.map { "@\($0)" } ?? "Choose one")
-            }
-            if model.handle != nil {
-                Toggle(
-                    "Show my library to friends",
-                    isOn: Binding(get: { model.shareLibrary }, set: { share in
-                        Task { await model.setShareLibrary(share) }
-                    })
+        @Bindable var social = social
+        Form {
+            Section {
+                NavigationLink {
+                    ProfileEditor(model: social)
+                } label: {
+                    LabeledContent("Handle", value: social.handle.map { "@\($0)" } ?? "Choose one")
+                }
+                if social.handle != nil {
+                    Button {
+                        router.showFriends()
+                    } label: {
+                        LabeledContent {
+                            if social.incoming.isEmpty {
+                                Text("\(social.friends.count)")
+                            } else {
+                                Text("\(social.incoming.count) asking").foregroundStyle(Color(.accent))
+                            }
+                        } label: {
+                            Label("Friends", systemImage: "person.2")
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens Friends: invites, requests and your friends")
+                    Toggle(
+                        "Show my library to friends",
+                        isOn: Binding(get: { social.shareLibrary }, set: { share in
+                            Task { await social.setShareLibrary(share) }
+                        })
+                    )
+                    .tint(Color(.accent))
+                }
+            } header: {
+                Text("Friends")
+            } footer: {
+                Text(
+                    "Friends find you by your exact handle and see what you're watching and finished. Nobody else "
+                        + "ever does."
                 )
-                .tint(Color(.accent))
             }
-        } header: {
-            Text("Profile and friends")
-        } footer: {
-            Text("Friends see what you're watching and finished. Nobody else ever does. Invites live in Friends.")
+            ConcertPlaceSection(model: concerts) { social.problem = $0 }
         }
-        .task { await model.load() }
+        .settingsPage("Friends & privacy", problem: $social.problem)
+        .refreshable { await social.load() }
+        .task { await social.load() }
     }
 }
 
@@ -46,8 +76,8 @@ struct ProfileEditor: View {
         Form {
             Section {
                 HStack(spacing: 2) {
-                    Text("@").foregroundStyle(Color(.muted))
-                    TextField("handle", text: $handle)
+                    Text("@").foregroundStyle(Color(.muted)).accessibilityHidden(true)
+                    TextField("Handle", text: $handle)
                         .autocorrectionDisabled()
                         .textContentType(.username)
                     #if os(iOS)
@@ -60,13 +90,13 @@ struct ProfileEditor: View {
                 Text(SocialModel.handleProblem(handle) ?? "3–20 letters, numbers or underscores.")
             }
             if let problem = model.problem {
-                Text(problem).foregroundStyle(.red)
+                Text(problem).foregroundStyle(Color(.danger))
             }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Color(.paper))
-        .navigationTitle(model.handle == nil ? "Choose a handle" : "Your handle")
+        .navigationTitle("Name and handle")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
@@ -153,8 +183,8 @@ struct FriendsView: View {
 
             Section {
                 HStack(spacing: 2) {
-                    Text("@").foregroundStyle(Color(.muted))
-                    TextField("their handle", text: $friendHandle)
+                    Text("@").foregroundStyle(Color(.muted)).accessibilityHidden(true)
+                    TextField("Their handle", text: $friendHandle)
                         .autocorrectionDisabled()
                         .onSubmit(send)
                     #if os(iOS)
@@ -195,19 +225,28 @@ struct FriendsView: View {
             }
 
             Section("Friends") {
-                if model.friends.isEmpty {
+                if !model.hasLoaded {
+                    ProgressView().frame(maxWidth: .infinity)
+                } else if model.friends.isEmpty {
                     Text("No friends yet. Send someone an invite, or ask for their handle.")
                         .foregroundStyle(Color(.muted))
                 }
                 ForEach(model.friends, id: \.userId) { friend in
-                    NavigationLink(value: friend) { PersonRow(user: friend) { EmptyView() } }
+                    // A destination link, so Friends works in any stack (its tab, Groups on iPhone).
+                    NavigationLink {
+                        FriendProfileView(api: model.api, friend: friend)
+                    } label: {
+                        PersonRow(user: friend) { EmptyView() }
+                    }
                         .swipeActions {
                             Button("Block", role: .destructive) { blocking = friend }
                             Button("Remove") { Task { await model.remove(friend) } }
                         }
                         .contextMenu {
-                            Button("Remove friend") { Task { await model.remove(friend) } }
-                            Button("Block", role: .destructive) { blocking = friend }
+                            Button("Remove friend", systemImage: "person.badge.minus") {
+                                Task { await model.remove(friend) }
+                            }
+                            Button("Block", systemImage: "hand.raised", role: .destructive) { blocking = friend }
                         }
                 }
             }
@@ -246,11 +285,7 @@ struct FriendsView: View {
         .safeAreaInset(edge: .bottom) { ProblemBanner(message: model.problem) { model.problem = nil } }
         .confirmationDialog(
             "Block @\(blocking?.handle ?? "")?",
-            isPresented: Binding(get: { blocking != nil }, set: {
-                if !$0 {
-                    blocking = nil
-                }
-            }),
+            isPresented: $blocking.isPresent,
             titleVisibility: .visible,
             presenting: blocking
         ) { person in
@@ -283,15 +318,16 @@ struct FriendsView: View {
 private struct PersonRow<Actions: View>: View {
     let user: SocialUser
     @ViewBuilder var actions: () -> Actions
+    @ScaledMetric(relativeTo: .body) private var side = 36
 
     var body: some View {
         HStack(spacing: 12) {
             Text(user.monogram)
                 .font(.subheadline.weight(.medium))
-                .frame(width: 36, height: 36)
+                .frame(width: side, height: side)
                 .background(Color(.medallion).opacity(0.2), in: .circle)
                 .accessibilityHidden(true)
-            Text(user.label).lineLimit(1)
+            Text(user.label).lineLimit(2)
             Spacer(minLength: 8)
             actions()
         }
@@ -318,7 +354,7 @@ private struct InviteRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(invite.plea).lineLimit(1)
+                Text(invite.plea).lineLimit(2)
                 Text(InviteWords.expiry(invite.expiresAt))
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
@@ -327,6 +363,8 @@ private struct InviteRow: View {
             if let url = URL(string: invite.url) {
                 ShareLink(item: url, message: Text(invite.plea)) {
                     Image(systemName: "square.and.arrow.up")
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Share invite")
             }
@@ -350,12 +388,13 @@ private struct FreshInviteSheet: View {
                     .frame(width: 96)
                 } else {
                     Image(systemName: "envelope.open")
-                        .font(.system(size: 48, weight: .light))
+                        .font(.largeTitle.weight(.light))
+                        .imageScale(.large)
                         .foregroundStyle(Color(.accent))
                 }
                 VStack(spacing: 8) {
                     Text("Your invite is ready")
-                        .font(.system(.title, design: .serif, weight: .medium))
+                        .font(.aaruDisplay(.title))
                     Text("“\(invite.plea)”")
                         .font(.system(.body, design: .serif))
                         .italic()
@@ -367,7 +406,7 @@ private struct FreshInviteSheet: View {
                 if let url = URL(string: invite.url) {
                     ShareLink(item: url, message: Text(invite.plea)) {
                         Label("Send invite", systemImage: "square.and.arrow.up")
-                            .frame(maxWidth: .infinity, minHeight: 32)
+                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)

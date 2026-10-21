@@ -6,8 +6,7 @@ import SwiftUI
 struct ConnectionSetupView: View {
     typealias Kind = Components.Schemas.AgentMCPKind
 
-    let api: Client
-    var onCreated: (Components.Schemas.AgentTokenCreated) -> Void
+    let model: ConnectionsModel
 
     @Environment(\.dismiss) private var dismiss
     @State private var kind: Kind = .claude
@@ -75,7 +74,7 @@ struct ConnectionSetupView: View {
                     }
                 }
                 if let problem {
-                    Section { Text(problem).foregroundStyle(.red) }
+                    Section { Text(problem).foregroundStyle(Color(.danger)) }
                 }
             }
             .navigationTitle("Connect an agent")
@@ -122,12 +121,7 @@ struct ConnectionSetupView: View {
 
     private func copyButton(_ text: String) -> some View {
         Button {
-            #if os(iOS)
-                UIPasteboard.general.string = text
-            #elseif os(macOS)
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(text, forType: .string)
-            #endif
+            Pasteboard.copy(text)
             copiedStep = text
         } label: {
             Label(copiedStep == text ? "Copied" : "Copy", systemImage: copiedStep == text ? "checkmark" : "doc.on.doc")
@@ -136,13 +130,8 @@ struct ConnectionSetupView: View {
 
     private func loadPreview() async {
         preview = nil
-        do {
-            if case let .ok(response) = try await api.getAgentSetup(path: .init(kind: kind)) {
-                preview = try response.body.json
-            }
-        } catch {
-            // The steps are a convenience; creating still works without them.
-        }
+        // The steps are a convenience; creating still works without them.
+        preview = await model.setup(for: kind)
     }
 
     private func create() async {
@@ -155,17 +144,9 @@ struct ConnectionSetupView: View {
             kind: tokenKind, name: trimmed.isEmpty ? nil : trimmed, allowLibraryWrites: allowsLibraryWrites,
             allowImports: allowsImports
         )
-        do {
-            switch try await api.createAgentToken(body: .json(body)) {
-            case let .created(response):
-                let result = try response.body.json
-                created = result
-                onCreated(result)
-            case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The connection could not be created."
-            }
-        } catch {
-            problem = "The connection could not be created. Aaru could not reach the server."
+        switch await model.create(body) {
+        case let .success(result): created = result
+        case let .failure(failure): problem = failure.message ?? "The connection could not be created."
         }
     }
 

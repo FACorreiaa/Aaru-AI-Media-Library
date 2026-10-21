@@ -23,7 +23,7 @@ struct BrowserExtensionView: View {
                     Text("Not in the Chrome Web Store or Firefox Add-ons yet.")
                         .foregroundStyle(.secondary)
                 } footer: {
-                    Text("Connected browsers appear under Connections, where you can revoke them.")
+                    Text("Connected browsers appear in Settings → Connections, where you can disconnect them.")
                 }
             }
             .navigationTitle("Browser extension")

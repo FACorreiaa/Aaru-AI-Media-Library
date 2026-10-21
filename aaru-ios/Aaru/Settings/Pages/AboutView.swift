@@ -1,14 +1,8 @@
 import SwiftUI
 
 /// PRV-001: who Aaru is, which build this is, and the credits every catalog provider requires
-/// (`docs/providers.md`, column "Credit Aaru shows"). In Settings it also holds the way out.
+/// (`docs/providers.md`, column "Credit Aaru shows"). Delete account is its own page (UX-021).
 struct AboutView: View {
-    /// Settings → About ends with Delete account; nil leaves it out.
-    var onDeleteAccount: (() async -> String?)?
-
-    @State private var confirmsDelete = false
-    @State private var deleteProblem: String?
-
     var body: some View {
         Form {
             Section {
@@ -73,35 +67,11 @@ struct AboutView: View {
                 Link("Contact", destination: Self.url("mailto:privacy@aaruapp.com"))
             }
 
-            if onDeleteAccount != nil {
-                Section {
-                    Button("Delete account", role: .destructive) { confirmsDelete = true }
-                    if let deleteProblem {
-                        Text(deleteProblem).font(.footnote).foregroundStyle(.red)
-                    }
-                } footer: {
-                    Text(
-                        "Deletes your library, lists, imports and sessions from Aaru for good. Export your data "
-                            + "first, in Imports & export, if you want to keep it."
-                    )
-                }
-            }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Color(.paper))
         .navigationTitle("About")
-        .confirmationDialog(
-            "Delete your Aaru account?",
-            isPresented: $confirmsDelete,
-            titleVisibility: .visible
-        ) {
-            Button("Delete account and library", role: .destructive) {
-                Task { deleteProblem = await onDeleteAccount?() }
-            }
-        } message: {
-            Text("This cannot be undone. Export your data first if you want to keep it.")
-        }
     }
 
     private static var version: String {

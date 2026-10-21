@@ -1,127 +1,59 @@
-import AaruAPI
 import SwiftUI
 
-/// "Connections" (OUT-004): AI agents that reach the library over MCP, and the browser extension
-/// (SCR-007). Lists the live ones, revokes them, and opens the setup sheet that mints an MCP token
-/// (GET/POST/DELETE /v1/agent/tokens). The extension connects from the desktop browser itself.
-struct ConnectionsSection: View {
-    let api: Client?
-    /// Shows a failure in Settings' problem banner.
-    var onProblem: (String) -> Void
+/// Connections → Agents (OUT-004): AI agents that reach the library over MCP, and the browser
+/// extension (SCR-007). Lists the live ones, disconnects them, and opens the setup sheet that
+/// mints an MCP token. The extension connects from the desktop browser itself.
+struct AgentsSection: View {
+    let model: ConnectionsModel
 
-    @State private var tokens: [Components.Schemas.AgentToken] = []
-    @State private var loaded = false
     @State private var connecting = false
     @State private var showsExtension = false
-    @State private var revoking: Components.Schemas.AgentToken?
+    @State private var disconnecting: AgentToken?
 
     var body: some View {
         Section {
-            if !loaded, api != nil {
+            if !model.hasLoaded, model.isAvailable {
                 ProgressView().frame(maxWidth: .infinity)
             }
-            ForEach(tokens, id: \.id) { token in
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(token.name).foregroundStyle(Color(.ink))
-                        detail(token).font(.caption).foregroundStyle(Color(.muted))
-                    }
-                    Spacer()
-                    Button("Revoke", role: .destructive) { revoking = token }
-                        .buttonStyle(.borderless)
-                }
+            ForEach(model.agents, id: \.id) { token in
+                ConnectionRow(token: token, detail: detail(token)) { disconnecting = token }
             }
-            Button {
-                connecting = true
-            } label: {
-                Label("Connect an agent", systemImage: "sparkles")
-            }
-            .disabled(api == nil)
-            Button {
-                showsExtension = true
-            } label: {
-                Label("Browser extension", systemImage: "puzzlepiece.extension")
-            }
+            Button("Connect an agent", systemImage: "sparkles") { connecting = true }
+                .disabled(!model.isAvailable)
+            Button("Browser extension", systemImage: "puzzlepiece.extension") { showsExtension = true }
         } header: {
-            Text("Connections")
+            Text("Agents")
         } footer: {
             Text(
                 "Claude, Claude Code, Codex, Hermes, Gemini CLI or any MCP client can read your library. If you allow "
-                    + "changes, it changes one item at a time, and you can undo it here. The browser extension marks "
-                    + "what you finish on streaming sites."
+                    + "changes, it changes one item at a time, and you can undo it in History, in Your data. The "
+                    + "browser extension marks what you finish on streaming sites."
             )
         }
-        .confirmationDialog(
-            "Revoke this connection?",
-            isPresented: Binding(get: { revoking != nil }, set: {
-                if !$0 {
-                    revoking = nil
-                }
-            }),
-            titleVisibility: .visible,
-            presenting: revoking
-        ) { token in
-            Button("Revoke", role: .destructive) { Task { await revoke(token) } }
-        } message: { token in
-            Text("\(token.name) can no longer reach your library.")
-        }
+        .confirmsDisconnect($disconnecting, stops: { token in
+            token.kind == .browser
+                ? "This browser stops marking what you watch."
+                : "\(token.name) can no longer reach your library."
+        }, perform: { token in
+            Task { await model.disconnect(token) }
+        })
         .sheet(isPresented: $connecting) {
-            if let api {
-                ConnectionSetupView(api: api) { created in
-                    tokens.insert(created.token, at: 0)
-                }
-            }
+            ConnectionSetupView(model: model)
         }
         .sheet(isPresented: $showsExtension) {
             BrowserExtensionView()
         }
-        .task { await load() }
     }
 
-    private func detail(_ token: Components.Schemas.AgentToken) -> Text {
-        let used = token.lastUsedAt.map { Text("used \($0, format: .relative(presentation: .named))") }
-            ?? Text("not used yet")
+    private func detail(_ token: AgentToken) -> Text {
+        let used = ConnectionRow.lastUsed(token)
         if token.kind == .browser {
-            return Text("Marks what you watch · ") + used
+            return Text("Marks what you watch · \(used)")
         }
         var access = token.scopes.contains(.library_colon_write) ? "Can change one item at a time" : "Read only"
         if token.scopes.contains(.imports_colon_write) {
             access += " · can send imports"
         }
-        return Text("\(ConnectionSetupView.label(token.kind)) · \(access) · ") + used
-    }
-
-    private func load() async {
-        guard let api else { return }
-        defer { loaded = true }
-        do {
-            var live: [Components.Schemas.AgentToken] = []
-            for surface in [Operations.ListAgentTokens.Input.Query.ForPayload.mcp, .scrobble] {
-                switch try await api.listAgentTokens(query: .init(_for: surface)) {
-                case let .ok(response):
-                    live += try response.body.json.items
-                case let .default(_, error):
-                    onProblem((try? error.body.json.message) ?? "Your connections could not be loaded.")
-                    return
-                }
-            }
-            tokens = live.sorted { $0.createdAt > $1.createdAt }
-        } catch {
-            onProblem("Your connections could not be loaded. Aaru could not reach the server.")
-        }
-    }
-
-    private func revoke(_ token: Components.Schemas.AgentToken) async {
-        guard let api else { return }
-        do {
-            switch try await api.revokeAgentToken(path: .init(id: token.id)) {
-            case .noContent:
-                tokens.removeAll { $0.id == token.id }
-            case let .default(_, error):
-                onProblem((try? error.body.json.message) ?? "That connection was not revoked.")
-            }
-        } catch {
-            onProblem("That connection was not revoked. Aaru could not reach the server.")
-        }
+        return Text("\(ConnectionSetupView.label(token.kind)) · \(access) · \(used)")
     }
 }

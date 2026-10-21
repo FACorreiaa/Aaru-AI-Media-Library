@@ -22,12 +22,10 @@ extension ImportFileSource: @retroactive Identifiable {
         rawValue
     }
 
-    /// What Settings offers. `csv` is reached through `auto`, which detects every format.
-    static let offered: [ImportFileSource] = [.auto, .imdb, .letterboxd, .netflix, .goodreads, .mal]
 
     var label: String {
         switch self {
-        case .auto: "Any site"
+        case .auto: "Any other CSV"
         case .csv: "CSV"
         case .imdb: "IMDb"
         case .letterboxd: "Letterboxd"
@@ -40,8 +38,7 @@ extension ImportFileSource: @retroactive Identifiable {
     var hint: String {
         switch self {
         case .auto, .csv:
-            "A CSV from any site (Netflix, Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML "
-                + "(MyAnimeList, Kitsu, AniList). Aaru reads the columns."
+            "A CSV from any other site, or a spreadsheet. Aaru reads the columns."
         case .imdb: "Your ratings or watchlist export (CSV)."
         case .letterboxd: "diary.csv, ratings.csv, watched.csv or watchlist.csv from your export."
         case .netflix: "Account → Profile → Viewing activity → Download all. One profile per file."
@@ -86,12 +83,65 @@ extension ImportJob {
     }
 }
 
+/// One row of Import's "Bring your history", in `CLAUDE.md`'s import order (UX-026). Trakt has
+/// its own section above; "Any other CSV" is last and only fills gaps.
+enum HistorySource: Hashable, Identifiable {
+    case stremio
+    case file(ImportFileSource)
+    case cat
+    case aniList
+
+    static let ordered: [HistorySource] = [
+        .stremio, .file(.imdb), .file(.letterboxd), .file(.goodreads), .cat, .file(.netflix), .file(.mal),
+        .aniList, .file(.auto),
+    ]
+
+    var id: String {
+        switch self {
+        case .stremio: "stremio"
+        case let .file(source): source.rawValue
+        case .cat: "cat"
+        case .aniList: "anilist"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .stremio: "Stremio history"
+        case let .file(source): source.label
+        case .cat: "Pogdesign CAT"
+        case .aniList: "AniList"
+        }
+    }
+
+    var hint: String {
+        switch self {
+        case .stremio: "What you watched before, approved on stremio.com."
+        case let .file(source): source.hint
+        case .cat: "Your iCal link or file, or a list of shows."
+        case .aniList: "Your public anime list, by username."
+        }
+    }
+}
+
 /// APP-007: the user's imports. Upload a file, watch it get matched, approve the plan.
 @MainActor
 @Observable
 final class ImportsModel {
     private(set) var jobs: [ImportJob] = []
+    /// The first load of the jobs worked, so an empty list means "No imports yet."
+    private(set) var hasLoaded = false
+    /// A file is being read and sent.
+    private(set) var uploading = false
+    /// Trakt: nil until the connection is read.
+    private(set) var trakt: Components.Schemas.TraktConnection?
+    private(set) var traktBusy = false
     var problem: String?
+
+    /// The server's upload limit (`ImportService.maxUploadBytes`).
+    static let maxUploadBytes = 5 * 1024 * 1024
+    /// Where Trakt's sign-in sheet returns.
+    static let traktReturn = "aaru://settings/trakt"
 
     @ObservationIgnored private let api: Client?
 
@@ -110,6 +160,7 @@ final class ImportsModel {
         do {
             if case let .ok(response) = try await api.listImports() {
                 jobs = try response.body.json.items
+                hasLoaded = true
             }
         } catch {
             problem = "Your imports could not be loaded. Aaru could not reach the server."
@@ -322,8 +373,136 @@ final class ImportsModel {
         return false
     }
 
+    /// Reads a picked export file and uploads it. MyAnimeList's export downloads gzipped; the
+    /// server takes the XML inside.
+    func upload(fileAt url: URL, source: ImportFileSource) async -> ImportJob? {
+        uploading = true
+        defer { uploading = false }
+        problem = nil
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer {
+            if scoped {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        guard var data = try? Data(contentsOf: url) else {
+            problem = "That file could not be read."
+            return nil
+        }
+        var filename = url.lastPathComponent
+        if Gunzip.isGzip(data) {
+            do {
+                data = try Gunzip.decompress(data, limit: Self.maxUploadBytes)
+                filename = filename.hasSuffix(".gz") ? String(filename.dropLast(3)) : filename
+            } catch Gunzip.Failure.tooLarge {
+                problem = "That file is larger than 5 MB unpacked. Check it is the right export."
+                return nil
+            } catch {
+                problem = "That file could not be unpacked. Upload the .xml file instead."
+                return nil
+            }
+        }
+        return await upload(data, filename: filename, source: source)
+    }
+
+    /// CAT's exported iCal file, read as text.
+    func importCATFile(at url: URL) async -> ImportJob? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer {
+            if scoped {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        guard let data = try? Data(contentsOf: url), data.count <= Self.maxUploadBytes,
+              let text = String(bytes: data, encoding: .utf8)
+        else {
+            problem = "That file could not be read, or is larger than 5 MB."
+            return nil
+        }
+        return await importCAT(text)
+    }
+
+    // MARK: Trakt (IMP-002/003)
+
+    func loadTrakt() async {
+        guard let api else { return }
+        if case let .ok(response) = try? await api.getTraktConnection() {
+            trakt = try? response.body.json
+        }
+    }
+
+    /// Trakt's sign-in page for this user. The server holds the PKCE verifier.
+    func traktAuthorizeURL() async -> URL? {
+        guard let api else { return nil }
+        traktBusy = true
+        defer { traktBusy = false }
+        do {
+            if case let .ok(response) = try await api.connectTrakt(body: .json(.init(returnTo: Self.traktReturn))),
+               let page = try URL(string: response.body.json.authorizeUrl)
+            {
+                return page
+            }
+            problem = "Trakt is not available right now. Try again later."
+        } catch {
+            problem = "Trakt could not be reached. Aaru could not reach the server."
+        }
+        return nil
+    }
+
+    /// Trakt's sign-in sheet came back to `aaru://…?trakt=`.
+    func finishTrakt(_ callback: URL) async {
+        let result = URLComponents(url: callback, resolvingAgainstBaseURL: false)?
+            .queryItems?.first { $0.name == "trakt" }?.value
+        switch result {
+        case "connected": await loadTrakt()
+        case "denied": break
+        default:
+            problem = "Trakt could not finish connecting. Free Trakt accounts can connect two apps; "
+                + "disconnect one on trakt.tv, or try again."
+        }
+    }
+
+    func startTraktImport() async -> ImportJob? {
+        guard let api else { return nil }
+        traktBusy = true
+        problem = nil
+        defer { traktBusy = false }
+        do {
+            switch try await api.createTraktImport() {
+            case let .accepted(response):
+                let job = try response.body.json
+                jobs.insert(job, at: 0)
+                return job
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "That Trakt import could not be started."
+            }
+        } catch {
+            problem = "The import did not start. Aaru could not reach the server."
+        }
+        return nil
+    }
+
+    func disconnectTrakt() async {
+        guard let api else { return }
+        traktBusy = true
+        problem = nil
+        defer { traktBusy = false }
+        do {
+            switch try await api.disconnectTrakt() {
+            case .noContent:
+                trakt = .init(connected: false)
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "Trakt was not disconnected. Try again."
+            }
+        } catch {
+            problem = "Trakt was not disconnected. Aaru could not reach the server."
+        }
+    }
+
     func reset() {
         jobs = []
+        hasLoaded = false
+        trakt = nil
         problem = nil
     }
 

@@ -10,6 +10,8 @@ final class AppServices {
     let library = LibraryModel()
     let lists: ListsModel
     let imports: ImportsModel
+    /// The models behind Settings' pages.
+    let settings: SettingsServices
     let groups: GroupsModel
     /// The `/v1/ws` socket (GRP-006): open while signed in and active.
     let realtime: RealtimeClient
@@ -35,6 +37,7 @@ final class AppServices {
         }
         lists = ListsModel(api: api)
         imports = ImportsModel(api: api)
+        settings = SettingsServices(api: api)
         realtime = RealtimeClient(baseURL: AppEnvironment.apiBaseURL) { session.token }
         groups = GroupsModel(api: api, realtime: realtime)
         #if os(iOS)
@@ -43,5 +46,15 @@ final class AppServices {
             liveActivities = LiveActivityRegistrar(api: api)
             LiveActivityRegistrar.current = liveActivities
         #endif
+    }
+
+    /// What Settings' pages need, for the Mac Settings scene (the main window builds its own).
+    var settingsContext: SettingsContext {
+        let flow = AuthFlow(api: api, session: session)
+        return SettingsContext(
+            api: api, imports: imports, models: settings, library: library, lists: lists,
+            onSignOut: { Task { await flow.signOut() } },
+            onDeleteAccount: { await flow.deleteAccount() }
+        )
     }
 }

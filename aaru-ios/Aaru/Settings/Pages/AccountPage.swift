@@ -1,80 +1,54 @@
 import AaruAPI
 import SwiftUI
 
-/// Settings → Account: who you are, how you sign in, friends, notifications, and the city Aaru
-/// looks for concerts around.
-struct AccountSettings: View {
-    let api: Client?
-    let imports: ImportsModel
-    @Binding var account: Components.Schemas.Me?
+/// Settings → Account (§18): name and handle in one editor (UX-030), how you sign in and Link
+/// Google, this device's appearance, and Sign out. On the Mac, Delete account sits at the bottom.
+struct AccountPage: View {
+    let account: AccountModel
+    let social: SocialModel
     var onSignOut: () -> Void
+    /// Mac only: the Account pane ends with Delete account. Nil leaves it out.
+    var onDeleteAccount: (() async -> String?)?
 
     var body: some View {
+        @Bindable var account = account
         Form {
             Section {
-                LabeledContent("Name", value: account?.displayName ?? "Not set")
-                LabeledContent("Signed in with", value: Self.providers(account))
-                if let clientID = AppEnvironment.googleClientID, let account, !account.providers.contains(.google) {
-                    LinkGoogleButton(api: api, clientID: clientID, account: $account)
-                }
-                Button("Sign out", action: onSignOut)
-            }
-            FriendsSection(api: api)
-            ConcertPlaceSection(api: api) { imports.problem = $0 }
-            #if os(iOS)
-                if let push = PushRegistrar.current {
-                    NotificationsSection(push: push)
-                }
-            #endif
-        }
-        .settingsForm(imports)
-        .navigationTitle("Account")
-        .task { account = await Self.load(api) ?? account }
-    }
-
-    static func load(_ api: Client?) async -> Components.Schemas.Me? {
-        guard let api, case let .ok(response) = try? await api.getMe() else { return nil }
-        return try? response.body.json
-    }
-
-    static func providers(_ account: Components.Schemas.Me?) -> String {
-        let names = (account?.providers ?? []).map { provider in
-            switch provider {
-            case .apple: "Apple"
-            case .google: "Google"
-            case .email: "Email"
-            }
-        }
-        return names.isEmpty ? "—" : names.joined(separator: ", ")
-    }
-}
-
-#if os(iOS)
-    /// Alerts: a new episode of a show you are watching, and groups (GRP-012).
-    private struct NotificationsSection: View {
-        let push: PushRegistrar
-
-        var body: some View {
-            Section {
-                Toggle("New episodes", isOn: binding(\.airing))
-                Toggle("Mentions in groups", isOn: binding(\.groupMentions))
-                Toggle("Group invites", isOn: binding(\.groupInvites))
-                if let problem = push.problem {
-                    Text(problem).font(.footnote).foregroundStyle(.red)
+                NavigationLink {
+                    ProfileEditor(model: social)
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(social.displayName ?? "No name yet").foregroundStyle(Color(.ink))
+                        Text(social.handle.map { "@\($0)" } ?? "Choose a handle")
+                            .font(.subheadline)
+                            .foregroundStyle(social.handle == nil ? Color(.accent) : Color(.muted))
+                    }
                 }
             } header: {
-                Text("Notifications")
+                Text("Name and handle")
             } footer: {
-                Text(
-                    "New episodes of shows you are watching, mentions in groups you have not muted, and invites. "
-                        + "A mention says who tagged you and where, never what they wrote."
-                )
+                Text("Friends find you by your exact handle. Your name is what they see.")
             }
-            .task { await push.loadSetting() }
+            Section("Signed in with") {
+                LabeledContent("Signed in with", value: account.providers)
+                if account.canLinkGoogle, let clientID = AppEnvironment.googleClientID {
+                    LinkGoogleButton(account: account, clientID: clientID)
+                }
+            }
+            Section("On this device") {
+                AppearancePicker()
+            }
+            Section {
+                Button("Sign out", action: onSignOut)
+            }
+            if let onDeleteAccount {
+                DeleteAccountSection(onDeleteAccount: onDeleteAccount)
+            }
         }
-
-        private func binding(_ setting: WritableKeyPath<NotificationSettings, Bool>) -> Binding<Bool> {
-            Binding(get: { push.settings[keyPath: setting] }, set: { value in Task { await push.set(setting, value) } })
+        .settingsPage("Account", problem: $account.problem)
+        .task {
+            await account.load()
+            await social.load()
         }
     }
-#endif
+}

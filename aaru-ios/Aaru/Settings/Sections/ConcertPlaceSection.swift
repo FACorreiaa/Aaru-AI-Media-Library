@@ -1,19 +1,13 @@
-import AaruAPI
 import SwiftUI
 
-/// "Concerts near" (MUS-003): the one city Aaru keeps to look for concerts around, chosen from a
-/// search and removed here. Shown only when this server has concerts on.
+/// Friends & privacy → Location (MUS-003, UX-022): the one city Aaru keeps to look for concerts
+/// around, chosen from a search and removed here. Shown only when this server has concerts on.
 struct ConcertPlaceSection: View {
-    /// Shows a failure in Settings' problem banner.
+    let model: ConcertsModel
+    /// Shows a failure in the page's problem banner.
     var onProblem: (String) -> Void
 
-    @State private var model: ConcertsModel
     @State private var choosing = false
-
-    init(api: Client?, onProblem: @escaping (String) -> Void) {
-        self.onProblem = onProblem
-        _model = State(initialValue: ConcertsModel(api: api))
-    }
 
     var body: some View {
         Group {
@@ -28,9 +22,12 @@ struct ConcertPlaceSection: View {
                         }
                     }
                 } header: {
-                    Text("Concerts")
+                    Text("Location")
                 } footer: {
-                    Text("Aaru keeps only this city. “Use my location” in Discover is used once and never saved.")
+                    Text(
+                        "The only place Aaru stores where you are, to find concerts. “Use my location” in "
+                            + "Discover is used once and never saved."
+                    )
                 }
             }
         }
@@ -39,7 +36,7 @@ struct ConcertPlaceSection: View {
             ConcertPlacePicker(model: model)
         }
         .onChange(of: model.problem) { _, problem in
-            // The picker shows its own; anything after it closes goes to Settings' banner.
+            // The picker shows its own; anything after it closes goes to the page's banner.
             guard let problem, !choosing else { return }
             onProblem(problem)
             model.problem = nil

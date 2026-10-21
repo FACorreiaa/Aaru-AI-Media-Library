@@ -9,6 +9,7 @@ struct RootView: View {
     let library: LibraryModel
     let lists: ListsModel
     let imports: ImportsModel
+    let settings: SettingsServices
     let groups: GroupsModel
     let realtime: RealtimeClient
     @Environment(SessionStore.self) private var session
@@ -26,7 +27,7 @@ struct RootView: View {
             if session.isSignedIn {
                 MainTabs(
                     api: api, library: library, lists: lists, imports: imports, groups: groups,
-                    realtime: realtime, flow: flow
+                    realtime: realtime, settings: settingsContext
                 )
             } else {
                 WelcomeView(
@@ -57,6 +58,7 @@ struct RootView: View {
                 library.reset()
                 lists.reset()
                 imports.reset()
+                settings.reset()
                 groups.reset()
                 realtime.reset()
                 router.reset()
@@ -70,6 +72,14 @@ struct RootView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+
+    private var settingsContext: SettingsContext {
+        SettingsContext(
+            api: api, imports: imports, models: settings, library: library, lists: lists,
+            onSignOut: { Task { await flow.signOut() } },
+            onDeleteAccount: { await flow.deleteAccount() }
+        )
     }
 
     private func signInWithGoogle(clientID: String) async {
@@ -98,7 +108,7 @@ private struct MainTabs: View {
     let imports: ImportsModel
     let groups: GroupsModel
     let realtime: RealtimeClient
-    let flow: AuthFlow
+    let settings: SettingsContext
 
     @Environment(AppRouter.self) private var router
     @Environment(\.scenePhase) private var scenePhase
@@ -156,7 +166,7 @@ private struct MainTabs: View {
             }
         #if os(iOS)
             .sheet(isPresented: $router.showsSettingsSheet) {
-                settings(showsDone: true)
+                settingsScreen(showsDone: true)
             }
             .onChange(of: sizeClass, initial: true) { _, size in
                 router.isCompact = size == .compact
@@ -241,9 +251,7 @@ private struct MainTabs: View {
         case .calendar:
             CalendarScreen(api: api, library: library, lists: lists)
         case .lists:
-            NavigationStack {
-                ListsView(lists: lists, library: library, api: api)
-            }
+            ListsScreen(lists: lists, library: library, api: api)
         case .groups:
             GroupsScreen(groups: groups)
         case .insights:
@@ -251,17 +259,12 @@ private struct MainTabs: View {
                 InsightsView(api: api, library: library)
             }
         case .settings:
-            settings(showsDone: false)
+            settingsScreen(showsDone: false)
         }
     }
 
-    private func settings(showsDone: Bool) -> some View {
-        SettingsView(
-            api: api, imports: imports, library: library, lists: lists,
-            onSignOut: { Task { await flow.signOut() } },
-            onDeleteAccount: { await flow.deleteAccount() },
-            showsDone: showsDone
-        )
+    private func settingsScreen(showsDone: Bool) -> some View {
+        SettingsView(context: settings, showsDone: showsDone)
     }
 
     struct LinkedTitle: Identifiable {
@@ -285,7 +288,7 @@ extension Optional {
 #Preview {
     RootView(
         api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil),
-        groups: GroupsModel(api: nil, realtime: nil), realtime: RealtimeClient(baseURL: nil) { nil }
+        settings: SettingsServices(api: nil), groups: GroupsModel(api: nil, realtime: nil), realtime: RealtimeClient(baseURL: nil) { nil }
     )
     .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
     .environment(AppRouter())

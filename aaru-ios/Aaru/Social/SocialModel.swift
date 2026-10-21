@@ -202,6 +202,18 @@ final class SocialModel {
         }
     }
 
+    func reset() {
+        handle = nil
+        displayName = nil
+        friends = []
+        incoming = []
+        outgoing = []
+        blocked = []
+        hasLoaded = false
+        problem = nil
+        notice = nil
+    }
+
     private struct Failure: Error {
         let message: String?
         init(_ message: String?) {

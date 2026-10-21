@@ -1,70 +1,40 @@
 #if os(iOS)
     import AaruAPI
-    import Observation
     import UIKit
     import UserNotifications
 
-    typealias NotificationSettings = Components.Schemas.NotificationSettings
-
-    /// Pushes on iOS (airing episodes, group mentions and invites): asks permission when the user
-    /// turns a setting on, hands the APNs token to the API, and forgets it on sign-out. Mac push is
-    /// not on yet.
+    /// Pushes on iOS (airing episodes, group mentions and invites): asks the system's permission
+    /// when the user turns an alert on, hands the APNs token to the API, and forgets it on
+    /// sign-out. The switches themselves are `NotificationsModel`'s, on every platform.
     @MainActor
-    @Observable
     final class PushRegistrar {
         /// The app delegate reaches the registrar through this; set once at launch.
         static var current: PushRegistrar?
 
-        private(set) var settings = NotificationSettings(airing: false, groupMentions: false, groupInvites: false)
-        var problem: String?
-
-        @ObservationIgnored private let api: Client?
-        @ObservationIgnored private let defaults = UserDefaults.standard
+        private let api: Client?
+        private let defaults = UserDefaults.standard
         private static let tokenKey = "push.deviceToken"
 
         init(api: Client?) {
             self.api = api
         }
 
-        func loadSetting() async {
-            guard let api, case let .ok(response) = try? await api.getNotificationSettings(),
-                  let loaded = try? response.body.json
-            else { return }
-            settings = loaded
-            // Refresh the token each launch: Apple can rotate it.
-            if loaded.airing || loaded.groupMentions || loaded.groupInvites,
-               await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .authorized
-            {
+        /// Asks the system once; true when alerts may be shown. Registers for the APNs token.
+        func requestAuthorization() async -> Bool {
+            let granted = (try? await UNUserNotificationCenter.current()
+                .requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+            if granted {
                 UIApplication.shared.registerForRemoteNotifications()
             }
+            return granted
         }
 
-        /// Turns one kind of alert on or off. On asks the system first; a refusal leaves it off.
-        func set(_ setting: WritableKeyPath<NotificationSettings, Bool>, _ enabled: Bool) async {
-            guard let api else { return }
-            problem = nil
-            if enabled {
-                let granted = (try? await UNUserNotificationCenter.current()
-                    .requestAuthorization(options: [.alert, .sound, .badge])) ?? false
-                guard granted else {
-                    problem = "Notifications are off for Aaru. Turn them on in the Settings app, then try again."
-                    return
-                }
-                UIApplication.shared.registerForRemoteNotifications()
-            }
-            var update = Components.Schemas.NotificationSettingsUpdate()
-            switch setting {
-            case \.airing: update.airing = enabled
-            case \.groupMentions: update.groupMentions = enabled
-            default: update.groupInvites = enabled
-            }
-            do {
-                if case let .ok(response) = try await api.updateNotificationSettings(body: .json(update)) {
-                    settings = try response.body.json
-                }
-            } catch {
-                problem = "That was not saved. Aaru could not reach the server."
-            }
+        /// Refreshes the token when any alert is on: Apple can rotate it.
+        func refreshRegistration(for settings: NotificationSettings) async {
+            guard settings.airing || settings.groupMentions || settings.groupInvites,
+                  await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .authorized
+            else { return }
+            UIApplication.shared.registerForRemoteNotifications()
         }
 
         /// From the app delegate: the device's APNs token.
@@ -89,7 +59,6 @@
             guard let api, let token = defaults.string(forKey: Self.tokenKey) else { return }
             _ = try? await api.unregisterDevice(path: .init(token: token))
             defaults.removeObject(forKey: Self.tokenKey)
-            settings = NotificationSettings(airing: false, groupMentions: false, groupInvites: false)
         }
     }
 

@@ -21,9 +21,7 @@ struct AaruApp: App {
         #if os(macOS)
             // ⌘, and the app menu: the only Settings on the Mac (DESIGN.md §18).
             Settings {
-                SettingsWindow(
-                    api: services.api, imports: services.imports, library: services.library, lists: services.lists
-                )
+                SettingsWindow(context: services.settingsContext)
                 .environment(services.session)
                 .environment(services.router)
                 .tint(Color(.accent))
@@ -37,7 +35,7 @@ struct AaruApp: App {
         let scene = WindowGroup {
             RootView(
                 api: services.api, library: services.library, lists: services.lists, imports: services.imports,
-                groups: services.groups, realtime: services.realtime
+                settings: services.settings, groups: services.groups, realtime: services.realtime
             )
             .environment(services.session)
             .environment(services.router)

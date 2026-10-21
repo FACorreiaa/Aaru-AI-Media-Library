@@ -14,6 +14,7 @@ struct CATImportSheet: View {
     @State private var busy = false
 
     var body: some View {
+        @Bindable var imports = imports
         NavigationStack {
             Form {
                 Section {
@@ -46,16 +47,12 @@ struct CATImportSheet: View {
                     Text("Your shows arrive as Plan to watch. CAT's watched episodes don't come across.")
                 }
             }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .background(Color(.paper))
-            .safeAreaInset(edge: .bottom) { ProblemBanner(message: imports.problem) { imports.problem = nil } }
+            .settingsPage("Pogdesign CAT", problem: $imports.problem)
             .overlay {
                 if busy {
                     ProgressView("Starting…").padding().background(.regularMaterial, in: .rect(cornerRadius: 14))
                 }
             }
-            .navigationTitle("Pogdesign CAT")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
@@ -82,18 +79,6 @@ struct CATImportSheet: View {
     }
 
     private func importFile(_ url: URL) async -> ImportJob? {
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer {
-            if scoped {
-                url.stopAccessingSecurityScopedResource()
-            }
-        }
-        guard let data = try? Data(contentsOf: url), data.count <= 5 * 1024 * 1024,
-              let text = String(bytes: data, encoding: .utf8)
-        else {
-            imports.problem = "That file could not be read, or is larger than 5 MB."
-            return nil
-        }
-        return await imports.importCAT(text)
+        await imports.importCATFile(at: url)
     }
 }
