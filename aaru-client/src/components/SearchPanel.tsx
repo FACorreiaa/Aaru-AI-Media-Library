@@ -19,6 +19,7 @@ import type {
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 import { AddToListDialog } from './AddToListDialog'
+import { Button } from './ui/button'
 
 /** All searches films, shows and anime together; books are never in it, and the last row of
  * an All search offers them instead. */
@@ -152,13 +153,14 @@ export function SearchPanel(props: {
         <h2 class="font-display text-2xl font-medium">
           {props.list ? `Add to ${props.list.name}` : 'Search'}
         </h2>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="bare"
           onClick={() => props.onClose()}
-          class="text-sm font-medium text-muted hover:text-ink"
+          class="text-sm"
         >
           Done
-        </button>
+        </Button>
       </div>
       <div class="flex flex-col gap-3 px-5 pt-4">
         <label for="search" class="sr-only">
@@ -172,7 +174,7 @@ export function SearchPanel(props: {
           placeholder={kind() === 'book' ? 'Title, author or ISBN' : 'Title'}
           value={query()}
           onInput={(e) => setQuery(e.currentTarget.value)}
-          class="min-h-12 w-full rounded-[14px] border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
+          class="min-h-12 w-full rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
         />
         <div
           class="-mx-5 flex gap-2 overflow-x-auto px-5"
@@ -247,13 +249,14 @@ export function SearchPanel(props: {
                   when={props.list}
                   fallback={
                     <>
-                      <button
-                        type="button"
-                        class="text-sm font-medium text-muted hover:text-ink"
+                      <Button
+                        variant="ghost"
+                        size="bare"
+                        class="text-sm"
                         onClick={() => setListTarget(hit)}
                       >
                         List…
-                      </button>
+                      </Button>
                       <Show
                         when={!isOnShelf(hit, props.entries ?? [])}
                         fallback={
@@ -286,13 +289,12 @@ export function SearchPanel(props: {
                           <span class="text-sm text-muted">Adding…</span>
                         }
                       >
-                        <button
-                          type="button"
+                        <Button
+                          size="sm"
                           onClick={() => void addToTarget(hit, list())}
-                          class="rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold hover:bg-surface"
                         >
                           Add
-                        </button>
+                        </Button>
                       </Show>
                     </Show>
                   )}
@@ -308,7 +310,7 @@ export function SearchPanel(props: {
             <button
               type="button"
               onClick={() => setKind('book')}
-              class="w-full rounded-[14px] px-3 py-2 text-left text-sm font-medium text-accent hover:bg-surface"
+              class="w-full rounded-panel px-3 py-2 text-left text-sm font-medium text-accent hover:bg-surface"
             >
               Search Books for “{query().trim()}”
             </button>

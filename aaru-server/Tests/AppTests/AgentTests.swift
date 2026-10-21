@@ -72,7 +72,7 @@ struct AgentTests {
             baseURL: #require(URL(string: "http://stub.test"))
         )
         let response = try await provider.complete(ModelRequest(
-            system: "sys", turns: [.user("hello")], tools: AgentTools.definitions, maxTokens: 2048
+            system: "sys", turns: [.user("hello")], tools: GroupAgentTools.definitions, maxTokens: 2048
         ))
         #expect(response.text == "Hi")
         #expect(response.stop == .done)
@@ -105,7 +105,7 @@ struct AgentTests {
 
     @Test("GRP-010: every agent tool reads; none writes")
     func toolsRead() {
-        #expect(Set(AgentTools.definitions.map(\.name))
+        #expect(Set(GroupAgentTools.definitions.map(\.name))
             == ["search_titles", "title_details", "list_airs", "read_my_library", "show_titles"])
     }
 

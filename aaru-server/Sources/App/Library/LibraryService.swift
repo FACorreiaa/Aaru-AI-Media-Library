@@ -57,29 +57,15 @@ struct LibraryService: Sendable {
         if let existing = try await stores.library.item(userID: userID, titleID: title.id) {
             return try await entry(existing.id, userID: userID)
         }
-        let status = status ?? .wishlist
-        let snapshot = ItemSnapshot(
-            id: LibraryItemID(),
-            titleID: title.id,
-            fields: ItemFields(
-                status: status, isOwned: false, finishedAt: status == .finished ? now() : nil,
-                // A wishlist add says nothing yet; an import may still move it forward.
-                statusByHand: caller.actor == .user && status != .wishlist
-            ),
-            addedAt: now(),
-            watched: []
-        )
+        let write = prepareAdd(title, status: status, caller: caller)
         do {
-            try await stores.library.apply(
-                .insertItem(snapshot), userID: userID, caller: caller, kind: "add",
-                summary: caller.summary("Added \(title.title) to \(status.label(for: title.type))")
-            )
+            try await commit(write, userID: userID, caller: caller)
             if title.type == .show {
                 // Fetch episodes now so the calendar and Up Next have them. Best effort:
                 // a provider outage must not fail the add; the calendar retries.
                 _ = try? await catalog.detail(title.id)
             }
-            return try await entry(snapshot.id, userID: userID)
+            return try await entry(write.itemID, userID: userID)
         } catch is StoreConflict {
             guard let winner = try await stores.library.item(userID: userID, titleID: title.id)
             else { throw AppError.notFound() }
@@ -122,42 +108,13 @@ struct LibraryService: Sendable {
         by caller: Caller = .user
     ) async throws -> LibraryEntry {
         let current = try await entry(id, userID: userID)
-        var fields = current.fields
-        if let status = patch.status, status != fields.status {
-            fields.status = status
-            fields.finishedAt = status == .finished ? now() : nil
-            if caller.actor == .user {
-                fields.statusByHand = true
-            }
-        }
-        if patch.clear.contains(.rating) {
-            fields.rating = nil
-        } else if let rating = patch.rating {
-            fields.rating = try Rating(rating).value
-        }
-        if patch.clear.contains(.notes) {
-            fields.notes = nil
-        } else if let notes = patch.notes {
-            fields.notes = notes.nilIfBlank
-        }
-        if let owned = patch.isOwned {
-            fields.isOwned = owned
-        }
-        try applyBookProgress(patch, to: &fields, type: current.title.type)
-        guard fields != current.fields else { return current }
-        try await stores.library.apply(
-            .setFields(id, fields), userID: userID, caller: caller, kind: "update",
-            summary: caller.summary(Self.updateSummary(current: current, fields: fields))
-        )
+        guard let write = try preparePatch(current, patch: patch, caller: caller) else { return current }
+        try await commit(write, userID: userID, caller: caller)
         return try await entry(id, userID: userID)
     }
 
-    func delete(_ id: LibraryItemID, userID: UserID) async throws {
-        let current = try await entry(id, userID: userID)
-        try await stores.library.apply(
-            .deleteItem(id), userID: userID, actor: .user, kind: "remove",
-            summary: "Removed \(current.title.title)"
-        )
+    func delete(_ id: LibraryItemID, userID: UserID, by caller: Caller = .user) async throws {
+        try await commit(prepareDelete(entry(id, userID: userID)), userID: userID, caller: caller)
     }
 
     // MARK: Sync (LIB-004)
@@ -192,10 +149,12 @@ struct LibraryService: Sendable {
             throw ValidationError.invalidEpisodeNumber(season: key.season, episode: key.episode)
         }
         let verb = watched ? "watched" : "unwatched"
-        return try await applyProgress(
+        let write = try await prepareProgress(
             watch: watched ? [key] : [], unwatch: watched ? [] : [key], show: show,
-            journal: ("episode", caller.summary("Marked \(key) of \(show.entry.title.title) \(verb)")), caller: caller
+            journal: ("episode", "Marked \(key) of \(show.entry.title.title) \(verb)")
         )
+        try await commit(write, userID: userID, caller: caller)
+        return try await entry(id, userID: userID)
     }
 
     /// Ticks or unticks several episodes of one show as one action, for outside callers
@@ -211,75 +170,21 @@ struct LibraryService: Sendable {
         by caller: Caller
     ) async throws -> LibraryEntry? {
         let show = try await showContext(id, userID: userID)
-        let known = Set(show.episodes.compactMap { try? EpisodeKey(season: $0.season, episode: $0.episode) })
-        let current = try await stores.library.watched(itemID: id)
-        let changing = Array(Set(keys)).filter { known.contains($0) && current.contains($0) != watched }
-            .sorted { ($0.season, $0.episode) < ($1.season, $1.episode) }
-        guard !changing.isEmpty else { return nil }
-        let verb = watched ? "watched" : "unwatched"
-        let what = changing.count == 1 ? "\(changing[0])" : "\(changing.count) episodes"
-        return try await applyProgress(
-            watch: watched ? changing : [], unwatch: watched ? [] : changing, show: show,
-            journal: ("episode", caller.summary("Marked \(what) of \(show.entry.title.title) \(verb)")),
-            caller: caller
-        )
-    }
-
-    /// Marks every aired episode of a season watched in one action; unaired ones are left alone.
-    func markSeasonWatched(_ id: LibraryItemID, userID: UserID, season: Int) async throws -> LibraryEntry {
-        let show = try await showContext(id, userID: userID)
-        let inSeason = show.episodes.filter { $0.season == season }
-        guard !inSeason.isEmpty else { throw ValidationError.invalidEpisodeNumber(season: season, episode: 1) }
-        let aired = inSeason.filter { Self.hasAired($0, titleStatus: show.status, now: now()) }
-            .compactMap { try? EpisodeKey(season: $0.season, episode: $0.episode) }
-        let summary = "Marked season \(season) of \(show.entry.title.title) watched (\(aired.count) episodes)"
-        return try await applyProgress(
-            watch: aired, unwatch: [], show: show, journal: ("season", summary), caller: .user
-        )
-    }
-
-    /// Applies an episode op together with the status it implies, as one action:
-    /// the first tick moves wishlist → in progress; watching every aired episode of an
-    /// ended or canceled show finishes it. A running show never auto-finishes.
-    private func applyProgress(
-        watch: [EpisodeKey],
-        unwatch: [EpisodeKey],
-        show: ShowContext,
-        journal: (kind: String, summary: String),
-        caller: Caller
-    ) async throws -> LibraryEntry {
-        let current = show.entry
-        let userID = current.item.userID
-        let id = current.item.id
-        let titleStatus = show.status
-        let op = LibraryOp.setEpisodes(id, watch: watch, unwatch: unwatch)
-        var watched = try await stores.library.watched(itemID: id)
-        watched.formUnion(watch)
-        watched.subtract(unwatch)
-        var fields = current.fields
-        if fields.status == .wishlist, !watched.isEmpty {
-            fields.status = .inProgress
-        }
-        let airedRegular = show.episodes.filter { $0.season > 0 && Self.hasAired(
-            $0,
-            titleStatus: titleStatus,
-            now: now()
-        ) }
-        let allWatched = !airedRegular.isEmpty && airedRegular.allSatisfy { episode in
-            watched.contains { $0.season == episode.season && $0.episode == episode.episode }
-        }
-        if allWatched, titleStatus == .ended || titleStatus == .canceled, fields.status != .finished {
-            fields.status = .finished
-            fields.finishedAt = now()
-        }
-        let ops: [LibraryOp] = fields == current.fields ? [op] : [op, .setFields(id, fields)]
-        try await stores.library.apply(
-            .batch(ops), userID: userID, caller: caller, kind: journal.kind, summary: journal.summary
-        )
+        guard let write = try await prepareEpisodes(show, keys: keys, watched: watched) else { return nil }
+        try await commit(write, userID: userID, caller: caller)
         return try await entry(id, userID: userID)
     }
 
-    private func showContext(_ id: LibraryItemID, userID: UserID) async throws -> ShowContext {
+    /// Marks every aired episode of a season watched in one action; unaired ones are left alone.
+    func markSeasonWatched(_ id: LibraryItemID, userID: UserID, season: Int, by caller: Caller = .user) async throws
+        -> LibraryEntry
+    {
+        let show = try await showContext(id, userID: userID)
+        try await commit(prepareSeason(show, season: season), userID: userID, caller: caller)
+        return try await entry(id, userID: userID)
+    }
+
+    func showContext(_ id: LibraryItemID, userID: UserID) async throws -> ShowContext {
         let current = try await entry(id, userID: userID)
         guard current.title.type == .show else {
             throw AppError(
@@ -311,7 +216,7 @@ struct LibraryService: Sendable {
 /// Field validation and journal wording for `patch`.
 extension LibraryService {
     /// PROG-004: page or percent, never both; each validated by `AaruCore.BookProgress`.
-    private func applyBookProgress(_ patch: ItemPatch, to fields: inout ItemFields, type: MediaType) throws {
+    func applyBookProgress(_ patch: ItemPatch, to fields: inout ItemFields, type: MediaType) throws {
         let touchesBook = patch.bookPage != nil || patch.bookPercent != nil || patch.clear.contains(.bookProgress)
         guard touchesBook else { return }
         guard type == .book else {
@@ -343,7 +248,7 @@ extension LibraryService {
         }
     }
 
-    private static func updateSummary(current: LibraryEntry, fields: ItemFields) -> String {
+    static func updateSummary(current: LibraryEntry, fields: ItemFields) -> String {
         let name = current.title.title
         if fields.status != current.fields.status {
             return "Moved \(name) to \(fields.status.label(for: current.title.type))"

@@ -14,6 +14,8 @@ struct Services: Sendable {
     var traktConnect: TraktConnectService
     var agentTokens: AgentTokenService
     var scrobble: ScrobbleService
+    var plans: PlanService
+    var oauth: OAuthService
     var social: SocialService
     var groups: GroupService
     /// Open sockets and browser tickets (GRP-006). One per process.
@@ -31,6 +33,8 @@ struct Services: Sendable {
         trakt: TraktAPI? = nil,
         stremio: StremioAccount? = nil,
         publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!,
+        // The web app's base URL and the binding cookie's domain, for the OAuth consent page.
+        oauth: (webBaseURL: URL, cookieDomain: String?) = (URL(string: "https://aaruapp.com")!, "aaruapp.com"),
         model: (any ModelProviding)? = nil
     ) -> Services {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
@@ -61,6 +65,13 @@ struct Services: Sendable {
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
+            plans: PlanService(stores: stores, library: library),
+            oauth: OAuthService(
+                stores: stores, oauth: stores.oauth,
+                settings: .init(
+                    publicBaseURL: publicBaseURL, webBaseURL: oauth.webBaseURL, cookieDomain: oauth.cookieDomain
+                )
+            ),
             social: SocialService(stores: stores),
             groups: groups,
             realtime: realtime,

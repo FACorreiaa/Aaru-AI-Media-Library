@@ -6,6 +6,7 @@ import {
 } from '@tanstack/solid-router'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { Wordmark } from '../components/Brand'
+import { Button } from '../components/ui/button'
 import { isWorking, sourceLabel, stateLabel } from '../lib/imports/model'
 import { applyImport, discardImport, getImport } from '../lib/imports/server'
 import type { ImportDetail } from '../lib/imports/server'
@@ -127,14 +128,14 @@ function ImportPage() {
 
         <Show when={planned()}>
           <div class="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="lg"
               disabled={applying()}
               onClick={apply}
-              class="rounded-full bg-accent px-6 py-3 font-semibold text-on-accent disabled:opacity-60"
             >
               {applying() ? 'Importing…' : 'Approve and import'}
-            </button>
+            </Button>
             <button
               type="button"
               onClick={discard}

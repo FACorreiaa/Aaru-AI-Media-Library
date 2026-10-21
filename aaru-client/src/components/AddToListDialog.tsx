@@ -1,6 +1,8 @@
 import { For, Show, createSignal, onMount } from 'solid-js'
 import { addToList, createList, getLists } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
+import { Button } from './ui/button'
+import { Dialog } from './ui/dialog'
 
 export interface MediaRefInput {
   titleId?: string
@@ -24,7 +26,6 @@ export function AddToListDialog(props: {
   const [problem, setProblem] = createSignal<string | null>(null)
 
   onMount(async () => {
-    dialog?.showModal()
     try {
       setLists(await getLists())
     } catch (error) {
@@ -84,23 +85,25 @@ export function AddToListDialog(props: {
   }
 
   return (
-    <dialog
+    <Dialog
       ref={dialog}
+      openOnMount
       aria-label={`Add ${props.titleName} to a list`}
-      class="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
+      class="w-[min(26rem,calc(100vw-2rem))]"
       onClose={() => props.onClose()}
     >
       <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
         <h2 class="line-clamp-1 font-display text-xl font-medium">
           Add “{props.titleName}”
         </h2>
-        <button
-          type="button"
-          class="text-sm font-medium text-muted hover:text-ink"
+        <Button
+          variant="ghost"
+          size="bare"
+          class="text-sm"
           onClick={() => dialog?.close()}
         >
           Done
-        </button>
+        </Button>
       </div>
       <form class="flex gap-2 px-5 pt-4" onSubmit={create}>
         <label for="new-list" class="sr-only">
@@ -113,13 +116,9 @@ export function AddToListDialog(props: {
           onInput={(e) => setNewName(e.currentTarget.value)}
           class="min-h-10 flex-1 rounded-full border-0 bg-surface px-4 text-sm focus:ring-2 focus:ring-accent"
         />
-        <button
-          type="submit"
-          disabled={!newName().trim()}
-          class="rounded-full border border-ink/25 px-4 text-sm font-semibold disabled:opacity-40"
-        >
+        <Button type="submit" size="sm" disabled={!newName().trim()}>
           Create
-        </button>
+        </Button>
       </form>
       <Show when={problem()}>
         {(message) => (
@@ -159,6 +158,6 @@ export function AddToListDialog(props: {
           )}
         </For>
       </ul>
-    </dialog>
+    </Dialog>
   )
 }

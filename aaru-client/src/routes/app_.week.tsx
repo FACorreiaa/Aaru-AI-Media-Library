@@ -19,6 +19,9 @@ import { z } from 'zod'
 import { AppHeader } from '../components/AppHeader'
 import { MonthCalendar } from '../components/MonthCalendar'
 import { WeekGrid } from '../components/WeekGrid'
+import { Alert } from '../components/ui/alert'
+import { Button, buttonVariants } from '../components/ui/button'
+import { cardClass } from '../components/ui/card'
 import {
   addDays,
   addMonths,
@@ -37,6 +40,7 @@ import type { CalendarEntry } from '../lib/calendar/model'
 import { getCalendar } from '../lib/calendar/server'
 import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
+import { cn } from '../lib/cn'
 
 // APP-010 on the web: what airs from the user's own shows, as CAT's dense week or Stremio's
 // month with an agenda. Rendered in the browser: "today" and every day boundary are the
@@ -275,9 +279,6 @@ function Calendar() {
     }
   }
 
-  const button =
-    'rounded-full border border-line px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface disabled:opacity-40'
-
   return (
     <div class="min-h-[100dvh]">
       <AppHeader class="max-w-[1600px]" />
@@ -322,54 +323,47 @@ function Calendar() {
             </div>
             <nav class="flex items-center gap-2" aria-label="Days">
               <Show when={view() === 'week'}>
-                <button
-                  type="button"
-                  class={button}
+                <Button
+                  variant="quiet"
+                  size="sm"
                   disabled={!today()}
                   onClick={() => step(-1)}
                   aria-keyshortcuts="ArrowLeft"
                 >
                   <span aria-hidden="true">‹</span>
                   <span class="sr-only sm:not-sr-only"> Previous day</span>
-                </button>
+                </Button>
               </Show>
-              <button
-                type="button"
-                class={button}
+              <Button
+                variant="quiet"
+                size="sm"
                 disabled={!today()}
                 onClick={goToday}
               >
                 Today
-              </button>
+              </Button>
               <Show when={view() === 'week'}>
-                <button
-                  type="button"
-                  class={button}
+                <Button
+                  variant="quiet"
+                  size="sm"
                   disabled={!today()}
                   onClick={() => step(1)}
                   aria-keyshortcuts="ArrowRight"
                 >
                   <span class="sr-only sm:not-sr-only">Next day </span>
                   <span aria-hidden="true">›</span>
-                </button>
+                </Button>
               </Show>
             </nav>
           </div>
         </div>
 
         <Show when={problem()}>
-          {(message) => (
-            <p
-              role="alert"
-              class="mt-4 rounded-[14px] bg-danger/10 px-4 py-3 text-sm text-danger"
-            >
-              {message()}
-            </p>
-          )}
+          {(message) => <Alert class="mt-4">{message()}</Alert>}
         </Show>
 
         <Show when={empty() && !problem()}>
-          <div class="mt-6 rounded-[20px] bg-surface p-6">
+          <div class={cn(cardClass, 'mt-6 p-6')}>
             <p class="font-display text-xl">
               Nothing from your shows airs this{' '}
               {view() === 'week' ? 'week' : 'month'}.
@@ -381,7 +375,10 @@ function Calendar() {
             <Link
               to="/app/library"
               search={{ search: true }}
-              class="mt-4 inline-block rounded-full bg-accent px-4 py-2 text-sm font-semibold text-on-accent"
+              class={cn(
+                buttonVariants({ variant: 'primary', size: 'sm' }),
+                'mt-4',
+              )}
             >
               Find shows to add
             </Link>

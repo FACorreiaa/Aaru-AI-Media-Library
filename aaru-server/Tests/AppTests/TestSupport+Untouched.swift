@@ -177,162 +177,6 @@ extension UntouchedStore: SocialStore {
     }
 }
 
-extension UntouchedStore: GroupStore {
-    func groups(for _: UserID) async throws -> [GroupSummary] {
-        throw Touched()
-    }
-
-    func summary(_: UUID, viewer _: UserID) async throws -> GroupSummary? {
-        throw Touched()
-    }
-
-    func ownedCount(_: UserID) async throws -> Int {
-        throw Touched()
-    }
-
-    func createGroup(id _: UUID, name _: String, owner _: UserID, general _: GroupChannel, now _: Date) async throws {
-        throw Touched()
-    }
-
-    func renameGroup(_: UUID, name _: String, now _: Date) async throws {
-        throw Touched()
-    }
-
-    func deleteGroup(_: UUID) async throws {
-        throw Touched()
-    }
-
-    func members(_: UUID) async throws -> [GroupMember] {
-        throw Touched()
-    }
-
-    func role(_: UUID, user _: UserID) async throws -> GroupRole? {
-        throw Touched()
-    }
-
-    func setRole(_: UUID, user _: UserID, role _: GroupRole) async throws {
-        throw Touched()
-    }
-
-    func removeMember(_: UUID, user _: UserID) async throws {
-        throw Touched()
-    }
-
-    func transferOwnership(_: UUID, from _: UserID, to _: UserID) async throws {
-        throw Touched()
-    }
-
-    func createInvite(id _: UUID, group _: UUID, inviter _: UserID, invitee _: UserID, now _: Date) async throws {
-        throw Touched()
-    }
-
-    func invites(to _: UserID) async throws -> [GroupInvite] {
-        throw Touched()
-    }
-
-    func invitesPending(_: UUID) async throws -> [GroupInvite] {
-        throw Touched()
-    }
-
-    func acceptInvite(id _: UUID, invitee _: UserID, now _: Date) async throws -> UUID? {
-        throw Touched()
-    }
-
-    func deleteInvite(id _: UUID, party _: UserID) async throws -> (group: UUID, invitee: UserID)? {
-        throw Touched()
-    }
-
-    func channels(_: UUID, viewer _: UserID) async throws -> [GroupChannel] {
-        throw Touched()
-    }
-
-    func channel(_: UUID, group _: UUID) async throws -> GroupChannel? {
-        throw Touched()
-    }
-
-    func createChannel(_: GroupChannel) async throws {
-        throw Touched()
-    }
-
-    func updateChannel(_: UUID, name _: String?, topic _: String??) async throws {
-        throw Touched()
-    }
-
-    func deleteChannel(_: UUID) async throws -> Bool {
-        throw Touched()
-    }
-
-    func messages(_: UUID, cursor _: MessageCursor, limit _: Int) async throws -> [GroupMessage] {
-        throw Touched()
-    }
-
-    func message(_: UUID, channel _: UUID) async throws -> GroupMessage? {
-        throw Touched()
-    }
-
-    func postMessage(_: GroupMessage, nonce _: String?) async throws -> GroupMessage {
-        throw Touched()
-    }
-
-    func editMessage(_: UUID, body _: String, mentions _: [UserID], mentionsAgent _: Bool, now _: Date) async throws {
-        throw Touched()
-    }
-
-    func deleteMessage(_: UUID, now _: Date) async throws {
-        throw Touched()
-    }
-
-    func markRead(_: UserID, channel _: UUID, upTo _: UUID) async throws {
-        throw Touched()
-    }
-
-    func exportMessages(_: UserID) async throws -> [ExportedGroupMessage] {
-        throw Touched()
-    }
-}
-
-extension UntouchedStore: GroupKindStore {
-    func setShareProgress(_: UUID, user _: UserID, share _: Bool) async throws {
-        throw Touched()
-    }
-
-    func progress(title _: TitleID, users _: [UserID]) async throws -> [UserID: TitleProgress] {
-        throw Touched()
-    }
-
-    func shelfItems(_: UUID, viewer _: UserID) async throws -> [ShelfItem] {
-        throw Touched()
-    }
-
-    func addShelfItem(_: UUID, title _: TitleID, by _: UserID, now _: Date) async throws -> Bool {
-        throw Touched()
-    }
-
-    func removeShelfItem(_: UUID, title _: TitleID) async throws -> Bool {
-        throw Touched()
-    }
-
-    func latestParty(_: UUID) async throws -> WatchParty? {
-        throw Touched()
-    }
-
-    func createSession(_: WatchParty) async throws {
-        throw Touched()
-    }
-
-    func setReady(_: UUID, user _: UserID, ready _: Bool) async throws {
-        throw Touched()
-    }
-
-    func startSession(_: UUID, at _: Date) async throws {
-        throw Touched()
-    }
-
-    func endSession(_: UUID, now _: Date) async throws {
-        throw Touched()
-    }
-}
-
 extension UntouchedStore: AgentStore {
     func enqueue(_: AgentReplyJob, state _: AgentReplyState, now _: Date) async throws {
         throw Touched()
@@ -373,6 +217,86 @@ extension UntouchedStore {
     }
 
     func consumeStremioLink(code _: String, userID _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+}
+
+extension UntouchedStore: PlanStore {
+    func create(_: AgentPlan, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func plans(userID _: UserID, pendingOnly _: Bool, now _: Date, limit _: Int) async throws -> [AgentPlan] {
+        throw Touched()
+    }
+
+    func plan(id _: UUID, userID _: UserID) async throws -> AgentPlan? {
+        throw Touched()
+    }
+
+    func pendingCount(agentTokenID _: UUID, now _: Date) async throws -> Int {
+        throw Touched()
+    }
+
+    func itemVersions(_: [LibraryItemID], userID _: UserID) async throws -> [String: Int64] {
+        throw Touched()
+    }
+
+    func approve(id _: UUID, userID _: UserID, now _: Date) async throws -> PlanDecision? {
+        throw Touched()
+    }
+
+    func deny(id _: UUID, userID _: UserID, now _: Date) async throws -> PlanDecision? {
+        throw Touched()
+    }
+}
+
+extension UntouchedStore: OAuthStore {
+    func register(_: OAuthClient) async throws {
+        throw Touched()
+    }
+
+    func client(id _: String) async throws -> OAuthClient? {
+        throw Touched()
+    }
+
+    func createRequest(_: OAuthRequest) async throws {
+        throw Touched()
+    }
+
+    func request(id _: UUID, now _: Date) async throws -> OAuthRequest? {
+        throw Touched()
+    }
+
+    func consumeRequest(id _: UUID, now _: Date) async throws -> OAuthRequest? {
+        throw Touched()
+    }
+
+    func createCode(_: OAuthCode, hash _: String) async throws {
+        throw Touched()
+    }
+
+    func redeemCode(hash _: String, now _: Date) async throws -> CodeRedemption? {
+        throw Touched()
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    func issue(
+        _: AgentToken, userID _: UserID, clientID _: String, codeHash _: String, accessHash _: String,
+        accessExpiresAt _: Date, refreshHash _: String, refreshExpiresAt _: Date
+    ) async throws {
+        throw Touched()
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    func rotate(
+        refreshHash _: String, clientID _: String, now _: Date, accessHash _: String, accessExpiresAt _: Date,
+        newRefreshHash _: String, refreshExpiresAt _: Date
+    ) async throws -> RefreshOutcome {
+        throw Touched()
+    }
+
+    func revoke(tokenHash _: String, now _: Date) async throws {
         throw Touched()
     }
 }

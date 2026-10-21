@@ -62,7 +62,7 @@ struct AgentReplyService: Sendable {
             job.channelID, cursor: .before(mention.id), limit: Self.contextMessages - 1
         )
         let about = try await channelContext(channel, tagger: job.tagger)
-        var tools = AgentTools(service: self, tagger: job.tagger)
+        var tools = GroupAgentTools(service: self, tagger: job.tagger)
         var turns = [ModelTurn.user(Self.prompt(
             group: summary.name, channel: channel, about: about.text, messages: earlier + [mention], tagger: tagger
         ))]
@@ -72,7 +72,7 @@ struct AgentReplyService: Sendable {
                 system: Self.system(tagger: tagger, spoilerLine: about.spoilerLine),
                 turns: turns,
                 // Always the full set: a transcript with tool calls needs their definitions.
-                tools: AgentTools.definitions,
+                tools: GroupAgentTools.definitions,
                 maxTokens: Self.maxTokens
             ))
             try await stores.agent.recordUsage(
@@ -100,7 +100,7 @@ struct AgentReplyService: Sendable {
     }
 
     /// Runs every call in one assistant turn and answers them all in one user turn.
-    static func results(of calls: [ModelResponse.ToolCall], with tools: inout AgentTools) async -> ModelTurn {
+    static func results(of calls: [ModelResponse.ToolCall], with tools: inout GroupAgentTools) async -> ModelTurn {
         var results: [ModelJSON] = []
         for call in calls {
             let (output, isError) = await tools.run(call.name, input: call.input)

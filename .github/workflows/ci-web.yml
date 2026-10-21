@@ -48,3 +48,5 @@ jobs:
             || { echo "::error::API types are stale. Run npm run api:generate in aaru-client and commit."; exit 1; }
       - run: npm test
       - run: npm run build
+      - name: Size budget (size-budget.json)
+        run: npm run size

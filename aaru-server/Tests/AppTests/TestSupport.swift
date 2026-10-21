@@ -350,16 +350,13 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         push: untouched,
         agentTokens: untouched,
         watchEvents: untouched,
+        plans: untouched,
+        oauth: untouched,
         social: untouched,
         groups: untouched,
         groupKinds: untouched,
         agent: untouched
     )
-}
-
-/// A date Postgres stores without loss (whole seconds).
-func wholeSecondNow() -> Date {
-    Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))
 }
 
 /// An Apple verifier that must not be called.
