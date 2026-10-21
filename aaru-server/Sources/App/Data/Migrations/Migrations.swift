@@ -43,6 +43,7 @@ let allMigrations: [any Migration] = [
     AddBrowserScrobbler(),
     AddMusic(),
     AddListens(),
+    AddMusicLookups(),
     AddConcerts(),
 ]
 

@@ -474,6 +474,14 @@ protocol UserLibraryImporting: Sendable {
 - Covers are Cover Art Archive URLs (`release-group/{mbid}/front-250`), square, never hosted
 - `CatalogProviders.music` is optional; without it album search is `incomplete` and album pages
   show no tracklist
+- Listens (MUS-006): `ListenResolver` runs every minute and asks `ws/2/recording` once per track
+  and album (`rid:` when the scrobbler sent a recording id, else `isrc:`, else the exact artist
+  and title). Only a score-100 recording with the same folded title and artist counts; the album
+  is the release group named like the listen's album, or the only Album/EP when none was sent.
+  Answers, misses included, live in `music_lookups` (shared, keyed by track and album) and fill
+  new listens as they are stored; a miss is asked again after 30 days. It uses the same
+  `MusicBrainzCatalog`, so album search and lookups share the one-a-second pacer. A listen's
+  `albumRef` points at the album by MusicBrainz id, and by Aaru's title id once it is in the catalog
 - `artists(releaseGroup:)` (MUS-003) gives an album's credited artists by MBID for concerts
 
 ### Concerts (MUS-003)
@@ -516,6 +524,14 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - **Decided 2026-10-09:** anime is an `isAnime` facet on `show`/`movie`, not a fourth
   `MediaType`. Progress, calendar, Up Next, and widgets share one code path, and an anime film
   is still a movie. TMDB hits are flagged when they are Japanese animation.
+- **When AniList is down (CAT-021).** AniList's 403 "API temporarily disabled", or a non-JSON
+  page from its CDN, is an outage (`unavailable`), never `unauthorized`
+  (`AniListCatalog.classify`, a hook on `ProviderClient`). While it lasts, TMDB's Japanese
+  animation stands in: the anime Discover rows come from `discover/tv` (genre 16, origin JP; this
+  season by first air date, trending by air date ± 7 days) with a `note`, cached 30 minutes so
+  AniList's own rows return soon after it recovers; anime search answers TMDB's anime hits,
+  `incomplete`, with a `notice`; a show AniList already hydrated keeps its stored episodes. AniList
+  requests carry the same contact User-Agent as Open Library.
 - Community AniList → TMDB mappings live in `anime_mappings` (CAT-009/010). A mapped AniList
   entry resolves to the TMDB show; an unmapped one stays its own AniList-backed title, whose
   episodes come from AniList's airing schedule (one season per entry), named from AniList's

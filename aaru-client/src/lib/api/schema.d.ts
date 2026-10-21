@@ -2402,8 +2402,10 @@ export interface components {
     }
     SearchResults: {
       items: components['schemas']['CatalogHit'][]
-      /** @description True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search. */
+      /** @description True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. An `anime` search is also incomplete while AniList is down and TMDB stands in. */
       incomplete: boolean
+      /** @description Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in. */
+      notice?: string
     }
     DiscoverRow: {
       /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get. */
@@ -2411,6 +2413,8 @@ export interface components {
       /** @description Display title, e.g. "Fall 2026 anime". */
       title: string
       items: components['schemas']['CatalogHit'][]
+      /** @description Where a stand-in row came from, e.g. TMDB while AniList is down. */
+      note?: string
     }
     DiscoverRows: {
       rows: components['schemas']['DiscoverRow'][]
@@ -2922,6 +2926,8 @@ export interface components {
       client?: string
       /** @description Where it was heard, e.g. "YouTube Music". */
       musicService?: string
+      /** @description The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is in the catalog, always by its MusicBrainz id. Open or add it like a search hit. */
+      albumRef?: components['schemas']['MediaRef']
     }
     ListenPage: {
       items: components['schemas']['Listen'][]

@@ -112,7 +112,7 @@ struct RecapView: View {
                 Button("Try again") { Task { await model.load() } }.buttonStyle(.bordered)
             } else if model.isEmpty {
                 Text("Nothing tracked in \(model.period.label) yet")
-                    .font(.system(.title2, design: .serif, weight: .medium))
+                    .font(.aaruDisplay(.title2))
                 Text("Tick an episode or finish a title, and it will show up here.")
                     .foregroundStyle(Color(.muted))
                     .multilineTextAlignment(.center)

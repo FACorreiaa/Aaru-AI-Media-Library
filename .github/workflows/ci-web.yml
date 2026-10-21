@@ -9,6 +9,9 @@ on:
       - "aaru-server/Sources/AppAPI/openapi.yaml"
       # /privacy is rendered from this file at build time.
       - "docs/privacy.md"
+      # Colour tokens for both clients (scripts/generate-tokens.mjs).
+      - "design/tokens.json"
+      - "scripts/generate-tokens.mjs"
       - ".github/workflows/ci-web.yml"
   pull_request:
     paths:
@@ -16,6 +19,9 @@ on:
       - "aaru-server/Sources/AppAPI/openapi.yaml"
       # /privacy is rendered from this file at build time.
       - "docs/privacy.md"
+      # Colour tokens for both clients (scripts/generate-tokens.mjs).
+      - "design/tokens.json"
+      - "scripts/generate-tokens.mjs"
       - ".github/workflows/ci-web.yml"
   workflow_dispatch:
 
@@ -46,6 +52,8 @@ jobs:
           npm run api:generate
           git diff --exit-code -- src/lib/api/schema.d.ts \
             || { echo "::error::API types are stale. Run npm run api:generate in aaru-client and commit."; exit 1; }
+      - name: Colour tokens match design/tokens.json (and pass contrast)
+        run: npm run tokens:check
       - run: npm test
       - run: npm run build
       - name: Size budget (size-budget.json)

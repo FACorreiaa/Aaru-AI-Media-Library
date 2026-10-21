@@ -87,6 +87,9 @@ func backgroundServices(
             logger: logger
         ),
     ] + (services.agentReplies.map { [AgentReplyWorker(replies: $0, logger: logger)] } ?? [])
+        + (services.catalog.catalogs.recordings.map {
+            [ListenResolverService(resolver: ListenResolver(stores: stores, recordings: $0), logger: logger)]
+        } ?? [])
 }
 
 /// HTTP/1 with the `/v1/ws` upgrade (GRP-006). A ping every 25 s keeps a proxy with a 60 s idle
@@ -320,7 +323,8 @@ func makeCATCalendarFeed(_ transport: any HTTPTransport) -> CATCalendarFeed {
 
 /// One `ProviderClient` (and so one rate pacer) per provider, shared by every caller.
 func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> CatalogProviders {
-    CatalogProviders(
+    let musicBrainz = makeMusicBrainz(userAgent: config.openLibraryUserAgent, transport)
+    return CatalogProviders(
         tmdb: TMDBCatalog(
             client: ProviderClient(
                 name: "tmdb",
@@ -332,10 +336,10 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
         anilist: AniListCatalog(
             // 90 requests/minute.
             client: ProviderClient(
-                name: "anilist",
-                transport: transport,
-                pacer: RequestPacer(requestsPerSecond: 1.5, burst: 5)
-            )
+                name: "anilist", transport: transport, pacer: RequestPacer(requestsPerSecond: 1.5, burst: 5),
+                classify: AniListCatalog.classify
+            ),
+            userAgent: config.openLibraryUserAgent
         ),
         openLibrary: OpenLibraryCatalog(
             client: ProviderClient(
@@ -353,15 +357,7 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
                 pacer: RequestPacer(requestsPerSecond: 1.8, burst: 5)
             )
         ),
-        music: MusicBrainzCatalog(
-            // MusicBrainz allows one request a second per client.
-            client: ProviderClient(
-                name: "musicbrainz",
-                transport: transport,
-                pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
-            ),
-            userAgent: config.openLibraryUserAgent
-        ),
+        music: musicBrainz,
         releases: ListenBrainzReleases(
             client: ProviderClient(
                 name: "listenbrainz",
@@ -370,25 +366,19 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
             ),
             userAgent: config.openLibraryUserAgent
         ),
+        recordings: musicBrainz,
         concerts: config.concertsAPIKey.map { makeConcertListing(apiKey: $0, transport) },
         places: makePlaceSearch(transport)
     )
 }
 
-/// The "Concerts near" city picker: a few lookups a user, only while they type (MUS-003).
-func makePlaceSearch(_ transport: any HTTPTransport) -> any PlaceSearching {
-    OpenMeteoPlaces(client: ProviderClient(
-        name: "open-meteo", transport: transport, pacer: RequestPacer(requestsPerSecond: 2, burst: 5)
-    ))
-}
-
-/// Ticketmaster allows five requests a second and 5,000 a day (MUS-003).
-func makeConcertListing(apiKey: String, _ transport: any HTTPTransport) -> any ConcertListing {
-    TicketmasterConcerts(
+/// MusicBrainz allows one request a second per client: album search, listen lookups (MUS-006) and
+/// concert artists (MUS-003) share this one.
+func makeMusicBrainz(userAgent: String, _ transport: any HTTPTransport) -> MusicBrainzCatalog {
+    MusicBrainzCatalog(
         client: ProviderClient(
-            name: "ticketmaster", transport: transport, pacer: RequestPacer(requestsPerSecond: 4, burst: 4)
+            name: "musicbrainz", transport: transport, pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
         ),
-        apiKey: apiKey,
-        budget: CallBudget(limit: 4500)
+        userAgent: userAgent
     )
 }

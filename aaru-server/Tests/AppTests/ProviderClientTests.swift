@@ -111,6 +111,31 @@ struct ProviderClientTests {
             lock.withLock { defer { value += 1 }; return value }
         }
     }
+
+    @Test("AniList's 'disabled' 403 is an outage, asked once; any other provider's 403 stays unauthorized")
+    func aniListDisabled() async throws {
+        let body = #"{"errors":[{"message":"The AniList API has been temporarily disabled due to "#
+            + #"severe stability issues.","status":403}]}"#
+        let disabled = StubTransport { _ in OutboundResponse(status: 403, body: Data(body.utf8)) }
+        var anilist = client(disabled)
+        anilist.classify = AniListCatalog.classify
+        await #expect(throws: ProviderError(provider: "test", kind: .unavailable)) {
+            _ = try await anilist.data(OutboundRequest(url: url))
+        }
+        #expect(disabled.requests.count == 1)
+
+        let cloudflare = StubTransport { _ in OutboundResponse(status: 403, body: Data("<html>blocked</html>".utf8)) }
+        var behindCDN = client(cloudflare)
+        behindCDN.classify = AniListCatalog.classify
+        await #expect(throws: ProviderError(provider: "test", kind: .unavailable)) {
+            _ = try await behindCDN.data(OutboundRequest(url: url))
+        }
+
+        let plain = StubTransport { _ in OutboundResponse(status: 403, body: Data(body.utf8)) }
+        await #expect(throws: ProviderError(provider: "test", kind: .unauthorized)) {
+            _ = try await client(plain).data(OutboundRequest(url: url))
+        }
+    }
 }
 
 /// A transport whose request never finishes until its task is cancelled.

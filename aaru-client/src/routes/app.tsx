@@ -10,7 +10,9 @@ import {
 } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
+import { LastImportCard } from '../components/LastImportCard'
 import { PlanCard } from '../components/PlanCard'
+import { TonightStrip } from '../components/TonightStrip'
 import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
 import { cardClass } from '../components/ui/card'
@@ -49,6 +51,10 @@ import type {
   WeekStrip,
 } from '../lib/home/model'
 import { getDiscover, getUpNext } from '../lib/home/server'
+import { airingToday, composeTonight, fieldLine } from '../lib/home/tonight'
+import { daypartHeading } from '../lib/appearance'
+import { listImports } from '../lib/imports/server'
+import type { ImportJob } from '../lib/imports/server'
 import { upsert } from '../lib/library/model'
 import type { LibraryEntry } from '../lib/library/model'
 import { getLibrary } from '../lib/library/server'
@@ -69,6 +75,11 @@ import { setEpisode } from '../lib/title/server'
 // fails. Search opens in place and shares the library for its "On your shelf" marks; the same
 // library fills the Listening row (MUS-001), which stays hidden until it holds an album.
 // Search loads only when it is first opened: it is not part of the page's first paint.
+//
+// The Field (DESIGN.md §1, "Mindspace", 2026-10-21): Tonight leads, the user's rows follow, and
+// beside them on a wide screen sits the work happening in the room: requests waiting for the
+// user, the last import, the week in numbers, lists. A phone stacks the same pieces, with
+// requests right under Tonight.
 const SearchPanel = lazy(() =>
   import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
 )
@@ -102,6 +113,7 @@ function Home() {
   const [searchOpened, setSearchOpened] = createSignal(false)
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
+  const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
   let dialog: HTMLDialogElement | undefined
   let libraryRequested = false
 
@@ -169,6 +181,20 @@ function Home() {
     }
   }
 
+  /** The newest import, collapsed beside the rows. A failure just leaves it out. */
+  async function loadLastImport() {
+    try {
+      const jobs = await listImports()
+      const newest = jobs.reduce<ImportJob | null>(
+        (best, job) => (!best || job.createdAt > best.createdAt ? job : best),
+        null,
+      )
+      setLastImport(newest)
+    } catch {
+      setLastImport(null)
+    }
+  }
+
   async function loadDiscover() {
     try {
       setDiscover(await getDiscover())
@@ -195,6 +221,7 @@ function Home() {
     void loadDiscover()
     void loadPlans()
     void loadLists()
+    void loadLastImport()
     loadLibrary()
     try {
       setAirings(
@@ -228,6 +255,29 @@ function Home() {
     return current ? airingBadge(entry, current) : null
   }
 
+  // Continue watching alone needs no clock, so the server draws Tonight's lead too; today's
+  // airings join in the browser.
+  const tonight = createMemo(() =>
+    composeTonight(continuing(), airings(), now() ?? new Date()),
+  )
+  /** The show Tonight leads with leaves Continue watching, so no card shows twice. */
+  const tonightItem = () => {
+    const pick = tonight()?.primary
+    return pick?.kind === 'continue' ? pick.entry.libraryItemId : null
+  }
+  const continuingRow = createMemo(() =>
+    continuing().filter((e) => e.libraryItemId !== tonightItem()),
+  )
+  const subline = createMemo(() => {
+    const current = now()
+    if (!current) return null
+    return fieldLine(
+      daypartHeading(current),
+      counts()?.inProgress ?? 0,
+      airingToday(airings(), current).length,
+    )
+  })
+
   const chips = createMemo(() => countChips(counts()))
   /** MUS-001: albums in progress, from the library Home already loads for Search. */
   const listeningNow = createMemo(() => listening(entries()))
@@ -251,7 +301,7 @@ function Home() {
 
   /** Marks the card's next episode watched: the card advances at once, the server's answer
    * then replaces the guess, and a failed write puts the card back where it was. */
-  async function markWatched(entry: ContinueEntry, card: HTMLElement) {
+  async function markWatched(entry: ContinueEntry, card?: HTMLElement) {
     const id = entry.libraryItemId
     if (busy().has(id)) return
     const index = continuing().findIndex((r) => r.libraryItemId === id)
@@ -259,8 +309,9 @@ function Home() {
     setProblem(null)
     const step = () => setContinuing((rows) => advance(rows, entry))
     // The last episode takes the show off the row: it fades out, the cards after it slide in.
-    const row = card.parentElement
-    if (entry.remainingCount <= 1 && row) {
+    // Tonight's card (no element) swaps to its next pick in place.
+    const row = card?.parentElement
+    if (card && entry.remainingCount <= 1 && row) {
       await leave(card)
       void flip(row, step)
     } else step()
@@ -302,278 +353,331 @@ function Home() {
   }
 
   return (
-    <div class="min-h-[100dvh]">
+    <div class="atmos min-h-[100dvh]">
       <AppHeader onSearch={openSearch} />
       <main class="mx-auto max-w-6xl px-4 pb-16 md:px-8">
-        <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
-          Home
+        <h1 class="mt-6 font-display text-4xl font-medium tracking-tight md:text-5xl">
+          The Field
         </h1>
+        {/* Filled in the browser, which knows the viewer's day; the line is held open so
+            nothing moves when it lands. */}
+        <p class="mt-1 min-h-6 text-muted tabular-nums">{subline()}</p>
 
         <Show when={problem()}>
           {(message) => <Alert class="mt-4">{message()}</Alert>}
         </Show>
 
-        <Show when={plans().length > 0}>
-          <section class="mt-6" aria-label="Waiting for you">
-            <h2 class="font-display text-2xl font-medium">Waiting for you</h2>
-            <div class="mt-3 grid gap-3 md:grid-cols-2">
-              <For each={plans()}>
-                {(plan) => (
-                  <PlanCard
-                    plan={plan}
-                    onDecided={(decided) => {
-                      if (decided.status === 'applied')
-                        void getUpNext().then(showUpNext, () => {})
-                    }}
-                  />
-                )}
-              </For>
-            </div>
-          </section>
-        </Show>
-
-        <Show when={strip()}>
-          {(week) => (
-            <Link
-              to="/app/insights"
-              search={{ span: 'last7' }}
-              class={cn(
-                cardClass,
-                'mt-6 flex items-center gap-4 px-5 py-4 hover:text-accent',
+        <div class="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr] lg:gap-x-10">
+          <div class="order-1 lg:col-start-1 lg:row-start-1">
+            <Show when={tonight()}>
+              {(picked) => (
+                <TonightStrip
+                  tonight={picked()}
+                  busy={
+                    picked().primary.kind === 'continue' &&
+                    busy().has(picked().primary.entry.libraryItemId)
+                  }
+                  onWatched={(entry) => void markWatched(entry)}
+                />
               )}
-            >
-              <span
-                class="flex h-8 w-20 shrink-0 items-end gap-[3px] text-accent"
-                aria-hidden="true"
+            </Show>
+          </div>
+
+          {/* On a phone these join the column in order; on a wide screen they are the side
+              column, held in view while the rows scroll. */}
+          <div class="contents lg:sticky lg:top-6 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-8 lg:flex lg:flex-col lg:gap-4 lg:self-start">
+            <Show when={plans().length > 0}>
+              <section
+                class="order-2 mt-8 lg:mt-0"
+                aria-labelledby="home-waiting"
               >
-                <For each={week().days}>
-                  {(height) => (
+                <h2 id="home-waiting" class="eyebrow">
+                  Waiting for you
+                </h2>
+                <div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+                  <For each={plans()}>
+                    {(plan) => (
+                      <PlanCard
+                        plan={plan}
+                        onDecided={(decided) => {
+                          if (decided.status === 'applied')
+                            void getUpNext().then(showUpNext, () => {})
+                        }}
+                      />
+                    )}
+                  </For>
+                </div>
+              </section>
+            </Show>
+            <div class="order-4 mt-10 flex flex-col gap-4 lg:mt-0">
+              <Show when={lastImport()}>
+                {(job) => <LastImportCard job={job()} />}
+              </Show>
+              <Show when={strip()}>
+                {(week) => (
+                  <Link
+                    to="/app/insights"
+                    search={{ span: 'last7' }}
+                    class={cn(
+                      cardClass,
+                      'flex items-center gap-4 px-5 py-4 hover:text-accent',
+                    )}
+                  >
                     <span
-                      class="flex-1 rounded-[2px]"
-                      classList={{
-                        'bg-current': height > 0,
-                        'bg-line': height === 0,
-                      }}
-                      style={{
-                        height:
-                          height > 0 ? `${Math.max(height * 100, 15)}%` : '3px',
-                      }}
+                      class="flex h-8 w-20 shrink-0 items-end gap-[3px] text-accent"
+                      aria-hidden="true"
+                    >
+                      <For each={week().days}>
+                        {(height) => (
+                          <span
+                            class="flex-1 rounded-[2px]"
+                            classList={{
+                              'bg-current': height > 0,
+                              'bg-line': height === 0,
+                            }}
+                            style={{
+                              height:
+                                height > 0
+                                  ? `${Math.max(height * 100, 15)}%`
+                                  : '3px',
+                            }}
+                          />
+                        )}
+                      </For>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block text-sm text-muted">Last 7 days</span>
+                      {/* Each figure keeps its words together; lines break only between them. */}
+                      <span class="font-medium tabular-nums">
+                        <Show
+                          when={week().parts.length > 0}
+                          fallback="Nothing tracked yet"
+                        >
+                          <For each={week().parts}>
+                            {(part, i) => (
+                              <>
+                                {i() > 0 && ' · '}
+                                <span class="whitespace-nowrap">{part}</span>
+                              </>
+                            )}
+                          </For>
+                        </Show>
+                      </span>
+                    </span>
+                    <span class="shrink-0 text-sm font-semibold text-accent">
+                      Insights
+                    </span>
+                  </Link>
+                )}
+              </Show>
+
+              <Show when={chips().length > 0}>
+                <nav
+                  aria-label="Your shelf by status"
+                  class="flex flex-wrap gap-2"
+                >
+                  <For each={chips()}>
+                    {(chip) => (
+                      <Link
+                        to="/app/library"
+                        search={{ status: chip.status }}
+                        class="rounded-full border border-line px-4 py-1.5 text-sm font-medium hover:bg-surface"
+                      >
+                        {chip.label}{' '}
+                        <span class="text-muted tabular-nums">
+                          {chip.count}
+                        </span>
+                      </Link>
+                    )}
+                  </For>
+                </nav>
+              </Show>
+
+              <Show when={recap()}>
+                {(period) => (
+                  <Link
+                    to="/app/recap"
+                    search={period()}
+                    class="rise flex items-center justify-between gap-4 rounded-card bg-ink p-5 text-paper"
+                  >
+                    <span>
+                      <span class="block text-sm opacity-80">
+                        Your recap is ready
+                      </span>
+                      <span class="font-display text-2xl font-medium">
+                        {period().month
+                          ? periodLabel(period())
+                          : `${period().year} in Aaru`}
+                      </span>
+                    </span>
+                    <span class="shrink-0 rounded-full bg-paper px-4 py-2 text-sm font-semibold text-ink">
+                      Play
+                    </span>
+                  </Link>
+                )}
+              </Show>
+
+              <Show when={lists()}>
+                {(all) => (
+                  <section aria-labelledby="home-lists">
+                    <h2 id="home-lists" class="eyebrow">
+                      Lists
+                    </h2>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      <For each={all()}>
+                        {(list) => (
+                          <Link
+                            to="/app/lists/$id"
+                            params={{ id: list.id }}
+                            class="rounded-full bg-surface px-4 py-2 text-sm font-medium hover:text-accent"
+                          >
+                            {list.name}{' '}
+                            <span class="text-muted tabular-nums">
+                              {list.itemCount}
+                            </span>
+                          </Link>
+                        )}
+                      </For>
+                      <Link
+                        to="/app/lists"
+                        class="rounded-full border border-dashed border-line px-4 py-2 text-sm font-medium text-accent hover:bg-surface"
+                      >
+                        New list
+                      </Link>
+                    </div>
+                  </section>
+                )}
+              </Show>
+            </div>
+          </div>
+
+          <div class="order-3 min-w-0 lg:col-start-1 lg:row-start-2">
+            <Show when={continuingRow().length > 0}>
+              <Row title="Continue watching">
+                <For each={continuingRow()}>
+                  {(entry) => (
+                    <ContinueCard
+                      entry={entry}
+                      busy={busy().has(entry.libraryItemId)}
+                      onWatched={markWatched}
                     />
                   )}
                 </For>
-              </span>
-              <span class="min-w-0 flex-1">
-                <span class="block text-sm text-muted">Last 7 days</span>
-                <span class="font-medium">
-                  {week().parts.join(' · ') || 'Nothing tracked yet'}
-                </span>
-              </span>
-              <span class="shrink-0 text-sm font-semibold text-accent">
-                Insights
-              </span>
-            </Link>
-          )}
-        </Show>
+              </Row>
+            </Show>
 
-        <Show when={chips().length > 0}>
-          <nav
-            aria-label="Your shelf by status"
-            class="mt-4 flex flex-wrap gap-2"
-          >
-            <For each={chips()}>
-              {(chip) => (
-                <Link
-                  to="/app/library"
-                  search={{ status: chip.status }}
-                  class="rounded-full border border-line px-4 py-1.5 text-sm font-medium hover:bg-surface"
-                >
-                  {chip.label}{' '}
-                  <span class="text-muted tabular-nums">{chip.count}</span>
-                </Link>
-              )}
-            </For>
-          </nav>
-        </Show>
+            <Show when={listeningNow().length > 0}>
+              <Row title="Listening">
+                <For each={listeningNow()}>
+                  {(entry) => <ListeningCard entry={entry} />}
+                </For>
+              </Row>
+            </Show>
 
-        <Show when={recap()}>
-          {(period) => (
-            <Link
-              to="/app/recap"
-              search={period()}
-              class="rise mt-6 flex items-center justify-between gap-4 rounded-card bg-ink p-5 text-paper"
-            >
-              <span>
-                <span class="block text-sm opacity-80">
-                  Your recap is ready
-                </span>
-                <span class="font-display text-2xl font-medium">
-                  {period().month
-                    ? periodLabel(period())
-                    : `${period().year} in Aaru`}
-                </span>
-              </span>
-              <span class="shrink-0 rounded-full bg-paper px-4 py-2 text-sm font-semibold text-ink">
-                Play
-              </span>
-            </Link>
-          )}
-        </Show>
-
-        <Show when={continuing().length > 0}>
-          <Row title="Continue watching">
-            <For each={continuing()}>
-              {(entry) => (
-                <ContinueCard
-                  entry={entry}
-                  busy={busy().has(entry.libraryItemId)}
-                  onWatched={markWatched}
-                />
-              )}
-            </For>
-          </Row>
-        </Show>
-
-        <Show when={listeningNow().length > 0}>
-          <Row title="Listening">
-            <For each={listeningNow()}>
-              {(entry) => <ListeningCard entry={entry} />}
-            </For>
-          </Row>
-        </Show>
-
-        <Show when={nextAirings().length > 0}>
-          <Row
-            title="Coming up"
-            action={
-              <Link
-                to="/app/week"
-                class="text-sm font-medium text-accent hover:underline"
+            <Show when={nextAirings().length > 0}>
+              <Row
+                title="Coming up"
+                action={
+                  <Link
+                    to="/app/week"
+                    class="text-sm font-medium text-accent hover:underline"
+                  >
+                    See calendar
+                  </Link>
+                }
               >
-                See calendar
-              </Link>
-            }
-          >
-            <For each={nextAirings()}>
-              {(entry) => <AiringCard entry={entry} when={badgeFor(entry)} />}
-            </For>
-          </Row>
-        </Show>
-
-        <Show when={starting().length > 0}>
-          <Row title="Start watching">
-            <For each={starting()}>
-              {(entry) => <StartCard entry={entry} />}
-            </For>
-          </Row>
-        </Show>
-
-        <Show when={unfinished().length > 0}>
-          <Row title="Unfinished business">
-            <For each={unfinished()}>
-              {(entry) => <UnfinishedCard entry={entry} now={now()} />}
-            </For>
-          </Row>
-        </Show>
-
-        <Show when={lists()}>
-          {(all) => (
-            <section class="mt-10" aria-labelledby="home-lists">
-              <h2
-                id="home-lists"
-                class="font-display text-2xl font-medium tracking-tight"
-              >
-                Lists
-              </h2>
-              <div class="mt-4 flex flex-wrap gap-2">
-                <For each={all()}>
-                  {(list) => (
-                    <Link
-                      to="/app/lists/$id"
-                      params={{ id: list.id }}
-                      class="rounded-full bg-surface px-4 py-2 text-sm font-medium hover:text-accent"
-                    >
-                      {list.name}{' '}
-                      <span class="text-muted tabular-nums">
-                        {list.itemCount}
-                      </span>
-                    </Link>
+                <For each={nextAirings()}>
+                  {(entry) => (
+                    <AiringCard entry={entry} when={badgeFor(entry)} />
                   )}
                 </For>
-                <Link
-                  to="/app/lists"
-                  class="rounded-full border border-dashed border-line px-4 py-2 text-sm font-medium text-accent hover:bg-surface"
-                >
-                  New list
-                </Link>
+              </Row>
+            </Show>
+
+            <Show when={starting().length > 0}>
+              <Row title="Start watching">
+                <For each={starting()}>
+                  {(entry) => <StartCard entry={entry} />}
+                </For>
+              </Row>
+            </Show>
+
+            <Show when={unfinished().length > 0}>
+              <Row title="Unfinished business">
+                <For each={unfinished()}>
+                  {(entry) => <UnfinishedCard entry={entry} now={now()} />}
+                </For>
+              </Row>
+            </Show>
+          </div>
+
+          <div class="order-5 min-w-0 lg:col-start-1 lg:row-start-3">
+            <Show when={empty() && (!discoverReady() || discover().length > 0)}>
+              <div
+                class={cn(
+                  cardClass,
+                  'mt-8 flex flex-wrap items-center justify-between gap-4 p-5',
+                )}
+              >
+                <div>
+                  <h2 class="font-display text-xl font-medium">
+                    Add a show to see what’s next
+                  </h2>
+                  <p class="mt-1 text-sm text-muted">
+                    Pick from the rows below, browse Discover, or search. What
+                    you watch and what airs next land here.
+                  </p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <Link
+                    to="/app/discover"
+                    class="rounded-full border border-line px-5 py-2 text-sm font-semibold hover:bg-paper"
+                  >
+                    Discover
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={openSearch}
+                    class="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-on-accent"
+                  >
+                    Search
+                  </button>
+                </div>
               </div>
-            </section>
-          )}
-        </Show>
+            </Show>
 
-        <Show when={empty() && (!discoverReady() || discover().length > 0)}>
-          <div
-            class={cn(
-              cardClass,
-              'mt-8 flex flex-wrap items-center justify-between gap-4 p-5',
-            )}
-          >
-            <div>
-              <h2 class="font-display text-xl font-medium">
-                Add a show to see what’s next
-              </h2>
-              <p class="mt-1 text-sm text-muted">
-                Pick from the rows below, browse Discover, or search. What you
-                watch and what airs next land here.
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <Link
-                to="/app/discover"
-                class="rounded-full border border-line px-5 py-2 text-sm font-semibold hover:bg-paper"
-              >
-                Discover
-              </Link>
-              <button
-                type="button"
-                onClick={openSearch}
-                class="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-on-accent"
-              >
-                Search
-              </button>
-            </div>
+            <DiscoverRows
+              rows={discover()}
+              onRowsChange={setDiscover}
+              today={now() ? localDayKey(now() as Date) : null}
+              onAdded={(entry) => void added(entry)}
+              onProblem={setProblem}
+            />
+
+            <Show when={empty() && discoverReady() && discover().length === 0}>
+              <div class="mx-auto mt-16 max-w-sm text-center">
+                <h2 class="font-display text-2xl font-medium">
+                  Add a show to see what’s next
+                </h2>
+                <p class="mt-2 text-muted">
+                  Shows you are watching, what you want to start, and what airs
+                  this week land here.
+                </p>
+                <div class="mt-6 flex items-center justify-center gap-3">
+                  <Link
+                    to="/app/discover"
+                    class={buttonVariants({ variant: 'primary', size: 'lg' })}
+                  >
+                    Discover
+                  </Link>
+                  <Button variant="quiet" size="lg" onClick={openSearch}>
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </Show>
           </div>
-        </Show>
-
-        <DiscoverRows
-          rows={discover()}
-          onRowsChange={setDiscover}
-          today={now() ? localDayKey(now() as Date) : null}
-          onAdded={(entry) => void added(entry)}
-          onProblem={setProblem}
-        />
-
-        <Show when={empty() && discoverReady() && discover().length === 0}>
-          <div class="mx-auto mt-16 max-w-sm text-center">
-            <h2 class="font-display text-2xl font-medium">
-              Add a show to see what’s next
-            </h2>
-            <p class="mt-2 text-muted">
-              Shows you are watching, what you want to start, and what airs this
-              week land here.
-            </p>
-            <div class="mt-6 flex items-center justify-center gap-3">
-              <Link
-                to="/app/discover"
-                class={buttonVariants({ variant: 'primary', size: 'lg' })}
-              >
-                Discover
-              </Link>
-              <Button variant="quiet" size="lg" onClick={openSearch}>
-                Search
-              </Button>
-            </div>
-          </div>
-        </Show>
+        </div>
       </main>
 
       <Dialog

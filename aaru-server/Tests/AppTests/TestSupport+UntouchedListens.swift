@@ -14,4 +14,12 @@ extension UntouchedStore: ListenStore {
     func top(userID _: UserID, by _: ListenGrouping, period _: StatsPeriod, limit _: Int) async throws -> ListenTop {
         throw Touched()
     }
+
+    func unresolved(retryBefore _: Date, limit _: Int) async throws -> [ListenLookup] {
+        throw Touched()
+    }
+
+    func resolve(_: ListenLookup, as _: RecordingMatch, at _: Date) async throws -> Int {
+        throw Touched()
+    }
 }

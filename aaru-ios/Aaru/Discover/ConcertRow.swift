@@ -176,7 +176,7 @@ private struct ConcertDateStub: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
             Text(day.day)
-                .font(.system(.largeTitle, design: .serif, weight: .light))
+                .font(.aaruDisplay(.largeTitle))
                 .monospacedDigit()
                 .foregroundStyle(Color(.ink))
             Text(day.weekday)

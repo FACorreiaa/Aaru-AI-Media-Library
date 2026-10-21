@@ -53,7 +53,7 @@ struct CalendarEpisodeSheet: View {
                     .textCase(.uppercase)
                     .foregroundStyle(Color(.muted))
                 Text(entry.episodeName ?? "Episode \(entry.number)")
-                    .font(.system(.title2, design: .serif, weight: .semibold))
+                    .font(.aaruDisplay(.title2, weight: .semibold))
                     .foregroundStyle(Color(.ink))
                     .fixedSize(horizontal: false, vertical: true)
                 if let badge = entry.badge {

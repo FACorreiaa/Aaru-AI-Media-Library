@@ -2871,7 +2871,13 @@ components:
           type: boolean
           description: >-
             True when one provider of an `all` search failed or ran out of time, so the items
-            come from the other alone. Always false for a single-provider search.
+            come from the other alone. An `anime` search is also incomplete while AniList is down
+            and TMDB stands in.
+        notice:
+          type: string
+          description: >-
+            Why the items are partial, in words to show, e.g. AniList being down while TMDB's
+            Japanese animation stands in.
     DiscoverRow:
       type: object
       required: [id, title, items]
@@ -2887,6 +2893,9 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/CatalogHit'}
+        note:
+          type: string
+          description: Where a stand-in row came from, e.g. TMDB while AniList is down.
     DiscoverRows:
       type: object
       required: [rows]
@@ -3601,6 +3610,11 @@ components:
         originUrl: {type: string, description: Where it played, when the scrobbler said.}
         client: {type: string, description: 'The scrobbler, e.g. "Web Scrobbler".'}
         musicService: {type: string, description: 'Where it was heard, e.g. "YouTube Music".'}
+        albumRef:
+          $ref: '#/components/schemas/MediaRef'
+          description: >-
+            The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is
+            in the catalog, always by its MusicBrainz id. Open or add it like a search hit.
     ListenPage:
       type: object
       required: [items]

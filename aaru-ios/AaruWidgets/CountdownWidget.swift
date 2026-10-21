@@ -148,7 +148,7 @@ struct CountdownView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Palette.brand)
                 Text(state.airing.title)
-                    .font(.headline)
+                    .font(.widgetDisplay)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2)
                 Text(state.airing.episodeCode + (state.airing.episodeName.map { " · \($0)" } ?? ""))

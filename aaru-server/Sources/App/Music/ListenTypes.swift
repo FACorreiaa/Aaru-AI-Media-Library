@@ -42,6 +42,8 @@ struct Listen: Sendable, Equatable {
     var album: String?
     var durationMs: Int?
     var releaseGroupMBID: String?
+    /// The album's title when it is in Aaru's catalog (MUS-006).
+    var albumTitleID: UUID?
     var originURL: String?
     var client: String?
     var musicService: String?
@@ -49,12 +51,23 @@ struct Listen: Sendable, Equatable {
     /// The artist and track, case-, width- and space-folded, joined by a unit separator: what
     /// makes two scrobblers' spellings of one play the same.
     static func trackKey(artist: String, track: String) -> String {
-        func folded(_ text: String) -> String {
-            text.precomposedStringWithCompatibilityMapping.lowercased()
-                .split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        }
-        return folded(artist) + "\u{1F}" + folded(track)
+        fold(artist) + "\u{1F}" + fold(track)
     }
+
+    /// Case-, width- and space-folded, so two spellings of one name compare equal.
+    static func fold(_ text: String) -> String {
+        text.precomposedStringWithCompatibilityMapping.lowercased()
+            .split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+}
+
+/// MUS-006 · one track no one has asked MusicBrainz about yet: its keys, and the newest listen's
+/// spelling with any ids a scrobbler sent.
+struct ListenLookup: Sendable, Equatable {
+    var trackKey: String
+    /// The album, lowercased; empty when the scrobbler sent none.
+    var albumKey: String
+    var query: RecordingQuery
 }
 
 /// What the top lists rank by.
@@ -87,4 +100,10 @@ protocol ListenStore: Sendable {
     func listens(userID: UserID, before: Date?, limit: Int) async throws -> [Listen]
     /// The period's totals and its `limit` most played artists, tracks or albums.
     func top(userID: UserID, by grouping: ListenGrouping, period: StatsPeriod, limit: Int) async throws -> ListenTop
+    /// Tracks still waiting for an album that were never looked up, or whose last miss is older
+    /// than `retryBefore`; newest listens first.
+    func unresolved(retryBefore: Date, limit: Int) async throws -> [ListenLookup]
+    /// Keeps what MusicBrainz said, and fills the ids of every listen of that track and album
+    /// that lacks them. Returns how many listens gained an album.
+    func resolve(_ lookup: ListenLookup, as match: RecordingMatch, at date: Date) async throws -> Int
 }

@@ -40,6 +40,9 @@ struct PostgresSettings: Sendable {
 struct AppConfig: Sendable {
     /// Bundle ids of the apps (Release and Beta) plus the web Services ID, comma-separated
     /// in `APPLE_AUDIENCES`. Not secret.
+    /// The contact string catalog providers that ask for one get (Open Library, AniList).
+    static let defaultProviderUserAgent = "Aaru/0.1 (media library; contact: signin@aaruapp.com)"
+
     static let defaultAppleAudiences = "com.fernandocorreia.aaru,com.fernandocorreia.aaru.beta"
 
     var postgres: PostgresSettings
@@ -89,7 +92,7 @@ struct AppConfig: Sendable {
             email: emailSettings(from: reader),
             openLibraryUserAgent: reader.string(
                 forKey: "open.library.user.agent",
-                default: "Aaru/0.1 (media library; contact: signin@aaruapp.com)"
+                default: defaultProviderUserAgent
             ),
             trakt: traktSettings(from: reader),
             push: pushSettings(from: reader),

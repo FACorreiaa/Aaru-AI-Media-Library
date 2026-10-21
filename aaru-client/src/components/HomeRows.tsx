@@ -34,6 +34,8 @@ import { Button } from './ui/button'
 /** A horizontal row: a heading, an optional action, and cards that snap as they scroll. */
 export function Row(props: {
   title: string
+  /** A line under the title, e.g. why a row is a stand-in. */
+  note?: string
   action?: JSX.Element
   children: JSX.Element
 }) {
@@ -49,9 +51,14 @@ export function Row(props: {
   return (
     <section class="mt-10" aria-labelledby={id}>
       <div class="flex items-end justify-between gap-4">
-        <h2 id={id} class="font-display text-2xl font-medium tracking-tight">
-          {props.title}
-        </h2>
+        <div>
+          <h2 id={id} class="font-display text-2xl font-medium tracking-tight">
+            {props.title}
+          </h2>
+          <Show when={props.note}>
+            {(note) => <p class="mt-1 text-xs text-muted">{note()}</p>}
+          </Show>
+        </div>
         <div class="flex items-center gap-3">
           {props.action}
           <div class="hidden gap-1 md:flex">
@@ -107,8 +114,8 @@ function Chevron(props: { flip?: boolean }) {
   )
 }
 
-/** Wide art: the show's backdrop, then its poster, then a tint with the title. */
-function Art(props: { sources: (string | undefined)[]; title: string }) {
+/** Wide art: the show's backdrop, then its poster, then a teal-to-gold wash with the title. */
+export function Art(props: { sources: (string | undefined)[]; title: string }) {
   const urls = () => props.sources.filter((u): u is string => !!u)
   const [failed, setFailed] = createSignal(0)
   const url = () => urls()[failed()]
@@ -117,7 +124,7 @@ function Art(props: { sources: (string | undefined)[]; title: string }) {
       when={url()}
       keyed
       fallback={
-        <div class="grid h-full place-items-center bg-accent/15 px-4 text-center font-display text-lg leading-tight text-accent">
+        <div class="grid h-full place-items-center bg-linear-135 from-accent/20 to-gold/20 px-4 text-center font-display text-lg leading-tight text-ink/75">
           {props.title}
         </div>
       }
@@ -156,7 +163,7 @@ export function ContinueCard(props: {
         params={{ id: e().libraryItemId }}
         tabindex="-1"
         aria-hidden="true"
-        class="relative block aspect-video overflow-hidden rounded-panel"
+        class="relative block aspect-video overflow-hidden rounded-panel shadow-[0_0_0_1px_var(--line)]"
       >
         <Art
           sources={[e().title.backdropUrl, e().title.posterUrl]}
@@ -302,7 +309,7 @@ export function AiringCard(props: {
       class="block w-56 shrink-0 snap-start transition-opacity"
       classList={{ 'opacity-60': e().watched }}
     >
-      <div class="relative aspect-[2/1] overflow-hidden rounded-[12px]">
+      <div class="relative aspect-[2/1] overflow-hidden rounded-[12px] shadow-[0_0_0_1px_var(--line)]">
         <Art
           sources={[e().title.backdropUrl, e().title.posterUrl]}
           title={e().title.title}

@@ -291,7 +291,7 @@ private struct ConcertsHeader: View {
 
     var body: some View {
         Text(title)
-            .font(.system(.title3, design: .serif, weight: .semibold))
+            .font(.aaruDisplay(.title3, weight: .semibold))
             .foregroundStyle(Color(.ink))
             .accessibilityAddTraits(.isHeader)
     }

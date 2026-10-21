@@ -72,7 +72,7 @@ struct UpNextView: View {
             SetUpView(compact: family == .systemSmall)
         } else if rows.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Up Next").font(.headline).foregroundStyle(Palette.ink)
+                Text("Up Next").font(.widgetDisplay).foregroundStyle(Palette.ink)
                 Text("You are all caught up.").font(.caption).foregroundStyle(Palette.muted)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

@@ -91,7 +91,11 @@ protocol AppErrorConvertible: Error {
 
 extension ProviderError: AppErrorConvertible {
     var appError: AppError {
-        AppError(status: .badGateway, code: "provider_unavailable", message: "The catalog is unavailable. Try again.")
+        AppError(
+            status: .badGateway, code: "provider_unavailable",
+            message: "\(displayName) is unavailable right now. Try again later.",
+            details: ["provider": provider]
+        )
     }
 }
 

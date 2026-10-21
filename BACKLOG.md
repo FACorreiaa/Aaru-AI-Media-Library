@@ -36,6 +36,23 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-21
 
+- **AniList outage: TMDB stands in (CAT-021).** AniList disabled its whole public API on
+  2026-10-21 ("temporarily disabled due to severe stability issues", HTTP 403 behind
+  Cloudflare). Aaru logged that as `unauthorized`, so the anime rows went empty. Now it reads as
+  an outage, and until AniList returns, TMDB's Japanese animation fills the anime Discover rows
+  (with a note) and anime search (with a notice). The stand-in approximates AniList: a continuing
+  show keeps its first air date, so sequels can miss "this season".
+- **Mindspace redesign, and Tonight pulled forward client-composed (owner, 2026-10-21).** Aaru
+  keeps its name, marks and teal → gold, and gets one visual language on both clients (DESIGN.md
+  "Mindspace"): shared tokens generated from `design/tokens.json` with an AA contrast gate,
+  Newsreader bundled for headings, a System / Light / Dark setting per device, and texture
+  (pinstripe, grain, edge light) on the Field and the Title room only. The first slice is the
+  design system, the Field and the Title room on web, iPhone, iPad and Mac; lists, library,
+  calendar, import detail, plans, widgets and the settings/groups palette follow as small PRs.
+  **Tonight** (`TonightStrip`) is an owner exception before M13: composed on the device from
+  Continue watching and today's airings, no new endpoint, no ranking, no reject. The agent's
+  Tonight stays M13. No API, auth, import, permission or persistence change.
+
 - **Music scrobbling (MUS-004…008) is built before the P2 gate**, by the owner's call, after
   albums (MUS-001). Aaru speaks ListenBrainz's submit protocol at `/listenbrainz/1/`, so the
   scrobblers people already use send their listens with a music token: Web Scrobbler (YouTube,
@@ -377,6 +394,7 @@ account or a stranger that has not happened yet.
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
 | MUS-003 | Built, unverified | ConcertTests | Not deployed; needs `TICKETMASTER_API_KEY` sealed; Portugal coverage not probed |
 | MUS-005 | Built, unverified | ListenBrainzRouteTests | Not deployed; not tried with a real scrobbler |
+| MUS-006 | Built, unverified | RecordingMatchTests, ListenResolverTests | Not deployed; not run against MusicBrainz itself |
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
@@ -413,6 +431,7 @@ account or a stranger that has not happened yet.
 | CAT-017 | Deferred | heading "Deferred" | |
 | CAT-019 | Done | #43 5be7fef; CatalogSearchAllTests (Mobland) | Stub tests |
 | CAT-020 | Dropped | superseded by DISC-001 | |
+| CAT-021 | Built | AniListCatalog.classify, TMDB anime stand-in | Stub tests; live AniList outage 2026-10-21 |
 | UPN-002 | Done | #43; ScheduleTests UPN-002 | |
 | GAM-006c | Done | #43; StatsTests "all time equals the years summed" | |
 | GAM-006d | Done | #65; StatsTests GAM-006d, insights/home model tests | iOS not run on a device |

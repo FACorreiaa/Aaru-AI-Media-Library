@@ -56,6 +56,15 @@ default chrome.
 Inspiration: Apple TV "Up Next" + Things 3 today list + Copilot canvas.
 Mood: reed field at dusk, teal/gold, lots of air.
 
+**Built 2026-10-21 (web, iPhone, iPad, Mac), in the Mindspace language below:** the page is
+headed "The Field" with one line of when it is and what is live ("Tuesday evening · 3 in
+progress · 2 airing today"). **Tonight** (§5) leads, then the user's rows, then Discover. On a
+wide screen (web ≥1024px, iPad and Mac at regular width) a side column holds what Aaru is doing
+for the user: requests waiting for an answer, the **last import** (collapsed `JobLedger`, the
+heron while it matches, opens the import), the last 7 days, status counts, the recap banner and
+the user's lists. On a phone the same blocks follow the rows. The composer is still M13; the
+nav label stays "Home".
+
 ## 2. Intent preview (before it writes)
 
 Never let the agent mutate the library invisibly.
@@ -116,6 +125,16 @@ genre chips, the same status / rating / notes as any title, then the tracklist (
 length in tabular figures; "Disc 1"… only when there is more than one). No playback and no
 ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not available yet".
 
+**Built 2026-10-21 (web, iPhone, iPad, Mac):** the room opens on a hero: the title's backdrop
+under a veil that fades into Paper (or, without art, the room's own reed code, seeded by the
+title id so each room has its rhythm), the poster standing over the hero's lower edge, the name
+in Newsreader. One row of next steps sits under it: **Mark S4 · E3 watched** for a show with an
+aired, unwatched episode, then the status in the kind's words. On a wide screen the title's
+layer (About for films and books, the tracklist, the season map and seasons) is the main column
+and the user's layer (rating, owned, page, notes; About for shows) a side column; on a phone
+they stack, the user's layer first on Apple. The next cell on the season map stands on Paper in
+a gold ring. Every write is the one the room already made.
+
 ## 5. Tonight
 
 A nightly composed view. Not recommendations-as-a-product — a **short plan**.
@@ -124,6 +143,15 @@ A nightly composed view. Not recommendations-as-a-product — a **short plan**.
 
 Two cards, one reject, one "not tonight." The reject teaches the agent. This is the return
 moment after an agent run.
+
+**Pulled forward, client-composed (owner, 2026-10-21):** until M13, Tonight on the Field is
+composed on the device from rows the Field already loads, with no new endpoint and no ranking:
+the next episode at the top of Continue watching, else the first unwatched airing today; then
+"Also tonight", one more from the other source, never the same show twice. The reason line is
+only real fields (runtime, episodes left, "Last one aired", air time, premiere/finale). It has
+Mark watched (the same write as the Continue card) and Open; no reject and no "not tonight"
+until the agent composes it. Same rule on the web (`lib/home/tonight.ts`) and Apple
+(`Home/Tonight.swift`).
 
 ## 6. The shelf (library as query, not as app section)
 
@@ -617,12 +645,48 @@ looking like Aaru.
 | Linear | Command palette as a peer of the mouse |
 
 Brand: teal → gold, paper-white or deep reed-green dark mode. Assets and how they are made:
-`docs/brand/README.md`. Colour tokens (`Paper`, `Surface`, `Ink`, `Muted`, `Medallion`, accent
-teal) are the same names in the asset catalog and in `aaru-client/src/styles.css`. The
+`docs/brand/README.md`. Colour tokens (`Paper`, `Surface`, `Stone`, `Ink`, `Muted`, `Medallion`,
+accent teal, `Gold`, `Agent`, `Line`, `Danger`) are generated into the asset catalogs and
+`aaru-client/src/tokens.css` from one file, `design/tokens.json` (see "Mindspace" below). The
 mascot (a small teal bird with books and a film reel) is the app icon (cropped to the face, on
 deep teal; chosen 2026-10-21) and otherwise appears on signed-out surfaces only, always on a paper
 disc. The heron only as a quiet mark when the agent is working (breathing reed, not a bouncing
 dots spinner).
+
+### Mindspace (visual language, 2026-10-21)
+
+Aaru is a constructed room for stories: a warm, lit interior with something quietly computed
+about it. Calm and editorial first; the uncanny is a texture, never an effect. No franchise
+look, no cyberpunk, no glitching or "broken AI" UI.
+
+- **One token source.** `design/tokens.json` holds every colour, light and dark, plus the
+  pairs that must pass WCAG AA (4.5 text, 3 non-text). `scripts/generate-tokens.mjs` writes
+  `aaru-client/src/tokens.css`, `src/lib/tokens.gen.ts` and the colour sets in both Apple asset
+  catalogs, and fails on a pair below AA; CI runs it with `--check`. Light is warm lit
+  architecture (Paper ivory, Surface parchment, Stone sunken); dark is reed-green and warm
+  charcoal. Accent is a desaturated teal. **Gold** is edge light only: hairlines, the next-up
+  ring, stars, a dot on the active nav item. It never fills a surface. **Agent** (reed sage)
+  marks the agent's activity. No pure black, no neon.
+- **Appearance.** System, Light or Dark, per device. The web keeps it in the `aaru_appearance`
+  cookie and renders `<html data-theme>` on the server, so nothing flashes; Apple keeps it in
+  `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system.
+- **Type.** Newsreader (OFL, bundled on both clients, `design/fonts.md`) for titles and
+  headings; the system sans for everything else. Small uppercase eyebrows (tracked 1.5) over
+  sections. Dates, `S·E` codes, counts and ratings use tabular figures. On Apple the serif is
+  `Font.aaruDisplay(_:)`, relative to a text style, so Dynamic Type scales it. Widgets bundle the
+  Medium face only and use it for their one heading; the rest of a widget is the system font.
+- **Badges.** Premiere and new season are teal, Finale is ink, both under Paper text (the web's
+  `accent` and `ink` badge tones). Gold never carries small text.
+- **Texture, on the Field and the Title room only.** Two faint pinstripes of different pitch
+  (the room's "code"; the Title room seeds them from the title id), film grain on the web, a
+  daypart wash that is warmer at dusk and cooler at night (`data-daypart`, set once before
+  paint), a gold top edge on the one or two focal pieces (`edge-lit` / `.edgeLit()`), and a
+  soft teal/gold chromatic edge on the focal art (`fringe`, web). All static: nothing animates.
+  All gone under increased contrast, forced colours or Reduce Transparency. Every other screen
+  is flat Paper with hairlines.
+- **Agent presence.** The heron stays quiet: the existing reed mark, breathing slowly beside
+  "Waiting for you" or an import that is matching, only while something is in progress, and
+  still under Reduce Motion. The brand mark is not redrawn.
 
 Research basis (2026-10-09): the user's screenshots of Trakt web home, Trakt "Today" stories
 and the Pogdesign CAT weekly schedule, plus web research on tracker widgets and social

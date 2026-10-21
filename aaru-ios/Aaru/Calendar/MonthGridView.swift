@@ -9,7 +9,7 @@ struct MonthSwitcher: View {
         HStack(alignment: .firstTextBaseline, spacing: 20) {
             neighbour(-1)
             Text(model.title())
-                .font(.system(.title2, design: .serif, weight: .semibold))
+                .font(.aaruDisplay(.title2, weight: .semibold))
                 .lineLimit(1)
                 .accessibilityAddTraits(.isHeader)
             neighbour(1)
@@ -23,7 +23,7 @@ struct MonthSwitcher: View {
             Task { await model.step(months: offset) }
         }
         .buttonStyle(.plain)
-        .font(.system(.body, design: .serif))
+        .font(.aaruDisplay(.body))
         .foregroundStyle(Color(.muted))
         .lineLimit(1)
         .accessibilityLabel(offset < 0 ? "Previous month, \(model.title(offset: offset))"
@@ -200,7 +200,7 @@ private struct PosterThumb: View {
     private var initials: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(.accent).opacity(0.55), Color.weekGold.opacity(0.45)],
+                colors: [Color(.accent).opacity(0.55), Color(.gold).opacity(0.45)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
             Text(entry.title.initials)

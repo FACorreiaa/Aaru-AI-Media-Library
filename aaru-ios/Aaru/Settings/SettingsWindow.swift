@@ -30,6 +30,10 @@
 
         private var panes: some View {
             TabView {
+                Tab("General", systemImage: "gearshape") {
+                    Form { AppearancePicker() }
+                        .formStyle(.grouped)
+                }
                 Tab("Account", systemImage: "person.crop.circle") {
                     NavigationStack {
                         AccountSettings(

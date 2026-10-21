@@ -65,7 +65,7 @@ struct ContinueCard: View {
                 HomeChip(text: durationLabel(minutes: runtime))
             }
             if entry.isFinale {
-                HomeChip(text: "Finale", tint: .weekGold)
+                HomeChip(text: "Finale", tint: Color(.ink), foreground: Color(.paper))
             }
             Spacer(minLength: 0)
             HomeChip(text: leftLabel)
@@ -168,7 +168,12 @@ struct AiringCard: View {
                     aspect: 16 / 6
                 )
                 .overlay(alignment: .topLeading) {
-                    HomeChip(text: when, tint: isSoon ? Color(.accent) : .black.opacity(0.55)).padding(6)
+                    HomeChip(
+                        text: when,
+                        tint: isSoon ? Color(.accent) : .black.opacity(0.55),
+                        foreground: isSoon ? Color(.paper) : .white
+                    )
+                    .padding(6)
                 }
                 .overlay(alignment: .topTrailing) {
                     if let badge = entry.badge {

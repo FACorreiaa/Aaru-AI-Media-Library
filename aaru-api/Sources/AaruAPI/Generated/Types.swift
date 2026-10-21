@@ -5137,25 +5137,33 @@ public enum Components {
         public struct SearchResults: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/SearchResults/items`.
             public var items: [Components.Schemas.CatalogHit]
-            /// True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search.
+            /// True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. An `anime` search is also incomplete while AniList is down and TMDB stands in.
             ///
             /// - Remark: Generated from `#/components/schemas/SearchResults/incomplete`.
             public var incomplete: Swift.Bool
+            /// Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchResults/notice`.
+            public var notice: Swift.String?
             /// Creates a new `SearchResults`.
             ///
             /// - Parameters:
             ///   - items:
-            ///   - incomplete: True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. Always false for a single-provider search.
+            ///   - incomplete: True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. An `anime` search is also incomplete while AniList is down and TMDB stands in.
+            ///   - notice: Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in.
             public init(
                 items: [Components.Schemas.CatalogHit],
-                incomplete: Swift.Bool
+                incomplete: Swift.Bool,
+                notice: Swift.String? = nil
             ) {
                 self.items = items
                 self.incomplete = incomplete
+                self.notice = notice
             }
             public enum CodingKeys: String, CodingKey {
                 case items
                 case incomplete
+                case notice
             }
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
@@ -5170,25 +5178,33 @@ public enum Components {
             public var title: Swift.String
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/items`.
             public var items: [Components.Schemas.CatalogHit]
+            /// Where a stand-in row came from, e.g. TMDB while AniList is down.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DiscoverRow/note`.
+            public var note: Swift.String?
             /// Creates a new `DiscoverRow`.
             ///
             /// - Parameters:
             ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
             ///   - title: Display title, e.g. "Fall 2026 anime".
             ///   - items:
+            ///   - note: Where a stand-in row came from, e.g. TMDB while AniList is down.
             public init(
                 id: Swift.String,
                 title: Swift.String,
-                items: [Components.Schemas.CatalogHit]
+                items: [Components.Schemas.CatalogHit],
+                note: Swift.String? = nil
             ) {
                 self.id = id
                 self.title = title
                 self.items = items
+                self.note = note
             }
             public enum CodingKeys: String, CodingKey {
                 case id
                 case title
                 case items
+                case note
             }
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRows`.
@@ -7561,6 +7577,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Listen/musicService`.
             public var musicService: Swift.String?
+            /// The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is in the catalog, always by its MusicBrainz id. Open or add it like a search hit.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/albumRef`.
+            public var albumRef: Components.Schemas.MediaRef?
             /// Creates a new `Listen`.
             ///
             /// - Parameters:
@@ -7574,6 +7594,7 @@ public enum Components {
             ///   - originUrl: Where it played
             ///   - client: The scrobbler, e.g. "Web Scrobbler".
             ///   - musicService: Where it was heard, e.g. "YouTube Music".
+            ///   - albumRef: The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is in the catalog, always by its MusicBrainz id. Open or add it like a search hit.
             public init(
                 id: Swift.String,
                 listenedAt: Foundation.Date,
@@ -7584,7 +7605,8 @@ public enum Components {
                 coverUrl: Swift.String? = nil,
                 originUrl: Swift.String? = nil,
                 client: Swift.String? = nil,
-                musicService: Swift.String? = nil
+                musicService: Swift.String? = nil,
+                albumRef: Components.Schemas.MediaRef? = nil
             ) {
                 self.id = id
                 self.listenedAt = listenedAt
@@ -7596,6 +7618,7 @@ public enum Components {
                 self.originUrl = originUrl
                 self.client = client
                 self.musicService = musicService
+                self.albumRef = albumRef
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -7608,6 +7631,7 @@ public enum Components {
                 case originUrl
                 case client
                 case musicService
+                case albumRef
             }
         }
         /// - Remark: Generated from `#/components/schemas/ListenPage`.

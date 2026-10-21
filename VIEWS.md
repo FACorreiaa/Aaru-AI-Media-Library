@@ -17,7 +17,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, Listening row (albums in progress, MUS-001), `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, Listening row (albums in progress, MUS-001), `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20), `TonightStrip` client-composed and the last import as a collapsed `JobLedger` (2026-10-21) (+ the agent's `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
 | Discover | Today: `DiscoverRow` per DISC-001 row, add with status or to a list. Seasons: `SeasonBrowser` (DISC-002). Concerts: `ConcertList` (MUS-003) | `GET /v1/discover`, `GET /v1/discover/season`, `POST /v1/concerts/near`, `GET /v1/concerts/artists`, `GET /v1/me/concert-place`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20), DISC-002, MUS-003 (2026-10-21) |
 | Insights | `StatsPanel` (7 days / 30 days / month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all|last7|last30` | 2 · GAM-006c (pulled forward 2026-10-20), GAM-006d (2026-10-21) |
 | Lists | `Shelf` rendering a list's items: show status, next airing, library status and progress (LST-003) | `GET /v1/lists`, `GET /v1/lists/{id}` (`items`), `POST /v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
@@ -26,7 +26,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
 | Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
 | Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4); for an album, a square cover and the tracklist instead of the season map (MUS-001) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
-| Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 |
+| Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 (client-composed on the Field since 2026-10-21, DESIGN.md §5) |
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
 | Library · Now | `NowCard` (Library only; the agent does not emit it — `TonightStrip` is its agent counterpart) | the synced shelf; `PUT .../episodes/{s}/{e}`, `PATCH /v1/library/items/{id}` | 2 · APP-017 |
 | Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
@@ -100,6 +100,11 @@ refuses and substitutes the nearest catalog piece.
 
 `PlanCard`, `JobLedger`, `MatchTable`, and `UndoRibbon` are the four that make agent writes
 safe. None of them is optional decoration.
+
+**`AgentPresence` is chrome, not a catalog component (2026-10-21).** The reed mark, breathing
+slowly, beside a request waiting for the user or an import that is matching. The client shows
+it from state it already has; the agent never emits it. Web `src/components/AgentPresence.tsx`,
+Apple `Design/AgentPresence.swift`.
 
 **The catalog grows from nine to twenty, said out loud here (2026-10-09).** Phase 1.5 did not
 grow it, and Capture, remote approval, Shortcuts, and MCP still render on the original nine.

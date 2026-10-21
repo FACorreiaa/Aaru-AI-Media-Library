@@ -79,7 +79,7 @@ struct MusicBrainzCatalog: CatalogSearching, TrackListing, AlbumArtistListing {
         }
     }
 
-    private func get<T: Decodable>(_: T.Type, _ path: String, _ query: [String: String]) async throws -> T {
+    func get<T: Decodable>(_: T.Type, _ path: String, _ query: [String: String]) async throws -> T {
         var components = URLComponents(url: Self.baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)
         var items = query.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
         items.append(URLQueryItem(name: "fmt", value: "json"))

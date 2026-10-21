@@ -44,7 +44,7 @@ struct CatchUpView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(show.title.title)
-                        .font(.system(.title3, design: .serif, weight: .semibold))
+                        .font(.aaruDisplay(.title3, weight: .semibold))
                         .lineLimit(2)
                     Text(show.line)
                         .font(.subheadline)

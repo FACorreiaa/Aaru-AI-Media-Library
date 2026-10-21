@@ -39,7 +39,7 @@ struct EpisodeSheet: View {
                     .font(.footnote.weight(.medium).monospacedDigit())
                     .foregroundStyle(Color(.muted))
                 Text(episode.name ?? "Episode \(episode.number)")
-                    .font(.system(.title2, design: .serif, weight: .medium))
+                    .font(.aaruDisplay(.title2))
                     .foregroundStyle(Color(.ink))
                     .fixedSize(horizontal: false, vertical: true)
                 if let meta = meta(episode) {
@@ -50,7 +50,7 @@ struct EpisodeSheet: View {
             }
 
             Toggle("Watched", isOn: watchedBinding)
-                .tint(Color.accentColor)
+                .tint(Color(.accent))
                 .disabled(!model.canToggle(episode) || model.pending.contains(key))
 
             if let overview = episode.overview, !overview.isEmpty {

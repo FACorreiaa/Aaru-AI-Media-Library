@@ -41,6 +41,9 @@ struct SettingsView: View {
                     }
                 }
                 Section {
+                    AppearancePicker()
+                }
+                Section {
                     NavigationLink(value: SettingsRoute.page(.imports)) {
                         SettingsRowLabel("Imports & export", systemImage: "tray.and.arrow.down.fill", tint: .blue)
                     }
@@ -103,7 +106,7 @@ private struct AccountSummary: View {
             Image(systemName: "person.crop.circle.fill")
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color(.accent))
                 .frame(width: avatar, height: avatar)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {

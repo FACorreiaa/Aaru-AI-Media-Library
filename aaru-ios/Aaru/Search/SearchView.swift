@@ -64,6 +64,7 @@ struct SearchView: View {
     @State private var scope = SearchScope.all
     @State private var hits: [CatalogHit] = []
     @State private var incomplete = false
+    @State private var notice: String?
     @State private var isSearching = false
     @State private var problem: String?
     /// Hits being added right now: a second tap waits instead of adding twice.
@@ -93,7 +94,7 @@ struct SearchView: View {
                         .listRowBackground(Color.clear)
                 }
                 if incomplete {
-                    Text("Some results are missing right now.")
+                    Text(notice ?? "Some results are missing right now.")
                         .font(.footnote)
                         .foregroundStyle(Color(.muted))
                         .listRowBackground(Color.clear)
@@ -175,6 +176,7 @@ struct SearchView: View {
                 let results = try response.body.json
                 hits = results.items
                 incomplete = results.incomplete
+                notice = results.notice
                 problem = nil
             case let .default(_, error):
                 hits = []
