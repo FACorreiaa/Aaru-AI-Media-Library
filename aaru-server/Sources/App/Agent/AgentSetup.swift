@@ -37,7 +37,7 @@ enum AgentSetup {
         case .hermes: hermes(url: url, token: token)
         case .gemini: gemini(url: url, token: token)
         case .claude: claude(url: url)
-        case .other, .stremio, .browser: [
+        case .other, .stremio, .browser, .music: [
                 Step(label: "Any MCP client", language: .text, text: """
                 Transport: streamable HTTP
                 URL:       \(url)

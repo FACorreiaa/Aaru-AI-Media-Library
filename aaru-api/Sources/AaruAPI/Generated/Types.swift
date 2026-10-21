@@ -357,6 +357,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
     func getStats(_ input: Operations.GetStats.Input) async throws -> Operations.GetStats.Output
+    /// Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)`.
+    func listListens(_ input: Operations.ListListens.Input) async throws -> Operations.ListListens.Output
+    /// Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens/top`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)`.
+    func getTopListens(_ input: Operations.GetTopListens.Input) async throws -> Operations.GetTopListens.Output
     /// Search the catalog. Results are catalog projections, never library rows.
     ///
     /// - Remark: HTTP `GET /v1/search`.
@@ -1439,6 +1449,32 @@ extension APIProtocol {
             headers: headers
         ))
     }
+    /// Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)`.
+    public func listListens(
+        query: Operations.ListListens.Input.Query = .init(),
+        headers: Operations.ListListens.Input.Headers = .init()
+    ) async throws -> Operations.ListListens.Output {
+        try await listListens(Operations.ListListens.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens/top`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)`.
+    public func getTopListens(
+        query: Operations.GetTopListens.Input.Query,
+        headers: Operations.GetTopListens.Input.Headers = .init()
+    ) async throws -> Operations.GetTopListens.Output {
+        try await getTopListens(Operations.GetTopListens.Input(
+            query: query,
+            headers: headers
+        ))
+    }
     /// Search the catalog. Results are catalog projections, never library rows.
     ///
     /// - Remark: HTTP `GET /v1/search`.
@@ -2301,7 +2337,7 @@ public enum Components {
                 case redirectTo
             }
         }
-        /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension: it can only scrobble.
+        /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension and `music` a music scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
         ///
         /// - Remark: Generated from `#/components/schemas/AgentTokenKind`.
         @frozen public enum AgentTokenKind: String, Codable, Hashable, Sendable, CaseIterable {
@@ -2313,6 +2349,7 @@ public enum Components {
             case other = "other"
             case claude = "claude"
             case browser = "browser"
+            case music = "music"
         }
         /// - Remark: Generated from `#/components/schemas/AgentMCPKind`.
         @frozen public enum AgentMCPKind: String, Codable, Hashable, Sendable, CaseIterable {
@@ -5772,6 +5809,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AccountExport/groupMessages`.
             public var groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload?
+            /// Every listen in your listening log, newest first (MUS-005).
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountExport/listens`.
+            public var listens: [Components.Schemas.Listen]?
             /// Creates a new `AccountExport`.
             ///
             /// - Parameters:
@@ -5784,6 +5825,7 @@ public enum Components {
             ///   - blocked:
             ///   - groups:
             ///   - groupMessages: Messages you wrote in groups, oldest first.
+            ///   - listens: Every listen in your listening log, newest first (MUS-005).
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
@@ -5793,7 +5835,8 @@ public enum Components {
                 friends: [Components.Schemas.SocialUser]? = nil,
                 blocked: [Components.Schemas.SocialUser]? = nil,
                 groups: Components.Schemas.AccountExport.GroupsPayload? = nil,
-                groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil
+                groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil,
+                listens: [Components.Schemas.Listen]? = nil
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
@@ -5804,6 +5847,7 @@ public enum Components {
                 self.blocked = blocked
                 self.groups = groups
                 self.groupMessages = groupMessages
+                self.listens = listens
             }
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
@@ -5815,6 +5859,7 @@ public enum Components {
                 case blocked
                 case groups
                 case groupMessages
+                case listens
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.
@@ -6895,6 +6940,238 @@ public enum Components {
                 case name
                 case minutes
                 case titles
+            }
+        }
+        /// One play of a track a scrobbler sent (MUS-005). Never a library item: listening does not change the library.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Listen`.
+        public struct Listen: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Listen/id`.
+            public var id: Swift.String
+            /// When the track started.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/listenedAt`.
+            public var listenedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Listen/artist`.
+            public var artist: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Listen/track`.
+            public var track: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Listen/album`.
+            public var album: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Listen/durationMs`.
+            public var durationMs: Swift.Int?
+            /// The album's Cover Art Archive cover when Aaru knows the album.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/coverUrl`.
+            public var coverUrl: Swift.String?
+            /// Where it played
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/originUrl`.
+            public var originUrl: Swift.String?
+            /// The scrobbler, e.g. "Web Scrobbler".
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/client`.
+            public var client: Swift.String?
+            /// Where it was heard, e.g. "YouTube Music".
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/musicService`.
+            public var musicService: Swift.String?
+            /// Creates a new `Listen`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - listenedAt: When the track started.
+            ///   - artist:
+            ///   - track:
+            ///   - album:
+            ///   - durationMs:
+            ///   - coverUrl: The album's Cover Art Archive cover when Aaru knows the album.
+            ///   - originUrl: Where it played
+            ///   - client: The scrobbler, e.g. "Web Scrobbler".
+            ///   - musicService: Where it was heard, e.g. "YouTube Music".
+            public init(
+                id: Swift.String,
+                listenedAt: Foundation.Date,
+                artist: Swift.String,
+                track: Swift.String,
+                album: Swift.String? = nil,
+                durationMs: Swift.Int? = nil,
+                coverUrl: Swift.String? = nil,
+                originUrl: Swift.String? = nil,
+                client: Swift.String? = nil,
+                musicService: Swift.String? = nil
+            ) {
+                self.id = id
+                self.listenedAt = listenedAt
+                self.artist = artist
+                self.track = track
+                self.album = album
+                self.durationMs = durationMs
+                self.coverUrl = coverUrl
+                self.originUrl = originUrl
+                self.client = client
+                self.musicService = musicService
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case listenedAt
+                case artist
+                case track
+                case album
+                case durationMs
+                case coverUrl
+                case originUrl
+                case client
+                case musicService
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListenPage`.
+        public struct ListenPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListenPage/items`.
+            public var items: [Components.Schemas.Listen]
+            /// Pass as `before` for the next page; absent on the last page.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListenPage/next`.
+            public var next: Foundation.Date?
+            /// Creates a new `ListenPage`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - next: Pass as `before` for the next page; absent on the last page.
+            public init(
+                items: [Components.Schemas.Listen],
+                next: Foundation.Date? = nil
+            ) {
+                self.items = items
+                self.next = next
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case next
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListenTop`.
+        public struct ListenTop: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListenTop/by`.
+            @frozen public enum ByPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case artist = "artist"
+                case track = "track"
+                case album = "album"
+            }
+            /// - Remark: Generated from `#/components/schemas/ListenTop/by`.
+            public var by: Components.Schemas.ListenTop.ByPayload
+            /// - Remark: Generated from `#/components/schemas/ListenTop/span`.
+            @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case month = "month"
+                case year = "year"
+                case all = "all"
+                case last7 = "last7"
+                case last30 = "last30"
+            }
+            /// - Remark: Generated from `#/components/schemas/ListenTop/span`.
+            public var span: Components.Schemas.ListenTop.SpanPayload
+            /// - Remark: Generated from `#/components/schemas/ListenTop/year`.
+            public var year: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ListenTop/month`.
+            public var month: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ListenTop/timeZone`.
+            public var timeZone: Swift.String
+            /// Every listen in the period.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListenTop/listens`.
+            public var listens: Swift.Int
+            /// Their length summed
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListenTop/minutes`.
+            public var minutes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload`.
+            public struct ItemsPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/artist`.
+                public var artist: Swift.String
+                /// Present when ranking tracks.
+                ///
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/track`.
+                public var track: Swift.String?
+                /// Present when ranking albums.
+                ///
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/album`.
+                public var album: Swift.String?
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/count`.
+                public var count: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/minutes`.
+                public var minutes: Swift.Int
+                /// Creates a new `ItemsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - artist:
+                ///   - track: Present when ranking tracks.
+                ///   - album: Present when ranking albums.
+                ///   - count:
+                ///   - minutes:
+                public init(
+                    artist: Swift.String,
+                    track: Swift.String? = nil,
+                    album: Swift.String? = nil,
+                    count: Swift.Int,
+                    minutes: Swift.Int
+                ) {
+                    self.artist = artist
+                    self.track = track
+                    self.album = album
+                    self.count = count
+                    self.minutes = minutes
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case artist
+                    case track
+                    case album
+                    case count
+                    case minutes
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ListenTop/items`.
+            public typealias ItemsPayload = [Components.Schemas.ListenTop.ItemsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/ListenTop/items`.
+            public var items: Components.Schemas.ListenTop.ItemsPayload
+            /// Creates a new `ListenTop`.
+            ///
+            /// - Parameters:
+            ///   - by:
+            ///   - span:
+            ///   - year:
+            ///   - month:
+            ///   - timeZone:
+            ///   - listens: Every listen in the period.
+            ///   - minutes: Their length summed
+            ///   - items:
+            public init(
+                by: Components.Schemas.ListenTop.ByPayload,
+                span: Components.Schemas.ListenTop.SpanPayload,
+                year: Swift.Int,
+                month: Swift.Int? = nil,
+                timeZone: Swift.String,
+                listens: Swift.Int,
+                minutes: Swift.Int,
+                items: Components.Schemas.ListenTop.ItemsPayload
+            ) {
+                self.by = by
+                self.span = span
+                self.year = year
+                self.month = month
+                self.timeZone = timeZone
+                self.listens = listens
+                self.minutes = minutes
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case by
+                case span
+                case year
+                case month
+                case timeZone
+                case listens
+                case minutes
+                case items
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsTotals`.
@@ -15493,15 +15770,16 @@ public enum Operations {
                     case stremio = "stremio"
                     case mcp = "mcp"
                     case scrobble = "scrobble"
+                    case music = "music"
                 }
-                /// Which surface's tokens: the Stremio addon, MCP clients, or the browser extension (`scrobble`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind.
+                /// Which surface's tokens: the Stremio addon, MCP clients, the browser extension (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind.
                 ///
                 /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/query/for`.
                 public var _for: Operations.ListAgentTokens.Input.Query.ForPayload?
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - _for: Which surface's tokens: the Stremio addon, MCP clients, or the browser extension (`scrobble`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind.
+                ///   - _for: Which surface's tokens: the Stremio addon, MCP clients, the browser extension (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind.
                 public init(_for: Operations.ListAgentTokens.Input.Query.ForPayload? = nil) {
                     self._for = _for
                 }
@@ -17597,6 +17875,358 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)`.
+    public enum ListListens {
+        public static let id: Swift.String = "listListens"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/listens/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Only listens that started before this time; the previous page's `next`.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/GET/query/before`.
+                public var before: Foundation.Date?
+                /// 1–100, default 20.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/GET/query/limit`.
+                public var limit: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - before: Only listens that started before this time; the previous page's `next`.
+                ///   - limit: 1–100, default 20.
+                public init(
+                    before: Foundation.Date? = nil,
+                    limit: Swift.Int? = nil
+                ) {
+                    self.before = before
+                    self.limit = limit
+                }
+            }
+            public var query: Operations.ListListens.Input.Query
+            /// - Remark: Generated from `#/paths/v1/me/listens/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListListens.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListListens.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListListens.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListListens.Input.Query = .init(),
+                headers: Operations.ListListens.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/listens/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/listens/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ListenPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ListenPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListListens.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListListens.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// A page of listens.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListListens.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListListens.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens/top`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)`.
+    public enum GetTopListens {
+        public static let id: Swift.String = "getTopListens"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/by`.
+                @frozen public enum ByPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case artist = "artist"
+                    case track = "track"
+                    case album = "album"
+                }
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/by`.
+                public var by: Operations.GetTopListens.Input.Query.ByPayload
+                /// Required unless `span` is sent.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/year`.
+                public var year: Swift.Int?
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/span`.
+                @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case all = "all"
+                    case last7 = "last7"
+                    case last30 = "last30"
+                }
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/span`.
+                public var span: Operations.GetTopListens.Input.Query.SpanPayload?
+                /// 1–12. Absent means the whole year.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/month`.
+                public var month: Swift.Int?
+                /// IANA time zone for day and month boundaries. Absent means UTC.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/tz`.
+                public var tz: Swift.String?
+                /// 1–50, default 10.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/limit`.
+                public var limit: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - by:
+                ///   - year: Required unless `span` is sent.
+                ///   - span:
+                ///   - month: 1–12. Absent means the whole year.
+                ///   - tz: IANA time zone for day and month boundaries. Absent means UTC.
+                ///   - limit: 1–50, default 10.
+                public init(
+                    by: Operations.GetTopListens.Input.Query.ByPayload,
+                    year: Swift.Int? = nil,
+                    span: Operations.GetTopListens.Input.Query.SpanPayload? = nil,
+                    month: Swift.Int? = nil,
+                    tz: Swift.String? = nil,
+                    limit: Swift.Int? = nil
+                ) {
+                    self.by = by
+                    self.year = year
+                    self.span = span
+                    self.month = month
+                    self.tz = tz
+                    self.limit = limit
+                }
+            }
+            public var query: Operations.GetTopListens.Input.Query
+            /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTopListens.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTopListens.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTopListens.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetTopListens.Input.Query,
+                headers: Operations.GetTopListens.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ListenTop)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ListenTop {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTopListens.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTopListens.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The period's top list.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTopListens.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTopListens.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

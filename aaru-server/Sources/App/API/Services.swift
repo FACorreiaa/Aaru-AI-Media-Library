@@ -14,6 +14,7 @@ struct Services: Sendable {
     var traktConnect: TraktConnectService
     var agentTokens: AgentTokenService
     var scrobble: ScrobbleService
+    var listens: ListenService
     var plans: PlanService
     var oauth: OAuthService
     var social: SocialService
@@ -67,6 +68,7 @@ struct Services: Sendable {
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
+            listens: ListenService(stores: stores),
             plans: PlanService(stores: stores, library: library),
             oauth: OAuthService(
                 stores: stores, oauth: stores.oauth,

@@ -379,6 +379,7 @@ struct Stores: Sendable {
     var push: any PushStore
     var agentTokens: any AgentTokenStore
     var watchEvents: any WatchEventStore
+    var listens: any ListenStore
     var plans: any PlanStore
     var oauth: any OAuthStore
     var social: any SocialStore

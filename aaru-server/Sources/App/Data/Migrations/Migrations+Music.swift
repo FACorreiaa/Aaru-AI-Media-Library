@@ -31,3 +31,52 @@ struct AddMusic: SQLMigration {
         "ALTER TABLE titles ADD CONSTRAINT titles_type_check CHECK (type IN ('movie', 'show', 'book'))",
     ]
 }
+
+/// MUS-005 · the listening log: one row per play of a track, append-only and never library
+/// truth. Scrobblers reach it with a `music` token over ListenBrainz's protocol. `track_key` is
+/// the normalized artist and track, so the same play sent by two scrobblers is kept once.
+struct AddListens: SQLMigration {
+    let forward = [
+        "ALTER TABLE agent_tokens DROP CONSTRAINT agent_tokens_kind_check",
+        """
+        ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_kind_check
+            CHECK (kind IN ('stremio', 'claude_code', 'codex', 'hermes', 'gemini', 'other', 'claude', 'browser',
+                            'music'))
+        """,
+        """
+        CREATE TABLE listens (
+            id uuid PRIMARY KEY,
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            listened_at timestamptz NOT NULL,
+            artist text NOT NULL CHECK (char_length(artist) BETWEEN 1 AND 500),
+            track text NOT NULL CHECK (char_length(track) BETWEEN 1 AND 500),
+            album text CHECK (char_length(album) BETWEEN 1 AND 500),
+            track_key text NOT NULL,
+            duration_ms integer CHECK (duration_ms > 0),
+            isrc text,
+            recording_mbid text,
+            release_mbid text,
+            release_group_mbid text,
+            artist_mbid text,
+            spotify_id text,
+            origin_url text,
+            client text,
+            music_service text,
+            source text NOT NULL CHECK (source IN ('live')),
+            agent_token_id uuid REFERENCES agent_tokens(id) ON DELETE SET NULL,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            UNIQUE (user_id, track_key, listened_at)
+        )
+        """,
+        "CREATE INDEX listens_user_time ON listens (user_id, listened_at DESC)",
+    ]
+    let backward = [
+        "DROP TABLE listens",
+        "DELETE FROM agent_tokens WHERE kind = 'music'",
+        "ALTER TABLE agent_tokens DROP CONSTRAINT agent_tokens_kind_check",
+        """
+        ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_kind_check
+            CHECK (kind IN ('stremio', 'claude_code', 'codex', 'hermes', 'gemini', 'other', 'claude', 'browser'))
+        """,
+    ]
+}

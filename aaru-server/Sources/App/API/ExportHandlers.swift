@@ -24,6 +24,7 @@ extension APIImplementation {
         async let blocked = services.social.blocked(userID)
         async let groups = services.groups.groups(userID)
         async let groupMessages = stores.groups.exportMessages(userID)
+        async let listens = services.listens.all(userID: userID)
         return try await .ok(.init(
             headers: .init(contentDisposition: "attachment; filename=\"aaru-export-\(stamp).json\""),
             body: .json(.init(
@@ -46,7 +47,8 @@ extension APIImplementation {
                 groups: groups.map { .init(name: $0.name, role: .init($0.role)) },
                 groupMessages: groupMessages.map {
                     .init(group: $0.group, channel: $0.channel, body: $0.body, createdAt: $0.createdAt)
-                }
+                },
+                listens: listens.map(Components.Schemas.Listen.init)
             ))
         ))
     }

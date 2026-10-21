@@ -26,13 +26,14 @@ struct MintedAgentToken: Sendable {
     var stremio: StremioLinks?
 }
 
-/// OUT-001: per-user tokens for outside callers: the Stremio addon, MCP clients (OUT-004) and the
-/// browser extension (SCR-007).
+/// OUT-001: per-user tokens for outside callers: the Stremio addon, MCP clients (OUT-004), the
+/// browser extension (SCR-007) and music scrobblers (MUS-005).
 /// The secret is a per-surface prefix + 32 random bytes; Postgres keeps only its SHA-256.
 struct AgentTokenService: Sendable {
     static let stremioPrefix = "aaru_st_"
     static let mcpPrefix = "aaru_mcp_"
     static let scrobblePrefix = "aaru_scr_"
+    static let listenPrefix = "aaru_lb_"
     /// An access token the OAuth front door issued (one hour). Also an MCP credential.
     static let oauthPrefix = "aaru_oat_"
     /// `last_used_at` is written at most this often, so a busy addon does not write per request.
@@ -68,13 +69,13 @@ struct AgentTokenService: Sendable {
             )
         }
         // An MCP client reads and, if allowed, writes the library; only a player scrobbles. The
-        // browser extension only scrobbles: it never reads the library.
+        // browser extension and music scrobblers only scrobble: they never read the library.
         var scopes: Set<AgentScope> = switch kind.group {
         case .stremio: [.libraryRead, .scrobbleWrite]
         case .mcp: [.libraryRead]
-        case .scrobble: [.scrobbleWrite]
+        case .scrobble, .music: [.scrobbleWrite]
         }
-        if allowLibraryWrites, kind.group != .scrobble {
+        if allowLibraryWrites, kind.group == .stremio || kind.group == .mcp {
             scopes.insert(.libraryWrite)
         }
         if allowImports, kind.group == .mcp {
@@ -102,6 +103,7 @@ struct AgentTokenService: Sendable {
         case .stremio: stremioPrefix
         case .mcp: mcpPrefix
         case .scrobble: scrobblePrefix
+        case .music: listenPrefix
         }
     }
 

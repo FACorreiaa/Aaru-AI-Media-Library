@@ -27,16 +27,20 @@ enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
     case claude
     /// Aaru's browser extension: scrobbles plays on streaming sites, nothing else (SCR-007).
     case browser
+    /// A music scrobbler speaking ListenBrainz's protocol (Web Scrobbler, Pano Scrobbler,
+    /// Navidrome, …): sends listens, nothing else (MUS-005).
+    case music
 
     /// Which surface a token opens. A token for one never authenticates on the other.
     enum Group: String, Sendable {
-        case stremio, mcp, scrobble
+        case stremio, mcp, scrobble, music
     }
 
     var group: Group {
         switch self {
         case .stremio: .stremio
         case .browser: .scrobble
+        case .music: .music
         case .claudeCode, .codex, .hermes, .gemini, .other, .claude: .mcp
         }
     }
@@ -52,6 +56,7 @@ enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
         case .other: "MCP client"
         case .claude: "Claude"
         case .browser: "Browser extension"
+        case .music: "Music scrobbler"
         }
     }
 }
