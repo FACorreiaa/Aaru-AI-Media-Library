@@ -206,6 +206,9 @@ enum ImportFormatDetector {
         if headers.isSuperset(of: ["Book Id", "Exclusive Shelf"]) {
             return .goodreadsCSV
         }
+        if headers == ["Title", "Date"] {
+            return .netflixCSV
+        }
         return .genericCSV
     }
 }

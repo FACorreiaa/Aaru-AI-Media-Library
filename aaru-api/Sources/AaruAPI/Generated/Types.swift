@@ -369,6 +369,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/discover`.
     /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
     func getDiscover(_ input: Operations.GetDiscover.Input) async throws -> Operations.GetDiscover.Output
+    /// One season's titles for the Seasons view (DISC-002), a page at a time.
+    ///
+    /// A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep, fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date, returning shows by an episode airing that season, films by first release. The same lists for every user, cached by the server; items the caller has carry `libraryItemId`.
+    ///
+    /// - Remark: HTTP `GET /v1/discover/season`.
+    /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)`.
+    func getDiscoverSeason(_ input: Operations.GetDiscoverSeason.Input) async throws -> Operations.GetDiscoverSeason.Output
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -1453,6 +1460,21 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
     public func getDiscover(headers: Operations.GetDiscover.Input.Headers = .init()) async throws -> Operations.GetDiscover.Output {
         try await getDiscover(Operations.GetDiscover.Input(headers: headers))
+    }
+    /// One season's titles for the Seasons view (DISC-002), a page at a time.
+    ///
+    /// A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep, fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date, returning shows by an episode airing that season, films by first release. The same lists for every user, cached by the server; items the caller has carry `libraryItemId`.
+    ///
+    /// - Remark: HTTP `GET /v1/discover/season`.
+    /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)`.
+    public func getDiscoverSeason(
+        query: Operations.GetDiscoverSeason.Input.Query,
+        headers: Operations.GetDiscoverSeason.Input.Headers = .init()
+    ) async throws -> Operations.GetDiscoverSeason.Output {
+        try await getDiscoverSeason(Operations.GetDiscoverSeason.Input(
+            query: query,
+            headers: headers
+        ))
     }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
@@ -2751,6 +2773,7 @@ public enum Components {
                 case goodreadsCsv = "goodreads_csv"
                 case catList = "cat_list"
                 case catIcs = "cat_ics"
+                case netflixCsv = "netflix_csv"
                 case malXml = "mal_xml"
                 case anilist = "anilist"
                 case csv = "csv"
@@ -4890,6 +4913,107 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case rows
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SeasonPage`.
+        public struct SeasonPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case anime = "anime"
+                case showsNew = "shows_new"
+                case showsReturning = "shows_returning"
+                case movies = "movies"
+            }
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/kind`.
+            public var kind: Components.Schemas.SeasonPage.KindPayload
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/season`.
+            @frozen public enum SeasonPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case winter = "winter"
+                case spring = "spring"
+                case summer = "summer"
+                case fall = "fall"
+            }
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/season`.
+            public var season: Components.Schemas.SeasonPage.SeasonPayload
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/year`.
+            public var year: Swift.Int
+            /// First day of the season, YYYY-MM-DD.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/from`.
+            public var from: Swift.String
+            /// Last day of the season, YYYY-MM-DD.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/until`.
+            public var until: Swift.String
+            /// Display name, e.g. "Fall 2026".
+            ///
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/items`.
+            public var items: [Components.Schemas.CatalogHit]
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/page`.
+            public var page: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/hasMore`.
+            public var hasMore: Swift.Bool
+            /// The provider's count for the whole season, when it gives one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/total`.
+            public var total: Swift.Int?
+            /// The provider did not answer and nothing was cached; not an empty season.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SeasonPage/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `SeasonPage`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - season:
+            ///   - year:
+            ///   - from: First day of the season, YYYY-MM-DD.
+            ///   - until: Last day of the season, YYYY-MM-DD.
+            ///   - title: Display name, e.g. "Fall 2026".
+            ///   - items:
+            ///   - page:
+            ///   - hasMore:
+            ///   - total: The provider's count for the whole season, when it gives one.
+            ///   - unavailable: The provider did not answer and nothing was cached; not an empty season.
+            public init(
+                kind: Components.Schemas.SeasonPage.KindPayload,
+                season: Components.Schemas.SeasonPage.SeasonPayload,
+                year: Swift.Int,
+                from: Swift.String,
+                until: Swift.String,
+                title: Swift.String,
+                items: [Components.Schemas.CatalogHit],
+                page: Swift.Int,
+                hasMore: Swift.Bool,
+                total: Swift.Int? = nil,
+                unavailable: Swift.Bool
+            ) {
+                self.kind = kind
+                self.season = season
+                self.year = year
+                self.from = from
+                self.until = until
+                self.title = title
+                self.items = items
+                self.page = page
+                self.hasMore = hasMore
+                self.total = total
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case season
+                case year
+                case from
+                case until
+                case title
+                case items
+                case page
+                case hasMore
+                case total
+                case unavailable
             }
         }
         /// - Remark: Generated from `#/components/schemas/Episode`.
@@ -17742,6 +17866,190 @@ public enum Operations {
             }
         }
     }
+    /// One season's titles for the Seasons view (DISC-002), a page at a time.
+    ///
+    /// A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep, fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date, returning shows by an episode airing that season, films by first release. The same lists for every user, cached by the server; items the caller has carry `libraryItemId`.
+    ///
+    /// - Remark: HTTP `GET /v1/discover/season`.
+    /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)`.
+    public enum GetDiscoverSeason {
+        public static let id: Swift.String = "getDiscoverSeason"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/discover/season/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/discover/season/GET/query/kind`.
+                @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case anime = "anime"
+                    case showsNew = "shows_new"
+                    case showsReturning = "shows_returning"
+                    case movies = "movies"
+                }
+                /// - Remark: Generated from `#/paths/v1/discover/season/GET/query/kind`.
+                public var kind: Operations.GetDiscoverSeason.Input.Query.KindPayload
+                /// - Remark: Generated from `#/paths/v1/discover/season/GET/query/season`.
+                @frozen public enum SeasonPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case winter = "winter"
+                    case spring = "spring"
+                    case summer = "summer"
+                    case fall = "fall"
+                }
+                /// - Remark: Generated from `#/paths/v1/discover/season/GET/query/season`.
+                public var season: Operations.GetDiscoverSeason.Input.Query.SeasonPayload
+                /// 1970 to next year; anything else is 422 `validation_failed`.
+                ///
+                /// - Remark: Generated from `#/paths/v1/discover/season/GET/query/year`.
+                public var year: Swift.Int
+                /// 1-based, at most 20.
+                ///
+                /// - Remark: Generated from `#/paths/v1/discover/season/GET/query/page`.
+                public var page: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - kind:
+                ///   - season:
+                ///   - year: 1970 to next year; anything else is 422 `validation_failed`.
+                ///   - page: 1-based, at most 20.
+                public init(
+                    kind: Operations.GetDiscoverSeason.Input.Query.KindPayload,
+                    season: Operations.GetDiscoverSeason.Input.Query.SeasonPayload,
+                    year: Swift.Int,
+                    page: Swift.Int? = nil
+                ) {
+                    self.kind = kind
+                    self.season = season
+                    self.year = year
+                    self.page = page
+                }
+            }
+            public var query: Operations.GetDiscoverSeason.Input.Query
+            /// - Remark: Generated from `#/paths/v1/discover/season/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetDiscoverSeason.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetDiscoverSeason.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetDiscoverSeason.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetDiscoverSeason.Input.Query,
+                headers: Operations.GetDiscoverSeason.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/discover/season/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/discover/season/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SeasonPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SeasonPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetDiscoverSeason.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetDiscoverSeason.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The page. `unavailable` when the provider is down and nothing is cached.
+            ///
+            /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetDiscoverSeason.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetDiscoverSeason.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -20900,11 +21208,12 @@ public enum Operations {
                     case auto = "auto"
                     case imdb = "imdb"
                     case letterboxd = "letterboxd"
+                    case netflix = "netflix"
                     case goodreads = "goodreads"
                     case mal = "mal"
                     case csv = "csv"
                 }
-                /// `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+                /// `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by its column names (`csv`).
                 ///
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
                 public var source: Operations.CreateCSVImport.Input.Query.SourcePayload
@@ -20915,7 +21224,7 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - source: `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+                ///   - source: `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by its column names (`csv`).
                 ///   - filename: The file's name. Letterboxd's watchlist export is told apart by it.
                 public init(
                     source: Operations.CreateCSVImport.Input.Query.SourcePayload,

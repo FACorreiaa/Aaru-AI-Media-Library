@@ -19,7 +19,7 @@ enum DiscoverList: String, Sendable, CaseIterable {
         switch self {
         case .tvTrending: "Trending shows"
         case .animeSeason:
-            AnimeSeason.current(now).map { "\($0.season.displayName) \($0.year) anime" } ?? "This season's anime"
+            SeasonOfYear.current(now).map { "\($0.title) anime" } ?? "This season's anime"
         case .moviesTrending: "Trending movies"
         case .tvOnAir: "On the air"
         case .animeTrending: "Trending anime"
@@ -34,51 +34,6 @@ enum DiscoverList: String, Sendable, CaseIterable {
 protocol DiscoverListing: Sendable {
     var discoverLists: Set<DiscoverList> { get }
     func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit]
-}
-
-/// The anime broadcast season (AniList's `MediaSeason`), by calendar quarter in UTC.
-enum AnimeSeason: String, Sendable {
-    case winter, spring, summer, fall
-
-    static func current(_ date: Date) -> (season: AnimeSeason, year: Int)? {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
-        let parts = calendar.dateComponents([.year, .month], from: date)
-        guard let year = parts.year, let month = parts.month else { return nil }
-        let season: AnimeSeason = switch month {
-        case 1 ... 3: .winter
-        case 4 ... 6: .spring
-        case 7 ... 9: .summer
-        default: .fall
-        }
-        return (season, year)
-    }
-
-    /// The season's first and last day, as the calendar quarter in UTC.
-    static func window(_ date: Date) -> (start: Date, end: Date)? {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
-        guard let current = current(date) else { return nil }
-        let firstMonth = switch current.season {
-        case .winter: 1
-        case .spring: 4
-        case .summer: 7
-        case .fall: 10
-        }
-        guard let start = calendar.date(from: DateComponents(year: current.year, month: firstMonth, day: 1)),
-              let next = calendar.date(byAdding: .month, value: 3, to: start),
-              let end = calendar.date(byAdding: .day, value: -1, to: next)
-        else { return nil }
-        return (start, end)
-    }
-
-    var anilist: String {
-        rawValue.uppercased()
-    }
-
-    var displayName: String {
-        rawValue.capitalized
-    }
 }
 
 struct DiscoverItem: Sendable, Equatable {
@@ -110,26 +65,30 @@ struct DiscoverService: Sendable {
     /// After a failed fetch, wait this long before asking that provider again.
     static let retryAfter: TimeInterval = 5 * 60
     static let rowLimit = 20
+    /// Seasons that have ended (DISC-002).
+    static let pastSeasonTTL: TimeInterval = 7 * 24 * 60 * 60
     /// A stand-in row is kept briefly, so the provider's own row returns soon after it recovers.
     static let fallbackTTL: TimeInterval = 30 * 60
     static let animeFallbackNote = "AniList is down, so these come from TMDB for now."
 
     let stores: Stores
     let sources: [DiscoverList: any DiscoverListing]
+    let seasonSources: [SeasonKind: any SeasonBrowsing]
     /// Serves the anime lists while AniList is down (CAT-021). TMDB in production.
     let animeFallback: (any DiscoverListing)?
     let cache: DiscoverCache
+    let seasonCache: SeasonCache
     var now: @Sendable () -> Date = { Date() }
 
     /// `providers` are the catalog adapters; those that list nothing are skipped.
     init(
-        stores: Stores,
-        providers: [any Sendable],
+        stores: Stores, providers: [any Sendable],
         animeFallback: (any DiscoverListing)? = nil,
-        cache: DiscoverCache = DiscoverCache()
+        cache: DiscoverCache = DiscoverCache(), seasonCache: SeasonCache = SeasonCache()
     ) {
         self.stores = stores
         self.cache = cache
+        self.seasonCache = seasonCache
         self.animeFallback = animeFallback
         var sources: [DiscoverList: any DiscoverListing] = [:]
         for case let provider as any DiscoverListing in providers {
@@ -138,6 +97,13 @@ struct DiscoverService: Sendable {
             }
         }
         self.sources = sources
+        var seasonSources: [SeasonKind: any SeasonBrowsing] = [:]
+        for case let provider as any SeasonBrowsing in providers {
+            for kind in provider.seasonKinds where seasonSources[kind] == nil {
+                seasonSources[kind] = provider
+            }
+        }
+        self.seasonSources = seasonSources
     }
 
     func rows(userID: UserID) async throws -> [DiscoverRow] {
@@ -161,12 +127,16 @@ struct DiscoverService: Sendable {
             fetched.hits = Array(fetched.hits.filter { $0.posterURL != nil }.prefix(Self.rowLimit))
             return fetched.hits.isEmpty ? nil : (list, fetched)
         }
-        let keys = Set(ordered.flatMap { $0.1.hits.flatMap(\.catalogKeys) })
-        let owned = try await stores.library.itemIDs(userID: userID, matching: keys)
+        let marked = try await mark(ordered.flatMap(\.1.hits), userID: userID)
+        var offset = 0
         return ordered.map { list, fetched in
-            DiscoverRow(list: list, title: list.title(now: now), items: fetched.hits.map { hit in
-                DiscoverItem(hit: hit, libraryItemID: hit.catalogKeys.lazy.compactMap { owned[$0] }.first)
-            }, note: fetched.note)
+            defer { offset += fetched.hits.count }
+            return DiscoverRow(
+                list: list,
+                title: list.title(now: now),
+                items: Array(marked[offset ..< offset + fetched.hits.count]),
+                note: fetched.note
+            )
         }
     }
 
@@ -180,6 +150,14 @@ struct DiscoverService: Sendable {
             guard let animeFallback else { throw error }
             let hits = try await animeFallback.list(list, now: now)
             return DiscoverFetch(hits: hits, ttl: Self.fallbackTTL, note: Self.animeFallbackNote)
+        }
+    }
+
+    /// Each hit with the caller's item for it, from one library query.
+    func mark(_ hits: [CatalogHit], userID: UserID) async throws -> [DiscoverItem] {
+        let owned = try await stores.library.itemIDs(userID: userID, matching: Set(hits.flatMap(\.catalogKeys)))
+        return hits.map { hit in
+            DiscoverItem(hit: hit, libraryItemID: hit.catalogKeys.lazy.compactMap { owned[$0] }.first)
         }
     }
 }

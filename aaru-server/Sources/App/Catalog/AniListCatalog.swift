@@ -10,7 +10,7 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
     /// AniList asks API users to identify themselves; the same contact string as Open Library.
     var userAgent = AppConfig.defaultProviderUserAgent
 
-    private static let mediaFields = """
+    static let mediaFields = """
     id idMal format status episodes duration genres
     title { romaji english native }
     startDate { year month day }
@@ -115,7 +115,7 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
 
     // MARK: Plumbing
 
-    private func media(for ids: ExternalIDs, withSchedule: Bool = false) async throws -> Media? {
+    private func media(for ids: ExternalIDs, withSchedule: Bool = false) async throws -> AniListMedia? {
         let schedule = withSchedule
             ? """
             airingSchedule(notYetAired: false, perPage: 50) { nodes { episode airingAt } }
@@ -202,15 +202,15 @@ private struct GraphQLResponse<T: Decodable>: Decodable {
     let data: T?
 }
 
-private struct SearchData: Decodable {
-    struct Page: Decodable { let media: [Media] }
+struct SearchData: Decodable {
+    struct Page: Decodable { let media: [AniListMedia] }
     let page: Page
 
     enum CodingKeys: String, CodingKey { case page = "Page" }
 }
 
 private struct MediaData: Decodable {
-    let media: Media?
+    let media: AniListMedia?
 
     enum CodingKeys: String, CodingKey { case media = "Media" }
 }
@@ -219,7 +219,7 @@ struct StreamingEpisode: Decodable, Sendable {
     let title: String?
 }
 
-private struct Media: Decodable {
+struct AniListMedia: Decodable {
     struct Titles: Decodable {
         let romaji: String?
         let english: String?
@@ -304,36 +304,5 @@ private struct Media: Decodable {
         case "CANCELLED": .canceled
         default: nil
         }
-    }
-}
-
-// MARK: Discover (DISC-001)
-
-extension AniListCatalog: DiscoverListing {
-    var discoverLists: Set<DiscoverList> {
-        [.animeSeason, .animeTrending]
-    }
-
-    func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit] {
-        let filter: String
-        switch list {
-        case .animeSeason:
-            guard let current = AnimeSeason.current(now) else { return [] }
-            filter = "season: \(current.season.anilist), seasonYear: \(current.year), sort: POPULARITY_DESC"
-        case .animeTrending:
-            filter = "status: RELEASING, sort: TRENDING_DESC"
-        default:
-            throw ProviderError(provider: "anilist", kind: .notFound)
-        }
-        let body = try await post(SearchData.self, """
-        query {
-          Page(perPage: 20) {
-            media(type: ANIME, isAdult: false, format_in: [TV, TV_SHORT, ONA, MOVIE], \(filter)) {
-              \(Self.mediaFields)
-            }
-          }
-        }
-        """, variables: [:])
-        return body.page.media.map(\.hit)
     }
 }

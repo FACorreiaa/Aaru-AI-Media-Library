@@ -10,7 +10,8 @@ struct DiscoverCard: View {
     let libraryItemID: String?
     /// "Tomorrow", "Nov 14", "Out now": see `releaseBadge`.
     var badge: String?
-    let width: CGFloat
+    /// A row's fixed card width; nil fills a grid cell (the Seasons view).
+    let width: CGFloat?
     let isAdding: Bool
     let onAdd: (LibraryStatus) -> Void
     let onAddToList: () -> Void
@@ -75,6 +76,7 @@ struct DiscoverCard: View {
             }
         }
         .frame(width: width)
+        .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
         .contentShape(Rectangle())
     }
 

@@ -32,7 +32,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
-| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
+| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | Realtime | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
 | Groups | Friends-only spaces with channels (`text`, `title`, `watch`, `shelf`) and `#general`. Server-visible messages in Postgres; `@aaru` replies through `ModelProviding` (pulled forward 2026-10-20) |
@@ -203,7 +203,8 @@ Owner's exceptions are recorded in `BACKLOG.md` decisions (Recap 2026-10-16; Str
 scrobble service and addon 2026-10-19; Discover rows (DISC-001), the Discover tab, Insights
 and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remote approval
 2026-10-20; groups, with minimal friends, the groups gateway and a minimal model provider,
-2026-10-20).
+2026-10-20; Seasons on Discover (DISC-002) and music as a fifth kind with new albums and
+concerts (MUS-001…003), 2026-10-21).
 
 ## Out of scope (do not add unless asked)
 
@@ -215,7 +216,9 @@ and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remo
 - Serializd / SIMKL integrations
 - Music, manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`
   decisions 2026-10-15)
-- Scraping Pogdesign, IMDb pages, AniDB, or any site without an official export/API
+- Scraping Pogdesign, IMDb pages, AniDB, or any site without an official export/API. The one owner
+  exception (2026-10-21) is SCR-007's browser extension reading the player page the user is
+  watching, in their own browser; Aaru's server fetches nothing from those sites
 - Any Stremio `stream` resource or stream source
 
 ## Import order (product + matching code)
@@ -228,10 +231,11 @@ When implementing multi-source import for one account, apply in this order and s
 4. Letterboxd CSV
 5. Goodreads CSV
 6. CAT show list / ICS
-7. TV Time export
-8. MyAnimeList XML
-9. AniList list
-10. Any other CSV (generic, by column names): fills gaps only
+7. Netflix viewing activity
+8. TV Time export
+9. MyAnimeList XML
+10. AniList list
+11. Any other CSV (generic, by column names): fills gaps only
 
 Capture is **not** in this order. It is a user-triggered one-shot, applied when the user asks
 and never as part of reconciling an account's connected sources.

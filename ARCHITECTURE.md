@@ -383,6 +383,16 @@ matters). After the cache read, one `LibraryStore.itemIDs` query (type + tmdb/an
 Library id) sets `libraryItemId` on hits the caller already has. Nothing is personalised and
 nothing is stored.
 
+**Seasons (DISC-002).** `GET /v1/discover/season` lists one season of one kind a page at a time.
+`SeasonKey` (`Catalog/DiscoverSeasons.swift`) is a calendar quarter in UTC, the same for every
+kind. Adapters conforming to `SeasonBrowsing` serve it: AniList `Page(page:, perPage: 50)` by
+`season`/`seasonYear` with GraphQL variables; TMDB `discover/tv` by `first_air_date` (new) or
+`air_date` with `first_air_date` before the season (returning), and `discover/movie` by
+`primary_release_date`. A `SeasonCache` actor holds pages by kind, season and page (LRU, 200
+entries; 6 h, or 7 days for a season that has ended), coalesces fetches and serves stale on
+failure; nothing cached and the provider down returns `unavailable: true`. Marking against the
+library is the same `DiscoverService.mark` the rows use.
+
 ### MediaRef
 
 ```swift
@@ -515,14 +525,20 @@ Parse known column layouts:
 - IMDb: title, year, title type, IMDb id (`tconst`), rating, date
 - Letterboxd: Name, Year, Letterboxd URI, Rating, Watched Date (URI may yield a slug; resolve via TMDB search + year)
 - Goodreads: Title, Author, ISBN, My Rating, Exclusive Shelf, Date Read
+- Netflix (IMP-018): `Title`, `Date` from one profile's Viewing activity download. A title with
+  a season segment (`Show: Season 1: Episode`, `Limited Series`, `Part 2`, `<Show> 4`) is a show
+  whose episodes come by name; anything else is a film. Rows are `nameOnly` with `notAfter` (the
+  year first watched). Once the show matches, `EpisodeNameMatcher` numbers its episodes against
+  TMDB's list (same season first, else the one episode in the show with that name). The
+  all-profiles account download is refused
 
 Unmatched rows are counted and listed on the job; they are not silently dropped without stats.
 
 ### CAT
 
 - Text list of show names, one per line (`Name` or CAT's `Name (2026)`) → `nameOnly` rows. A
-  name-only row matches through `TitleResolver.resolveShow(named:)`: the one TMDB show whose
-  normalized title equals it, any year. Two shows with the name are ambiguous and listed unmatched
+  name-only row matches through `TitleResolver.resolve(named:type:)`: the one TMDB show whose
+  normalized title equals it, any year (up to `notAfter` when the source knows when it was watched). Two shows with the name are ambiguous and listed unmatched
   ("Pick the right one by hand"); never a guess. A row with a year takes the normal title + year path
 - ICS (file or the user's iCal link): show names from each event's `SUMMARY` with the episode part
   (`S01E02`, `1x02`) removed; events collapse to one row per show. A summary with no readable show
@@ -570,6 +586,7 @@ Merge when the same user imports several sources, in order:
 4. Letterboxd CSV  
 5. Goodreads CSV  
 6. CAT  
+7. Netflix viewing activity  
 
 Later sources fill empty fields; they do not overwrite a non-empty rating, status, or progress from an earlier source unless the incoming event is newer *and* the source is explicitly marked authoritative. v1 can skip “newer” and use fill-empty-only. That is enough.
 
@@ -1091,7 +1108,8 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Book catalog | Open Library |
 | Primary user import | Trakt |
 | CAT | Pasted list, ICS file, or the user's own iCal link read once; no scraping |
-| Scraping | Forbidden |
+| Netflix | The per-profile Viewing activity CSV (IMP-018); live plays through the browser extension (SCR-007) |
+| Scraping | Forbidden. One owner exception (2026-10-21): the SCR-007 browser extension reads the player page the user is watching, in their browser; the server fetches nothing |
 | Backend | Hummingbird only |
 | First clients | iOS and Mac, with widgets and a Live Activity |
 | Web | `aaru-client`: SolidJS + TanStack Start on Cloudflare Workers, pure `/v1` client at parity with the Apple apps (2026-10-14; SvelteKit 2026-10-09 to 10-14) |

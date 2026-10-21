@@ -111,10 +111,18 @@ extension ImportService {
         }
         let nameOnly = row.row.nameOnly == true && row.row.year == nil && row.row.ids.isEmpty
         do {
-            row.titleID = if nameOnly {
-                try await resolver.resolveShow(named: row.row.title, airing: row.row.airing).id
+            let title = if nameOnly {
+                try await resolver.resolve(
+                    named: row.row.title, type: row.row.type, airing: row.row.airing, notAfter: row.row.notAfter
+                )
             } else {
-                try await resolver.resolve(row.row.mediaRef, searchHint: row.row.author).id
+                try await resolver.resolve(row.row.mediaRef, searchHint: row.row.author)
+            }
+            row.titleID = title.id
+            if let names = row.row.namedEpisodes {
+                let keys = try await resolver.episodes(of: title, named: names)
+                row.row.watched = keys.isEmpty ? row.row.watched : (row.row.watched ?? []) + keys
+                row.row.namedEpisodes = nil
             }
         } catch ResolutionError.notFound {
             row.outcome = .unmatched
@@ -122,7 +130,8 @@ extension ImportService {
         } catch ResolutionError.ambiguous {
             row.outcome = .unmatched
             row.reason = nameOnly
-                ? "Several shows are called “\(row.row.title)”. Pick the right one by hand."
+                ? "Several \(row.row.type == .movie ? "films" : "shows") are called “\(row.row.title)”. "
+                + "Pick the right one by hand."
                 : "More than one catalog entry matches. Pick the right one by hand."
         } catch is ValidationError {
             row.outcome = .unmatched

@@ -83,6 +83,7 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, MALBa
     private var failure: (any Error)?
     private var latency: Duration?
     private var discoverHits: [DiscoverList: [CatalogHit]] = [:]
+    private var seasonHits: [SeasonKind: [CatalogHit]] = [:]
 
     static func providers(_ catalog: FakeCatalog) -> CatalogProviders {
         CatalogProviders(tmdb: catalog, anilist: catalog, openLibrary: catalog)
@@ -171,6 +172,22 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, MALBa
 
     func stubDiscover(_ list: DiscoverList, _ hits: [CatalogHit]) {
         lock.withLock { discoverHits[list] = hits }
+    }
+
+    func stubSeason(_ kind: SeasonKind, _ hits: [CatalogHit]) {
+        lock.withLock { seasonHits[kind] = hits }
+    }
+}
+
+extension FakeCatalog: SeasonBrowsing {
+    var seasonKinds: Set<SeasonKind> {
+        Set(SeasonKind.allCases)
+    }
+
+    func season(_: SeasonKey, kind: SeasonKind, page _: Int, now _: Date) async throws -> SeasonPage {
+        try record("season")
+        let hits = lock.withLock { seasonHits[kind] ?? [] }
+        return SeasonPage(hits: hits, hasMore: false, total: hits.count)
     }
 }
 
