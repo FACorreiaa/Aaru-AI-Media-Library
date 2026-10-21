@@ -8,7 +8,7 @@ import {
   lazy,
   onMount,
 } from 'solid-js'
-import { z } from 'zod'
+import { optionalBoolean, optionalEnum } from '../lib/search-params'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
@@ -43,12 +43,19 @@ const SearchPanel = lazy(() =>
 
 export const Route = createFileRoute('/app_/library')({
   head: () => ({ meta: [{ title: 'Library · Aaru' }] }),
-  validateSearch: z.object({
-    search: z.boolean().optional().catch(undefined),
-    status: z
-      .enum(['wishlist', 'in_progress', 'finished', 'dropped'])
-      .optional()
-      .catch(undefined),
+  validateSearch: (
+    search,
+  ): {
+    search?: boolean
+    status?: 'wishlist' | 'in_progress' | 'finished' | 'dropped'
+  } => ({
+    search: optionalBoolean(search.search),
+    status: optionalEnum(search.status, [
+      'wishlist',
+      'in_progress',
+      'finished',
+      'dropped',
+    ]),
   }),
   beforeLoad: async () => {
     const session = await getSession()

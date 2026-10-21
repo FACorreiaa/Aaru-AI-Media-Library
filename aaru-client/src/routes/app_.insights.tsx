@@ -8,7 +8,7 @@ import {
   createSignal,
   onMount,
 } from 'solid-js'
-import { z } from 'zod'
+import { optionalEnum, optionalInt } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { StatsPanel } from '../components/StatsPanel'
 import { Alert } from '../components/ui/alert'
@@ -35,16 +35,12 @@ import { getSession } from '../lib/session/session'
 // Recap story. Stats load in the browser, which knows the viewer's time zone and "this month".
 export const Route = createFileRoute('/app_/insights')({
   head: () => ({ meta: [{ title: 'Insights · Aaru' }] }),
-  validateSearch: z.object({
-    span: z.enum(['month', 'year', 'all']).optional().catch(undefined),
-    year: z.coerce
-      .number()
-      .int()
-      .min(1900)
-      .max(2200)
-      .optional()
-      .catch(undefined),
-    month: z.coerce.number().int().min(1).max(12).optional().catch(undefined),
+  validateSearch: (
+    search,
+  ): { span?: 'month' | 'year' | 'all'; year?: number; month?: number } => ({
+    span: optionalEnum(search.span, ['month', 'year', 'all']),
+    year: optionalInt(search.year, 1900, 2200),
+    month: optionalInt(search.month, 1, 12),
   }),
   beforeLoad: async () => {
     const session = await getSession()

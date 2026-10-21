@@ -5,7 +5,7 @@ import {
   useRouter,
 } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
-import { z } from 'zod'
+import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
 import { Button } from '../components/ui/button'
 import { signInWithEmailLink } from '../lib/session/session'
@@ -16,7 +16,9 @@ export const Route = createFileRoute('/auth/verify')({
   head: () => ({
     meta: [{ title: 'Sign in · Aaru' }, { name: 'robots', content: 'noindex' }],
   }),
-  validateSearch: z.object({ token: z.string().optional() }),
+  validateSearch: (search): { token?: string } => ({
+    token: optionalString(search.token),
+  }),
   component: VerifyLink,
 })
 
