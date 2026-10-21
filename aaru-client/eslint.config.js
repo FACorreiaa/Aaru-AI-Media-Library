@@ -14,6 +14,62 @@ export default [
       'pnpm/json-enforce-catalog': 'off',
     },
   },
+  // shadcn-solid's source as its registry ships it, so a later copy diffs cleanly against
+  // upstream. Only the house-style rules its code breaks are off here; the type assertions
+  // TypeScript reports as unnecessary are what Kobalte's polymorphic props need.
+  {
+    files: [
+      'src/components/ui/**',
+      'src/lib/cva.ts',
+      'src/lib/call-handler.ts',
+      'src/lib/combine-style.ts',
+      'src/hooks/use-mobile.ts',
+    ],
+    rules: {
+      '@typescript-eslint/naming-convention': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+      'import/consistent-type-specifier-style': 'off',
+      'import/no-duplicates': 'off',
+      'no-shadow': 'off',
+    },
+  },
+  // The web UI rule (CLAUDE.md): every control comes from shadcn-solid in components/ui,
+  // imported through its barrel. Inside components/ui the components import each other freely.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/components/ui/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^~/components/ui/.+',
+              message:
+                "Import UI from the barrel, '~/components/ui', not from its files.",
+            },
+            {
+              regex: '^\\.{1,2}/(.*/)?(components/)?ui(/.*)?$',
+              message:
+                "Import UI as '~/components/ui', not by a relative path.",
+            },
+          ],
+        },
+      ],
+      // Raw form controls and modals go through the components (Button, TextField, Select,
+      // Dialog…). A warning until step 2 has migrated the routes, then an error.
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector:
+            'JSXOpeningElement[name.name=/^(button|input|select|textarea|dialog)$/]',
+          message:
+            'Use the shadcn-solid component from ~/components/ui instead of a raw element; add it from shadcn-solid if it is missing.',
+        },
+      ],
+    },
+  },
   {
     ignores: [
       'eslint.config.js',
