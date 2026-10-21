@@ -28,15 +28,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let transport = AsyncHTTPTransport(client: .shared)
     let auth = makeAuthService(config: config, stores: stores, transport: transport)
     let catalogs = makeCatalogProviders(config: config, transport: transport)
-    let trakt = config.trakt.map { settings in
-        // Trakt allows 1000 calls per 5 minutes per user; stay well under it.
-        TraktAPI(
-            client: ProviderClient(
-                name: "trakt", transport: transport, pacer: RequestPacer(requestsPerSecond: 2, burst: 10)
-            ),
-            settings: settings
-        )
-    }
+    let trakt = config.trakt.map { makeTraktAPI($0, transport) }
     let webPush = makeWebPushSender(config.vapidConfigJSON, logger: logger)
     var services = Services.make(
         stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
@@ -230,6 +222,16 @@ func makeAuthService(config: AppConfig, stores: Stores, transport: any HTTPTrans
             audiences: config.googleAudiences,
             jwks: AppleJWKSCache(transport: transport, url: GoogleIdentityVerifier.keysURL)
         )
+    )
+}
+
+/// Trakt allows 1000 calls per 5 minutes per user; stay well under it.
+func makeTraktAPI(_ settings: TraktSettings, _ transport: any HTTPTransport) -> TraktAPI {
+    TraktAPI(
+        client: ProviderClient(
+            name: "trakt", transport: transport, pacer: RequestPacer(requestsPerSecond: 2, burst: 10)
+        ),
+        settings: settings
     )
 }
 
