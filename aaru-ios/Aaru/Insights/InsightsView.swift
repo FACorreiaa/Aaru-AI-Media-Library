@@ -12,6 +12,7 @@ struct InsightsView: View {
 
     @State private var model: InsightsModel
     @State private var recap: RecapPeriod?
+    @Environment(\.dynamicTypeSize) private var dynamicType
 
     init(api: Client?, library: LibraryModel? = nil, model: InsightsModel? = nil) {
         self.api = api
@@ -22,10 +23,7 @@ struct InsightsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Picker("Period", selection: $model.span) {
-                    ForEach(InsightsSpan.allCases) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                spanPicker
                 PeriodStepper(model: model)
                 content
             }
@@ -36,9 +34,15 @@ struct InsightsView: View {
         }
         .navigationTitle("Insights")
         .task(id: model.period) { await model.load() }
+        .refreshable { await model.load() }
+        // View → Refresh (⌘R) while Insights is showing.
+        .refreshesOnCommand(.insights) { await model.load() }
         .recapStory($recap, api: api)
         .safeAreaInset(edge: .bottom) {
-            ProblemBanner(message: model.problem) { model.problem = nil }
+            // A failed first load has its own error state; the banner is for later failures.
+            if model.stats != nil {
+                ProblemBanner(message: model.problem) { model.problem = nil }
+            }
         }
         .background(Color(.paper))
     }
@@ -65,8 +69,24 @@ struct InsightsView: View {
                 MusicInsights(music: music, period: model.period, api: api, library: library)
                     .padding(.top, 8)
             }
-        } else if model.problem == nil {
+        } else if let problem = model.problem {
+            // Nothing loaded: an error with Try again, never a blank page (UX-063).
+            LoadFailedView(title: "Couldn't load Insights", message: problem) { await model.load() }
+                .frame(minHeight: 300)
+        } else {
             ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+        }
+    }
+
+    /// Five segments do not fit at the accessibility sizes; a menu does.
+    @ViewBuilder private var spanPicker: some View {
+        let picker = Picker("Period", selection: $model.span) {
+            ForEach(InsightsSpan.allCases) { Text($0.label).tag($0) }
+        }
+        if dynamicType.isAccessibilitySize {
+            picker.pickerStyle(.menu)
+        } else {
+            picker.pickerStyle(.segmented)
         }
     }
 }
@@ -78,8 +98,7 @@ private struct PeriodStepper: View {
     var body: some View {
         HStack {
             if model.canStep {
-                Button("Previous", systemImage: "chevron.left") { model.step(-1) }
-                    .labelStyle(.iconOnly)
+                stepButton("Previous", systemImage: "chevron.left") { model.step(-1) }
             }
             Spacer()
             Text(model.period.label)
@@ -87,12 +106,20 @@ private struct PeriodStepper: View {
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             if model.canStep {
-                Button("Next", systemImage: "chevron.right") { model.step(1) }
-                    .labelStyle(.iconOnly)
+                stepButton("Next", systemImage: "chevron.right") { model.step(1) }
                     .disabled(!model.canStepForward)
             }
         }
         .buttonStyle(.borderless)
         .font(.title3)
+    }
+
+    private func stepButton(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
     }
 }
