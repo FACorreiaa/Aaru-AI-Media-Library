@@ -1142,11 +1142,11 @@ paths:
           required: true
           description: >-
             `all` searches films, shows and anime together (TMDB and AniList in parallel, merged;
-            books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open
-            Library.
+            books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB;
+            `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
           schema:
             type: string
-            enum: [all, movie, show, anime, book]
+            enum: [all, movie, show, anime, book, album]
       responses:
         '200':
           description: >-
@@ -2623,9 +2623,15 @@ components:
         anilist: {type: string}
         mal: {type: string}
         anidb: {type: string}
+        musicbrainz:
+          type: string
+          description: An album's MusicBrainz release-group id (MUS-001).
     MediaType:
       type: string
-      enum: [movie, show, book]
+      description: >-
+        `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and
+        notes, no progress.
+      enum: [movie, show, book, album]
     CatalogHit:
       type: object
       required: [type, title, isAnime, ids]
@@ -2638,7 +2644,7 @@ components:
         overview: {type: string}
         byline:
           type: string
-          description: Authors, for books.
+          description: Authors, for books; the artist credit, for albums.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
         libraryItemId:
@@ -2761,6 +2767,27 @@ components:
           type: array
           description: Shows only.
           items: {$ref: '#/components/schemas/Season'}
+        byline:
+          type: string
+          description: Authors, for books; the artist credit, for albums.
+        genres:
+          type: array
+          description: Albums only (MUS-001), at most five, most tagged first.
+          items: {type: string}
+        tracks:
+          type: array
+          description: >-
+            Albums only: the tracklist of the album's earliest official release, by disc then
+            position. Absent when MusicBrainz could not be reached and none is stored yet.
+          items: {$ref: '#/components/schemas/AlbumTrack'}
+    AlbumTrack:
+      type: object
+      required: [disc, position, name]
+      properties:
+        disc: {type: integer}
+        position: {type: integer}
+        name: {type: string}
+        lengthMs: {type: integer}
     LibraryStatus:
       type: string
       enum: [wishlist, in_progress, finished, dropped]
@@ -2837,6 +2864,9 @@ components:
         network:
           type: string
           description: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
+        byline:
+          type: string
+          description: Authors, for books; the artist credit, for albums.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
     LibraryEntry:
@@ -3197,7 +3227,9 @@ components:
         prior: {$ref: '#/components/schemas/StatsTotals'}
         byKind:
           type: array
-          description: Movie, show, anime and book, always all four in that order; they sum to `totals`.
+          description: >-
+            Movie, show, anime and book, always, in that order; then album (MUS-001) only when the
+            period finished one. They sum to `totals`.
           items: {$ref: '#/components/schemas/StatsKind'}
         buckets:
           type: array
@@ -3242,7 +3274,7 @@ components:
     StatsTotals:
       type: object
       required: [episodesWatched, minutesWatched, activeDays, moviesFinished, showsFinished, animeFinished,
-        booksFinished]
+        booksFinished, albumsFinished]
       properties:
         episodesWatched: {type: integer}
         minutesWatched:
@@ -3255,13 +3287,16 @@ components:
           type: integer
           description: Anime shows and films. Not counted again as shows or movies.
         booksFinished: {type: integer}
+        albumsFinished:
+          type: integer
+          description: MUS-001. Albums have no minutes.
     StatsKind:
       type: object
       required: [kind, episodes, minutes, finished]
       properties:
         kind:
           type: string
-          enum: [movie, show, anime, book]
+          enum: [movie, show, anime, book, album]
           description: Anime is its own kind, films and shows alike; never counted again as either.
         episodes: {type: integer}
         minutes: {type: integer}

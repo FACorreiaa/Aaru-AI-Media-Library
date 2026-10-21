@@ -2234,9 +2234,14 @@ export interface components {
       anilist?: string
       mal?: string
       anidb?: string
+      /** @description An album's MusicBrainz release-group id (MUS-001). */
+      musicbrainz?: string
     }
-    /** @enum {string} */
-    MediaType: 'movie' | 'show' | 'book'
+    /**
+     * @description `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress.
+     * @enum {string}
+     */
+    MediaType: 'movie' | 'show' | 'book' | 'album'
     CatalogHit: {
       type: components['schemas']['MediaType']
       title: string
@@ -2244,7 +2249,7 @@ export interface components {
       year?: number
       posterUrl?: string
       overview?: string
-      /** @description Authors, for books. */
+      /** @description Authors, for books; the artist credit, for albums. */
       byline?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
@@ -2322,6 +2327,18 @@ export interface components {
       runtimeMinutes?: number
       /** @description Shows only. */
       seasons?: components['schemas']['Season'][]
+      /** @description Authors, for books; the artist credit, for albums. */
+      byline?: string
+      /** @description Albums only (MUS-001), at most five, most tagged first. */
+      genres?: string[]
+      /** @description Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet. */
+      tracks?: components['schemas']['AlbumTrack'][]
+    }
+    AlbumTrack: {
+      disc: number
+      position: number
+      name: string
+      lengthMs?: number
     }
     /** @enum {string} */
     LibraryStatus: 'wishlist' | 'in_progress' | 'finished' | 'dropped'
@@ -2378,6 +2395,8 @@ export interface components {
       backdropUrl?: string
       /** @description Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll"). */
       network?: string
+      /** @description Authors, for books; the artist credit, for albums. */
+      byline?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
     }
@@ -2630,7 +2649,7 @@ export interface components {
       isPartial: boolean
       totals: components['schemas']['StatsTotals']
       prior?: components['schemas']['StatsTotals']
-      /** @description Movie, show, anime and book, always all four in that order; they sum to `totals`. */
+      /** @description Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`. */
       byKind: components['schemas']['StatsKind'][]
       /** @description One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order. */
       buckets: components['schemas']['StatsBucket'][]
@@ -2673,13 +2692,15 @@ export interface components {
       /** @description Anime shows and films. Not counted again as shows or movies. */
       animeFinished: number
       booksFinished: number
+      /** @description MUS-001. Albums have no minutes. */
+      albumsFinished: number
     }
     StatsKind: {
       /**
        * @description Anime is its own kind, films and shows alike; never counted again as either.
        * @enum {string}
        */
-      kind: 'movie' | 'show' | 'anime' | 'book'
+      kind: 'movie' | 'show' | 'anime' | 'book' | 'album'
       episodes: number
       minutes: number
       finished: number
@@ -4482,8 +4503,8 @@ export interface operations {
     parameters: {
       query: {
         q: string
-        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library. */
-        type: 'all' | 'movie' | 'show' | 'anime' | 'book'
+        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001). */
+        type: 'all' | 'movie' | 'show' | 'anime' | 'book' | 'album'
       }
       header?: never
       path?: never

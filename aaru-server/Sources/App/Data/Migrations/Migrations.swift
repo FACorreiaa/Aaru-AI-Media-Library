@@ -40,6 +40,7 @@ let allMigrations: [any Migration] = [
     AddAgentReplies(),
     AddGroupPush(),
     AddImportProgress(),
+    AddMusic(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

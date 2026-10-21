@@ -342,6 +342,15 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
                 transport: transport,
                 pacer: RequestPacer(requestsPerSecond: 1.8, burst: 5)
             )
+        ),
+        music: MusicBrainzCatalog(
+            // MusicBrainz allows one request a second per client.
+            client: ProviderClient(
+                name: "musicbrainz",
+                transport: transport,
+                pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
+            ),
+            userAgent: config.openLibraryUserAgent
         )
     )
 }

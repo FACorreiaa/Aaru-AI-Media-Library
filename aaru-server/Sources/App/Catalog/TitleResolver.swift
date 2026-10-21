@@ -119,6 +119,7 @@ struct TitleResolver: Sendable {
             posterURL: catalog.hit.posterURL,
             backdropURL: catalog.hit.backdropURL,
             network: catalog.hit.network,
+            byline: catalog.hit.byline,
             ids: mergedIDs,
             isAnime: catalog.hit.isAnime
         )
@@ -145,6 +146,9 @@ struct TitleResolver: Sendable {
     private func hydrate(ids: ExternalIDs, type: MediaType) async throws -> CatalogTitle? {
         if type == .book {
             return try await catalogs.openLibrary.hydrate(ids: ids, type: type)
+        }
+        if type == .album {
+            return try await catalogs.music?.hydrate(ids: ids, type: type)
         }
         if let mapping = try await animeMapping(ids), let tmdb = mapping.tmdb {
             let mapped = ids.filling(from: ExternalIDs(
@@ -196,7 +200,14 @@ struct TitleResolver: Sendable {
 
     private func resolveByTitle(_ ref: MediaRef, hint: String?) async throws -> Title {
         guard let title = ref.title else { throw ResolutionError.notFound }
-        let provider: any CatalogSearching = ref.type == .book ? catalogs.openLibrary : catalogs.tmdb
+        let provider: any CatalogSearching
+        switch ref.type {
+        case .book: provider = catalogs.openLibrary
+        case .album:
+            guard let music = catalogs.music else { throw ResolutionError.notFound }
+            provider = music
+        case .movie, .show: provider = catalogs.tmdb
+        }
         let query = [title, hint].compactMap(\.self).joined(separator: " ")
         let hits = try await provider.search(query: query, type: ref.type)
         let matches = hits.filter { hit in

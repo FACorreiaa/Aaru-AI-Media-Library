@@ -83,6 +83,14 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
+    func saveTracks(_: TitleID, _: [AlbumTrack], hydratedAt _: Date) async throws {
+        throw Touched()
+    }
+
+    func tracks(_: TitleID) async throws -> [AlbumTrack] {
+        throw Touched()
+    }
+
     func mapping(anilist _: String) async throws -> AnimeMapping? {
         throw Touched()
     }

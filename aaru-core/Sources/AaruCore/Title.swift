@@ -1,6 +1,6 @@
 import Foundation
 
-/// A canonical work Aaru knows about: one movie, show, or book.
+/// A canonical work Aaru knows about: one movie, show, book, or album.
 ///
 /// Titles are shared across users. Ratings, status, notes, and progress belong on
 /// `LibraryItem` and must never appear here.
@@ -20,6 +20,8 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
     public var backdropURL: URL?
     /// Network or streaming service, for shows: "HBO", "Netflix", "Crunchyroll".
     public var network: String?
+    /// Who made it, as the catalog credits them: an album's artist ("Simon & Garfunkel").
+    public var byline: String?
     public var ids: ExternalIDs
     /// Anime is a facet on `movie`/`show`, not a fourth `MediaType`: an anime series
     /// shares show progress, calendar, Up Next, and widgets with every other show.
@@ -37,6 +39,7 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         posterURL: URL? = nil,
         backdropURL: URL? = nil,
         network: String? = nil,
+        byline: String? = nil,
         ids: ExternalIDs = ExternalIDs(),
         isAnime: Bool = false,
         seasons: [Season]? = nil
@@ -50,6 +53,7 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         self.posterURL = posterURL
         self.backdropURL = backdropURL
         self.network = network
+        self.byline = byline
         self.ids = ids
         self.isAnime = isAnime
         self.seasons = seasons

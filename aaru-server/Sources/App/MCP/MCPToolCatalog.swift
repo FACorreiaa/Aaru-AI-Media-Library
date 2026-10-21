@@ -51,15 +51,15 @@ enum MCPToolCatalog {
         name: "search_titles",
         title: "Search the catalog",
         description: """
-        Search movies, shows, anime and books in the public catalog, or read one title's detail \
+        Search movies, shows, anime, books and albums in the public catalog, or read one title's detail \
         (episodes included for shows) by titleId. To add a hit, pass {"type": hit.type, "ids": hit.ids} \
         as the mediaRef of an apply_library_patch add.
         """,
         inputSchema: object([
             "query": string("Words to search for, 1 to 200 characters."),
             "type": enumeration(
-                ["all", "movie", "show", "anime", "book"],
-                "What to search. all is films, shows and anime together; books are searched only with book."
+                ["all", "movie", "show", "anime", "book", "album"],
+                "What to search. all is films, shows and anime together; books only with book, albums only with album."
             ),
             "titleId": string("An Aaru title id, to read that title's detail instead of searching."),
         ]),
@@ -81,9 +81,9 @@ enum MCPToolCatalog {
             "libraryItemId": string("One item's id. Other filters are ignored."),
             "status": enumeration(
                 ["wishlist", "in_progress", "finished", "dropped"],
-                "wishlist is plan to watch or read; in_progress is watching or reading."
+                "wishlist is plan to watch, read or listen; in_progress is watching, reading or listening."
             ),
-            "type": enumeration(["movie", "show", "book"], "Only this kind of title."),
+            "type": enumeration(["movie", "show", "book", "album"], "Only this kind of title."),
             "anime": .object(["type": .string("boolean"), "description": .string("Only anime, or no anime.")]),
             "owned": .object(["type": .string("boolean"), "description": .string("Only titles the user owns.")]),
             "listId": string("Only items on this list."),
@@ -186,7 +186,7 @@ enum MCPToolCatalog {
                 "description": .string("{type, ids} copied from a search hit, or {type, titleId}."),
                 "required": .array([.string("type")]),
                 "properties": .object([
-                    "type": enumeration(["movie", "show", "book"], nil),
+                    "type": enumeration(["movie", "show", "book", "album"], nil),
                     "ids": .object(["type": .string("object")]),
                     "titleId": string(nil),
                     "title": string(nil),

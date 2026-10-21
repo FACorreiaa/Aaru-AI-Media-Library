@@ -77,6 +77,9 @@ protocol TitleStore: Sendable {
     /// was hydrated. Never deletes: progress refers to episodes by number.
     func saveEpisodes(_ id: TitleID, _ fresh: CatalogEpisodes, hydratedAt: Date) async throws
     func episodes(_ id: TitleID) async throws -> [CatalogEpisode]
+    /// MUS-001: an album's tracklist, replaced whole.
+    func saveTracks(_ id: TitleID, _ tracks: [AlbumTrack], hydratedAt: Date) async throws
+    func tracks(_ id: TitleID) async throws -> [AlbumTrack]
     /// The titles with these ids, in the order given; unknown ids are skipped.
     func titles(ids: [TitleID]) async throws -> [Title]
     /// Status and first unaired episode of each show among these ids; other types are left out.
@@ -115,6 +118,8 @@ struct TitleCatalogState: Sendable, Equatable {
     var status: TitleStatus?
     var runtimeMinutes: Int?
     var episodesHydratedAt: Date?
+    /// Albums: when the tracklist was last fetched; nil when never.
+    var tracksHydratedAt: Date?
 }
 
 /// A community mapping from an AniList entry to TMDB (CAT-009). Catalog data, no user.
@@ -176,7 +181,7 @@ protocol LibraryStore: Sendable {
 /// the type is part of the key.
 struct CatalogKey: Hashable, Sendable {
     enum Provider: String, Sendable, CaseIterable {
-        case tmdb, anilist
+        case tmdb, anilist, musicbrainz
         case openLibrary = "open_library"
     }
 
