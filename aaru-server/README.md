@@ -72,6 +72,7 @@ docker build -f aaru-server/Dockerfile -t aaru-server .
 | `trakt.token.key` | `TRAKT_TOKEN_KEY` | required with Trakt: 32 bytes, base64, encrypts tokens at rest |
 | `trakt.redirect.uri` | `TRAKT_REDIRECT_URI` | `https://api.aaruapp.com/v1/imports/trakt/callback` |
 | `open.library.user.agent` | `OPEN_LIBRARY_USER_AGENT` | `Aaru/0.1 (media library; contact: signin@aaruapp.com)` |
+| `metrics.secret` | `METRICS_SECRET` | empty → `GET /internal/metrics` answers 404. The bearer facorreia.com/apps sends for the user count |
 | `log.level` | `LOG_LEVEL` | `info` |
 | `http.serverName` | — | `aaru-server` |
 | `db.migrate` | `DB_MIGRATE` (`--db-migrate`) | unset |
@@ -138,6 +139,7 @@ directory. CI lives at the repo root (`.github/workflows/ci.yml`).
 
 ```text
 GET    /v1/health
+GET    /internal/metrics                    # plain router, not OpenAPI: {"users":N}, METRICS_SECRET bearer
 
 POST   /v1/auth/apple                       GET    /v1/me
 POST   /v1/auth/google                      DELETE /v1/me

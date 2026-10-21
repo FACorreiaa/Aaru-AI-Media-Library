@@ -113,6 +113,10 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
+    func count() async throws -> Int {
+        throw Touched()
+    }
+
     func create(userID _: UserID, tokenHash _: String, expiresAt _: Date) async throws {
         throw Touched()
     }

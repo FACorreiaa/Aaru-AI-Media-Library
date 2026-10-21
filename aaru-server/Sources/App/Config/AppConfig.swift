@@ -76,6 +76,9 @@ struct AppConfig: Sendable {
     var anthropic: AnthropicSettings?
     /// Nil when `TICKETMASTER_API_KEY` is unset: concerts answer `unavailable` (MUS-003).
     var concertsAPIKey: String?
+    /// `METRICS_SECRET`: the bearer facorreia.com/apps sends to `/internal/metrics`. Empty turns
+    /// the route off.
+    var metricsSecret: String
 
     static let defaultRealtimeOrigins = "https://aaruapp.com,https://www.aaruapp.com,https://beta.aaruapp.com"
 
@@ -106,7 +109,8 @@ struct AppConfig: Sendable {
                     .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
             ),
             anthropic: anthropicSettings(from: reader),
-            concertsAPIKey: reader.string(forKey: "ticketmaster.api.key").flatMap(\.nilIfBlank)
+            concertsAPIKey: reader.string(forKey: "ticketmaster.api.key").flatMap(\.nilIfBlank),
+            metricsSecret: reader.string(forKey: "metrics.secret", default: "")
         )
     }
 
