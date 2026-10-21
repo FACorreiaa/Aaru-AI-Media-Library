@@ -2125,7 +2125,9 @@ Messages API (no Swift SDK) with `claude-haiku-5-5` at effort `low`. It sends no
 `top_p`, `top_k` or assistant prefill (see `platform/infra/docs/llm-haiku-trial.md`), and replays
 content blocks unchanged so thinking survives a tool loop. Env follows the trial contract:
 `ANTHROPIC_API_KEY` (sealed in `platform/infra`; unset turns `@aaru` off and `GroupDetail.agent`
-says so), `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`, and `ANTHROPIC_BASE_URL` for tests. Metering in
+says so), `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`, `ANTHROPIC_WORKSPACE_ID` (sent as
+`anthropic-workspace-id` when the key is not scoped to one workspace), and `ANTHROPIC_BASE_URL` for
+tests. Metering in
 `agent_usage` (user, UTC day, requests, input and output tokens). No user keys yet.
 
 **Done when:** tests against a stub server pass, a request body never contains `temperature`,
