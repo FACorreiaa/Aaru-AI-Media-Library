@@ -22,6 +22,18 @@ struct AuthMiddleware: RouterMiddleware {
         "/v1/scrobble/stop",
     ]
 
+    /// Whether a path answers without a session: the fixed public routes, and an invite link's
+    /// preview (`/v1/invites/{code}`), which a signed-out friend opens before signing up.
+    static func isPublic(_ path: String) -> Bool {
+        if publicPaths.contains(path) {
+            return true
+        }
+        let invitePrefix = "/v1/invites/"
+        guard path.hasPrefix(invitePrefix) else { return false }
+        let code = path.dropFirst(invitePrefix.count)
+        return !code.isEmpty && !code.contains("/")
+    }
+
     let sessions: any SessionStore
 
     func handle(
@@ -39,7 +51,7 @@ struct AuthMiddleware: RouterMiddleware {
             }
         }
         let path = request.uri.path
-        if context.userID == nil, path.hasPrefix("/v1/"), !Self.publicPaths.contains(path) {
+        if context.userID == nil, path.hasPrefix("/v1/"), !Self.isPublic(path) {
             throw AppError.unauthorized()
         }
         return try await next(request, context)

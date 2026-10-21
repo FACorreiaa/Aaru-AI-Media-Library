@@ -7,6 +7,7 @@ import {
 import { Show, createSignal } from 'solid-js'
 import { optionalString } from '../lib/search-params'
 import { safeNext } from '../lib/oauth/model'
+import { rememberNext } from '../lib/session/pending-next'
 import { AppleSignInButton } from '../components/AppleSignInButton'
 import type { AppleCredential } from '../components/AppleSignInButton'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
@@ -83,6 +84,7 @@ function SignIn() {
     event.preventDefault()
     void run(async () => {
       await sendCode({ data: { email: email() } })
+      rememberNext(search().next)
       go('code')
     })
   }

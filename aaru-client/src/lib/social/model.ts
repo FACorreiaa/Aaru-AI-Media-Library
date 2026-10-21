@@ -1,3 +1,4 @@
+import type { MediaKind } from '../library/model'
 import type { SocialUser } from './server'
 
 // SOC-001 / SOC-002 on the web. The server is the judge of every rule; these only shape input
@@ -39,4 +40,24 @@ export function requestOutcome(
 ): string {
   if (relationship === 'friend') return `You and @${user.handle} are friends.`
   return `Request sent to @${user.handle}.`
+}
+
+/** How an invite names its sender: their name, else their handle. */
+export function inviterName(user: SocialUser): string {
+  return user.displayName?.trim() || `@${user.handle}`
+}
+
+/** The line an invite carrying a title says, in the sender's voice. */
+export function invitePlea(title: string, kind: MediaKind): string {
+  if (kind === 'book') return `Read ${title} with me.`
+  if (kind === 'album') return `Listen to ${title} with me.`
+  return `Watch ${title} with me.`
+}
+
+/** "Expires in 13 days", "Expires tomorrow", "Expires today". */
+export function inviteExpiry(expiresAt: string, now = Date.now()): string {
+  const days = Math.floor((Date.parse(expiresAt) - now) / 86_400_000)
+  if (days <= 0) return 'Expires today'
+  if (days === 1) return 'Expires tomorrow'
+  return `Expires in ${days} days`
 }

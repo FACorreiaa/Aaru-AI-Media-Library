@@ -31,6 +31,7 @@
     "/app_/week": 98071,
     "/auth/verify": 83406,
     "/connect/extension": 84207,
+    "/i/$code": 80895,
     "/oauth/consent": 84224,
     "/privacy": 87972,
     "/sign-in": 86717

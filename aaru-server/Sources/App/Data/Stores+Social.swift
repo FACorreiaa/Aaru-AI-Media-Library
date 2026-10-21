@@ -36,6 +36,23 @@ struct UserReport: Sendable {
     var createdAt: Date
 }
 
+/// One friend invite link (SOC-002). Open while it is unredeemed, unrevoked and unexpired.
+struct FriendInvite: Sendable, Equatable {
+    var id: UUID
+    var code: String
+    var inviter: UserID
+    var titleID: TitleID?
+    var createdAt: Date
+    var expiresAt: Date
+    var redeemedBy: UserID?
+    var redeemedAt: Date?
+    var revokedAt: Date?
+
+    func isOpen(at now: Date) -> Bool {
+        redeemedAt == nil && revokedAt == nil && expiresAt > now
+    }
+}
+
 /// Handles, friends, blocks and reports (SOC-001 / SOC-002, minimal). Callers check blocks
 /// before revealing anything; the store only answers what is asked.
 protocol SocialStore: Sendable {
@@ -69,4 +86,15 @@ protocol SocialStore: Sendable {
     /// Everyone who blocked this user.
     func blockers(of id: UserID) async throws -> Set<UserID>
     func report(_ report: UserReport) async throws
+    /// Inserts an invite. `StoreConflict` when the code is taken.
+    func createInvite(_ invite: FriendInvite) async throws
+    func invite(code: String) async throws -> FriendInvite?
+    /// The inviter's invites still open at `now`, newest first.
+    func openInvites(_ inviter: UserID, now: Date) async throws -> [FriendInvite]
+    /// Revokes an open invite the inviter made. True when one was open.
+    func revokeInvite(code: String, inviter: UserID, now: Date) async throws -> Bool
+    /// Spends an open invite on `redeemer` and, in the same transaction, makes the two friends
+    /// and drops any pending requests between them. Returns the inviter, or nil when the invite
+    /// was not open (a concurrent redeem lost).
+    func redeemInvite(code: String, redeemer: UserID, now: Date) async throws -> UserID?
 }

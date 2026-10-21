@@ -219,6 +219,26 @@ extension UntouchedStore: SocialStore {
     func blockers(of _: UserID) async throws -> Set<UserID> {
         throw Touched()
     }
+
+    func createInvite(_: FriendInvite) async throws {
+        throw Touched()
+    }
+
+    func invite(code _: String) async throws -> FriendInvite? {
+        throw Touched()
+    }
+
+    func openInvites(_: UserID, now _: Date) async throws -> [FriendInvite] {
+        throw Touched()
+    }
+
+    func revokeInvite(code _: String, inviter _: UserID, now _: Date) async throws -> Bool {
+        throw Touched()
+    }
+
+    func redeemInvite(code _: String, redeemer _: UserID, now _: Date) async throws -> UserID? {
+        throw Touched()
+    }
 }
 
 extension UntouchedStore: AgentStore {
