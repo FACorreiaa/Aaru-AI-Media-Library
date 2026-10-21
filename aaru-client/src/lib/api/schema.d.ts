@@ -583,7 +583,7 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** Your own settings in a group. shareProgress shows your progress in its title channels (off by default). */
+    /** Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default. */
     put: operations['updateMyMembership']
     post?: never
     delete?: never
@@ -980,6 +980,7 @@ export interface paths {
       cookie?: never
     }
     get: operations['getNotificationSettings']
+    /** Changes the switches sent; any left out keep their value. */
     put: operations['updateNotificationSettings']
     post?: never
     delete?: never
@@ -1812,6 +1813,15 @@ export interface components {
     NotificationSettings: {
       /** @description Push when a new episode of a show you are watching airs. */
       airing: boolean
+      /** @description Push when someone tags you in a group you have not muted. The alert never holds the message. */
+      groupMentions: boolean
+      /** @description Push when a friend invites you into a group. */
+      groupInvites: boolean
+    }
+    NotificationSettingsUpdate: {
+      airing?: boolean
+      groupMentions?: boolean
+      groupInvites?: boolean
     }
     GoogleSignInRequest: {
       idToken: string
@@ -1891,6 +1901,8 @@ export interface components {
       mentions: number
       /** @description You show your progress in this group's title channels. */
       shareProgress: boolean
+      /** @description Mentions in this group send you no alerts. */
+      muted: boolean
     }
     GroupList: {
       items: components['schemas']['GroupSummary'][]
@@ -2079,8 +2091,10 @@ export interface components {
       /** Format: uuid */
       channelId: string
     }
+    /** @description Any field left out keeps its value. */
     MembershipUpdate: {
-      shareProgress: boolean
+      shareProgress?: boolean
+      muted?: boolean
     }
     /** @description How far into the title a reader must be to read the message unveiled. An episode, or the ending. */
     SpoilerStamp: {
@@ -4315,7 +4329,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['NotificationSettings']
+        'application/json': components['schemas']['NotificationSettingsUpdate']
       }
     }
     responses: {

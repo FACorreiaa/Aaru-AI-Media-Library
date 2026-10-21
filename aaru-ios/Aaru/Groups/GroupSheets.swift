@@ -117,6 +117,7 @@ struct GroupMenuItems: View {
     let group: GroupSummary
     let present: (GroupSheet) -> Void
     let confirm: (GroupConfirm) -> Void
+    @Environment(GroupsModel.self) private var groups: GroupsModel?
 
     var body: some View {
         Button("Invite friends", systemImage: "person.badge.plus") { present(.invite(group.id)) }
@@ -124,6 +125,11 @@ struct GroupMenuItems: View {
         if group.role.manages {
             Button("New channel", systemImage: "plus.bubble") { present(.newChannel(group.id)) }
             Button("Rename group", systemImage: "pencil") { present(.rename(group.id)) }
+        }
+        if group.muted {
+            Button("Unmute mentions", systemImage: "bell") { Task { await groups?.setMuted(group.id, false) } }
+        } else {
+            Button("Mute mentions", systemImage: "bell.slash") { Task { await groups?.setMuted(group.id, true) } }
         }
         Divider()
         if group.role == .owner {

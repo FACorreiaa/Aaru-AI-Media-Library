@@ -1,19 +1,41 @@
-import { Show, createSignal, onMount } from 'solid-js'
+import { For, Show, createSignal, onMount } from 'solid-js'
 import { keyBytes, pushSupport } from '../lib/push/model'
 import type { PushSupport } from '../lib/push/model'
 import {
   deleteSubscription,
+  saveNotifications,
   saveSubscription,
-  setAiring,
 } from '../lib/push/server'
-import type { PushSetup } from '../lib/push/server'
+import type { NotificationSettings, PushSetup } from '../lib/push/server'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
 
-// Airing alerts in this browser. "New episodes" is the account's switch, shared with the Apple
-// apps; "this browser" is one push subscription. Permission is asked only on a tap.
+type Switch = keyof NotificationSettings
+
+const switches: { key: Switch; label: string; detail: string }[] = [
+  {
+    key: 'airing',
+    label: 'New episodes',
+    detail: 'When a show you are watching airs a new episode.',
+  },
+  {
+    key: 'groupMentions',
+    label: 'Mentions in groups',
+    detail:
+      'When someone tags you in a group you have not muted. The alert says who and where, never what they wrote.',
+  },
+  {
+    key: 'groupInvites',
+    label: 'Group invites',
+    detail: 'When a friend invites you into a group.',
+  },
+]
+
+// Alerts in this browser. The switches are the account's, shared with the Apple apps, and reach
+// every device where alerts are on; "this browser" is one push subscription. Permission is asked
+// only on a tap.
 export function NotificationsSection(props: { setup: PushSetup }) {
-  const [airing, setAiringState] = createSignal(props.setup.airing)
+  const [settings, setSettings] = createSignal(props.setup.settings)
   const [support, setSupport] = createSignal<PushSupport>('unsupported')
   const [subscribed, setSubscribed] = createSignal(false)
   const [busy, setBusy] = createSignal(false)
@@ -37,10 +59,10 @@ export function NotificationsSection(props: { setup: PushSetup }) {
     setSubscribed(Boolean(await registration?.pushManager.getSubscription()))
   })
 
-  async function toggleAiring(on: boolean) {
+  async function toggle(key: Switch, on: boolean) {
     setProblem(null)
     try {
-      setAiringState(await setAiring({ data: { airing: on } }))
+      setSettings(await saveNotifications({ data: { [key]: on } }))
     } catch (error) {
       fail(error, 'That was not saved.')
     }
@@ -73,7 +95,7 @@ export function NotificationsSection(props: { setup: PushSetup }) {
         },
       })
       setSubscribed(true)
-      if (!airing()) await toggleAiring(true)
+      if (!Object.values(settings()).some(Boolean)) await toggle('airing', true)
     } catch (error) {
       fail(error, 'This browser could not be signed up for alerts.')
     } finally {
@@ -102,21 +124,22 @@ export function NotificationsSection(props: { setup: PushSetup }) {
   return (
     <Card class="mt-10 p-5">
       <h2 class="font-display text-xl font-medium">Notifications</h2>
-      <label class="mt-3 flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          class="mt-0.5"
-          checked={airing()}
-          onChange={(e) => void toggleAiring(e.currentTarget.checked)}
-        />
-        <span>
-          New episodes
-          <span class="block text-xs text-muted">
-            When a show you are watching airs a new episode, on every device
-            where alerts are on.
-          </span>
-        </span>
-      </label>
+      <For each={switches}>
+        {(item) => (
+          <label class="mt-3 flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              class="mt-0.5"
+              checked={settings()[item.key]}
+              onChange={(e) => void toggle(item.key, e.currentTarget.checked)}
+            />
+            <span>
+              {item.label}
+              <span class="block text-xs text-muted">{item.detail}</span>
+            </span>
+          </label>
+        )}
+      </For>
 
       <Show
         when={props.setup.publicKey}

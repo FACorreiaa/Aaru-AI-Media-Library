@@ -387,7 +387,7 @@ thing being talked about.
 **Layout.**
 - **Desktop web and Mac:** four columns. `GroupRail` (monogram circles, an unread dot, a
   mention count, `+` to create), `ChannelList` (group name with its menu: invite, settings,
-  leave; channels grouped by kind), the channel (`MessageList` with its composer), and
+  mute mentions, leave; channels grouped by kind), the channel (`MessageList` with its composer), and
   `MemberList`, which folds away.
 - **Tablet web and iPad:** the rail and channels share one sidebar or drawer.
 - **iPhone and phone web:** a stack, groups → channels → chat. Members open as a sheet from the

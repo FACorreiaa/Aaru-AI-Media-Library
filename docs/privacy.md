@@ -73,8 +73,9 @@ Stremio password never reaches Aaru). Aaru then reads your Stremio library once,
 session out at once, and does not keep Stremio's session key. What it read becomes an import you
 review like any other.
 
-**Notifications.** If you turn on new-episode alerts, Aaru stores your device's push token and
-that setting. In a browser, it stores the subscription your browser hands over: an address at your
+**Notifications.** If you turn on new-episode, group mention or group invite alerts, Aaru stores
+your device's push token and those settings, and which groups you muted. A mention alert names who
+tagged you and in which group and channel, never what they wrote. In a browser, it stores the subscription your browser hands over: an address at your
 browser's push service (Google, Mozilla, Apple or Microsoft) and the keys that encrypt each alert so
 only your browser can read it. Turning alerts off in that browser, or deleting your account, removes
 it.

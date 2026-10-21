@@ -37,6 +37,8 @@ struct GroupSummary: Sendable, Equatable {
     var mentions: Int
     /// Whether the viewer shows their progress in this group's title channels (GRP-007).
     var shareProgress = false
+    /// Whether the viewer silenced this group's mention alerts (GRP-012).
+    var muted = false
 }
 
 /// A channel: plain chat, one title's thread, a watch party, or a shared shelf.
@@ -137,9 +139,11 @@ protocol GroupStore: Sendable {
     func removeMember(_ group: UUID, user: UserID) async throws
     /// The new owner takes the role; the old owner becomes an admin.
     func transferOwnership(_ group: UUID, from previous: UserID, to next: UserID) async throws
+    func setMuted(_ group: UUID, user: UserID, muted: Bool) async throws
 
-    /// Inserts an invite; a second invite to the same person is ignored.
-    func createInvite(id: UUID, group: UUID, inviter: UserID, invitee: UserID, now: Date) async throws
+    /// Inserts an invite; a second invite to the same person is ignored. False when one was pending.
+    @discardableResult
+    func createInvite(id: UUID, group: UUID, inviter: UserID, invitee: UserID, now: Date) async throws -> Bool
     func invites(to user: UserID) async throws -> [GroupInvite]
     func invitesPending(_ group: UUID) async throws -> [GroupInvite]
     /// Turns an invite to `invitee` into a membership, with every channel read up to now.

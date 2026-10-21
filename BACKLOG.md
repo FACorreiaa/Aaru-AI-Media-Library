@@ -441,7 +441,7 @@ on `maat` since 2026-10-15 with the Apple and web clients on it.
 | **P1 — Basics (API)** | M2 auth, M3 catalog + anime, M4 library, M5 progress, M6 lists, Calendar + Up Next | A personal tracker works end to end over `/v1`: sign in, search movies/shows/anime/books, add, tick episodes, lists, calendar, up next | **Done** — gate met |
 | **P2 — Clients, widgets, imports** | M7 iOS + Mac, Widgets, M10/M11 web, M8 Trakt, M9 file imports, catalog sources | **The "basics done" line.** TestFlight beta and the beta Worker are usable by a stranger end to end; widgets work; Trakt + CSV imports work | In progress — 29/54 done; not met |
 | **P3 — Tracking integrations** | Scrobble, Stremio, Plex/Jellyfin, outbound Trakt/MAL/AniList | A play in Plex, Jellyfin or Stremio moves Aaru progress without a tap | Started — 1/6 (Stremio addon) |
-| **P4 — Social** | Profiles, friends, activity, push, shared lists, groups | Two users can friend, see each other's activity, and block cleanly; friends chat in a group | Not started (airing push plumbing only); groups pulled forward 2026-10-20, in review (GRP-001…GRP-011) |
+| **P4 — Social** | Profiles, friends, activity, push, shared lists, groups | Two users can friend, see each other's activity, and block cleanly; friends chat in a group | Not started (airing push plumbing only); groups pulled forward 2026-10-20, in review (GRP-001…GRP-012) |
 | **P5 — Gamification** | Points ledger, levels, streaks, badges, leaderboard, stats | Points and streaks are idempotent and survive replays and undo | Started — 1/9 (Recap) |
 | **P6 — Realtime, DMs, watch together** | WebSocket gateway, libsignal DMs, rooms, SharePlay | E2E DMs between two devices; a room counts down and checks off together | Not started |
 | **P7 — Agent surfaces** | M13 agent, M14 outbound agent | As written in M13/M14 | Not started |
@@ -2079,6 +2079,9 @@ payload carries no message text: "{name} mentioned you in #{channel}" and
 
 **Done when:** a muted group sends nothing, a mention push opens the right channel from a cold
 start, and no push payload contains message text.
+
+Built 2026-10-21: both switches are off until turned on, like `airing`. Browsers get the same
+alerts through web push and open `/app/groups/{g}/{c}`. Mac push stays off.
 
 ---
 

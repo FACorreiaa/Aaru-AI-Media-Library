@@ -22,11 +22,13 @@ struct PostgresGroupStore: GroupStore {
         let unread: Int
         let mentions: Int
         let shareProgress: Bool
+        let muted: Bool
 
         var summary: GroupSummary {
             GroupSummary(
                 id: id, name: name, role: GroupRole(rawValue: role) ?? .member,
-                defaultChannelID: defaultChannelId, unread: unread, mentions: mentions, shareProgress: shareProgress
+                defaultChannelID: defaultChannelId, unread: unread, mentions: mentions, shareProgress: shareProgress,
+                muted: muted
             )
         }
     }
@@ -78,7 +80,7 @@ struct PostgresGroupStore: GroupStore {
         WHERE c.group_id = g.id AND \(Self.unseen(viewer))
         """
         return try await sql.raw("""
-        SELECT g.id, g.name, gm.role, gm.share_progress,
+        SELECT g.id, g.name, gm.role, gm.share_progress, gm.muted,
             (SELECT id FROM group_channels WHERE group_id = g.id AND is_default) AS default_channel_id,
             (SELECT count(*) \(messages)) AS unread,
             (SELECT count(*) \(messages) AND \(bind: viewer.rawValue) = ANY(m.mentions)) AS mentions
@@ -187,14 +189,21 @@ struct PostgresGroupStore: GroupStore {
         }
     }
 
+    func setMuted(_ group: UUID, user: UserID, muted: Bool) async throws {
+        try await sql.raw("""
+        UPDATE group_members SET muted = \(bind: muted)
+        WHERE group_id = \(bind: group) AND user_id = \(bind: user.rawValue)
+        """).run()
+    }
+
     // MARK: Invites
 
-    func createInvite(id: UUID, group: UUID, inviter: UserID, invitee: UserID, now: Date) async throws {
+    func createInvite(id: UUID, group: UUID, inviter: UserID, invitee: UserID, now: Date) async throws -> Bool {
         try await sql.raw("""
         INSERT INTO group_invites (id, group_id, inviter_id, invitee_id, created_at)
         VALUES (\(bind: id), \(bind: group), \(bind: inviter.rawValue), \(bind: invitee.rawValue), \(bind: now))
-        ON CONFLICT (group_id, invitee_id) DO NOTHING
-        """).run()
+        ON CONFLICT (group_id, invitee_id) DO NOTHING RETURNING id
+        """).first() != nil
     }
 
     private func invites(where condition: SQLQueryString) async throws -> [GroupInvite] {

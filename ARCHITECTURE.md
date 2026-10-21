@@ -960,6 +960,14 @@ server never sees plaintext.
   the server never POSTs anywhere else. The same airing job fans out to APNs devices and browser
   subscriptions behind `WebPushSending` (named for the wire format). The web's `public/sw.js` has
   no fetch handler: it shows the alert and opens the same-origin path the alert carries.
+- Group alerts (GRP-012): `notification_settings.group_mentions` and `group_invites`, off until
+  turned on like `airing`, and `group_members.muted` per group (`PUT /v1/groups/{id}/me`). A post
+  alerts the members it tags, unless they muted the group, turned mentions off, or blocked the
+  author; a retried post and a repeat invite alert nobody. Alerts go out inline through
+  `UserPush`, best effort, like agent requests. The payload names who and where, never the
+  message: "{name} mentioned you in #{channel}" with `groupId`, `channelId` and
+  `url` `aaru://group/{g}/channel/{c}`; an invite carries `aaru://groups`. iOS routes the tap
+  through `PushInbox` and `GroupLink`; the web opens `/app/groups/{g}/{c}`.
 
 ## Phasing
 

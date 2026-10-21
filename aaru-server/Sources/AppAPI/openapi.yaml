@@ -617,7 +617,9 @@ paths:
   /v1/groups/{groupId}/me:
     put:
       operationId: updateMyMembership
-      summary: Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+      summary: >-
+        Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention
+        alerts. Both are off by default.
       parameters:
         - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
       requestBody:
@@ -1073,11 +1075,12 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: updateNotificationSettings
+      summary: Changes the switches sent; any left out keep their value.
       requestBody:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/NotificationSettings'}
+            schema: {$ref: '#/components/schemas/NotificationSettingsUpdate'}
       responses:
         '200':
           description: Saved.
@@ -2105,11 +2108,23 @@ components:
             auth: {type: string}
     NotificationSettings:
       type: object
-      required: [airing]
+      required: [airing, groupMentions, groupInvites]
       properties:
         airing:
           type: boolean
           description: Push when a new episode of a show you are watching airs.
+        groupMentions:
+          type: boolean
+          description: Push when someone tags you in a group you have not muted. The alert never holds the message.
+        groupInvites:
+          type: boolean
+          description: Push when a friend invites you into a group.
+    NotificationSettingsUpdate:
+      type: object
+      properties:
+        airing: {type: boolean}
+        groupMentions: {type: boolean}
+        groupInvites: {type: boolean}
     GoogleSignInRequest:
       type: object
       required: [idToken]
@@ -2212,7 +2227,7 @@ components:
       enum: [owner, admin, member]
     GroupSummary:
       type: object
-      required: [id, name, role, defaultChannelId, unread, mentions, shareProgress]
+      required: [id, name, role, defaultChannelId, unread, mentions, shareProgress, muted]
       properties:
         id: {type: string, format: uuid}
         name: {type: string}
@@ -2221,6 +2236,7 @@ components:
         unread: {type: integer, description: Messages from others since you last read, across channels.}
         mentions: {type: integer, description: Unread messages that tag you.}
         shareProgress: {type: boolean, description: You show your progress in this group's title channels.}
+        muted: {type: boolean, description: "Mentions in this group send you no alerts."}
     GroupList:
       type: object
       required: [items]
@@ -2409,9 +2425,10 @@ components:
         channelId: {type: string, format: uuid}
     MembershipUpdate:
       type: object
-      required: [shareProgress]
+      description: Any field left out keeps its value.
       properties:
         shareProgress: {type: boolean}
+        muted: {type: boolean}
     SpoilerStamp:
       type: object
       description: How far into the title a reader must be to read the message unveiled. An episode, or the ending.

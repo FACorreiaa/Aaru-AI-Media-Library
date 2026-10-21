@@ -5,6 +5,7 @@ import {
   deleteChannel,
   deleteGroup,
   removeGroupMember,
+  setGroupMuted,
   updateChannel,
   updateGroup,
 } from '../../lib/groups/server'
@@ -34,6 +35,25 @@ export function ChannelList(props: { class?: string }) {
 
   const group = () => scope.detail().group
   const manages = () => group().role !== 'member'
+
+  async function toggleMuted() {
+    setMenu(false)
+    try {
+      const summary = await setGroupMuted({
+        data: { groupId: group().id, muted: !group().muted },
+      })
+      scope.setDetail((detail) => ({ ...detail, group: summary }))
+      shell.notify(
+        summary.muted
+          ? `Mentions in ${summary.name} send no alerts.`
+          : `Mentions in ${summary.name} send alerts again.`,
+      )
+    } catch (error) {
+      shell.notify(
+        error instanceof Error ? error.message : 'That setting was not saved.',
+      )
+    }
+  }
 
   async function afterLeaving() {
     await shell.refresh()
@@ -96,6 +116,9 @@ export function ChannelList(props: { class?: string }) {
               Rename group
             </MenuItem>
           </Show>
+          <MenuItem onSelect={() => void toggleMuted()}>
+            {group().muted ? 'Unmute mentions' : 'Mute mentions'}
+          </MenuItem>
           <div class="my-1 h-px bg-line" />
           <Show
             when={group().role === 'owner'}

@@ -39,7 +39,9 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     )
     services.webPush = webPush
     let pushSender = makePushSender(config.push, logger: logger)
-    services.plans.push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
+    let push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
+    services.plans.push = push
+    services.groups.push = push
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }

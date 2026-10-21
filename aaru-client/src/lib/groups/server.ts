@@ -95,6 +95,19 @@ export const updateGroup = createServerFn({ method: 'POST' })
     ),
   )
 
+/** Mutes or unmutes this group's mention alerts for me (GRP-012). Nobody else sees it. */
+export const setGroupMuted = createServerFn({ method: 'POST' })
+  .validator(z.object({ groupId: uuid, muted: z.boolean() }))
+  .handler(async ({ data }): Promise<GroupSummary> =>
+    check(
+      await api(sessionToken()).PUT('/v1/groups/{groupId}/me', {
+        params: { path: { groupId: data.groupId } },
+        body: { muted: data.muted },
+      }),
+      'That setting was not saved.',
+    ),
+  )
+
 export const deleteGroup = createServerFn({ method: 'POST' })
   .validator(groupRef)
   .handler(async ({ data }) =>

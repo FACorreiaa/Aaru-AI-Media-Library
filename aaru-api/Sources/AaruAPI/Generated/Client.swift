@@ -3192,7 +3192,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+    /// Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
     ///
     /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
@@ -5362,6 +5362,8 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Changes the switches sent; any left out keep their value.
+    ///
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     public func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output {

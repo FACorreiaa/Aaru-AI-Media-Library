@@ -381,3 +381,19 @@ extension Components.Schemas.GroupRole {
         self != .member
     }
 }
+
+extension GroupsModel {
+    /// Mutes or unmutes the group's mention alerts on every device (GRP-012).
+    func setMuted(_ groupID: String, _ muted: Bool) async {
+        guard let api else { return }
+        await run("That setting was not saved.") {
+            switch try await api.updateMyMembership(path: .init(groupId: groupID), body: .json(.init(muted: muted))) {
+            case let .ok(response):
+                let summary = try response.body.json
+                details[groupID]?.group = summary
+                groups = groups.map { $0.id == groupID ? summary : $0 }
+            case let .default(_, error): throw Failure(try? error.body.json)
+            }
+        }
+    }
+}

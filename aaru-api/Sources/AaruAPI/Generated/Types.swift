@@ -217,7 +217,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/realtime/ticket`.
     /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
     func createRealtimeTicket(_ input: Operations.CreateRealtimeTicket.Input) async throws -> Operations.CreateRealtimeTicket.Output
-    /// Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+    /// Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
     ///
     /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
@@ -347,6 +347,8 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/get(getNotificationSettings)`.
     func getNotificationSettings(_ input: Operations.GetNotificationSettings.Input) async throws -> Operations.GetNotificationSettings.Output
+    /// Changes the switches sent; any left out keep their value.
+    ///
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
@@ -1038,7 +1040,7 @@ extension APIProtocol {
     public func createRealtimeTicket(headers: Operations.CreateRealtimeTicket.Input.Headers = .init()) async throws -> Operations.CreateRealtimeTicket.Output {
         try await createRealtimeTicket(Operations.CreateRealtimeTicket.Input(headers: headers))
     }
-    /// Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+    /// Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
     ///
     /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
@@ -1394,6 +1396,8 @@ extension APIProtocol {
     public func getNotificationSettings(headers: Operations.GetNotificationSettings.Input.Headers = .init()) async throws -> Operations.GetNotificationSettings.Output {
         try await getNotificationSettings(Operations.GetNotificationSettings.Input(headers: headers))
     }
+    /// Changes the switches sent; any left out keep their value.
+    ///
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     public func updateNotificationSettings(
@@ -3060,15 +3064,62 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/NotificationSettings/airing`.
             public var airing: Swift.Bool
+            /// Push when someone tags you in a group you have not muted. The alert never holds the message.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NotificationSettings/groupMentions`.
+            public var groupMentions: Swift.Bool
+            /// Push when a friend invites you into a group.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NotificationSettings/groupInvites`.
+            public var groupInvites: Swift.Bool
             /// Creates a new `NotificationSettings`.
             ///
             /// - Parameters:
             ///   - airing: Push when a new episode of a show you are watching airs.
-            public init(airing: Swift.Bool) {
+            ///   - groupMentions: Push when someone tags you in a group you have not muted. The alert never holds the message.
+            ///   - groupInvites: Push when a friend invites you into a group.
+            public init(
+                airing: Swift.Bool,
+                groupMentions: Swift.Bool,
+                groupInvites: Swift.Bool
+            ) {
                 self.airing = airing
+                self.groupMentions = groupMentions
+                self.groupInvites = groupInvites
             }
             public enum CodingKeys: String, CodingKey {
                 case airing
+                case groupMentions
+                case groupInvites
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/NotificationSettingsUpdate`.
+        public struct NotificationSettingsUpdate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NotificationSettingsUpdate/airing`.
+            public var airing: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/NotificationSettingsUpdate/groupMentions`.
+            public var groupMentions: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/NotificationSettingsUpdate/groupInvites`.
+            public var groupInvites: Swift.Bool?
+            /// Creates a new `NotificationSettingsUpdate`.
+            ///
+            /// - Parameters:
+            ///   - airing:
+            ///   - groupMentions:
+            ///   - groupInvites:
+            public init(
+                airing: Swift.Bool? = nil,
+                groupMentions: Swift.Bool? = nil,
+                groupInvites: Swift.Bool? = nil
+            ) {
+                self.airing = airing
+                self.groupMentions = groupMentions
+                self.groupInvites = groupInvites
+            }
+            public enum CodingKeys: String, CodingKey {
+                case airing
+                case groupMentions
+                case groupInvites
             }
         }
         /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest`.
@@ -3407,6 +3458,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/GroupSummary/shareProgress`.
             public var shareProgress: Swift.Bool
+            /// Mentions in this group send you no alerts.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/muted`.
+            public var muted: Swift.Bool
             /// Creates a new `GroupSummary`.
             ///
             /// - Parameters:
@@ -3417,6 +3472,7 @@ public enum Components {
             ///   - unread: Messages from others since you last read
             ///   - mentions: Unread messages that tag you.
             ///   - shareProgress: You show your progress in this group's title channels.
+            ///   - muted: Mentions in this group send you no alerts.
             public init(
                 id: Swift.String,
                 name: Swift.String,
@@ -3424,7 +3480,8 @@ public enum Components {
                 defaultChannelId: Swift.String,
                 unread: Swift.Int,
                 mentions: Swift.Int,
-                shareProgress: Swift.Bool
+                shareProgress: Swift.Bool,
+                muted: Swift.Bool
             ) {
                 self.id = id
                 self.name = name
@@ -3433,6 +3490,7 @@ public enum Components {
                 self.unread = unread
                 self.mentions = mentions
                 self.shareProgress = shareProgress
+                self.muted = muted
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -3442,6 +3500,7 @@ public enum Components {
                 case unread
                 case mentions
                 case shareProgress
+                case muted
             }
         }
         /// - Remark: Generated from `#/components/schemas/GroupList`.
@@ -4185,19 +4244,29 @@ public enum Components {
                 case channelId
             }
         }
+        /// Any field left out keeps its value.
+        ///
         /// - Remark: Generated from `#/components/schemas/MembershipUpdate`.
         public struct MembershipUpdate: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/MembershipUpdate/shareProgress`.
-            public var shareProgress: Swift.Bool
+            public var shareProgress: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/MembershipUpdate/muted`.
+            public var muted: Swift.Bool?
             /// Creates a new `MembershipUpdate`.
             ///
             /// - Parameters:
             ///   - shareProgress:
-            public init(shareProgress: Swift.Bool) {
+            ///   - muted:
+            public init(
+                shareProgress: Swift.Bool? = nil,
+                muted: Swift.Bool? = nil
+            ) {
                 self.shareProgress = shareProgress
+                self.muted = muted
             }
             public enum CodingKeys: String, CodingKey {
                 case shareProgress
+                case muted
             }
         }
         /// How far into the title a reader must be to read the message unveiled. An episode, or the ending.
@@ -12710,7 +12779,7 @@ public enum Operations {
             }
         }
     }
-    /// Your own settings in a group. shareProgress shows your progress in its title channels (off by default).
+    /// Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
     ///
     /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
@@ -16896,6 +16965,8 @@ public enum Operations {
             }
         }
     }
+    /// Changes the switches sent; any left out keep their value.
+    ///
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     public enum UpdateNotificationSettings {
@@ -16916,7 +16987,7 @@ public enum Operations {
             /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/requestBody`.
             @frozen public enum Body: Sendable, Hashable {
                 /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/requestBody/content/application\/json`.
-                case json(Components.Schemas.NotificationSettings)
+                case json(Components.Schemas.NotificationSettingsUpdate)
             }
             public var body: Operations.UpdateNotificationSettings.Input.Body
             /// Creates a new `Input`.

@@ -40,21 +40,42 @@ struct PostgresPushStore: PushStore {
         }
     }
 
-    func airingEnabled(userID: UserID) async throws -> Bool {
-        struct Row: Decodable { let airing: Bool }
-        return try await sql.raw("""
-        SELECT airing FROM notification_settings WHERE user_id = \(bind: userID.rawValue)
-        """).first(decoding: Row.self)?.airing ?? false
+    func notificationSettings(userID: UserID) async throws -> NotificationSettings {
+        struct Row: Decodable {
+            let airing: Bool
+            let groupMentions: Bool
+            let groupInvites: Bool
+        }
+        let row = try await sql.raw("""
+        SELECT airing, group_mentions, group_invites FROM notification_settings
+        WHERE user_id = \(bind: userID.rawValue)
+        """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
+        return row.map {
+            NotificationSettings(airing: $0.airing, groupMentions: $0.groupMentions, groupInvites: $0.groupInvites)
+        } ?? NotificationSettings()
     }
 
-    func setAiring(_ enabled: Bool, userID: UserID, now: Date) async throws {
+    func saveNotificationSettings(_ settings: NotificationSettings, userID: UserID, now: Date) async throws {
         try await sql.raw("""
-        INSERT INTO notification_settings (user_id, airing, airing_since)
-        VALUES (\(bind: userID.rawValue), \(bind: enabled), \(bind: enabled ? now : nil))
+        INSERT INTO notification_settings (user_id, airing, airing_since, group_mentions, group_invites)
+        VALUES (\(bind: userID.rawValue), \(bind: settings.airing), \(bind: settings.airing ? now : nil),
+            \(bind: settings.groupMentions), \(bind: settings.groupInvites))
         ON CONFLICT (user_id) DO UPDATE SET airing = EXCLUDED.airing,
             airing_since = CASE WHEN EXCLUDED.airing AND NOT notification_settings.airing
-                THEN EXCLUDED.airing_since ELSE notification_settings.airing_since END
+                THEN EXCLUDED.airing_since ELSE notification_settings.airing_since END,
+            group_mentions = EXCLUDED.group_mentions, group_invites = EXCLUDED.group_invites
         """).run()
+    }
+
+    func mentionRecipients(group: UUID, users: [UserID]) async throws -> [UserID] {
+        struct Row: Decodable { let userId: UUID }
+        guard !users.isEmpty else { return [] }
+        return try await sql.raw("""
+        SELECT gm.user_id FROM group_members gm
+        JOIN notification_settings ns ON ns.user_id = gm.user_id AND ns.group_mentions
+        WHERE gm.group_id = \(bind: group) AND NOT gm.muted
+          AND gm.user_id = ANY(\(bind: users.map(\.rawValue)))
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map { UserID($0.userId) }
     }
 
     func dueAirings(now: Date, since: Date) async throws -> [DueAiring] {
