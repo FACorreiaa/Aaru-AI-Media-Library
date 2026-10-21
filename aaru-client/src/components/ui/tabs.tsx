@@ -58,7 +58,7 @@ export const TabsTrigger = <T extends ValidComponent = 'button'>(
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       class={cx(
-        "text-foreground dark:text-muted-foreground dark:data-[selected]:text-foreground peer relative z-10 inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "text-foreground dark:text-muted-foreground dark:data-[selected]:text-foreground peer relative z-10 inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         props.class,
       )}
       {...rest}
