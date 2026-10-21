@@ -1,9 +1,23 @@
 import AaruAPI
 import SwiftUI
-import UniformTypeIdentifiers
 
-/// APP-007: account, imports, and the way out (sign out, delete account). A tab of its own, and
-/// the Settings window (Cmd-,) on Mac.
+/// Settings' groups (APP-007), the same as the web's Settings pages.
+enum SettingsPage: Hashable {
+    case account
+    case imports
+    case connected
+    case insights
+    case about
+}
+
+/// Where Settings' stack goes: a group's page, or an import job opened from Imports & export.
+enum SettingsRoute: Hashable {
+    case page(SettingsPage)
+    case job(String)
+}
+
+/// APP-007: Settings as a list of groups, each its own page. A tab of its own; the Mac Settings
+/// window (Cmd-,) shows the same pages as panes (`SettingsWindow`).
 struct SettingsView: View {
     let api: Client?
     let imports: ImportsModel
@@ -16,270 +30,125 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var account: Components.Schemas.Me?
-    @State private var pickingFor: ImportFileSource?
-    @State private var uploading = false
-    @State private var confirmsDelete = false
-    @State private var deleteProblem: String?
-    @State private var openedJob: ImportJob?
-    @State private var path: [String] = []
-    @State private var asksAniListName = false
-    @State private var aniListName = ""
-    @State private var showsCAT = false
+    @State private var path: [SettingsRoute] = []
 
     var body: some View {
         NavigationStack(path: $path) {
             Form {
-                accountSection
-                FriendsSection(api: api)
-                #if os(iOS)
-                    if let push = PushRegistrar.current {
-                        NotificationsSection(push: push)
-                    }
-                #endif
-                TraktSection(api: api) { imports.problem = $0 } onImported: { job in
-                    path.append(job.id)
-                }
-                importSection
-                if !imports.jobs.isEmpty {
-                    jobsSection
-                }
-                StremioSection(api: api, imports: imports) { imports.problem = $0 } onImported: { job in
-                    path.append(job.id)
-                }
-                ConnectionsSection(api: api) { imports.problem = $0 }
-                ExportDataSection(api: api) { imports.problem = $0 }
                 Section {
-                    NavigationLink("About Aaru") { AboutView() }
+                    NavigationLink(value: SettingsRoute.page(.account)) {
+                        AccountSummary(account: account)
+                    }
                 }
-                deleteSection
-            }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .background(Color(.paper))
-            .safeAreaInset(edge: .bottom) { ProblemBanner(message: imports.problem) { imports.problem = nil } }
-            .overlay {
-                if uploading {
-                    ProgressView("Uploading…").padding().background(
-                        .regularMaterial,
-                        in: .rect(cornerRadius: 14)
-                    )
+                Section {
+                    NavigationLink(value: SettingsRoute.page(.imports)) {
+                        SettingsRowLabel("Imports & export", systemImage: "tray.and.arrow.down.fill", tint: .blue)
+                    }
+                    NavigationLink(value: SettingsRoute.page(.connected)) {
+                        SettingsRowLabel(
+                            "Connected apps", systemImage: "app.connected.to.app.below.fill", tint: .green
+                        )
+                    }
+                }
+                Section {
+                    NavigationLink(value: SettingsRoute.page(.insights)) {
+                        SettingsRowLabel("Insights & recaps", systemImage: "chart.bar.fill", tint: .orange)
+                    }
+                    NavigationLink(value: SettingsRoute.page(.about)) {
+                        SettingsRowLabel("About", systemImage: "info", tint: .gray)
+                    }
                 }
             }
+            .settingsForm(imports)
             .navigationTitle("Settings")
-            .navigationDestination(for: String.self) { id in
-                ImportDetailView(id: id, imports: imports, library: library, lists: lists, api: api)
-            }
+            .navigationDestination(for: SettingsRoute.self, destination: destination)
             .toolbar {
                 if showsDone {
                     ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
                 }
             }
-            .fileImporter(
-                isPresented: Binding(get: { pickingFor != nil }, set: {
-                    if !$0 {
-                        pickingFor = nil
-                    }
-                }),
-                allowedContentTypes: [.commaSeparatedText, .plainText, .text, .xml, .gzip]
-            ) { result in
-                guard let source = pickingFor else { return }
-                pickingFor = nil
-                if case let .success(url) = result {
-                    Task { await upload(url, source: source) }
-                }
-            }
-            .sheet(isPresented: $showsCAT) {
-                CATImportSheet(imports: imports) { path.append($0.id) }
-            }
-            .alert("Import from AniList", isPresented: $asksAniListName) {
-                TextField("Username", text: $aniListName)
-                    .autocorrectionDisabled()
-                #if os(iOS)
-                    .textInputAutocapitalization(.never)
-                #endif
-                Button("Import") { Task { await importAniList() } }
-                    .disabled(aniListName.trimmingCharacters(in: .whitespaces).isEmpty)
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Your AniList anime list must be public.")
-            }
-            .confirmationDialog(
-                "Delete your Aaru account?",
-                isPresented: $confirmsDelete,
-                titleVisibility: .visible
-            ) {
-                Button("Delete account and library", role: .destructive) {
-                    Task { deleteProblem = await onDeleteAccount() }
-                }
-            } message: {
-                Text("This cannot be undone. Export your data first if you want to keep it.")
-            }
             .task {
                 await imports.load()
-                if let api, case let .ok(response) = try? await api.getMe() {
-                    account = try? response.body.json
-                }
+                account = await AccountSettings.load(api) ?? account
             }
         }
     }
 
-    private var accountSection: some View {
-        Section("Account") {
-            LabeledContent("Name", value: account?.displayName ?? "Not set")
-            LabeledContent("Signed in with", value: providers)
-            if let clientID = AppEnvironment.googleClientID, let account, !account.providers.contains(.google) {
-                LinkGoogleButton(api: api, clientID: clientID, account: $account)
-            }
-            Button("Sign out", action: onSignOut)
-        }
-    }
-
-    private var importSection: some View {
-        Section {
-            ForEach(ImportFileSource.offered) { source in
-                Button {
-                    pickingFor = source
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Import from \(source.label)").foregroundStyle(Color(.ink))
-                        Text(source.hint).font(.caption).foregroundStyle(Color(.muted))
-                    }
-                }
-                .disabled(uploading)
-            }
-            Button {
-                aniListName = ""
-                asksAniListName = true
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Import from AniList").foregroundStyle(Color(.ink))
-                    Text("Your public anime list, by username.").font(.caption).foregroundStyle(Color(.muted))
-                }
-            }
-            .disabled(uploading)
-            Button {
-                showsCAT = true
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Import from Pogdesign CAT").foregroundStyle(Color(.ink))
-                    Text("Your iCal link or file, or a list of shows.").font(.caption).foregroundStyle(Color(.muted))
-                }
-            }
-            .disabled(uploading)
-        } header: {
-            Text("Bring your history")
-        } footer: {
-            Text(
-                "Aaru matches every row first and shows you the plan. Nothing changes until you "
-                    + "approve it, and an import undoes in one step."
-            )
-        }
-    }
-
-    private var jobsSection: some View {
-        Section("Imports") {
-            ForEach(imports.jobs, id: \.id) { job in
-                NavigationLink(value: job.id) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(job.filename ?? job.sourceLabel).lineLimit(1)
-                        Text("\(job.sourceLabel) · \(job.stateLabel)")
-                            .font(.caption)
-                            .foregroundStyle(job.state == .failed ? .red : Color(.muted))
-                    }
-                }
-            }
-        }
-    }
-
-    private var deleteSection: some View {
-        Section {
-            Button("Delete account", role: .destructive) { confirmsDelete = true }
-            if let deleteProblem {
-                Text(deleteProblem).font(.footnote).foregroundStyle(.red)
-            }
-        } footer: {
-            Text("Deletes your library, lists, imports and sessions from Aaru for good.")
-        }
-    }
-
-    private var providers: String {
-        let names = (account?.providers ?? []).map { provider in
-            switch provider {
-            case .apple: "Apple"
-            case .google: "Google"
-            case .email: "Email"
-            }
-        }
-        return names.isEmpty ? "—" : names.joined(separator: ", ")
-    }
-
-    private func upload(_ url: URL, source: ImportFileSource) async {
-        uploading = true
-        defer { uploading = false }
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer {
-            if scoped {
-                url.stopAccessingSecurityScopedResource()
-            }
-        }
-        guard var data = try? Data(contentsOf: url) else {
-            imports.problem = "That file could not be read."
-            return
-        }
-        var filename = url.lastPathComponent
-        // MyAnimeList's export downloads gzipped; the server takes the XML inside.
-        if Gunzip.isGzip(data) {
-            do {
-                data = try Gunzip.decompress(data, limit: Self.maxUploadBytes)
-                filename = filename.hasSuffix(".gz") ? String(filename.dropLast(3)) : filename
-            } catch Gunzip.Failure.tooLarge {
-                imports.problem = "That file is larger than 5 MB unpacked. Check it is the right export."
-                return
-            } catch {
-                imports.problem = "That file could not be unpacked. Upload the .xml file instead."
-                return
-            }
-        }
-        _ = await imports.upload(data, filename: filename, source: source)
-    }
-
-    /// The server's upload limit (`ImportService.maxUploadBytes`).
-    private static let maxUploadBytes = 5 * 1024 * 1024
-
-    private func importAniList() async {
-        let name = aniListName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let job = await imports.importAniList(username: name) {
-            path.append(job.id)
+    @ViewBuilder
+    private func destination(_ route: SettingsRoute) -> some View {
+        switch route {
+        case .page(.account):
+            AccountSettings(api: api, imports: imports, account: $account, onSignOut: onSignOut)
+        case .page(.imports):
+            ImportsSettings(api: api, imports: imports) { path.append(.job($0)) }
+        case .page(.connected):
+            ConnectedAppsSettings(api: api, imports: imports)
+        case .page(.insights):
+            InsightsView(api: api)
+        case .page(.about):
+            AboutView(onDeleteAccount: onDeleteAccount)
+        case let .job(id):
+            ImportDetailView(id: id, imports: imports, library: library, lists: lists, api: api)
         }
     }
 }
 
-#if os(iOS)
-    /// Alerts: a new episode of a show you are watching, and groups (GRP-012).
-    private struct NotificationsSection: View {
-        let push: PushRegistrar
+/// The top row: who is signed in, the way Settings on iPhone starts with your name.
+private struct AccountSummary: View {
+    let account: Components.Schemas.Me?
+    @ScaledMetric(relativeTo: .title) private var avatar = 48
 
-        var body: some View {
-            Section {
-                Toggle("New episodes", isOn: binding(\.airing))
-                Toggle("Mentions in groups", isOn: binding(\.groupMentions))
-                Toggle("Group invites", isOn: binding(\.groupInvites))
-                if let problem = push.problem {
-                    Text(problem).font(.footnote).foregroundStyle(.red)
-                }
-            } header: {
-                Text("Notifications")
-            } footer: {
-                Text(
-                    "New episodes of shows you are watching, mentions in groups you have not muted, and invites. "
-                        + "A mention says who tagged you and where, never what they wrote."
-                )
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "person.crop.circle.fill")
+                .resizable()
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: avatar, height: avatar)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(account?.displayName ?? "Account").font(.title3).foregroundStyle(Color(.ink))
+                Text(AccountSettings.providers(account)).font(.subheadline).foregroundStyle(Color(.muted))
             }
-            .task { await push.loadSetting() }
         }
+        .padding(.vertical, 4)
+    }
+}
 
-        private func binding(_ setting: WritableKeyPath<NotificationSettings, Bool>) -> Binding<Bool> {
-            Binding(get: { push.settings[keyPath: setting] }, set: { value in Task { await push.set(setting, value) } })
+/// A group's row: its symbol in a small tinted square, as in the system Settings.
+struct SettingsRowLabel: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    @ScaledMetric(relativeTo: .body) private var side = 28
+
+    init(_ title: String, systemImage: String, tint: Color) {
+        self.title = title
+        self.systemImage = systemImage
+        self.tint = tint
+    }
+
+    var body: some View {
+        Label {
+            Text(title).foregroundStyle(Color(.ink))
+        } icon: {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: side, height: side)
+                .background(tint, in: .rect(cornerRadius: side / 4, style: .continuous))
         }
     }
-#endif
+}
+
+extension View {
+    /// Every Settings page reads the same: grouped, on paper, with the problem banner below.
+    func settingsForm(_ imports: ImportsModel) -> some View {
+        formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .background(Color(.paper))
+            .safeAreaInset(edge: .bottom) {
+                ProblemBanner(message: imports.problem) { imports.problem = nil }
+            }
+    }
+}

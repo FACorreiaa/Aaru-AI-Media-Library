@@ -10,7 +10,7 @@ const POLL_MS = 3000
 // IMP-016: bring in what was watched in Stremio before the addon was installed. The user
 // approves a code on stremio.com; Aaru reads the library once, logs out, and plans an import
 // that waits for approval like any other.
-export function StremioHistoryImport() {
+export function StremioHistoryImport(props: { class?: string }) {
   const navigate = useNavigate()
   const [link, setLink] = createSignal<StremioLink | null>(null)
   const [busy, setBusy] = createSignal(false)
@@ -66,7 +66,7 @@ export function StremioHistoryImport() {
   }
 
   return (
-    <div class="mt-4 border-t border-line pt-4">
+    <div class={props.class}>
       <Show
         when={link()}
         fallback={
