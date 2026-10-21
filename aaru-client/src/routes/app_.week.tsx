@@ -1,9 +1,4 @@
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useNavigate,
-} from '@tanstack/solid-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import {
   Show,
   batch,
@@ -49,7 +44,7 @@ import type {
   OnlyFilter,
 } from '../lib/calendar/filters'
 import { getCalendar } from '../lib/calendar/server'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 import { setEpisode } from '../lib/title/server'
 import { cn } from '../lib/cn'
 import { slideIn } from '../lib/motion'
@@ -80,9 +75,8 @@ export const Route = createFileRoute('/app_/week')({
     only: optionalEnum(search.only, ['premieres', 'finales']),
     kind: optionalEnum(search.kind, ['show', 'anime']),
   }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   component: Calendar,
 })

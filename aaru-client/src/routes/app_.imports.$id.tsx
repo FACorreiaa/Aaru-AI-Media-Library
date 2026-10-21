@@ -1,9 +1,4 @@
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useNavigate,
-} from '@tanstack/solid-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { Wordmark } from '../components/Brand'
 import { Button } from '../components/ui/button'
@@ -21,15 +16,14 @@ import {
   listImports,
 } from '../lib/imports/server'
 import type { ImportDetail } from '../lib/imports/server'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // APP-007 on the web: one import. A ledger of steps while it is matched (IMP-017), then the
 // plan to approve.
 export const Route = createFileRoute('/app_/imports/$id')({
   head: () => ({ meta: [{ title: 'Import · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   loader: ({ params }) => getImport({ data: { id: params.id } }),
   component: ImportPage,

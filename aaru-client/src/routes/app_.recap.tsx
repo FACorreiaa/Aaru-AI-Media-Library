@@ -1,9 +1,4 @@
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useNavigate,
-} from '@tanstack/solid-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import type { SearchSchemaInput } from '@tanstack/solid-router'
 import { Match, Switch, createSignal, onMount } from 'solid-js'
 import { optionalInt } from '../lib/search-params'
@@ -15,7 +10,7 @@ import type { RecapCard } from '../lib/recap/deck'
 import { periodLabel } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
 import { getStats } from '../lib/recap/server'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // GAM-006a on the web: the Recap story for `?year=` and optional `?month=`, the twin of the
 // Apple apps' `RecapView`. Stats load in the browser, which knows the viewer's time zone.
@@ -27,9 +22,8 @@ export const Route = createFileRoute('/app_/recap')({
     year: optionalInt(search.year, 1900, 2200) ?? new Date().getFullYear(),
     month: optionalInt(search.month, 1, 12),
   }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   component: Recap,
 })

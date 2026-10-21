@@ -862,6 +862,11 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
 
 - Session: the token lives in an HttpOnly, Secure, SameSite=Lax cookie. Server functions send
   `/v1` calls with it; page scripts never see the token. A 401 clears the cookie once.
+- Reads go through TanStack Query (`src/lib/queries.ts`, 30 s fresh): loaders read the cache, so
+  hovering a link preloads the page and Back is served from memory; the SSR integration hands
+  the server's reads to the browser. Any POST server function marks the cache old
+  (`src/start.ts`). The signed-in check runs once per tab (`src/lib/session/query.ts`), not per
+  navigation; signing out or reaching sign-in signed out empties the cache.
 - API types come from the same `openapi.yaml` as the Apple apps' `AaruAPI` (`openapi-typescript`,
   committed, checked fresh in CI).
 

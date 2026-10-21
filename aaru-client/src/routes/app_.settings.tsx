@@ -1,18 +1,17 @@
-import { Outlet, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Outlet, createFileRoute } from '@tanstack/solid-router'
 import { AppHeader } from '../components/AppHeader'
 import {
   SettingsRail,
   useSettingsIndex,
 } from '../components/settings/SettingsNav'
 import { Toaster } from '../components/ui/toast'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // APP-007 on the web: Settings in groups. Desktop keeps the groups in a rail beside the page;
 // a phone lists the groups and opens one at a time.
 export const Route = createFileRoute('/app_/settings')({
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   component: SettingsLayout,
 })

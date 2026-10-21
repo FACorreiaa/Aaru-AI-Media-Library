@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouter } from '@tanstack/solid-router'
 import { For, Show } from 'solid-js'
 import { signOut } from '../lib/session/session'
+import { forgetAccount } from '../lib/session/query'
 import { Wordmark } from './Brand'
 import { Button, buttonVariants } from './ui/button'
 
@@ -25,6 +26,7 @@ export function AppHeader(props: { onSearch?: () => void; class?: string }) {
 
   async function leave() {
     await signOut()
+    forgetAccount(router.options.context.queryClient)
     await router.invalidate()
     await navigate({ to: '/' })
   }

@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/solid-router'
+import { createFileRoute } from '@tanstack/solid-router'
 import {
   For,
   Match,
@@ -31,7 +31,7 @@ import type { InsightsPeriod } from '../lib/insights/model'
 import { isEmpty } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
 import { getStats } from '../lib/recap/server'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // Insights on the web: the last 7 or 30 days, a month, a year, or all time in numbers, the browsable twin of the
 // Recap story. Stats load in the browser, which knows the viewer's time zone and "this month".
@@ -54,9 +54,8 @@ export const Route = createFileRoute('/app_/insights')({
     year: optionalInt(search.year, 1900, 2200),
     month: optionalInt(search.month, 1, 12),
   }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   component: Insights,
 })

@@ -1,9 +1,4 @@
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useRouter,
-} from '@tanstack/solid-router'
+import { Link, createFileRoute, useRouter } from '@tanstack/solid-router'
 import {
   For,
   Show,
@@ -32,7 +27,7 @@ import { Toaster, dismissToast, showToast } from '../components/ui/toast'
 import { cn } from '../lib/cn'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 import {
   getTitlePage,
   markSeason,
@@ -57,9 +52,8 @@ import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
 // tracklist: no progress, no episodes.
 export const Route = createFileRoute('/app_/title/$id')({
   head: () => ({ meta: [{ title: 'Title · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   loader: ({ params }) => getTitlePage({ data: { id: params.id } }),
   component: TitleRoom,

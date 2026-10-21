@@ -3,6 +3,8 @@ import {
   createMiddleware,
   createStart,
 } from '@tanstack/solid-start'
+import { browserQueryClient } from './integrations/tanstack-query/provider'
+import { SESSION_KEY } from './lib/session/query'
 
 const CANONICAL_HOST = 'aaruapp.com'
 
@@ -42,6 +44,24 @@ const securityHeaders = createMiddleware().server(async ({ request, next }) => {
 })
 
 /**
+ * Every POST is a write (or one-off work like a search), so after one the browser's cached
+ * reads count as old: the next page or Back asks the server again instead of showing what was
+ * there before the change. Nothing refetches right away. The session stays cached; signing in
+ * and out manage it themselves.
+ */
+const staleAfterWrite = createMiddleware({ type: 'function' }).client(
+  async ({ method, next }) => {
+    const result = await next()
+    if (method === 'POST')
+      void browserQueryClient()?.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== SESSION_KEY[0],
+        refetchType: 'none',
+      })
+    return result
+  },
+)
+
+/**
  * Server functions answer only this origin. Start adds this check itself only when an app has
  * no `src/start.ts`; with one, it is ours to add. The session cookie is SameSite=Lax, which
  * still lets another aaruapp.com subdomain call in; the Sec-Fetch-Site / Origin check does not.
@@ -53,4 +73,5 @@ const sameOriginServerFns = createCsrfMiddleware({
 export const startInstance = createStart(() => ({
   // Headers first, so a refused request still carries them.
   requestMiddleware: [securityHeaders, sameOriginServerFns],
+  functionMiddleware: [staleAfterWrite],
 }))

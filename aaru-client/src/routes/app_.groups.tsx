@@ -1,7 +1,6 @@
 import {
   Outlet,
   createFileRoute,
-  redirect,
   useNavigate,
   useParams,
 } from '@tanstack/solid-router'
@@ -22,16 +21,15 @@ import {
   loadGroups,
 } from '../lib/groups/server'
 import { connectionState, useRealtime } from '../lib/realtime/socket'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // GRP-004 on the web: the groups shell. Desktop shows four columns (rail, channels, the
 // channel, members); a tablet folds the rail and channels into a drawer; a phone stacks
 // groups → channels → chat.
 export const Route = createFileRoute('/app_/groups')({
   head: () => ({ meta: [{ title: 'Groups · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   loader: () => loadGroups(),
   component: GroupsShell,

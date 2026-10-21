@@ -1,4 +1,4 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import { For, Show, createResource, createSignal, onMount } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { AlbumLink, Cover, TopList } from '../components/music/TopList'
@@ -16,16 +16,15 @@ import {
 import type { TopBy } from '../lib/music/listening-model'
 import { listListens, topListens } from '../lib/music/listening'
 import type { Listen } from '../lib/music/listening'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // MUS-008: the listening log and its top lists. Recent and Top sit side by side on a wide
 // screen and behind a switch on a phone. Everything loads in the browser, which knows the
 // viewer's time zone.
 export const Route = createFileRoute('/app_/music')({
   head: () => ({ meta: [{ title: 'Music · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   component: Music,
 })
