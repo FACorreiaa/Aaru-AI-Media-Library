@@ -347,7 +347,7 @@ account or a stranger that has not happened yet.
 | APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
 | DISC-002 | Built | #84; DiscoverSeasonTests, season model tests | Not deployed; not run on a device |
-| MUS-001 | Built | MusicTests, StatsTests | Not deployed; not run on a device |
+| MUS-001 | Built | #93; MusicTests, StatsTests | Not deployed; not run on a device |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
