@@ -133,9 +133,18 @@ struct RootView: View {
             linkedTitle = LinkedTitle(id: id)
             PushInbox.shared.libraryItemID = nil
         }
+        .onChange(of: PushInbox.shared.groupLink, initial: true) { _, url in
+            guard session.isSignedIn, let url else { return }
+            openGroup(url)
+            PushInbox.shared.groupLink = nil
+        }
         .onOpenURL { url in
-            guard session.isSignedIn, let id = WidgetLink.libraryItemId(in: url) else { return }
-            linkedTitle = LinkedTitle(id: id)
+            guard session.isSignedIn else { return }
+            if let id = WidgetLink.libraryItemId(in: url) {
+                linkedTitle = LinkedTitle(id: id)
+            } else {
+                openGroup(url)
+            }
         }
         .alert(
             "Could not sign in",
@@ -148,6 +157,16 @@ struct RootView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
+        }
+    }
+
+    /// A group alert or link: the channel it names, or the Groups tab (GRP-012).
+    private func openGroup(_ url: URL) {
+        switch GroupLink(url) {
+        case .groups?: tab = .groups
+        // The Groups tab opens itself for a channel request.
+        case let .channel(request)?: groups.openRequest = request
+        case nil: break
         }
     }
 

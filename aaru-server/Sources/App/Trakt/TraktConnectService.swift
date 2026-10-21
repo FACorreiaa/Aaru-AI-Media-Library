@@ -90,22 +90,44 @@ struct TraktConnectService: Sendable {
         return Status(connected: true, username: connection.username, connectedAt: connection.connectedAt)
     }
 
+    /// Revokes the tokens on Trakt first, which frees one of the user's Trakt app slots (free
+    /// accounts get two). Best effort: forgetting the tokens here is what disconnects.
     func disconnect(userID: UserID) async throws {
+        if let settings, let api, let connection = try await stores.trakt.connection(userID: userID),
+           let token = try? settings.tokenCipher.open(connection.sealedAccessToken)
+        {
+            try? await api.revoke(token)
+        }
         try await stores.trakt.deleteConnection(userID: userID)
     }
 
     /// A usable access token, refreshed first when it expires within the hour. Nil when the
-    /// user has not connected Trakt.
+    /// user has not connected Trakt. Trakt's refresh tokens are single use, so the refresh runs
+    /// with the connection locked and a caller that waited reuses the token the first one got.
+    /// A refresh Trakt refuses means the user must connect again (`.unauthorized`).
     func accessToken(userID: UserID) async throws -> String? {
         let (settings, api) = try enabled()
         guard let connection = try await stores.trakt.connection(userID: userID) else { return nil }
-        if connection.expiresAt > now().addingTimeInterval(60 * 60) {
+        if isFresh(connection) {
             return try settings.tokenCipher.open(connection.sealedAccessToken)
         }
-        let refresh = try settings.tokenCipher.open(connection.sealedRefreshToken)
-        let tokens = try await api.refresh(refresh)
-        try await save(tokens, username: connection.username, userID: userID, settings: settings)
-        return tokens.accessToken
+        let refreshed = try await stores.trakt.refreshConnection(userID: userID) { current in
+            if isFresh(current) {
+                return current
+            }
+            let tokens: TraktAPI.Tokens
+            do {
+                tokens = try await api.refresh(settings.tokenCipher.open(current.sealedRefreshToken))
+            } catch let error as ProviderError where error.kind == .refused(400) {
+                throw ProviderError(provider: error.provider, kind: .unauthorized) // invalid_grant
+            }
+            return try record(tokens, username: current.username, connectedAt: current.connectedAt, settings: settings)
+        }
+        return try refreshed.map { try settings.tokenCipher.open($0.sealedAccessToken) }
+    }
+
+    private func isFresh(_ connection: TraktConnectionRecord) -> Bool {
+        connection.expiresAt > now().addingTimeInterval(60 * 60)
     }
 
     private func save(
@@ -114,13 +136,25 @@ struct TraktConnectService: Sendable {
         userID: UserID,
         settings: TraktSettings
     ) async throws {
-        try await stores.trakt.saveConnection(TraktConnectionRecord(
+        try await stores.trakt.saveConnection(
+            record(tokens, username: username, connectedAt: now(), settings: settings), userID: userID
+        )
+    }
+
+    /// Trakt says how long the token lives (24 hours or 7 days, it has changed); trust that.
+    private func record(
+        _ tokens: TraktAPI.Tokens,
+        username: String?,
+        connectedAt: Date,
+        settings: TraktSettings
+    ) throws -> TraktConnectionRecord {
+        try TraktConnectionRecord(
             sealedAccessToken: settings.tokenCipher.seal(tokens.accessToken),
             sealedRefreshToken: settings.tokenCipher.seal(tokens.refreshToken),
             expiresAt: now().addingTimeInterval(TimeInterval(tokens.expiresIn)),
             username: username,
-            connectedAt: now()
-        ), userID: userID)
+            connectedAt: connectedAt
+        )
     }
 
     static func returning(_ base: String, result: String) -> URL {

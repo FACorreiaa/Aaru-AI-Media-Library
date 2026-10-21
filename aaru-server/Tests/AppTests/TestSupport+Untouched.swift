@@ -72,6 +72,18 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func titlesMissingGenres(retryAfter _: Date, limit _: Int) async throws -> [Title] {
+        throw Touched()
+    }
+
+    func fillGenres(_: TitleID, _: [String], attemptedAt _: Date) async throws {
+        throw Touched()
+    }
+
+    func genres(_: TitleID) async throws -> [String] {
+        throw Touched()
+    }
+
     func saveWebPush(_: WebPushSubscription, userID _: UserID) async throws {
         throw Touched()
     }
@@ -297,6 +309,44 @@ extension UntouchedStore: OAuthStore {
     }
 
     func revoke(tokenHash _: String, now _: Date) async throws {
+        throw Touched()
+    }
+}
+
+extension UntouchedStore: PushStore {
+    func register(_: PushDevice, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func unregister(token _: String, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func forget(token _: String) async throws {
+        throw Touched()
+    }
+
+    func devices(userID _: UserID) async throws -> [PushDevice] {
+        throw Touched()
+    }
+
+    func notificationSettings(userID _: UserID) async throws -> NotificationSettings {
+        throw Touched()
+    }
+
+    func saveNotificationSettings(_: NotificationSettings, userID _: UserID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func mentionRecipients(group _: UUID, users _: [UserID]) async throws -> [UserID] {
+        throw Touched()
+    }
+
+    func dueAirings(now _: Date, since _: Date) async throws -> [DueAiring] {
+        throw Touched()
+    }
+
+    func claim(_: DueAiring) async throws -> Bool {
         throw Touched()
     }
 }

@@ -1,12 +1,23 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
-import { z } from 'zod'
+import {
+  For,
+  Show,
+  Suspense,
+  createMemo,
+  createSignal,
+  lazy,
+  onMount,
+} from 'solid-js'
+import { optionalBoolean, optionalEnum } from '../lib/search-params'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
-import { SearchPanel } from '../components/SearchPanel'
 import { Button } from '../components/ui/button'
 import { Dialog } from '../components/ui/dialog'
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '../components/ui/segmented-control'
 import { getLibrary } from '../lib/library/server'
 import {
   KINDS,
@@ -25,14 +36,26 @@ import { getSession } from '../lib/session/session'
 // APP-003 on the web: the shelf, at parity with the Apple apps' `LibraryView`. `?search=true`
 // opens Search on arrival; `?status=` opens the shelf filtered to one status (Home's count
 // chips link there).
+// Search loads only when it is first opened: it is not part of the page's first paint.
+const SearchPanel = lazy(() =>
+  import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
+)
+
 export const Route = createFileRoute('/app_/library')({
   head: () => ({ meta: [{ title: 'Library · Aaru' }] }),
-  validateSearch: z.object({
-    search: z.boolean().optional().catch(undefined),
-    status: z
-      .enum(['wishlist', 'in_progress', 'finished', 'dropped'])
-      .optional()
-      .catch(undefined),
+  validateSearch: (
+    search,
+  ): {
+    search?: boolean
+    status?: 'wishlist' | 'in_progress' | 'finished' | 'dropped'
+  } => ({
+    search: optionalBoolean(search.search),
+    status: optionalEnum(search.status, [
+      'wishlist',
+      'in_progress',
+      'finished',
+      'dropped',
+    ]),
   }),
   beforeLoad: async () => {
     const session = await getSession()
@@ -71,6 +94,12 @@ function Library() {
   // The entry whose "List…" was clicked: the picker adds its title to a list.
   const [listTarget, setListTarget] = createSignal<LibraryEntry | null>(null)
   let dialog: HTMLDialogElement | undefined
+  // Search mounts on its first open and then stays, keeping its query between opens.
+  const [searchOpened, setSearchOpened] = createSignal(false)
+  function openSearch() {
+    setSearchOpened(true)
+    dialog?.showModal()
+  }
 
   function chooseList(libraryItemId: string) {
     setListTarget(entries().find((e) => e.id === libraryItemId) ?? null)
@@ -79,7 +108,7 @@ function Library() {
   onMount(() => {
     setLayout(readLayout())
     if (search().search) {
-      dialog?.showModal()
+      openSearch()
       // Back does not reopen it.
       void navigate({
         search: (prev) => ({ ...prev, search: undefined }),
@@ -99,14 +128,9 @@ function Library() {
     }
   }
 
-  const chip = (on: boolean) =>
-    on
-      ? 'rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-paper'
-      : 'rounded-full border border-line px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface'
-
   return (
     <div class="min-h-[100dvh]">
-      <AppHeader onSearch={() => dialog?.showModal()} />
+      <AppHeader onSearch={openSearch} />
 
       <main class="mx-auto max-w-6xl px-5 pb-16 md:px-8">
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
@@ -114,25 +138,33 @@ function Library() {
         </h1>
 
         <div class="mt-6 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            class={chip(kind() === null)}
-            onClick={() => setKind(null)}
+          <SegmentedControl
+            class="flex flex-wrap gap-2"
+            aria-label="Kind"
+            value={kind() ?? 'all'}
+            onChange={(next) =>
+              setKind(next === 'all' ? null : (next as MediaKind))
+            }
           >
-            All
-          </button>
-          <For each={KINDS}>
-            {(option) => (
-              <button
-                type="button"
-                class={chip(kind() === option.kind)}
-                aria-pressed={kind() === option.kind}
-                onClick={() => setKind(option.kind)}
-              >
-                {option.label}
-              </button>
-            )}
-          </For>
+            <SegmentedControlItem
+              value="all"
+              variant="chip"
+              class="px-4 py-1.5 text-sm"
+            >
+              All
+            </SegmentedControlItem>
+            <For each={KINDS}>
+              {(option) => (
+                <SegmentedControlItem
+                  value={option.kind}
+                  variant="chip"
+                  class="px-4 py-1.5 text-sm"
+                >
+                  {option.label}
+                </SegmentedControlItem>
+              )}
+            </For>
+          </SegmentedControl>
           <label class="sr-only" for="status-filter">
             Status
           </label>
@@ -155,26 +187,27 @@ function Library() {
               )}
             </For>
           </select>
-          <div class="ml-auto flex overflow-hidden rounded-full border border-line text-sm">
-            <button
-              type="button"
-              aria-pressed={layout() === 'grid'}
+          <SegmentedControl
+            class="ml-auto flex overflow-hidden rounded-full border border-line text-sm"
+            aria-label="Layout"
+            value={layout()}
+            onChange={(next) => chooseLayout(next as Layout)}
+          >
+            <SegmentedControlItem
+              value="grid"
+              variant="surface"
               class="px-3 py-1.5"
-              classList={{ 'bg-surface font-semibold': layout() === 'grid' }}
-              onClick={() => chooseLayout('grid')}
             >
               Grid
-            </button>
-            <button
-              type="button"
-              aria-pressed={layout() === 'list'}
+            </SegmentedControlItem>
+            <SegmentedControlItem
+              value="list"
+              variant="surface"
               class="px-3 py-1.5"
-              classList={{ 'bg-surface font-semibold': layout() === 'list' }}
-              onClick={() => chooseLayout('list')}
             >
               List
-            </button>
-          </div>
+            </SegmentedControlItem>
+          </SegmentedControl>
         </div>
 
         <Show
@@ -203,7 +236,7 @@ function Library() {
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={() => dialog?.showModal()}
+                  onClick={openSearch}
                   class="mt-6"
                 >
                   Search
@@ -296,11 +329,19 @@ function Library() {
         aria-label="Search"
         class="w-[min(40rem,calc(100vw-2rem))]"
       >
-        <SearchPanel
-          entries={entries()}
-          onAdded={(entry) => setEntries(upsert(entries(), entry))}
-          onClose={() => dialog?.close()}
-        />
+        <Show when={searchOpened()}>
+          <Suspense
+            fallback={
+              <p class="px-5 py-8 text-center text-sm text-muted">Loading…</p>
+            }
+          >
+            <SearchPanel
+              entries={entries()}
+              onAdded={(entry) => setEntries(upsert(entries(), entry))}
+              onClose={() => dialog?.close()}
+            />
+          </Suspense>
+        </Show>
       </Dialog>
       <Show when={listTarget()}>
         {(entry) => (

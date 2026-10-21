@@ -61,7 +61,7 @@ func withMigratedStores<T>(_ body: (Stores) async throws -> T) async throws -> T
 
 /// A store that must not be touched by the test using it.
 struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, AnimeMappingStore, LibraryStore,
-    ListStore, ShelfStore, ScheduleStore, ImportJobStore, TraktStore, PushStore
+    ListStore, ShelfStore, ScheduleStore, ImportJobStore, TraktStore
 {
     func find(ids _: ExternalIDs, type _: AaruCore.MediaType) async throws -> Title? {
         throw Touched()
@@ -138,7 +138,7 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func insert(_: Title, status _: TitleStatus?, runtimeMinutes _: Int?) async throws {
+    func insert(_: Title, status _: TitleStatus?, runtimeMinutes _: Int?, genres _: [String]) async throws {
         throw Touched()
     }
 
@@ -287,38 +287,6 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
     }
 
     func deleteConnection(userID _: UserID) async throws {
-        throw Touched()
-    }
-
-    func register(_: PushDevice, userID _: UserID) async throws {
-        throw Touched()
-    }
-
-    func unregister(token _: String, userID _: UserID) async throws {
-        throw Touched()
-    }
-
-    func forget(token _: String) async throws {
-        throw Touched()
-    }
-
-    func devices(userID _: UserID) async throws -> [PushDevice] {
-        throw Touched()
-    }
-
-    func airingEnabled(userID _: UserID) async throws -> Bool {
-        throw Touched()
-    }
-
-    func setAiring(_: Bool, userID _: UserID, now _: Date) async throws {
-        throw Touched()
-    }
-
-    func dueAirings(now _: Date, since _: Date) async throws -> [DueAiring] {
-        throw Touched()
-    }
-
-    func claim(_: DueAiring) async throws -> Bool {
         throw Touched()
     }
 }

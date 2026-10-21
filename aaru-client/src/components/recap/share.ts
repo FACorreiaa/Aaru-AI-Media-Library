@@ -1,4 +1,5 @@
-import { periodLabel, shareLines } from '../../lib/recap/model'
+import { shareLines } from '../../lib/recap/deck'
+import { periodLabel } from '../../lib/recap/model'
 import type { Stats } from '../../lib/recap/model'
 
 // GAM-006a: the Recap's share image, drawn on a canvas from the user's own numbers. Text and
@@ -40,10 +41,13 @@ export async function drawShareImage(stats: Stats): Promise<Blob> {
   ctx.fillText(periodLabel({ year: stats.year, month: stats.month }), 96, 320)
 
   let y = 500
-  for (const line of shareLines(stats)) {
-    ctx.font = `500 64px ${display}`
+  const lines = shareLines(stats)
+  // A year review can carry seven lines; they step down a size so the footer stays clear.
+  const [size, leading, gap] = lines.length > 5 ? [52, 62, 28] : [64, 76, 40]
+  for (const line of lines) {
+    ctx.font = `500 ${size}px ${display}`
     // Next line: one line's leading, plus a gap between lines.
-    y = wrap(ctx, line, 96, y, WIDTH - 192, 76) + 76 + 40
+    y = wrap(ctx, line, 96, y, WIDTH - 192, leading) + leading + gap
   }
 
   ctx.font = `600 44px ${display}`

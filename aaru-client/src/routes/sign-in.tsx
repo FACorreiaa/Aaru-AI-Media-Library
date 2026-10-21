@@ -5,7 +5,7 @@ import {
   useRouter,
 } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
-import { z } from 'zod'
+import { optionalString } from '../lib/search-params'
 import { safeNext } from '../lib/oauth/model'
 import { AppleSignInButton } from '../components/AppleSignInButton'
 import type { AppleCredential } from '../components/AppleSignInButton'
@@ -27,7 +27,9 @@ import {
 export const Route = createFileRoute('/sign-in')({
   head: () => ({ meta: [{ title: 'Sign in · Aaru' }] }),
   // `next`: where to return after signing in, e.g. an OAuth consent page (OUT-004).
-  validateSearch: z.object({ next: z.string().optional() }),
+  validateSearch: (search): { next?: string } => ({
+    next: optionalString(search.next),
+  }),
   beforeLoad: async ({ search }) => {
     const session = await getSession()
     if (session.signedIn) throw redirect({ href: safeNext(search.next) })

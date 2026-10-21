@@ -5,6 +5,8 @@ import { lastUsedLabel } from '../lib/stremio/model'
 import { cn } from '../lib/cn'
 import { AlertDialog } from './ui/alert-dialog'
 import { Button } from './ui/button'
+import { RadioGroup, RadioGroupItem } from './ui/radio-group'
+import { showToast } from './ui/toast'
 import { cardClass } from './ui/card'
 import {
   createConnection,
@@ -89,30 +91,20 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
         when={fresh()}
         fallback={
           <div class="mt-4 flex flex-col gap-4">
-            <div
-              role="radiogroup"
+            <RadioGroup
               aria-label="Agent"
               class="flex flex-wrap gap-2"
+              value={kind()}
+              onChange={(next) => setKind(next as AgentKind)}
             >
               <For each={AGENT_KINDS}>
                 {(option) => (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={kind() === option}
-                    class="min-h-11 rounded-full border px-4 text-sm font-semibold"
-                    classList={{
-                      'border-accent bg-accent text-on-accent':
-                        kind() === option,
-                      'border-ink/25': kind() !== option,
-                    }}
-                    onClick={() => setKind(option)}
-                  >
+                  <RadioGroupItem value={option}>
                     {kindLabel(option)}
-                  </button>
+                  </RadioGroupItem>
                 )}
               </For>
-            </div>
+            </RadioGroup>
 
             <Show when={preview()}>
               {(setup) => <SetupSteps setup={setup()} />}
@@ -133,7 +125,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
               <label class="flex items-start gap-2 text-sm">
                 <input
                   type="checkbox"
-                  class="mt-0.5"
+                  class="mt-0.5 accent-accent"
                   checked={allowWrites()}
                   onChange={(e) => setAllowWrites(e.currentTarget.checked)}
                 />
@@ -270,6 +262,8 @@ function CopyBlock(props: { text: string; wrap?: boolean }) {
     try {
       await navigator.clipboard.writeText(props.text)
       setCopied(true)
+      // The label change is silent to a screen reader; the toast is announced.
+      showToast('Copied to the clipboard.')
       setTimeout(() => setCopied(false), 2000)
     } catch {
       // Clipboard can be blocked; the text stays selectable.

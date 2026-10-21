@@ -51,10 +51,19 @@ struct LocalDay: Sendable, Hashable, Comparable, CustomStringConvertible {
     }
 }
 
-/// One calendar year, one month of it, or all time, in one time zone.
+/// One calendar year, one month of it, all time, or the last 7 or 30 days, in one time zone.
 struct StatsPeriod: Sendable, Equatable {
     enum Span: String, Sendable {
-        case month, year, all
+        case month, year, all, last7, last30
+
+        /// GAM-006d: the length of a rolling span in days; nil for calendar spans.
+        var days: Int? {
+            switch self {
+            case .last7: 7
+            case .last30: 30
+            case .month, .year, .all: nil
+            }
+        }
     }
 
     /// The earliest day any period reaches (`StatsService.years`' lower bound).
@@ -94,14 +103,41 @@ struct StatsPeriod: Sendable, Equatable {
         firstYear = today.year
     }
 
-    /// Months of the year, days of the month, or years from `firstYear`, in order.
+    /// GAM-006d: the `days` days ending with `today`, one bucket per day. `year` is today's.
+    init(lastDays span: Span, today: LocalDay, timeZone: TimeZone) {
+        let days = span.days ?? 7
+        self.init(span: span, from: today.adding(days: 1 - days), until: today.adding(days: 1), timeZone: timeZone)
+    }
+
+    private init(span: Span, from: LocalDay, until: LocalDay, timeZone: TimeZone) {
+        self.span = span
+        year = until.adding(days: -1).year
+        month = nil
+        self.timeZone = timeZone
+        start = from
+        end = until
+        firstYear = year
+    }
+
+    /// A rolling span's equal-length window just before it; nil for calendar spans.
+    var previous: StatsPeriod? {
+        guard let days = span.days else { return nil }
+        return StatsPeriod(span: span, from: start.adding(days: -days), until: start, timeZone: timeZone)
+    }
+
+    /// The period's last day, inclusive.
+    var lastDay: LocalDay {
+        end.adding(days: -1)
+    }
+
+    /// Months of the year, days of the month or rolling span, or years from `firstYear`, in order.
     var bucketStarts: [LocalDay] {
         switch span {
         case .all:
             return (min(firstYear, year) ... year).map { LocalDay(year: $0, month: 1, day: 1) }
         case .year:
             return (0 ..< 12).map { start.adding(months: $0) }
-        case .month:
+        case .month, .last7, .last30:
             return Array(sequence(first: start) { $0.adding(days: 1) }.prefix { $0 < end })
         }
     }
@@ -111,7 +147,7 @@ struct StatsPeriod: Sendable, Equatable {
         switch span {
         case .all: LocalDay(year: day.year, month: 1, day: 1)
         case .year: LocalDay(year: day.year, month: day.month, day: 1)
-        case .month: day
+        case .month, .last7, .last30: day
         }
     }
 }
@@ -129,6 +165,8 @@ struct StatsActivity: Sendable, Equatable {
     var finished: Bool
     var firstAt: Date
     var lastAt: Date
+    /// GAM-006e: the title's stored genres (CAT-018); empty for books and titles not yet filled.
+    var genres: [String] = []
 }
 
 protocol StatsStore: Sendable {
@@ -199,9 +237,35 @@ struct PeriodStats: Sendable, Equatable {
         var date: Date
     }
 
+    /// GAM-006e: time spent in one genre, and how many titles carried it.
+    struct GenreTime: Sendable, Equatable {
+        var name: String
+        var minutes: Int
+        var titles: Int
+    }
+
+    /// GAM-006e: one word for how the period went, from the user's own numbers only. The first
+    /// rule that holds wins, in case order. Clients own the words; the server owns the rule.
+    enum Persona: String, Sendable, CaseIterable {
+        /// A day of six or more episodes, or two weeks in a row.
+        case binger
+        /// Books are most of what was finished (at least two).
+        case bookworm
+        /// Anime is most of the time.
+        case anime
+        /// 24 or more titles finished.
+        case completionist
+        /// Three or more kinds of story.
+        case explorer
+        /// Anything else with activity.
+        case steady
+    }
+
     var period: StatsPeriod
     var isPartial: Bool
     var totals: Totals
+    /// GAM-006d: the previous equal-length window's totals; rolling spans only.
+    var prior: Totals?
     /// Movie, show, anime, book, always all four; they sum to `totals`.
     var byKind: [KindTotals]
     var buckets: [Bucket]
@@ -213,4 +277,9 @@ struct PeriodStats: Sendable, Equatable {
     var ratings: Ratings
     var first: Moment?
     var last: Moment?
+    /// GAM-006e: the three genres with the most time, films, shows and anime only.
+    var topGenres: [GenreTime] = []
+    /// GAM-006e: the single local day with the most time (then episodes); the earliest on a tie.
+    var biggestDay: Bucket?
+    var persona: Persona?
 }

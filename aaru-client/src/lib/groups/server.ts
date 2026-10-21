@@ -95,6 +95,19 @@ export const updateGroup = createServerFn({ method: 'POST' })
     ),
   )
 
+/** Mutes or unmutes this group's mention alerts for me (GRP-012). Nobody else sees it. */
+export const setGroupMuted = createServerFn({ method: 'POST' })
+  .validator(z.object({ groupId: uuid, muted: z.boolean() }))
+  .handler(async ({ data }): Promise<GroupSummary> =>
+    check(
+      await api(sessionToken()).PUT('/v1/groups/{groupId}/me', {
+        params: { path: { groupId: data.groupId } },
+        body: { muted: data.muted },
+      }),
+      'That setting was not saved.',
+    ),
+  )
+
 export const deleteGroup = createServerFn({ method: 'POST' })
   .validator(groupRef)
   .handler(async ({ data }) =>
@@ -184,8 +197,11 @@ export const declineGroupInvite = createServerFn({ method: 'POST' })
     ),
   )
 
-/** A title by Aaru id, by provider ids, or by title and year, as the server's `MediaRef`. */
-export const mediaRef = z.object({
+/**
+ * A title by Aaru id, by provider ids, or by title and year, as the server's `MediaRef`. Kept
+ * private: an exported schema survives the server-function split and pulls zod into the browser.
+ */
+const mediaRef = z.object({
   titleId: uuid.optional(),
   type: z.enum(['movie', 'show', 'book']),
   ids: z.record(z.string(), z.string()).optional(),

@@ -30,16 +30,19 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let transport = AsyncHTTPTransport(client: .shared)
     let auth = makeAuthService(config: config, stores: stores, transport: transport)
     let catalogs = makeCatalogProviders(config: config, transport: transport)
-    let trakt = makeTraktAPI(config.trakt, transport: transport)
+    let trakt = config.trakt.map { makeTraktAPI($0, transport) }
     let webPush = makeWebPushSender(config.vapidConfigJSON, logger: logger)
     var services = Services.make(
         stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
+        catFeed: makeCATCalendarFeed(transport),
         publicBaseURL: config.publicBaseURL, oauth: (config.webBaseURL, config.oauthCookieDomain),
         model: makeModelProvider(config.anthropic, transport: transport, logger: logger)
     )
     services.webPush = webPush
     let pushSender = makePushSender(config.push, logger: logger)
-    services.plans.push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
+    let push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
+    services.plans.push = push
+    services.groups.push = push
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -276,6 +279,16 @@ func makeAuthService(config: AppConfig, stores: Stores, transport: any HTTPTrans
     )
 }
 
+/// Trakt allows 500 reads per 5 minutes per user (1.67/s); stay under it.
+func makeTraktAPI(_ settings: TraktSettings, _ transport: any HTTPTransport) -> TraktAPI {
+    TraktAPI(
+        client: ProviderClient(
+            name: "trakt", transport: transport, pacer: RequestPacer(requestsPerSecond: 1.5, burst: 10)
+        ),
+        settings: settings
+    )
+}
+
 /// Stremio's account API (a few calls per import) and Cinemeta (one call per show in a library).
 func makeStremioAccount(_ transport: any HTTPTransport) -> StremioAccount {
     func client(_ name: String, perSecond: Double) -> ProviderClient {
@@ -286,6 +299,13 @@ func makeStremioAccount(_ transport: any HTTPTransport) -> StremioAccount {
         api: client("stremio", perSecond: 2),
         cinemeta: client("cinemeta", perSecond: 5)
     )
+}
+
+/// The user's own CAT calendar link (IMP-010): one request per import, so a slow pacer.
+func makeCATCalendarFeed(_ transport: any HTTPTransport) -> CATCalendarFeed {
+    CATCalendarFeed(client: ProviderClient(
+        name: "pogdesign", transport: transport, pacer: RequestPacer(requestsPerSecond: 1, burst: 3)
+    ))
 }
 
 /// One `ProviderClient` (and so one rate pacer) per provider, shared by every caller.

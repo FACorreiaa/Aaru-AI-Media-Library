@@ -17,6 +17,7 @@ import {
   failPending,
   mergeMessages,
   newLineIndex,
+  PAGE_SIZE,
   retryPending,
   settlePending,
   splitMentions,
@@ -65,8 +66,6 @@ import {
   ThinkingRow,
 } from './AgentParts'
 import { Monogram, useGroup, useShell, useVisiblePoll } from './shell'
-
-export const PAGE_SIZE = 50
 
 /**
  * MessageList (GRP-005): one channel's conversation and its composer. Flat rows grouped into

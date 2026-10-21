@@ -6,8 +6,8 @@ import OpenAPIRuntime
 extension APIImplementation {
     func getStats(_ input: Operations.GetStats.Input) async throws -> Operations.GetStats.Output {
         let stats = try await services.stats.stats(
-            userID: currentUser(), allTime: input.query.span == .all, year: input.query.year,
-            month: input.query.month, timeZone: input.query.tz
+            userID: currentUser(), span: input.query.span.flatMap { StatsPeriod.Span(rawValue: $0.rawValue) },
+            year: input.query.year, month: input.query.month, timeZone: input.query.tz
         )
         return .ok(.init(body: .json(.init(stats))))
     }
@@ -20,14 +20,12 @@ extension Components.Schemas.Stats {
             span: .init(rawValue: stats.period.span.rawValue) ?? .year,
             year: stats.period.year,
             month: stats.period.month,
+            from: stats.period.span.days == nil ? nil : stats.period.start.description,
+            until: stats.period.span.days == nil ? nil : stats.period.lastDay.description,
             timeZone: stats.period.timeZone.identifier,
             isPartial: stats.isPartial,
-            totals: .init(
-                episodesWatched: totals.episodesWatched, minutesWatched: totals.minutesWatched,
-                activeDays: totals.activeDays, moviesFinished: totals.moviesFinished,
-                showsFinished: totals.showsFinished, animeFinished: totals.animeFinished,
-                booksFinished: totals.booksFinished
-            ),
+            totals: .init(totals),
+            prior: stats.prior.map(Components.Schemas.StatsTotals.init),
             byKind: stats.byKind.map {
                 .init(
                     kind: .init(rawValue: $0.kind.rawValue) ?? .movie, episodes: $0.episodes, minutes: $0.minutes,
@@ -49,7 +47,21 @@ extension Components.Schemas.Stats {
                 highestRating: stats.ratings.highestRating, distribution: stats.ratings.distribution
             ),
             first: stats.first.map { .init(title: .init($0.title), at: $0.date) },
-            last: stats.last.map { .init(title: .init($0.title), at: $0.date) }
+            last: stats.last.map { .init(title: .init($0.title), at: $0.date) },
+            topGenres: stats.topGenres.map { .init(name: $0.name, minutes: $0.minutes, titles: $0.titles) },
+            biggestDay: stats.biggestDay.map(Components.Schemas.StatsBucket.init),
+            persona: stats.persona.flatMap { .init(rawValue: $0.rawValue) }
+        )
+    }
+}
+
+extension Components.Schemas.StatsTotals {
+    init(_ totals: PeriodStats.Totals) {
+        self.init(
+            episodesWatched: totals.episodesWatched, minutesWatched: totals.minutesWatched,
+            activeDays: totals.activeDays, moviesFinished: totals.moviesFinished,
+            showsFinished: totals.showsFinished, animeFinished: totals.animeFinished,
+            booksFinished: totals.booksFinished
         )
     }
 }

@@ -85,7 +85,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
             <label class="flex items-start gap-2 text-sm">
               <input
                 type="checkbox"
-                class="mt-0.5"
+                class="mt-0.5 accent-accent"
                 checked={allowWrites()}
                 onChange={(e) => setAllowWrites(e.currentTarget.checked)}
               />

@@ -16,16 +16,7 @@ extension APIImplementation {
         let body: HTTPBody = switch input.body {
         case let .csv(body), let .xml(body): body
         }
-        // Refuse an oversized upload from its declared length, before reading a byte of it.
-        if case let .known(length) = body.length, length > ImportService.maxUploadBytes {
-            throw Self.tooLarge
-        }
-        let text: String
-        do {
-            text = try await String(collecting: body, upTo: ImportService.maxUploadBytes)
-        } catch {
-            throw Self.tooLarge
-        }
+        let text = try await Self.text(body)
         let source: ImportSource
         switch input.query.source {
         case .imdb: source = .imdbCSV
@@ -46,6 +37,25 @@ extension APIImplementation {
         let job = try await services.imports.createCSVImport(
             userID: currentUser(), source: source, filename: input.query.filename, text: text
         )
+        return .accepted(.init(body: .json(.init(job))))
+    }
+
+    func createCATImport(_ input: Operations.CreateCATImport.Input) async throws -> Operations.CreateCATImport
+        .Output
+    {
+        let body: HTTPBody = switch input.body {
+        case let .plainText(body), let .textCalendar(body): body
+        }
+        let text = try await Self.text(body)
+        let job = try await services.imports.createCATImport(userID: currentUser(), text: text)
+        return .accepted(.init(body: .json(.init(job))))
+    }
+
+    func createCATFeedImport(_ input: Operations.CreateCATFeedImport.Input) async throws
+        -> Operations.CreateCATFeedImport.Output
+    {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let job = try await services.imports.createCATFeedImport(userID: currentUser(), link: body.url)
         return .accepted(.init(body: .json(.init(job))))
     }
 
@@ -114,6 +124,18 @@ extension APIImplementation {
     func disconnectTrakt(_: Operations.DisconnectTrakt.Input) async throws -> Operations.DisconnectTrakt.Output {
         try await services.traktConnect.disconnect(userID: currentUser())
         return .noContent(.init())
+    }
+
+    /// An upload's text. An oversized one is refused from its declared length, before a byte is read.
+    private static func text(_ body: HTTPBody) async throws -> String {
+        if case let .known(length) = body.length, length > ImportService.maxUploadBytes {
+            throw tooLarge
+        }
+        do {
+            return try await String(collecting: body, upTo: ImportService.maxUploadBytes)
+        } catch {
+            throw tooLarge
+        }
     }
 
     private static var tooLarge: AppError {

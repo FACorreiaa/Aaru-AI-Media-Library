@@ -222,7 +222,7 @@ extension Components.Schemas.GroupSummary {
         self.init(
             id: group.id.uuidString, name: group.name, role: .init(group.role),
             defaultChannelId: group.defaultChannelID.uuidString, unread: group.unread, mentions: group.mentions,
-            shareProgress: group.shareProgress
+            shareProgress: group.shareProgress, muted: group.muted
         )
     }
 }

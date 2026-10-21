@@ -4,15 +4,18 @@
     import UIKit
     import UserNotifications
 
-    /// Airing-episode pushes on iOS: asks permission when the user turns the setting on, hands the
-    /// APNs token to the API, and forgets it on sign-out. Mac push is not on yet.
+    typealias NotificationSettings = Components.Schemas.NotificationSettings
+
+    /// Pushes on iOS (airing episodes, group mentions and invites): asks permission when the user
+    /// turns a setting on, hands the APNs token to the API, and forgets it on sign-out. Mac push is
+    /// not on yet.
     @MainActor
     @Observable
     final class PushRegistrar {
         /// The app delegate reaches the registrar through this; set once at launch.
         static var current: PushRegistrar?
 
-        private(set) var airing = false
+        private(set) var settings = NotificationSettings(airing: false, groupMentions: false, groupInvites: false)
         var problem: String?
 
         @ObservationIgnored private let api: Client?
@@ -24,18 +27,20 @@
         }
 
         func loadSetting() async {
-            guard let api, case let .ok(response) = try? await api.getNotificationSettings() else { return }
-            airing = (try? response.body.json.airing) ?? false
+            guard let api, case let .ok(response) = try? await api.getNotificationSettings(),
+                  let loaded = try? response.body.json
+            else { return }
+            settings = loaded
             // Refresh the token each launch: Apple can rotate it.
-            if airing,
+            if loaded.airing || loaded.groupMentions || loaded.groupInvites,
                await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .authorized
             {
                 UIApplication.shared.registerForRemoteNotifications()
             }
         }
 
-        /// Turns airing alerts on or off. On asks the system first; a refusal leaves it off.
-        func setAiring(_ enabled: Bool) async {
+        /// Turns one kind of alert on or off. On asks the system first; a refusal leaves it off.
+        func set(_ setting: WritableKeyPath<NotificationSettings, Bool>, _ enabled: Bool) async {
             guard let api else { return }
             problem = nil
             if enabled {
@@ -47,11 +52,15 @@
                 }
                 UIApplication.shared.registerForRemoteNotifications()
             }
+            var update = Components.Schemas.NotificationSettingsUpdate()
+            switch setting {
+            case \.airing: update.airing = enabled
+            case \.groupMentions: update.groupMentions = enabled
+            default: update.groupInvites = enabled
+            }
             do {
-                if case let .ok(response) = try await api
-                    .updateNotificationSettings(body: .json(.init(airing: enabled)))
-                {
-                    airing = try response.body.json.airing
+                if case let .ok(response) = try await api.updateNotificationSettings(body: .json(update)) {
+                    settings = try response.body.json
                 }
             } catch {
                 problem = "That was not saved. Aaru could not reach the server."
@@ -80,7 +89,7 @@
             guard let api, let token = defaults.string(forKey: Self.tokenKey) else { return }
             _ = try? await api.unregisterDevice(path: .init(token: token))
             defaults.removeObject(forKey: Self.tokenKey)
-            airing = false
+            settings = NotificationSettings(airing: false, groupMentions: false, groupInvites: false)
         }
     }
 
@@ -105,7 +114,8 @@
             [.banner, .sound]
         }
 
-        /// A tap on an airing alert opens the show it announced; one on an agent request opens it.
+        /// A tap on an airing alert opens the show it announced; one on an agent request opens it;
+        /// one on a mention opens its channel, and one on a group invite the Groups tab.
         nonisolated func userNotificationCenter(
             _: UNUserNotificationCenter,
             didReceive response: UNNotificationResponse
@@ -113,9 +123,11 @@
             let info = response.notification.request.content.userInfo
             let id = info["libraryItemId"] as? String
             let plan = info["planId"] as? String
+            let group = (info["url"] as? String).flatMap(URL.init(string:))
             await MainActor.run {
                 PushInbox.shared.libraryItemID = id
                 PushInbox.shared.planID = plan
+                PushInbox.shared.groupLink = group
             }
         }
     }

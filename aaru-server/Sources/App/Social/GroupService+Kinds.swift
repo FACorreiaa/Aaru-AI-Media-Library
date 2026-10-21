@@ -25,11 +25,19 @@ extension GroupService {
 
     // MARK: Progress and spoilers
 
-    /// Shows or hides the viewer's progress in this group's title channels.
-    func setShareProgress(_ group: UUID, share: Bool, viewer: UserID) async throws -> GroupSummary {
+    /// The viewer's own settings in a group: showing their progress in its title channels, and
+    /// muting its mention alerts (GRP-012). A nil leaves that setting as it is.
+    func updateMembership(_ group: UUID, share: Bool?, muted: Bool?, viewer: UserID) async throws -> GroupSummary {
         _ = try await role(group, viewer)
-        try await stores.groupKinds.setShareProgress(group, user: viewer, share: share)
-        await announce(.groupUpdated(group: group), in: group)
+        if let share {
+            try await stores.groupKinds.setShareProgress(group, user: viewer, share: share)
+            await announce(.groupUpdated(group: group), in: group)
+        }
+        if let muted {
+            // Nobody else sees a mute; only the viewer's other devices refresh.
+            try await stores.groups.setMuted(group, user: viewer, muted: muted)
+            await events.publish(.groupUpdated(group: group), to: [viewer])
+        }
         guard let summary = try await stores.groups.summary(group, viewer: viewer) else { throw Self.noSuchGroup }
         return summary
     }

@@ -5,7 +5,11 @@ import Foundation
 /// the client id is public.
 struct TraktSettings: Sendable {
     static let authorizeURL = URL(string: "https://auth.trakt.tv/oauth/authorize")!
+    /// Token exchange, refresh and revoke. Trakt requires this host for OAuth from 2027-02-01.
+    static let authURL = URL(string: "https://auth.trakt.tv")!
     static let apiURL = URL(string: "https://api.trakt.tv")!
+    /// Trakt may block requests that do not identify the app.
+    static let userAgent = "Aaru/1.0 (+https://aaruapp.com)"
 
     var clientID: String
     /// Must be registered on the Trakt app exactly. `https://` on Aaru's own API host.

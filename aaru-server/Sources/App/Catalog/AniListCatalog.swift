@@ -9,7 +9,7 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
     let client: ProviderClient
 
     private static let mediaFields = """
-    id idMal format status episodes duration
+    id idMal format status episodes duration genres
     title { romaji english native }
     startDate { year month day }
     coverImage { large }
@@ -31,7 +31,9 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
         guard let media = try await media(for: ids) else { return nil }
         var hit = media.hit
         hit.ids = hit.ids.filling(from: ids)
-        return CatalogTitle(hit: hit, status: media.titleStatus, runtimeMinutes: media.duration)
+        return CatalogTitle(
+            hit: hit, status: media.titleStatus, runtimeMinutes: media.duration, genres: media.genres ?? []
+        )
     }
 
     func episodes(ids: ExternalIDs) async throws -> CatalogEpisodes? {
@@ -208,6 +210,7 @@ private struct Media: Decodable {
     let status: String?
     let episodes: Int?
     let duration: Int?
+    let genres: [String]?
     let title: Titles
     let startDate: StartDate?
     let coverImage: Cover?

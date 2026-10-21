@@ -71,3 +71,29 @@ export function stateLabel(job: ImportJob): string {
 /** Still changing on the server: the page polls until it is not. */
 export const isWorking = (job: ImportJob) =>
   job.state === 'queued' || job.state === 'running'
+
+/** What Trakt's redirect back (`?trakt=`) means, in words; null for anything else. */
+export function traktResult(
+  value: string | undefined,
+): { ok: boolean; message: string } | null {
+  switch (value) {
+    case 'connected':
+      return {
+        ok: true,
+        message: 'Trakt is connected. Import when you are ready.',
+      }
+    case 'denied':
+      return {
+        ok: false,
+        message: 'Trakt was not connected: access was declined.',
+      }
+    case 'failed':
+      return {
+        ok: false,
+        message:
+          'Trakt could not finish connecting. Free Trakt accounts can connect two apps; disconnect one on trakt.tv, or try again.',
+      }
+    default:
+      return null
+  }
+}

@@ -95,7 +95,7 @@ struct PushTests {
             let (live, dead) = (Self.token(), Self.token())
             _ = try await register(env, live)
             _ = try await register(env, dead, environment: "sandbox")
-            try await env.stores.push.setAiring(true, userID: env.userID, now: optIn)
+            try await env.stores.push.saveNotificationSettings(.init(airing: true), userID: env.userID, now: optIn)
 
             let sender = FakeSender(dead: [dead])
             var notifier = AiringNotifier(stores: env.stores, sender: sender)

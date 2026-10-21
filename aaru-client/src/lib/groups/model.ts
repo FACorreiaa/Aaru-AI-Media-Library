@@ -6,6 +6,8 @@ import type { GroupMember, GroupMessage } from './server'
 /** A run by one author holds together this long. */
 export const RUN_WINDOW_MS = 5 * 60 * 1000
 export const MAX_MESSAGE_LENGTH = 4000
+/** Messages per page. Here, not in MessageList: the channel route's loader (never code-split) reads it. */
+export const PAGE_SIZE = 50
 
 /** A message typed here that the server has not confirmed yet. */
 export type PendingMessage = {

@@ -1,8 +1,9 @@
 import AaruAPI
 import SwiftUI
 
-/// Insights (GAM-006c): the user's own numbers for a month, a year or all time, with a way into
-/// the Recap story for the same month or year. Reached from Home's stats strip and Library's menu.
+/// Insights (GAM-006c/d): the user's own numbers for the last 7 or 30 days, a month, a year or all
+/// time, with a way into the Recap story for the same month or year. Reached from Home's week
+/// strip and Library's menu.
 struct InsightsView: View {
     let api: Client?
 
@@ -42,7 +43,9 @@ struct InsightsView: View {
         if let stats = model.stats {
             if stats.totals.isZero, stats.ratings.mean == nil {
                 ContentUnavailableView(
-                    "Nothing tracked in \(model.period.label)",
+                    model.span.isRolling
+                        ? "Nothing tracked in the \(model.period.label.lowercased())"
+                        : "Nothing tracked in \(model.period.label)",
                     systemImage: "chart.bar",
                     description: Text("Tick episodes and finish titles, and they add up here.")
                 )
@@ -59,13 +62,13 @@ struct InsightsView: View {
     }
 }
 
-/// "‹ October 2026 ›". All time has nothing to step through.
+/// "‹ October 2026 ›". All time and rolling windows have nothing to step through.
 private struct PeriodStepper: View {
     let model: InsightsModel
 
     var body: some View {
         HStack {
-            if model.canStepBack {
+            if model.canStep {
                 Button("Previous", systemImage: "chevron.left") { model.step(-1) }
                     .labelStyle(.iconOnly)
             }
@@ -74,7 +77,7 @@ private struct PeriodStepper: View {
                 .font(.system(.title2, design: .serif, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
             Spacer()
-            if model.span != .all {
+            if model.canStep {
                 Button("Next", systemImage: "chevron.right") { model.step(1) }
                     .labelStyle(.iconOnly)
                     .disabled(!model.canStepForward)

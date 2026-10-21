@@ -83,6 +83,9 @@ A canonical work Aaru knows about. Created on first add or during import hydrati
 - `posterURL` (catalog URL, not hosted)
 - `ids` — `ExternalIDs`
 - `seasons` — only for shows; episode lists may be lazy-loaded
+- `genres` (server-only, CAT-018) — the provider's genre names, stored at hydration (TMDB,
+  AniList; books none) and backfilled by the catalog refresher. Not on the `Title` DTO; the
+  stats read them
 
 Titles are shared across users. Do not put ratings or status on `Title`.
 
@@ -183,7 +186,7 @@ what any user watched or read.
 
 Shape:
 
-- `source` — import source (`trakt`, `imdb_csv`, `letterboxd_csv`, `goodreads_csv`, `cat`)
+- `source` — import source (`trakt`, `imdb_csv`, `letterboxd_csv`, `goodreads_csv`, `cat_list`, `cat_ics`)
 - `source_key` — the normalized row identity from that source (Letterboxd URI, Goodreads
   book id, normalized title + year for sources with no stable id)
 - `external_id` — the resolved `ExternalID` (`tmdb`, `imdb`, `trakt`, `tvdb`, `isbn`)
@@ -271,7 +274,8 @@ POST   /v1/imports/stremio/link/{code}    # 204 pending | 202 queued import | 41
 POST   /v1/imports/csv                    # text/csv body; ?source=imdb|letterboxd|goodreads&filename=
 POST   /v1/imports/{id}/apply             # approve the plan: one journaled, undoable action
 DELETE /v1/imports/{id}                   # discard
-POST   /v1/imports/cat                    # text list or ics
+POST   /v1/imports/cat                    # text/plain list or text/calendar ics (IMP-009/010)
+POST   /v1/imports/cat/feed               # {url}: the user's CAT iCal link, read once, not kept
 POST   /v1/imports/capture                # one-shot capture: text | image | url
 GET    /v1/imports/{id}
 
@@ -328,6 +332,16 @@ a request with neither `year` nor `span` is a 422 too), so all-time totals equal
 response adds `span` (`month` | `year` | `all`), `byKind` (`movie` | `show` | `anime` | `book`:
 episodes, minutes, finished) and `ratings.distribution`: ten bins, index `ceil(rating) - 1`,
 so a 7.5 counts as an 8. No new query and no table.
+
+The last 7 and 30 days (GAM-006d) are `span=last7|last30`: the local days ending today in `tz`,
+one bucket per day, `from`/`until` inclusive. The service reads the window and the equal-length
+window before it in one `activity` call, splits the rows at the window's first day, and digests
+each; the earlier one returns only as `prior` totals, for the clients' deltas. Same rows, same
+rule on imported ticks, no new query and no table.
+
+The Year in Review (GAM-006e) reads `titles.genres` (CAT-018) in the same query and derives
+`topGenres`, `biggestDay` and `persona` in `StatsDigest`. The persona rule lives in the server;
+clients only map its key to words.
 
 ### Calendar and Up Next
 
@@ -459,7 +473,10 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - PKCE only: Trakt issues this app no client secret. The server holds the verifier; the browser
   carries a one-time `state` and the `code`. Redirect URI `https://api.<domain>/v1/imports/trakt/callback`
 - OAuth user token stored encrypted at rest (AES-GCM, `TRAKT_TOKEN_KEY`), refreshed before expiry
-- Pull watched history, watchlist, ratings, lists
+  with the connection row locked (refresh tokens are single use); disconnect revokes on Trakt
+- OAuth calls go to `auth.trakt.tv`, data to `api.trakt.tv`; every call sends a `User-Agent`
+- Pull watched history, watchlist, ratings, lists: every list paged at 250, watched shows with
+  `extended=progress` (Trakt sends no episodes without it); 1.5 requests/s, `Retry-After` honoured
 - Map Trakt ids → TMDB/IMDb → `Title`
 - First importer in the merge order
 
@@ -495,10 +512,18 @@ Unmatched rows are counted and listed on the job; they are not silently dropped 
 
 ### CAT
 
-- Text list of show names → TMDB search, first high-confidence hit
-- ICS: extract show titles from event names; treat as tracked series (`wishlist` or `in_progress` if currently airing is knowable, else `wishlist`)
-- No watched-episode import from CAT in v1
-- No HTTP scraping of pogdesign.co.uk
+- Text list of show names, one per line (`Name` or CAT's `Name (2026)`) → `nameOnly` rows. A
+  name-only row matches through `TitleResolver.resolveShow(named:)`: the one TMDB show whose
+  normalized title equals it, any year. Two shows with the name are ambiguous and listed unmatched
+  ("Pick the right one by hand"); never a guess. A row with a year takes the normal title + year path
+- ICS (file or the user's iCal link): show names from each event's `SUMMARY` with the episode part
+  (`S01E02`, `1x02`) removed; events collapse to one row per show. A summary with no readable show
+  name is listed unmatched, once
+- Every CAT show is planned `wishlist` with no progress (owner, 2026-10-21). No watched-episode import
+  from CAT
+- The iCal link (`/cat/download_ics/<key>` or `generate_ics`) is checked strictly (https, pogdesign
+  host, that path), read once at request time through a `ProviderClient`, and never stored or logged:
+  it holds the user's CAT key. No other pogdesign.co.uk page is ever read
 
 ## Import pipeline
 
@@ -960,6 +985,14 @@ server never sees plaintext.
   the server never POSTs anywhere else. The same airing job fans out to APNs devices and browser
   subscriptions behind `WebPushSending` (named for the wire format). The web's `public/sw.js` has
   no fetch handler: it shows the alert and opens the same-origin path the alert carries.
+- Group alerts (GRP-012): `notification_settings.group_mentions` and `group_invites`, off until
+  turned on like `airing`, and `group_members.muted` per group (`PUT /v1/groups/{id}/me`). A post
+  alerts the members it tags, unless they muted the group, turned mentions off, or blocked the
+  author; a retried post and a repeat invite alert nobody. Alerts go out inline through
+  `UserPush`, best effort, like agent requests. The payload names who and where, never the
+  message: "{name} mentioned you in #{channel}" with `groupId`, `channelId` and
+  `url` `aaru://group/{g}/channel/{c}`; an invite carries `aaru://groups`. iOS routes the tap
+  through `PushInbox` and `GroupLink`; the web opens `/app/groups/{g}/{c}`.
 
 ## Phasing
 
@@ -1043,7 +1076,7 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Video catalog | TMDB |
 | Book catalog | Open Library |
 | Primary user import | Trakt |
-| CAT | Manual list / ICS only |
+| CAT | Pasted list, ICS file, or the user's own iCal link read once; no scraping |
 | Scraping | Forbidden |
 | Backend | Hummingbird only |
 | First clients | iOS and Mac, with widgets and a Live Activity |

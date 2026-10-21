@@ -9,8 +9,8 @@ extension APIImplementation {
         -> Operations.UpdateMyMembership.Output
     {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
-        let summary = try await services.groups.setShareProgress(
-            groupID(input.path.groupId), share: body.shareProgress, viewer: currentUser()
+        let summary = try await services.groups.updateMembership(
+            groupID(input.path.groupId), share: body.shareProgress, muted: body.muted, viewer: currentUser()
         )
         return .ok(.init(body: .json(.init(summary))))
     }

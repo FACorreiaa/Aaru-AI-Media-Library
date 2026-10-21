@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isWorking, sourceLabel, stateLabel } from './model'
+import { isWorking, sourceLabel, stateLabel, traktResult } from './model'
 import type { components } from '../api/schema'
 
 const job = (
@@ -23,5 +23,15 @@ describe('import labels', () => {
   it('surfaces the unmatched count on a partial import', () => {
     expect(stateLabel(job('partial'))).toBe('Imported, 2 unmatched')
     expect(sourceLabel(job('planned'))).toBe('Goodreads')
+  })
+})
+
+describe('Trakt sign-in result', () => {
+  it('reads what Trakt sent back and ignores anything else', () => {
+    expect(traktResult('connected')?.ok).toBe(true)
+    expect(traktResult('denied')?.ok).toBe(false)
+    expect(traktResult('failed')?.message).toContain('two apps')
+    expect(traktResult(undefined)).toBeNull()
+    expect(traktResult('<script>')).toBeNull()
   })
 })

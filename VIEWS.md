@@ -17,9 +17,9 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; this-month strip, status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats` (month), `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
 | Discover | `DiscoverRow` per DISC-001 row, add with status or to a list | `GET /v1/discover`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20) |
-| Insights | `StatsPanel` (month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all` | 2 · GAM-006c (pulled forward 2026-10-20) |
+| Insights | `StatsPanel` (7 days / 30 days / month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all|last7|last30` | 2 · GAM-006c (pulled forward 2026-10-20), GAM-006d (2026-10-21) |
 | Lists | `Shelf` rendering a list's items: show status, next airing, library status and progress (LST-003) | `GET /v1/lists`, `GET /v1/lists/{id}` (`items`), `POST /v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
 | Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
@@ -83,8 +83,8 @@ refuses and substitutes the nearest catalog piece.
 | `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
 | `BadgeShelf` | Earned badges | badge ids, tier, earned at |
-| `StatsPanel` | Insights, later profile numbers | span (`month` / `year` / `all`), totals, buckets, by kind, top titles, ratings distribution (10 bins), longest run; static. Genres and mean score on a profile in 5 |
-| `RecapStory` | A month or year as a story | `year`, optional `month`; the deck is built on the device from `/v1/me/stats` |
+| `StatsPanel` | Insights, later profile numbers | span (`last7` / `last30` / `month` / `year` / `all`), totals with an absolute change against `prior` on rolling spans, buckets, by kind, top titles, ratings distribution (10 bins), longest run; static. Genres and mean score on a profile in 5 |
+| `RecapStory` | A month or year as a story | `year`, optional `month`; the deck is built on the device from `/v1/me/stats`. A year adds biggest day, genres, kinds and persona cards (GAM-006e) |
 | `GroupRail` | The groups you are in | group ids, names, monogram, unread flag, mention count, selected group |
 | `ChannelList` | A group's channels | group id, channels by kind (`text` / `title` / `watch` / `shelf`) with name, title poster for `title`, unread flag, mention count; `#general` first |
 | `MessageList` | A channel's conversation and its composer | channel id, kind, "not end-to-end" label, messages (author or Aaru, body, `components`, reply, mentions, spoiler stamp, edited / deleted / from a blocked member), last-read marker, typing names; composer with `@` suggestions |

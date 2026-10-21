@@ -35,6 +35,7 @@ struct LibraryHarness {
         trakt: TraktAPI? = nil,
         stremio: StremioAccount? = nil,
         webPush: (any WebPushSending)? = nil,
+        push: (any PushSending)? = nil,
         model: (any ModelProviding)? = nil,
         _ body: @escaping @Sendable (LibraryHarness) async throws -> Void
     ) async throws {
@@ -47,6 +48,9 @@ struct LibraryHarness {
                 model: model
             )
             services.webPush = webPush
+            if push != nil || webPush != nil {
+                services.groups.push = UserPush(stores: stores, sender: push, webPush: webPush)
+            }
             if let clock {
                 services.catalog.now = { clock.now }
                 services.library = LibraryService(

@@ -2,6 +2,7 @@ import { For } from 'solid-js'
 import { cellState, episodeKey } from '../lib/title/model'
 import type { CellState, Episode, Season } from '../lib/title/model'
 import { cn } from '../lib/cn'
+import { pop } from '../lib/motion'
 import { cardClass } from './ui/card'
 
 const CELL: Record<CellState, string> = {
@@ -58,9 +59,11 @@ export function SeasonMap(props: {
                         (state() === 'unaired' && !props.watched.has(key)) ||
                         props.pending.has(key)
                       }
-                      onClick={() =>
+                      onClick={(event) => {
+                        // A tick pops once; clearing one does not.
+                        if (state() !== 'watched') void pop(event.currentTarget)
                         props.onToggle(episode.season, episode.number)
-                      }
+                      }}
                     >
                       {episode.number}
                     </button>

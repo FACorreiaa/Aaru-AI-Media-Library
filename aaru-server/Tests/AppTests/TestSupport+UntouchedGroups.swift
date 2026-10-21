@@ -49,7 +49,13 @@ extension UntouchedStore: GroupStore {
         throw Touched()
     }
 
-    func createInvite(id _: UUID, group _: UUID, inviter _: UserID, invitee _: UserID, now _: Date) async throws {
+    func setMuted(_: UUID, user _: UserID, muted _: Bool) async throws {
+        throw Touched()
+    }
+
+    func createInvite(
+        id _: UUID, group _: UUID, inviter _: UserID, invitee _: UserID, now _: Date
+    ) async throws -> Bool {
         throw Touched()
     }
 
