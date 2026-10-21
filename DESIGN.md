@@ -19,7 +19,7 @@ Keep a **canvas** beside intent so work does not die in the scroll.
 ## 0. Welcome (signed out)
 
 The app's landing screen, and the web landing page's twin. Mascot on its disc, wordmark, one
-serif headline, three plain pillars (one shelf, private by default, bring your history), then
+serif headline, three plain pillars (one library, private by default, bring your history), then
 Sign in with Apple and Continue with email pinned to the bottom on iPhone. Side by side on iPad
 and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`.
 
@@ -171,8 +171,9 @@ spreadsheet.
 "Now" of §1 made real before The Field: **Watching** (shows, anime, films) and **Reading**
 (books), newest activity first, as big cards, not posters in a grid. A video card is the
 backdrop with the title on it; a book card is its cover. Each shows how far along it is ("4 of
-10 episodes" with a bar, "35%", "Page 120") and the one next step: **Watched S1 · E5** ticks the
-next aired episode, **Update page** moves a book, **Finished** / **Mark watched** closes it. A
+10 episodes" with a bar, "35%", "Page 120") and the one next step: **Mark S1 · E5 watched**
+ticks the next aired episode, **Update page** moves a book, **Mark read** / **Mark watched**
+closes it (wording aligned 2026-10-21, UX-043/044). A
 kind chip narrows Now with the shelf; another status hides it. Cards scroll sideways on phones
 and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
 carry Open Library's page count, so a page reads "Page 120 of 412" with its bar.
@@ -336,8 +337,8 @@ your shelf" and opens the item, anything else offers Add (with a status) and Add
 AniList and Open Library credits sit in the footer.
 
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
-watched", no taste profile, nothing read from other users. A tab on iPhone, a header link on
-the web.
+watched", no taste profile, nothing read from other users. A tab on iPhone, a sidebar
+destination on iPad, Mac and the web (§18).
 
 **Seasons (DISC-002, 2026-10-21).** A Today | Seasons control sits under the title (pinned under
 the large title on iPhone, in the toolbar on the Mac). Seasons shows one season as an object:
@@ -357,16 +358,16 @@ city" in muted, "distance · time", and "Tickets ↗" out to Ticketmaster. Aaru 
 or prices a ticket. Dates and times are the venue's, never converted. On iPhone and Mac a List |
 Map switch shows the searched area as a circle on a map; the web is list only. "Use my location"
 asks for an approximate position once (reduced accuracy on Apple) and says it is not saved; the
-saved city lives in Settings → "Concerts near", with Remove. Placeholders at the real row size
+saved city lives in Settings → Friends & privacy → Location ("Concerts near"), with Remove. Placeholders at the real row size
 while loading, no shimmer; a silent provider says so in one line.
 
 ## 13b. Insights (pulled forward 2026-10-20)
 
 The Recap's numbers, browsable instead of played. `StatsPanel`: a 7 days / 30 days / month /
 year / all time switch, totals, bars per bucket, by kind (films, shows, anime, books), the top titles, a
-ratings histogram, and the longest run. Opened from Home's stats strip and next to Recap
-(Library's More menu on Apple, Settings on the web); "Play as story" hands a month or year to
-the Recap. Not a tab.
+ratings histogram, and the longest run. "Play as story" hands a month or year to the Recap.
+Since 2026-10-21 (§18) a destination in the sidebar's bottom group on the web, iPad and Mac;
+on iPhone it opens from Home's stats strip and Library's More menu, not a tab.
 
 The rolling windows (GAM-006d) add a line "Oct 15 – Oct 21 · Private to you", and each tile
 shows its change against the window just before as an arrow and an absolute number (`↗ +3`,
@@ -411,17 +412,8 @@ day strip (tall day pills) over that day's episodes as poster rows.
 Tapping the bar flips between time left and end time. Set by a manual check-in in Phase 2 and
 by scrobbles from Plex, Jellyfin or Stremio in Phase 3. The same data drives the Live Activity.
 
-**Settings groups, 2026-10-21** (owner). Settings is a list of groups, each its own page, so no
-page grows into one long scroll: **Account** (name, sign-in, Sign out, profile and friends,
-notifications), **Imports & export** (Trakt, the file sources, AniList, CAT, Stremio history,
-the job list, export), **Connected apps** (Stremio, agent connections), **Insights & recaps**,
-and **About** (credits, privacy, Delete account). iPhone: a grouped list in the system Settings
-style, the account on top with your name and how you sign in, each group a row with its symbol
-in a small tinted square, drilling in. Mac: the same pages as toolbar panes in the Settings
-window (Cmd-,), Insights staying in the main window. Web: a rail of the groups beside the page
-on a desktop, where `/app/settings` opens Account; a phone gets the group list and opens one
-page at a time with "‹ Settings" back. A new connected app or import source joins its group's
-page; it does not get a group of its own.
+**Settings groups, 2026-10-21** (owner): five groups (Account, Imports & export, Connected apps,
+Insights & recaps, About). Superseded the same day by the eight pages of §18.
 
 **Stremio, built 2026-10-20.** Settings has a Stremio section on web, iPhone and Mac: connect,
 then the install links (Open in Stremio, Install on Stremio Web, Copy) show once, because they
@@ -432,7 +424,7 @@ not built yet; `watch_events` holds what it will read. Under the intro, a collap
 up" lists the install steps, what Stremio's marks do here, where it works, and that a lost link is
 revoked and made again; the same text on web and Apple.
 
-Imports & export offers **Import from Stremio** (IMP-016): a sheet (web: an inline panel)
+Settings → Import offers **Import from Stremio** (IMP-016): a sheet (web: an inline panel)
 with the code in large monospace, an "Approve on stremio.com" button and a QR for approving
 from another device, and a quiet "Waiting for approval…" line. It polls on its own and, once
 approved, opens the import's plan, which is approved like any other import. Nothing is written
@@ -602,6 +594,101 @@ On the web (2026-10-20), performance comes first:
   reduced import `src/lib/reduced-motion.ts`, so they do not load `motion/mini`. Every
   animation follows a tap, so `motion/mini` is never preloaded: it loads when the browser is idle.
 - `npm run size` holds every route to `size-budget.json` in CI.
+
+## 18. Navigation and Settings (owner, 2026-10-21)
+
+Same names, same order, on every platform. Findings that led here and the work list for each
+client: `docs/audit/ux.md`.
+
+**Destinations.** Home · Discover · Library · Calendar · Lists · Groups, then, set apart at the
+bottom, Insights and Settings.
+
+- **Web.** One shell for every `/app` page. At 1024px and up a persistent left sidebar
+  (collapsible to icons): the wordmark, Search (⌘K; opens in place on every page), the six
+  destinations, a gap, Insights, Settings, and last the account row (name and @handle, opens
+  Settings → Account). Groups carries the mention count. Below 1024px a top bar (wordmark,
+  Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
+  pages (a title, a list, an import, a channel) sit inside the shell with a back link that
+  names where you came from. Sign out lives on Account only.
+- **iPad.** The `sidebarAdaptable` sidebar: the six, then a bottom section with Insights and
+  Settings.
+- **Mac.** The same sidebar without Settings: Settings is the Settings scene (⌘, and the app
+  menu) and nothing else. A Go menu switches the seven rows with ⌘1…⌘7.
+- **iPhone.** The tab bar holds five: Home · Discover · Library · Calendar · Groups. A sixth tab
+  would push Lists, Groups and its badge behind More. Lists opens from Library (a "Lists" row on
+  top and in the toolbar) and from Home's lists; Insights from Home's Last 7 days and Library's
+  More menu; Settings from an account button (`person.crop.circle`, top trailing on Home and
+  Library), presented as a sheet with Done.
+
+**Names.** Calendar is the destination; Week, Month and Missed are its modes. The web URL is
+`/app/calendar` (`/app/week` redirects). Home's nav label stays Home and its page heading "The
+Field" (§1). Recap is not a destination: Insights plays it ("Play as story"), Home offers it in
+its window, Your data keeps the shortcuts. The listen log is **Listens** ("All listens ›" from
+Insights and Library's More menu), never "Music", which is the albums kind. An agent's plan is
+"Waiting for you" on Home and "Request" when a push opens one. In groups, a `shelf` channel
+reads **List** and a Room reads **Watch party**: UI labels only, the stored kinds and code names
+stay `shelf` and `watch` / Room (owner, 2026-10-21).
+
+**Settings: eight pages, in this order.** Each is its own page; none scrolls into the next. A
+new import source or connected app joins its page; it never gets a page of its own.
+
+| # | Page | Web slug | Sections, in order |
+| --- | --- | --- | --- |
+| 1 | Account | `account` | Name and handle (one editor) · Signed in with, Link Google · On this device: Appearance (System / Light / Dark) · Sign out |
+| 2 | Friends & privacy | `friends` | Add a friend · Asking you · Waiting on · Friends · Blocked · Location: Concerts near, Remove (only while concerts are on). Footer: "Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private." |
+| 3 | Notifications | `notifications` | New episodes · Mentions in groups · Group invites · this browser's alerts (web). Footer: "Requests from your connected agents always alert you." The switches are per account, so the Mac shows them too: "Alerts go to your iPhone and your browsers." |
+| 4 | Import | `import` | Trakt · Bring your history, in `CLAUDE.md`'s import order: Stremio history, IMDb, Letterboxd, Goodreads, Pogdesign CAT, Netflix, MyAnimeList, AniList, Any other CSV · Imports (the jobs; "No imports yet." when none) |
+| 5 | Connections | `connections` | Agents: the picker (Claude, Claude Code, Codex, Hermes, Gemini CLI, other MCP client, Browser extension) and live connections · Stremio: the addon, with "Import your Stremio history" linking to Import · Music: scrobblers, the last listen → Listens. One verb: Disconnect |
+| 6 | Your data | `data` | Recaps: this year, last month, last year · History: every journaled action, newest first, by whom (you, an import, a connection), with Undo · Export: Everything (JSON), Library spreadsheet (CSV) |
+| 7 | About | `about` | Wordmark, version, channel (Apple) · Credits · Privacy policy, About Aaru, Contact |
+| 8 | Delete account | `delete` | One sentence on what goes, a link to Your data → Export, **Delete account** in danger styling; confirm "Delete account?" with **Delete account and library** / Keep it |
+
+Where each existing piece goes:
+
+| Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
+| --- | --- | --- |
+| Account | `AccountPage` card (name, providers, Link Google, Sign out); the handle and name editor out of `SocialSection`; `AppearanceSection` | `AccountSettings` first section; `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
+| Friends & privacy | `SocialSection` without the profile editor; `ConcertPlaceSection` | `FriendsView`'s sections inline (not a push from Account); `ConcertPlaceSection` |
+| Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
+| Import | `ImportsPage` without the export card: `TraktImport`, `FILE_SOURCES`, the AniList form, `CatImport`, `StremioHistoryImport`, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |
+| Connections | `ConnectionsSection`, `StremioSection`, `MusicSection` (from `app_.settings.connected`) | `ConnectionsSection` (+ `ConnectionSetupView`, `BrowserExtensionView`), `StremioSection`, `MusicSection` (from `ConnectedAppsSettings`) |
+| Your data | recap shortcuts from `app_.settings.recaps` (its Insights link goes: Insights is in the sidebar); the export card; History (new) | recap shortcuts (`RecapDeck`'s, now also in Library's menu); `ExportDataSection`; History (new) |
+| About | the "About Aaru" card of `app_.settings.about` | `AboutView` without the delete section |
+| Delete account | the delete section and `AlertDialog` of `app_.settings.about` | `AboutView`'s delete section and dialog |
+
+**Presentation.**
+
+- **Web.** `/app/settings/<slug>` under the settings layout. A desktop sub-nav lists the eight,
+  Delete account last after a divider in danger text; `/app/settings` redirects to `account`.
+  A phone shows the list with one hint line per page and each page has "‹ Settings". Old slugs
+  redirect: `imports` → `import`, `connected` → `connections`, `recaps` → `data`.
+- **iPhone and iPad.** The system Settings shape: a grouped list of `NavigationLink`s, each
+  symbol in a small tinted square. The account row on top (name, how you sign in) opens
+  Account; then Friends & privacy (`person.2.fill`), Notifications (`bell.badge.fill`); then
+  Import (`tray.and.arrow.down.fill`), Connections (`app.connected.to.app.below.fill`), Your data
+  (`externaldrive.fill`); then About (`info`); then Delete account alone, its title in danger.
+  `aaru://settings/<slug>` opens a page, so an empty state can send you to its fix.
+- **Mac.** The Settings scene is a `TabView` of seven panes in the same order: Account, Friends
+  & privacy, Notifications, Import, Connections, Your data, About. Delete account sits at the
+  bottom of the Account pane under a divider; a pane holding one destructive button is not a
+  Mac pane.
+
+**What changed from the plan, and why.**
+- iPhone keeps five tabs (above). Lists, not Groups, moves: the Groups badge must stay visible,
+  and a list is a view of the library. Owner confirmed, 2026-10-21.
+- Appearance had no page: it joins Account as "On this device", and the Mac "General" pane goes.
+- "Concerts near" moves from Account to Friends & privacy → Location: it is the only place Aaru
+  stores where you are.
+- Connections also holds the Stremio addon and music scrobblers: they reach Aaru with a token,
+  as agents do. Stremio *history* stays in Import.
+- Insights leaves Settings for the sidebar. Your data keeps the recaps as shortcuts and gains
+  History, which every "undo it from your history" line already promises. History (with Undo)
+  and Remove from library on the title page are built in this pass on web and Apple (owner,
+  2026-10-21).
+- TV Time joins Import, in its `CLAUDE.md` place, when its import lands (separate PR, with a
+  Bingers import).
+- On the Mac, Delete account folds into Account and Settings leaves the sidebar.
+- The web Calendar route follows its name.
 
 ---
 

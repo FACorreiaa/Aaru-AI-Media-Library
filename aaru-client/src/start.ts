@@ -1,4 +1,8 @@
-import { createMiddleware, createStart } from '@tanstack/solid-start'
+import {
+  createCsrfMiddleware,
+  createMiddleware,
+  createStart,
+} from '@tanstack/solid-start'
 import { browserQueryClient } from './integrations/tanstack-query/provider'
 import { SESSION_KEY } from './lib/session/query'
 
@@ -57,7 +61,17 @@ const staleAfterWrite = createMiddleware({ type: 'function' }).client(
   },
 )
 
+/**
+ * Server functions answer only this origin. Start adds this check itself only when an app has
+ * no `src/start.ts`; with one, it is ours to add. The session cookie is SameSite=Lax, which
+ * still lets another aaruapp.com subdomain call in; the Sec-Fetch-Site / Origin check does not.
+ */
+const sameOriginServerFns = createCsrfMiddleware({
+  filter: (ctx) => ctx.handlerType === 'serverFn',
+})
+
 export const startInstance = createStart(() => ({
-  requestMiddleware: [securityHeaders],
+  // Headers first, so a refused request still carries them.
+  requestMiddleware: [securityHeaders, sameOriginServerFns],
   functionMiddleware: [staleAfterWrite],
 }))

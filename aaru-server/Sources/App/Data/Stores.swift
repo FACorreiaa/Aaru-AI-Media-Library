@@ -38,6 +38,8 @@ protocol UserStore: Sendable {
     /// Deletes the user and, by cascade, every row that belongs to them, plus the
     /// magic links sent to their email identities (AUTH-004).
     func deleteUser(_ id: UserID) async throws
+    /// Every account, for the user count on facorreia.com/apps.
+    func count() async throws -> Int
 }
 
 struct UserProfile: Sendable, Equatable {
