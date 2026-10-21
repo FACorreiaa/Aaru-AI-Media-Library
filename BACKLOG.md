@@ -370,7 +370,7 @@ account or a stranger that has not happened yet.
 | CAT-020 | Dropped | superseded by DISC-001 | |
 | UPN-002 | Done | #43; ScheduleTests UPN-002 | |
 | GAM-006c | Done | #43; StatsTests "all time equals the years summed" | |
-| GAM-006d | Done | `feat/rolling-stats`; StatsTests GAM-006d, insights/home model tests | iOS not run on a device |
+| GAM-006d | Done | #65; StatsTests GAM-006d, insights/home model tests | iOS not run on a device |
 | APP-011 | Done | #43; SearchPanel.tsx, SearchView.swift | Not seen on a device |
 | APP-012 | Done | #43; DiscoverScreen.swift, app_.discover.tsx | |
 | APP-013 | Done | #43; HomeSummary.swift, app.tsx | The strip hid at zero until GAM-006d |
@@ -399,9 +399,9 @@ account or a stranger that has not happened yet.
 | GAM-004 | Open | none | |
 | GAM-005 | Open | none | |
 | GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
-| GAM-006e | Done | `feat/year-review`; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
+| GAM-006e | Done | #67; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
 | GAM-006b | Partial | #43 Insights covers all-time/by-kind | No genres, profile placement, badges |
-| CAT-018 | Done | `feat/store-genres`; GenreTests, CatalogAdapterTests "genre names" | Pulled forward 2026-10-21 for GAM-006e; backfill runs in the catalog refresher |
+| CAT-018 | Done | #66; GenreTests, CatalogAdapterTests "genre names" | Pulled forward 2026-10-21 for GAM-006e; backfill runs in the catalog refresher |
 | RT-001 | Open | none (PR #48 open) | |
 | DM-001 | Open | none | |
 | DM-002 | Open | none | |
