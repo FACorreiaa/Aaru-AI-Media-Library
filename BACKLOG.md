@@ -349,7 +349,7 @@ account or a stranger that has not happened yet.
 | GAM-005 | Open | none | |
 | GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
 | GAM-006b | Partial | #43 Insights covers all-time/by-kind | No genres, profile placement, badges |
-| CAT-018 | Open | genres not stored | |
+| CAT-018 | Done | `feat/store-genres`; GenreTests, CatalogAdapterTests "genre names" | Pulled forward 2026-10-21 for GAM-006e; backfill runs in the catalog refresher |
 | RT-001 | Open | none (PR #48 open) | |
 | DM-001 | Open | none | |
 | DM-002 | Open | none | |
@@ -1978,9 +1978,13 @@ network breakdowns, anime vs TV. A genre card joins the Recap once genres are st
 
 **Done when:** every number matches `/v1/me/stats` summed over the same years.
 
-### CAT-018 · Store genres · S
+### CAT-018 · Store genres · S · pulled forward 2026-10-21
 TMDB `genres` and AniList `genres` are decoded today but only used to compute `isAnime`. Store
 them as `titles.genres text[]` at hydration, and backfill titles already in libraries.
+
+Built: names in the provider's order, books none. The backfill is a pass in the catalog
+refresher (40 titles every five minutes), fill-empty-only, stamped in `genres_attempted_at` and
+retried after a week when the provider has none. Not on the Title DTO yet; GAM-006e reads them.
 
 **Done when:** a hydrated movie, show and anime each carry their provider's genres, and the
 backfill leaves no tracked title without them where the provider has some.
