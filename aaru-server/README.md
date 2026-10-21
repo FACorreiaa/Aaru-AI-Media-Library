@@ -58,6 +58,10 @@ docker build -f aaru-server/Dockerfile -t aaru-server .
 | `postgres.user` | `POSTGRES_USER` | required |
 | `postgres.password` | `POSTGRES_PASSWORD` | required |
 | `postgres.database` | `POSTGRES_DATABASE` | required |
+| `postgres.pool.size` | `POSTGRES_POOL_SIZE` | `10` connections per process (keep size × replicas under `max_connections`) |
+| `postgres.pool.timeout` | `POSTGRES_POOL_TIMEOUT` | `10` seconds a query waits for a free connection |
+| `imports.workers` | `IMPORTS_WORKERS` | `1` concurrent import jobs per process (1–8) |
+| `agent.reply.workers` | `AGENT_REPLY_WORKERS` | `1` concurrent `@aaru` replies per process (1–8) |
 | `tmdb.api.key` | `TMDB_API_KEY` | required to serve |
 | `apple.audiences` | `APPLE_AUDIENCES` | `com.fernandocorreia.aaru,com.fernandocorreia.aaru.beta` (add the web Services ID) |
 | `resend.api.key` | `RESEND_API_KEY` | unset → email sign-in answers 503 |
