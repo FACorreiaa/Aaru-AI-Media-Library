@@ -11,7 +11,7 @@ struct HomeRow<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
-                    .font(.system(.title3, design: .serif, weight: .semibold))
+                    .font(.aaruDisplay(.title3, weight: .semibold))
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if let trailing {
@@ -50,13 +50,13 @@ enum HomeCardSize {
     }
 }
 
-/// Wide catalog art with the teal-to-gold wash when there is none (same fallback as the week grid).
+/// Wide catalog art with the teal-to-gold wash over Surface when there is none.
 struct HomeArt: View {
     let url: URL?
     let aspect: CGFloat
 
     var body: some View {
-        Color(.medallion)
+        Color(.surface)
             .aspectRatio(aspect, contentMode: .fit)
             .overlay {
                 AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
@@ -64,7 +64,7 @@ struct HomeArt: View {
                         image.resizable().scaledToFill()
                     } else {
                         LinearGradient(
-                            colors: [Color(.accent).opacity(0.35), Color.weekGold.opacity(0.3)],
+                            colors: [Color(.accent).opacity(0.25), Color(.gold).opacity(0.25)],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         )
                     }
@@ -93,10 +93,11 @@ struct HomeChip: View {
 /// On a Mac a card lifts under the pointer, so it reads as clickable.
 struct HoverLift: ViewModifier {
     @State private var hovering = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
-            .scaleEffect(hovering ? 1.02 : 1)
+            .scaleEffect(hovering && !reduceMotion ? 1.02 : 1)
             .shadow(color: .black.opacity(hovering ? 0.18 : 0), radius: 8, y: 4)
             .animation(.easeOut(duration: 0.15), value: hovering)
             .onHover { hovering = $0 }

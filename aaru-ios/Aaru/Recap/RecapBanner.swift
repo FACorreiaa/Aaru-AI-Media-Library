@@ -14,7 +14,7 @@ struct RecapBanner: View {
                         .font(.subheadline)
                         .opacity(0.8)
                     Text(period.month == nil ? "\(period.year) in Aaru" : period.label)
-                        .font(.system(.title2, design: .serif, weight: .medium))
+                        .font(.aaruDisplay(.title2))
                 }
                 Spacer(minLength: 0)
                 Text("Play")

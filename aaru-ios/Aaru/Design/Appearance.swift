@@ -9,7 +9,9 @@ enum Appearance: String, CaseIterable, Identifiable {
 
     static let storageKey = "appearance"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var label: String {
         switch self {

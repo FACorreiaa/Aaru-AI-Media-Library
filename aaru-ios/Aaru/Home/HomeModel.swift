@@ -42,7 +42,7 @@ final class HomeModel {
     @ObservationIgnored private let library: LibraryModel?
     @ObservationIgnored private let cache: HomeCache?
     @ObservationIgnored let calendar: Calendar
-    @ObservationIgnored private let now: () -> Date
+    @ObservationIgnored let now: () -> Date
     /// What the cache holds, updated part by part as loads land.
     @ObservationIgnored private var snapshot: HomeCache.Snapshot?
     /// The library revision the last load started at: a write after it means Home is stale.

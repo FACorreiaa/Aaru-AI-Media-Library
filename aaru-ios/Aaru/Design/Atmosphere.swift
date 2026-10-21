@@ -18,7 +18,9 @@ enum Daypart {
         }
     }
 
-    static var now: Daypart { Daypart(hour: Calendar.current.component(.hour, from: .now)) }
+    static var now: Daypart {
+        Daypart(hour: Calendar.current.component(.hour, from: .now))
+    }
 
     /// "Tuesday evening".
     func heading(on date: Date = .now) -> String {
@@ -71,7 +73,7 @@ struct ReedCode: View {
 
     var body: some View {
         Canvas { context, size in
-            var state = seed.utf8.reduce(UInt64(1469598103934665603)) { ($0 ^ UInt64($1)) &* 1099511628211 }
+            var state = seed.utf8.reduce(UInt64(1_469_598_103_934_665_603)) { ($0 ^ UInt64($1)) &* 1_099_511_628_211 }
             let pitch: CGFloat = 6
             var x: CGFloat = pitch / 2
             while x < size.width {
