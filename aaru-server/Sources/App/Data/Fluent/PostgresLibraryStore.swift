@@ -126,7 +126,8 @@ struct PostgresLibraryStore: LibraryStore {
         if !removed.isEmpty {
             try await sql.raw("""
             DELETE FROM episode_progress ep
-            USING unnest(\(bind: removed.map(\.season))::int[], \(bind: removed.map(\.episode))::int[]) AS k(season, episode)
+            USING unnest(\(bind: removed.map(\.season))::int[], \(bind: removed.map(\.episode))::int[])
+                AS k(season, episode)
             WHERE ep.library_item_id = \(bind: id.rawValue) AND ep.season = k.season AND ep.episode = k.episode
             """).run()
         }

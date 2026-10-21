@@ -41,9 +41,13 @@ extension ImportService {
         let animeTitles = Array(Set(anime.compactMap(\.titleID)))
         async let titles = stores.titles.titles(ids: animeTitles)
         var context = try await MergeContext(states: states, byMAL: byMAL)
-        context.byAniList = try await Dictionary(byAniList.map { ($0.anilist, $0) }, uniquingKeysWith: { first, _ in first })
+        context.byAniList = try await Dictionary(
+            byAniList.map { ($0.anilist, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
         context.tmdb = try await Dictionary(
-            titles.compactMap { title in title.ids.tmdb.map { (title.id, $0) } }, uniquingKeysWith: { first, _ in first }
+            titles.compactMap { title in title.ids.tmdb.map { (title.id, $0) } },
+            uniquingKeysWith: { first, _ in first }
         )
         return context
     }
