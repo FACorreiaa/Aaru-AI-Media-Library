@@ -1006,6 +1006,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/listens': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`. */
+    get: operations['listListens']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/listens/top': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span. */
+    get: operations['getTopListens']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/search': {
     parameters: {
       query?: never
@@ -1671,7 +1705,7 @@ export interface components {
       redirectTo: string
     }
     /**
-     * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension: it can only scrobble.
+     * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension and `music` a music scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
      * @enum {string}
      */
     AgentTokenKind:
@@ -1683,6 +1717,7 @@ export interface components {
       | 'other'
       | 'claude'
       | 'browser'
+      | 'music'
     /** @enum {string} */
     AgentMCPKind:
       'claude' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
@@ -2451,6 +2486,8 @@ export interface components {
         /** Format: date-time */
         createdAt: string
       }[]
+      /** @description Every listen in your listening log, newest first (MUS-005). */
+      listens?: components['schemas']['Listen'][]
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]
@@ -2685,6 +2722,57 @@ export interface components {
       minutes: number
       /** @description How many titles in the period carried this genre. */
       titles: number
+    }
+    /** @description One play of a track a scrobbler sent (MUS-005). Never a library item: listening does not change the library. */
+    Listen: {
+      id: string
+      /**
+       * Format: date-time
+       * @description When the track started.
+       */
+      listenedAt: string
+      artist: string
+      track: string
+      album?: string
+      durationMs?: number
+      /** @description The album's Cover Art Archive cover when Aaru knows the album. */
+      coverUrl?: string
+      /** @description Where it played */
+      originUrl?: string
+      /** @description The scrobbler, e.g. "Web Scrobbler". */
+      client?: string
+      /** @description Where it was heard, e.g. "YouTube Music". */
+      musicService?: string
+    }
+    ListenPage: {
+      items: components['schemas']['Listen'][]
+      /**
+       * Format: date-time
+       * @description Pass as `before` for the next page; absent on the last page.
+       */
+      next?: string
+    }
+    ListenTop: {
+      /** @enum {string} */
+      by: 'artist' | 'track' | 'album'
+      /** @enum {string} */
+      span: 'month' | 'year' | 'all' | 'last7' | 'last30'
+      year: number
+      month?: number
+      timeZone: string
+      /** @description Every listen in the period. */
+      listens: number
+      /** @description Their length summed */
+      minutes: number
+      items: {
+        artist: string
+        /** @description Present when ranking tracks. */
+        track?: string
+        /** @description Present when ranking albums. */
+        album?: string
+        count: number
+        minutes: number
+      }[]
     }
     StatsTotals: {
       episodesWatched: number
@@ -4154,8 +4242,8 @@ export interface operations {
   listAgentTokens: {
     parameters: {
       query?: {
-        /** @description Which surface's tokens: the Stremio addon, MCP clients, or the browser extension (`scrobble`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind. */
-        for?: 'stremio' | 'mcp' | 'scrobble'
+        /** @description Which surface's tokens: the Stremio addon, MCP clients, the browser extension (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind. */
+        for?: 'stremio' | 'mcp' | 'scrobble' | 'music'
       }
       header?: never
       path?: never
@@ -4498,6 +4586,64 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Stats']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listListens: {
+    parameters: {
+      query?: {
+        /** @description Only listens that started before this time; the previous page's `next`. */
+        before?: string
+        /** @description 1–100, default 20. */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description A page of listens. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListenPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTopListens: {
+    parameters: {
+      query: {
+        by: 'artist' | 'track' | 'album'
+        /** @description Required unless `span` is sent. */
+        year?: number
+        span?: 'all' | 'last7' | 'last30'
+        /** @description 1–12. Absent means the whole year. */
+        month?: number
+        /** @description IANA time zone for day and month boundaries. Absent means UTC. */
+        tz?: string
+        /** @description 1–50, default 10. */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The period's top list. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListenTop']
         }
       }
       default: components['responses']['Error']

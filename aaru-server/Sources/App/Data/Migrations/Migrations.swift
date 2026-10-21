@@ -42,6 +42,7 @@ let allMigrations: [any Migration] = [
     AddImportProgress(),
     AddBrowserScrobbler(),
     AddMusic(),
+    AddListens(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

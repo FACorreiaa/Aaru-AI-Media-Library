@@ -1,5 +1,5 @@
 {
-  "totalJs": 231811,
+  "totalJs": 240648,
   "css": 12592,
   "shared": 73130,
   "routes": {
@@ -19,7 +19,13 @@
     "/app_/lists/$id": 82474,
     "/app_/plans/$id": 75911,
     "/app_/recap": 87299,
-    "/app_/settings": 95549,
+    "/app_/settings": 77564,
+    "/app_/settings/": 81897,
+    "/app_/settings/about": 77278,
+    "/app_/settings/account": 81799,
+    "/app_/settings/connected": 81879,
+    "/app_/settings/imports": 81789,
+    "/app_/settings/recaps": 75072,
     "/app_/title/$id": 88315,
     "/app_/week": 90741,
     "/auth/verify": 74133,

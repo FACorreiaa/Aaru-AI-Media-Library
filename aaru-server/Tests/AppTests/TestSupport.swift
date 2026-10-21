@@ -330,6 +330,7 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         push: untouched,
         agentTokens: untouched,
         watchEvents: untouched,
+        listens: untouched,
         plans: untouched,
         oauth: untouched,
         social: untouched,

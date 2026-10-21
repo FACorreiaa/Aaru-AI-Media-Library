@@ -858,10 +858,10 @@ paths:
         - name: for
           in: query
           description: >-
-            Which surface's tokens: the Stremio addon, MCP clients, or the browser extension
-            (`scrobble`). Defaults to `stremio`, so Apple builds that only know the Stremio kind
-            never see another kind.
-          schema: {type: string, enum: [stremio, mcp, scrobble], default: stremio}
+            Which surface's tokens: the Stremio addon, MCP clients, the browser extension
+            (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds
+            that only know the Stremio kind never see another kind.
+          schema: {type: string, enum: [stremio, mcp, scrobble, music], default: stremio}
       responses:
         '200':
           description: Live tokens.
@@ -1126,6 +1126,67 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Stats'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/listens:
+    get:
+      operationId: listListens
+      summary: >-
+        Your listening log, newest first (MUS-005): what music scrobblers sent with your music
+        token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
+      parameters:
+        - name: before
+          in: query
+          description: Only listens that started before this time; the previous page's `next`.
+          schema: {type: string, format: date-time}
+        - name: limit
+          in: query
+          description: 1–100, default 20.
+          schema: {type: integer}
+      responses:
+        '200':
+          description: A page of listens.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListenPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/listens/top:
+    get:
+      operationId: getTopListens
+      summary: >-
+        Your most played artists, tracks or albums over a period (MUS-005). The period is chosen
+        as for `/v1/me/stats`: a year, a month of it, or a span.
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema: {type: string, enum: [artist, track, album]}
+        - name: year
+          in: query
+          description: Required unless `span` is sent.
+          schema: {type: integer}
+        - name: span
+          in: query
+          schema: {type: string, enum: [all, last7, last30]}
+        - name: month
+          in: query
+          description: 1–12. Absent means the whole year.
+          schema: {type: integer}
+        - name: tz
+          in: query
+          description: IANA time zone for day and month boundaries. Absent means UTC.
+          schema: {type: string}
+        - name: limit
+          in: query
+          description: 1–50, default 10.
+          schema: {type: integer}
+      responses:
+        '200':
+          description: The period's top list.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListenTop'}
         default:
           $ref: '#/components/responses/Error'
   /v1/search:
@@ -1972,8 +2033,9 @@ components:
       type: string
       description: >-
         Which outside caller a token is for. The MCP kinds differ only in the setup shown; they
-        reach the same tools. `browser` is Aaru's browser extension: it can only scrobble.
-      enum: [stremio, claude_code, codex, hermes, gemini, other, claude, browser]
+        reach the same tools. `browser` is Aaru's browser extension and `music` a music
+        scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
+      enum: [stremio, claude_code, codex, hermes, gemini, other, claude, browser, music]
     AgentMCPKind:
       type: string
       enum: [claude, claude_code, codex, hermes, gemini, other]
@@ -2941,6 +3003,10 @@ components:
               channel: {type: string}
               body: {type: string}
               createdAt: {type: string, format: date-time}
+        listens:
+          type: array
+          description: Every listen in your listening log, newest first (MUS-005).
+          items: {$ref: '#/components/schemas/Listen'}
     LibraryPage:
       type: object
       required: [items, page]
@@ -3276,6 +3342,56 @@ components:
         titles:
           type: integer
           description: How many titles in the period carried this genre.
+    Listen:
+      type: object
+      description: >-
+        One play of a track a scrobbler sent (MUS-005). Never a library item: listening does not
+        change the library.
+      required: [id, listenedAt, artist, track]
+      properties:
+        id: {type: string}
+        listenedAt: {type: string, format: date-time, description: When the track started.}
+        artist: {type: string}
+        track: {type: string}
+        album: {type: string}
+        durationMs: {type: integer}
+        coverUrl: {type: string, description: The album's Cover Art Archive cover when Aaru knows the album.}
+        originUrl: {type: string, description: Where it played, when the scrobbler said.}
+        client: {type: string, description: 'The scrobbler, e.g. "Web Scrobbler".'}
+        musicService: {type: string, description: 'Where it was heard, e.g. "YouTube Music".'}
+    ListenPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Listen'}
+        next:
+          type: string
+          format: date-time
+          description: Pass as `before` for the next page; absent on the last page.
+    ListenTop:
+      type: object
+      required: [by, span, year, timeZone, listens, minutes, items]
+      properties:
+        by: {type: string, enum: [artist, track, album]}
+        span: {type: string, enum: [month, year, all, last7, last30]}
+        year: {type: integer}
+        month: {type: integer}
+        timeZone: {type: string}
+        listens: {type: integer, description: Every listen in the period.}
+        minutes: {type: integer, description: Their length summed, for listens whose length is known.}
+        items:
+          type: array
+          items:
+            type: object
+            required: [artist, count, minutes]
+            properties:
+              artist: {type: string}
+              track: {type: string, description: Present when ranking tracks.}
+              album: {type: string, description: Present when ranking albums.}
+              count: {type: integer}
+              minutes: {type: integer}
     StatsTotals:
       type: object
       required: [episodesWatched, minutesWatched, activeDays, moviesFinished, showsFinished, animeFinished,
