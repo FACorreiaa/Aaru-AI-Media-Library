@@ -10,9 +10,28 @@ struct CalendarEpisodeSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        if let entry = feed.opened {
-            content(entry)
+        NavigationStack {
+            Group {
+                if let entry = feed.opened {
+                    content(entry)
+                }
+            }
+            .background(Color(.paper))
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+                .toolbar {
+                    // A way out on every platform; the Mac has no swipe down (UX-069).
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
         }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        #if os(macOS)
+            .frame(minWidth: 420, minHeight: 480)
+        #endif
     }
 
     private func content(_ entry: CalendarEntry) -> some View {
@@ -33,9 +52,6 @@ struct CalendarEpisodeSheet: View {
             }
             .padding(20)
         }
-        .background(Color(.paper))
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
     }
 
     private func header(_ entry: CalendarEntry) -> some View {
@@ -47,8 +63,9 @@ struct CalendarEpisodeSheet: View {
             .frame(width: 72)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .shadow(radius: 4, y: 2)
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(entry.title.title) · \(entry.code)")
+                Text("\(entry.title.title) · \(entry.shortCode)")
                     .font(.caption.weight(.semibold))
                     .textCase(.uppercase)
                     .foregroundStyle(Color(.muted))
@@ -64,7 +81,15 @@ struct CalendarEpisodeSheet: View {
     }
 
     private func actions(_ entry: CalendarEntry) -> some View {
-        HStack(spacing: 10) {
+        // Side by side; stacked at accessibility sizes so neither label is cut.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) { actionButtons(entry) }
+            VStack(alignment: .leading, spacing: 10) { actionButtons(entry) }
+        }
+    }
+
+    @ViewBuilder private func actionButtons(_ entry: CalendarEntry) -> some View {
+        Group {
             Button {
                 Task { await feed.toggle(entry) }
             } label: {

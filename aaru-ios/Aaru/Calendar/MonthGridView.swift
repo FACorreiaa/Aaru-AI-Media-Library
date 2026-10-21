@@ -43,6 +43,8 @@ struct MonthGridView: View {
     /// iPhone: the tapped day opens as a sheet.
     var onOpenDay: ((Date) -> Void)?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private static let spacing: CGFloat = 4
 
     var body: some View {
@@ -80,7 +82,7 @@ struct MonthGridView: View {
         ) {
             ForEach(model.gridDays, id: \.self) { day in
                 Button {
-                    withAnimation(.snappy) { model.select(day) }
+                    withAnimation(reduceMotion ? nil : .snappy) { model.select(day) }
                     onOpenDay?(day)
                 } label: {
                     MonthDayCell(

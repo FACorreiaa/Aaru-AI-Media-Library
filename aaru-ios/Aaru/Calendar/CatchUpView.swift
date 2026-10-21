@@ -4,7 +4,11 @@ import SwiftUI
 /// miss first, so catching up starts where it should.
 struct CatchUpView: View {
     let feed: CalendarFeed
-    var onSearch: () -> Void
+    /// Missed's four weeks: "all caught up" only once this window has loaded (UX-062).
+    let window: Range<Date>
+    /// Set while a filter is on: the empty state offers "Clear filters" (UX-067).
+    var onClearFilters: (() -> Void)?
+    var retry: () async -> Void
 
     /// One request, inside the 42-day limit.
     static let days = 28
@@ -12,8 +16,19 @@ struct CatchUpView: View {
     var body: some View {
         let shows = feed.missed()
         ScrollView {
-            if !feed.hasLoaded, feed.isLoading {
+            if let failure = feed.loadProblem(for: window) {
+                LoadFailedView(title: "Missed didn't load", message: failure, retry: retry)
+                    .padding(.top, 40)
+            } else if !feed.covers(window) {
                 ProgressView().padding(40)
+            } else if shows.isEmpty, let onClearFilters {
+                ContentUnavailableView {
+                    Label("No missed episodes match these filters", systemImage: "line.3.horizontal.decrease.circle")
+                } actions: {
+                    Button("Clear filters", action: onClearFilters)
+                        .buttonStyle(.borderedProminent)
+                }
+                .padding(.top, 40)
             } else if shows.isEmpty {
                 ContentUnavailableView {
                     Label("You are all caught up", systemImage: "checkmark.seal")
@@ -42,10 +57,12 @@ struct CatchUpView: View {
                 )
                 .frame(width: 52)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(show.title.title)
                         .font(.aaruDisplay(.title3, weight: .semibold))
-                        .lineLimit(2)
+                        .lineLimit(3)
+                        .accessibilityAddTraits(.isHeader)
                     Text(show.line)
                         .font(.subheadline)
                         .foregroundStyle(Color(.muted))
