@@ -45,7 +45,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20); group mention and invite alerts with groups (GRP-012) |
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
-| Agent model | Pluggable `ModelProviding` in `Server`. Anthropic default, user key supported, spend metered daily |
+| Agent model | Pluggable `ModelProviding` in `aaru-server` (`Sources/App/Agent`). Anthropic default, user key supported, spend metered daily |
 | Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`, with an OAuth front door (`Sources/App/OAuth`) so Claude can add Aaru as a custom connector. Not a second backend |
 
 ## Repo layout
@@ -55,7 +55,7 @@ aaru/
   aaru-core/             # AaruCore: models, IDs, validation. Shared by server and clients
   aaru-api/              # AaruAPI: generated /v1 client for the Apple apps
   aaru-server/           # Hummingbird API
-  aaru-ios/              # SwiftUI iPhone + Mac + widget extension (not scaffolded)
+  aaru-ios/              # SwiftUI iPhone + Mac + widget extension
   aaru-client/           # SolidJS + TanStack Start on Workers: landing + the web app on /v1
   aaru-extension/        # Browser extension (Chrome + Firefox): scrobbles streaming sites
   README.md
@@ -74,7 +74,7 @@ Prefer one multiplatform SwiftUI app over two divergent clients. If split, they 
 
 ## Commands
 
-Adjust names if Package.swift targets differ. Do not invent new root targets without updating this file.
+Do not invent new root targets without updating this file.
 
 ```bash
 # Shared package
@@ -106,9 +106,9 @@ cd aaru-extension && npm run build   # .output/chrome-mv3, .output/firefox-mv3; 
 xcodebuild build -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
 cd aaru-ios && bundle exec fastlane beta   # TestFlight, iOS + macOS
 
-# Format / lint (use whatever the repo actually configures)
-swiftformat .
-swiftlint
+# Format / lint
+./scripts/lint.sh   # check only: swiftformat --lint, swiftlint, periphery (core, server, api)
+swiftformat .       # rewrites files
 ```
 
 Never run destructive DB commands against a non-local database.
@@ -205,7 +205,7 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 ## Basics (P0–P2, build this first)
 
 1. Rails: root CI, Xcode project with Beta/Release, fastlane, API on `maat`, Workers beta/prod.
-2. Auth: Sign in with Apple + email/password (or magic link). Sessions/JWT as implemented in `Server`.
+2. Auth: Sign in with Apple + email/password (or magic link). Sessions/JWT as implemented in `aaru-server`.
 3. Search titles via TMDB / AniList / Open Library.
 4. Add to library, set status, rating, notes.
 5. TV and anime progress by season/episode; calendar and Up Next.
@@ -276,11 +276,9 @@ id); entries for later seasons tick the TMDB season they map to and merge into o
 
 ## Architecture
 
-Read `ARCHITECTURE.md` before changing boundaries between `AaruCore`, `Server`, and apps.
+Read `ARCHITECTURE.md` before changing boundaries between `AaruCore`, `aaru-server`, and apps.
 Read `DESIGN.md` and `VIEWS.md` before adding or changing a client surface. The agent emits
 only components from the `VIEWS.md` catalog; it gets no write path a user tap does not have.
-
-When you add a source, status, or client, update this file and `ARCHITECTURE.md`.
 
 ## Agent working style
 
@@ -296,4 +294,4 @@ When you add a source, status, or client, update this file and `ARCHITECTURE.md`
   An outside caller gets no capability a signed-in session lacks: single-item writes behave
   like a tap, anything larger becomes a plan the user approves inside Aaru. See X-009 in
   `BACKLOG.md` and `ARCHITECTURE.md` §"Outbound agent surfaces".
-- Do not add features “for later” as empty abstractions. Phased work belongs in docs, not unused protocols.
+- Phased work belongs in docs, not unused protocols.
