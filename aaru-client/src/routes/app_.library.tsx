@@ -1,4 +1,4 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import {
   For,
   Show,
@@ -18,7 +18,6 @@ import {
   SegmentedControl,
   SegmentedControlItem,
 } from '../components/ui/segmented-control'
-import { getLibrary } from '../lib/library/server'
 import { NowSection } from '../components/library/NowSection'
 import {
   KINDS,
@@ -32,7 +31,8 @@ import type {
   LibraryStatus,
   MediaKind,
 } from '../lib/library/model'
-import { getSession } from '../lib/session/session'
+import { libraryQuery } from '../lib/queries'
+import { requireSession } from '../lib/session/query'
 
 // APP-003 on the web: the shelf, at parity with the Apple apps' `LibraryView`. `?search=true`
 // opens Search on arrival; `?status=` opens the shelf filtered to one status (Home's count
@@ -58,12 +58,10 @@ export const Route = createFileRoute('/app_/library')({
       'dropped',
     ]),
   }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-    return { session }
-  },
-  loader: () => getLibrary(),
+  beforeLoad: async ({ context }) => ({
+    session: await requireSession(context.queryClient),
+  }),
+  loader: ({ context: { queryClient } }) => queryClient.query(libraryQuery),
   component: Library,
 })
 

@@ -1,4 +1,6 @@
 import { createMiddleware, createStart } from '@tanstack/solid-start'
+import { browserQueryClient } from './integrations/tanstack-query/provider'
+import { SESSION_KEY } from './lib/session/query'
 
 const CANONICAL_HOST = 'aaruapp.com'
 
@@ -37,6 +39,25 @@ const securityHeaders = createMiddleware().server(async ({ request, next }) => {
   return { ...result, response }
 })
 
+/**
+ * Every POST is a write (or one-off work like a search), so after one the browser's cached
+ * reads count as old: the next page or Back asks the server again instead of showing what was
+ * there before the change. Nothing refetches right away. The session stays cached; signing in
+ * and out manage it themselves.
+ */
+const staleAfterWrite = createMiddleware({ type: 'function' }).client(
+  async ({ method, next }) => {
+    const result = await next()
+    if (method === 'POST')
+      void browserQueryClient()?.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== SESSION_KEY[0],
+        refetchType: 'none',
+      })
+    return result
+  },
+)
+
 export const startInstance = createStart(() => ({
   requestMiddleware: [securityHeaders],
+  functionMiddleware: [staleAfterWrite],
 }))

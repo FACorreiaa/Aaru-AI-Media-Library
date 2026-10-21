@@ -1,4 +1,4 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import {
   For,
   Show,
@@ -21,7 +21,7 @@ import type { ListRow } from '../lib/lists/model'
 import { getList, removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // APP-006 on the web: one list, in order, with remove and move up/down. LST-003: rows carry
 // library status and progress, show status and the next airing; "Add titles" searches into it.
@@ -32,9 +32,8 @@ const SearchPanel = lazy(() =>
 
 export const Route = createFileRoute('/app_/lists/$id')({
   head: () => ({ meta: [{ title: 'List · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   loader: ({ params }) => getList({ data: { id: params.id } }),
   component: ListPage,

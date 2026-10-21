@@ -9,6 +9,7 @@ import { Alert } from '../ui/alert'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { linkGoogle, signOut } from '../../lib/session/session'
+import { forgetAccount } from '../../lib/session/query'
 import type { AccountPageData } from '../../lib/settings/account'
 import { SettingsPageTitle } from './SettingsNav'
 
@@ -36,6 +37,7 @@ export function AccountPage(props: { data: AccountPageData }) {
 
   async function leave() {
     await signOut()
+    forgetAccount(router.options.context.queryClient)
     await router.invalidate()
     await navigate({ to: '/' })
   }

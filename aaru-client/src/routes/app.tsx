@@ -1,4 +1,4 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import {
   For,
   Show,
@@ -33,7 +33,6 @@ import {
   withWatched,
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
-import { getCalendar } from '../lib/calendar/server'
 import {
   AIRING_DAYS,
   advance,
@@ -50,23 +49,28 @@ import type {
   UpNext,
   WeekStrip,
 } from '../lib/home/model'
-import { getDiscover, getUpNext } from '../lib/home/server'
 import { airingToday, composeTonight, fieldLine } from '../lib/home/tonight'
 import { daypartHeading } from '../lib/appearance'
-import { listImports } from '../lib/imports/server'
 import type { ImportJob } from '../lib/imports/server'
 import { upsert } from '../lib/library/model'
 import type { LibraryEntry } from '../lib/library/model'
-import { getLibrary } from '../lib/library/server'
-import { getLists } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
-import { getStats } from '../lib/recap/server'
 import { offeredRecap, periodLabel } from '../lib/recap/model'
-import { getSession } from '../lib/session/session'
-import { listPendingPlans } from '../lib/plans/server'
+import { requireSession } from '../lib/session/query'
 import type { AgentPlan } from '../lib/plans/server'
 import { flip, leave } from '../lib/motion'
 import { setEpisode } from '../lib/title/server'
+import {
+  calendarQuery,
+  discoverQuery,
+  importsQuery,
+  lastWeekStatsQuery,
+  libraryQuery,
+  listsQuery,
+  pendingPlansQuery,
+  upNextQuery,
+} from '../lib/queries'
+import type { QueryClient } from '@tanstack/solid-query'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
 // watching come with the page; the calendar row loads in the browser, which knows the
@@ -86,17 +90,43 @@ const SearchPanel = lazy(() =>
 
 export const Route = createFileRoute('/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
-    return { session }
+  beforeLoad: async ({ context }) => ({
+    session: await requireSession(context.queryClient),
+  }),
+  loader: ({ context: { queryClient } }) => {
+    // In the browser (a click, or a hover that preloads) the rest of the page starts with
+    // Up next instead of after it mounts. On the first load the server cannot know the
+    // viewer's day, so the page starts them when it mounts.
+    if (typeof window !== 'undefined') startReads(queryClient, new Date())
+    return queryClient.query(upNextQuery)
   },
-  loader: () => getUpNext(),
   component: Home,
 })
 
+const viewerTimeZone = () =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+
+const airingWindow = (today: string) =>
+  fetchWindow(today, addDays(today, AIRING_DAYS - 1))
+
+/** Every read Home shows besides Up next, all at once. Each row handles its own failure. */
+function startReads(queryClient: QueryClient, current: Date) {
+  const ignore = () => undefined
+  const today = localDayKey(current)
+  void queryClient.query(discoverQuery).catch(ignore)
+  void queryClient.query(listsQuery).catch(ignore)
+  void queryClient.query(pendingPlansQuery).catch(ignore)
+  void queryClient.query(importsQuery).catch(ignore)
+  void queryClient.query(libraryQuery).catch(ignore)
+  void queryClient.query(lastWeekStatsQuery(viewerTimeZone())).catch(ignore)
+  void queryClient.query(calendarQuery(airingWindow(today))).catch(ignore)
+}
+
 function Home() {
   const loaded = Route.useLoaderData()
+  const { queryClient } = Route.useRouteContext()()
+  /** Up next again, past the cache: after a write the rows must show it. */
+  const freshUpNext = () => queryClient.query({ ...upNextQuery, staleTime: 0 })
   const [continuing, setContinuing] = createSignal(loaded().continueWatching)
   const [starting, setStarting] = createSignal(loaded().startWatching)
   const [unfinished, setUnfinished] = createSignal(loaded().unfinished ?? [])
@@ -126,7 +156,8 @@ function Home() {
   function loadLibrary() {
     if (libraryRequested) return
     libraryRequested = true
-    getLibrary()
+    queryClient
+      .query(libraryQuery)
       .then((library) => {
         // Anything added while it loaded is already on the server's answer, or kept here.
         setEntries((recent) => recent.reduce(upsert, library))
@@ -150,7 +181,7 @@ function Home() {
     setEntries((current) => upsert(current, entry))
     setDiscover((rows) => markOnShelf(rows, entry))
     try {
-      showUpNext(await getUpNext())
+      showUpNext(await freshUpNext())
     } catch {
       // The add landed; the rows catch up on the next visit.
     }
@@ -160,12 +191,9 @@ function Home() {
    * out. */
   async function loadStrip() {
     try {
-      const stats = await getStats({
-        data: {
-          span: 'last7',
-          tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-        },
-      })
+      const stats = await queryClient.query(
+        lastWeekStatsQuery(viewerTimeZone()),
+      )
       setStrip(weekStrip(stats))
     } catch {
       setStrip(null)
@@ -175,7 +203,7 @@ function Home() {
   /** Agent requests waiting for the user (OUT-004), pinned above everything else. */
   async function loadPlans() {
     try {
-      setPlans(await listPendingPlans())
+      setPlans(await queryClient.query(pendingPlansQuery))
     } catch {
       // The requests stay on the server; the next visit shows them.
     }
@@ -184,7 +212,7 @@ function Home() {
   /** The newest import, collapsed beside the rows. A failure just leaves it out. */
   async function loadLastImport() {
     try {
-      const jobs = await listImports()
+      const jobs = await queryClient.query(importsQuery)
       const newest = jobs.reduce<ImportJob | null>(
         (best, job) => (!best || job.createdAt > best.createdAt ? job : best),
         null,
@@ -197,7 +225,7 @@ function Home() {
 
   async function loadDiscover() {
     try {
-      setDiscover(await getDiscover())
+      setDiscover(await queryClient.query(discoverQuery))
     } catch {
       // Discover is extra: the user's own rows stand without it.
     } finally {
@@ -207,7 +235,7 @@ function Home() {
 
   async function loadLists() {
     try {
-      setLists(await getLists())
+      setLists(await queryClient.query(listsQuery))
     } catch {
       setLists(null)
     }
@@ -224,11 +252,7 @@ function Home() {
     void loadLastImport()
     loadLibrary()
     try {
-      setAirings(
-        await getCalendar({
-          data: fetchWindow(today, addDays(today, AIRING_DAYS - 1)),
-        }),
-      )
+      setAirings(await queryClient.query(calendarQuery(airingWindow(today))))
     } catch (err) {
       setProblem(
         err instanceof Error
@@ -344,7 +368,7 @@ function Home() {
     )
     if (match) setAirings((rows) => withWatched(rows, match, true))
     try {
-      showUpNext(await getUpNext())
+      showUpNext(await freshUpNext())
     } catch {
       // The write landed; the optimistic card stands until the next visit.
     } finally {
@@ -401,7 +425,7 @@ function Home() {
                         plan={plan}
                         onDecided={(decided) => {
                           if (decided.status === 'applied')
-                            void getUpNext().then(showUpNext, () => {})
+                            void freshUpNext().then(showUpNext, () => {})
                         }}
                       />
                     )}

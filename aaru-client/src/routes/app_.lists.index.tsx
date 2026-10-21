@@ -1,4 +1,4 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { AlertDialog } from '../components/ui/alert-dialog'
@@ -11,14 +11,13 @@ import {
 } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // APP-006 on the web: every list, with create, rename and delete.
 export const Route = createFileRoute('/app_/lists/')({
   head: () => ({ meta: [{ title: 'Lists · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   loader: () => getLists(),
   component: Lists,

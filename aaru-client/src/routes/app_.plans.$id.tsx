@@ -1,15 +1,14 @@
-import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import { AppHeader } from '../components/AppHeader'
 import { PlanCard } from '../components/PlanCard'
 import { getPlan } from '../lib/plans/server'
-import { getSession } from '../lib/session/session'
+import { requireSession } from '../lib/session/query'
 
 // OUT-004: one agent request, where its push notification opens.
 export const Route = createFileRoute('/app_/plans/$id')({
   head: () => ({ meta: [{ title: 'Request · Aaru' }] }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.signedIn) throw redirect({ to: '/sign-in' })
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient)
   },
   loader: ({ params }) => getPlan({ data: { id: params.id } }),
   component: PlanPage,

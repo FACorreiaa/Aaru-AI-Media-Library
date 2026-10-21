@@ -16,7 +16,10 @@ npm run cf:types       # after changing vars in wrangler.jsonc
 - `src/routes/index.tsx`: the landing page. It never reads the session.
 - `src/routes/sign-in.tsx`, `src/routes/app.tsx`: sign-in and the signed-in app.
 - `src/lib/session/`: the session. The token sits in an HttpOnly cookie; server functions send
-  every `/v1` call with it, so page scripts never see it. A 401 clears it once.
+  every `/v1` call with it, so page scripts never see it. A 401 clears it once. `query.ts`
+  checks it once per tab for the app's pages.
+- `src/lib/queries.ts`: the shared reads, as TanStack Query options. Loaders and rows read
+  through them; a POST marks them old (`src/start.ts`).
 - `src/lib/api/`: the `/v1` client. `schema.d.ts` is generated from the server's spec, the same
   spec the Apple apps' `AaruAPI` comes from; CI fails if it is stale.
 
