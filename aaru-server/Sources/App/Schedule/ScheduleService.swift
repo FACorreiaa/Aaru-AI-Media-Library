@@ -48,7 +48,11 @@ struct ScheduleService: Sendable {
     /// belong to `CatalogRefresher`.
     private func hydrateNewShows(userID: UserID) async throws {
         let pending = try await stores.schedule.unhydratedTrackedShows(userID: userID, limit: Self.hydrationBudget)
-        for titleID in pending {
+        // Stamped first, like the refresher: a show the provider does not know (or an outage) is
+        // tried once an hour, not on every calendar read. A few at once; the providers are paced.
+        let (stores, catalog, now) = (stores, catalog, Date())
+        _ = try await ImportService.boundedMap(pending, limit: 3) { titleID in
+            try await stores.titles.markEpisodesAttempted(titleID, at: now)
             _ = try? await catalog.detail(titleID)
         }
     }

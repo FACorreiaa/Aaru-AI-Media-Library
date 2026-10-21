@@ -109,6 +109,12 @@ struct ImportService: Sendable {
             job.updatedAt = now()
             try await stores.importJobs.savePlan(job, rows: rows)
         } catch {
+            // A shutdown is not the job's failure: hand it back untouched, attempt uncounted, for
+            // the next worker (whatever the provider client turned the cancellation into).
+            if Task.isCancelled || error is CancellationError {
+                try? await stores.importJobs.release(job.id, now: now())
+                throw CancellationError()
+            }
             let summary = Self.summary(of: error)
             if claimed.attempts < Self.maxAttempts {
                 // Back off: 30 s, then 60 s. A provider outage usually passes.

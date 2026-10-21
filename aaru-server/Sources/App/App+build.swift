@@ -27,7 +27,8 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let config = try AppConfig.load(from: reader)
     let fluent = try await makeFluent(config.postgres, logger: logger)
     let stores = try Stores.postgres(fluent.db())
-    let transport = AsyncHTTPTransport(client: .shared)
+    let httpClient = makeHTTPClient()
+    let transport = AsyncHTTPTransport(client: httpClient)
     let auth = makeAuthService(config: config, stores: stores, transport: transport)
     let catalogs = makeCatalogProviders(config: config, transport: transport)
     let trakt = config.trakt.map { makeTraktAPI($0, transport) }
@@ -57,11 +58,12 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             )
         ),
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        // The web push manager finishes in-flight sends on shutdown.
-        services: backgroundServices(
+        // The web push manager finishes in-flight sends on shutdown. Services stop in reverse
+        // order, so the HTTP client, first here, closes after every worker that calls out.
+        services: [HTTPClientService(client: httpClient)] + backgroundServices(
             fluent: fluent, stores: stores, services: services,
             airing: AiringNotifier(stores: stores, sender: pushSender, webPush: webPush),
-            logger: logger
+            workers: config.workers, logger: logger
         ) + [webPush?.manager].compactMap(\.self),
         logger: logger
     )
@@ -69,11 +71,12 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
 
 /// Everything that runs beside the HTTP server: the database, and the workers.
 func backgroundServices(
-    fluent: Fluent, stores: Stores, services: Services, airing: AiringNotifier, logger: Logger
+    fluent: Fluent, stores: Stores, services: Services, airing: AiringNotifier,
+    workers: WorkerSettings = WorkerSettings(), logger: Logger
 ) -> [any Service] {
     [
         fluent,
-        ImportWorker(imports: services.imports, logger: logger),
+        ImportWorker(imports: services.imports, logger: logger, workers: workers.imports),
         AiringNotifierService(notifier: airing, logger: logger),
         CatalogRefreshService(
             refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
@@ -87,7 +90,9 @@ func backgroundServices(
             ),
             logger: logger
         ),
-    ] + (services.agentReplies.map { [AgentReplyWorker(replies: $0, logger: logger)] } ?? [])
+    ] + (services.agentReplies.map {
+        [AgentReplyWorker(replies: $0, logger: logger, workers: workers.agentReplies)]
+    } ?? [])
         + (services.catalog.catalogs.recordings.map {
             [ListenResolverService(resolver: ListenResolver(stores: stores, recordings: $0), logger: logger)]
         } ?? [])
@@ -140,19 +145,6 @@ func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger
     }
 }
 
-/// The Trakt client, or nil when Trakt is not configured.
-func makeTraktAPI(_ settings: TraktSettings?, transport: any HTTPTransport) -> TraktAPI? {
-    settings.map { settings in
-        // Trakt allows 1000 calls per 5 minutes per user; stay well under it.
-        TraktAPI(
-            client: ProviderClient(
-                name: "trakt", transport: transport, pacer: RequestPacer(requestsPerSecond: 2, burst: 10)
-            ),
-            settings: settings
-        )
-    }
-}
-
 /// The agent's model, or nil (with a notice) when no key is configured: `@aaru` then stays off.
 func makeModelProvider(
     _ settings: AnthropicSettings?, transport: any HTTPTransport, logger: Logger
@@ -176,10 +168,10 @@ func waitForDatabase(
     delay: Duration = .seconds(3),
     logger: Logger
 ) async throws {
-    guard let sql = fluent.db() as? any SQLDatabase else { throw MigrationNeedsSQL() }
+    let health = try PostgresHealth(sql: sqlDatabase(fluent.db()))
     for attempt in 1 ... attempts {
         do {
-            try await sql.raw("SELECT 1").run()
+            try await health.ping()
             return
         } catch where attempt < attempts {
             logger.notice("Database not reachable yet, retrying", metadata: ["attempt": "\(attempt)"])
@@ -216,7 +208,9 @@ func makeWebPushSender(_ json: String?, logger: Logger) -> WebPushSender? {
     }
 }
 
-/// A Fluent instance on Postgres with every migration registered.
+/// A Fluent instance on Postgres with every migration registered. The pool is sized from config:
+/// `Stores.postgres(fluent.db())` binds every store to one event loop's pool, so its maximum is
+/// the process's connection count (it was Fluent's default of one).
 func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fluent {
     let fluent = Fluent(logger: logger)
     fluent.databases.use(
@@ -228,7 +222,9 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
                 password: settings.password,
                 database: settings.database,
                 tls: .disable
-            )
+            ),
+            maxConnectionsPerEventLoop: settings.poolSize,
+            connectionPoolTimeout: .seconds(Int64(settings.poolTimeoutSeconds))
         ),
         as: .psql
     )

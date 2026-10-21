@@ -126,6 +126,14 @@ struct PostgresImportJobStore: ImportJobStore {
         """).run()
     }
 
+    func release(_ id: ImportJobID, now: Date) async throws {
+        try await sql.raw("""
+        UPDATE import_jobs SET state = 'queued', attempts = greatest(attempts - 1, 0), locked_until = NULL,
+            rows_matched = 0, updated_at = \(bind: now)
+        WHERE id = \(bind: id.rawValue) AND state = 'running'
+        """).run()
+    }
+
     func progress(_ id: ImportJobID, matched: Int, lockedUntil: Date) async throws {
         try await sql.raw("""
         UPDATE import_jobs SET rows_matched = \(bind: matched), locked_until = \(bind: lockedUntil)

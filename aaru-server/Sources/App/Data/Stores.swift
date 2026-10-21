@@ -308,6 +308,9 @@ protocol ImportJobStore: Sendable {
     func claimNext(now: Date, lease: TimeInterval, userID: UserID?) async throws -> ClaimedImportJob?
     /// Puts a failed attempt back in the queue, not before `notBefore`.
     func retry(_ id: ImportJobID, error: String, notBefore: Date, now: Date) async throws
+    /// Hands a running job back to the queue at once without counting the attempt: the worker
+    /// stopped (shutdown), the job did not fail.
+    func release(_ id: ImportJobID, now: Date) async throws
     /// The worker's heartbeat while matching: rows matched so far, and a lease pushed forward so a
     /// long import is never taken for a dead one.
     func progress(_ id: ImportJobID, matched: Int, lockedUntil: Date) async throws
@@ -322,6 +325,13 @@ protocol ImportJobStore: Sendable {
     func stremioLinkExpiry(code: String, userID: UserID) async throws -> Date?
     /// Single use: true when this call removed the code, so two polls never import twice.
     func consumeStremioLink(code: String, userID: UserID) async throws -> Bool
+}
+
+extension ImportJobStore {
+    /// For stores without a release: a retry due now (the attempt still counts).
+    func release(_ id: ImportJobID, now: Date) async throws {
+        try await retry(id, error: "Interrupted.", notBefore: now, now: now)
+    }
 }
 
 /// A user's Trakt connection, tokens still sealed.
