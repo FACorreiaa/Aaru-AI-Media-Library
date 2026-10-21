@@ -15,13 +15,17 @@ import {
   onCleanup,
   onMount,
 } from 'solid-js'
-import { z } from 'zod'
+import { optionalEnum } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { MonthCalendar } from '../components/MonthCalendar'
 import { WeekGrid } from '../components/WeekGrid'
 import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
 import { cardClass } from '../components/ui/card'
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '../components/ui/segmented-control'
 import {
   addDays,
   addMonths,
@@ -41,6 +45,7 @@ import { getCalendar } from '../lib/calendar/server'
 import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
 import { cn } from '../lib/cn'
+import { slideIn } from '../lib/motion'
 
 // APP-010 on the web: what airs from the user's own shows, as CAT's dense week or Stremio's
 // month with an agenda. Rendered in the browser: "today" and every day boundary are the
@@ -49,7 +54,9 @@ type View = 'week' | 'month'
 
 export const Route = createFileRoute('/app_/week')({
   head: () => ({ meta: [{ title: 'Calendar · Aaru' }] }),
-  validateSearch: z.object({ view: z.enum(['week', 'month']).optional() }),
+  validateSearch: (search): { view?: 'week' | 'month' } => ({
+    view: optionalEnum(search.view, ['week', 'month']),
+  }),
   beforeLoad: async () => {
     const session = await getSession()
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
@@ -92,6 +99,13 @@ function Calendar() {
   const [loading, setLoading] = createSignal(true)
   const [problem, setProblem] = createSignal<string | null>(null)
   let request = 0
+  let content: HTMLDivElement | undefined
+
+  /** Week view paging: the moved week slides in from the side it came from. */
+  function slide(direction: number) {
+    if (content && direction !== 0 && view() === 'week')
+      void slideIn(content, direction > 0 ? 1 : -1)
+  }
 
   const weekDays = createMemo(() => (start() ? daysFrom(start()) : []))
   const grid = createMemo(() => (month() ? monthGrid(month()) : []))
@@ -116,8 +130,15 @@ function Calendar() {
     const onKey = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
         return
+      if (event.defaultPrevented) return
       const target = event.target as HTMLElement | null
-      if (target?.closest('input:not([type=checkbox]), textarea, select'))
+      // Fields keep their keys, the view switch's radios included; the day tabs move their
+      // own selection with the arrows.
+      if (
+        target?.closest(
+          'input:not([type=checkbox]), textarea, select, [role=tablist]',
+        )
+      )
         return
       if (target?.isContentEditable) return
       const key = event.key
@@ -223,6 +244,7 @@ function Calendar() {
       setStart((s) => addDays(s, delta))
       setSelected((s) => addDays(s, delta))
     })
+    slide(delta)
   }
 
   /** Month view: the selected day moves, and the month follows it across an edge. */
@@ -251,11 +273,14 @@ function Calendar() {
   function goToday() {
     const now = today()
     if (!now) return
+    const from = start()
+    const to = mondayOf(now)
     batch(() => {
-      setStart(mondayOf(now))
+      setStart(to)
       setMonth(monthOf(now))
       setSelected(now)
     })
+    slide(to === from ? 0 : to > from ? 1 : -1)
   }
 
   async function toggle(entry: CalendarEntry) {
@@ -299,28 +324,23 @@ function Calendar() {
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <div
+            <SegmentedControl
               class="flex rounded-full border border-line p-0.5"
-              role="group"
               aria-label="Calendar view"
+              value={view()}
+              onChange={(next) => switchView(next as View)}
             >
               <For each={['week', 'month'] as const}>
                 {(option) => (
-                  <button
-                    type="button"
-                    aria-pressed={view() === option}
-                    class="rounded-full px-3 py-1 text-sm font-medium"
-                    classList={{
-                      'bg-ink text-paper': view() === option,
-                      'text-muted hover:text-ink': view() !== option,
-                    }}
-                    onClick={() => switchView(option)}
+                  <SegmentedControlItem
+                    value={option}
+                    class="px-3 py-1 text-sm"
                   >
                     {option === 'week' ? 'Week' : 'Month'}
-                  </button>
+                  </SegmentedControlItem>
                 )}
               </For>
-            </div>
+            </SegmentedControl>
             <nav class="flex items-center gap-2" aria-label="Days">
               <Show when={view() === 'week'}>
                 <Button
@@ -385,7 +405,7 @@ function Calendar() {
           </div>
         </Show>
 
-        <div class="mt-6" aria-busy={loading()}>
+        <div ref={content} class="mt-6" aria-busy={loading()}>
           <Show
             when={today()}
             fallback={<p class="text-sm text-muted">Loading the calendar…</p>}

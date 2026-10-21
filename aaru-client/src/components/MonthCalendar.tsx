@@ -15,6 +15,7 @@ import {
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { cn } from '../lib/cn'
+import { slideIn } from '../lib/motion'
 import { WatchedCheckbox } from './WatchedCheckbox'
 import { Button, buttonVariants } from './ui/button'
 import { cardClass } from './ui/card'
@@ -35,11 +36,23 @@ export interface MonthCalendarProps {
 }
 
 export function MonthCalendar(props: MonthCalendarProps) {
+  let grid: HTMLDivElement | undefined
+  // Paging months slides the new one in from the side it lies on. Not on first render.
+  createEffect(
+    on(
+      () => props.month,
+      (month, previous) => {
+        if (grid && previous && month !== previous)
+          void slideIn(grid, month > previous ? 1 : -1)
+      },
+      { defer: true },
+    ),
+  )
   return (
     <div class="lg:flex lg:items-start lg:gap-6">
       <section class="min-w-0 flex-1" aria-label={monthLabel(props.month)}>
         <MonthSwitcher month={props.month} onMonth={props.onMonth} />
-        <div class="mt-4 grid grid-cols-7 gap-1 md:gap-1.5">
+        <div ref={grid} class="mt-4 grid grid-cols-7 gap-1 md:gap-1.5">
           <For each={props.grid.slice(0, 7)}>
             {(day) => (
               <span

@@ -8,10 +8,14 @@ import {
   createSignal,
   onMount,
 } from 'solid-js'
-import { z } from 'zod'
+import { optionalEnum, optionalInt } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { StatsPanel } from '../components/StatsPanel'
 import { Alert } from '../components/ui/alert'
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '../components/ui/segmented-control'
 import {
   SPANS,
   insightsLabel,
@@ -32,19 +36,22 @@ import { getSession } from '../lib/session/session'
 // Recap story. Stats load in the browser, which knows the viewer's time zone and "this month".
 export const Route = createFileRoute('/app_/insights')({
   head: () => ({ meta: [{ title: 'Insights · Aaru' }] }),
-  validateSearch: z.object({
-    span: z
-      .enum(['last7', 'last30', 'month', 'year', 'all'])
-      .optional()
-      .catch(undefined),
-    year: z.coerce
-      .number()
-      .int()
-      .min(1900)
-      .max(2200)
-      .optional()
-      .catch(undefined),
-    month: z.coerce.number().int().min(1).max(12).optional().catch(undefined),
+  validateSearch: (
+    search,
+  ): {
+    span?: 'last7' | 'last30' | 'month' | 'year' | 'all'
+    year?: number
+    month?: number
+  } => ({
+    span: optionalEnum(search.span, [
+      'last7',
+      'last30',
+      'month',
+      'year',
+      'all',
+    ]),
+    year: optionalInt(search.year, 1900, 2200),
+    month: optionalInt(search.month, 1, 12),
   }),
   beforeLoad: async () => {
     const session = await getSession()
@@ -123,31 +130,30 @@ function Insights() {
         </h1>
 
         <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <div
+          <SegmentedControl
             class="flex overflow-hidden rounded-full border border-line text-sm"
-            role="group"
             aria-label="Period"
+            // '' until the period is known: controlled, with nothing chosen yet.
+            value={period()?.span ?? ''}
+            onChange={(span) => {
+              const p = period()
+              const current = now()
+              const option = SPANS.find((o) => o.span === span)
+              if (p && current && option) go(withSpan(p, option.span, current))
+            }}
           >
             <For each={SPANS}>
               {(option) => (
-                <button
-                  type="button"
-                  aria-pressed={period()?.span === option.span}
+                <SegmentedControlItem
+                  value={option.span}
+                  variant="surface"
                   class="px-4 py-1.5"
-                  classList={{
-                    'bg-surface font-semibold': period()?.span === option.span,
-                  }}
-                  onClick={() => {
-                    const p = period()
-                    const current = now()
-                    if (p && current) go(withSpan(p, option.span, current))
-                  }}
                 >
                   {option.label}
-                </button>
+                </SegmentedControlItem>
               )}
             </For>
-          </div>
+          </SegmentedControl>
           <Show when={period()}>
             {(p) => (
               <div class="flex items-center gap-2">
