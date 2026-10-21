@@ -42,4 +42,5 @@ export const CREDITS: Credit[] = [
     name: 'Open Library',
     href: 'https://openlibrary.org',
   },
+  { lead: 'History import from ', name: 'Trakt', href: 'https://trakt.tv' },
 ]
