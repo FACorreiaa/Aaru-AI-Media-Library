@@ -15,6 +15,8 @@ public struct ExternalIDs: Codable, Hashable, Sendable {
     public var anilist: String?
     public var mal: String?
     public var anidb: String?
+    /// MusicBrainz release-group MBID, for albums.
+    public var musicbrainz: String?
 
     public init(
         tmdb: String? = nil,
@@ -25,7 +27,8 @@ public struct ExternalIDs: Codable, Hashable, Sendable {
         openLibrary: String? = nil,
         anilist: String? = nil,
         mal: String? = nil,
-        anidb: String? = nil
+        anidb: String? = nil,
+        musicbrainz: String? = nil
     ) {
         self.tmdb = tmdb
         self.imdb = imdb
@@ -36,6 +39,7 @@ public struct ExternalIDs: Codable, Hashable, Sendable {
         self.anilist = anilist
         self.mal = mal
         self.anidb = anidb
+        self.musicbrainz = musicbrainz
     }
 
     // Computed: key paths are not Sendable, so this cannot be a stored static.
@@ -50,6 +54,7 @@ public struct ExternalIDs: Codable, Hashable, Sendable {
             ("anilist", \.anilist),
             ("mal", \.mal),
             ("anidb", \.anidb),
+            ("musicbrainz", \.musicbrainz),
         ]
     }
 

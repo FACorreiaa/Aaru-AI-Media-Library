@@ -105,7 +105,12 @@ export function TitlePicker(props: {
                 <span class="min-w-0 flex-1">
                   <span class="block truncate font-medium">{hit.title}</span>
                   <span class="block truncate text-xs text-muted">
-                    {[hit.year, hit.byline].filter(Boolean).join(' · ')}
+                    {(hit.type === 'album'
+                      ? [hit.byline, hit.year]
+                      : [hit.year, hit.byline]
+                    )
+                      .filter(Boolean)
+                      .join(' · ')}
                   </span>
                 </span>
               </button>

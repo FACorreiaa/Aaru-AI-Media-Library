@@ -1,15 +1,25 @@
 import type { components } from '../api/schema'
+import type { MediaType } from '../media'
 
 export type LibraryEntry = components['schemas']['LibraryEntry']
 export type LibraryStatus = components['schemas']['LibraryStatus']
 export type CatalogHit = components['schemas']['CatalogHit']
 export type ExternalIds = components['schemas']['ExternalIds']
 export type SearchResults = components['schemas']['SearchResults']
-/** `all` searches films, shows and anime together; books are only ever searched on their own. */
-export type SearchType = 'all' | 'movie' | 'show' | 'anime' | 'book'
+/** `all` searches films, shows and anime together; books and albums are only ever searched on
+ * their own. */
+export const SEARCH_TYPES = [
+  'all',
+  'movie',
+  'show',
+  'anime',
+  'book',
+  'album',
+] as const
+export type SearchType = (typeof SEARCH_TYPES)[number]
 
 /** How the library is browsed: anime is its own shelf even though it is a show or a film. */
-export type MediaKind = 'film' | 'show' | 'anime' | 'book'
+export type MediaKind = 'film' | 'show' | 'anime' | 'book' | 'album'
 
 export const KINDS: Array<{
   kind: MediaKind
@@ -20,6 +30,7 @@ export const KINDS: Array<{
   { kind: 'show', label: 'Shows', search: 'show' },
   { kind: 'anime', label: 'Anime', search: 'anime' },
   { kind: 'book', label: 'Books', search: 'book' },
+  { kind: 'album', label: 'Music', search: 'album' },
 ]
 
 /** Stored order of the four statuses. The words differ per kind; the values never do. */
@@ -28,6 +39,7 @@ const KIND_NAMES: Record<MediaKind, string> = {
   show: 'Show',
   anime: 'Anime',
   book: 'Book',
+  album: 'Album',
 }
 
 /** One title's kind, singular: the badge on a search hit or a Discover card. */
@@ -56,6 +68,13 @@ const BOOK_LABELS: Record<LibraryStatus, string> = {
   dropped: 'Dropped',
 }
 
+const LISTEN_LABELS: Record<LibraryStatus, string> = {
+  wishlist: 'Plan to listen',
+  in_progress: 'Listening',
+  finished: 'Listened',
+  dropped: 'Dropped',
+}
+
 /** For a mixed shelf (no kind chosen), words that fit films and books alike. */
 const NEUTRAL_LABELS: Record<LibraryStatus, string> = {
   wishlist: 'Planned',
@@ -66,10 +85,13 @@ const NEUTRAL_LABELS: Record<LibraryStatus, string> = {
 
 function labelsFor(kind: MediaKind | null): Record<LibraryStatus, string> {
   if (kind === null) return NEUTRAL_LABELS
-  return kind === 'book' ? BOOK_LABELS : VIDEO_LABELS
+  if (kind === 'book') return BOOK_LABELS
+  if (kind === 'album') return LISTEN_LABELS
+  return VIDEO_LABELS
 }
 
-/** What a status is called for this kind: "Watching" for a show, "Reading" for a book. */
+/** What a status is called for this kind: "Watching" for a show, "Reading" for a book,
+ * "Listening" for an album. */
 export function statusLabel(
   status: LibraryStatus,
   kind: MediaKind | null,
@@ -85,13 +107,16 @@ export function statusOptions(
   return STATUS_ORDER.map((status) => ({ status, label: labels[status] }))
 }
 
-export function kindOf(
-  type: 'movie' | 'show' | 'book',
-  isAnime: boolean,
-): MediaKind {
+export function kindOf(type: MediaType, isAnime: boolean): MediaKind {
   if (type === 'book') return 'book'
+  if (type === 'album') return 'album'
   if (isAnime) return 'anime'
   return type === 'movie' ? 'film' : 'show'
+}
+
+/** An album's cover is square (Cover Art Archive); every other kind's poster is 2:3. */
+export function coverShape(kind: MediaKind): 'square' | 'poster' {
+  return kind === 'album' ? 'square' : 'poster'
 }
 
 /** One library entry, ready to draw. Same shape as the Apple apps' `LibraryRow`. */
@@ -101,6 +126,8 @@ export interface LibraryRow {
   year?: number
   posterUrl?: string
   kind: MediaKind
+  /** An album's artist (and a book's authors): the line under an album's name. */
+  byline?: string
   status: LibraryStatus
   detail?: string
   updatedAt: string
@@ -121,6 +148,7 @@ export function toRow(entry: LibraryEntry): LibraryRow {
     year: entry.title.year,
     posterUrl: entry.title.posterUrl,
     kind: kindOf(entry.title.type, entry.title.isAnime),
+    byline: entry.title.byline,
     status: entry.status,
     detail,
     updatedAt: entry.updatedAt,

@@ -188,11 +188,14 @@ function ListPage() {
                       <div class="min-w-0 flex-1">
                         <p class="line-clamp-2 font-medium">{row().title}</p>
                         <p class="truncate text-sm text-muted">
-                          {[
-                            row().year,
-                            KINDS.find((k) => k.kind === row().kind)?.label,
-                            row().network,
-                          ]
+                          {(row().kind === 'album'
+                            ? [row().byline, row().year]
+                            : [
+                                row().year,
+                                KINDS.find((k) => k.kind === row().kind)?.label,
+                                row().network,
+                              ]
+                          )
                             .filter(Boolean)
                             .join(' · ')}
                         </p>

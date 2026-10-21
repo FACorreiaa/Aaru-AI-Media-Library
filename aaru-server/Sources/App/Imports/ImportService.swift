@@ -171,6 +171,7 @@ extension ImportService {
         case .trakt: "Trakt"
         case .stremio: "Stremio"
         case .catList, .catICS: "Pogdesign CAT"
+        case .netflixCSV: "Netflix"
         case .malXML: "MyAnimeList"
         case .anilist: "AniList"
         case .genericCSV: "CSV"

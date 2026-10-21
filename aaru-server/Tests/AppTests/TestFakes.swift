@@ -83,9 +83,11 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, MALBa
     private var failure: (any Error)?
     private var latency: Duration?
     private var discoverHits: [DiscoverList: [CatalogHit]] = [:]
+    private var seasonHits: [SeasonKind: [CatalogHit]] = [:]
+    private var trackLists: [String: [AlbumTrack]] = [:]
 
     static func providers(_ catalog: FakeCatalog) -> CatalogProviders {
-        CatalogProviders(tmdb: catalog, anilist: catalog, openLibrary: catalog)
+        CatalogProviders(tmdb: catalog, anilist: catalog, openLibrary: catalog, music: catalog)
     }
 
     func fail(with error: (any Error)?) {
@@ -172,6 +174,22 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, MALBa
     func stubDiscover(_ list: DiscoverList, _ hits: [CatalogHit]) {
         lock.withLock { discoverHits[list] = hits }
     }
+
+    func stubSeason(_ kind: SeasonKind, _ hits: [CatalogHit]) {
+        lock.withLock { seasonHits[kind] = hits }
+    }
+}
+
+extension FakeCatalog: SeasonBrowsing {
+    var seasonKinds: Set<SeasonKind> {
+        Set(SeasonKind.allCases)
+    }
+
+    func season(_: SeasonKey, kind: SeasonKind, page _: Int, now _: Date) async throws -> SeasonPage {
+        try record("season")
+        let hits = lock.withLock { seasonHits[kind] ?? [] }
+        return SeasonPage(hits: hits, hasMore: false, total: hits.count)
+    }
 }
 
 extension FakeCatalog: DiscoverListing {
@@ -182,5 +200,17 @@ extension FakeCatalog: DiscoverListing {
     func list(_ list: DiscoverList, now _: Date) async throws -> [CatalogHit] {
         try record("discover")
         return lock.withLock { discoverHits[list] ?? [] }
+    }
+}
+
+extension FakeCatalog: TrackListing {
+    /// Keyed by the album's MusicBrainz release-group id.
+    func stubTracks(_ musicbrainz: String, _ tracks: [AlbumTrack]) {
+        lock.withLock { trackLists[musicbrainz] = tracks }
+    }
+
+    func tracks(ids: ExternalIDs) async throws -> [AlbumTrack]? {
+        try record("tracks")
+        return lock.withLock { ids.musicbrainz.flatMap { trackLists[$0] } }
     }
 }

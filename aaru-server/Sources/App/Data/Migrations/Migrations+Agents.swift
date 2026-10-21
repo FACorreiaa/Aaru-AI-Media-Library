@@ -148,3 +148,31 @@ struct AddImportsWriteScope: SQLMigration {
         """,
     ]
 }
+
+/// SCR-007 · the browser extension's tokens (`browser`, scrobble only) and the streaming sites its
+/// watch events come from.
+struct AddBrowserScrobbler: SQLMigration {
+    let forward = [
+        "ALTER TABLE agent_tokens DROP CONSTRAINT agent_tokens_kind_check",
+        """
+        ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_kind_check
+            CHECK (kind IN ('stremio', 'claude_code', 'codex', 'hermes', 'gemini', 'other', 'claude', 'browser'))
+        """,
+        "ALTER TABLE watch_events DROP CONSTRAINT watch_events_source_check",
+        """
+        ALTER TABLE watch_events ADD CONSTRAINT watch_events_source_check
+            CHECK (source IN ('stremio', 'netflix', 'disney_plus', 'prime_video'))
+        """,
+    ]
+    let backward = [
+        "DELETE FROM watch_events WHERE source <> 'stremio'",
+        "ALTER TABLE watch_events DROP CONSTRAINT watch_events_source_check",
+        "ALTER TABLE watch_events ADD CONSTRAINT watch_events_source_check CHECK (source IN ('stremio'))",
+        "DELETE FROM agent_tokens WHERE kind = 'browser'",
+        "ALTER TABLE agent_tokens DROP CONSTRAINT agent_tokens_kind_check",
+        """
+        ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_kind_check
+            CHECK (kind IN ('stremio', 'claude_code', 'codex', 'hermes', 'gemini', 'other', 'claude'))
+        """,
+    ]
+}

@@ -21,6 +21,27 @@ extension APIImplementation {
         }))))
     }
 
+    func getDiscoverSeason(
+        _ input: Operations.GetDiscoverSeason.Input
+    ) async throws -> Operations.GetDiscoverSeason.Output {
+        let query = input.query
+        guard let kind = SeasonKind(rawValue: query.kind.rawValue),
+              let season = SeasonOfYear(rawValue: query.season.rawValue)
+        else { throw AppError.badRequest() }
+        let key = SeasonKey(season: season, year: query.year)
+        let result = try await services.discover.season(
+            key, kind: kind, page: query.page ?? 1, userID: currentUser()
+        )
+        let (from, until) = key.days
+        return .ok(.init(body: .json(.init(
+            kind: .init(rawValue: kind.rawValue) ?? .anime,
+            season: .init(rawValue: season.rawValue) ?? .winter,
+            year: key.year, from: from, until: until, title: key.title,
+            items: result.items.map { Components.Schemas.CatalogHit($0.hit, libraryItemID: $0.libraryItemID) },
+            page: result.page, hasMore: result.hasMore, total: result.total, unavailable: result.unavailable
+        ))))
+    }
+
     func getTitle(_ input: Operations.GetTitle.Input) async throws -> Operations.GetTitle.Output {
         guard let id = TitleID(uuidString: input.path.id) else { throw AppError.notFound() }
         return try await .ok(.init(body: .json(.init(catalog.detail(id)))))
@@ -31,7 +52,8 @@ extension Components.Schemas.ExternalIds {
     init(_ ids: ExternalIDs) {
         self.init(
             tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb, isbn: ids.isbn,
-            openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb
+            openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb,
+            musicbrainz: ids.musicbrainz
         )
     }
 }
@@ -42,6 +64,7 @@ extension Components.Schemas.MediaType {
         case .movie: self = .movie
         case .show: self = .show
         case .book: self = .book
+        case .album: self = .album
         }
     }
 }
@@ -97,7 +120,12 @@ extension Components.Schemas.TitleDetail {
             ids: .init(title.ids),
             status: detail.status.flatMap { .init(rawValue: $0.rawValue) },
             runtimeMinutes: detail.runtimeMinutes,
-            seasons: seasons
+            seasons: seasons,
+            byline: title.byline,
+            genres: title.type == .album ? detail.genres : nil,
+            tracks: detail.tracks?.map {
+                .init(disc: $0.disc, position: $0.position, name: $0.name, lengthMs: $0.lengthMs)
+            }
         )
     }
 }

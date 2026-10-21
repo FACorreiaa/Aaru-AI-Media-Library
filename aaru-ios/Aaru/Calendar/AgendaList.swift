@@ -1,12 +1,10 @@
 import SwiftUI
 
-/// Stremio's sidebar: from the selected day on, a heading per date and a row per episode. The
-/// chosen row opens up with the episode, its synopsis, a watched toggle and the way to the show.
+/// Stremio's sidebar: from the selected day on, a heading per date and a poster row per episode.
+/// A row opens the episode sheet (CAL-003); its tick works on its own.
 struct AgendaList: View {
     let model: MonthModel
     var onSearch: () -> Void
-
-    @State private var expanded: String?
 
     var body: some View {
         let sections = model.agenda
@@ -15,13 +13,7 @@ struct AgendaList: View {
                 ForEach(sections, id: \.day) { section in
                     Section {
                         ForEach(section.entries, id: \.cellID) { entry in
-                            AgendaRow(
-                                entry: entry,
-                                isExpanded: expanded == entry.cellID,
-                                isPending: model.feed.pending.contains(entry.cellID),
-                                onSelect: { select(entry) },
-                                onToggle: { Task { await model.feed.toggle(entry) } }
-                            )
+                            CalendarEpisodeRow(entry: entry, feed: model.feed)
                         }
                     } header: {
                         AgendaHeader(day: section.day, isToday: model.isToday(section.day))
@@ -32,13 +24,6 @@ struct AgendaList: View {
                 }
             }
             .padding(.bottom, 16)
-        }
-        .onChange(of: model.selection) { expanded = nil }
-    }
-
-    private func select(_ entry: CalendarEntry) {
-        withAnimation(.snappy) {
-            expanded = expanded == entry.cellID ? nil : entry.cellID
         }
     }
 
@@ -79,87 +64,6 @@ private struct AgendaHeader: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.paper))
         .accessibilityAddTraits(.isHeader)
-    }
-}
-
-private struct AgendaRow: View {
-    let entry: CalendarEntry
-    let isExpanded: Bool
-    let isPending: Bool
-    let onSelect: () -> Void
-    let onToggle: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button(action: onSelect) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(entry.title.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color(.ink))
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text(entry.shortCode)
-                        .monospacedDigit()
-                    if let time = entry.timeText {
-                        Text(time).monospacedDigit()
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(Color(.muted))
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint(isExpanded ? "Hides the episode" : "Shows the episode")
-            if isExpanded {
-                details
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(isExpanded ? Color(.accent).opacity(0.10) : .clear)
-        .opacity(entry.watched && !isExpanded ? 0.55 : 1)
-    }
-
-    private var details: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let name = entry.episodeName {
-                Text("“\(name)”")
-                    .font(.system(.title3, design: .serif, weight: .semibold))
-                    .foregroundStyle(Color(.accent))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            if let badge = entry.badge {
-                WeekBadge(badge: badge)
-            }
-            if let overview = entry.episodeOverview {
-                Text(overview)
-                    .font(.callout)
-                    .foregroundStyle(Color(.ink).opacity(0.85))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            if let detail = entry.whereAndWhen {
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(Color(.muted))
-            }
-            HStack(spacing: 8) {
-                Button(action: onToggle) {
-                    Label(
-                        entry.watched ? "Watched" : "Mark watched",
-                        systemImage: entry.watched ? "checkmark.circle.fill" : "circle"
-                    )
-                }
-                .buttonStyle(.bordered)
-                .disabled(isPending)
-                NavigationLink(value: entry.libraryItemId) {
-                    Label("Open show", systemImage: "info.circle")
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .controlSize(.small)
-            .padding(.top, 2)
-        }
     }
 }
 

@@ -4,6 +4,7 @@ import {
   airingBadge,
   countChips,
   hoursLabel,
+  listening,
   markAdded,
   markOnShelf,
   weekStrip,
@@ -187,6 +188,7 @@ function weekStats(
       showsFinished: 0,
       animeFinished: 0,
       booksFinished: 0,
+      albumsFinished: 0,
       ...totals,
     },
     byKind: [],
@@ -212,6 +214,7 @@ describe('last 7 days strip', () => {
           activeDays: 5,
           moviesFinished: 1,
           booksFinished: 1,
+          albumsFinished: 0,
         }),
       ).parts,
     ).toEqual(['12 episodes', '9 hours', '2 finished', '5 active days'])
@@ -345,5 +348,35 @@ describe('markOnShelf', () => {
       undefined,
     ])
     expect(marked[1].items[0].libraryItemId).toBe('item-1')
+  })
+})
+
+describe('listening row', () => {
+  const item = (
+    id: string,
+    type: LibraryEntry['title']['type'],
+    status: LibraryEntry['status'],
+    updatedAt: string,
+  ): LibraryEntry => ({
+    id,
+    status,
+    isOwned: false,
+    addedAt: '2026-10-01T00:00:00Z',
+    updatedAt,
+    title: { id: `t-${id}`, type, title: id, isAnime: false, ids: {} },
+  })
+
+  it('holds albums in progress, the last touched first', () => {
+    const rows = listening([
+      item('old', 'album', 'in_progress', '2026-10-02T00:00:00Z'),
+      item('show', 'show', 'in_progress', '2026-10-09T00:00:00Z'),
+      item('planned', 'album', 'wishlist', '2026-10-09T00:00:00Z'),
+      item('new', 'album', 'in_progress', '2026-10-08T00:00:00Z'),
+    ])
+    expect(rows.map((e) => e.id)).toEqual(['new', 'old'])
+  })
+
+  it('is empty without albums, so the row hides', () => {
+    expect(listening([])).toEqual([])
   })
 })

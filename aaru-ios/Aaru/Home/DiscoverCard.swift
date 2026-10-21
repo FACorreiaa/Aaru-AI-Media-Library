@@ -10,7 +10,8 @@ struct DiscoverCard: View {
     let libraryItemID: String?
     /// "Tomorrow", "Nov 14", "Out now": see `releaseBadge`.
     var badge: String?
-    let width: CGFloat
+    /// A row's fixed card width; nil fills a grid cell (the Seasons view).
+    let width: CGFloat?
     let isAdding: Bool
     let onAdd: (LibraryStatus) -> Void
     let onAddToList: () -> Void
@@ -48,7 +49,7 @@ struct DiscoverCard: View {
 
     private var card: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HomeArt(url: hit.posterUrl.flatMap(URL.init(string:)), aspect: 2 / 3)
+            HomeArt(url: hit.posterUrl.flatMap(URL.init(string:)), aspect: kind.posterAspect)
                 .overlay(alignment: .topTrailing) { shelfMark.padding(6) }
                 .overlay(alignment: .topLeading) {
                     if let badge {
@@ -75,6 +76,7 @@ struct DiscoverCard: View {
             }
         }
         .frame(width: width)
+        .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
         .contentShape(Rectangle())
     }
 
@@ -98,15 +100,20 @@ struct DiscoverCard: View {
         }
     }
 
-    /// Rows mix kinds only for anime films; say "Film" there so a poster is not mistaken.
+    /// Rows mix kinds only for anime films; say "Film" there so a poster is not mistaken. An
+    /// album wears its year here instead, with the artist under the name.
     private var kindChip: String? {
-        hit.isAnime && hit._type == .movie ? "Film" : nil
+        if kind == .music {
+            return hit.year.map(String.init)
+        }
+        return hit.isAnime && hit._type == .movie ? "Film" : nil
     }
 
-    /// "2026", or "2026 · James Clear" for a book.
+    /// "2026", "2026 · James Clear" for a book, or the artist for an album.
     private var detail: String? {
-        let parts = [hit.year.map(String.init), hit.byline].compactMap(\.self)
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+        let parts = kind == .music ? [hit.byline] : [hit.year.map(String.init), hit.byline]
+        let present = parts.compactMap(\.self)
+        return present.isEmpty ? nil : present.joined(separator: " · ")
     }
 
     /// The row whose past release dates read "Out now"; elsewhere a past date shows nothing.

@@ -22,6 +22,8 @@ export interface ListRow {
   year?: number
   posterUrl?: string
   kind: MediaKind
+  /** An album's artist (and a book's authors). */
+  byline?: string
   network?: string
   status?: LibraryStatus
   detail?: string
@@ -46,6 +48,7 @@ export function toListRow(item: ListItem, now: Date | null): ListRow {
     year: item.title.year,
     posterUrl: item.title.posterUrl,
     kind: kindOf(item.title.type, item.title.isAnime),
+    byline: item.title.byline,
     network: item.title.network,
     status: library?.status,
     detail: library?.detail,

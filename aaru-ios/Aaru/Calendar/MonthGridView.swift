@@ -31,14 +31,17 @@ struct MonthSwitcher: View {
     }
 }
 
-/// The Monday-start weeks of the month. Posters per day on Mac and iPad; dots on iPhone.
+/// The Monday-start weeks of the month. Three posters per day on Mac and iPad; two small ones and
+/// "+N" on iPhone (CAL-003), where a tapped day also opens as a sheet.
 struct MonthGridView: View {
     enum Style {
-        case posters, dots
+        case posters, compact
     }
 
     let model: MonthModel
     let style: Style
+    /// iPhone: the tapped day opens as a sheet.
+    var onOpenDay: ((Date) -> Void)?
 
     private static let spacing: CGFloat = 4
 
@@ -59,8 +62,8 @@ struct MonthGridView: View {
                 GeometryReader { proxy in
                     grid(rowHeight: rowHeight(in: proxy.size.height))
                 }
-            case .dots:
-                grid(rowHeight: 46)
+            case .compact:
+                grid(rowHeight: 68)
             }
         }
     }
@@ -78,6 +81,7 @@ struct MonthGridView: View {
             ForEach(model.gridDays, id: \.self) { day in
                 Button {
                     withAnimation(.snappy) { model.select(day) }
+                    onOpenDay?(day)
                 } label: {
                     MonthDayCell(
                         day: day, entries: model.entries(on: day), style: style,
@@ -101,7 +105,9 @@ private struct MonthDayCell: View {
     let isToday: Bool
     let isSelected: Bool
 
-    private static let shown = 3
+    private var shown: Int {
+        style == .posters ? 3 : 2
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -111,15 +117,12 @@ private struct MonthDayCell: View {
                 .foregroundStyle(isToday ? Color(.paper) : Color(.ink))
                 .frame(minWidth: 26, minHeight: 26)
                 .background(isToday ? Color(.accent) : .clear, in: Circle())
-            switch style {
-            case .posters: posters
-            case .dots: dots
-            }
+            posters
             Spacer(minLength: 0)
         }
         .opacity(isMuted ? 0.45 : 1)
-        .padding(style == .posters ? 6 : 4)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: style == .posters ? .topLeading : .top)
+        .padding(style == .posters ? 6 : 3)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(.ink).opacity(isMuted ? 0.02 : 0.05), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             if isSelected {
@@ -132,39 +135,30 @@ private struct MonthDayCell: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
+    /// Past the posters that fit, the last slot says "+N".
+    private var visible: ArraySlice<CalendarEntry> {
+        entries.count <= shown ? entries[...] : entries.prefix(shown - 1)
+    }
+
     private var overflow: Int {
-        max(0, entries.count - Self.shown)
+        entries.count - visible.count
     }
 
     private var posters: some View {
         HStack(alignment: .top, spacing: 3) {
-            ForEach(entries.prefix(Self.shown), id: \.cellID) { entry in
+            ForEach(visible, id: \.cellID) { entry in
                 PosterThumb(entry: entry)
             }
             if overflow > 0 {
                 Text("+\(overflow)")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color(.muted))
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color(.ink))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color(.ink).opacity(0.1), in: Capsule())
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
-    }
-
-    private var dots: some View {
-        HStack(spacing: 3) {
-            ForEach(entries.prefix(Self.shown), id: \.cellID) { entry in
-                Circle()
-                    .fill(entry.dotColor)
-                    .opacity(entry.watched ? 0.35 : 1)
-                    .frame(width: 5, height: 5)
-            }
-            if overflow > 0 {
-                Text("+")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Color(.muted))
-            }
-        }
-        .frame(height: 6)
     }
 
     private var accessibilityText: String {
@@ -193,10 +187,10 @@ private struct PosterThumb: View {
                     }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
             .overlay {
                 if let badge = entry.badge {
-                    RoundedRectangle(cornerRadius: 4).strokeBorder(badge.tint, lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: 6).strokeBorder(badge.tint, lineWidth: 1.5)
                 }
             }
             .opacity(entry.watched ? 0.4 : 1)
@@ -213,17 +207,6 @@ private struct PosterThumb: View {
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(.white)
                 .minimumScaleFactor(0.6)
-        }
-    }
-}
-
-extension CalendarEntry {
-    /// iPhone's month dots: gold finale, teal premiere or new season, ink otherwise.
-    var dotColor: Color {
-        switch badge {
-        case .finale: .weekGold
-        case .premiere, .newSeason: Color(.accent)
-        case nil: Color(.ink).opacity(0.55)
         }
     }
 }

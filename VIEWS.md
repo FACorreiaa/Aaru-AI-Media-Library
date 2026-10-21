@@ -17,28 +17,29 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
-| Discover | `DiscoverRow` per DISC-001 row, add with status or to a list | `GET /v1/discover`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20) |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, Listening row (albums in progress, MUS-001), `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
+| Discover | Today: `DiscoverRow` per DISC-001 row, add with status or to a list. Seasons: `SeasonBrowser` (DISC-002) | `GET /v1/discover`, `GET /v1/discover/season`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20), DISC-002 (2026-10-21) |
 | Insights | `StatsPanel` (7 days / 30 days / month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all|last7|last30` | 2 · GAM-006c (pulled forward 2026-10-20), GAM-006d (2026-10-21) |
 | Lists | `Shelf` rendering a list's items: show status, next airing, library status and progress (LST-003) | `GET /v1/lists`, `GET /v1/lists/{id}` (`items`), `POST /v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
 | Week grid | `WeekGrid` | `GET /v1/calendar?from&to`, `PUT .../episodes/{s}/{e}` | 2 · M7 |
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
 | Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
-| Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
+| Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4); for an album, a square cover and the tracklist instead of the season map (MUS-001) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
 | Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 |
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
-| Catch-up calendar | `CalendarMonth` + agenda | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7 |
+| Library · Now | `NowCard` (Library only; the agent does not emit it — `TonightStrip` is its agent counterpart) | the synced shelf; `PUT .../episodes/{s}/{e}`, `PATCH /v1/library/items/{id}` | 2 · APP-017 |
+| Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
 | Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage | 2 · M9 |
 | Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | 7 · M13 |
 | Undo ribbon | `UndoRibbon` | action journal + undo endpoint | 1 · M4 |
 | Mac companion | sidebar + inspector over the same components | same `/v1` | 2 · M7 |
 | Web (`aaru-client`) | same components as SolidJS views | same `/v1` | 2 · WEB-001 |
-| Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
+| Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard`, Listening (MUS-001) (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
 | Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3); Stremio `player` events already fill `watch_events` (2026-10-20) | 2–3 |
 | Settings | none — groups, each its own page: Account (account, friends, notifications), Imports & export (imports, export), Connected apps, Insights & recaps, About (credits, delete account). A tab on Apple (panes in the Cmd-, window on Mac), `/app/settings/{account,imports,connected,recaps,about}` on the web (DESIGN.md §15 "Settings groups") | `GET /v1/me`, `/v1/me/notifications`, `/v1/imports`, `/v1/agent/tokens` | 2 · APP-007 |
 | Connected apps (Settings) | none — a section of Settings → Connected apps: connect, one-time install links, live links with last use, revoke | `GET`/`POST /v1/agent/tokens?for=stremio`, `DELETE /v1/agent/tokens/{id}` | 3 · SCR-003 (owner un-deferred 2026-10-19) |
-| Connections (Settings) | none — a section of Settings → Connected apps: pick an agent (Claude Code, Codex, Hermes, Gemini CLI, other), its setup steps, create a token shown once with the steps filled in, live connections with last use, revoke | `GET`/`POST /v1/agent/tokens?for=mcp`, `GET /v1/agent/setup/{kind}`, `DELETE /v1/agent/tokens/{id}` | 7 · OUT-001/004 (owner pulled forward 2026-10-20) |
+| Connections (Settings) | none — a section of Settings → Connected apps: pick an agent (Claude Code, Codex, Hermes, Gemini CLI, other) or the browser extension, its setup steps, create a token shown once with the steps filled in (the extension connects itself), live connections with last use, revoke | `GET`/`POST /v1/agent/tokens?for=mcp`, `?for=scrobble`, `GET /v1/agent/setup/{kind}`, `DELETE /v1/agent/tokens/{id}` | 7 · OUT-001/004 (owner pulled forward 2026-10-20); SCR-007 (2026-10-21) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
 | Profile and stats | `StatsPanel` (already on Insights), `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
@@ -49,6 +50,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Approvals | `PlanCard`, pinned at the top of Home ("Waiting for you") until The Field exists; a push opens one | `GET /v1/plans`, `GET /v1/plans/{id}`, `POST /v1/plans/{id}/approve`, `/deny` | 7 · OUT-004 (built 2026-10-20) |
 | Shortcuts / App Intents | `TitleCard`, `TonightStrip` as intent snippets | agent tool layer | 7 · M14 |
 | MCP | none — headless, no rendering | `POST /v1/mcp` | 7 · OUT-004 (built 2026-10-20) |
+| Extension connect (web only) | none — "Connect {browser} to Aaru?", what it may do, Approve (enabled once the extension answers) / Not now; Connected / Not connected / not installed | `POST /v1/agent/tokens` (`kind = browser`), `DELETE …/{id}` when the extension never took it | 3 · SCR-007 (2026-10-21) |
 | OAuth consent (web only) | none — the app's name, the host it returns to, a name, Allow changes, Allow / Not now | `GET /v1/oauth/requests/{id}`, `POST …/approve`, `POST …/deny` | 7 · OUT-004 (built 2026-10-20) |
 
 No surface gets a private endpoint. If a view needs data no route returns, add the route,
@@ -70,7 +72,7 @@ refuses and substitutes the nearest catalog piece.
 | `JobLedger` | Import or bulk progress | `importJobId`, step rows (done / current / to do), `state`, `stats`, `rowsMatched` of `rowsTotal` on the matching step, unmatched count |
 | `TonightStrip` | 1–3 next actions | ordered `libraryItemId` + reason + est. minutes |
 | `Shelf` | Filtered library page | `shelfId` or inline query, result page, `isPinned` |
-| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (dots on phones), selected day, agenda by date with an expandable row (episode name, synopsis, network · time, badge, watched check, open show); agent highlight string later |
+| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (two and "+N" on phones, three wider), selected day (a sheet on phones), agenda by date with poster rows that open the episode sheet (still, synopsis, network · time, badge, watched toggle, open show), filters (hide watched, premieres/finales, shows/anime); agent highlight string later |
 | `MatchTable` | Import reconciliation | `importJobId`, three buckets: matched / needs eyes / unknown |
 | `UndoRibbon` | Last agent write | `actionId`, human summary, expiry, `isUndoable` |
 | `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, synopsis, network, local time or none when `airTimeKnown` is false, banner URL = `backdropUrl` → poster → tint, state: watched / premiere / new season / finale / today); Monday start |
@@ -78,6 +80,7 @@ refuses and substitutes the nearest catalog piece.
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |
 | `DiscoverRow` | Public catalog rows on Home and Discover (DISC-001) | row id + title, `CatalogHit`s (a `MediaRef` each) with `libraryItemId` when on the shelf, kind badge, date badge; each a `DiscoverCard` (poster, add or open) |
+| `SeasonBrowser` | One season of public catalog titles on Discover (DISC-002) | season + year with steps either side, kind (anime, new shows, returning, movies), `CatalogHit` grid with `libraryItemId`, "Show more"; `DiscoverCard` per hit |
 | `NowPlayingCard` | Current watch | `libraryItemId`, `EpisodeKey`, progress, started at, ends at, source (check-in / scrobble). Rendered on iOS as the "Now watching" Live Activity (`NowWatchingAttributes`, WID-005) |
 | `UnfinishedRow` | Dropped or stalled items | ordered `libraryItemId`, reason (`dropped` / `stalled`), since, next `EpisodeKey` for shows |
 | `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
@@ -119,6 +122,9 @@ The eleven new components add product, not agent reach, and each has a reason:
   below); a hit the caller already has carries `libraryItemId` and opens the item. Home renders
   the rows, and the Discover tab/page (APP-012) shows the same rows as a destination; the agent
   does not emit them, since it would be recommending.
+- `SeasonBrowser` (DISC-002, added 2026-10-21) — browsing a season by name needs steps through
+  time and a kind switch, which a row of cards has no place for. The same public `CatalogHit`s
+  and the same add path as `DiscoverRow`; the agent does not emit it either.
 - `UnfinishedRow` (2026-10-20, the twenty-third) — Unfinished business (`DESIGN.md` §1) had no
   renderer. It is `ContinueRow`'s shape over `dropped` and 30-day-stalled items. `StatsPanel`
   is pulled forward from Phase 5 as Insights (GAM-006c), with no new component.

@@ -36,6 +36,41 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-21
 
+- **Music scrobbling (MUS-004…008) is built before the P2 gate**, by the owner's call, after
+  albums (MUS-001). Aaru speaks ListenBrainz's submit protocol at `/listenbrainz/1/`, so the
+  scrobblers people already use send their listens with a music token: Web Scrobbler (YouTube,
+  YouTube Music, Spotify and Apple Music on the web), Pano Scrobbler on Android, Navidrome and
+  Jellyfin's ListenBrainz plugin. **No Spotify OAuth**: since February 2026 a Spotify app in
+  development mode has 5 users, and extended quota needs a registered business with 250k monthly
+  users. **No native Apple Music path on iPhone**: Apple's API gives no play times, and iOS
+  cannot watch playback in the background. YouTube has no history API. Listens are a separate,
+  append-only log and never touch the library; the same play sent twice (one scrobbler retrying,
+  or two scrobblers on one play) is kept once. Past listening comes in through MUS-004. Settings
+  was split into groups first (#88) so Music joins Connected apps rather than lengthening it.
+- **Seasons on Discover (DISC-002) and music as a fifth kind (MUS-001…003) are built before the
+  P2 gate**, by the owner's call, with 0 strangers (flagged; the owner chose). Discover gets a
+  Seasons view: one season at a time, its name as the headline, kinds Anime · New shows ·
+  Returning · Movies. A season is a calendar quarter for every kind (winter Jan–Mar … fall
+  Oct–Dec): anime by broadcast season, shows by premiere or by an episode airing, films by
+  first release. Music follows in order: albums as a tracked kind (MusicBrainz + Cover Art
+  Archive), New albums / Coming soon rows (ListenBrainz fresh releases), then concerts
+  (Ticketmaster Discovery) near a saved city or a one-off approximate location, and for artists
+  in the user's library. Every surface ships on web and on iPhone/Mac, in Aaru's design system
+  on the web and Apple's HIG on Apple; the owner picked the look (season as an object, square
+  album covers, a date-led concert list, skeletons that do not shimmer).
+- **Netflix viewing history and a browser-extension scrobbler, both now (owner, 2026-10-21).**
+  Netflix's per-profile *Viewing activity* download is an official export: imported like any file
+  (IMP-018). Netflix, Disney+ and Prime Video have no API, so live plays in a browser come through
+  an Aaru browser extension (SCR-007). **This is an owner exception to "no scraping"**: the
+  extension reads the player page in the user's own browser, for the user's own session, and
+  sends a scrobble to Aaru. It makes no request to the site beyond what the page already makes,
+  Aaru's server fetches nothing from these sites, it never controls playback, and it touches no
+  stream source. Scrobbling is P3; built ahead of the gate like SCR-003. Its token is a new
+  `browser` kind that can only scrobble.
+- **Titles known only by name** (CAT, Netflix, a browser player) match by exact normalized name,
+  only when exactly one TMDB entry of that type has it and came out by the year it was watched.
+  Episodes named but not numbered (Netflix) match by name: in the same season first, else the one
+  episode in the show with that name. Anything else stays unmatched; nothing is guessed.
 - **Last 7 and 30 days on Home, a fuller Year in Review, and stored genres are built before the
   P2 gate**, by the owner's call, with 0 strangers. Modelled on north's recap: Home gets a
   compact "Last 7 days" strip (a bar per day plus the week's figures) that opens Insights on a
@@ -324,6 +359,8 @@ account or a stranger that has not happened yet.
 | SHF-001 | Done | #2; `saved_queries` | API-only by decision |
 | SHF-002 | Done | #2; `/v1/shelves/{id}/items` | |
 | CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
+| CAL-002 | Built (web) | app_.week.tsx, components/calendar/* | Posters, sheets, Missed, filters; `stillUrl` on `CalendarEntry` |
+| CAL-003 | Built (Apple) | Calendar/CalendarEpisodeSheet, CatchUpView, CalendarFilter | Same as CAL-002 on iPhone, iPad, Mac; not seen on a device |
 | UPN-001 | Done | #2; `/v1/up-next` | |
 | APP-001 | Done | #7 432e35f; SessionMiddleware (12 concurrent 401s) | |
 | APP-002 | Done | #8; SessionKeychain.swift | Mac relaunch persistence not recorded |
@@ -335,6 +372,9 @@ account or a stranger that has not happened yet.
 | APP-008 | Partial | sidebarAdaptable + ⌘F in RootView/LibraryView | No ⌘N add shortcut |
 | APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
+| DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
+| MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
+| MUS-005 | Built, unverified | ListenBrainzRouteTests | Not deployed; not tried with a real scrobbler; no client surface yet (MUS-007) |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -359,6 +399,7 @@ account or a stranger that has not happened yet.
 | IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
 | IMP-016 | Built, unverified | #46 62dfe1d; Imports/Stremio/*, StremioImportTests | Not deployed; no real account library |
 | IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Live 2026-10-21 (API c8b19e7, LuminaVaultInfra#405; web prod); Apple ledger not run on a device |
+| IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -377,16 +418,18 @@ account or a stranger that has not happened yet.
 | APP-013 | Done | #43; HomeSummary.swift, app.tsx | The strip hid at zero until GAM-006d |
 | APP-014 | Done | #43; LibraryRow.swift, library/model.ts labels | |
 | APP-015 | Done | #43; RootView `lists` tab | |
+| APP-017 | Built | library/NowSection (web), Library/NowSection (Apple) | Watching + Reading; Listening waits on MUS-001; book page count not yet stored |
 | LAND-001 | Partial | #5, #9; routes/index.tsx, demo/ gone | No prerender config found; Lighthouse never run |
 | LAND-002 | Open | no waitlist code | |
 | LAND-003 | Done | #27; docs/privacy.md, /privacy | Names all six third parties |
 | WEB-001 | Done | #9 da50ed5 + later; ARCHITECTURE.md lists it | |
-| SCR-001 | Partial | #36; ScrobbleService.swift, ScrobbleTests | No `/v1/scrobble/*` routes; service only |
+| SCR-001 | Built | #36; ScrobbleService.swift, ScrobbleRoutes.swift, ScrobbleTests, ScrobbleRouteTests | `/v1/scrobble/*` for scrobble tokens only (SCR-007); no live player yet |
 | SCR-002 | Open | no Plex/Jellyfin code | |
 | SCR-003 | Done | #36 e8bdebb; Sources/App/Stremio; deployed | Verified in Stremio Web on local server; playback events not tried |
 | SCR-004 | Open | none | |
 | SCR-005 | Open | none | |
 | SCR-006 | Open | none | |
+| SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
 | SOC-001 | Open | none on main (PR #44 open) | |
 | SOC-002 | Open | none on main (PR #44 open) | |
 | SOC-003 | Open | none | |
@@ -1220,6 +1263,105 @@ full empty state. Not personalised, ever (decision 2026-10-20).
 title from a card in one tap, and that card turns into a link to the item; a provider being
 down drops only its row.
 
+### DISC-002 · Seasons on Discover · M · pulled forward 2026-10-21
+**Needs:** DISC-001.
+`GET /v1/discover/season?kind=&season=&year=&page=`: one page of one season, the same for
+everyone. Anime from AniList (`season`/`seasonYear`, popularity, 50 a page); new shows, returning
+shows and films from TMDB `discover/tv` (`first_air_date`, or `air_date` with an earlier
+premiere) and `discover/movie` (`primary_release_date`), popularity first, a vote floor only on
+seasons that have ended. Years 1970 to next year, pages 1–20, else 422. A bounded in-memory page
+cache (200 pages; 6 h for the current and coming seasons, 7 days for past ones; stale served on
+failure). A provider down with nothing cached reads `unavailable`, not an empty season. Web:
+`/app/discover?view=seasons` (`SeasonBrowser`); iPhone and Mac: the Discover tab's Today |
+Seasons control (`SeasonBrowser.swift`). The Today row "Fall 2026 anime" links to it.
+
+**Done when:** on iPhone, Mac and web, flipping Fall 2026 → Winter 2027 → Summer 2025 shows each
+kind's titles, a title adds in one tap and turns into a link to the item, and AniList being down
+says so on the Anime tab only.
+
+### MUS-001 · Albums as a fifth kind · L · pulled forward 2026-10-21
+**Needs:** LIB-001, APP-004.
+`MediaType.album`: one MusicBrainz release group of type Album or EP, stored with its
+`musicbrainz` id, the artist credit as `byline`, the first release year, up to five genres by
+tag count, and a Cover Art Archive cover URL (`release-group/{mbid}/front-250`, referenced,
+never hosted). MusicBrainz is paced at one request a second with a contact User-Agent. Search
+`type=album` goes to MusicBrainz alone; `all` never includes albums, as with books. An album has
+status, rating and notes, no progress: Plan to listen / Listening / Listened / Dropped. Its page
+carries a tracklist (`album_tracks`) from the release group's earliest official release, fetched
+the first time the page opens and again after 30 days; MusicBrainz failing shows the album
+without it. Stats count an album finish with no minutes (`albumsFinished`; `byKind` lists
+`album` only when the period has one, so older clients keep decoding). Clients: a square cover
+everywhere, Music in search and the Library kind filter, a Home "Listening" row, albums in
+Insights and the Recap, and a Listening widget on iPhone and Mac. Calendar, Up Next, episodes
+and the Live Activity stay video only. Artist MBIDs for concerts are stored with MUS-003, not
+here.
+
+**Done when:** on iPhone, Mac and web, searching "Radiohead" finds *OK Computer* with its square
+cover, it adds in one tap, its page shows the tracklist, Listened moves it into the year's
+Insights, and the Listening row and widget show an album in progress.
+
+### MUS-002 · New albums and Coming soon on Discover · M
+**Needs:** MUS-001, DISC-001.
+Two Discover rows from one ListenBrainz `explore/fresh-releases` call (no key) per 6 h: New
+albums (last 14 days, albums with a cover, by listen count) and Coming soon (the next 30 days,
+by date). Hits are albums with their `musicbrainz` id, so "already in your library" works.
+
+**Done when:** both rows show on Today on three clients and a card adds the album in one tap.
+
+### MUS-003 · Concerts · L
+**Needs:** MUS-001, the owner's Ticketmaster key (sealed `TICKETMASTER_API_KEY`).
+Ticketmaster Discovery events near a saved city (Open-Meteo geocoding, rounded to 2 decimals)
+or a one-off approximate location sent in a POST body and never stored, 25 · 50 · 100 km; and
+upcoming concerts for artists in the user's library, matched by MusicBrainz artist id only.
+A daily call budget under the 5,000 limit; tickets link out. Discover gains a Concerts view.
+
+**Done when:** concerts near a saved city and near "Use my location" list on three clients, and
+an artist in the library with a tour shows under "Your artists on tour".
+
+### MUS-004 · Listening history import · M · pulled forward 2026-10-21
+**Needs:** MUS-005.
+Past listens into the listening log, as import jobs the user confirms, undone by job: Last.fm by
+username (`user.getRecentTracks`), ListenBrainz by username, Spotify's extended streaming
+history (`ts` is when a play ended; plays under 30 s and podcast episodes are skipped), and
+YouTube Music from Google Takeout's `watch-history.json` (`header` "YouTube Music" only). The
+same duplicate window as live listens applies. Never part of the library import order.
+
+**Done when:** a Last.fm username and a Spotify history file each import with a count of new and
+duplicate listens, show in the log, and undo in one step.
+
+### MUS-005 · Listening log and ListenBrainz ingest · M · pulled forward 2026-10-21
+**Needs:** OUT-001.
+`listens`: one row per play (artist, track, album, length, ISRC and MusicBrainz ids when sent,
+the scrobbler and the service it heard), append-only, deleted with the account, in the export.
+A `music` token (`aaru_lb_`, `scrobble:write` only) opens `POST /listenbrainz/1/submit-listens`
+(`single`, `playing_now` which stores nothing, `import` of up to 1,000) and
+`GET /listenbrainz/1/validate-token`, in ListenBrainz's shapes. A listen of the same normalized
+artist and track within half its length (at most 90 s, 30 s when unknown) of a stored one is the
+same play and is dropped. `GET /v1/me/listens` pages the log; `GET /v1/me/listens/top` ranks
+artists, tracks or albums over a period read like `/v1/me/stats`.
+
+**Done when:** Web Scrobbler pointed at Aaru logs a YouTube Music play once, Pano Scrobbler the
+same, and the play shows in `/v1/me/listens`.
+
+### MUS-006 · Listens resolved to MusicBrainz · M
+**Needs:** MUS-005, MUS-001.
+A background pass looks each new track up once (sent ids, then ISRC, then an exact
+artist-and-title search) through `MusicBrainzCatalog`'s paced client, and fills recording,
+release group and artist ids. A listen then has its album's cover, and links to the album when
+it is in the catalog. Nothing is guessed: only an exact match fills ids.
+
+### MUS-007 · Music in Settings → Connected apps · S
+**Needs:** MUS-005, APP-007 groups (#88).
+Web and Apple: connect a scrobbler (the token shown once), the address each scrobbler wants with
+Copy, a collapsed "How to set it up" for Web Scrobbler, Pano Scrobbler, Navidrome and Jellyfin,
+live connections with last use and Revoke, and the last listen received.
+
+### MUS-008 · Listening on Insights, a Music page and the Recap · M
+**Needs:** MUS-005, MUS-006.
+Insights gains a Music block (listens, minutes, top artists, tracks and albums); a Music page
+lists recent listens with the top lists by period; the Recap gains a top-artist card when the
+period has listens.
+
 ### APP-010 · Week grid · L
 **Needs:** APP-001, CAL-001.
 Pogdesign CAT-style `WeekGrid`: seven day columns, previous/next day stepping, today
@@ -1558,6 +1700,22 @@ line be cancelled.
 **Done when:** a 2,000-entry export shows steady progress and plans in about a minute (local run
 with an empty catalog: 70 s, bounded by AniList's rate; was ~22 min at one request per entry).
 
+### IMP-018 · Netflix viewing history · M · 2026-10-21
+**Needs:** IMP-005, IMP-011.
+`source=netflix` (and `auto`, by its `Title,Date` columns): Netflix → Account → Profile →
+Viewing activity → Download all, `NetflixViewingHistory.csv`, one profile per file. The full
+account download (`Profile Name` column, every profile in the household) is refused with a
+pointer to the per-profile file. `Show: Season 1: Episode name` (also `Limited Series`, `Part N`,
+`<Show> 4`, and Netflix's season words in other languages) is a show; anything else is a film.
+One row per show (`in_progress`, its episodes by name) and per film (`finished`, last watched
+date). Dates are read in the file's own layout (month first unless a day passes 12). Matching
+follows the 2026-10-21 name-only decision; `notAfter` is the year first watched, so a later
+remake drops out. Merge order: after CAT, before TV Time.
+
+**Done when:** a file with a show, a film, a remade title and an unknown episode plans the show
+with its named episodes ticked, the film finished, the remake unmatched with "Several films are
+called …", and the unknown episode not ticked (`NetflixImportTests`).
+
 ---
 
 ## P2 · Catalog sources
@@ -1838,6 +1996,16 @@ duration, or a second `stop` within 10 minutes writes nothing. A title not in th
 added (in progress / finished) and then ticked: two journal rows, not one. Unknown ids are kept
 as unmatched rows with no library write. The 403 condition lives in the Stremio adapter.
 
+**Progress 2026-10-21 (HTTP):** `POST /v1/scrobble/start|pause|stop` (`Scrobble/ScrobbleRoutes.swift`),
+hand-written like MCP: only a scrobble token (`kind = browser`, `aaru_scr_…`, `scrobble:write`
+only) gets in; a session, MCP token or Stremio link is 401. Trakt's body (`movie`, or `show` +
+`episode` with `season`/`number`/`title`; `progress` in percent; `ids` as numbers or strings) plus
+`source` (`netflix`, `disney_plus`, `prime_video`), `ref` (the player's id for one film or
+episode) and optional `durationMs`. No ids → matched by title + year, else by name alone
+(2026-10-21 decision); no number → episode by name. The answer names the outcome (`recorded`,
+`watched`, `stopped`, `unmatched`) and the matched title. A title not in the library is added and
+ticked: two journal rows.
+
 ### SCR-002 · Plex and Jellyfin webhooks · M
 **Needs:** SCR-001.
 `POST /v1/scrobble/hooks/plex/{token}` (multipart JSON; `media.play`, `media.pause`,
@@ -1918,6 +2086,32 @@ token appears in a response or log.
 `pause` positions feed Continue Watching for movies ("1h 27m left").
 
 **Done when:** a paused movie shows time left on home and drops off when stopped past 80%.
+
+### SCR-007 · Browser extension scrobbler · L · 2026-10-21
+**Needs:** SCR-001, OUT-001, IMP-018 (name-only matching). Owner exception to "no scraping",
+recorded 2026-10-21.
+`aaru-extension/`: one Manifest V3 codebase for Chrome and Firefox (Safari later, through the Mac
+target). Content scripts on Netflix, Disney+ and Prime Video read the playing title from the
+player's title overlay and the page URL only (title, season and episode or episode name; no
+calls to the sites' internal APIs) and follow the page's main `<video>` for position and
+duration. The background worker sends `start`, `pause` (also every 5 minutes while playing),
+and `stop` (on end, on the next episode, on leaving the page) to `POST /v1/scrobble/*` with a
+`kind = browser` token that has `scrobble:write` only and works nowhere else. The server
+resolves names through `TitleResolver`; a play it cannot match is kept as an unmatched watch
+event and the extension says "Not matched". Settings on the web and the Apple app list and
+revoke browser tokens; the web connect page hands a new token to the extension. Store
+submission (Chrome Web Store, AMO) waits for the owner.
+
+**Progress 2026-10-21:** built. `aaru-extension/` (WXT 0.21, Chrome + Firefox MV3, `web-ext lint`
+clean): content scripts report what they see on a port, `Session` turns it into scrobbles, the
+background sends them (stops retried for a day) and sets the badge; the popup shows now, recent
+and the connection in Aaru's tokens. Connections on web, iPhone and Mac list and revoke browser
+tokens; `/connect/extension` hands over the token. Readers were written from the players' known
+markup with fixtures; **check them on the live sites** before a store submission.
+
+**Done when:** an episode played past 80% on each site ticks that episode once, journaled as
+the browser extension; a film nobody can tell apart from a remake stays unmatched; a revoked
+token gets 401 and the extension asks to connect again.
 
 ---
 
@@ -2687,7 +2881,8 @@ Now **SCR-004** (P3): user-triggered push with a dry-run diff, one-way out.
 Two-way sync · conflict engine · recommendations engine (DISC-001's public provider rows are
 not one: nothing personalised) · a global or public activity feed ·
 public profile pages indexed by search engines · scraping any site
-without an official export (Pogdesign, IMDb pages, AniDB) · a Stremio `stream` resource or any
+without an official export (Pogdesign, IMDb pages, AniDB; the one owner exception is SCR-007's
+browser extension reading the user's own player page, 2026-10-21) · a Stremio `stream` resource or any
 stream source · hosting TMDB, Open Library or AniList artwork · a second backend · a documented
 public API with third-party clients (M14's agent access and P3's scrobble tokens are per-user
 and token-scoped, which is a different thing).

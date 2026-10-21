@@ -282,14 +282,17 @@ extension LibraryEntry {
 extension LibraryStatus {
     /// The status as people read it, per kind (APP-014). The stored value never changes:
     /// films, shows and anime read Plan to watch / Watching / Watched; books Plan to read /
-    /// Reading / Read.
+    /// Reading / Read; albums Plan to listen / Listening / Listened (MUS-001).
     func label(for type: MediaType) -> String {
         switch (self, type) {
         case (.wishlist, .book): "Plan to read"
+        case (.wishlist, .album): "Plan to listen"
         case (.wishlist, _): "Plan to watch"
         case (.inProgress, .book): "Reading"
+        case (.inProgress, .album): "Listening"
         case (.inProgress, _): "Watching"
         case (.finished, .book): "Read"
+        case (.finished, .album): "Listened"
         case (.finished, _): "Watched"
         case (.dropped, _): "Dropped"
         }

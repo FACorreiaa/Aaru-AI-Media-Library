@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   chartBars,
   insightsLabel,
+  kindDetail,
   kindShares,
   periodFromSearch,
   ratingBars,
@@ -31,6 +32,7 @@ function stats(overrides: Partial<Stats> = {}): Stats {
       showsFinished: 1,
       animeFinished: 0,
       booksFinished: 2,
+      albumsFinished: 0,
     },
     byKind: [
       { kind: 'movie', episodes: 0, minutes: 150, finished: 1 },
@@ -163,6 +165,31 @@ describe('insights figures', () => {
     ])
     expect(shares[1].share).toBeCloseTo(1200 / 1350)
     expect(shares[3].finished).toBe(2)
+  })
+
+  it('adds albums only when the period finished one, counted as listened, never in time', () => {
+    const t = stats().totals
+    const shares = kindShares(
+      stats({
+        totals: { ...t, albumsFinished: 3 },
+        byKind: [
+          ...stats().byKind,
+          { kind: 'album', episodes: 0, minutes: 0, finished: 3 },
+        ],
+      }),
+    )
+    const album = shares[4]
+    expect(album).toMatchObject({ kind: 'album', label: 'Albums', share: 0 })
+    expect(kindDetail(album)).toBe('3 listened')
+    expect(kindDetail({ ...album, minutes: 90 })).toBe('3 listened')
+    expect(kindDetail(shares[1])).toBe('20 h · 30 episodes · 1 finished')
+    expect(kindDetail(shares[2])).toBe('Nothing yet')
+  })
+
+  it('counts a listened album as finished', () => {
+    const t = stats().totals
+    const tiles = totals(stats({ totals: { ...t, albumsFinished: 2 } }))
+    expect(tiles.find((tile) => tile.label === 'Finished')?.value).toBe('6')
   })
 
   it('draws ten rating bars scaled to the tallest', () => {

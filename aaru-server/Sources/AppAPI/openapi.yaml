@@ -858,9 +858,10 @@ paths:
         - name: for
           in: query
           description: >-
-            Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so
-            Apple builds that only know the Stremio kind never see an MCP token.
-          schema: {type: string, enum: [stremio, mcp], default: stremio}
+            Which surface's tokens: the Stremio addon, MCP clients, the browser extension
+            (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds
+            that only know the Stremio kind never see another kind.
+          schema: {type: string, enum: [stremio, mcp, scrobble, music], default: stremio}
       responses:
         '200':
           description: Live tokens.
@@ -1127,6 +1128,67 @@ paths:
               schema: {$ref: '#/components/schemas/Stats'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/listens:
+    get:
+      operationId: listListens
+      summary: >-
+        Your listening log, newest first (MUS-005): what music scrobblers sent with your music
+        token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
+      parameters:
+        - name: before
+          in: query
+          description: Only listens that started before this time; the previous page's `next`.
+          schema: {type: string, format: date-time}
+        - name: limit
+          in: query
+          description: 1–100, default 20.
+          schema: {type: integer}
+      responses:
+        '200':
+          description: A page of listens.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListenPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/listens/top:
+    get:
+      operationId: getTopListens
+      summary: >-
+        Your most played artists, tracks or albums over a period (MUS-005). The period is chosen
+        as for `/v1/me/stats`: a year, a month of it, or a span.
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema: {type: string, enum: [artist, track, album]}
+        - name: year
+          in: query
+          description: Required unless `span` is sent.
+          schema: {type: integer}
+        - name: span
+          in: query
+          schema: {type: string, enum: [all, last7, last30]}
+        - name: month
+          in: query
+          description: 1–12. Absent means the whole year.
+          schema: {type: integer}
+        - name: tz
+          in: query
+          description: IANA time zone for day and month boundaries. Absent means UTC.
+          schema: {type: string}
+        - name: limit
+          in: query
+          description: 1–50, default 10.
+          schema: {type: integer}
+      responses:
+        '200':
+          description: The period's top list.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListenTop'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/search:
     get:
       operationId: searchCatalog
@@ -1142,11 +1204,11 @@ paths:
           required: true
           description: >-
             `all` searches films, shows and anime together (TMDB and AniList in parallel, merged;
-            books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open
-            Library.
+            books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB;
+            `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
           schema:
             type: string
-            enum: [all, movie, show, anime, book]
+            enum: [all, movie, show, anime, book, album]
       responses:
         '200':
           description: >-
@@ -1173,6 +1235,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscoverRows'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/discover/season:
+    get:
+      operationId: getDiscoverSeason
+      summary: One season's titles for the Seasons view (DISC-002), a page at a time.
+      description: >-
+        A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep,
+        fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date,
+        returning shows by an episode airing that season, films by first release. The same
+        lists for every user, cached by the server; items the caller has carry `libraryItemId`.
+      parameters:
+        - name: kind
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [anime, shows_new, shows_returning, movies]
+        - name: season
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [winter, spring, summer, fall]
+        - name: year
+          in: query
+          required: true
+          description: 1970 to next year; anything else is 422 `validation_failed`.
+          schema: {type: integer}
+        - name: page
+          in: query
+          required: false
+          description: 1-based, at most 20.
+          schema: {type: integer, default: 1}
+      responses:
+        '200':
+          description: The page. `unavailable` when the provider is down and nothing is cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonPage'
         default:
           $ref: '#/components/responses/Error'
   /v1/titles/{id}:
@@ -1506,10 +1609,11 @@ paths:
           required: true
           schema:
             type: string
-            enum: [auto, imdb, letterboxd, goodreads, mal, csv]
+            enum: [auto, imdb, letterboxd, netflix, goodreads, mal, csv]
           description: >-
             `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList),
-            an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+            an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by
+            its column names (`csv`).
         - name: filename
           in: query
           required: false
@@ -1929,8 +2033,9 @@ components:
       type: string
       description: >-
         Which outside caller a token is for. The MCP kinds differ only in the setup shown; they
-        reach the same tools.
-      enum: [stremio, claude_code, codex, hermes, gemini, other, claude]
+        reach the same tools. `browser` is Aaru's browser extension and `music` a music
+        scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
+      enum: [stremio, claude_code, codex, hermes, gemini, other, claude, browser, music]
     AgentMCPKind:
       type: string
       enum: [claude, claude_code, codex, hermes, gemini, other]
@@ -2072,7 +2177,7 @@ components:
         id: {type: string, format: uuid}
         source:
           type: string
-          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, mal_xml, anilist, csv]
+          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, netflix_csv, mal_xml, anilist, csv]
         state:
           type: string
           enum: [queued, running, planned, succeeded, failed, partial]
@@ -2582,9 +2687,15 @@ components:
         anilist: {type: string}
         mal: {type: string}
         anidb: {type: string}
+        musicbrainz:
+          type: string
+          description: An album's MusicBrainz release-group id (MUS-001).
     MediaType:
       type: string
-      enum: [movie, show, book]
+      description: >-
+        `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and
+        notes, no progress.
+      enum: [movie, show, book, album]
     CatalogHit:
       type: object
       required: [type, title, isAnime, ids]
@@ -2597,7 +2708,7 @@ components:
         overview: {type: string}
         byline:
           type: string
-          description: Authors, for books.
+          description: Authors, for books; the artist credit, for albums.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
         libraryItemId:
@@ -2642,6 +2753,37 @@ components:
         rows:
           type: array
           items: {$ref: '#/components/schemas/DiscoverRow'}
+    SeasonPage:
+      type: object
+      required: [kind, season, year, from, until, title, items, page, hasMore, unavailable]
+      properties:
+        kind:
+          type: string
+          enum: [anime, shows_new, shows_returning, movies]
+        season:
+          type: string
+          enum: [winter, spring, summer, fall]
+        year: {type: integer}
+        from:
+          type: string
+          description: First day of the season, YYYY-MM-DD.
+        until:
+          type: string
+          description: Last day of the season, YYYY-MM-DD.
+        title:
+          type: string
+          description: Display name, e.g. "Fall 2026".
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CatalogHit'}
+        page: {type: integer}
+        hasMore: {type: boolean}
+        total:
+          type: integer
+          description: The provider's count for the whole season, when it gives one.
+        unavailable:
+          type: boolean
+          description: The provider did not answer and nothing was cached; not an empty season.
     Episode:
       type: object
       required: [season, number, airTimeKnown]
@@ -2689,6 +2831,27 @@ components:
           type: array
           description: Shows only.
           items: {$ref: '#/components/schemas/Season'}
+        byline:
+          type: string
+          description: Authors, for books; the artist credit, for albums.
+        genres:
+          type: array
+          description: Albums only (MUS-001), at most five, most tagged first.
+          items: {type: string}
+        tracks:
+          type: array
+          description: >-
+            Albums only: the tracklist of the album's earliest official release, by disc then
+            position. Absent when MusicBrainz could not be reached and none is stored yet.
+          items: {$ref: '#/components/schemas/AlbumTrack'}
+    AlbumTrack:
+      type: object
+      required: [disc, position, name]
+      properties:
+        disc: {type: integer}
+        position: {type: integer}
+        name: {type: string}
+        lengthMs: {type: integer}
     LibraryStatus:
       type: string
       enum: [wishlist, in_progress, finished, dropped]
@@ -2765,6 +2928,9 @@ components:
         network:
           type: string
           description: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
+        byline:
+          type: string
+          description: Authors, for books; the artist credit, for albums.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
     LibraryEntry:
@@ -2837,6 +3003,10 @@ components:
               channel: {type: string}
               body: {type: string}
               createdAt: {type: string, format: date-time}
+        listens:
+          type: array
+          description: Every listen in your listening log, newest first (MUS-005).
+          items: {$ref: '#/components/schemas/Listen'}
     LibraryPage:
       type: object
       required: [items, page]
@@ -3010,6 +3180,9 @@ components:
         episodeOverview:
           type: string
           description: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
+        stillUrl:
+          type: string
+          description: The episode's still image (TMDB), when the catalog has one.
         airsAt: {type: string, format: date-time}
         airTimeKnown:
           type: boolean
@@ -3125,7 +3298,9 @@ components:
         prior: {$ref: '#/components/schemas/StatsTotals'}
         byKind:
           type: array
-          description: Movie, show, anime and book, always all four in that order; they sum to `totals`.
+          description: >-
+            Movie, show, anime and book, always, in that order; then album (MUS-001) only when the
+            period finished one. They sum to `totals`.
           items: {$ref: '#/components/schemas/StatsKind'}
         buckets:
           type: array
@@ -3167,10 +3342,60 @@ components:
         titles:
           type: integer
           description: How many titles in the period carried this genre.
+    Listen:
+      type: object
+      description: >-
+        One play of a track a scrobbler sent (MUS-005). Never a library item: listening does not
+        change the library.
+      required: [id, listenedAt, artist, track]
+      properties:
+        id: {type: string}
+        listenedAt: {type: string, format: date-time, description: When the track started.}
+        artist: {type: string}
+        track: {type: string}
+        album: {type: string}
+        durationMs: {type: integer}
+        coverUrl: {type: string, description: The album's Cover Art Archive cover when Aaru knows the album.}
+        originUrl: {type: string, description: Where it played, when the scrobbler said.}
+        client: {type: string, description: 'The scrobbler, e.g. "Web Scrobbler".'}
+        musicService: {type: string, description: 'Where it was heard, e.g. "YouTube Music".'}
+    ListenPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Listen'}
+        next:
+          type: string
+          format: date-time
+          description: Pass as `before` for the next page; absent on the last page.
+    ListenTop:
+      type: object
+      required: [by, span, year, timeZone, listens, minutes, items]
+      properties:
+        by: {type: string, enum: [artist, track, album]}
+        span: {type: string, enum: [month, year, all, last7, last30]}
+        year: {type: integer}
+        month: {type: integer}
+        timeZone: {type: string}
+        listens: {type: integer, description: Every listen in the period.}
+        minutes: {type: integer, description: Their length summed, for listens whose length is known.}
+        items:
+          type: array
+          items:
+            type: object
+            required: [artist, count, minutes]
+            properties:
+              artist: {type: string}
+              track: {type: string, description: Present when ranking tracks.}
+              album: {type: string, description: Present when ranking albums.}
+              count: {type: integer}
+              minutes: {type: integer}
     StatsTotals:
       type: object
       required: [episodesWatched, minutesWatched, activeDays, moviesFinished, showsFinished, animeFinished,
-        booksFinished]
+        booksFinished, albumsFinished]
       properties:
         episodesWatched: {type: integer}
         minutesWatched:
@@ -3183,13 +3408,16 @@ components:
           type: integer
           description: Anime shows and films. Not counted again as shows or movies.
         booksFinished: {type: integer}
+        albumsFinished:
+          type: integer
+          description: MUS-001. Albums have no minutes.
     StatsKind:
       type: object
       required: [kind, episodes, minutes, finished]
       properties:
         kind:
           type: string
-          enum: [movie, show, anime, book]
+          enum: [movie, show, anime, book, album]
           description: Anime is its own kind, films and shows alike; never counted again as either.
         episodes: {type: integer}
         minutes: {type: integer}

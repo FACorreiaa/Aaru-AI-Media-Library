@@ -87,7 +87,7 @@ struct StartCard: View {
     var body: some View {
         NavigationLink(value: entry.libraryItemId) {
             VStack(alignment: .leading, spacing: 6) {
-                HomeArt(url: entry.title.posterUrl.flatMap(URL.init(string:)), aspect: 2 / 3)
+                HomeArt(url: entry.title.posterURL, aspect: entry.title.mediaKind.posterAspect)
                     .overlay(alignment: .bottomLeading) {
                         if let runtime = entry.runtimeMinutes, runtime > 0 {
                             HomeChip(text: durationLabel(minutes: runtime)).padding(6)
@@ -110,6 +110,47 @@ struct StartCard: View {
     private var accessibilityText: String {
         [entry.title.title, entry.runtimeMinutes.map { durationLabel(minutes: $0) }]
             .compactMap(\.self).joined(separator: ", ")
+    }
+}
+
+/// `ListeningRow` card (MUS-001): an album being listened to. A square cover with its year as
+/// the badge, the name, and the artist under it.
+struct ListeningCard: View {
+    let row: LibraryRow
+    let width: CGFloat
+
+    var body: some View {
+        NavigationLink(value: row.id) {
+            VStack(alignment: .leading, spacing: 6) {
+                HomeArt(url: row.posterURL, aspect: MediaKind.music.posterAspect)
+                    .overlay(alignment: .bottomLeading) {
+                        if let year = row.year {
+                            HomeChip(text: String(year)).padding(6)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(row.title)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    if let artist = row.byline {
+                        Text(artist)
+                            .font(.caption2)
+                            .foregroundStyle(Color(.muted))
+                            .lineLimit(1)
+                    }
+                }
+            }
+            .frame(width: width, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .modifier(HoverLift())
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        [row.title, row.byline, row.year.map(String.init)].compactMap(\.self).joined(separator: ", ")
     }
 }
 

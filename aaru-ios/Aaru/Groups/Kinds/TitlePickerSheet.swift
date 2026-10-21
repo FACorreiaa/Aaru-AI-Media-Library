@@ -46,8 +46,7 @@ struct TitlePickerSheet: View {
                             .frame(width: 44)
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(hit.title).font(.body.weight(.medium)).lineLimit(2)
-                                Text([hit.year.map(String.init), hit.byline].compactMap(\.self)
-                                    .joined(separator: " · "))
+                                Text(pickerLine(hit))
                                     .font(.footnote)
                                     .foregroundStyle(Color(.muted))
                                     .lineLimit(1)
@@ -75,12 +74,19 @@ struct TitlePickerSheet: View {
                 }
             }
             .navigationTitle(navigationTitle)
-            .searchable(text: $query, prompt: kind == .book ? "Title, author or ISBN" : "Title")
+            .searchable(text: $query, prompt: kind.searchPrompt)
             .task(id: SearchKey(query: query, kind: kind)) { await search() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
         }
+    }
+
+    /// "2016 · James Clear"; an album leads with its artist, as everywhere else.
+    private func pickerLine(_ hit: CatalogHit) -> String {
+        let year = hit.year.map(String.init)
+        let parts = hit._type == .album ? [hit.byline, year] : [year, hit.byline]
+        return parts.compactMap(\.self).joined(separator: " · ")
     }
 
     private func pick(_ hit: CatalogHit) {

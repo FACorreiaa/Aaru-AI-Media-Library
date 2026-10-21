@@ -42,5 +42,19 @@ export const CREDITS: Credit[] = [
     name: 'Open Library',
     href: 'https://openlibrary.org',
   },
+  {
+    lead: 'Music data from ',
+    name: 'MusicBrainz',
+    href: 'https://musicbrainz.org',
+    licence: {
+      name: 'CC0',
+      href: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    },
+  },
+  {
+    lead: 'Album covers from ',
+    name: 'Cover Art Archive',
+    href: 'https://coverartarchive.org',
+  },
   { lead: 'History import from ', name: 'Trakt', href: 'https://trakt.tv' },
 ]

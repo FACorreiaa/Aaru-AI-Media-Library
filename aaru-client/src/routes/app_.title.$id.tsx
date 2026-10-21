@@ -14,6 +14,7 @@ import {
   onCleanup,
 } from 'solid-js'
 import { AddToListDialog } from '../components/AddToListDialog'
+import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
 import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
@@ -45,7 +46,9 @@ import {
 } from '../lib/title/model'
 import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
 
-// APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`.
+// APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`. An album
+// (MUS-001) is a big square cover, its artist and genres, then the usual controls and its
+// tracklist: no progress, no episodes.
 export const Route = createFileRoute('/app_/title/$id')({
   head: () => ({ meta: [{ title: 'Title · Aaru' }] }),
   beforeLoad: async () => {
@@ -79,6 +82,7 @@ function TitleRoom() {
   const [retrying, setRetrying] = createSignal(false)
 
   const kind = () => kindOf(entry().title.type, entry().title.isAnime)
+  const isAlbum = () => kind() === 'album'
   const seasons = createMemo(() => orderedSeasons(title()))
   const upNext = createMemo(() => nextEpisode(title(), watched()))
   /** The season to open first: the one holding the next episode, else the first. */
@@ -211,17 +215,57 @@ function TitleRoom() {
       </header>
 
       <main class="mx-auto max-w-4xl px-5 pb-20 md:px-8">
-        <section class="mt-4 flex gap-6">
-          <Poster
-            url={entry().title.posterUrl}
-            kind={kind()}
-            class="w-28 shrink-0 md:w-40"
-          />
-          <div class="min-w-0">
-            <h1 class="font-display text-3xl leading-tight font-medium tracking-tight md:text-4xl">
-              {entry().title.title}
-            </h1>
-            <p class="mt-2 text-muted">{meta()}</p>
+        <Show
+          when={isAlbum()}
+          fallback={
+            <section class="mt-4 flex gap-6">
+              <Poster
+                url={entry().title.posterUrl}
+                kind={kind()}
+                class="w-28 shrink-0 md:w-40"
+              />
+              <div class="min-w-0">
+                <h1 class="font-display text-3xl leading-tight font-medium tracking-tight md:text-4xl">
+                  {entry().title.title}
+                </h1>
+                <p class="mt-2 text-muted">{meta()}</p>
+                <Button size="sm" class="mt-4" onClick={() => setPicking(true)}>
+                  Add to list
+                </Button>
+                <DiscussButton
+                  titleId={entry().title.id}
+                  type={entry().title.type}
+                  name={entry().title.title}
+                />
+                <Show
+                  when={entry().progress && entry().progress!.airedCount > 0}
+                >
+                  <div class="mt-4 max-w-xs">
+                    <div class="h-1.5 overflow-hidden rounded-full bg-surface">
+                      <div
+                        class="h-full rounded-full bg-accent transition-[width]"
+                        style={{
+                          width: `${(entry().progress!.watchedCount / entry().progress!.airedCount) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <p class="mt-2 text-sm text-muted">
+                      {entry().progress!.watchedCount} of{' '}
+                      {entry().progress!.airedCount} episodes
+                    </p>
+                  </div>
+                </Show>
+              </div>
+            </section>
+          }
+        >
+          <AlbumHeader
+            name={entry().title.title}
+            posterUrl={entry().title.posterUrl}
+            byline={entry().title.byline ?? title()?.byline}
+            year={entry().title.year}
+            genres={title()?.genres}
+          >
             <Button size="sm" class="mt-4" onClick={() => setPicking(true)}>
               Add to list
             </Button>
@@ -230,24 +274,8 @@ function TitleRoom() {
               type={entry().title.type}
               name={entry().title.title}
             />
-            <Show when={entry().progress && entry().progress!.airedCount > 0}>
-              <div class="mt-4 max-w-xs">
-                <div class="h-1.5 overflow-hidden rounded-full bg-surface">
-                  <div
-                    class="h-full rounded-full bg-accent transition-[width]"
-                    style={{
-                      width: `${(entry().progress!.watchedCount / entry().progress!.airedCount) * 100}%`,
-                    }}
-                  />
-                </div>
-                <p class="mt-2 text-sm text-muted">
-                  {entry().progress!.watchedCount} of{' '}
-                  {entry().progress!.airedCount} episodes
-                </p>
-              </div>
-            </Show>
-          </div>
-        </section>
+          </AlbumHeader>
+        </Show>
 
         <Card class="mt-8 grid gap-4 p-5 sm:grid-cols-2">
           <label class="flex items-center justify-between gap-4 text-sm font-medium">
@@ -365,6 +393,10 @@ function TitleRoom() {
               {title()?.synopsis}
             </p>
           </section>
+        </Show>
+
+        <Show when={isAlbum()}>
+          <Tracklist tracks={title()?.tracks} />
         </Show>
 
         <Show when={entry().title.type === 'show'}>

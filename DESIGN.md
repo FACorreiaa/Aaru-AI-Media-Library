@@ -110,6 +110,12 @@ optimistic write as the list. Below it each season's list shows a still, the nam
 previous/next. Only the season holding the next episode starts open. A title that fails to load
 says so with a retry, never an endless spinner.
 
+**An album's room (MUS-001, 2026-10-21)** is an album page, not a season map: a big square
+cover with almost no chrome, the title in the serif, the artist under it in muted, the year,
+genre chips, the same status / rating / notes as any title, then the tracklist (number, name,
+length in tabular figures; "Disc 1"… only when there is more than one). No playback and no
+ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not available yet".
+
 ## 5. Tonight
 
 A nightly composed view. Not recommendations-as-a-product — a **short plan**.
@@ -133,6 +139,16 @@ Classic filters are how a shelf is edited, not how you enter the app.
 Visual cue: Letterboxd lists + Ryot filters, presented as pages of reeds rather than a
 spreadsheet.
 
+**Now (APP-017, built 2026-10-21).** Library opens with what you are in the middle of, the
+"Now" of §1 made real before The Field: **Watching** (shows, anime, films) and **Reading**
+(books), newest activity first, as big cards, not posters in a grid. A video card is the
+backdrop with the title on it; a book card is its cover. Each shows how far along it is ("4 of
+10 episodes" with a bar, "35%", "Page 120") and the one next step: **Watched S1 · E5** ticks the
+next aired episode, **Update page** moves a book, **Finished** / **Mark watched** closes it. A
+kind chip narrows Now with the shelf; another status hides it. Cards scroll sideways on phones
+and sit in a grid wider. A **Listening** group joins when albums land (MUS-001). Book progress
+bars appear only for a percent until books carry a page count.
+
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
 library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
 reads "On this list" once it is there. Every library row also offers "Add to list". A list row
@@ -144,11 +160,21 @@ airs, and the library status and progress when the title is on the shelf (LST-00
 You came from Pogdesign CAT. Steal the *feeling*, not the site.
 
 Month canvas of **your** airings only, shaped like Stremio's calendar: a month switcher with the
-neighbouring months as buttons, poster thumbnails in each day (dots on iPhone and phone web), and
-an agenda beside the grid (below it on phones) grouped by date. Selecting an agenda row expands
-it: episode name, synopsis, network · time, badge, a single "watched" check, and "Open show".
-Week and Month are two modes of one Calendar destination; weeks start on Monday. Agent
-highlight later: "three premieres, one finale, you are behind on two."
+neighbouring months as buttons, poster thumbnails in each day (two small posters and a "+N" on
+phones, three on wider screens), and an agenda beside the grid (below it on phones) grouped by
+date. Agenda rows carry the poster, show, code and name, network · time and the badge; tapping
+one opens the **episode sheet**: the still, the poster, when and where, the synopsis, a watched
+toggle and "Open show". On a phone, tapping a day opens that day as a sheet.
+
+Week, Month and **Missed** are three modes of one Calendar destination; weeks start on Monday.
+Missed is the catch-up list: what aired in the last four weeks without a tick, one card per
+show, oldest miss first, with how many episodes and how much time it adds up to. **Filters**
+(hide watched, premieres or finales only, shows or anime) apply to every mode, live in the URL,
+and show as removable chips. Every tick is a 44px round toggle that a pending write disables.
+(CAL-002 web, CAL-003 iPhone, iPad and Mac, 2026-10-21: the same modes, rows, sheets and filters;
+on Apple the filters are a toolbar menu and the episode sheet has medium and large detents.)
+Agent highlight later: "three premieres, one finale, you are behind on
+two."
 
 ICS import lands here first, then the agent offers to add the missing shows to the library.
 
@@ -260,6 +286,11 @@ rows of wide cards, one job per row.
   anything in progress untouched for 30 days, "Dropped" or "Paused 6 weeks", with "Resume at
   S2 · E3" for a show. Never a title already in Continue watching.
 - **Lists** — chips for the user's lists plus "New list".
+- **Listening** (MUS-001, 2026-10-21) — square album covers for albums in progress, after
+  Continue watching; absent when there are none.
+
+Album covers are **square everywhere** (Apple Music style), the same width as a poster in the
+same row, with the artist in muted under the title and the year as the badge.
 
 Discover on Home is DISC-001's rows above, not a separate teaser. On the web, Search opens in
 place on Home and an add shows up in the rows without a reload.
@@ -278,6 +309,15 @@ AniList and Open Library credits sit in the footer.
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
 watched", no taste profile, nothing read from other users. A tab on iPhone, a header link on
 the web.
+
+**Seasons (DISC-002, 2026-10-21).** A Today | Seasons control sits under the title (pinned under
+the large title on iPhone, in the toolbar on the Mac). Seasons shows one season as an object:
+its name in the display serif as the headline ("Fall 2026"), "Oct – Dec · 84 anime" under it in
+muted, a step to the season either side (a swipe across the name on iPhone), then the kind
+switch (Anime · New shows · Returning · Movies) and a poster grid, popular first, with "Show
+more" rather than endless scroll. A new season comes in from the side it lies on (about 200 ms,
+entrance only; a fade with reduced motion). While a season loads, still placeholders at the
+real poster size stand in: nothing shimmers. A provider that is down says so on its own kind.
 
 ## 13b. Insights (pulled forward 2026-10-20)
 
@@ -302,17 +342,19 @@ The `CalendarMonth` (§7) answers "what did I miss." The week grid answers "what
 week," and it is the closest Aaru gets to copying Pogdesign CAT outright, because that page is
 right.
 
-- Seven dense day columns, today highlighted, previous / next day paging.
+- Seven dense day columns, today highlighted, paging by a day (← →) or a week (« », PageUp /
+  PageDown), Today, and a date to jump to.
 - One cell per episode: banner art, show title, `S01E05`, episode name, network · local time.
-- A checkbox on every cell marks it watched in place.
+  Tapping the cell opens the episode sheet (§7); there is no hover-only tooltip.
+- A round 44px tick on every cell marks it watched in place.
 - State colours: watched (dimmed), premiere, finale, today, and new-season. Colours come from
   the brand palette, not CAT's yellow and red.
 - Banner art is the show's backdrop (TMDB) or banner (AniList), then the poster, then a tint.
   Date-only air dates (TMDB) show the day without a time; anime from AniList has exact times.
 - Your shows only. No global schedule.
 
-On Mac and web the grid is the default calendar view. On iPhone it collapses to a day list with
-the same cells.
+On Mac and web the grid is the default calendar view. On iPhone and phone web it collapses to a
+day strip (tall day pills) over that day's episodes as poster rows.
 
 ## 15. Now playing (Phase 2, live in Phase 3)
 
@@ -365,6 +407,26 @@ watched"), so history and undo treat them like a tap.
 name themselves; the host they cannot fake), then a name for the history, **Allow changes**
 (off), and **Allow** / **Not now**. A signed-out visitor signs in first and lands back on it.
 
+**Browser extension, 2026-10-21** (SCR-007, owner's choices). It is the last choice in the same
+Connections picker, not a section of its own. Choosing it shows no token: one sentence on what it
+does (finish an episode or a film on Netflix, Disney+ or Prime Video in your browser and it is
+marked watched; it can't read your library), three numbered steps (install for Chrome or Firefox;
+click Aaru in the toolbar, then Connect; approve on the page it opens) and the store buttons once
+they are listed. On iPhone and Mac the row "Browser extension" opens a sheet with the same
+sentence and steps; connecting happens in the desktop browser. Connected browsers list with the
+others ("Chrome on macOS · Marks what you watch · used 2 h ago"), with Revoke.
+
+Connecting is **one click, no secret shown**: the extension opens `/connect/extension`, styled
+like the consent page — "Connect Chrome on macOS to Aaru?", the same sentence, **Approve** /
+**Not now**. Approve stays disabled until the extension answers on the page, so a browser
+without it is told to install it instead of minting a token nobody holds; a token the extension
+does not take within five seconds is revoked. Then: "Connected. You can close this tab."
+
+The extension draws nothing inside the streaming sites. Its toolbar badge is the only signal:
+✓ matched, ? not matched, ! connect again. Its popup shows what is playing now and what Aaru
+matched it to, the last few plays with their result (marked, finished, not matched), and
+Connected · Disconnect, in Aaru's paper and ink with the display serif for the title.
+
 ## 16. Widgets (Phase 2)
 
 Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only
@@ -376,6 +438,7 @@ ships.
 - **Airing countdown** + Lock Screen accessories — next airing of a tracked show or anime.
 - **Week** (L / XL) — the week grid in miniature, CAT style.
 - **Now watching** Live Activity — Lock Screen and Dynamic Island, progress plus "Ends at".
+- **Listening** (S / M, MUS-001) — square covers of albums in progress; a tap opens the album.
 - **Streak** (Phase 5) — current streak and this week's ticks.
 - **macOS** — the same widgets on the desktop and in Notification Center. Almost no tracker
   ships Mac widgets.
@@ -543,9 +606,10 @@ looking like Aaru.
 Brand: teal → gold, paper-white or deep reed-green dark mode. Assets and how they are made:
 `docs/brand/README.md`. Colour tokens (`Paper`, `Surface`, `Ink`, `Muted`, `Medallion`, accent
 teal) are the same names in the asset catalog and in `aaru-client/src/styles.css`. The
-mascot (a small teal bird with books and a film reel) appears on signed-out surfaces only, always
-on a paper disc. The heron only as a quiet mark
-when the agent is working (breathing reed, not a bouncing dots spinner).
+mascot (a small teal bird with books and a film reel) is the app icon (cropped to the face, on
+deep teal; chosen 2026-10-21) and otherwise appears on signed-out surfaces only, always on a paper
+disc. The heron only as a quiet mark when the agent is working (breathing reed, not a bouncing
+dots spinner).
 
 Research basis (2026-10-09): the user's screenshots of Trakt web home, Trakt "Today" stories
 and the Pogdesign CAT weekly schedule, plus web research on tracker widgets and social

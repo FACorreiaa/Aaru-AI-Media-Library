@@ -15,15 +15,15 @@ struct WireContractTests {
 
     @Test
     func mediaTypeRawValuesAreStable() {
-        #expect(MediaType.allCases.map(\.rawValue) == ["movie", "show", "book"])
+        #expect(MediaType.allCases.map(\.rawValue) == ["movie", "show", "book", "album"])
     }
 
     @Test
     func importSourceRawValuesAreStable() {
         #expect(
             ImportSource.allCases.map(\.rawValue) == [
-                "trakt", "stremio", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics", "mal_xml",
-                "anilist", "csv",
+                "trakt", "stremio", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics",
+                "netflix_csv", "mal_xml", "anilist", "csv",
             ]
         )
     }
@@ -36,6 +36,7 @@ struct WireContractTests {
         #expect(ImportSource.letterboxdCSV.mergeRank < ImportSource.goodreadsCSV.mergeRank)
         #expect(ImportSource.goodreadsCSV.mergeRank < ImportSource.catList.mergeRank)
         #expect(ImportSource.catList.mergeRank < ImportSource.catICS.mergeRank)
+        #expect(ImportSource.catICS.mergeRank < ImportSource.netflixCSV.mergeRank)
     }
 
     @Test

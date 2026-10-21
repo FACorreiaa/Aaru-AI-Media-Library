@@ -255,6 +255,8 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         tokens: services.agentTokens
     ).register(on: router)
     MCPRoutes(tools: AgentTools(services: services, stores: stores), tokens: services.agentTokens).register(on: router)
+    ScrobbleRoutes(scrobble: services.scrobble, tokens: services.agentTokens).register(on: router)
+    ListenBrainzRoutes(listens: services.listens, tokens: services.agentTokens).register(on: router)
     OAuthRoutes(service: services.oauth).register(on: router)
     return router
 }
@@ -342,6 +344,15 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
                 transport: transport,
                 pacer: RequestPacer(requestsPerSecond: 1.8, burst: 5)
             )
+        ),
+        music: MusicBrainzCatalog(
+            // MusicBrainz allows one request a second per client.
+            client: ProviderClient(
+                name: "musicbrainz",
+                transport: transport,
+                pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
+            ),
+            userAgent: config.openLibraryUserAgent
         )
     )
 }

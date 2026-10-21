@@ -23,6 +23,7 @@ import { Route as AppRecapRouteImport } from './routes/app_.recap'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
+import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as AppGroupsIndexRouteImport } from './routes/app_.groups.index'
 import { Route as AppGroupsGroupIdRouteImport } from './routes/app_.groups.$groupId'
@@ -108,6 +109,11 @@ const AppWeekRoute = AppWeekRouteImport.update({
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
   id: '/auth/verify',
   path: '/auth/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnectExtensionRoute = ConnectExtensionRouteImport.update({
+  id: '/connect/extension',
+  path: '/connect/extension',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/app/settings': typeof AppSettingsRouteWithChildren
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app/imports/$id': typeof AppImportsIdRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/app/recap': typeof AppRecapRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/app_/settings': typeof AppSettingsRouteWithChildren
   '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app_/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app_/imports/$id': typeof AppImportsIdRoute
@@ -303,6 +312,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
+    | '/connect/extension'
     | '/oauth/consent'
     | '/app/groups/$groupId'
     | '/app/imports/$id'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/app/recap'
     | '/app/week'
     | '/auth/verify'
+    | '/connect/extension'
     | '/oauth/consent'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -364,6 +375,7 @@ export interface FileRouteTypes {
     | '/app_/settings'
     | '/app_/week'
     | '/auth/verify'
+    | '/connect/extension'
     | '/oauth/consent'
     | '/app_/groups/$groupId'
     | '/app_/imports/$id'
@@ -397,6 +409,7 @@ export interface RootRouteChildren {
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppWeekRoute: typeof AppWeekRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  ConnectExtensionRoute: typeof ConnectExtensionRoute
   OauthConsentRoute: typeof OauthConsentRoute
   AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
@@ -503,6 +516,13 @@ declare module '@tanstack/solid-router' {
       path: '/auth/verify'
       fullPath: '/auth/verify'
       preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connect/extension': {
+      id: '/connect/extension'
+      path: '/connect/extension'
+      fullPath: '/connect/extension'
+      preLoaderRoute: typeof ConnectExtensionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oauth/consent': {
@@ -684,6 +704,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppWeekRoute: AppWeekRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  ConnectExtensionRoute: ConnectExtensionRoute,
   OauthConsentRoute: OauthConsentRoute,
   AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,

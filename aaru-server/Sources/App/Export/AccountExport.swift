@@ -32,7 +32,7 @@ struct AccountExport: Sendable {
     /// The columns Aaru's own "Any site" import reads (`GenericCSVParser`), so an export re-imports.
     static let csvHeader = [
         "Title", "Year", "Type", "Status", "Rating", "Owned", "Finished", "Added", "IMDb ID", "TMDB ID",
-        "TVDB ID", "MAL ID", "AniList ID", "ISBN", "Watched Episodes", "Notes",
+        "TVDB ID", "MAL ID", "AniList ID", "ISBN", "MusicBrainz ID", "Watched Episodes", "Notes",
     ]
 
     var csv: String {
@@ -46,7 +46,7 @@ struct AccountExport: Sendable {
                 Self.statusWord(entry.item.status), entry.item.rating.map { Self.number($0.value) } ?? "",
                 entry.item.isOwned ? "yes" : "", entry.item.finishedAt.map(day.string) ?? "",
                 day.string(from: entry.item.addedAt), ids.imdb ?? "", ids.tmdb ?? "", ids.tvdb ?? "",
-                ids.mal ?? "", ids.anilist ?? "", ids.isbn ?? "",
+                ids.mal ?? "", ids.anilist ?? "", ids.isbn ?? "", ids.musicbrainz ?? "",
                 (watched[entry.item.id] ?? []).map { String(format: "S%02dE%02d", $0.season, $0.episode) }
                     .joined(separator: " "),
                 entry.item.notes ?? "",

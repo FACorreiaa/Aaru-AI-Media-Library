@@ -15,6 +15,8 @@ render the **Credit** column; `/privacy` names every row that receives user data
 | Fribb/anime-lists | AniList → TMDB/TVDB/MAL/AniDB id mappings, so mapped anime use TMDB's episodes (CAT-010). A file loaded by `aaru --anime-mappings`, monthly; no API calls at request time | none | — | one download per load | MIT | "Anime id mappings from Fribb/anime-lists" linking to github.com/Fribb/anime-lists, MIT |
 | Cinemeta (Stremio) | A show's episode list, to read Stremio's watched-episode field during a Stremio history import (IMP-016) | none | — | 5/s, User-Agent | Stremio's public addon; no published terms | none |
 | Open Library | Books: search, details, covers; Discover's weekly trending books | none | — | 3/s, contact User-Agent | Internet Archive terms; covers rate-limited | "Book data from Open Library" linking to openlibrary.org |
+| MusicBrainz | Albums and EPs (release groups): search, details, artist credit, genres, tracklists (MUS-001) | none | — | 1/s, contact User-Agent (MusicBrainz's limit) | Core data CC0; API free, clients must identify themselves | "Music data from MusicBrainz" linking to musicbrainz.org |
+| Cover Art Archive | Album covers, by release-group id, referenced and never hosted (MUS-001) | none | — | none ours (clients load images directly) | Images belong to their owners; served by the Internet Archive | "Covers from the Cover Art Archive" linking to coverartarchive.org |
 
 Commercial use of TMDB and AniList on these keys is **not** allowed: any paid plan in
 `BUSINESS.md` needs a TMDB commercial agreement and AniList's permission first.

@@ -51,15 +51,15 @@ enum MCPToolCatalog {
         name: "search_titles",
         title: "Search the catalog",
         description: """
-        Search movies, shows, anime and books in the public catalog, or read one title's detail \
+        Search movies, shows, anime, books and albums in the public catalog, or read one title's detail \
         (episodes included for shows) by titleId. To add a hit, pass {"type": hit.type, "ids": hit.ids} \
         as the mediaRef of an apply_library_patch add.
         """,
         inputSchema: object([
             "query": string("Words to search for, 1 to 200 characters."),
             "type": enumeration(
-                ["all", "movie", "show", "anime", "book"],
-                "What to search. all is films, shows and anime together; books are searched only with book."
+                ["all", "movie", "show", "anime", "book", "album"],
+                "What to search. all is films, shows and anime together; books only with book, albums only with album."
             ),
             "titleId": string("An Aaru title id, to read that title's detail instead of searching."),
         ]),
@@ -81,9 +81,9 @@ enum MCPToolCatalog {
             "libraryItemId": string("One item's id. Other filters are ignored."),
             "status": enumeration(
                 ["wishlist", "in_progress", "finished", "dropped"],
-                "wishlist is plan to watch or read; in_progress is watching or reading."
+                "wishlist is plan to watch, read or listen; in_progress is watching, reading or listening."
             ),
-            "type": enumeration(["movie", "show", "book"], "Only this kind of title."),
+            "type": enumeration(["movie", "show", "book", "album"], "Only this kind of title."),
             "anime": .object(["type": .string("boolean"), "description": .string("Only anime, or no anime.")]),
             "owned": .object(["type": .string("boolean"), "description": .string("Only titles the user owns.")]),
             "listId": string("Only items on this list."),
@@ -148,17 +148,17 @@ enum MCPToolCatalog {
         name: "plan_import",
         title: "Hand Aaru a list to import",
         description: """
-        Give Aaru a list export (IMDb, Letterboxd or Goodreads CSV, MyAnimeList XML, a Pogdesign CAT iCal \
-        file or show list with source cat, or any CSV with title columns) as text. Aaru matches every row and the \
-        user reviews and approves the import in Aaru; this tool never changes the library itself. Needs a \
-        connection the user allowed imports for.
+        Give Aaru a list export (IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, MyAnimeList XML, \
+        a Pogdesign CAT iCal file or show list with source cat, or any CSV with title columns) as text. Aaru \
+        matches every row and the user reviews and approves the import in Aaru; this tool never changes the \
+        library itself. Needs a connection the user allowed imports for.
         """,
         inputSchema: object(
             [
                 "text": string("The file's contents, at most 5 MB."),
                 "filename": string("The file's name, if it has one. Helps tell formats apart."),
                 "source": enumeration(
-                    ["auto", "imdb", "letterboxd", "goodreads", "mal", "csv", "cat"],
+                    ["auto", "imdb", "letterboxd", "netflix", "goodreads", "mal", "csv", "cat"],
                     "Defaults to auto: detected from the text. A plain list of show names needs cat."
                 ),
             ],
@@ -186,7 +186,7 @@ enum MCPToolCatalog {
                 "description": .string("{type, ids} copied from a search hit, or {type, titleId}."),
                 "required": .array([.string("type")]),
                 "properties": .object([
-                    "type": enumeration(["movie", "show", "book"], nil),
+                    "type": enumeration(["movie", "show", "book", "album"], nil),
                     "ids": .object(["type": .string("object")]),
                     "titleId": string(nil),
                     "title": string(nil),

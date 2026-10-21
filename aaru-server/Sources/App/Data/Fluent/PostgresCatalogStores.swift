@@ -15,6 +15,7 @@ private var idColumns: [(column: String, path: KeyPath<ExternalIDs, String?>)] {
     [
         ("tmdb", \.tmdb), ("imdb", \.imdb), ("trakt", \.trakt), ("tvdb", \.tvdb), ("isbn", \.isbn),
         ("open_library", \.openLibrary), ("anilist", \.anilist), ("mal", \.mal), ("anidb", \.anidb),
+        ("musicbrainz", \.musicbrainz),
     ]
 }
 
@@ -31,11 +32,13 @@ struct PostgresTitleStore: TitleStore {
         let posterUrl: String?
         let backdropUrl: String?
         let network: String?
-        let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb: String?
+        let byline: String?
+        let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb, musicbrainz: String?
         let isAnime: Bool
         let status: String?
         let runtimeMinutes: Int?
         let episodesHydratedAt: Date?
+        let tracksHydratedAt: Date?
         let genres: [String]
 
         var asTitle: Title? {
@@ -50,9 +53,10 @@ struct PostgresTitleStore: TitleStore {
                 posterURL: posterUrl.flatMap(URL.init(string:)),
                 backdropURL: backdropUrl.flatMap(URL.init(string:)),
                 network: network,
+                byline: byline,
                 ids: ExternalIDs(
                     tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
-                    openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb
+                    openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb, musicbrainz: musicbrainz
                 ),
                 isAnime: isAnime
             )
@@ -66,11 +70,12 @@ struct PostgresTitleStore: TitleStore {
             id: title.id.rawValue, type: title.type.rawValue, title: title.title,
             originalTitle: title.originalTitle, year: title.year, synopsis: title.synopsis,
             posterUrl: title.posterURL?.absoluteString,
-            backdropUrl: title.backdropURL?.absoluteString, network: title.network,
+            backdropUrl: title.backdropURL?.absoluteString, network: title.network, byline: title.byline,
             tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb, isbn: ids.isbn,
             openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb,
+            musicbrainz: ids.musicbrainz,
             isAnime: title.isAnime, status: status?.rawValue, runtimeMinutes: runtimeMinutes,
-            episodesHydratedAt: nil, genres: genres
+            episodesHydratedAt: nil, tracksHydratedAt: nil, genres: genres
         )
         do {
             try await sql.insert(into: "titles").model(row, keyEncodingStrategy: .convertToSnakeCase).run()
@@ -123,7 +128,8 @@ struct PostgresTitleStore: TitleStore {
         return TitleCatalogState(
             status: row.status.flatMap(TitleStatus.init(rawValue:)),
             runtimeMinutes: row.runtimeMinutes,
-            episodesHydratedAt: row.episodesHydratedAt
+            episodesHydratedAt: row.episodesHydratedAt,
+            tracksHydratedAt: row.tracksHydratedAt
         )
     }
 
@@ -269,7 +275,7 @@ extension PostgresTitleStore {
     func titlesMissingGenres(retryAfter: Date, limit: Int) async throws -> [Title] {
         try await sql.raw("""
         SELECT t.* FROM titles t
-        WHERE t.type <> 'book' AND t.genres = '{}'
+        WHERE t.type NOT IN ('book', 'album') AND t.genres = '{}'
           AND (t.genres_attempted_at IS NULL OR t.genres_attempted_at < \(bind: retryAfter))
           AND (EXISTS (SELECT 1 FROM library_items li WHERE li.title_id = t.id)
                OR EXISTS (SELECT 1 FROM list_items lst WHERE lst.title_id = t.id))
