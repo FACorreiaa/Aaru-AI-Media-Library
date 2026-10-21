@@ -64,7 +64,7 @@ import {
   calendarQuery,
   discoverQuery,
   importsQuery,
-  lastWeekStatsQuery,
+  myStatsQuery,
   libraryQuery,
   listsQuery,
   pendingPlansQuery,
@@ -118,7 +118,9 @@ function startReads(queryClient: QueryClient, current: Date) {
   void queryClient.query(pendingPlansQuery).catch(ignore)
   void queryClient.query(importsQuery).catch(ignore)
   void queryClient.query(libraryQuery).catch(ignore)
-  void queryClient.query(lastWeekStatsQuery(viewerTimeZone())).catch(ignore)
+  void queryClient
+    .query(myStatsQuery({ span: 'last7', tz: viewerTimeZone() }))
+    .catch(ignore)
   void queryClient.query(calendarQuery(airingWindow(today))).catch(ignore)
 }
 
@@ -192,7 +194,7 @@ function Home() {
   async function loadStrip() {
     try {
       const stats = await queryClient.query(
-        lastWeekStatsQuery(viewerTimeZone()),
+        myStatsQuery({ span: 'last7', tz: viewerTimeZone() }),
       )
       setStrip(weekStrip(stats))
     } catch {

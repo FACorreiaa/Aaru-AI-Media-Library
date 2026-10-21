@@ -18,9 +18,10 @@ import { Dialog } from '../components/ui/dialog'
 import { KINDS, statusLabel } from '../lib/library/model'
 import { toListRow } from '../lib/lists/model'
 import type { ListRow } from '../lib/lists/model'
-import { getList, removeFromList, reorderList } from '../lib/lists/server'
+import { removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
+import { listQuery } from '../lib/queries'
 import { requireSession } from '../lib/session/query'
 
 // APP-006 on the web: one list, in order, with remove and move up/down. LST-003: rows carry
@@ -35,7 +36,8 @@ export const Route = createFileRoute('/app_/lists/$id')({
   beforeLoad: async ({ context }) => {
     await requireSession(context.queryClient)
   },
-  loader: ({ params }) => getList({ data: { id: params.id } }),
+  loader: ({ params, context: { queryClient } }) =>
+    queryClient.query(listQuery(params.id)),
   component: ListPage,
 })
 
