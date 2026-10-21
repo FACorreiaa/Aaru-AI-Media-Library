@@ -293,24 +293,3 @@ private struct NameListSheet: View {
         }
     }
 }
-
-/// The bottom message for a write that failed. Tap to dismiss.
-struct ProblemBanner: View {
-    let message: String?
-    let onDismiss: () -> Void
-
-    var body: some View {
-        if let message {
-            Label(message, systemImage: "exclamationmark.arrow.circlepath")
-                .font(.callout)
-                .foregroundStyle(Color(.paper))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.danger), in: RoundedRectangle(cornerRadius: 14))
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
-                .onTapGesture(perform: onDismiss)
-        }
-    }
-}

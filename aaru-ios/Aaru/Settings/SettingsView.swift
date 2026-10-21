@@ -1,21 +1,6 @@
 import AaruAPI
 import SwiftUI
 
-/// Settings' groups (APP-007), the same as the web's Settings pages.
-enum SettingsPage: Hashable {
-    case account
-    case imports
-    case connected
-    case insights
-    case about
-}
-
-/// Where Settings' stack goes: a group's page, or an import job opened from Imports & export.
-enum SettingsRoute: Hashable {
-    case page(SettingsPage)
-    case job(String)
-}
-
 /// APP-007: Settings as a list of groups, each its own page. A tab of its own; the Mac Settings
 /// window (Cmd-,) shows the same pages as panes (`SettingsWindow`).
 struct SettingsView: View {
@@ -30,10 +15,11 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var account: Components.Schemas.Me?
-    @State private var path: [SettingsRoute] = []
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
-        NavigationStack(path: $path) {
+        @Bindable var router = router
+        NavigationStack(path: $router.settingsPath) {
             Form {
                 Section {
                     NavigationLink(value: SettingsRoute.page(.account)) {
@@ -47,14 +33,14 @@ struct SettingsView: View {
                     NavigationLink(value: SettingsRoute.page(.imports)) {
                         SettingsRowLabel("Imports & export", systemImage: "tray.and.arrow.down.fill", tint: .blue)
                     }
-                    NavigationLink(value: SettingsRoute.page(.connected)) {
+                    NavigationLink(value: SettingsRoute.page(.connections)) {
                         SettingsRowLabel(
                             "Connected apps", systemImage: "app.connected.to.app.below.fill", tint: .green
                         )
                     }
                 }
                 Section {
-                    NavigationLink(value: SettingsRoute.page(.insights)) {
+                    NavigationLink(value: SettingsRoute.page(.about)) {
                         SettingsRowLabel("Insights & recaps", systemImage: "chart.bar.fill", tint: .orange)
                     }
                     NavigationLink(value: SettingsRoute.page(.about)) {
@@ -83,13 +69,13 @@ struct SettingsView: View {
         case .page(.account):
             AccountSettings(api: api, imports: imports, account: $account, onSignOut: onSignOut)
         case .page(.imports):
-            ImportsSettings(api: api, imports: imports) { path.append(.job($0)) }
-        case .page(.connected):
+            ImportsSettings(api: api, imports: imports) { router.settingsPath.append(.job($0)) }
+        case .page(.connections):
             ConnectedAppsSettings(api: api, imports: imports)
-        case .page(.insights):
-            InsightsView(api: api)
-        case .page(.about):
+        case .page:
             AboutView(onDeleteAccount: onDeleteAccount)
+        case .history:
+            EmptyView()
         case let .job(id):
             ImportDetailView(id: id, imports: imports, library: library, lists: lists, api: api)
         }

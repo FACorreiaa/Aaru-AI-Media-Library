@@ -5,6 +5,8 @@ import AaruAPI
 @MainActor
 final class AppServices {
     let session: SessionStore
+    /// Where the app is: the destination, Settings' page, and menu-bar requests.
+    let router = AppRouter()
     let library = LibraryModel()
     let lists: ListsModel
     let imports: ImportsModel

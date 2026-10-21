@@ -140,23 +140,12 @@ struct ChannelKindMark: View {
 
     var body: some View {
         if channel.kind == .title, let title = channel.title {
-            PosterThumb(url: title.posterURL, kind: title.mediaKind)
+            PosterThumb(url: title.posterURL, kind: title.mediaKind, cornerRadius: 2)
+                .frame(width: 14)
         } else {
             Image(systemName: channel.kind.symbol)
                 .foregroundStyle(Color(.muted))
                 .accessibilityHidden(true)
         }
-    }
-}
-
-private struct PosterThumb: View {
-    let url: URL?
-    let kind: MediaKind
-
-    var body: some View {
-        PosterView(url: url, kind: kind)
-            .frame(width: 14)
-            .clipShape(RoundedRectangle(cornerRadius: 2))
-            .accessibilityHidden(true)
     }
 }

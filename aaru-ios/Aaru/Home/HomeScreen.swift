@@ -15,7 +15,7 @@ struct HomeScreen: View {
     /// The user's imports, for the newest one's note. Nil in previews.
     var imports: ImportsModel?
     /// Switches the app to another destination (Calendar, Discover, Lists).
-    var onSelectTab: (RootView.AppTab) -> Void
+    var onSelectTab: (AppTab) -> Void
     /// Switches to Library, filtered to one status.
     var onShowLibrary: (LibraryStatus) -> Void
 
@@ -42,7 +42,7 @@ struct HomeScreen: View {
         lists: ListsModel,
         imports: ImportsModel? = nil,
         model: HomeModel? = nil,
-        onSelectTab: @escaping (RootView.AppTab) -> Void = { _ in },
+        onSelectTab: @escaping (AppTab) -> Void = { _ in },
         onShowLibrary: @escaping (LibraryStatus) -> Void = { _ in }
     ) {
         self.api = api
