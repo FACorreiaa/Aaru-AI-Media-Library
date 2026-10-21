@@ -27,13 +27,9 @@ import { Toaster, dismissToast, showToast } from '../components/ui/toast'
 import { cn } from '../lib/cn'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
+import { titlePageQuery } from '../lib/queries'
 import { requireSession } from '../lib/session/query'
-import {
-  getTitlePage,
-  markSeason,
-  setEpisode,
-  updateItem,
-} from '../lib/title/server'
+import { markSeason, setEpisode, updateItem } from '../lib/title/server'
 import {
   airLabel,
   airedKeys,
@@ -55,7 +51,8 @@ export const Route = createFileRoute('/app_/title/$id')({
   beforeLoad: async ({ context }) => {
     await requireSession(context.queryClient)
   },
-  loader: ({ params }) => getTitlePage({ data: { id: params.id } }),
+  loader: ({ params, context: { queryClient } }) =>
+    queryClient.query(titlePageQuery(params.id)),
   component: TitleRoom,
 })
 

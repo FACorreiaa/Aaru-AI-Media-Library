@@ -30,7 +30,7 @@ import {
 import type { InsightsPeriod } from '../lib/insights/model'
 import { isEmpty } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
-import { getStats } from '../lib/recap/server'
+import { myStatsQuery } from '../lib/queries'
 import { requireSession } from '../lib/session/query'
 
 // Insights on the web: the last 7 or 30 days, a month, a year, or all time in numbers, the browsable twin of the
@@ -67,6 +67,7 @@ type State =
 
 function Insights() {
   const search = Route.useSearch()
+  const { queryClient } = Route.useRouteContext()()
   const navigate = Route.useNavigate()
   const [now, setNow] = createSignal<Date | null>(null)
   const [period, setPeriod] = createSignal<InsightsPeriod | null>(null)
@@ -92,7 +93,7 @@ function Insights() {
     const ticket = ++latest
     setState({ kind: 'loading' })
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-    getStats({ data: statsQuery(next, tz) }).then(
+    queryClient.query(myStatsQuery(statsQuery(next, tz))).then(
       (stats) => {
         if (ticket === latest) setState({ kind: 'ready', stats })
       },

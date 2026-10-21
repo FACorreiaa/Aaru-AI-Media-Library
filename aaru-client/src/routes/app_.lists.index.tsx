@@ -3,14 +3,10 @@ import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { AlertDialog } from '../components/ui/alert-dialog'
 import { Button } from '../components/ui/button'
-import {
-  createList,
-  deleteList,
-  getLists,
-  renameList,
-} from '../lib/lists/server'
+import { createList, deleteList, renameList } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
+import { listsQuery } from '../lib/queries'
 import { requireSession } from '../lib/session/query'
 
 // APP-006 on the web: every list, with create, rename and delete.
@@ -19,7 +15,7 @@ export const Route = createFileRoute('/app_/lists/')({
   beforeLoad: async ({ context }) => {
     await requireSession(context.queryClient)
   },
-  loader: () => getLists(),
+  loader: ({ context: { queryClient } }) => queryClient.query(listsQuery),
   component: Lists,
 })
 

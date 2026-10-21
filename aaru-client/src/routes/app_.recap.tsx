@@ -9,7 +9,7 @@ import { cards } from '../lib/recap/deck'
 import type { RecapCard } from '../lib/recap/deck'
 import { periodLabel } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
-import { getStats } from '../lib/recap/server'
+import { myStatsQuery } from '../lib/queries'
 import { requireSession } from '../lib/session/query'
 
 // GAM-006a on the web: the Recap story for `?year=` and optional `?month=`, the twin of the
@@ -30,6 +30,7 @@ export const Route = createFileRoute('/app_/recap')({
 
 function Recap() {
   const search = Route.useSearch()
+  const { queryClient } = Route.useRouteContext()()
   const navigate = useNavigate()
   const [state, setState] = createSignal<
     | { kind: 'loading' }
@@ -40,13 +41,13 @@ function Recap() {
 
   onMount(async () => {
     try {
-      const stats = await getStats({
-        data: {
+      const stats = await queryClient.query(
+        myStatsQuery({
           year: search().year,
           month: search().month,
           tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-        },
-      })
+        }),
+      )
       setState({ kind: 'ready', stats, deck: cards(stats) })
     } catch (err) {
       setState({
