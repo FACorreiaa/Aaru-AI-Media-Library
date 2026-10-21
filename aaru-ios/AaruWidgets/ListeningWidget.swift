@@ -62,7 +62,7 @@ struct ListeningView: View {
             SetUpView(compact: family == .systemSmall)
         } else if albums.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Listening").font(.headline).foregroundStyle(Palette.ink)
+                Text("Listening").font(.widgetDisplay).foregroundStyle(Palette.ink)
                 Text("Albums you mark Listening show here.").font(.caption).foregroundStyle(Palette.muted)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

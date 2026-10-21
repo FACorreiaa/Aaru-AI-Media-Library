@@ -77,7 +77,7 @@
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(context.attributes.title)
-                            .font(.headline)
+                            .font(.widgetDisplay)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(1)
                         Spacer(minLength: 4)
