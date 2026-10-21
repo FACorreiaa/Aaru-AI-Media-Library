@@ -465,7 +465,10 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - PKCE only: Trakt issues this app no client secret. The server holds the verifier; the browser
   carries a one-time `state` and the `code`. Redirect URI `https://api.<domain>/v1/imports/trakt/callback`
 - OAuth user token stored encrypted at rest (AES-GCM, `TRAKT_TOKEN_KEY`), refreshed before expiry
-- Pull watched history, watchlist, ratings, lists
+  with the connection row locked (refresh tokens are single use); disconnect revokes on Trakt
+- OAuth calls go to `auth.trakt.tv`, data to `api.trakt.tv`; every call sends a `User-Agent`
+- Pull watched history, watchlist, ratings, lists: every list paged at 250, watched shows with
+  `extended=progress` (Trakt sends no episodes without it); 1.5 requests/s, `Retry-After` honoured
 - Map Trakt ids → TMDB/IMDb → `Title`
 - First importer in the merge order
 

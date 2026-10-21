@@ -189,25 +189,33 @@ extension ImportService {
     }
 
     /// Reads the user's Trakt library. A revoked connection fails the job at once (no retry) and
-    /// forgets the dead tokens, so Settings shows "Connect Trakt" again.
+    /// forgets the dead tokens, so Settings shows "Connect Trakt" again. Trakt's account answers
+    /// (420 over a limit, 423 locked) fail at once too: retrying gets the same answer.
     func fetchTrakt(_ job: inout ImportJob) async throws -> [ImportRow]? {
+        let failure: String
         do {
             guard let trakt, let token = try await trakt.connect.accessToken(userID: job.userID) else {
-                job.state = .failed
-                job.errorSummary = "Trakt is not connected. Connect it in Settings, then import again."
-                job.updatedAt = now()
-                try await stores.importJobs.update(job)
+                try await fail(&job, "Trakt is not connected. Connect it in Settings, then import again.")
                 return nil
             }
             return try await trakt.importer.rows(token: token)
         } catch let error as ProviderError where error.kind == .unauthorized {
             try await stores.trakt.deleteConnection(userID: job.userID)
-            job.state = .failed
-            job.errorSummary = "Trakt access was revoked or expired. Connect Trakt again, then import."
-            job.updatedAt = now()
-            try await stores.importJobs.update(job)
-            return nil
+            failure = "Trakt access was revoked or expired. Connect Trakt again, then import."
+        } catch let error as ProviderError where error.kind == .refused(420) {
+            failure = "Your Trakt account is over one of Trakt's limits, so Trakt refused the import."
+        } catch let error as ProviderError where error.kind == .refused(423) {
+            failure = "Trakt has locked this account. Sort it out on trakt.tv, then import again."
         }
+        try await fail(&job, failure)
+        return nil
+    }
+
+    private func fail(_ job: inout ImportJob, _ summary: String) async throws {
+        job.state = .failed
+        job.errorSummary = summary
+        job.updatedAt = now()
+        try await stores.importJobs.update(job)
     }
 }
 

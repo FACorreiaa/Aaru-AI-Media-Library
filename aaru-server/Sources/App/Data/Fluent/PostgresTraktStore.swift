@@ -42,6 +42,29 @@ struct PostgresTraktStore: TraktStore {
     }
 
     func connection(userID: UserID) async throws -> TraktConnectionRecord? {
+        try await connection(userID: userID, on: sql, lock: false)
+    }
+
+    func refreshConnection(
+        userID: UserID,
+        _ refresh: @escaping @Sendable (TraktConnectionRecord) async throws -> TraktConnectionRecord
+    ) async throws -> TraktConnectionRecord? {
+        try await sql.transaction { sql in
+            guard let current = try await connection(userID: userID, on: sql, lock: true) else { return nil }
+            let next = try await refresh(current)
+            guard next != current else { return current }
+            try await sql.raw("""
+            UPDATE trakt_connections SET access_token = \(bind: next.sealedAccessToken),
+                refresh_token = \(bind: next.sealedRefreshToken), expires_at = \(bind: next.expiresAt)
+            WHERE user_id = \(bind: userID.rawValue)
+            """).run()
+            return next
+        }
+    }
+
+    private func connection(userID: UserID, on sql: any SQLDatabase, lock: Bool) async throws
+        -> TraktConnectionRecord?
+    {
         struct Row: Decodable {
             let accessToken: String
             let refreshToken: String
@@ -51,7 +74,7 @@ struct PostgresTraktStore: TraktStore {
         }
         return try await sql.raw("""
         SELECT access_token, refresh_token, expires_at, username, connected_at FROM trakt_connections
-        WHERE user_id = \(bind: userID.rawValue)
+        WHERE user_id = \(bind: userID.rawValue) \(unsafeRaw: lock ? "FOR UPDATE" : "")
         """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
             TraktConnectionRecord(
                 sealedAccessToken: $0.accessToken, sealedRefreshToken: $0.refreshToken,

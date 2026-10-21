@@ -269,7 +269,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/get(getTraktConnection)`.
     func getTraktConnection(_ input: Operations.GetTraktConnection.Input) async throws -> Operations.GetTraktConnection.Output
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
@@ -986,7 +986,7 @@ extension APIProtocol {
     public func getTraktConnection(headers: Operations.GetTraktConnection.Input.Headers = .init()) async throws -> Operations.GetTraktConnection.Output {
         try await getTraktConnection(Operations.GetTraktConnection.Input(headers: headers))
     }
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
@@ -13171,7 +13171,7 @@ public enum Operations {
             }
         }
     }
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.

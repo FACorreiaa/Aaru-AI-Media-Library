@@ -35,7 +35,7 @@ notice and the AniList and Open Library credits in its footer, besides About.
 | Google | Sign in with Google | none (public client ids) | `GOOGLE_CLIENT_IDS` env | Google sign-in token |
 | Resend | Sign-in emails (code + link) | API key | `RESEND_API_KEY` in `aaru-env` | Email address and the sign-in email |
 | Stremio (optional, per user) | Importing a user's Stremio history once (IMP-016): `link.stremio.com` device-link code, `api.strem.io` library read + logout. Unofficial API | none | — | The approved link code; the session key is used for one read and never stored |
-| Trakt (optional, per user) | Importing a user's Trakt history (IMP-002/003) | OAuth client | `TRAKT_*` (not configured yet) | The user's Trakt authorisation; tokens stored encrypted |
+| Trakt (optional, per user) | Importing a user's Trakt history (IMP-002/003) | OAuth client (PKCE, no secret) | `TRAKT_CLIENT_ID` env, `TRAKT_TOKEN_KEY` in `aaru-env` | The user's Trakt authorisation; tokens stored encrypted, revoked on disconnect. Credit: "Aaru uses Trakt but is not endorsed or certified by Trakt." |
 
 ## Hosting
 
