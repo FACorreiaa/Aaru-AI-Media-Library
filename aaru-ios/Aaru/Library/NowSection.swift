@@ -26,7 +26,7 @@ struct NowSection: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(group.title)
-                            .font(.system(.title2, design: .serif, weight: .semibold))
+                            .font(.aaruDisplay(.title2, weight: .semibold))
                             .accessibilityAddTraits(.isHeader)
                         Spacer()
                         Text("\(group.items.count)").foregroundStyle(Color(.muted))
@@ -124,7 +124,7 @@ private struct NowCard: View {
                     .shadow(radius: 3, y: 2)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title.title)
-                        .font(.system(.title3, design: .serif, weight: .semibold))
+                        .font(.aaruDisplay(.title3, weight: .semibold))
                         .foregroundStyle(Color(.ink))
                         .lineLimit(3)
                     if let year = title.year {
@@ -148,7 +148,7 @@ private struct NowCard: View {
                 }
                 .overlay(alignment: .bottomLeading) {
                     Text(title.title)
-                        .font(.system(.title3, design: .serif, weight: .semibold))
+                        .font(.aaruDisplay(.title3, weight: .semibold))
                         .foregroundStyle(.white)
                         .lineLimit(2)
                         .padding(12)

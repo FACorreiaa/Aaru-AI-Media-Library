@@ -57,7 +57,7 @@ struct WeekStrip: View {
     private func figure(_ value: String, _ caption: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value)
-                .font(.system(.title3, design: .serif, weight: .semibold))
+                .font(.aaruDisplay(.title3, weight: .semibold))
                 .monospacedDigit()
             Text(caption)
                 .font(.caption2)

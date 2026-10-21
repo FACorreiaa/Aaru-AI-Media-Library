@@ -67,7 +67,7 @@ private struct PanelSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(.title3, design: .serif, weight: .semibold))
+                .font(.aaruDisplay(.title3, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
             content()
         }
@@ -131,7 +131,7 @@ private struct StatTile: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(value)
-                    .font(.system(.title, design: .serif, weight: .semibold))
+                    .font(.aaruDisplay(.title, weight: .semibold))
                     .monospacedDigit()
                 if let delta {
                     Label(delta.text, systemImage: delta.isUp ? "arrow.up.right" : "arrow.down.right")
@@ -283,7 +283,7 @@ private struct TopTitles: View {
             ForEach(Array(titles.enumerated()), id: \.offset) { index, entry in
                 HStack(spacing: 12) {
                     Text("\(index + 1)")
-                        .font(.system(.title3, design: .serif, weight: .semibold))
+                        .font(.aaruDisplay(.title3, weight: .semibold))
                         .monospacedDigit()
                         .frame(width: 22)
                         .foregroundStyle(Color(.muted))
@@ -328,7 +328,7 @@ private struct RatingsHistogram: View {
                     x: .value("Rating", "\(index + 1)"),
                     y: .value("Titles", count)
                 )
-                .foregroundStyle(Color.weekGold)
+                .foregroundStyle(Color(.gold))
                 .cornerRadius(3)
                 .accessibilityLabel("Rated \(index + 1)")
                 .accessibilityValue(count == 1 ? "1 title" : "\(count) titles")

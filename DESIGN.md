@@ -661,7 +661,10 @@ look, no cyberpunk, no glitching or "broken AI" UI.
 - **Type.** Newsreader (OFL, bundled on both clients, `design/fonts.md`) for titles and
   headings; the system sans for everything else. Small uppercase eyebrows (tracked 1.5) over
   sections. Dates, `S·E` codes, counts and ratings use tabular figures. On Apple the serif is
-  `Font.aaruDisplay(_:)`, relative to a text style, so Dynamic Type scales it.
+  `Font.aaruDisplay(_:)`, relative to a text style, so Dynamic Type scales it. Widgets bundle the
+  Medium face only and use it for their one heading; the rest of a widget is the system font.
+- **Badges.** Premiere and new season are teal, Finale is ink, both under Paper text (the web's
+  `accent` and `ink` badge tones). Gold never carries small text.
 - **Texture, on the Field and the Title room only.** Two faint pinstripes of different pitch
   (the room's "code"; the Title room seeds them from the title id), film grain on the web, a
   daypart wash that is warmer at dusk and cooler at night (`data-daypart`, set once before

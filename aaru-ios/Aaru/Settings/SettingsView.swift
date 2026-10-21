@@ -106,7 +106,7 @@ private struct AccountSummary: View {
             Image(systemName: "person.crop.circle.fill")
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color(.accent))
                 .frame(width: avatar, height: avatar)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {

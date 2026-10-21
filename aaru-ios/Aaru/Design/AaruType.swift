@@ -12,6 +12,14 @@ enum AaruType {
         CTFontManagerRegisterFontURLs(urls as CFArray, .process, true, nil)
     }
 
+    /// The bundled face for a weight: SemiBold from `.semibold` up, Medium below.
+    fileprivate static func faceName(weight: Font.Weight, italic: Bool) -> String {
+        if italic {
+            return "Newsreader-MediumItalic"
+        }
+        return [.semibold, .bold, .heavy, .black].contains(weight) ? "Newsreader-SemiBold" : "Newsreader-Medium"
+    }
+
     /// The text style's size at the default content size, per platform.
     fileprivate static func baseSize(_ style: Font.TextStyle) -> CGFloat {
         baseSizes[style] ?? baseSizes[.body] ?? 17
@@ -33,10 +41,13 @@ enum AaruType {
 extension Font {
     /// Newsreader at a text style's size. `.semibold` for page titles, `.medium` otherwise.
     static func aaruDisplay(_ style: Font.TextStyle, weight: Font.Weight = .medium, italic: Bool = false) -> Font {
-        let name = italic
-            ? "Newsreader-MediumItalic"
-            : weight == .semibold ? "Newsreader-SemiBold" : "Newsreader-Medium"
-        return .custom(name, size: AaruType.baseSize(style), relativeTo: style)
+        .custom(AaruType.faceName(weight: weight, italic: italic), size: AaruType.baseSize(style), relativeTo: style)
+    }
+
+    /// Newsreader at a fixed size, for story cards and shared images whose layout is drawn to
+    /// size (Recap). Everything else uses a text style.
+    static func aaruDisplay(size: CGFloat, weight: Font.Weight = .medium) -> Font {
+        .custom(AaruType.faceName(weight: weight, italic: false), fixedSize: size)
     }
 }
 

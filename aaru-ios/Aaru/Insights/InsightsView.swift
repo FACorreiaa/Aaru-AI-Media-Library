@@ -74,7 +74,7 @@ private struct PeriodStepper: View {
             }
             Spacer()
             Text(model.period.label)
-                .font(.system(.title2, design: .serif, weight: .semibold))
+                .font(.aaruDisplay(.title2, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             if model.canStep {

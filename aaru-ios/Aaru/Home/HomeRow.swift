@@ -79,11 +79,12 @@ struct HomeArt: View {
 struct HomeChip: View {
     let text: String
     var tint: Color = .black.opacity(0.55)
+    var foreground: Color = .white
 
     var body: some View {
         Text(text)
             .font(.caption2.weight(.bold))
-            .foregroundStyle(.white)
+            .foregroundStyle(foreground)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .background(tint, in: Capsule())

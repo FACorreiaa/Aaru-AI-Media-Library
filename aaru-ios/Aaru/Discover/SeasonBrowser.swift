@@ -54,7 +54,7 @@ struct SeasonBrowser: View {
             step(-1)
             VStack(spacing: 4) {
                 Text(model.key.title)
-                    .font(.system(.largeTitle, design: .serif, weight: .medium))
+                    .font(.aaruDisplay(.largeTitle))
                     .monospacedDigit()
                 Text(model.detail)
                     .font(.subheadline)

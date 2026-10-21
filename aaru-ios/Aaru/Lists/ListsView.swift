@@ -303,11 +303,11 @@ struct ProblemBanner: View {
         if let message {
             Label(message, systemImage: "exclamationmark.arrow.circlepath")
                 .font(.callout)
-                .foregroundStyle(.white)
+                .foregroundStyle(Color(.paper))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.red.opacity(0.9), in: RoundedRectangle(cornerRadius: 14))
+                .background(Color(.danger), in: RoundedRectangle(cornerRadius: 14))
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
                 .onTapGesture(perform: onDismiss)

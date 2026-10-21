@@ -96,7 +96,7 @@ private struct WeekBanner: View {
     /// No art: a quiet teal-to-gold wash. The show's name is right below, so no text here.
     private var placeholder: some View {
         LinearGradient(
-            colors: [Color(.accent).opacity(0.35), Color.weekGold.opacity(0.3)],
+            colors: [Color(.accent).opacity(0.25), Color(.gold).opacity(0.25)],
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
     }
@@ -133,7 +133,7 @@ struct WeekBadge: View {
         Text(badge.label)
             .font(.caption2.weight(.bold))
             .textCase(.uppercase)
-            .foregroundStyle(.white)
+            .foregroundStyle(Color(.paper))
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(badge.tint, in: Capsule())
@@ -141,7 +141,8 @@ struct WeekBadge: View {
 }
 
 extension CalendarEntry {
-    /// Premieres and finales stand out; colours are the brand's teal and gold, not CAT's.
+    /// Premieres and finales stand out: teal for a start, ink for an end (as on the web), each
+    /// under Paper text that passes AA in both appearances. Not CAT's colours.
     enum Badge {
         case premiere, newSeason, finale
 
@@ -156,7 +157,7 @@ extension CalendarEntry {
         var tint: Color {
             switch self {
             case .premiere, .newSeason: Color(.accent)
-            case .finale: .weekGold
+            case .finale: Color(.ink)
             }
         }
     }
@@ -179,9 +180,4 @@ extension CalendarEntry {
         let parts = [title.network, time].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
-}
-
-extension Color {
-    /// The gold end of the brand's teal → gold (DESIGN.md "Visual references").
-    static let weekGold = Color(red: 0.80, green: 0.60, blue: 0.20)
 }

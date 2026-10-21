@@ -74,7 +74,7 @@ struct WelcomeView: View {
                 .frame(height: 34)
                 .accessibilityLabel("Aaru")
             Text("Everything you watch and read, on one shelf.")
-                .font(.system(.largeTitle, design: .serif, weight: .medium))
+                .font(.aaruDisplay(.largeTitle))
                 .fixedSize(horizontal: false, vertical: true)
             Text("Films, shows, anime and books in one calm library.")
                 .font(.title3)
