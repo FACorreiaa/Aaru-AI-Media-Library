@@ -268,3 +268,87 @@ body {
     }
   }
 }
+
+/* GRP-004: groups. Menus and popovers settle in, the tablet drawer slides in, the member sheet
+   rises. Entrances only; with reduced motion they simply appear. */
+@media (prefers-reduced-motion: no-preference) {
+  .group-pop {
+    animation: group-pop 160ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .group-drawer {
+    animation: group-drawer 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .group-sheet[open] {
+    animation: group-sheet 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes group-pop {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.98);
+    }
+  }
+  @keyframes group-drawer {
+    from {
+      opacity: 0.6;
+      transform: translateX(-16px);
+    }
+  }
+  @keyframes group-sheet {
+    from {
+      transform: translateY(24px);
+      opacity: 0.6;
+    }
+  }
+}
+
+/* GRP-009: a watch-party reaction drifts up and fades; with reduced motion it only fades. */
+.reaction-float {
+  animation: reaction-fade 2400ms ease-out both;
+}
+@keyframes reaction-fade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reaction-float {
+    animation: reaction-float 2400ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes reaction-float {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.8);
+    }
+    15% {
+      opacity: 1;
+      transform: translateY(0) scale(1.1);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-56px) scale(1);
+    }
+  }
+}
+
+/* GRP-011: while Aaru answers, its medallion breathes in the "Aaru is thinking…" row. Never
+   bouncing dots; with reduced motion it holds still. */
+@media (prefers-reduced-motion: no-preference) {
+  .aaru-breathe {
+    animation: aaru-breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes aaru-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.85;
+    }
+    50% {
+      transform: scale(1.06);
+      opacity: 1;
+    }
+  }
+}

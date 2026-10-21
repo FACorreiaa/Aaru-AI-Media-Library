@@ -67,6 +67,12 @@ struct AppConfig: Sendable {
     /// `OAUTH_COOKIE_DOMAIN`: the parent domain of the API and the web app, so the consent page
     /// can read the cookie the API set. Empty for a host-only cookie (local development).
     var oauthCookieDomain: String?
+    /// Browser origins allowed to open the realtime socket (`REALTIME_ORIGINS`, comma-separated).
+    var realtimeOrigins: Set<String>
+    /// Nil when `ANTHROPIC_API_KEY` is unset: `@aaru` stays off and groups say so (GRP-010).
+    var anthropic: AnthropicSettings?
+
+    static let defaultRealtimeOrigins = "https://aaruapp.com,https://www.aaruapp.com,https://beta.aaruapp.com"
 
     static func load(from reader: ConfigReader) throws -> AppConfig {
         let audiences = reader.string(forKey: "apple.audiences", default: defaultAppleAudiences)
@@ -89,7 +95,27 @@ struct AppConfig: Sendable {
             publicBaseURL: publicBaseURL(from: reader),
             webBaseURL: URL(string: reader.string(forKey: "web.base.url", default: "https://aaruapp.com"))
                 ?? URL(string: "https://aaruapp.com")!,
-            oauthCookieDomain: reader.string(forKey: "oauth.cookie.domain", default: "aaruapp.com").nilIfBlank
+            oauthCookieDomain: reader.string(forKey: "oauth.cookie.domain", default: "aaruapp.com").nilIfBlank,
+            realtimeOrigins: Set(
+                reader.string(forKey: "realtime.origins", default: defaultRealtimeOrigins).split(separator: ",")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            ),
+            anthropic: anthropicSettings(from: reader)
+        )
+    }
+
+    /// The trial's env contract (`platform/infra/docs/llm-haiku-trial.md`): `ANTHROPIC_API_KEY`,
+    /// `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`; `ANTHROPIC_BASE_URL` only for tests and proxies.
+    static func anthropicSettings(from reader: ConfigReader) throws -> AnthropicSettings? {
+        guard let key = reader.string(forKey: "anthropic.api.key"), !key.isEmpty else { return nil }
+        let base = reader.string(forKey: "anthropic.base.url", default: "https://api.anthropic.com")
+        guard let url = URL(string: base), url.scheme == "https" || url.scheme == "http" else {
+            throw MissingConfigError(environmentName: "ANTHROPIC_BASE_URL", key: "anthropic.base.url")
+        }
+        let effort = reader.string(forKey: "anthropic.effort", default: "low")
+        return AnthropicSettings(
+            apiKey: key, model: reader.string(forKey: "anthropic.model", default: "claude-haiku-5-5"),
+            effort: effort.isEmpty ? nil : effort, baseURL: url
         )
     }
 
@@ -155,4 +181,11 @@ private func required(_ key: String, env: String, in reader: ConfigReader) throw
         throw MissingConfigError(environmentName: env, key: key)
     }
     return value
+}
+
+struct AnthropicSettings: Sendable {
+    var apiKey: String
+    var model: String
+    var effort: String?
+    var baseURL: URL
 }

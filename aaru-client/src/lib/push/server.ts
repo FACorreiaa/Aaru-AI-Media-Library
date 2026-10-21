@@ -3,9 +3,11 @@ import { z } from 'zod'
 import { api } from '../api/client'
 import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
+import type { components } from '../api/schema'
 
-// Airing alerts on the web: the account's "New episodes" switch (shared with the Apple apps) and
-// this browser's push subscription, over `/v1/me/notifications` and `/v1/web-push/*`.
+// Alerts on the web: the account's switches (new episodes, group mentions and invites, shared
+// with the Apple apps) and this browser's push subscription, over `/v1/me/notifications` and
+// `/v1/web-push/*`.
 
 function check<T>(
   result: { data?: T; error?: unknown; response: Response },
@@ -17,8 +19,10 @@ function check<T>(
   return result.data
 }
 
+export type NotificationSettings = components['schemas']['NotificationSettings']
+
 export type PushSetup = {
-  airing: boolean
+  settings: NotificationSettings
   /** The VAPID key browsers subscribe with; null when the server has no web push. */
   publicKey: string | null
 }
@@ -30,25 +34,29 @@ export const getPushSetup = createServerFn({ method: 'GET' }).handler(
       client.GET('/v1/me/notifications'),
       client.GET('/v1/web-push/key'),
     ])
-    const airing = check(
+    const loaded = check(
       settings,
       'Your notification settings could not be loaded.',
-    ).airing
+    )
     if (key.response.status === 401) sessionRejected()
-    return { airing, publicKey: key.data?.publicKey ?? null }
+    return { settings: loaded, publicKey: key.data?.publicKey ?? null }
   },
 )
 
-export const setAiring = createServerFn({ method: 'POST' })
-  .validator(z.object({ airing: z.boolean() }))
-  .handler(
-    async ({ data }): Promise<boolean> =>
-      check(
-        await api(sessionToken()).PUT('/v1/me/notifications', {
-          body: { airing: data.airing },
-        }),
-        'That was not saved.',
-      ).airing,
+/** Changes the switches sent; the others keep their value. */
+export const saveNotifications = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      airing: z.boolean().optional(),
+      groupMentions: z.boolean().optional(),
+      groupInvites: z.boolean().optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<NotificationSettings> =>
+    check(
+      await api(sessionToken()).PUT('/v1/me/notifications', { body: data }),
+      'That was not saved.',
+    ),
   )
 
 const subscription = z.object({

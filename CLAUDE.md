@@ -7,7 +7,8 @@ This file is the working contract for anyone — human or agent — changing the
 ## Product rules
 
 - Aaru is the source of truth after import. Imports and scrobbles are one-way into Aaru. Pushes to Trakt, MAL, and AniList (P3) are one-way out and are never read back as a conflict source. Do not build two-way sync or a conflict engine.
-- Private by default. A new account has no visible surface. Social is opt-in per user and friends-only; there is no global feed and no public profile page.
+- Private by default. A new account has no visible surface. Social is opt-in per user and friends-only; there is no global feed and no public profile page. Groups are friends-only too: no invite links, no public or discoverable groups.
+- Group messages are server-visible and every channel says "not end-to-end". DMs are end-to-end and the server never reads them. Never blur the two.
 - Catalog metadata and user library are different layers. Never treat TMDB/Trakt/Open Library/AniList payloads as the user’s library row.
 - Every saved title must store external IDs when known: `tmdb`, `imdb`, `trakt`, `tvdb`, `isbn`, `anilist`, `mal`, `anidb`.
 - Pogdesign CAT is a minor on-ramp (show list + optional ICS), not a first-class sync target. No CAT scraping:
@@ -33,9 +34,10 @@ This file is the working contract for anyone — human or agent — changing the
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
-| Realtime (P6) | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server` |
+| Realtime | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
+| Groups | Friends-only spaces with channels (`text`, `title`, `watch`, `shelf`) and `#general`. Server-visible messages in Postgres; `@aaru` replies through `ModelProviding` (pulled forward 2026-10-20) |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
-| Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20) |
+| Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20); group mention and invite alerts with groups (GRP-012) |
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
 | Agent model | Pluggable `ModelProviding` in `Server`. Anthropic default, user key supported, spend metered daily |
@@ -159,8 +161,17 @@ Use these words in code, APIs, and UI:
 - **Badge** — an award derived from points events, defined in code
 - **Recap** — a read-only summary of one month or year (`/v1/me/stats`), played as a story.
   Derived only from the user's own library; imported or restored ticks are not activity
+- **Group** — a friends-only space a user creates and invites friends into. It holds channels
+  and always has `#general`
+- **Channel** — one place to talk inside a group. Kind: `text` | `title` (one title, with a
+  spoiler guard) | `watch` (a watch-together session) | `shelf` (a list the group edits)
+- **Member** — a user's place in a group. Role: `owner` | `admin` | `member`
+- **Group message** — one post in a channel, by a member or by Aaru. Server-visible. Never call
+  it a Message, which is the encrypted DM
+- **Mention** — `@handle` or `@aaru` inside a group message. Mentioning `@aaru` is the only way
+  the agent posts in a group
 - **Room** — a watch-together session: invite, countdown, reactions, shared check-off. Aaru
-  does not control anyone's player
+  does not control anyone's player. Since 2026-10-20 it lives in a `watch` channel
 - **Conversation / Message** — an end-to-end encrypted DM thread. The server only ever holds
   ciphertext
 - **Device** — one installed client, the unit for push tokens and Signal keys
@@ -182,15 +193,16 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 ## Later phases (after the P2 gate, see `BACKLOG.md`)
 
 - P3 Tracking: scrobble ingest, Plex/Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events), one-way push to Trakt/MAL/AniList
-- P4 Social: profiles, friends, blocks, invites, friend activity and "Today" stories, push, shared lists
+- P4 Social: profiles, friends, blocks, invites, friend activity and "Today" stories, push, shared lists, groups
 - P5 Gamification: points ledger, levels, streaks, badges, friends-only leaderboard, stats
-- P6 Realtime: WebSocket gateway, libsignal DMs, watch-together rooms, SharePlay
+- P6 Realtime: presence, libsignal DMs, SharePlay (the gateway and watch channels ship with groups)
 - P7 Agent surfaces (M13/M14)
 
 Do not write code for a later phase before the P2 gate, and do not add empty abstractions for it.
 Owner's exceptions are recorded in `BACKLOG.md` decisions (Recap 2026-10-16; Stremio tokens,
 scrobble service and addon 2026-10-19; Discover rows (DISC-001), the Discover tab, Insights
 and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remote approval
+2026-10-20; groups, with minimal friends, the groups gateway and a minimal model provider,
 2026-10-20).
 
 ## Out of scope (do not add unless asked)

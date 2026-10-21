@@ -155,7 +155,12 @@ phase:
 | 3 | `watch_events`, `outbound_connections` (Trakt / MAL / AniList tokens, encrypted) |
 | 4 | `social_friend_requests`, `social_friendships`, `social_blocks`, `social_reports`, `social_invites`, `social_settings`, `apns_devices` |
 | 5 | `points_events`, `user_progress`, `check_ins`, `user_badges` |
-| 6 | `devices`, `signal_identity_keys`, `signal_signed_prekeys`, `signal_onetime_prekeys`, `conversations`, `conversation_members`, `message_envelopes`, `rooms`, `room_members` |
+| 6 | `devices`, `signal_identity_keys`, `signal_signed_prekeys`, `signal_onetime_prekeys`, `conversations`, `conversation_members`, `message_envelopes` |
+
+Groups (pulled forward 2026-10-20) bring `profiles`, `social_friend_requests`,
+`social_friendships`, `social_blocks`, `social_reports` and the `group_*`, `watch_sessions` and
+`agent_replies` tables early; see §Groups. Rooms are `watch` channels, so there is no `rooms`
+table.
 
 Do not store raw provider dumps long-term. Store the job result and the normalized rows.
 
@@ -304,7 +309,9 @@ addon at `/stremio/{token}/*` (3, pulled forward 2026-10-19; outside `/v1` becau
 protocol fixes the paths), `/v1/social/*`
 and `/v1/devices` (airing push, pulled into 2 on 2026-10-15), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
 with GAM-006a and grew with GAM-006c, 2026-10-20), `/v1/ws`,
-`/v1/keys/*`, `/v1/conversations/*`, `/v1/rooms/*` (6).
+`/v1/keys/*`, `/v1/conversations/*` (6). Pulled forward with groups (2026-10-20):
+`/v1/me/profile`, `/v1/social/*` (friends, requests, blocks, reports), `/v1/groups/*`,
+`/v1/group-invites/*`, `/v1/me/group-invites`, `/v1/realtime/ticket` and `/v1/ws`.
 
 ### Recap stats (GAM-006a)
 
@@ -687,6 +694,9 @@ protocol ModelProviding: Sendable {
 - Anthropic adapter is the default. Keys live in environment config.
 - A user may supply their own encrypted key, which lifts the fair-use cap.
 - `agent_usage` meters spend per user per day from the first call, not later.
+- First consumer (GRP-010, 2026-10-20): `@aaru` replies in groups, on `claude-haiku-5-5`. The
+  adapter sends no `temperature`, `top_p`, `top_k` or assistant prefill; Haiku 5.5 rejects
+  them (`platform/infra/docs/llm-haiku-trial.md`). User keys wait for AG-007.
 
 ## Auth
 
@@ -834,6 +844,60 @@ Rules:
 - Friend activity and "Today" stories read `watch_events` and journaled progress, filtered by
   friendship and settings at query time. There is no fan-out table.
 
+## Groups (pulled forward 2026-10-20)
+
+A group is a friends-only space with channels, like a small Discord server. Backlog:
+GRP-001…GRP-012.
+
+| Table | Shape |
+| --- | --- |
+| `profiles` | `user_id`, `handle` (unique, `^[a-z0-9_]{3,20}$`), display name |
+| `groups` | name. Ownership is the one `owner` member row (unique partial index); delete is hard and cascades |
+| `group_members` | group, user, role `owner` / `admin` / `member`, `joined_at`; `muted` (GRP-012), `share_progress` (GRP-007, default off) |
+| `group_invites` | group, inviter, invitee. Pending only: accepted becomes a member row, declined or cancelled is deleted |
+| `group_channels` | group, kind `text` / `title` / `watch` / `shelf`, name, topic, position, `is_default`, `title_id` (required for `title`) |
+| `group_messages` | channel, author (null once the account is deleted), body (≤ 4,000), `mentions`, `mentions_agent`, `client_nonce`, `edited_at`, `deleted_at`, spoiler season and episode or `spoiler_ending` (GRP-007); `author_kind` `user` / `agent` (an agent message has no author), `components` (title cards), `reply_to` (GRP-011) |
+| `group_read_state` | user, channel, `last_read_at`. Unread and mention counts are counted from it, never stored |
+| `group_channel_items` | shelf channel, title, `added_by`, position |
+| `watch_sessions` | watch channel, title, season, episode, `created_by`, `starts_at`, `ended_at`. One open per channel. State is derived: lobby, countdown until `starts_at`, live, ended. `watch_ready` holds who is ready |
+| `agent_replies` | the job row for one `@aaru` mention, claimed with a lease like imports; `capped` and `skipped` rows record mentions over the fair-use cap |
+| `agent_usage` | user, UTC day, requests, input and output tokens |
+
+Rules:
+
+- **Friends only.** An invite needs an accepted friendship and no block either way. There are
+  no invite links and no discoverable groups.
+- **A non-member gets `404`** for the group, its channels and its messages, the same as a group
+  that does not exist. Every query is scoped by membership in the data layer (X-011).
+- **Server-visible, and said so.** Group messages are plain rows. Every channel header carries
+  a "not end-to-end" label. DMs are a different system (below) and never share a table, type or
+  route with group messages.
+- `#general` is created with the group in one transaction and can never be deleted.
+- **Blocks inside a group:** both people can stay members. The blocker's client collapses the
+  blocked member's messages, and neither can invite the other.
+- Writes go through REST. After commit, the service publishes an envelope to the realtime hub.
+  A client that reconnects reads REST `after=` its last message, so the socket is never the
+  source of truth. Posts carry a `client_nonce`, which makes retries idempotent.
+- **Channel kinds** add behaviour, not separate chat systems:
+  - `title`: a message is stamped with the author's furthest episode (or the ending once they
+    finished), by hand, or not at all, and a reader who is behind sees it veiled. Finishing the
+    title unveils everything. The stamp says where its author is, so only the author ever sees
+    it; readers get `veiled` and nothing more. The header lists the progress of members who
+    switched on `share_progress` for that group, and nobody else.
+  - `shelf`: a list the members edit together. Separate from `lists`, which stay single-owner;
+    the two share a renderer. "Add to my library" is the viewer's own journaled tap.
+  - `watch`: the watch-together room (below) living in a channel: one open party at a time, a
+    ready list, a countdown every client runs against `serverTime`, reactions from a fixed set
+    over the socket, and "Mark watched for me", which ticks only the tapper's library through
+    `LibraryService`.
+- **`@aaru`.** A mention enqueues an `agent_replies` row. The worker builds context from the
+  channel's last 30 messages, the channel's title, session or shelf, and the tagger's own
+  library. It never reads another member's library. Tools are read-only. The reply is a group
+  message with author kind `agent` and catalog components only. Card buttons are the viewer's
+  own taps, so the agent has no write path. Per-user and per-group caps apply before any model
+  call.
+- **Push** for mentions and invites carries no message text, only who, where and a deep link.
+
 ## Gamification (Phase 5)
 
 Modelled on Norviq `gamification_xp_events` and Loci `points_events`.
@@ -860,9 +924,17 @@ Modelled on Norviq `gamification_xp_events` and Loci `points_events`.
 
 ### Realtime gateway
 
-- `GET /v1/ws` behind the same JWT as `/v1`.
-- One in-process `ConnectionManager` actor keyed by user, as in LuminaVaultServer. It carries
-  presence, room events, and message-arrival notices.
+- `GET /v1/ws` behind the same session as `/v1`. It ships early, with groups (GRP-006): group
+  envelopes first, presence and DM notices in Phase 6.
+- Apple clients send the bearer token on the upgrade. The web cannot, because its session token
+  is in an HttpOnly cookie, so a server function fetches a single-use ticket valid for 60 s from
+  `POST /v1/realtime/ticket` and the browser connects with it. A ticket only works from an
+  allowed `Origin` (`REALTIME_ORIGINS`); a bearer upgrade cannot come from a browser.
+- One in-process hub actor (`RealtimeHub`) keyed by user, as LuminaVaultServer's
+  `ConnectionManager`. A group event goes to every member's sockets and the client filters by
+  channel; there is no subscribe step. It carries group events, then presence, room events,
+  and message-arrival notices. Frames are `RealtimeEvent` in `openapi.yaml`; the server pings
+  every 25 s.
 - **Single replica** is assumed and documented. Cross-pod fan-out (Valkey pub/sub) is added
   when a second replica is needed, not before.
 - The template `/ws` echo is deleted in SRV-001; this is a fresh gateway.
@@ -888,8 +960,8 @@ server never sees plaintext.
 
 ### Watch together
 
-- Rooms (`rooms`, `room_members`) are created from a title or episode. Members are invited from
-  friends.
+- Since 2026-10-20 a room is a `watch` channel inside a group (GRP-009), with its session in
+  `watch_sessions`. Members come from the group, which is friends-only.
 - A room runs over `/v1/ws`: a countdown to "press play", reactions, and a shared check-off at
   the end that writes each member's own progress through the normal data layer.
 - Aaru owns no player, so it does not sync playback. It can show drift from scrobbles ("Ana is
@@ -913,6 +985,14 @@ server never sees plaintext.
   the server never POSTs anywhere else. The same airing job fans out to APNs devices and browser
   subscriptions behind `WebPushSending` (named for the wire format). The web's `public/sw.js` has
   no fetch handler: it shows the alert and opens the same-origin path the alert carries.
+- Group alerts (GRP-012): `notification_settings.group_mentions` and `group_invites`, off until
+  turned on like `airing`, and `group_members.muted` per group (`PUT /v1/groups/{id}/me`). A post
+  alerts the members it tags, unless they muted the group, turned mentions off, or blocked the
+  author; a retried post and a repeat invite alert nobody. Alerts go out inline through
+  `UserPush`, best effort, like agent requests. The payload names who and where, never the
+  message: "{name} mentioned you in #{channel}" with `groupId`, `channelId` and
+  `url` `aaru://group/{g}/channel/{c}`; an invite carries `aaru://groups`. iOS routes the tap
+  through `PushInbox` and `GroupLink`; the web opens `/app/groups/{g}/{c}`.
 
 ## Phasing
 
@@ -924,7 +1004,7 @@ server never sees plaintext.
 | 1 — Basics | Auth, catalog (TMDB, Open Library, AniList), library, action journal, TV/anime progress, lists, shelves, calendar, Up Next | API complete for a personal tracker |
 | 2 — Clients, widgets, imports | iOS + Mac app, widgets + Live Activity, web client, Trakt/CSV/CAT/TV Time/MAL/AniList imports | **Basics done:** beta app and beta web usable end to end, widgets work |
 | 3 — Tracking integrations | Scrobble ingest, Plex/Jellyfin webhooks, Stremio addon, outbound Trakt/MAL/AniList | Scrobble from at least one player lands as journaled progress |
-| 4 — Social | Profiles, friends, blocks, invites, friend activity, push | Two accounts can friend, see each other's activity, and block cleanly |
+| 4 — Social | Profiles, friends, blocks, invites, friend activity, push, groups | Two accounts can friend, see each other's activity, and block cleanly |
 | 5 — Gamification | Points ledger, levels, streaks, badges, friend leaderboards, stats | Replaying any event earns nothing twice |
 | 6 — Realtime, DMs, rooms | WebSocket gateway, libsignal DMs, watch-together rooms, SharePlay | Server stores only ciphertext; a room can count down and check off together |
 | 7 — Agent surfaces | Composer, The Field, tool layer, capture, App Intents, MCP, remote approval (M13, M14) | See M13/M14 in `BACKLOG.md` |
@@ -940,7 +1020,9 @@ the only allowance. Exception by the owner's call (2026-10-19): agent tokens for
 scrobble service, and the Stremio addon. And (2026-10-20): Discover rows (DISC-001) and the Discover
 tab/page on them, Insights (GAM-006c, part of P5's stats) and Home's stats strip, with no new
 tables. And (2026-10-20): agent connections, MCP with its OAuth front door, and remote
-plans/approvals (OUT-001/002/004, AG-001's tools, AG-003's remote-plan slice).
+plans/approvals (OUT-001/002/004, AG-001's tools, AG-003's remote-plan slice). Exception by the
+owner's call (2026-10-20): groups, with minimal handles, friends and blocks, the `/v1/ws` gateway
+for group events, and a minimal model provider for `@aaru`.
 
 ## Deployment
 

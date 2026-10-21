@@ -9,7 +9,10 @@ struct RootView: View {
     let library: LibraryModel
     let lists: ListsModel
     let imports: ImportsModel
+    let groups: GroupsModel
+    let realtime: RealtimeClient
     @Environment(SessionStore.self) private var session
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var tab: AppTab = .home
@@ -34,12 +37,31 @@ struct RootView: View {
                         Tab(destination.title, systemImage: destination.symbol, value: destination) {
                             screen(for: destination)
                         }
+                        .badge(destination == .groups ? groups.mentionTotal : 0)
                     }
                 }
                 .tabViewStyle(.sidebarAdaptable)
                 .sheet(item: $linkedPlan) { link in
                     if let api {
                         PlanSheet(api: api, id: link.id) { linkedPlan = nil }
+                    }
+                }
+                // Screens outside the tab (a title's "Discuss in a group…") reach groups through this.
+                .environment(groups)
+                .onChange(of: groups.openRequest) { _, request in
+                    if request != nil {
+                        tab = .groups
+                    }
+                }
+                // The tab's mention badge needs the counts before the tab is opened.
+                .task { await groups.load() }
+                // The socket is open while the app is active, and its events keep groups current.
+                .task { await groups.follow() }
+                .task(id: scenePhase) {
+                    if scenePhase == .background {
+                        realtime.stop()
+                    } else {
+                        realtime.start()
                     }
                 }
                 .sheet(item: $linkedTitle) { link in
@@ -89,6 +111,8 @@ struct RootView: View {
                 library.reset()
                 lists.reset()
                 imports.reset()
+                groups.reset()
+                realtime.reset()
                 HomeCache().clear()
                 WidgetSnapshotStore.clear()
                 WidgetCenter.shared.reloadAllTimelines()
@@ -109,9 +133,18 @@ struct RootView: View {
             linkedTitle = LinkedTitle(id: id)
             PushInbox.shared.libraryItemID = nil
         }
+        .onChange(of: PushInbox.shared.groupLink, initial: true) { _, url in
+            guard session.isSignedIn, let url else { return }
+            openGroup(url)
+            PushInbox.shared.groupLink = nil
+        }
         .onOpenURL { url in
-            guard session.isSignedIn, let id = WidgetLink.libraryItemId(in: url) else { return }
-            linkedTitle = LinkedTitle(id: id)
+            guard session.isSignedIn else { return }
+            if let id = WidgetLink.libraryItemId(in: url) {
+                linkedTitle = LinkedTitle(id: id)
+            } else {
+                openGroup(url)
+            }
         }
         .alert(
             "Could not sign in",
@@ -127,9 +160,19 @@ struct RootView: View {
         }
     }
 
+    /// A group alert or link: the channel it names, or the Groups tab (GRP-012).
+    private func openGroup(_ url: URL) {
+        switch GroupLink(url) {
+        case .groups?: tab = .groups
+        // The Groups tab opens itself for a channel request.
+        case let .channel(request)?: groups.openRequest = request
+        case nil: break
+        }
+    }
+
     /// The app's destinations, in tab-bar and sidebar order.
     enum AppTab: String, CaseIterable, Identifiable {
-        case home, discover, library, calendar, lists, settings
+        case home, discover, library, calendar, lists, groups, settings
 
         var id: String {
             rawValue
@@ -142,6 +185,7 @@ struct RootView: View {
             case .library: "Library"
             case .calendar: "Calendar"
             case .lists: "Lists"
+            case .groups: "Groups"
             case .settings: "Settings"
             }
         }
@@ -153,6 +197,7 @@ struct RootView: View {
             case .library: "books.vertical"
             case .calendar: "calendar"
             case .lists: "list.bullet.rectangle"
+            case .groups: "bubble.left.and.bubble.right"
             case .settings: "gearshape"
             }
         }
@@ -180,6 +225,8 @@ struct RootView: View {
             NavigationStack {
                 ListsView(lists: lists, library: library, api: api)
             }
+        case .groups:
+            GroupsScreen(groups: groups)
         case .settings:
             SettingsView(
                 api: api, imports: imports, library: library, lists: lists,
@@ -203,6 +250,9 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil))
-        .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
+    RootView(
+        api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil),
+        groups: GroupsModel(api: nil, realtime: nil), realtime: RealtimeClient(baseURL: nil) { nil }
+    )
+    .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
 }

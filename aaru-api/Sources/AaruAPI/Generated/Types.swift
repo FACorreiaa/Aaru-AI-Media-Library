@@ -56,6 +56,222 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
     func deleteAccount(_ input: Operations.DeleteAccount.Input) async throws -> Operations.DeleteAccount.Output
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/profile`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
+    func updateProfile(_ input: Operations.UpdateProfile.Input) async throws -> Operations.UpdateProfile.Output
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    ///
+    /// - Remark: HTTP `GET /v1/social/users/{handle}`.
+    /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
+    func getSocialUser(_ input: Operations.GetSocialUser.Input) async throws -> Operations.GetSocialUser.Output
+    /// Pending requests to you and from you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)`.
+    func listFriendRequests(_ input: Operations.ListFriendRequests.Input) async throws -> Operations.ListFriendRequests.Output
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
+    func sendFriendRequest(_ input: Operations.SendFriendRequest.Input) async throws -> Operations.SendFriendRequest.Output
+    /// Decline a request to you, or cancel one you sent. The other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friend-requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)`.
+    func withdrawFriendRequest(_ input: Operations.WithdrawFriendRequest.Input) async throws -> Operations.WithdrawFriendRequest.Output
+    /// - Remark: HTTP `POST /v1/social/friend-requests/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)`.
+    func acceptFriendRequest(_ input: Operations.AcceptFriendRequest.Input) async throws -> Operations.AcceptFriendRequest.Output
+    /// Your friends, by handle.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)`.
+    func listFriends(_ input: Operations.ListFriends.Input) async throws -> Operations.ListFriends.Output
+    /// Unfriend. Silent; the other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friends/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)`.
+    func removeFriend(_ input: Operations.RemoveFriend.Input) async throws -> Operations.RemoveFriend.Output
+    /// People you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/social/blocks`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)`.
+    func listBlocks(_ input: Operations.ListBlocks.Input) async throws -> Operations.ListBlocks.Output
+    /// Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
+    ///
+    /// - Remark: HTTP `PUT /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)`.
+    func blockUser(_ input: Operations.BlockUser.Input) async throws -> Operations.BlockUser.Output
+    /// - Remark: HTTP `DELETE /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)`.
+    func unblockUser(_ input: Operations.UnblockUser.Input) async throws -> Operations.UnblockUser.Output
+    /// Report a user to Aaru. The user is not told.
+    ///
+    /// - Remark: HTTP `POST /v1/social/reports`.
+    /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)`.
+    func reportUser(_ input: Operations.ReportUser.Input) async throws -> Operations.ReportUser.Output
+    /// Your groups, in the order you joined them, with unread and mention counts.
+    ///
+    /// - Remark: HTTP `GET /v1/groups`.
+    /// - Remark: Generated from `#/paths//v1/groups/get(listGroups)`.
+    func listGroups(_ input: Operations.ListGroups.Input) async throws -> Operations.ListGroups.Output
+    /// Create a group you own, with a
+    ///
+    /// - Remark: HTTP `POST /v1/groups`.
+    /// - Remark: Generated from `#/paths//v1/groups/post(createGroup)`.
+    func createGroup(_ input: Operations.CreateGroup.Input) async throws -> Operations.CreateGroup.Output
+    /// A group you are in, with its channels, members and pending invites. 404 to anyone else.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/get(getGroup)`.
+    func getGroup(_ input: Operations.GetGroup.Input) async throws -> Operations.GetGroup.Output
+    /// Rename the group. Owner and admins.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/patch(updateGroup)`.
+    func updateGroup(_ input: Operations.UpdateGroup.Input) async throws -> Operations.UpdateGroup.Output
+    /// Delete the group, its channels and every message. Owner only.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/delete(deleteGroup)`.
+    func deleteGroup(_ input: Operations.DeleteGroup.Input) async throws -> Operations.DeleteGroup.Output
+    /// Make a member an admin, or an admin a member. Owner only.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/members/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/patch(updateGroupMember)`.
+    func updateGroupMember(_ input: Operations.UpdateGroupMember.Input) async throws -> Operations.UpdateGroupMember.Output
+    /// Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/members/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/delete(removeGroupMember)`.
+    func removeGroupMember(_ input: Operations.RemoveGroupMember.Input) async throws -> Operations.RemoveGroupMember.Output
+    /// Make another member the owner. You become an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/transfer`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/transfer/post(transferGroup)`.
+    func transferGroup(_ input: Operations.TransferGroup.Input) async throws -> Operations.TransferGroup.Output
+    /// Invite a friend. Inviting again, or someone already in, changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/invites`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/invites/post(inviteToGroup)`.
+    func inviteToGroup(_ input: Operations.InviteToGroup.Input) async throws -> Operations.InviteToGroup.Output
+    /// Invites waiting for you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/me/group-invites`.
+    /// - Remark: Generated from `#/paths//v1/me/group-invites/get(listGroupInvites)`.
+    func listGroupInvites(_ input: Operations.ListGroupInvites.Input) async throws -> Operations.ListGroupInvites.Output
+    /// Decline an invite to you, or cancel one you sent.
+    ///
+    /// - Remark: HTTP `DELETE /v1/group-invites/{id}`.
+    /// - Remark: Generated from `#/paths//v1/group-invites/{id}/delete(declineGroupInvite)`.
+    func declineGroupInvite(_ input: Operations.DeclineGroupInvite.Input) async throws -> Operations.DeclineGroupInvite.Output
+    /// Join the group.
+    ///
+    /// - Remark: HTTP `POST /v1/group-invites/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/group-invites/{id}/accept/post(acceptGroupInvite)`.
+    func acceptGroupInvite(_ input: Operations.AcceptGroupInvite.Input) async throws -> Operations.AcceptGroupInvite.Output
+    /// Add a text channel. Owner and admins.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/post(createChannel)`.
+    func createChannel(_ input: Operations.CreateChannel.Input) async throws -> Operations.CreateChannel.Output
+    /// Rename a channel or set its topic. Owner and admins.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/channels/{channelId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/patch(updateChannel)`.
+    func updateChannel(_ input: Operations.UpdateChannel.Input) async throws -> Operations.UpdateChannel.Output
+    /// Delete a channel and its messages. The first channel stays. Owner and admins.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/delete(deleteChannel)`.
+    func deleteChannel(_ input: Operations.DeleteChannel.Input) async throws -> Operations.DeleteChannel.Output
+    /// Messages oldest first. Without a cursor, the latest page.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/messages`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/get(listMessages)`.
+    func listMessages(_ input: Operations.ListMessages.Input) async throws -> Operations.ListMessages.Output
+    /// Post a message. A retry with the same clientNonce returns the first message.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/messages`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/post(postMessage)`.
+    func postMessage(_ input: Operations.PostMessage.Input) async throws -> Operations.PostMessage.Output
+    /// Edit your own message.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/patch(editMessage)`.
+    func editMessage(_ input: Operations.EditMessage.Input) async throws -> Operations.EditMessage.Output
+    /// Delete your message, or any message as owner or admin. The row stays, empty.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/delete(deleteMessage)`.
+    func deleteMessage(_ input: Operations.DeleteMessage.Input) async throws -> Operations.DeleteMessage.Output
+    /// Mark the channel read up to a message. The read point never moves back.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/read`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/read/post(markChannelRead)`.
+    func markChannelRead(_ input: Operations.MarkChannelRead.Input) async throws -> Operations.MarkChannelRead.Output
+    /// A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead.
+    ///
+    /// - Remark: HTTP `POST /v1/realtime/ticket`.
+    /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
+    func createRealtimeTicket(_ input: Operations.CreateRealtimeTicket.Input) async throws -> Operations.CreateRealtimeTicket.Output
+    /// Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
+    ///
+    /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
+    func updateMyMembership(_ input: Operations.UpdateMyMembership.Input) async throws -> Operations.UpdateMyMembership.Output
+    /// A title channel's title, your progress, and the progress of members who share theirs in this group.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/progress`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)`.
+    func getChannelProgress(_ input: Operations.GetChannelProgress.Input) async throws -> Operations.GetChannelProgress.Output
+    /// A shelf channel's titles, with your own library status for each.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)`.
+    func listChannelItems(_ input: Operations.ListChannelItems.Input) async throws -> Operations.ListChannelItems.Output
+    /// Add a title to a shelf channel. Any member can; adding one already there changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)`.
+    func addChannelItem(_ input: Operations.AddChannelItem.Input) async throws -> Operations.AddChannelItem.Output
+    /// Take a title off a shelf channel. Any member can.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/items/{titleId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)`.
+    func removeChannelItem(_ input: Operations.RemoveChannelItem.Input) async throws -> Operations.RemoveChannelItem.Output
+    /// A watch channel's newest party, ended or not, and the server's clock for the countdown.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)`.
+    func getWatchParty(_ input: Operations.GetWatchParty.Input) async throws -> Operations.GetWatchParty.Output
+    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
+    func openWatchParty(_ input: Operations.OpenWatchParty.Input) async throws -> Operations.OpenWatchParty.Output
+    /// Say you are ready, or not.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
+    func setWatchPartyReady(_ input: Operations.SetWatchPartyReady.Input) async throws -> Operations.SetWatchPartyReady.Output
+    /// Start the countdown. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/start`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)`.
+    func startWatchParty(_ input: Operations.StartWatchParty.Input) async throws -> Operations.StartWatchParty.Output
+    /// End the party. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
+    func endWatchParty(_ input: Operations.EndWatchParty.Input) async throws -> Operations.EndWatchParty.Output
+    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.
+    func markWatchPartyWatched(_ input: Operations.MarkWatchPartyWatched.Input) async throws -> Operations.MarkWatchPartyWatched.Output
     /// Register this device for pushes. A token registered again moves to this user.
     ///
     /// - Remark: HTTP `PUT /v1/devices`.
@@ -131,6 +347,8 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/get(getNotificationSettings)`.
     func getNotificationSettings(_ input: Operations.GetNotificationSettings.Input) async throws -> Operations.GetNotificationSettings.Output
+    /// Changes the switches sent; any left out keep their value.
+    ///
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
@@ -423,6 +641,568 @@ extension APIProtocol {
     public func deleteAccount(headers: Operations.DeleteAccount.Input.Headers = .init()) async throws -> Operations.DeleteAccount.Output {
         try await deleteAccount(Operations.DeleteAccount.Input(headers: headers))
     }
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/profile`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
+    public func updateProfile(
+        headers: Operations.UpdateProfile.Input.Headers = .init(),
+        body: Operations.UpdateProfile.Input.Body
+    ) async throws -> Operations.UpdateProfile.Output {
+        try await updateProfile(Operations.UpdateProfile.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    ///
+    /// - Remark: HTTP `GET /v1/social/users/{handle}`.
+    /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
+    public func getSocialUser(
+        path: Operations.GetSocialUser.Input.Path,
+        headers: Operations.GetSocialUser.Input.Headers = .init()
+    ) async throws -> Operations.GetSocialUser.Output {
+        try await getSocialUser(Operations.GetSocialUser.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Pending requests to you and from you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)`.
+    public func listFriendRequests(headers: Operations.ListFriendRequests.Input.Headers = .init()) async throws -> Operations.ListFriendRequests.Output {
+        try await listFriendRequests(Operations.ListFriendRequests.Input(headers: headers))
+    }
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
+    public func sendFriendRequest(
+        headers: Operations.SendFriendRequest.Input.Headers = .init(),
+        body: Operations.SendFriendRequest.Input.Body
+    ) async throws -> Operations.SendFriendRequest.Output {
+        try await sendFriendRequest(Operations.SendFriendRequest.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Decline a request to you, or cancel one you sent. The other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friend-requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)`.
+    public func withdrawFriendRequest(
+        path: Operations.WithdrawFriendRequest.Input.Path,
+        headers: Operations.WithdrawFriendRequest.Input.Headers = .init()
+    ) async throws -> Operations.WithdrawFriendRequest.Output {
+        try await withdrawFriendRequest(Operations.WithdrawFriendRequest.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `POST /v1/social/friend-requests/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)`.
+    public func acceptFriendRequest(
+        path: Operations.AcceptFriendRequest.Input.Path,
+        headers: Operations.AcceptFriendRequest.Input.Headers = .init()
+    ) async throws -> Operations.AcceptFriendRequest.Output {
+        try await acceptFriendRequest(Operations.AcceptFriendRequest.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Your friends, by handle.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)`.
+    public func listFriends(headers: Operations.ListFriends.Input.Headers = .init()) async throws -> Operations.ListFriends.Output {
+        try await listFriends(Operations.ListFriends.Input(headers: headers))
+    }
+    /// Unfriend. Silent; the other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friends/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)`.
+    public func removeFriend(
+        path: Operations.RemoveFriend.Input.Path,
+        headers: Operations.RemoveFriend.Input.Headers = .init()
+    ) async throws -> Operations.RemoveFriend.Output {
+        try await removeFriend(Operations.RemoveFriend.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// People you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/social/blocks`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)`.
+    public func listBlocks(headers: Operations.ListBlocks.Input.Headers = .init()) async throws -> Operations.ListBlocks.Output {
+        try await listBlocks(Operations.ListBlocks.Input(headers: headers))
+    }
+    /// Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
+    ///
+    /// - Remark: HTTP `PUT /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)`.
+    public func blockUser(
+        path: Operations.BlockUser.Input.Path,
+        headers: Operations.BlockUser.Input.Headers = .init()
+    ) async throws -> Operations.BlockUser.Output {
+        try await blockUser(Operations.BlockUser.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `DELETE /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)`.
+    public func unblockUser(
+        path: Operations.UnblockUser.Input.Path,
+        headers: Operations.UnblockUser.Input.Headers = .init()
+    ) async throws -> Operations.UnblockUser.Output {
+        try await unblockUser(Operations.UnblockUser.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Report a user to Aaru. The user is not told.
+    ///
+    /// - Remark: HTTP `POST /v1/social/reports`.
+    /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)`.
+    public func reportUser(
+        headers: Operations.ReportUser.Input.Headers = .init(),
+        body: Operations.ReportUser.Input.Body
+    ) async throws -> Operations.ReportUser.Output {
+        try await reportUser(Operations.ReportUser.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Your groups, in the order you joined them, with unread and mention counts.
+    ///
+    /// - Remark: HTTP `GET /v1/groups`.
+    /// - Remark: Generated from `#/paths//v1/groups/get(listGroups)`.
+    public func listGroups(headers: Operations.ListGroups.Input.Headers = .init()) async throws -> Operations.ListGroups.Output {
+        try await listGroups(Operations.ListGroups.Input(headers: headers))
+    }
+    /// Create a group you own, with a
+    ///
+    /// - Remark: HTTP `POST /v1/groups`.
+    /// - Remark: Generated from `#/paths//v1/groups/post(createGroup)`.
+    public func createGroup(
+        headers: Operations.CreateGroup.Input.Headers = .init(),
+        body: Operations.CreateGroup.Input.Body
+    ) async throws -> Operations.CreateGroup.Output {
+        try await createGroup(Operations.CreateGroup.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// A group you are in, with its channels, members and pending invites. 404 to anyone else.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/get(getGroup)`.
+    public func getGroup(
+        path: Operations.GetGroup.Input.Path,
+        headers: Operations.GetGroup.Input.Headers = .init()
+    ) async throws -> Operations.GetGroup.Output {
+        try await getGroup(Operations.GetGroup.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Rename the group. Owner and admins.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/patch(updateGroup)`.
+    public func updateGroup(
+        path: Operations.UpdateGroup.Input.Path,
+        headers: Operations.UpdateGroup.Input.Headers = .init(),
+        body: Operations.UpdateGroup.Input.Body
+    ) async throws -> Operations.UpdateGroup.Output {
+        try await updateGroup(Operations.UpdateGroup.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete the group, its channels and every message. Owner only.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/delete(deleteGroup)`.
+    public func deleteGroup(
+        path: Operations.DeleteGroup.Input.Path,
+        headers: Operations.DeleteGroup.Input.Headers = .init()
+    ) async throws -> Operations.DeleteGroup.Output {
+        try await deleteGroup(Operations.DeleteGroup.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Make a member an admin, or an admin a member. Owner only.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/members/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/patch(updateGroupMember)`.
+    public func updateGroupMember(
+        path: Operations.UpdateGroupMember.Input.Path,
+        headers: Operations.UpdateGroupMember.Input.Headers = .init(),
+        body: Operations.UpdateGroupMember.Input.Body
+    ) async throws -> Operations.UpdateGroupMember.Output {
+        try await updateGroupMember(Operations.UpdateGroupMember.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/members/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/delete(removeGroupMember)`.
+    public func removeGroupMember(
+        path: Operations.RemoveGroupMember.Input.Path,
+        headers: Operations.RemoveGroupMember.Input.Headers = .init()
+    ) async throws -> Operations.RemoveGroupMember.Output {
+        try await removeGroupMember(Operations.RemoveGroupMember.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Make another member the owner. You become an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/transfer`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/transfer/post(transferGroup)`.
+    public func transferGroup(
+        path: Operations.TransferGroup.Input.Path,
+        headers: Operations.TransferGroup.Input.Headers = .init(),
+        body: Operations.TransferGroup.Input.Body
+    ) async throws -> Operations.TransferGroup.Output {
+        try await transferGroup(Operations.TransferGroup.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Invite a friend. Inviting again, or someone already in, changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/invites`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/invites/post(inviteToGroup)`.
+    public func inviteToGroup(
+        path: Operations.InviteToGroup.Input.Path,
+        headers: Operations.InviteToGroup.Input.Headers = .init(),
+        body: Operations.InviteToGroup.Input.Body
+    ) async throws -> Operations.InviteToGroup.Output {
+        try await inviteToGroup(Operations.InviteToGroup.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Invites waiting for you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/me/group-invites`.
+    /// - Remark: Generated from `#/paths//v1/me/group-invites/get(listGroupInvites)`.
+    public func listGroupInvites(headers: Operations.ListGroupInvites.Input.Headers = .init()) async throws -> Operations.ListGroupInvites.Output {
+        try await listGroupInvites(Operations.ListGroupInvites.Input(headers: headers))
+    }
+    /// Decline an invite to you, or cancel one you sent.
+    ///
+    /// - Remark: HTTP `DELETE /v1/group-invites/{id}`.
+    /// - Remark: Generated from `#/paths//v1/group-invites/{id}/delete(declineGroupInvite)`.
+    public func declineGroupInvite(
+        path: Operations.DeclineGroupInvite.Input.Path,
+        headers: Operations.DeclineGroupInvite.Input.Headers = .init()
+    ) async throws -> Operations.DeclineGroupInvite.Output {
+        try await declineGroupInvite(Operations.DeclineGroupInvite.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Join the group.
+    ///
+    /// - Remark: HTTP `POST /v1/group-invites/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/group-invites/{id}/accept/post(acceptGroupInvite)`.
+    public func acceptGroupInvite(
+        path: Operations.AcceptGroupInvite.Input.Path,
+        headers: Operations.AcceptGroupInvite.Input.Headers = .init()
+    ) async throws -> Operations.AcceptGroupInvite.Output {
+        try await acceptGroupInvite(Operations.AcceptGroupInvite.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Add a text channel. Owner and admins.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/post(createChannel)`.
+    public func createChannel(
+        path: Operations.CreateChannel.Input.Path,
+        headers: Operations.CreateChannel.Input.Headers = .init(),
+        body: Operations.CreateChannel.Input.Body
+    ) async throws -> Operations.CreateChannel.Output {
+        try await createChannel(Operations.CreateChannel.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Rename a channel or set its topic. Owner and admins.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/channels/{channelId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/patch(updateChannel)`.
+    public func updateChannel(
+        path: Operations.UpdateChannel.Input.Path,
+        headers: Operations.UpdateChannel.Input.Headers = .init(),
+        body: Operations.UpdateChannel.Input.Body
+    ) async throws -> Operations.UpdateChannel.Output {
+        try await updateChannel(Operations.UpdateChannel.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete a channel and its messages. The first channel stays. Owner and admins.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/delete(deleteChannel)`.
+    public func deleteChannel(
+        path: Operations.DeleteChannel.Input.Path,
+        headers: Operations.DeleteChannel.Input.Headers = .init()
+    ) async throws -> Operations.DeleteChannel.Output {
+        try await deleteChannel(Operations.DeleteChannel.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Messages oldest first. Without a cursor, the latest page.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/messages`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/get(listMessages)`.
+    public func listMessages(
+        path: Operations.ListMessages.Input.Path,
+        query: Operations.ListMessages.Input.Query = .init(),
+        headers: Operations.ListMessages.Input.Headers = .init()
+    ) async throws -> Operations.ListMessages.Output {
+        try await listMessages(Operations.ListMessages.Input(
+            path: path,
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Post a message. A retry with the same clientNonce returns the first message.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/messages`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/post(postMessage)`.
+    public func postMessage(
+        path: Operations.PostMessage.Input.Path,
+        headers: Operations.PostMessage.Input.Headers = .init(),
+        body: Operations.PostMessage.Input.Body
+    ) async throws -> Operations.PostMessage.Output {
+        try await postMessage(Operations.PostMessage.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Edit your own message.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/patch(editMessage)`.
+    public func editMessage(
+        path: Operations.EditMessage.Input.Path,
+        headers: Operations.EditMessage.Input.Headers = .init(),
+        body: Operations.EditMessage.Input.Body
+    ) async throws -> Operations.EditMessage.Output {
+        try await editMessage(Operations.EditMessage.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete your message, or any message as owner or admin. The row stays, empty.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/delete(deleteMessage)`.
+    public func deleteMessage(
+        path: Operations.DeleteMessage.Input.Path,
+        headers: Operations.DeleteMessage.Input.Headers = .init()
+    ) async throws -> Operations.DeleteMessage.Output {
+        try await deleteMessage(Operations.DeleteMessage.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Mark the channel read up to a message. The read point never moves back.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/read`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/read/post(markChannelRead)`.
+    public func markChannelRead(
+        path: Operations.MarkChannelRead.Input.Path,
+        headers: Operations.MarkChannelRead.Input.Headers = .init(),
+        body: Operations.MarkChannelRead.Input.Body
+    ) async throws -> Operations.MarkChannelRead.Output {
+        try await markChannelRead(Operations.MarkChannelRead.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead.
+    ///
+    /// - Remark: HTTP `POST /v1/realtime/ticket`.
+    /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
+    public func createRealtimeTicket(headers: Operations.CreateRealtimeTicket.Input.Headers = .init()) async throws -> Operations.CreateRealtimeTicket.Output {
+        try await createRealtimeTicket(Operations.CreateRealtimeTicket.Input(headers: headers))
+    }
+    /// Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
+    ///
+    /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
+    public func updateMyMembership(
+        path: Operations.UpdateMyMembership.Input.Path,
+        headers: Operations.UpdateMyMembership.Input.Headers = .init(),
+        body: Operations.UpdateMyMembership.Input.Body
+    ) async throws -> Operations.UpdateMyMembership.Output {
+        try await updateMyMembership(Operations.UpdateMyMembership.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// A title channel's title, your progress, and the progress of members who share theirs in this group.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/progress`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)`.
+    public func getChannelProgress(
+        path: Operations.GetChannelProgress.Input.Path,
+        headers: Operations.GetChannelProgress.Input.Headers = .init()
+    ) async throws -> Operations.GetChannelProgress.Output {
+        try await getChannelProgress(Operations.GetChannelProgress.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// A shelf channel's titles, with your own library status for each.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)`.
+    public func listChannelItems(
+        path: Operations.ListChannelItems.Input.Path,
+        headers: Operations.ListChannelItems.Input.Headers = .init()
+    ) async throws -> Operations.ListChannelItems.Output {
+        try await listChannelItems(Operations.ListChannelItems.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Add a title to a shelf channel. Any member can; adding one already there changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)`.
+    public func addChannelItem(
+        path: Operations.AddChannelItem.Input.Path,
+        headers: Operations.AddChannelItem.Input.Headers = .init(),
+        body: Operations.AddChannelItem.Input.Body
+    ) async throws -> Operations.AddChannelItem.Output {
+        try await addChannelItem(Operations.AddChannelItem.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Take a title off a shelf channel. Any member can.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/items/{titleId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)`.
+    public func removeChannelItem(
+        path: Operations.RemoveChannelItem.Input.Path,
+        headers: Operations.RemoveChannelItem.Input.Headers = .init()
+    ) async throws -> Operations.RemoveChannelItem.Output {
+        try await removeChannelItem(Operations.RemoveChannelItem.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// A watch channel's newest party, ended or not, and the server's clock for the countdown.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)`.
+    public func getWatchParty(
+        path: Operations.GetWatchParty.Input.Path,
+        headers: Operations.GetWatchParty.Input.Headers = .init()
+    ) async throws -> Operations.GetWatchParty.Output {
+        try await getWatchParty(Operations.GetWatchParty.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
+    public func openWatchParty(
+        path: Operations.OpenWatchParty.Input.Path,
+        headers: Operations.OpenWatchParty.Input.Headers = .init(),
+        body: Operations.OpenWatchParty.Input.Body
+    ) async throws -> Operations.OpenWatchParty.Output {
+        try await openWatchParty(Operations.OpenWatchParty.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Say you are ready, or not.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
+    public func setWatchPartyReady(
+        path: Operations.SetWatchPartyReady.Input.Path,
+        headers: Operations.SetWatchPartyReady.Input.Headers = .init(),
+        body: Operations.SetWatchPartyReady.Input.Body
+    ) async throws -> Operations.SetWatchPartyReady.Output {
+        try await setWatchPartyReady(Operations.SetWatchPartyReady.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Start the countdown. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/start`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)`.
+    public func startWatchParty(
+        path: Operations.StartWatchParty.Input.Path,
+        headers: Operations.StartWatchParty.Input.Headers = .init(),
+        body: Operations.StartWatchParty.Input.Body? = nil
+    ) async throws -> Operations.StartWatchParty.Output {
+        try await startWatchParty(Operations.StartWatchParty.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// End the party. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
+    public func endWatchParty(
+        path: Operations.EndWatchParty.Input.Path,
+        headers: Operations.EndWatchParty.Input.Headers = .init()
+    ) async throws -> Operations.EndWatchParty.Output {
+        try await endWatchParty(Operations.EndWatchParty.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.
+    public func markWatchPartyWatched(
+        path: Operations.MarkWatchPartyWatched.Input.Path,
+        headers: Operations.MarkWatchPartyWatched.Input.Headers = .init()
+    ) async throws -> Operations.MarkWatchPartyWatched.Output {
+        try await markWatchPartyWatched(Operations.MarkWatchPartyWatched.Input(
+            path: path,
+            headers: headers
+        ))
+    }
     /// Register this device for pushes. A token registered again moves to this user.
     ///
     /// - Remark: HTTP `PUT /v1/devices`.
@@ -626,6 +1406,8 @@ extension APIProtocol {
     public func getNotificationSettings(headers: Operations.GetNotificationSettings.Input.Headers = .init()) async throws -> Operations.GetNotificationSettings.Output {
         try await getNotificationSettings(Operations.GetNotificationSettings.Input(headers: headers))
     }
+    /// Changes the switches sent; any left out keep their value.
+    ///
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     public func updateNotificationSettings(
@@ -2318,15 +3100,62 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/NotificationSettings/airing`.
             public var airing: Swift.Bool
+            /// Push when someone tags you in a group you have not muted. The alert never holds the message.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NotificationSettings/groupMentions`.
+            public var groupMentions: Swift.Bool
+            /// Push when a friend invites you into a group.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NotificationSettings/groupInvites`.
+            public var groupInvites: Swift.Bool
             /// Creates a new `NotificationSettings`.
             ///
             /// - Parameters:
             ///   - airing: Push when a new episode of a show you are watching airs.
-            public init(airing: Swift.Bool) {
+            ///   - groupMentions: Push when someone tags you in a group you have not muted. The alert never holds the message.
+            ///   - groupInvites: Push when a friend invites you into a group.
+            public init(
+                airing: Swift.Bool,
+                groupMentions: Swift.Bool,
+                groupInvites: Swift.Bool
+            ) {
                 self.airing = airing
+                self.groupMentions = groupMentions
+                self.groupInvites = groupInvites
             }
             public enum CodingKeys: String, CodingKey {
                 case airing
+                case groupMentions
+                case groupInvites
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/NotificationSettingsUpdate`.
+        public struct NotificationSettingsUpdate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NotificationSettingsUpdate/airing`.
+            public var airing: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/NotificationSettingsUpdate/groupMentions`.
+            public var groupMentions: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/NotificationSettingsUpdate/groupInvites`.
+            public var groupInvites: Swift.Bool?
+            /// Creates a new `NotificationSettingsUpdate`.
+            ///
+            /// - Parameters:
+            ///   - airing:
+            ///   - groupMentions:
+            ///   - groupInvites:
+            public init(
+                airing: Swift.Bool? = nil,
+                groupMentions: Swift.Bool? = nil,
+                groupInvites: Swift.Bool? = nil
+            ) {
+                self.airing = airing
+                self.groupMentions = groupMentions
+                self.groupInvites = groupInvites
+            }
+            public enum CodingKeys: String, CodingKey {
+                case airing
+                case groupMentions
+                case groupInvites
             }
         }
         /// - Remark: Generated from `#/components/schemas/GoogleSignInRequest`.
@@ -2391,6 +3220,10 @@ public enum Components {
             public var userId: Swift.String
             /// - Remark: Generated from `#/components/schemas/Me/displayName`.
             public var displayName: Swift.String?
+            /// Absent until the user claims one in PUT /v1/me/profile.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Me/handle`.
+            public var handle: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Me/ProvidersPayload`.
             @frozen public enum ProvidersPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case apple = "apple"
@@ -2406,20 +3239,1396 @@ public enum Components {
             /// - Parameters:
             ///   - userId:
             ///   - displayName:
+            ///   - handle: Absent until the user claims one in PUT /v1/me/profile.
             ///   - providers:
             public init(
                 userId: Swift.String,
                 displayName: Swift.String? = nil,
+                handle: Swift.String? = nil,
                 providers: Components.Schemas.Me.ProvidersPayload
             ) {
                 self.userId = userId
                 self.displayName = displayName
+                self.handle = handle
                 self.providers = providers
             }
             public enum CodingKeys: String, CodingKey {
                 case userId
                 case displayName
+                case handle
                 case providers
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ProfileUpdate`.
+        public struct ProfileUpdate: Codable, Hashable, Sendable {
+            /// 3–20 of a–z, 0–9 and _. Stored lowercase.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileUpdate/handle`.
+            public var handle: Swift.String
+            /// Absent leaves it unchanged; empty clears it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileUpdate/displayName`.
+            public var displayName: Swift.String?
+            /// Creates a new `ProfileUpdate`.
+            ///
+            /// - Parameters:
+            ///   - handle: 3–20 of a–z, 0–9 and _. Stored lowercase.
+            ///   - displayName: Absent leaves it unchanged; empty clears it.
+            public init(
+                handle: Swift.String,
+                displayName: Swift.String? = nil
+            ) {
+                self.handle = handle
+                self.displayName = displayName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case handle
+                case displayName
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SocialUser`.
+        public struct SocialUser: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SocialUser/userId`.
+            public var userId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SocialUser/handle`.
+            public var handle: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SocialUser/displayName`.
+            public var displayName: Swift.String?
+            /// Creates a new `SocialUser`.
+            ///
+            /// - Parameters:
+            ///   - userId:
+            ///   - handle:
+            ///   - displayName:
+            public init(
+                userId: Swift.String,
+                handle: Swift.String,
+                displayName: Swift.String? = nil
+            ) {
+                self.userId = userId
+                self.handle = handle
+                self.displayName = displayName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case userId
+                case handle
+                case displayName
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SocialUserView`.
+        public struct SocialUserView: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SocialUserView/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/SocialUserView/relationship`.
+            @frozen public enum RelationshipPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case none = "none"
+                case friend = "friend"
+                case outgoing = "outgoing"
+                case incoming = "incoming"
+                case _self = "self"
+            }
+            /// - Remark: Generated from `#/components/schemas/SocialUserView/relationship`.
+            public var relationship: Components.Schemas.SocialUserView.RelationshipPayload
+            /// Creates a new `SocialUserView`.
+            ///
+            /// - Parameters:
+            ///   - user:
+            ///   - relationship:
+            public init(
+                user: Components.Schemas.SocialUser,
+                relationship: Components.Schemas.SocialUserView.RelationshipPayload
+            ) {
+                self.user = user
+                self.relationship = relationship
+            }
+            public enum CodingKeys: String, CodingKey {
+                case user
+                case relationship
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SocialUserList`.
+        public struct SocialUserList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SocialUserList/items`.
+            public var items: [Components.Schemas.SocialUser]
+            /// Creates a new `SocialUserList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.SocialUser]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendRequest`.
+        public struct FriendRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendRequest/id`.
+            public var id: Swift.String
+            /// The other person.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendRequest/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/FriendRequest/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Creates a new `FriendRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - user: The other person.
+            ///   - createdAt:
+            public init(
+                id: Swift.String,
+                user: Components.Schemas.SocialUser,
+                createdAt: Foundation.Date
+            ) {
+                self.id = id
+                self.user = user
+                self.createdAt = createdAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case user
+                case createdAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendRequests`.
+        public struct FriendRequests: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendRequests/incoming`.
+            public var incoming: [Components.Schemas.FriendRequest]
+            /// - Remark: Generated from `#/components/schemas/FriendRequests/outgoing`.
+            public var outgoing: [Components.Schemas.FriendRequest]
+            /// Creates a new `FriendRequests`.
+            ///
+            /// - Parameters:
+            ///   - incoming:
+            ///   - outgoing:
+            public init(
+                incoming: [Components.Schemas.FriendRequest],
+                outgoing: [Components.Schemas.FriendRequest]
+            ) {
+                self.incoming = incoming
+                self.outgoing = outgoing
+            }
+            public enum CodingKeys: String, CodingKey {
+                case incoming
+                case outgoing
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendRequestCreate`.
+        public struct FriendRequestCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendRequestCreate/handle`.
+            public var handle: Swift.String
+            /// Creates a new `FriendRequestCreate`.
+            ///
+            /// - Parameters:
+            ///   - handle:
+            public init(handle: Swift.String) {
+                self.handle = handle
+            }
+            public enum CodingKeys: String, CodingKey {
+                case handle
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ReportCreate`.
+        public struct ReportCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ReportCreate/userId`.
+            public var userId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ReportCreate/reason`.
+            @frozen public enum ReasonPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case spam = "spam"
+                case harassment = "harassment"
+                case impersonation = "impersonation"
+                case other = "other"
+            }
+            /// - Remark: Generated from `#/components/schemas/ReportCreate/reason`.
+            public var reason: Components.Schemas.ReportCreate.ReasonPayload
+            /// - Remark: Generated from `#/components/schemas/ReportCreate/note`.
+            public var note: Swift.String?
+            /// Creates a new `ReportCreate`.
+            ///
+            /// - Parameters:
+            ///   - userId:
+            ///   - reason:
+            ///   - note:
+            public init(
+                userId: Swift.String,
+                reason: Components.Schemas.ReportCreate.ReasonPayload,
+                note: Swift.String? = nil
+            ) {
+                self.userId = userId
+                self.reason = reason
+                self.note = note
+            }
+            public enum CodingKeys: String, CodingKey {
+                case userId
+                case reason
+                case note
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupRole`.
+        @frozen public enum GroupRole: String, Codable, Hashable, Sendable, CaseIterable {
+            case owner = "owner"
+            case admin = "admin"
+            case member = "member"
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupSummary`.
+        public struct GroupSummary: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/role`.
+            public var role: Components.Schemas.GroupRole
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/defaultChannelId`.
+            public var defaultChannelId: Swift.String
+            /// Messages from others since you last read
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/unread`.
+            public var unread: Swift.Int
+            /// Unread messages that tag you.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/mentions`.
+            public var mentions: Swift.Int
+            /// You show your progress in this group's title channels.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/shareProgress`.
+            public var shareProgress: Swift.Bool
+            /// Mentions in this group send you no alerts.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupSummary/muted`.
+            public var muted: Swift.Bool
+            /// Creates a new `GroupSummary`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - role:
+            ///   - defaultChannelId:
+            ///   - unread: Messages from others since you last read
+            ///   - mentions: Unread messages that tag you.
+            ///   - shareProgress: You show your progress in this group's title channels.
+            ///   - muted: Mentions in this group send you no alerts.
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                role: Components.Schemas.GroupRole,
+                defaultChannelId: Swift.String,
+                unread: Swift.Int,
+                mentions: Swift.Int,
+                shareProgress: Swift.Bool,
+                muted: Swift.Bool
+            ) {
+                self.id = id
+                self.name = name
+                self.role = role
+                self.defaultChannelId = defaultChannelId
+                self.unread = unread
+                self.mentions = mentions
+                self.shareProgress = shareProgress
+                self.muted = muted
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case role
+                case defaultChannelId
+                case unread
+                case mentions
+                case shareProgress
+                case muted
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupList`.
+        public struct GroupList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupList/items`.
+            public var items: [Components.Schemas.GroupSummary]
+            /// Creates a new `GroupList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.GroupSummary]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupMember`.
+        public struct GroupMember: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupMember/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/GroupMember/role`.
+            public var role: Components.Schemas.GroupRole
+            /// - Remark: Generated from `#/components/schemas/GroupMember/joinedAt`.
+            public var joinedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/GroupMember/shareProgress`.
+            public var shareProgress: Swift.Bool
+            /// Creates a new `GroupMember`.
+            ///
+            /// - Parameters:
+            ///   - user:
+            ///   - role:
+            ///   - joinedAt:
+            ///   - shareProgress:
+            public init(
+                user: Components.Schemas.SocialUser,
+                role: Components.Schemas.GroupRole,
+                joinedAt: Foundation.Date,
+                shareProgress: Swift.Bool
+            ) {
+                self.user = user
+                self.role = role
+                self.joinedAt = joinedAt
+                self.shareProgress = shareProgress
+            }
+            public enum CodingKeys: String, CodingKey {
+                case user
+                case role
+                case joinedAt
+                case shareProgress
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Channel`.
+        public struct Channel: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Channel/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Channel/kind`.
+            public var kind: Components.Schemas.ChannelKind
+            /// What a title channel is about.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Channel/title`.
+            public var title: Components.Schemas.TitleSummary?
+            /// Lowercase, dashes for spaces: movie-night.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Channel/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Channel/topic`.
+            public var topic: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Channel/position`.
+            public var position: Swift.Int
+            /// The #general every group starts with. Cannot be deleted.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Channel/isDefault`.
+            public var isDefault: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Channel/unread`.
+            public var unread: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Channel/mentions`.
+            public var mentions: Swift.Int
+            /// Creates a new `Channel`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - title: What a title channel is about.
+            ///   - name: Lowercase, dashes for spaces: movie-night.
+            ///   - topic:
+            ///   - position:
+            ///   - isDefault: The #general every group starts with. Cannot be deleted.
+            ///   - unread:
+            ///   - mentions:
+            public init(
+                id: Swift.String,
+                kind: Components.Schemas.ChannelKind,
+                title: Components.Schemas.TitleSummary? = nil,
+                name: Swift.String,
+                topic: Swift.String? = nil,
+                position: Swift.Int,
+                isDefault: Swift.Bool,
+                unread: Swift.Int,
+                mentions: Swift.Int
+            ) {
+                self.id = id
+                self.kind = kind
+                self.title = title
+                self.name = name
+                self.topic = topic
+                self.position = position
+                self.isDefault = isDefault
+                self.unread = unread
+                self.mentions = mentions
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case title
+                case name
+                case topic
+                case position
+                case isDefault
+                case unread
+                case mentions
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupDetail`.
+        public struct GroupDetail: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupDetail/group`.
+            public var group: Components.Schemas.GroupSummary
+            /// - Remark: Generated from `#/components/schemas/GroupDetail/channels`.
+            public var channels: [Components.Schemas.Channel]
+            /// - Remark: Generated from `#/components/schemas/GroupDetail/members`.
+            public var members: [Components.Schemas.GroupMember]
+            /// Friends invited who have not answered yet.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupDetail/invited`.
+            public var invited: [Components.Schemas.SocialUser]
+            /// @aaru answers in this group. When false, hide it from mentions.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupDetail/agent`.
+            public var agent: Swift.Bool
+            /// Creates a new `GroupDetail`.
+            ///
+            /// - Parameters:
+            ///   - group:
+            ///   - channels:
+            ///   - members:
+            ///   - invited: Friends invited who have not answered yet.
+            ///   - agent: @aaru answers in this group. When false, hide it from mentions.
+            public init(
+                group: Components.Schemas.GroupSummary,
+                channels: [Components.Schemas.Channel],
+                members: [Components.Schemas.GroupMember],
+                invited: [Components.Schemas.SocialUser],
+                agent: Swift.Bool
+            ) {
+                self.group = group
+                self.channels = channels
+                self.members = members
+                self.invited = invited
+                self.agent = agent
+            }
+            public enum CodingKeys: String, CodingKey {
+                case group
+                case channels
+                case members
+                case invited
+                case agent
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupCreate`.
+        public struct GroupCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupCreate/name`.
+            public var name: Swift.String
+            /// Creates a new `GroupCreate`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            public init(name: Swift.String) {
+                self.name = name
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupMemberUpdate`.
+        public struct GroupMemberUpdate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupMemberUpdate/role`.
+            @frozen public enum RolePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case admin = "admin"
+                case member = "member"
+            }
+            /// - Remark: Generated from `#/components/schemas/GroupMemberUpdate/role`.
+            public var role: Components.Schemas.GroupMemberUpdate.RolePayload
+            /// Creates a new `GroupMemberUpdate`.
+            ///
+            /// - Parameters:
+            ///   - role:
+            public init(role: Components.Schemas.GroupMemberUpdate.RolePayload) {
+                self.role = role
+            }
+            public enum CodingKeys: String, CodingKey {
+                case role
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UserRef`.
+        public struct UserRef: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UserRef/userId`.
+            public var userId: Swift.String
+            /// Creates a new `UserRef`.
+            ///
+            /// - Parameters:
+            ///   - userId:
+            public init(userId: Swift.String) {
+                self.userId = userId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case userId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupInvite`.
+        public struct GroupInvite: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupInvite/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/GroupInvite/groupId`.
+            public var groupId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/GroupInvite/groupName`.
+            public var groupName: Swift.String
+            /// - Remark: Generated from `#/components/schemas/GroupInvite/inviter`.
+            public var inviter: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/GroupInvite/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Creates a new `GroupInvite`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - groupId:
+            ///   - groupName:
+            ///   - inviter:
+            ///   - createdAt:
+            public init(
+                id: Swift.String,
+                groupId: Swift.String,
+                groupName: Swift.String,
+                inviter: Components.Schemas.SocialUser,
+                createdAt: Foundation.Date
+            ) {
+                self.id = id
+                self.groupId = groupId
+                self.groupName = groupName
+                self.inviter = inviter
+                self.createdAt = createdAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case groupId
+                case groupName
+                case inviter
+                case createdAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupInviteList`.
+        public struct GroupInviteList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupInviteList/items`.
+            public var items: [Components.Schemas.GroupInvite]
+            /// Creates a new `GroupInviteList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.GroupInvite]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// text: chat. title: one title, with the spoiler guard. watch: watch parties. shelf: a shared list.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChannelKind`.
+        @frozen public enum ChannelKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case text = "text"
+            case title = "title"
+            case watch = "watch"
+            case shelf = "shelf"
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelCreate`.
+        public struct ChannelCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelCreate/kind`.
+            public var kind: Components.Schemas.ChannelKind?
+            /// Required, except a title channel takes its title's name.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelCreate/name`.
+            public var name: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChannelCreate/topic`.
+            public var topic: Swift.String?
+            /// Required for a title channel.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelCreate/title`.
+            public var title: Components.Schemas.MediaRef?
+            /// Creates a new `ChannelCreate`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - name: Required, except a title channel takes its title's name.
+            ///   - topic:
+            ///   - title: Required for a title channel.
+            public init(
+                kind: Components.Schemas.ChannelKind? = nil,
+                name: Swift.String? = nil,
+                topic: Swift.String? = nil,
+                title: Components.Schemas.MediaRef? = nil
+            ) {
+                self.kind = kind
+                self.name = name
+                self.topic = topic
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case name
+                case topic
+                case title
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelUpdate`.
+        public struct ChannelUpdate: Codable, Hashable, Sendable {
+            /// Absent leaves it unchanged.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelUpdate/name`.
+            public var name: Swift.String?
+            /// Absent leaves it unchanged; empty clears it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelUpdate/topic`.
+            public var topic: Swift.String?
+            /// Creates a new `ChannelUpdate`.
+            ///
+            /// - Parameters:
+            ///   - name: Absent leaves it unchanged.
+            ///   - topic: Absent leaves it unchanged; empty clears it.
+            public init(
+                name: Swift.String? = nil,
+                topic: Swift.String? = nil
+            ) {
+                self.name = name
+                self.topic = topic
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case topic
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupMessage`.
+        public struct GroupMessage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/channelId`.
+            public var channelId: Swift.String
+            /// Absent once the author deleted their account.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/author`.
+            public var author: Components.Schemas.SocialUser?
+            /// Empty when deleted.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/body`.
+            public var body: Swift.String
+            /// Members the message tags.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/mentions`.
+            public var mentions: [Swift.String]
+            /// The message tags @aaru.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/mentionsAgent`.
+            public var mentionsAgent: Swift.Bool
+            /// You blocked the author. Show it collapsed.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/fromBlocked`.
+            public var fromBlocked: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/deleted`.
+            public var deleted: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/editedAt`.
+            public var editedAt: Foundation.Date?
+            /// Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/clientNonce`.
+            public var clientNonce: Swift.String?
+            /// Only on your own messages: it says where you are in the title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/spoiler`.
+            public var spoiler: Components.Schemas.SpoilerStamp?
+            /// It may spoil what you have not watched yet: show it veiled until you tap.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/veiled`.
+            public var veiled: Swift.Bool
+            /// Written by @aaru. It has no author.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/fromAgent`.
+            public var fromAgent: Swift.Bool
+            /// The mention an @aaru reply answers.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/replyTo`.
+            public var replyTo: Swift.String?
+            /// Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/components`.
+            public var components: [Components.Schemas.MessageComponent]?
+            /// Creates a new `GroupMessage`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - channelId:
+            ///   - author: Absent once the author deleted their account.
+            ///   - body: Empty when deleted.
+            ///   - mentions: Members the message tags.
+            ///   - mentionsAgent: The message tags @aaru.
+            ///   - fromBlocked: You blocked the author. Show it collapsed.
+            ///   - deleted:
+            ///   - createdAt:
+            ///   - editedAt:
+            ///   - clientNonce: Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.
+            ///   - spoiler: Only on your own messages: it says where you are in the title.
+            ///   - veiled: It may spoil what you have not watched yet: show it veiled until you tap.
+            ///   - fromAgent: Written by @aaru. It has no author.
+            ///   - replyTo: The mention an @aaru reply answers.
+            ///   - components: Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps.
+            public init(
+                id: Swift.String,
+                channelId: Swift.String,
+                author: Components.Schemas.SocialUser? = nil,
+                body: Swift.String,
+                mentions: [Swift.String],
+                mentionsAgent: Swift.Bool,
+                fromBlocked: Swift.Bool,
+                deleted: Swift.Bool,
+                createdAt: Foundation.Date,
+                editedAt: Foundation.Date? = nil,
+                clientNonce: Swift.String? = nil,
+                spoiler: Components.Schemas.SpoilerStamp? = nil,
+                veiled: Swift.Bool,
+                fromAgent: Swift.Bool,
+                replyTo: Swift.String? = nil,
+                components: [Components.Schemas.MessageComponent]? = nil
+            ) {
+                self.id = id
+                self.channelId = channelId
+                self.author = author
+                self.body = body
+                self.mentions = mentions
+                self.mentionsAgent = mentionsAgent
+                self.fromBlocked = fromBlocked
+                self.deleted = deleted
+                self.createdAt = createdAt
+                self.editedAt = editedAt
+                self.clientNonce = clientNonce
+                self.spoiler = spoiler
+                self.veiled = veiled
+                self.fromAgent = fromAgent
+                self.replyTo = replyTo
+                self.components = components
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case channelId
+                case author
+                case body
+                case mentions
+                case mentionsAgent
+                case fromBlocked
+                case deleted
+                case createdAt
+                case editedAt
+                case clientNonce
+                case spoiler
+                case veiled
+                case fromAgent
+                case replyTo
+                case components
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MessageComponent`.
+        public struct MessageComponent: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MessageComponent/type`.
+            @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case title = "title"
+            }
+            /// - Remark: Generated from `#/components/schemas/MessageComponent/type`.
+            public var _type: Components.Schemas.MessageComponent._TypePayload
+            /// - Remark: Generated from `#/components/schemas/MessageComponent/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// Creates a new `MessageComponent`.
+            ///
+            /// - Parameters:
+            ///   - _type:
+            ///   - title:
+            public init(
+                _type: Components.Schemas.MessageComponent._TypePayload,
+                title: Components.Schemas.TitleSummary
+            ) {
+                self._type = _type
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case _type = "type"
+                case title
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/GroupMessagePage`.
+        public struct GroupMessagePage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/GroupMessagePage/items`.
+            public var items: [Components.Schemas.GroupMessage]
+            /// Creates a new `GroupMessagePage`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.GroupMessage]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MessageCreate`.
+        public struct MessageCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MessageCreate/body`.
+            public var body: Swift.String
+            /// Makes a retry safe.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MessageCreate/clientNonce`.
+            public var clientNonce: Swift.String?
+            /// Title channels: stamp by hand. Absent: stamped from your progress.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MessageCreate/spoiler`.
+            public var spoiler: Components.Schemas.SpoilerStamp?
+            /// Title channels: no stamp at all.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MessageCreate/spoilerFree`.
+            public var spoilerFree: Swift.Bool?
+            /// Creates a new `MessageCreate`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            ///   - clientNonce: Makes a retry safe.
+            ///   - spoiler: Title channels: stamp by hand. Absent: stamped from your progress.
+            ///   - spoilerFree: Title channels: no stamp at all.
+            public init(
+                body: Swift.String,
+                clientNonce: Swift.String? = nil,
+                spoiler: Components.Schemas.SpoilerStamp? = nil,
+                spoilerFree: Swift.Bool? = nil
+            ) {
+                self.body = body
+                self.clientNonce = clientNonce
+                self.spoiler = spoiler
+                self.spoilerFree = spoilerFree
+            }
+            public enum CodingKeys: String, CodingKey {
+                case body
+                case clientNonce
+                case spoiler
+                case spoilerFree
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MessageUpdate`.
+        public struct MessageUpdate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MessageUpdate/body`.
+            public var body: Swift.String
+            /// Creates a new `MessageUpdate`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            public init(body: Swift.String) {
+                self.body = body
+            }
+            public enum CodingKeys: String, CodingKey {
+                case body
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ReadMark`.
+        public struct ReadMark: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ReadMark/messageId`.
+            public var messageId: Swift.String
+            /// Creates a new `ReadMark`.
+            ///
+            /// - Parameters:
+            ///   - messageId:
+            public init(messageId: Swift.String) {
+                self.messageId = messageId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case messageId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RealtimeTicket`.
+        public struct RealtimeTicket: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RealtimeTicket/ticket`.
+            public var ticket: Swift.String
+            /// The wss:// URL to open, ticket included.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeTicket/url`.
+            public var url: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RealtimeTicket/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// Creates a new `RealtimeTicket`.
+            ///
+            /// - Parameters:
+            ///   - ticket:
+            ///   - url: The wss:// URL to open, ticket included.
+            ///   - expiresAt:
+            public init(
+                ticket: Swift.String,
+                url: Swift.String,
+                expiresAt: Foundation.Date
+            ) {
+                self.ticket = ticket
+                self.url = url
+                self.expiresAt = expiresAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case ticket
+                case url
+                case expiresAt
+            }
+        }
+        /// One frame from GET /v1/ws (a WebSocket). The socket is never the source of truth: on `ready` (every connect and reconnect), refetch what is on screen with REST.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RealtimeEvent`.
+        public struct RealtimeEvent: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/type`.
+            @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case ready = "ready"
+                case message_created = "message.created"
+                case message_updated = "message.updated"
+                case message_deleted = "message.deleted"
+                case typing = "typing"
+                case read = "read"
+                case group_updated = "group.updated"
+                case group_removed = "group.removed"
+                case invites_changed = "invites.changed"
+                case shelf_updated = "shelf.updated"
+                case watch_updated = "watch.updated"
+                case watch_reaction = "watch.reaction"
+                case agent_thinking = "agent.thinking"
+            }
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/type`.
+            public var _type: Components.Schemas.RealtimeEvent._TypePayload
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/groupId`.
+            public var groupId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/channelId`.
+            public var channelId: Swift.String?
+            /// agent.thinking: the mention being answered.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/messageId`.
+            public var messageId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/message`.
+            public var message: Components.Schemas.GroupMessage?
+            /// Who is typing, or reacting.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/user`.
+            public var user: Components.Schemas.SocialUser?
+            /// watch.reaction only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeEvent/emoji`.
+            public var emoji: Swift.String?
+            /// Creates a new `RealtimeEvent`.
+            ///
+            /// - Parameters:
+            ///   - _type:
+            ///   - groupId:
+            ///   - channelId:
+            ///   - messageId: agent.thinking: the mention being answered.
+            ///   - message:
+            ///   - user: Who is typing, or reacting.
+            ///   - emoji: watch.reaction only.
+            public init(
+                _type: Components.Schemas.RealtimeEvent._TypePayload,
+                groupId: Swift.String? = nil,
+                channelId: Swift.String? = nil,
+                messageId: Swift.String? = nil,
+                message: Components.Schemas.GroupMessage? = nil,
+                user: Components.Schemas.SocialUser? = nil,
+                emoji: Swift.String? = nil
+            ) {
+                self._type = _type
+                self.groupId = groupId
+                self.channelId = channelId
+                self.messageId = messageId
+                self.message = message
+                self.user = user
+                self.emoji = emoji
+            }
+            public enum CodingKeys: String, CodingKey {
+                case _type = "type"
+                case groupId
+                case channelId
+                case messageId
+                case message
+                case user
+                case emoji
+            }
+        }
+        /// One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds, and one reaction a second, counts.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RealtimeCommand`.
+        public struct RealtimeCommand: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/type`.
+            @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case typing = "typing"
+                case react = "react"
+            }
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/type`.
+            public var _type: Components.Schemas.RealtimeCommand._TypePayload
+            /// react only: one of 😂 😱 😭 ❤️ 👏 🔥.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/emoji`.
+            public var emoji: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/groupId`.
+            public var groupId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RealtimeCommand/channelId`.
+            public var channelId: Swift.String
+            /// Creates a new `RealtimeCommand`.
+            ///
+            /// - Parameters:
+            ///   - _type:
+            ///   - emoji: react only: one of 😂 😱 😭 ❤️ 👏 🔥.
+            ///   - groupId:
+            ///   - channelId:
+            public init(
+                _type: Components.Schemas.RealtimeCommand._TypePayload,
+                emoji: Swift.String? = nil,
+                groupId: Swift.String,
+                channelId: Swift.String
+            ) {
+                self._type = _type
+                self.emoji = emoji
+                self.groupId = groupId
+                self.channelId = channelId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case _type = "type"
+                case emoji
+                case groupId
+                case channelId
+            }
+        }
+        /// Any field left out keeps its value.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MembershipUpdate`.
+        public struct MembershipUpdate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MembershipUpdate/shareProgress`.
+            public var shareProgress: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/MembershipUpdate/muted`.
+            public var muted: Swift.Bool?
+            /// Creates a new `MembershipUpdate`.
+            ///
+            /// - Parameters:
+            ///   - shareProgress:
+            ///   - muted:
+            public init(
+                shareProgress: Swift.Bool? = nil,
+                muted: Swift.Bool? = nil
+            ) {
+                self.shareProgress = shareProgress
+                self.muted = muted
+            }
+            public enum CodingKeys: String, CodingKey {
+                case shareProgress
+                case muted
+            }
+        }
+        /// How far into the title a reader must be to read the message unveiled. An episode, or the ending.
+        ///
+        /// - Remark: Generated from `#/components/schemas/SpoilerStamp`.
+        public struct SpoilerStamp: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SpoilerStamp/season`.
+            public var season: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/SpoilerStamp/episode`.
+            public var episode: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/SpoilerStamp/ending`.
+            public var ending: Swift.Bool?
+            /// Creates a new `SpoilerStamp`.
+            ///
+            /// - Parameters:
+            ///   - season:
+            ///   - episode:
+            ///   - ending:
+            public init(
+                season: Swift.Int? = nil,
+                episode: Swift.Int? = nil,
+                ending: Swift.Bool? = nil
+            ) {
+                self.season = season
+                self.episode = episode
+                self.ending = ending
+            }
+            public enum CodingKeys: String, CodingKey {
+                case season
+                case episode
+                case ending
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MemberProgress`.
+        public struct MemberProgress: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MemberProgress/user`.
+            public var user: Components.Schemas.SocialUser
+            /// Absent when it is not in their library.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MemberProgress/status`.
+            public var status: Components.Schemas.LibraryStatus?
+            /// The furthest episode they ticked.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MemberProgress/season`.
+            public var season: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/MemberProgress/episode`.
+            public var episode: Swift.Int?
+            /// Creates a new `MemberProgress`.
+            ///
+            /// - Parameters:
+            ///   - user:
+            ///   - status: Absent when it is not in their library.
+            ///   - season: The furthest episode they ticked.
+            ///   - episode:
+            public init(
+                user: Components.Schemas.SocialUser,
+                status: Components.Schemas.LibraryStatus? = nil,
+                season: Swift.Int? = nil,
+                episode: Swift.Int? = nil
+            ) {
+                self.user = user
+                self.status = status
+                self.season = season
+                self.episode = episode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case user
+                case status
+                case season
+                case episode
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelProgress`.
+        public struct ChannelProgress: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelProgress/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/ChannelProgress/mine`.
+            public var mine: Components.Schemas.MemberProgress?
+            /// Only members who share their progress in this group.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelProgress/members`.
+            public var members: [Components.Schemas.MemberProgress]
+            /// Creates a new `ChannelProgress`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - mine:
+            ///   - members: Only members who share their progress in this group.
+            public init(
+                title: Components.Schemas.TitleSummary,
+                mine: Components.Schemas.MemberProgress? = nil,
+                members: [Components.Schemas.MemberProgress]
+            ) {
+                self.title = title
+                self.mine = mine
+                self.members = members
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case mine
+                case members
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelItem`.
+        public struct ChannelItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelItem/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/ChannelItem/addedBy`.
+            public var addedBy: Components.Schemas.SocialUser?
+            /// - Remark: Generated from `#/components/schemas/ChannelItem/addedAt`.
+            public var addedAt: Foundation.Date
+            /// Yours
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChannelItem/myStatus`.
+            public var myStatus: Components.Schemas.LibraryStatus?
+            /// Creates a new `ChannelItem`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - addedBy:
+            ///   - addedAt:
+            ///   - myStatus: Yours
+            public init(
+                title: Components.Schemas.TitleSummary,
+                addedBy: Components.Schemas.SocialUser? = nil,
+                addedAt: Foundation.Date,
+                myStatus: Components.Schemas.LibraryStatus? = nil
+            ) {
+                self.title = title
+                self.addedBy = addedBy
+                self.addedAt = addedAt
+                self.myStatus = myStatus
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case addedBy
+                case addedAt
+                case myStatus
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelItemList`.
+        public struct ChannelItemList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelItemList/items`.
+            public var items: [Components.Schemas.ChannelItem]
+            /// Creates a new `ChannelItemList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.ChannelItem]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChannelItemCreate`.
+        public struct ChannelItemCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChannelItemCreate/title`.
+            public var title: Components.Schemas.MediaRef
+            /// Creates a new `ChannelItemCreate`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            public init(title: Components.Schemas.MediaRef) {
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchParty`.
+        public struct WatchParty: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchParty/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/WatchParty/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/WatchParty/season`.
+            public var season: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/episode`.
+            public var episode: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case lobby = "lobby"
+                case countdown = "countdown"
+                case live = "live"
+                case ended = "ended"
+            }
+            /// - Remark: Generated from `#/components/schemas/WatchParty/state`.
+            public var state: Components.Schemas.WatchParty.StatePayload
+            /// - Remark: Generated from `#/components/schemas/WatchParty/startsAt`.
+            public var startsAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/endedAt`.
+            public var endedAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/host`.
+            public var host: Components.Schemas.SocialUser?
+            /// - Remark: Generated from `#/components/schemas/WatchParty/ready`.
+            public var ready: [Components.Schemas.SocialUser]
+            /// Creates a new `WatchParty`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - title:
+            ///   - season:
+            ///   - episode:
+            ///   - state:
+            ///   - startsAt:
+            ///   - endedAt:
+            ///   - host:
+            ///   - ready:
+            public init(
+                id: Swift.String,
+                title: Components.Schemas.TitleSummary,
+                season: Swift.Int? = nil,
+                episode: Swift.Int? = nil,
+                state: Components.Schemas.WatchParty.StatePayload,
+                startsAt: Foundation.Date? = nil,
+                endedAt: Foundation.Date? = nil,
+                host: Components.Schemas.SocialUser? = nil,
+                ready: [Components.Schemas.SocialUser]
+            ) {
+                self.id = id
+                self.title = title
+                self.season = season
+                self.episode = episode
+                self.state = state
+                self.startsAt = startsAt
+                self.endedAt = endedAt
+                self.host = host
+                self.ready = ready
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case title
+                case season
+                case episode
+                case state
+                case startsAt
+                case endedAt
+                case host
+                case ready
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchPartyView`.
+        public struct WatchPartyView: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchPartyView/party`.
+            public var party: Components.Schemas.WatchParty?
+            /// Count down against this, not the device clock.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchPartyView/serverTime`.
+            public var serverTime: Foundation.Date
+            /// Creates a new `WatchPartyView`.
+            ///
+            /// - Parameters:
+            ///   - party:
+            ///   - serverTime: Count down against this, not the device clock.
+            public init(
+                party: Components.Schemas.WatchParty? = nil,
+                serverTime: Foundation.Date
+            ) {
+                self.party = party
+                self.serverTime = serverTime
+            }
+            public enum CodingKeys: String, CodingKey {
+                case party
+                case serverTime
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchPartyCreate`.
+        public struct WatchPartyCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/title`.
+            public var title: Components.Schemas.MediaRef
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/season`.
+            public var season: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/episode`.
+            public var episode: Swift.Int?
+            /// Creates a new `WatchPartyCreate`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - season:
+            ///   - episode:
+            public init(
+                title: Components.Schemas.MediaRef,
+                season: Swift.Int? = nil,
+                episode: Swift.Int? = nil
+            ) {
+                self.title = title
+                self.season = season
+                self.episode = episode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case season
+                case episode
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchPartyReady`.
+        public struct WatchPartyReady: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchPartyReady/ready`.
+            public var ready: Swift.Bool
+            /// Creates a new `WatchPartyReady`.
+            ///
+            /// - Parameters:
+            ///   - ready:
+            public init(ready: Swift.Bool) {
+                self.ready = ready
+            }
+            public enum CodingKeys: String, CodingKey {
+                case ready
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchPartyStart`.
+        public struct WatchPartyStart: Codable, Hashable, Sendable {
+            /// 3–60, default 10.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchPartyStart/countdownSeconds`.
+            public var countdownSeconds: Swift.Int?
+            /// Creates a new `WatchPartyStart`.
+            ///
+            /// - Parameters:
+            ///   - countdownSeconds: 3–60, default 10.
+            public init(countdownSeconds: Swift.Int? = nil) {
+                self.countdownSeconds = countdownSeconds
+            }
+            public enum CodingKeys: String, CodingKey {
+                case countdownSeconds
             }
         }
         /// Provider identifiers known for a title. Absent means unknown.
@@ -3270,6 +5479,80 @@ public enum Components {
             public var lists: Components.Schemas.AccountExport.ListsPayload
             /// - Remark: Generated from `#/components/schemas/AccountExport/shelves`.
             public var shelves: [Components.Schemas.Shelf]
+            /// - Remark: Generated from `#/components/schemas/AccountExport/friends`.
+            public var friends: [Components.Schemas.SocialUser]?
+            /// - Remark: Generated from `#/components/schemas/AccountExport/blocked`.
+            public var blocked: [Components.Schemas.SocialUser]?
+            /// - Remark: Generated from `#/components/schemas/AccountExport/GroupsPayload`.
+            public struct GroupsPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AccountExport/GroupsPayload/name`.
+                public var name: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AccountExport/GroupsPayload/role`.
+                public var role: Components.Schemas.GroupRole
+                /// Creates a new `GroupsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - name:
+                ///   - role:
+                public init(
+                    name: Swift.String,
+                    role: Components.Schemas.GroupRole
+                ) {
+                    self.name = name
+                    self.role = role
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case name
+                    case role
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AccountExport/groups`.
+            public typealias GroupsPayload = [Components.Schemas.AccountExport.GroupsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/AccountExport/groups`.
+            public var groups: Components.Schemas.AccountExport.GroupsPayload?
+            /// - Remark: Generated from `#/components/schemas/AccountExport/GroupMessagesPayload`.
+            public struct GroupMessagesPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AccountExport/GroupMessagesPayload/group`.
+                public var group: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AccountExport/GroupMessagesPayload/channel`.
+                public var channel: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AccountExport/GroupMessagesPayload/body`.
+                public var body: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AccountExport/GroupMessagesPayload/createdAt`.
+                public var createdAt: Foundation.Date
+                /// Creates a new `GroupMessagesPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - group:
+                ///   - channel:
+                ///   - body:
+                ///   - createdAt:
+                public init(
+                    group: Swift.String,
+                    channel: Swift.String,
+                    body: Swift.String,
+                    createdAt: Foundation.Date
+                ) {
+                    self.group = group
+                    self.channel = channel
+                    self.body = body
+                    self.createdAt = createdAt
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case group
+                    case channel
+                    case body
+                    case createdAt
+                }
+            }
+            /// Messages you wrote in groups, oldest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountExport/groupMessages`.
+            public typealias GroupMessagesPayload = [Components.Schemas.AccountExport.GroupMessagesPayloadPayload]
+            /// Messages you wrote in groups, oldest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountExport/groupMessages`.
+            public var groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload?
             /// Creates a new `AccountExport`.
             ///
             /// - Parameters:
@@ -3278,18 +5561,30 @@ public enum Components {
             ///   - library: Every library item; shows carry `watchedEpisodes`.
             ///   - lists:
             ///   - shelves:
+            ///   - friends:
+            ///   - blocked:
+            ///   - groups:
+            ///   - groupMessages: Messages you wrote in groups, oldest first.
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
                 library: [Components.Schemas.LibraryEntry],
                 lists: Components.Schemas.AccountExport.ListsPayload,
-                shelves: [Components.Schemas.Shelf]
+                shelves: [Components.Schemas.Shelf],
+                friends: [Components.Schemas.SocialUser]? = nil,
+                blocked: [Components.Schemas.SocialUser]? = nil,
+                groups: Components.Schemas.AccountExport.GroupsPayload? = nil,
+                groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
                 self.library = library
                 self.lists = lists
                 self.shelves = shelves
+                self.friends = friends
+                self.blocked = blocked
+                self.groups = groups
+                self.groupMessages = groupMessages
             }
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
@@ -3297,6 +5592,10 @@ public enum Components {
                 case library
                 case lists
                 case shelves
+                case friends
+                case blocked
+                case groups
+                case groupMessages
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.
@@ -5929,6 +8228,6386 @@ public enum Operations {
             }
         }
     }
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/profile`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
+    public enum UpdateProfile {
+        public static let id: Swift.String = "updateProfile"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/profile/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateProfile.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateProfile.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateProfile.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/profile/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/profile/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.ProfileUpdate)
+            }
+            public var body: Operations.UpdateProfile.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.UpdateProfile.Input.Headers = .init(),
+                body: Operations.UpdateProfile.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/profile/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/profile/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUser)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUser {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateProfile.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateProfile.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Your social identity.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateProfile.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateProfile.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    ///
+    /// - Remark: HTTP `GET /v1/social/users/{handle}`.
+    /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
+    public enum GetSocialUser {
+        public static let id: Swift.String = "getSocialUser"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/path/handle`.
+                public var handle: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - handle:
+                public init(handle: Swift.String) {
+                    self.handle = handle
+                }
+            }
+            public var path: Operations.GetSocialUser.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSocialUser.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSocialUser.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSocialUser.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetSocialUser.Input.Path,
+                headers: Operations.GetSocialUser.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/users/{handle}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUserView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUserView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSocialUser.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSocialUser.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The user.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSocialUser.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSocialUser.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Pending requests to you and from you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)`.
+    public enum ListFriendRequests {
+        public static let id: Swift.String = "listFriendRequests"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriendRequests.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriendRequests.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListFriendRequests.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListFriendRequests.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friend-requests/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.FriendRequests)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.FriendRequests {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListFriendRequests.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListFriendRequests.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Both directions.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListFriendRequests.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListFriendRequests.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/friend-requests`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
+    public enum SendFriendRequest {
+        public static let id: Swift.String = "sendFriendRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SendFriendRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SendFriendRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SendFriendRequest.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.FriendRequestCreate)
+            }
+            public var body: Operations.SendFriendRequest.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SendFriendRequest.Input.Headers = .init(),
+                body: Operations.SendFriendRequest.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friend-requests/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUserView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUserView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SendFriendRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SendFriendRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The user and where you now stand (outgoing or friend).
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SendFriendRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SendFriendRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Decline a request to you, or cancel one you sent. The other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friend-requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)`.
+    public enum WithdrawFriendRequest {
+        public static let id: Swift.String = "withdrawFriendRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.WithdrawFriendRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.WithdrawFriendRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.WithdrawFriendRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.WithdrawFriendRequest.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.WithdrawFriendRequest.Input.Path,
+                headers: Operations.WithdrawFriendRequest.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.WithdrawFriendRequest.Output.NoContent)
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.WithdrawFriendRequest.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/delete(withdrawFriendRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `POST /v1/social/friend-requests/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)`.
+    public enum AcceptFriendRequest {
+        public static let id: Swift.String = "acceptFriendRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.AcceptFriendRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AcceptFriendRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AcceptFriendRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AcceptFriendRequest.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.AcceptFriendRequest.Input.Path,
+                headers: Operations.AcceptFriendRequest.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friend-requests/{id}/accept/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUser)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUser {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AcceptFriendRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AcceptFriendRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The new friend.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AcceptFriendRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AcceptFriendRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friend-requests/{id}/accept/post(acceptFriendRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your friends, by handle.
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)`.
+    public enum ListFriends {
+        public static let id: Swift.String = "listFriends"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friends/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriends.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriends.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListFriends.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListFriends.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friends/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friends/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUserList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUserList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListFriends.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListFriends.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListFriends.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListFriends.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/get(listFriends)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Unfriend. Silent; the other side is not told.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/friends/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)`.
+    public enum RemoveFriend {
+        public static let id: Swift.String = "removeFriend"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/DELETE/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - userId:
+                public init(userId: Swift.String) {
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.RemoveFriend.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveFriend.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveFriend.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RemoveFriend.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RemoveFriend.Input.Path,
+                headers: Operations.RemoveFriend.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// No longer friends.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RemoveFriend.Output.NoContent)
+            /// No longer friends.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RemoveFriend.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// People you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/social/blocks`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)`.
+    public enum ListBlocks {
+        public static let id: Swift.String = "listBlocks"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/blocks/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListBlocks.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListBlocks.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListBlocks.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListBlocks.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/blocks/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/blocks/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialUserList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialUserList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListBlocks.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListBlocks.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListBlocks.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListBlocks.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/get(listBlocks)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
+    ///
+    /// - Remark: HTTP `PUT /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)`.
+    public enum BlockUser {
+        public static let id: Swift.String = "blockUser"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/PUT/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - userId:
+                public init(userId: Swift.String) {
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.BlockUser.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.BlockUser.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.BlockUser.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.BlockUser.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.BlockUser.Input.Path,
+                headers: Operations.BlockUser.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Blocked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.BlockUser.Output.NoContent)
+            /// Blocked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.BlockUser.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/put(blockUser)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `DELETE /v1/social/blocks/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)`.
+    public enum UnblockUser {
+        public static let id: Swift.String = "unblockUser"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/DELETE/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - userId:
+                public init(userId: Swift.String) {
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.UnblockUser.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/blocks/{userId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UnblockUser.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UnblockUser.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UnblockUser.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.UnblockUser.Input.Path,
+                headers: Operations.UnblockUser.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Unblocked. Friendship does not come back.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.UnblockUser.Output.NoContent)
+            /// Unblocked. Friendship does not come back.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.UnblockUser.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Report a user to Aaru. The user is not told.
+    ///
+    /// - Remark: HTTP `POST /v1/social/reports`.
+    /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)`.
+    public enum ReportUser {
+        public static let id: Swift.String = "reportUser"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/reports/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ReportUser.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ReportUser.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ReportUser.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/social/reports/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/reports/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ReportCreate)
+            }
+            public var body: Operations.ReportUser.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ReportUser.Input.Headers = .init(),
+                body: Operations.ReportUser.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Received.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.ReportUser.Output.NoContent)
+            /// Received.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.ReportUser.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/reports/post(reportUser)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your groups, in the order you joined them, with unread and mention counts.
+    ///
+    /// - Remark: HTTP `GET /v1/groups`.
+    /// - Remark: Generated from `#/paths//v1/groups/get(listGroups)`.
+    public enum ListGroups {
+        public static let id: Swift.String = "listGroups"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListGroups.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListGroups.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListGroups.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListGroups.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListGroups.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListGroups.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/get(listGroups)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListGroups.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListGroups.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/get(listGroups)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Create a group you own, with a
+    ///
+    /// - Remark: HTTP `POST /v1/groups`.
+    /// - Remark: Generated from `#/paths//v1/groups/post(createGroup)`.
+    public enum CreateGroup {
+        public static let id: Swift.String = "createGroup"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateGroup.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateGroup.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateGroup.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.GroupCreate)
+            }
+            public var body: Operations.CreateGroup.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateGroup.Input.Headers = .init(),
+                body: Operations.CreateGroup.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupDetail)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupDetail {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateGroup.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateGroup.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The new group.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/post(createGroup)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.CreateGroup.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.CreateGroup.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/post(createGroup)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A group you are in, with its channels, members and pending invites. 404 to anyone else.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/get(getGroup)`.
+    public enum GetGroup {
+        public static let id: Swift.String = "getGroup"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/GET/path/groupId`.
+                public var groupId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                public init(groupId: Swift.String) {
+                    self.groupId = groupId
+                }
+            }
+            public var path: Operations.GetGroup.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetGroup.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetGroup.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetGroup.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetGroup.Input.Path,
+                headers: Operations.GetGroup.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupDetail)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupDetail {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetGroup.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetGroup.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/get(getGroup)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetGroup.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetGroup.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/get(getGroup)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Rename the group. Owner and admins.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/patch(updateGroup)`.
+    public enum UpdateGroup {
+        public static let id: Swift.String = "updateGroup"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/PATCH/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/PATCH/path/groupId`.
+                public var groupId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                public init(groupId: Swift.String) {
+                    self.groupId = groupId
+                }
+            }
+            public var path: Operations.UpdateGroup.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/PATCH/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateGroup.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateGroup.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateGroup.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/PATCH/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/PATCH/requestBody/content/application\/json`.
+                case json(Components.Schemas.GroupCreate)
+            }
+            public var body: Operations.UpdateGroup.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdateGroup.Input.Path,
+                headers: Operations.UpdateGroup.Input.Headers = .init(),
+                body: Operations.UpdateGroup.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/PATCH/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/PATCH/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupDetail)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupDetail {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateGroup.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateGroup.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The group.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/patch(updateGroup)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateGroup.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateGroup.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/patch(updateGroup)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Delete the group, its channels and every message. Owner only.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/delete(deleteGroup)`.
+    public enum DeleteGroup {
+        public static let id: Swift.String = "deleteGroup"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/DELETE/path/groupId`.
+                public var groupId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                public init(groupId: Swift.String) {
+                    self.groupId = groupId
+                }
+            }
+            public var path: Operations.DeleteGroup.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteGroup.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteGroup.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteGroup.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeleteGroup.Input.Path,
+                headers: Operations.DeleteGroup.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/delete(deleteGroup)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteGroup.Output.NoContent)
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/delete(deleteGroup)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteGroup.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/delete(deleteGroup)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Make a member an admin, or an admin a member. Owner only.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/members/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/patch(updateGroupMember)`.
+    public enum UpdateGroupMember {
+        public static let id: Swift.String = "updateGroupMember"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/PATCH/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/PATCH/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/PATCH/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - userId:
+                public init(
+                    groupId: Swift.String,
+                    userId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.UpdateGroupMember.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/PATCH/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateGroupMember.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateGroupMember.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateGroupMember.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/PATCH/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/PATCH/requestBody/content/application\/json`.
+                case json(Components.Schemas.GroupMemberUpdate)
+            }
+            public var body: Operations.UpdateGroupMember.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdateGroupMember.Input.Path,
+                headers: Operations.UpdateGroupMember.Input.Headers = .init(),
+                body: Operations.UpdateGroupMember.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Changed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/patch(updateGroupMember)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.UpdateGroupMember.Output.NoContent)
+            /// Changed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/patch(updateGroupMember)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.UpdateGroupMember.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/patch(updateGroupMember)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/members/{userId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/delete(removeGroupMember)`.
+    public enum RemoveGroupMember {
+        public static let id: Swift.String = "removeGroupMember"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/DELETE/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/DELETE/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - userId:
+                public init(
+                    groupId: Swift.String,
+                    userId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.RemoveGroupMember.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/members/{userId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveGroupMember.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveGroupMember.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RemoveGroupMember.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RemoveGroupMember.Input.Path,
+                headers: Operations.RemoveGroupMember.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Removed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/delete(removeGroupMember)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RemoveGroupMember.Output.NoContent)
+            /// Removed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/delete(removeGroupMember)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RemoveGroupMember.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/members/{userId}/delete(removeGroupMember)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Make another member the owner. You become an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/transfer`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/transfer/post(transferGroup)`.
+    public enum TransferGroup {
+        public static let id: Swift.String = "transferGroup"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/transfer/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/transfer/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                public init(groupId: Swift.String) {
+                    self.groupId = groupId
+                }
+            }
+            public var path: Operations.TransferGroup.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/transfer/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TransferGroup.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TransferGroup.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.TransferGroup.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/transfer/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/transfer/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.UserRef)
+            }
+            public var body: Operations.TransferGroup.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.TransferGroup.Input.Path,
+                headers: Operations.TransferGroup.Input.Headers = .init(),
+                body: Operations.TransferGroup.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Transferred.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/transfer/post(transferGroup)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.TransferGroup.Output.NoContent)
+            /// Transferred.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/transfer/post(transferGroup)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.TransferGroup.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/transfer/post(transferGroup)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Invite a friend. Inviting again, or someone already in, changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/invites`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/invites/post(inviteToGroup)`.
+    public enum InviteToGroup {
+        public static let id: Swift.String = "inviteToGroup"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/invites/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/invites/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                public init(groupId: Swift.String) {
+                    self.groupId = groupId
+                }
+            }
+            public var path: Operations.InviteToGroup.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/invites/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.InviteToGroup.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.InviteToGroup.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.InviteToGroup.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/invites/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/invites/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.UserRef)
+            }
+            public var body: Operations.InviteToGroup.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.InviteToGroup.Input.Path,
+                headers: Operations.InviteToGroup.Input.Headers = .init(),
+                body: Operations.InviteToGroup.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Invited.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/invites/post(inviteToGroup)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.InviteToGroup.Output.NoContent)
+            /// Invited.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/invites/post(inviteToGroup)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.InviteToGroup.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/invites/post(inviteToGroup)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Invites waiting for you, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/me/group-invites`.
+    /// - Remark: Generated from `#/paths//v1/me/group-invites/get(listGroupInvites)`.
+    public enum ListGroupInvites {
+        public static let id: Swift.String = "listGroupInvites"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/group-invites/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListGroupInvites.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListGroupInvites.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListGroupInvites.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListGroupInvites.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/group-invites/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/group-invites/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupInviteList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupInviteList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListGroupInvites.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListGroupInvites.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/group-invites/get(listGroupInvites)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListGroupInvites.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListGroupInvites.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/group-invites/get(listGroupInvites)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Decline an invite to you, or cancel one you sent.
+    ///
+    /// - Remark: HTTP `DELETE /v1/group-invites/{id}`.
+    /// - Remark: Generated from `#/paths//v1/group-invites/{id}/delete(declineGroupInvite)`.
+    public enum DeclineGroupInvite {
+        public static let id: Swift.String = "declineGroupInvite"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/group-invites/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/group-invites/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DeclineGroupInvite.Input.Path
+            /// - Remark: Generated from `#/paths/v1/group-invites/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeclineGroupInvite.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeclineGroupInvite.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeclineGroupInvite.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeclineGroupInvite.Input.Path,
+                headers: Operations.DeclineGroupInvite.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/group-invites/{id}/delete(declineGroupInvite)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeclineGroupInvite.Output.NoContent)
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/group-invites/{id}/delete(declineGroupInvite)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeclineGroupInvite.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/group-invites/{id}/delete(declineGroupInvite)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Join the group.
+    ///
+    /// - Remark: HTTP `POST /v1/group-invites/{id}/accept`.
+    /// - Remark: Generated from `#/paths//v1/group-invites/{id}/accept/post(acceptGroupInvite)`.
+    public enum AcceptGroupInvite {
+        public static let id: Swift.String = "acceptGroupInvite"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/group-invites/{id}/accept/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/group-invites/{id}/accept/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.AcceptGroupInvite.Input.Path
+            /// - Remark: Generated from `#/paths/v1/group-invites/{id}/accept/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AcceptGroupInvite.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AcceptGroupInvite.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AcceptGroupInvite.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.AcceptGroupInvite.Input.Path,
+                headers: Operations.AcceptGroupInvite.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/group-invites/{id}/accept/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/group-invites/{id}/accept/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupSummary)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupSummary {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AcceptGroupInvite.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AcceptGroupInvite.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The group you joined.
+            ///
+            /// - Remark: Generated from `#/paths//v1/group-invites/{id}/accept/post(acceptGroupInvite)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AcceptGroupInvite.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AcceptGroupInvite.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/group-invites/{id}/accept/post(acceptGroupInvite)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Add a text channel. Owner and admins.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/post(createChannel)`.
+    public enum CreateChannel {
+        public static let id: Swift.String = "createChannel"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                public init(groupId: Swift.String) {
+                    self.groupId = groupId
+                }
+            }
+            public var path: Operations.CreateChannel.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateChannel.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateChannel.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateChannel.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ChannelCreate)
+            }
+            public var body: Operations.CreateChannel.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.CreateChannel.Input.Path,
+                headers: Operations.CreateChannel.Input.Headers = .init(),
+                body: Operations.CreateChannel.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Channel)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Channel {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateChannel.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateChannel.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The channel.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/post(createChannel)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.CreateChannel.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.CreateChannel.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/post(createChannel)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Rename a channel or set its topic. Owner and admins.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/channels/{channelId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/patch(updateChannel)`.
+    public enum UpdateChannel {
+        public static let id: Swift.String = "updateChannel"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/PATCH/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/PATCH/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/PATCH/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.UpdateChannel.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/PATCH/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateChannel.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateChannel.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateChannel.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/PATCH/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/PATCH/requestBody/content/application\/json`.
+                case json(Components.Schemas.ChannelUpdate)
+            }
+            public var body: Operations.UpdateChannel.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdateChannel.Input.Path,
+                headers: Operations.UpdateChannel.Input.Headers = .init(),
+                body: Operations.UpdateChannel.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/PATCH/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/PATCH/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Channel)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Channel {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateChannel.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateChannel.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The channel.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/patch(updateChannel)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateChannel.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateChannel.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/patch(updateChannel)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Delete a channel and its messages. The first channel stays. Owner and admins.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/delete(deleteChannel)`.
+    public enum DeleteChannel {
+        public static let id: Swift.String = "deleteChannel"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/DELETE/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/DELETE/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.DeleteChannel.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteChannel.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteChannel.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteChannel.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeleteChannel.Input.Path,
+                headers: Operations.DeleteChannel.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/delete(deleteChannel)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteChannel.Output.NoContent)
+            /// Gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/delete(deleteChannel)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteChannel.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/delete(deleteChannel)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Messages oldest first. Without a cursor, the latest page.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/messages`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/get(listMessages)`.
+    public enum ListMessages {
+        public static let id: Swift.String = "listMessages"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.ListMessages.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Messages older than this one.
+                ///
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/query/before`.
+                public var before: Swift.String?
+                /// Messages newer than this one.
+                ///
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/query/after`.
+                public var after: Swift.String?
+                /// 1–100, default 50.
+                ///
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/query/limit`.
+                public var limit: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - before: Messages older than this one.
+                ///   - after: Messages newer than this one.
+                ///   - limit: 1–100, default 50.
+                public init(
+                    before: Swift.String? = nil,
+                    after: Swift.String? = nil,
+                    limit: Swift.Int? = nil
+                ) {
+                    self.before = before
+                    self.after = after
+                    self.limit = limit
+                }
+            }
+            public var query: Operations.ListMessages.Input.Query
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListMessages.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListMessages.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListMessages.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            public init(
+                path: Operations.ListMessages.Input.Path,
+                query: Operations.ListMessages.Input.Query = .init(),
+                headers: Operations.ListMessages.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupMessagePage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupMessagePage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListMessages.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListMessages.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/get(listMessages)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListMessages.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListMessages.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/get(listMessages)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Post a message. A retry with the same clientNonce returns the first message.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/messages`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/post(postMessage)`.
+    public enum PostMessage {
+        public static let id: Swift.String = "postMessage"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.PostMessage.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PostMessage.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PostMessage.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.PostMessage.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.MessageCreate)
+            }
+            public var body: Operations.PostMessage.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.PostMessage.Input.Path,
+                headers: Operations.PostMessage.Input.Headers = .init(),
+                body: Operations.PostMessage.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupMessage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupMessage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.PostMessage.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.PostMessage.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The message.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/post(postMessage)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.PostMessage.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.PostMessage.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/post(postMessage)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Edit your own message.
+    ///
+    /// - Remark: HTTP `PATCH /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/patch(editMessage)`.
+    public enum EditMessage {
+        public static let id: Swift.String = "editMessage"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/path/channelId`.
+                public var channelId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/path/messageId`.
+                public var messageId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                ///   - messageId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String,
+                    messageId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                    self.messageId = messageId
+                }
+            }
+            public var path: Operations.EditMessage.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EditMessage.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EditMessage.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.EditMessage.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/requestBody/content/application\/json`.
+                case json(Components.Schemas.MessageUpdate)
+            }
+            public var body: Operations.EditMessage.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.EditMessage.Input.Path,
+                headers: Operations.EditMessage.Input.Headers = .init(),
+                body: Operations.EditMessage.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/PATCH/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupMessage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupMessage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.EditMessage.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.EditMessage.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The message.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/patch(editMessage)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.EditMessage.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.EditMessage.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/patch(editMessage)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Delete your message, or any message as owner or admin. The row stays, empty.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/delete(deleteMessage)`.
+    public enum DeleteMessage {
+        public static let id: Swift.String = "deleteMessage"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/DELETE/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/DELETE/path/channelId`.
+                public var channelId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/DELETE/path/messageId`.
+                public var messageId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                ///   - messageId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String,
+                    messageId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                    self.messageId = messageId
+                }
+            }
+            public var path: Operations.DeleteMessage.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteMessage.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteMessage.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteMessage.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeleteMessage.Input.Path,
+                headers: Operations.DeleteMessage.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Deleted.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/delete(deleteMessage)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteMessage.Output.NoContent)
+            /// Deleted.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/delete(deleteMessage)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteMessage.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/delete(deleteMessage)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Mark the channel read up to a message. The read point never moves back.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/read`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/read/post(markChannelRead)`.
+    public enum MarkChannelRead {
+        public static let id: Swift.String = "markChannelRead"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/read/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/read/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/read/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.MarkChannelRead.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/read/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkChannelRead.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkChannelRead.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.MarkChannelRead.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/read/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/read/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ReadMark)
+            }
+            public var body: Operations.MarkChannelRead.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.MarkChannelRead.Input.Path,
+                headers: Operations.MarkChannelRead.Input.Headers = .init(),
+                body: Operations.MarkChannelRead.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Marked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/read/post(markChannelRead)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.MarkChannelRead.Output.NoContent)
+            /// Marked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/read/post(markChannelRead)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.MarkChannelRead.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/read/post(markChannelRead)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead.
+    ///
+    /// - Remark: HTTP `POST /v1/realtime/ticket`.
+    /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)`.
+    public enum CreateRealtimeTicket {
+        public static let id: Swift.String = "createRealtimeTicket"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/realtime/ticket/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateRealtimeTicket.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateRealtimeTicket.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateRealtimeTicket.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.CreateRealtimeTicket.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/realtime/ticket/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/realtime/ticket/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.RealtimeTicket)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.RealtimeTicket {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateRealtimeTicket.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateRealtimeTicket.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The ticket and the socket URL to open with it.
+            ///
+            /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.CreateRealtimeTicket.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.CreateRealtimeTicket.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/realtime/ticket/post(createRealtimeTicket)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
+    ///
+    /// - Remark: HTTP `PUT /v1/groups/{groupId}/me`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)`.
+    public enum UpdateMyMembership {
+        public static let id: Swift.String = "updateMyMembership"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/path/groupId`.
+                public var groupId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                public init(groupId: Swift.String) {
+                    self.groupId = groupId
+                }
+            }
+            public var path: Operations.UpdateMyMembership.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateMyMembership.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateMyMembership.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateMyMembership.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.MembershipUpdate)
+            }
+            public var body: Operations.UpdateMyMembership.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdateMyMembership.Input.Path,
+                headers: Operations.UpdateMyMembership.Input.Headers = .init(),
+                body: Operations.UpdateMyMembership.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/me/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.GroupSummary)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.GroupSummary {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateMyMembership.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateMyMembership.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateMyMembership.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateMyMembership.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/me/put(updateMyMembership)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A title channel's title, your progress, and the progress of members who share theirs in this group.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/progress`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)`.
+    public enum GetChannelProgress {
+        public static let id: Swift.String = "getChannelProgress"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.GetChannelProgress.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetChannelProgress.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetChannelProgress.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetChannelProgress.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetChannelProgress.Input.Path,
+                headers: Operations.GetChannelProgress.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/progress/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChannelProgress)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChannelProgress {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetChannelProgress.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetChannelProgress.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetChannelProgress.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetChannelProgress.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/progress/get(getChannelProgress)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A shelf channel's titles, with your own library status for each.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)`.
+    public enum ListChannelItems {
+        public static let id: Swift.String = "listChannelItems"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.ListChannelItems.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListChannelItems.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListChannelItems.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListChannelItems.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.ListChannelItems.Input.Path,
+                headers: Operations.ListChannelItems.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChannelItemList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChannelItemList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListChannelItems.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListChannelItems.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListChannelItems.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListChannelItems.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/get(listChannelItems)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Add a title to a shelf channel. Any member can; adding one already there changes nothing.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/items`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)`.
+    public enum AddChannelItem {
+        public static let id: Swift.String = "addChannelItem"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.AddChannelItem.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddChannelItem.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddChannelItem.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AddChannelItem.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ChannelItemCreate)
+            }
+            public var body: Operations.AddChannelItem.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.AddChannelItem.Input.Path,
+                headers: Operations.AddChannelItem.Input.Headers = .init(),
+                body: Operations.AddChannelItem.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChannelItemList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChannelItemList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AddChannelItem.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AddChannelItem.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The shelf.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AddChannelItem.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AddChannelItem.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/post(addChannelItem)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Take a title off a shelf channel. Any member can.
+    ///
+    /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/items/{titleId}`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)`.
+    public enum RemoveChannelItem {
+        public static let id: Swift.String = "removeChannelItem"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/path/channelId`.
+                public var channelId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/path/titleId`.
+                public var titleId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                ///   - titleId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String,
+                    titleId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                    self.titleId = titleId
+                }
+            }
+            public var path: Operations.RemoveChannelItem.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/items/{titleId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveChannelItem.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveChannelItem.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RemoveChannelItem.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RemoveChannelItem.Input.Path,
+                headers: Operations.RemoveChannelItem.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Removed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RemoveChannelItem.Output.NoContent)
+            /// Removed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RemoveChannelItem.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/items/{titleId}/delete(removeChannelItem)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A watch channel's newest party, ended or not, and the server's clock for the countdown.
+    ///
+    /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)`.
+    public enum GetWatchParty {
+        public static let id: Swift.String = "getWatchParty"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.GetWatchParty.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetWatchParty.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetWatchParty.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetWatchParty.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetWatchParty.Input.Path,
+                headers: Operations.GetWatchParty.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetWatchParty.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetWatchParty.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetWatchParty.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetWatchParty.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
+    public enum OpenWatchParty {
+        public static let id: Swift.String = "openWatchParty"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.OpenWatchParty.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.OpenWatchParty.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.OpenWatchParty.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.OpenWatchParty.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.WatchPartyCreate)
+            }
+            public var body: Operations.OpenWatchParty.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.OpenWatchParty.Input.Path,
+                headers: Operations.OpenWatchParty.Input.Headers = .init(),
+                body: Operations.OpenWatchParty.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.OpenWatchParty.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.OpenWatchParty.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.OpenWatchParty.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.OpenWatchParty.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Say you are ready, or not.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
+    public enum SetWatchPartyReady {
+        public static let id: Swift.String = "setWatchPartyReady"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.SetWatchPartyReady.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetWatchPartyReady.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetWatchPartyReady.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SetWatchPartyReady.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.WatchPartyReady)
+            }
+            public var body: Operations.SetWatchPartyReady.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.SetWatchPartyReady.Input.Path,
+                headers: Operations.SetWatchPartyReady.Input.Headers = .init(),
+                body: Operations.SetWatchPartyReady.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/ready/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SetWatchPartyReady.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SetWatchPartyReady.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SetWatchPartyReady.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SetWatchPartyReady.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Start the countdown. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/start`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)`.
+    public enum StartWatchParty {
+        public static let id: Swift.String = "startWatchParty"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.StartWatchParty.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.StartWatchParty.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.StartWatchParty.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.StartWatchParty.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.WatchPartyStart)
+            }
+            public var body: Operations.StartWatchParty.Input.Body?
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.StartWatchParty.Input.Path,
+                headers: Operations.StartWatchParty.Input.Headers = .init(),
+                body: Operations.StartWatchParty.Input.Body? = nil
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/start/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.StartWatchParty.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.StartWatchParty.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.StartWatchParty.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.StartWatchParty.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// End the party. The host or an admin.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
+    public enum EndWatchParty {
+        public static let id: Swift.String = "endWatchParty"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.EndWatchParty.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EndWatchParty.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EndWatchParty.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.EndWatchParty.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.EndWatchParty.Input.Path,
+                headers: Operations.EndWatchParty.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/end/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.WatchPartyView)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.WatchPartyView {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.EndWatchParty.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.EndWatchParty.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.EndWatchParty.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.EndWatchParty.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    ///
+    /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
+    /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.
+    public enum MarkWatchPartyWatched {
+        public static let id: Swift.String = "markWatchPartyWatched"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/watched/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/watched/POST/path/groupId`.
+                public var groupId: Swift.String
+                /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/watched/POST/path/channelId`.
+                public var channelId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - groupId:
+                ///   - channelId:
+                public init(
+                    groupId: Swift.String,
+                    channelId: Swift.String
+                ) {
+                    self.groupId = groupId
+                    self.channelId = channelId
+                }
+            }
+            public var path: Operations.MarkWatchPartyWatched.Input.Path
+            /// - Remark: Generated from `#/paths/v1/groups/{groupId}/channels/{channelId}/party/watched/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkWatchPartyWatched.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkWatchPartyWatched.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.MarkWatchPartyWatched.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.MarkWatchPartyWatched.Input.Path,
+                headers: Operations.MarkWatchPartyWatched.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Marked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.MarkWatchPartyWatched.Output.NoContent)
+            /// Marked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.MarkWatchPartyWatched.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Register this device for pushes. A token registered again moves to this user.
     ///
     /// - Remark: HTTP `PUT /v1/devices`.
@@ -8410,6 +17089,8 @@ public enum Operations {
             }
         }
     }
+    /// Changes the switches sent; any left out keep their value.
+    ///
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     public enum UpdateNotificationSettings {
@@ -8430,7 +17111,7 @@ public enum Operations {
             /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/requestBody`.
             @frozen public enum Body: Sendable, Hashable {
                 /// - Remark: Generated from `#/paths/v1/me/notifications/PUT/requestBody/content/application\/json`.
-                case json(Components.Schemas.NotificationSettings)
+                case json(Components.Schemas.NotificationSettingsUpdate)
             }
             public var body: Operations.UpdateNotificationSettings.Input.Body
             /// Creates a new `Input`.

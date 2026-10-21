@@ -29,6 +29,7 @@ extension APIImplementation {
         return .ok(.init(body: .json(.init(
             userId: profile.id.description,
             displayName: profile.displayName,
+            handle: profile.handle,
             providers: profile.providers.compactMap { .init(rawValue: $0.rawValue) }
         ))))
     }
@@ -72,6 +73,7 @@ extension APIImplementation {
         return .ok(.init(body: .json(.init(
             userId: profile.id.description,
             displayName: profile.displayName,
+            handle: profile.handle,
             providers: profile.providers.compactMap { .init(rawValue: $0.rawValue) }
         ))))
     }

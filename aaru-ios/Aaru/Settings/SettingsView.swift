@@ -30,6 +30,7 @@ struct SettingsView: View {
         NavigationStack(path: $path) {
             Form {
                 accountSection
+                FriendsSection(api: api)
                 #if os(iOS)
                     if let push = PushRegistrar.current {
                         NotificationsSection(push: push)
@@ -254,25 +255,31 @@ struct SettingsView: View {
 }
 
 #if os(iOS)
-    /// Airing alerts: a new episode of a show you are watching.
+    /// Alerts: a new episode of a show you are watching, and groups (GRP-012).
     private struct NotificationsSection: View {
         let push: PushRegistrar
 
         var body: some View {
             Section {
-                Toggle(
-                    "New episodes",
-                    isOn: Binding(get: { push.airing }, set: { value in Task { await push.setAiring(value) } })
-                )
+                Toggle("New episodes", isOn: binding(\.airing))
+                Toggle("Mentions in groups", isOn: binding(\.groupMentions))
+                Toggle("Group invites", isOn: binding(\.groupInvites))
                 if let problem = push.problem {
                     Text(problem).font(.footnote).foregroundStyle(.red)
                 }
             } header: {
                 Text("Notifications")
             } footer: {
-                Text("A notification when a new episode of a show you are watching comes out.")
+                Text(
+                    "New episodes of shows you are watching, mentions in groups you have not muted, and invites. "
+                        + "A mention says who tagged you and where, never what they wrote."
+                )
             }
             .task { await push.loadSetting() }
+        }
+
+        private func binding(_ setting: WritableKeyPath<NotificationSettings, Bool>) -> Binding<Bool> {
+            Binding(get: { push.settings[keyPath: setting] }, set: { value in Task { await push.set(setting, value) } })
         }
     }
 #endif

@@ -3,7 +3,9 @@ import FluentPostgresDriver
 import FluentSQL
 import Foundation
 import Hummingbird
+import HummingbirdCore
 import HummingbirdFluent
+import HummingbirdWebSocket
 import Logging
 import OpenAPIHummingbird
 import ServiceLifecycle
@@ -33,33 +35,58 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     var services = Services.make(
         stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
         catFeed: makeCATCalendarFeed(transport),
-        publicBaseURL: config.publicBaseURL, oauth: (config.webBaseURL, config.oauthCookieDomain)
+        publicBaseURL: config.publicBaseURL, oauth: (config.webBaseURL, config.oauthCookieDomain),
+        model: makeModelProvider(config.anthropic, transport: transport, logger: logger)
     )
     services.webPush = webPush
     let pushSender = makePushSender(config.push, logger: logger)
-    services.plans.push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
+    let push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
+    services.plans.push = push
+    services.groups.push = push
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
     let router = try buildRouter(stores: stores, services: services)
-    let background: [any Service] = [
+    return Application(
+        router: router,
+        server: realtimeServer(
+            RealtimeRoutes(
+                hub: services.realtime, groups: services.groups, sessions: stores.sessions,
+                allowedOrigins: config.realtimeOrigins
+            )
+        ),
+        configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
+        // The web push manager finishes in-flight sends on shutdown.
+        services: backgroundServices(
+            fluent: fluent, stores: stores, services: services,
+            airing: AiringNotifier(stores: stores, sender: pushSender, webPush: webPush),
+            logger: logger
+        ) + [webPush?.manager].compactMap(\.self),
+        logger: logger
+    )
+}
+
+/// Everything that runs beside the HTTP server: the database, and the workers.
+func backgroundServices(
+    fluent: Fluent, stores: Stores, services: Services, airing: AiringNotifier, logger: Logger
+) -> [any Service] {
+    [
         fluent,
         ImportWorker(imports: services.imports, logger: logger),
-        AiringNotifierService(
-            notifier: AiringNotifier(stores: stores, sender: pushSender, webPush: webPush),
-            logger: logger
-        ),
+        AiringNotifierService(notifier: airing, logger: logger),
         CatalogRefreshService(
             refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
             logger: logger
         ),
-    ]
-    return Application(
-        router: router,
-        configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        // The web push manager finishes in-flight sends on shutdown.
-        services: background + [webPush?.manager].compactMap(\.self),
-        logger: logger
+    ] + (services.agentReplies.map { [AgentReplyWorker(replies: $0, logger: logger)] } ?? [])
+}
+
+/// HTTP/1 with the `/v1/ws` upgrade (GRP-006). A ping every 25 s keeps a proxy with a 60 s idle
+/// timeout from closing a quiet socket.
+func realtimeServer(_ realtime: RealtimeRoutes) -> HTTPServerBuilder {
+    .http1WebSocketUpgrade(
+        webSocketRouter: realtime.router(),
+        configuration: .init(ws: .init(autoPing: .enabled(timePeriod: .seconds(25))))
     )
 }
 
@@ -99,6 +126,33 @@ func loadAnimeMappings(from source: String, reader: ConfigReader, logger: Logger
         try? await fluent.shutdown()
         throw error
     }
+}
+
+/// The Trakt client, or nil when Trakt is not configured.
+func makeTraktAPI(_ settings: TraktSettings?, transport: any HTTPTransport) -> TraktAPI? {
+    settings.map { settings in
+        // Trakt allows 1000 calls per 5 minutes per user; stay well under it.
+        TraktAPI(
+            client: ProviderClient(
+                name: "trakt", transport: transport, pacer: RequestPacer(requestsPerSecond: 2, burst: 10)
+            ),
+            settings: settings
+        )
+    }
+}
+
+/// The agent's model, or nil (with a notice) when no key is configured: `@aaru` then stays off.
+func makeModelProvider(
+    _ settings: AnthropicSettings?, transport: any HTTPTransport, logger: Logger
+) -> (any ModelProviding)? {
+    guard let settings else {
+        logger.notice("@aaru disabled: ANTHROPIC_API_KEY is not set")
+        return nil
+    }
+    return AnthropicMessagesProvider(
+        transport: transport, apiKey: settings.apiKey, model: settings.model, baseURL: settings.baseURL,
+        effort: settings.effort
+    )
 }
 
 /// A fresh pod can be refused by Postgres for its first seconds while the network policy that

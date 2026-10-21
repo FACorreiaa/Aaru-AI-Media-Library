@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 /// A notification the user tapped, waiting for the signed-in app to open its title. It outlives
@@ -11,4 +12,6 @@ final class PushInbox {
     var libraryItemID: String?
     /// The agent request to open, from the alert's `planId` (OUT-004).
     var planID: String?
+    /// The group channel or invites to open, from the alert's `url` (GRP-012).
+    var groupLink: URL?
 }

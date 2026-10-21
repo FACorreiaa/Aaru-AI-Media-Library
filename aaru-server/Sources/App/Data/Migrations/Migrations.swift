@@ -34,6 +34,11 @@ let allMigrations: [any Migration] = [
     AddMCPOAuth(),
     AddImportsWriteScope(),
     AddTitleGenres(),
+    CreateSocial(),
+    CreateGroups(),
+    AddGroupChannelKinds(),
+    AddAgentReplies(),
+    AddGroupPush(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

@@ -36,7 +36,7 @@ extension APIImplementation {
     func getNotificationSettings(_: Operations.GetNotificationSettings.Input) async throws
         -> Operations.GetNotificationSettings.Output
     {
-        try await .ok(.init(body: .json(.init(airing: stores.push.airingEnabled(userID: currentUser())))))
+        try await .ok(.init(body: .json(.init(stores.push.notificationSettings(userID: currentUser())))))
     }
 
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws
@@ -44,8 +44,20 @@ extension APIImplementation {
     {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
         let userID = try currentUser()
-        try await stores.push.setAiring(body.airing, userID: userID, now: Date())
-        return try await .ok(.init(body: .json(.init(airing: stores.push.airingEnabled(userID: userID)))))
+        var settings = try await stores.push.notificationSettings(userID: userID)
+        settings.airing = body.airing ?? settings.airing
+        settings.groupMentions = body.groupMentions ?? settings.groupMentions
+        settings.groupInvites = body.groupInvites ?? settings.groupInvites
+        try await stores.push.saveNotificationSettings(settings, userID: userID, now: Date())
+        return try await .ok(.init(body: .json(.init(stores.push.notificationSettings(userID: userID)))))
+    }
+}
+
+extension Components.Schemas.NotificationSettings {
+    init(_ settings: NotificationSettings) {
+        self.init(
+            airing: settings.airing, groupMentions: settings.groupMentions, groupInvites: settings.groupInvites
+        )
     }
 }
 

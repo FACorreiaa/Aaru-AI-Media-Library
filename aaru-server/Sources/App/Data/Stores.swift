@@ -43,6 +43,7 @@ protocol UserStore: Sendable {
 struct UserProfile: Sendable, Equatable {
     var id: UserID
     var displayName: String?
+    var handle: String?
     var providers: [AuthIdentity.Provider]
 }
 
@@ -307,6 +308,16 @@ struct DueAiring: Sendable, Equatable {
     var episodeName: String?
 }
 
+/// What a user asked to hear about. Everything is off until they turn it on.
+struct NotificationSettings: Sendable, Equatable {
+    /// A new episode of a show they are watching aired.
+    var airing = false
+    /// Someone tagged them in a group they have not muted.
+    var groupMentions = false
+    /// A friend invited them into a group.
+    var groupInvites = false
+}
+
 protocol PushStore: Sendable {
     /// A token belongs to one user: registering it again moves it.
     func register(_ device: PushDevice, userID: UserID) async throws
@@ -314,9 +325,11 @@ protocol PushStore: Sendable {
     /// Apple said the token is dead (uninstalled app, revoked permission).
     func forget(token: String) async throws
     func devices(userID: UserID) async throws -> [PushDevice]
-    func airingEnabled(userID: UserID) async throws -> Bool
-    /// Turning it on records when, so only episodes airing afterwards are announced.
-    func setAiring(_ enabled: Bool, userID: UserID, now: Date) async throws
+    func notificationSettings(userID: UserID) async throws -> NotificationSettings
+    /// Turning airing on records when, so only episodes airing afterwards are announced.
+    func saveNotificationSettings(_ settings: NotificationSettings, userID: UserID, now: Date) async throws
+    /// Of `users`, the members of `group` who want mention alerts and have not muted it (GRP-012).
+    func mentionRecipients(group: UUID, users: [UserID]) async throws -> [UserID]
     /// Aired in `(since, now]`, for in-progress shows, not watched, not announced, user opted in.
     func dueAirings(now: Date, since: Date) async throws -> [DueAiring]
     /// Claims an announcement. False when another run already sent it.
@@ -360,4 +373,8 @@ struct Stores: Sendable {
     var watchEvents: any WatchEventStore
     var plans: any PlanStore
     var oauth: any OAuthStore
+    var social: any SocialStore
+    var groups: any GroupStore
+    var groupKinds: any GroupKindStore
+    var agent: any AgentStore
 }

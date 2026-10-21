@@ -16,6 +16,12 @@ struct Services: Sendable {
     var scrobble: ScrobbleService
     var plans: PlanService
     var oauth: OAuthService
+    var social: SocialService
+    var groups: GroupService
+    /// Open sockets and browser tickets (GRP-006). One per process.
+    var realtime: RealtimeHub
+    /// `@aaru` answers; nil when no model is configured (GRP-011).
+    var agentReplies: AgentReplyService?
     /// Nil when `VAPID_CONFIG` is unset; the key route then answers 503.
     var webPush: (any WebPushSending)?
 
@@ -29,11 +35,16 @@ struct Services: Sendable {
         catFeed: CATCalendarFeed? = nil,
         publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!,
         // The web app's base URL and the binding cookie's domain, for the OAuth consent page.
-        oauth: (webBaseURL: URL, cookieDomain: String?) = (URL(string: "https://aaruapp.com")!, "aaruapp.com")
+        oauth: (webBaseURL: URL, cookieDomain: String?) = (URL(string: "https://aaruapp.com")!, "aaruapp.com"),
+        model: (any ModelProviding)? = nil
     ) -> Services {
         let catalog = CatalogService(stores: stores, catalogs: catalogs)
         let resolver = TitleResolver(stores: stores, catalogs: catalogs)
         let library = LibraryService(stores: stores, resolver: resolver, catalog: catalog)
+        let realtime = RealtimeHub()
+        let groups = GroupService(
+            stores: stores, events: realtime, resolver: resolver, library: library, agentAvailable: model != nil
+        )
         return Services(
             auth: auth,
             catalog: catalog,
@@ -62,7 +73,15 @@ struct Services: Sendable {
                 settings: .init(
                     publicBaseURL: publicBaseURL, webBaseURL: oauth.webBaseURL, cookieDomain: oauth.cookieDomain
                 )
-            )
+            ),
+            social: SocialService(stores: stores),
+            groups: groups,
+            realtime: realtime,
+            agentReplies: model.map {
+                AgentReplyService(
+                    stores: stores, groups: groups, catalog: catalog, resolver: resolver, library: library, model: $0
+                )
+            }
         )
     }
 

@@ -7,12 +7,16 @@ import Foundation
 
 extension PostgresUserStore {
     func profile(_ id: UserID) async throws -> UserProfile? {
-        struct UserRow: Decodable { let displayName: String? }
+        struct UserRow: Decodable {
+            let displayName: String?
+            let handle: String?
+        }
         struct IdentityRow: Decodable { let provider: String }
         let sql = try sqlDatabase(database)
-        guard let user = try await sql.select().column("display_name").from("users")
-            .where("id", .equal, id.rawValue)
-            .first(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase)
+        guard let user = try await sql.raw("""
+        SELECT u.display_name, p.handle FROM users u LEFT JOIN profiles p ON p.user_id = u.id
+        WHERE u.id = \(bind: id.rawValue)
+        """).first(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase)
         else { return nil }
         let identities = try await sql.select().column("provider").from("auth_identities")
             .where("user_id", .equal, id.rawValue)
@@ -21,6 +25,7 @@ extension PostgresUserStore {
         return UserProfile(
             id: id,
             displayName: user.displayName,
+            handle: user.handle,
             providers: identities.compactMap { AuthIdentity.Provider(rawValue: $0.provider) }
         )
     }
@@ -34,7 +39,40 @@ extension PostgresUserStore {
                 SELECT email FROM auth_identities WHERE user_id = \(bind: id.rawValue) AND email IS NOT NULL
             )
             """).run()
+            try await Self.leaveGroups(id, sql: sql)
             try await sql.delete(from: "users").where("id", .equal, id.rawValue).run()
+        }
+    }
+}
+
+extension PostgresUserStore {
+    /// Group messages are server-visible, so an account's messages are emptied, not orphaned with
+    /// their text. Each group it owned passes to its oldest admin, else its oldest member, and a
+    /// group with nobody else in it goes. The membership rows then cascade with the user.
+    static func leaveGroups(_ id: UserID, sql: any SQLDatabase) async throws {
+        try await sql.raw("""
+        UPDATE group_messages SET body = '', mentions = '{}', mentions_agent = false,
+            deleted_at = coalesce(deleted_at, now())
+        WHERE author_id = \(bind: id.rawValue)
+        """).run()
+        try await sql.raw("""
+        DELETE FROM groups g WHERE g.id IN (SELECT group_id FROM group_members WHERE user_id = \(bind: id.rawValue))
+          AND NOT EXISTS (SELECT 1 FROM group_members o WHERE o.group_id = g.id AND o.user_id <> \(bind: id.rawValue))
+        """).run()
+        struct Owned: Decodable { let groupId: UUID }
+        let owned = try await sql.raw("""
+        UPDATE group_members SET role = 'admin' WHERE user_id = \(bind: id.rawValue) AND role = 'owner'
+        RETURNING group_id
+        """).all(decoding: Owned.self, keyDecodingStrategy: .convertFromSnakeCase)
+        for group in owned {
+            try await sql.raw("""
+            UPDATE group_members SET role = 'owner'
+            WHERE group_id = \(bind: group.groupId) AND user_id = (
+                SELECT user_id FROM group_members
+                WHERE group_id = \(bind: group.groupId) AND user_id <> \(bind: id.rawValue)
+                ORDER BY role = 'admin' DESC, joined_at, user_id LIMIT 1
+            )
+            """).run()
         }
     }
 }

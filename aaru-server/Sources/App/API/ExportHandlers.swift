@@ -20,13 +20,18 @@ extension APIImplementation {
             dto.watchedEpisodes = export.watched[entry.item.id]?.map { .init(season: $0.season, number: $0.episode) }
             return dto
         }
-        return .ok(.init(
+        async let friends = services.social.friends(userID)
+        async let blocked = services.social.blocked(userID)
+        async let groups = services.groups.groups(userID)
+        async let groupMessages = stores.groups.exportMessages(userID)
+        return try await .ok(.init(
             headers: .init(contentDisposition: "attachment; filename=\"aaru-export-\(stamp).json\""),
             body: .json(.init(
                 exportedAt: Date(),
                 account: .init(
                     userId: profile.id.description,
                     displayName: profile.displayName,
+                    handle: profile.handle,
                     providers: profile.providers.compactMap { .init(rawValue: $0.rawValue) }
                 ),
                 library: library,
@@ -35,7 +40,13 @@ extension APIImplementation {
                     createdAt: $0.list.createdAt,
                     items: $0.titles.map(Components.Schemas.TitleSummary.init)
                 ) },
-                shelves: export.shelves.map(Components.Schemas.Shelf.init)
+                shelves: export.shelves.map(Components.Schemas.Shelf.init),
+                friends: friends.map(Components.Schemas.SocialUser.init),
+                blocked: blocked.map(Components.Schemas.SocialUser.init),
+                groups: groups.map { .init(name: $0.name, role: .init($0.role)) },
+                groupMessages: groupMessages.map {
+                    .init(group: $0.group, channel: $0.channel, body: $0.body, createdAt: $0.createdAt)
+                }
             ))
         ))
     }

@@ -152,6 +152,645 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/profile:
+    put:
+      operationId: updateProfile
+      summary: Claim or change your handle, and optionally your display name. Handles are how friends find you.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProfileUpdate'}
+      responses:
+        '200':
+          description: Your social identity.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUser'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/users/{handle}:
+    get:
+      operationId: getSocialUser
+      summary: The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+      parameters:
+        - {name: handle, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: The user.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friend-requests:
+    get:
+      operationId: listFriendRequests
+      summary: Pending requests to you and from you, newest first.
+      responses:
+        '200':
+          description: Both directions.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FriendRequests'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: sendFriendRequest
+      summary: Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FriendRequestCreate'}
+      responses:
+        '200':
+          description: The user and where you now stand (outgoing or friend).
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friend-requests/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    delete:
+      operationId: withdrawFriendRequest
+      summary: Decline a request to you, or cancel one you sent. The other side is not told.
+      responses:
+        '204':
+          description: Gone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friend-requests/{id}/accept:
+    post:
+      operationId: acceptFriendRequest
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The new friend.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUser'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friends:
+    get:
+      operationId: listFriends
+      summary: Your friends, by handle.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friends/{userId}:
+    delete:
+      operationId: removeFriend
+      summary: Unfriend. Silent; the other side is not told.
+      parameters:
+        - {name: userId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: No longer friends.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/blocks:
+    get:
+      operationId: listBlocks
+      summary: People you blocked.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/blocks/{userId}:
+    parameters:
+      - {name: userId, in: path, required: true, schema: {type: string, format: uuid}}
+    put:
+      operationId: blockUser
+      summary: Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
+      responses:
+        '204':
+          description: Blocked.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unblockUser
+      responses:
+        '204':
+          description: Unblocked. Friendship does not come back.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/reports:
+    post:
+      operationId: reportUser
+      summary: Report a user to Aaru. The user is not told.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReportCreate'}
+      responses:
+        '204':
+          description: Received.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups:
+    get:
+      operationId: listGroups
+      summary: Your groups, in the order you joined them, with unread and mention counts.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createGroup
+      summary: Create a group you own, with a #general channel. Needs your handle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GroupCreate'}
+      responses:
+        '200':
+          description: The new group.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getGroup
+      summary: A group you are in, with its channels, members and pending invites. 404 to anyone else.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: updateGroup
+      summary: Rename the group. Owner and admins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GroupCreate'}
+      responses:
+        '200':
+          description: The group.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteGroup
+      summary: Delete the group, its channels and every message. Owner only.
+      responses:
+        '204':
+          description: Gone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/members/{userId}:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: userId, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: updateGroupMember
+      summary: Make a member an admin, or an admin a member. Owner only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GroupMemberUpdate'}
+      responses:
+        '204':
+          description: Changed.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: removeGroupMember
+      summary: Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave.
+      responses:
+        '204':
+          description: Removed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/transfer:
+    post:
+      operationId: transferGroup
+      summary: Make another member the owner. You become an admin.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UserRef'}
+      responses:
+        '204':
+          description: Transferred.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/invites:
+    post:
+      operationId: inviteToGroup
+      summary: Invite a friend. Inviting again, or someone already in, changes nothing.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UserRef'}
+      responses:
+        '204':
+          description: Invited.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/group-invites:
+    get:
+      operationId: listGroupInvites
+      summary: Invites waiting for you, newest first.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupInviteList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/group-invites/{id}:
+    delete:
+      operationId: declineGroupInvite
+      summary: Decline an invite to you, or cancel one you sent.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Gone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/group-invites/{id}/accept:
+    post:
+      operationId: acceptGroupInvite
+      summary: Join the group.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The group you joined.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupSummary'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels:
+    post:
+      operationId: createChannel
+      summary: Add a text channel. Owner and admins.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChannelCreate'}
+      responses:
+        '200':
+          description: The channel.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Channel'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: updateChannel
+      summary: Rename a channel or set its topic. Owner and admins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChannelUpdate'}
+      responses:
+        '200':
+          description: The channel.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Channel'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteChannel
+      summary: Delete a channel and its messages. The first channel stays. Owner and admins.
+      responses:
+        '204':
+          description: Gone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/messages:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listMessages
+      summary: Messages oldest first. Without a cursor, the latest page.
+      parameters:
+        - name: before
+          in: query
+          description: Messages older than this one.
+          schema: {type: string, format: uuid}
+        - name: after
+          in: query
+          description: Messages newer than this one.
+          schema: {type: string, format: uuid}
+        - name: limit
+          in: query
+          description: 1–100, default 50.
+          schema: {type: integer}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupMessagePage'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: postMessage
+      summary: Post a message. A retry with the same clientNonce returns the first message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MessageCreate'}
+      responses:
+        '200':
+          description: The message.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupMessage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: messageId, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: editMessage
+      summary: Edit your own message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MessageUpdate'}
+      responses:
+        '200':
+          description: The message.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupMessage'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteMessage
+      summary: Delete your message, or any message as owner or admin. The row stays, empty.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/read:
+    post:
+      operationId: markChannelRead
+      summary: Mark the channel read up to a message. The read point never moves back.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReadMark'}
+      responses:
+        '204':
+          description: Marked.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/realtime/ticket:
+    post:
+      operationId: createRealtimeTicket
+      summary: >-
+        A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser,
+        which cannot send an Authorization header on a WebSocket. Apps send their bearer token on
+        the upgrade instead.
+      responses:
+        '200':
+          description: The ticket and the socket URL to open with it.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RealtimeTicket'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/me:
+    put:
+      operationId: updateMyMembership
+      summary: >-
+        Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention
+        alerts. Both are off by default.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MembershipUpdate'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupSummary'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/progress:
+    get:
+      operationId: getChannelProgress
+      summary: A title channel's title, your progress, and the progress of members who share theirs in this group.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChannelProgress'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/items:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listChannelItems
+      summary: A shelf channel's titles, with your own library status for each.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChannelItemList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: addChannelItem
+      summary: Add a title to a shelf channel. Any member can; adding one already there changes nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChannelItemCreate'}
+      responses:
+        '200':
+          description: The shelf.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChannelItemList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/items/{titleId}:
+    delete:
+      operationId: removeChannelItem
+      summary: Take a title off a shelf channel. Any member can.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: titleId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Removed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party:
+    parameters:
+      - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getWatchParty
+      summary: A watch channel's newest party, ended or not, and the server's clock for the countdown.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: openWatchParty
+      summary: Open a party in the lobby. A show needs the episode. One open party per channel (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WatchPartyCreate'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party/ready:
+    post:
+      operationId: setWatchPartyReady
+      summary: Say you are ready, or not.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WatchPartyReady'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party/start:
+    post:
+      operationId: startWatchParty
+      summary: Start the countdown. The host or an admin.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WatchPartyStart'}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party/end:
+    post:
+      operationId: endWatchParty
+      summary: End the party. The host or an admin.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchPartyView'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/groups/{groupId}/channels/{channelId}/party/watched:
+    post:
+      operationId: markWatchPartyWatched
+      summary: Mark the party's episode, film or book watched in your own library. Nobody else's.
+      parameters:
+        - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Marked.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/devices:
     put:
       operationId: registerDevice
@@ -436,11 +1075,12 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: updateNotificationSettings
+      summary: Changes the switches sent; any left out keep their value.
       requestBody:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/NotificationSettings'}
+            schema: {$ref: '#/components/schemas/NotificationSettingsUpdate'}
       responses:
         '200':
           description: Saved.
@@ -1514,11 +2154,23 @@ components:
             auth: {type: string}
     NotificationSettings:
       type: object
-      required: [airing]
+      required: [airing, groupMentions, groupInvites]
       properties:
         airing:
           type: boolean
           description: Push when a new episode of a show you are watching airs.
+        groupMentions:
+          type: boolean
+          description: Push when someone tags you in a group you have not muted. The alert never holds the message.
+        groupInvites:
+          type: boolean
+          description: Push when a friend invites you into a group.
+    NotificationSettingsUpdate:
+      type: object
+      properties:
+        airing: {type: boolean}
+        groupMentions: {type: boolean}
+        groupInvites: {type: boolean}
     GoogleSignInRequest:
       type: object
       required: [idToken]
@@ -1549,11 +2201,364 @@ components:
           format: uuid
         displayName:
           type: string
+        handle:
+          type: string
+          description: Absent until the user claims one in PUT /v1/me/profile.
         providers:
           type: array
           items:
             type: string
             enum: [apple, email, google]
+    ProfileUpdate:
+      type: object
+      required: [handle]
+      properties:
+        handle: {type: string, description: '3–20 of a–z, 0–9 and _. Stored lowercase.'}
+        displayName: {type: string, description: Absent leaves it unchanged; empty clears it.}
+    SocialUser:
+      type: object
+      required: [userId, handle]
+      properties:
+        userId: {type: string, format: uuid}
+        handle: {type: string}
+        displayName: {type: string}
+    SocialUserView:
+      type: object
+      required: [user, relationship]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        relationship:
+          type: string
+          enum: [none, friend, outgoing, incoming, self]
+    SocialUserList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/SocialUser'}
+    FriendRequest:
+      type: object
+      required: [id, user, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        user: {$ref: '#/components/schemas/SocialUser', description: The other person.}
+        createdAt: {type: string, format: date-time}
+    FriendRequests:
+      type: object
+      required: [incoming, outgoing]
+      properties:
+        incoming:
+          type: array
+          items: {$ref: '#/components/schemas/FriendRequest'}
+        outgoing:
+          type: array
+          items: {$ref: '#/components/schemas/FriendRequest'}
+    FriendRequestCreate:
+      type: object
+      required: [handle]
+      properties:
+        handle: {type: string}
+    ReportCreate:
+      type: object
+      required: [userId, reason]
+      properties:
+        userId: {type: string, format: uuid}
+        reason:
+          type: string
+          enum: [spam, harassment, impersonation, other]
+        note: {type: string, maxLength: 1000}
+    GroupRole:
+      type: string
+      enum: [owner, admin, member]
+    GroupSummary:
+      type: object
+      required: [id, name, role, defaultChannelId, unread, mentions, shareProgress, muted]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        role: {$ref: '#/components/schemas/GroupRole'}
+        defaultChannelId: {type: string, format: uuid}
+        unread: {type: integer, description: Messages from others since you last read, across channels.}
+        mentions: {type: integer, description: Unread messages that tag you.}
+        shareProgress: {type: boolean, description: You show your progress in this group's title channels.}
+        muted: {type: boolean, description: "Mentions in this group send you no alerts."}
+    GroupList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/GroupSummary'}
+    GroupMember:
+      type: object
+      required: [user, role, joinedAt, shareProgress]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        role: {$ref: '#/components/schemas/GroupRole'}
+        joinedAt: {type: string, format: date-time}
+        shareProgress: {type: boolean}
+    Channel:
+      type: object
+      required: [id, kind, name, position, isDefault, unread, mentions]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {$ref: '#/components/schemas/ChannelKind'}
+        title: {$ref: '#/components/schemas/TitleSummary', description: What a title channel is about.}
+        name: {type: string, description: 'Lowercase, dashes for spaces: movie-night.'}
+        topic: {type: string}
+        position: {type: integer}
+        isDefault: {type: boolean, description: 'The #general every group starts with. Cannot be deleted.'}
+        unread: {type: integer}
+        mentions: {type: integer}
+    GroupDetail:
+      type: object
+      required: [group, channels, members, invited, agent]
+      properties:
+        group: {$ref: '#/components/schemas/GroupSummary'}
+        channels:
+          type: array
+          items: {$ref: '#/components/schemas/Channel'}
+        members:
+          type: array
+          items: {$ref: '#/components/schemas/GroupMember'}
+        invited:
+          type: array
+          description: Friends invited who have not answered yet.
+          items: {$ref: '#/components/schemas/SocialUser'}
+        agent: {type: boolean, description: '@aaru answers in this group. When false, hide it from mentions.'}
+    GroupCreate:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string, maxLength: 50}
+    GroupMemberUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [admin, member]
+    UserRef:
+      type: object
+      required: [userId]
+      properties:
+        userId: {type: string, format: uuid}
+    GroupInvite:
+      type: object
+      required: [id, groupId, groupName, inviter, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        groupId: {type: string, format: uuid}
+        groupName: {type: string}
+        inviter: {$ref: '#/components/schemas/SocialUser'}
+        createdAt: {type: string, format: date-time}
+    GroupInviteList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/GroupInvite'}
+    ChannelKind:
+      type: string
+      description: 'text: chat. title: one title, with the spoiler guard. watch: watch parties. shelf: a shared list.'
+      enum: [text, title, watch, shelf]
+    ChannelCreate:
+      type: object
+      properties:
+        kind: {$ref: '#/components/schemas/ChannelKind'}
+        name: {type: string, description: "Required, except a title channel takes its title's name."}
+        topic: {type: string, maxLength: 200}
+        title: {$ref: '#/components/schemas/MediaRef', description: Required for a title channel.}
+    ChannelUpdate:
+      type: object
+      properties:
+        name: {type: string, description: Absent leaves it unchanged.}
+        topic: {type: string, description: Absent leaves it unchanged; empty clears it.}
+    GroupMessage:
+      type: object
+      required: [id, channelId, body, mentions, mentionsAgent, fromBlocked, deleted, createdAt, veiled, fromAgent]
+      properties:
+        id: {type: string, format: uuid}
+        channelId: {type: string, format: uuid}
+        author: {$ref: '#/components/schemas/SocialUser', description: Absent once the author deleted their account.}
+        body: {type: string, description: Empty when deleted.}
+        mentions:
+          type: array
+          description: Members the message tags.
+          items: {type: string, format: uuid}
+        mentionsAgent: {type: boolean, description: The message tags @aaru.}
+        fromBlocked: {type: boolean, description: You blocked the author. Show it collapsed.}
+        deleted: {type: boolean}
+        createdAt: {type: string, format: date-time}
+        editedAt: {type: string, format: date-time}
+        clientNonce: {type: string, description: 'Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.'}
+        spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: 'Only on your own messages: it says where you are in the title.'}
+        veiled: {type: boolean, description: "It may spoil what you have not watched yet: show it veiled until you tap."}
+        fromAgent: {type: boolean, description: Written by @aaru. It has no author.}
+        replyTo: {type: string, format: uuid, description: The mention an @aaru reply answers.}
+        components:
+          type: array
+          description: 'Cards on an @aaru reply. Catalog titles only; their buttons are the viewer''s own taps.'
+          items: {$ref: '#/components/schemas/MessageComponent'}
+    MessageComponent:
+      type: object
+      required: [type, title]
+      properties:
+        type:
+          type: string
+          enum: [title]
+        title: {$ref: '#/components/schemas/TitleSummary'}
+    GroupMessagePage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/GroupMessage'}
+    MessageCreate:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
+        clientNonce: {type: string, maxLength: 64, description: Makes a retry safe.}
+        spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: "Title channels: stamp by hand. Absent: stamped from your progress."}
+        spoilerFree: {type: boolean, description: 'Title channels: no stamp at all.'}
+    MessageUpdate:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
+    ReadMark:
+      type: object
+      required: [messageId]
+      properties:
+        messageId: {type: string, format: uuid}
+    RealtimeTicket:
+      type: object
+      required: [ticket, url, expiresAt]
+      properties:
+        ticket: {type: string}
+        url: {type: string, description: 'The wss:// URL to open, ticket included.'}
+        expiresAt: {type: string, format: date-time}
+    RealtimeEvent:
+      type: object
+      description: >-
+        One frame from GET /v1/ws (a WebSocket). The socket is never the source of truth: on
+        `ready` (every connect and reconnect), refetch what is on screen with REST.
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [ready, message.created, message.updated, message.deleted, typing, read, group.updated, group.removed, invites.changed, shelf.updated, watch.updated, watch.reaction, agent.thinking]
+        groupId: {type: string, format: uuid}
+        channelId: {type: string, format: uuid}
+        messageId: {type: string, format: uuid, description: 'agent.thinking: the mention being answered.'}
+        message: {$ref: '#/components/schemas/GroupMessage'}
+        user: {$ref: '#/components/schemas/SocialUser', description: 'Who is typing, or reacting.'}
+        emoji: {type: string, description: 'watch.reaction only.'}
+    RealtimeCommand:
+      type: object
+      description: One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds, and one reaction a second, counts.
+      required: [type, groupId, channelId]
+      properties:
+        type:
+          type: string
+          enum: [typing, react]
+        emoji: {type: string, description: 'react only: one of 😂 😱 😭 ❤️ 👏 🔥.'}
+        groupId: {type: string, format: uuid}
+        channelId: {type: string, format: uuid}
+    MembershipUpdate:
+      type: object
+      description: Any field left out keeps its value.
+      properties:
+        shareProgress: {type: boolean}
+        muted: {type: boolean}
+    SpoilerStamp:
+      type: object
+      description: How far into the title a reader must be to read the message unveiled. An episode, or the ending.
+      properties:
+        season: {type: integer}
+        episode: {type: integer}
+        ending: {type: boolean}
+    MemberProgress:
+      type: object
+      required: [user]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        status: {$ref: '#/components/schemas/LibraryStatus', description: Absent when it is not in their library.}
+        season: {type: integer, description: The furthest episode they ticked.}
+        episode: {type: integer}
+    ChannelProgress:
+      type: object
+      required: [title, members]
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        mine: {$ref: '#/components/schemas/MemberProgress'}
+        members:
+          type: array
+          description: Only members who share their progress in this group.
+          items: {$ref: '#/components/schemas/MemberProgress'}
+    ChannelItem:
+      type: object
+      required: [title, addedAt]
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        addedBy: {$ref: '#/components/schemas/SocialUser'}
+        addedAt: {type: string, format: date-time}
+        myStatus: {$ref: '#/components/schemas/LibraryStatus', description: Yours, when it is in your library.}
+    ChannelItemList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ChannelItem'}
+    ChannelItemCreate:
+      type: object
+      required: [title]
+      properties:
+        title: {$ref: '#/components/schemas/MediaRef'}
+    WatchParty:
+      type: object
+      required: [id, title, state, ready]
+      properties:
+        id: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        season: {type: integer}
+        episode: {type: integer}
+        state:
+          type: string
+          enum: [lobby, countdown, live, ended]
+        startsAt: {type: string, format: date-time}
+        endedAt: {type: string, format: date-time}
+        host: {$ref: '#/components/schemas/SocialUser'}
+        ready:
+          type: array
+          items: {$ref: '#/components/schemas/SocialUser'}
+    WatchPartyView:
+      type: object
+      required: [serverTime]
+      properties:
+        party: {$ref: '#/components/schemas/WatchParty'}
+        serverTime: {type: string, format: date-time, description: 'Count down against this, not the device clock.'}
+    WatchPartyCreate:
+      type: object
+      required: [title]
+      properties:
+        title: {$ref: '#/components/schemas/MediaRef'}
+        season: {type: integer}
+        episode: {type: integer}
+    WatchPartyReady:
+      type: object
+      required: [ready]
+      properties:
+        ready: {type: boolean}
+    WatchPartyStart:
+      type: object
+      properties:
+        countdownSeconds: {type: integer, description: '3–60, default 10.'}
     ExternalIds:
       type: object
       description: Provider identifiers known for a title. Absent means unknown.
@@ -1797,6 +2802,31 @@ components:
         shelves:
           type: array
           items: {$ref: '#/components/schemas/Shelf'}
+        friends:
+          type: array
+          items: {$ref: '#/components/schemas/SocialUser'}
+        blocked:
+          type: array
+          items: {$ref: '#/components/schemas/SocialUser'}
+        groups:
+          type: array
+          items:
+            type: object
+            required: [name, role]
+            properties:
+              name: {type: string}
+              role: {$ref: '#/components/schemas/GroupRole'}
+        groupMessages:
+          type: array
+          description: Messages you wrote in groups, oldest first.
+          items:
+            type: object
+            required: [group, channel, body, createdAt]
+            properties:
+              group: {type: string}
+              channel: {type: string}
+              body: {type: string}
+              createdAt: {type: string, format: date-time}
     LibraryPage:
       type: object
       required: [items, page]

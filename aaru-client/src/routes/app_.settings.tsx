@@ -10,6 +10,7 @@ import { optionalString } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
+import { SocialSection } from '../components/SocialSection'
 import { StremioSection } from '../components/StremioSection'
 import { CatImport } from '../components/CatImport'
 import { TraktImport } from '../components/TraktImport'
@@ -43,6 +44,7 @@ import {
   linkGoogle,
   signOut,
 } from '../lib/session/session'
+import { loadSocial } from '../lib/social/server'
 import { listStremio } from '../lib/stremio/server'
 import { listConnections } from '../lib/agents/server'
 import { getPushSetup } from '../lib/push/server'
@@ -64,16 +66,25 @@ export const Route = createFileRoute('/app_/settings')({
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
   },
   loader: async () => {
-    const [account, imports, signIn, stremio, connections, push, trakt] =
-      await Promise.all([
-        getAccount(),
-        listImports(),
-        getSignInConfig(),
-        listStremio(),
-        listConnections(),
-        getPushSetup(),
-        getTraktConnection(),
-      ])
+    const [
+      account,
+      imports,
+      signIn,
+      stremio,
+      connections,
+      push,
+      social,
+      trakt,
+    ] = await Promise.all([
+      getAccount(),
+      listImports(),
+      getSignInConfig(),
+      listStremio(),
+      listConnections(),
+      getPushSetup(),
+      loadSocial(),
+      getTraktConnection(),
+    ])
     return {
       account,
       imports,
@@ -81,6 +92,7 @@ export const Route = createFileRoute('/app_/settings')({
       trakt,
       connections,
       push,
+      social,
       googleClientId: signIn.googleClientId,
     }
   },
@@ -251,6 +263,19 @@ function Settings() {
             Sign out
           </Button>
         </Card>
+
+        <SocialSection
+          handle={account().handle}
+          displayName={account().displayName}
+          state={loaded().social}
+          onProfileSaved={(user) =>
+            setAccount({
+              ...account(),
+              handle: user.handle,
+              displayName: user.displayName,
+            })
+          }
+        />
 
         <section class="mt-8">
           <h2 class="font-display text-2xl font-medium">Bring your history</h2>

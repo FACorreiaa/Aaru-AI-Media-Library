@@ -29,9 +29,7 @@ struct WebPushSender: WebPushSending {
 
     func send(_ message: PushMessage, to subscription: WebPushSubscription) async throws -> PushOutcome {
         let subscriber = try Self.subscriber(subscription)
-        let path = message.payload["planId"].map { "/app/plans/\($0)" }
-            ?? message.payload["importId"].map { "/app/imports/\($0)" }
-            ?? message.payload["libraryItemId"].map { "/app/title/\($0)" } ?? "/app"
+        let path = Self.path(message.payload)
         let notification = WebPush.PushMessage.Notification(
             destination: Self.webApp.appending(path: path),
             title: message.title,
@@ -45,6 +43,17 @@ struct WebPushSender: WebPushSending {
         } catch is BadSubscriberError {
             return .deadToken
         }
+    }
+
+    /// The web app's page for an alert's payload.
+    static func path(_ payload: [String: String]) -> String {
+        if let group = payload["groupId"], let channel = payload["channelId"] {
+            return "/app/groups/\(group)/\(channel)"
+        }
+        return payload["planId"].map { "/app/plans/\($0)" }
+            ?? payload["importId"].map { "/app/imports/\($0)" }
+            ?? payload["libraryItemId"].map { "/app/title/\($0)" }
+            ?? payload["groupInvite"].map { _ in "/app/groups" } ?? "/app"
     }
 
     private static func subscriber(_ subscription: WebPushSubscription) throws -> Subscriber {

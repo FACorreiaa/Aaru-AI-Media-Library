@@ -8,6 +8,9 @@ final class AppServices {
     let library = LibraryModel()
     let lists: ListsModel
     let imports: ImportsModel
+    let groups: GroupsModel
+    /// The `/v1/ws` socket (GRP-006): open while signed in and active.
+    let realtime: RealtimeClient
     #if os(iOS)
         let push: PushRegistrar
     #endif
@@ -28,6 +31,8 @@ final class AppServices {
         }
         lists = ListsModel(api: api)
         imports = ImportsModel(api: api)
+        realtime = RealtimeClient(baseURL: AppEnvironment.apiBaseURL) { session.token }
+        groups = GroupsModel(api: api, realtime: realtime)
         #if os(iOS)
             push = PushRegistrar(api: api)
             PushRegistrar.current = push

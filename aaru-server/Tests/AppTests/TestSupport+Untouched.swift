@@ -115,6 +115,110 @@ extension UntouchedStore {
     }
 }
 
+extension UntouchedStore: SocialStore {
+    func socialUser(_: UserID) async throws -> SocialUser? {
+        throw Touched()
+    }
+
+    func socialUser(handle _: String) async throws -> SocialUser? {
+        throw Touched()
+    }
+
+    func saveProfile(_: UserID, handle _: String, displayName _: String??) async throws {
+        throw Touched()
+    }
+
+    func isBlocked(_: UserID, _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func areFriends(_: UserID, _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func pendingRequest(sender _: UserID, recipient _: UserID) async throws -> UUID? {
+        throw Touched()
+    }
+
+    func createRequest(id _: UUID, sender _: UserID, recipient _: UserID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func incomingRequests(_: UserID) async throws -> [FriendRequest] {
+        throw Touched()
+    }
+
+    func outgoingRequests(_: UserID) async throws -> [FriendRequest] {
+        throw Touched()
+    }
+
+    func acceptRequest(id _: UUID, recipient _: UserID, now _: Date) async throws -> UserID? {
+        throw Touched()
+    }
+
+    func deleteRequest(id _: UUID, party _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func friends(_: UserID) async throws -> [SocialUser] {
+        throw Touched()
+    }
+
+    func unfriend(_: UserID, _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func block(_: UserID, _: UserID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func unblock(_: UserID, _: UserID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func blocked(by _: UserID) async throws -> [SocialUser] {
+        throw Touched()
+    }
+
+    func report(_: UserReport) async throws {
+        throw Touched()
+    }
+
+    func blockers(of _: UserID) async throws -> Set<UserID> {
+        throw Touched()
+    }
+}
+
+extension UntouchedStore: AgentStore {
+    func enqueue(_: AgentReplyJob, state _: AgentReplyState, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func load(tagger _: UserID, group _: UUID, dayStart _: Date, hourStart _: Date) async throws -> AgentLoad {
+        throw Touched()
+    }
+
+    func claim(now _: Date, lease _: TimeInterval) async throws -> AgentReplyJob? {
+        throw Touched()
+    }
+
+    func finish(_: UUID, state _: AgentReplyState, error _: String?, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func retry(_: UUID, error _: String, notBefore _: Date, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func recordUsage(_: UserID, day _: Date, inputTokens _: Int, outputTokens _: Int) async throws {
+        throw Touched()
+    }
+
+    func usage(_: UserID, day _: Date) async throws -> AgentUsage {
+        throw Touched()
+    }
+}
+
 extension UntouchedStore {
     func createStremioLink(code _: String, userID _: UserID, expiresAt _: Date, now _: Date) async throws {
         throw Touched()
@@ -205,6 +309,44 @@ extension UntouchedStore: OAuthStore {
     }
 
     func revoke(tokenHash _: String, now _: Date) async throws {
+        throw Touched()
+    }
+}
+
+extension UntouchedStore: PushStore {
+    func register(_: PushDevice, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func unregister(token _: String, userID _: UserID) async throws {
+        throw Touched()
+    }
+
+    func forget(token _: String) async throws {
+        throw Touched()
+    }
+
+    func devices(userID _: UserID) async throws -> [PushDevice] {
+        throw Touched()
+    }
+
+    func notificationSettings(userID _: UserID) async throws -> NotificationSettings {
+        throw Touched()
+    }
+
+    func saveNotificationSettings(_: NotificationSettings, userID _: UserID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func mentionRecipients(group _: UUID, users _: [UserID]) async throws -> [UserID] {
+        throw Touched()
+    }
+
+    func dueAirings(now _: Date, since _: Date) async throws -> [DueAiring] {
+        throw Touched()
+    }
+
+    func claim(_: DueAiring) async throws -> Bool {
         throw Touched()
     }
 }

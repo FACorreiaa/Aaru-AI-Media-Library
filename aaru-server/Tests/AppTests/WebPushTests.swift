@@ -96,7 +96,7 @@ extension PushTests {
                 "mediaRef": ["titleId": title.id.description, "type": "show"], "status": "in_progress",
             ]).json()
             let itemID = try #require(item["id"] as? String)
-            try await env.stores.push.setAiring(true, userID: env.userID, now: optIn)
+            try await env.stores.push.saveNotificationSettings(.init(airing: true), userID: env.userID, now: optIn)
             let (live, dead) = (Self.endpoint(), Self.endpoint())
             for endpoint in [live, dead] {
                 try await env.stores.push.saveWebPush(

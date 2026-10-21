@@ -11,6 +11,11 @@ struct LibraryHarness {
     let fake: FakeCatalog
     let token: String
     let userID: UserID
+    let services: Services
+
+    var realtime: RealtimeHub {
+        services.realtime
+    }
 
     struct Reply {
         let status: HTTPResponse.Status
@@ -30,6 +35,8 @@ struct LibraryHarness {
         trakt: TraktAPI? = nil,
         stremio: StremioAccount? = nil,
         webPush: (any WebPushSending)? = nil,
+        push: (any PushSending)? = nil,
+        model: (any ModelProviding)? = nil,
         _ body: @escaping @Sendable (LibraryHarness) async throws -> Void
     ) async throws {
         try await withMigratedStores { stores in
@@ -37,9 +44,13 @@ struct LibraryHarness {
             let (userID, token) = try await signedInUser(stores)
             let auth = AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil)
             var services = Services.make(
-                stores: stores, catalogs: FakeCatalog.providers(fake), auth: auth, trakt: trakt, stremio: stremio
+                stores: stores, catalogs: FakeCatalog.providers(fake), auth: auth, trakt: trakt, stremio: stremio,
+                model: model
             )
             services.webPush = webPush
+            if push != nil || webPush != nil {
+                services.groups.push = UserPush(stores: stores, sender: push, webPush: webPush)
+            }
             if let clock {
                 services.catalog.now = { clock.now }
                 services.library = LibraryService(
@@ -49,9 +60,13 @@ struct LibraryHarness {
                     now: { clock.now }
                 )
             }
-            let app = try Application(router: buildRouter(stores: stores, services: services))
+            let built = services
+            let app = try Application(router: buildRouter(stores: stores, services: built))
             try await app.test(.router) { client in
-                try await body(LibraryHarness(client: client, stores: stores, fake: fake, token: token, userID: userID))
+                try await body(LibraryHarness(
+                    client: client, stores: stores, fake: fake, token: token, userID: userID,
+                    services: built
+                ))
             }
         }
     }

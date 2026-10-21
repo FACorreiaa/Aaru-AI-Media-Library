@@ -8,6 +8,9 @@ struct TitleDetailView: View {
     @State private var notes = ""
     @State private var page = ""
     @State private var showsListPicker = false
+    @State private var discusses = false
+    /// Nil in previews and outside the signed-in app.
+    @Environment(GroupsModel.self) private var groups: GroupsModel?
     @State private var openEpisode: EpisodeKey?
     @State private var expandedSeasons: Set<Int> = []
     private let lists: ListsModel
@@ -76,6 +79,16 @@ struct TitleDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Add to list", systemImage: "text.badge.plus") { showsListPicker = true }
+            }
+            if groups?.managedGroups.isEmpty == false {
+                ToolbarItem(placement: .secondaryAction) {
+                    Button("Discuss in a group…", systemImage: "bubble.left.and.bubble.right") { discusses = true }
+                }
+            }
+        }
+        .sheet(isPresented: $discusses) {
+            if let groups {
+                DiscussInGroupSheet(groups: groups, title: entry.title)
             }
         }
         .sheet(isPresented: $showsListPicker) {

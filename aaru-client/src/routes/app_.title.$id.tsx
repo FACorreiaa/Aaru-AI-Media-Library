@@ -14,6 +14,7 @@ import {
   onCleanup,
 } from 'solid-js'
 import { AddToListDialog } from '../components/AddToListDialog'
+import { DiscussButton } from '../components/groups/DiscussButton'
 import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
@@ -224,6 +225,11 @@ function TitleRoom() {
             <Button size="sm" class="mt-4" onClick={() => setPicking(true)}>
               Add to list
             </Button>
+            <DiscussButton
+              titleId={entry().title.id}
+              type={entry().title.type}
+              name={entry().title.title}
+            />
             <Show when={entry().progress && entry().progress!.airedCount > 0}>
               <div class="mt-4 max-w-xs">
                 <div class="h-1.5 overflow-hidden rounded-full bg-surface">
