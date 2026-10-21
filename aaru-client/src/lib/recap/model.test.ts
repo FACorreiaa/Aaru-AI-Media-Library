@@ -39,6 +39,7 @@ function stats(overrides: Partial<Stats> = {}): Stats {
       showsFinished: 1,
       animeFinished: 0,
       booksFinished: 0,
+      albumsFinished: 0,
     },
     byKind: [
       { kind: 'movie', episodes: 0, minutes: 0, finished: 0 },
@@ -101,6 +102,7 @@ describe('cards', () => {
         showsFinished: 0,
         animeFinished: 0,
         booksFinished: 2,
+        albumsFinished: 0,
       },
       topTitles: [],
       topGenres: [],
@@ -265,6 +267,22 @@ describe('labels', () => {
       'Most watched: Severance',
       '2 days in a row',
     ])
+  })
+
+  it('says how many albums were listened to, only when there are any', () => {
+    const t = stats().totals
+    const withAlbums = stats({ totals: { ...t, albumsFinished: 2 } })
+    expect(shareLines(withAlbums)).toContain('Listened to 2 albums')
+    expect(shareLines(stats()).some((line) => line.includes('album'))).toBe(
+      false,
+    )
+    const finished = cards(withAlbums).find((card) => card.kind === 'finished')
+    expect(finished).toMatchObject({
+      parts: [
+        { kind: 'show', count: 1 },
+        { kind: 'album', count: 2 },
+      ],
+    })
   })
 })
 

@@ -2,21 +2,13 @@ import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import type { MessageComponent } from '../../lib/groups/agent'
 import { addTitleToLibrary } from '../../lib/groups/kinds-server'
-import { kindOf, statusLabel } from '../../lib/library/model'
-import type { MediaKind } from '../../lib/library/model'
+import { kindName, kindOf, statusLabel } from '../../lib/library/model'
 import { MascotMedallion } from '../Brand'
 import { Poster } from '../Poster'
 
 // GRP-011 on the web: how Aaru appears in a channel. It wears the medallion, says it is an
 // assistant, breathes while it works, and answers with title cards whose buttons act for
 // whoever taps them.
-
-const KIND_LABEL: Record<MediaKind, string> = {
-  film: 'Film',
-  show: 'Show',
-  anime: 'Anime',
-  book: 'Book',
-}
 
 /** Aaru's avatar: the medallion, at the size of a member's monogram. */
 export function AaruAvatar(props: { size?: 'sm' | 'md'; breathing?: boolean }) {
@@ -114,7 +106,11 @@ export function AgentCards(props: { cards: MessageComponent[] }) {
                   {card.title.title}
                 </Link>
                 <p class="truncate text-xs text-muted">
-                  {[card.title.year, KIND_LABEL[kind()]]
+                  {[
+                    kind() === 'album' ? card.title.byline : undefined,
+                    card.title.year,
+                    kindName(kind()),
+                  ]
                     .filter(Boolean)
                     .join(' · ')}
                 </p>

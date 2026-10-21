@@ -231,7 +231,7 @@ function Library() {
                   Your shelf is empty
                 </h2>
                 <p class="mt-2 text-muted">
-                  Search for a film, show, anime or book to start.
+                  Search for a film, show, anime, book or album to start.
                 </p>
                 <Button
                   variant="primary"
@@ -264,11 +264,14 @@ function Library() {
                         />
                         <div class="min-w-0">
                           <p class="line-clamp-2 font-medium">{row.title}</p>
-                          <p class="text-sm text-muted">
-                            {[
-                              row.year,
-                              KINDS.find((k) => k.kind === row.kind)?.label,
-                            ]
+                          <p class="truncate text-sm text-muted">
+                            {(row.kind === 'album'
+                              ? [row.byline, row.year]
+                              : [
+                                  row.year,
+                                  KINDS.find((k) => k.kind === row.kind)?.label,
+                                ]
+                            )
                               .filter(Boolean)
                               .join(' · ')}
                           </p>
@@ -301,10 +304,19 @@ function Library() {
                       params={{ id: row.id }}
                       class="block"
                     >
-                      <Poster url={row.posterUrl} kind={row.kind} />
+                      {/* Among posters a square cover keeps their baseline; on the Music
+                          shelf every cover is square and needs no slot. */}
+                      <Poster
+                        url={row.posterUrl}
+                        kind={row.kind}
+                        frame={kind() !== 'album'}
+                      />
                       <p class="mt-2 line-clamp-2 text-sm font-medium">
                         {row.title}
                       </p>
+                      <Show when={row.kind === 'album' && row.byline}>
+                        <p class="truncate text-xs text-muted">{row.byline}</p>
+                      </Show>
                       <p class="truncate text-xs text-muted">
                         {row.detail ?? statusLabel(row.status, row.kind)}
                       </p>

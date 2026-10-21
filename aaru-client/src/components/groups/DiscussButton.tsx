@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/solid-router'
 import { For, Show, createSignal, onMount } from 'solid-js'
 import { createChannel, getGroup, listGroups } from '../../lib/groups/server'
 import type { GroupSummary } from '../../lib/groups/server'
+import type { MediaType } from '../../lib/media'
 
 /**
  * "Discuss in a group…" on a Title page (GRP-007): opens this title's channel in a group I
@@ -9,7 +10,7 @@ import type { GroupSummary } from '../../lib/groups/server'
  */
 export function DiscussButton(props: {
   titleId: string
-  type: 'movie' | 'show' | 'book'
+  type: MediaType
   name: string
 }) {
   const navigate = useNavigate()

@@ -4,6 +4,7 @@ import type { JSX } from 'solid-js'
 import {
   chartBars,
   isRolling,
+  kindDetail,
   kindShares,
   ratingBars,
   recapPeriod,
@@ -157,13 +158,7 @@ export function StatsPanel(props: { stats: Stats; period: InsightsPeriod }) {
                   <div class="flex items-baseline justify-between gap-4 text-sm">
                     <span class="font-medium">{kind.label}</span>
                     <span class="text-muted tabular-nums">
-                      {[
-                        kind.minutes > 0 ? timeLabel(kind.minutes) : null,
-                        kind.episodes > 0 ? `${kind.episodes} episodes` : null,
-                        kind.finished > 0 ? `${kind.finished} finished` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ') || 'Nothing yet'}
+                      {kindDetail(kind)}
                     </span>
                   </div>
                   <div class="mt-2 h-2 overflow-hidden rounded-full bg-surface">

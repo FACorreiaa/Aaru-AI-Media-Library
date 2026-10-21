@@ -11,6 +11,8 @@ export const badgeVariants = cva(
       tone: {
         accent: 'bg-accent text-on-accent',
         ink: 'bg-ink text-paper',
+        /** A tag that describes rather than signals: an album's genres. */
+        quiet: 'bg-surface text-muted',
         /** On top of artwork, where the page's colours would not read. */
         scrim: 'bg-black/65 text-white',
       },

@@ -156,12 +156,15 @@ export function ShelfView(props: {
               <ul class="mt-5 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
                 <For each={list()}>
                   {(item) => (
-                    <li class="group/item relative min-w-0">
+                    // A container, so an album's remove button can find the top of its square
+                    // cover, which sits at the foot of a 2:3 slot (half the width down).
+                    <li class="group/item relative @container min-w-0">
                       <Link to="/app/title/$id" params={{ id: item.title.id }}>
                         <Poster
                           url={item.title.posterUrl}
                           kind={kindOf(item.title.type, item.title.isAnime)}
                           class="w-full"
+                          frame
                         />
                         <p class="mt-2 truncate text-sm font-semibold">
                           {item.title.title}
@@ -209,7 +212,12 @@ export function ShelfView(props: {
                             aria-label={`Remove ${item.title.title} from the shelf`}
                             title="Remove from the shelf"
                             onClick={() => setRemoving(item.title.id)}
-                            class="absolute top-1.5 right-1.5 grid size-7 place-items-center rounded-full bg-paper/90 text-muted opacity-0 shadow-sm group-hover/item:opacity-100 hover:text-danger focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                            class="absolute right-1.5 grid size-7 place-items-center rounded-full bg-paper/90 text-muted opacity-0 shadow-sm group-hover/item:opacity-100 hover:text-danger focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                            classList={{
+                              'top-1.5': item.title.type !== 'album',
+                              'top-[calc(50cqw+0.375rem)]':
+                                item.title.type === 'album',
+                            }}
                           >
                             ×
                           </button>
