@@ -27,7 +27,7 @@ struct PostgresScheduleStore: ScheduleStore {
     func calendar(userID: UserID, from: Date, until: Date, now _: Date) async throws -> [CalendarEntry] {
         let query: SQLQueryString = """
         SELECT li.id AS item_id, \(Self.titleColumns), se.season, se.episode, se.name, se.airs_at, se.airs_at_exact,
-            se.overview, se.runtime_minutes,
+            se.overview, se.runtime_minutes, se.still_url,
             NOT \(Self.unwatched) AS watched,
             (SELECT max(s2.episode) FROM show_episodes s2 WHERE s2.title_id = se.title_id AND s2.season = se.season)
                 AS season_last
@@ -47,7 +47,8 @@ struct PostgresScheduleStore: ScheduleStore {
                 return CalendarEntry(
                     libraryItemID: LibraryItemID(row.itemId), title: title, key: key, episodeName: row.name,
                     airsAt: row.airsAt, runtimeMinutes: row.runtimeMinutes, watched: row.watched, kind: kind,
-                    airTimeKnown: row.airsAtExact, episodeOverview: row.overview
+                    airTimeKnown: row.airsAtExact, episodeOverview: row.overview,
+                    stillURL: row.stillUrl.flatMap(URL.init(string:))
                 )
             }
     }
@@ -211,6 +212,7 @@ private struct CalendarRow: Decodable {
     let airsAtExact: Bool
     let overview: String?
     let runtimeMinutes: Int?
+    let stillUrl: String?
     let watched: Bool
     let seasonLast: Int
 
@@ -224,13 +226,15 @@ private struct CalendarRow: Decodable {
         airsAtExact = try container.decode(Bool.self, forKey: .airsAtExact)
         overview = try container.decodeIfPresent(String.self, forKey: .overview)
         runtimeMinutes = try container.decodeIfPresent(Int.self, forKey: .runtimeMinutes)
+        stillUrl = try container.decodeIfPresent(String.self, forKey: .stillUrl)
         watched = try container.decode(Bool.self, forKey: .watched)
         seasonLast = try container.decode(Int.self, forKey: .seasonLast)
         title = try TitleColumns(from: decoder)
     }
 
     enum CodingKeys: String, CodingKey {
-        case itemId, season, episode, name, airsAt, airsAtExact, overview, runtimeMinutes, watched, seasonLast
+        case itemId, season, episode, name, airsAt, airsAtExact, overview, runtimeMinutes, stillUrl, watched,
+             seasonLast
     }
 }
 

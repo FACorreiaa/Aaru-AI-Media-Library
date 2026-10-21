@@ -5,12 +5,12 @@ import {
   useNavigate,
 } from '@tanstack/solid-router'
 import {
-  For,
   Show,
   batch,
   createEffect,
   createMemo,
   createSignal,
+  lazy,
   on,
   onCleanup,
   onMount,
@@ -19,13 +19,13 @@ import { optionalEnum } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { MonthCalendar } from '../components/MonthCalendar'
 import { WeekGrid } from '../components/WeekGrid'
-import { Alert } from '../components/ui/alert'
-import { Button, buttonVariants } from '../components/ui/button'
-import { cardClass } from '../components/ui/card'
 import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from '../components/ui/segmented-control'
+  CalendarToolbar,
+  FilterChips,
+} from '../components/calendar/CalendarToolbar'
+import { Alert } from '../components/ui/alert'
+import { buttonVariants } from '../components/ui/button'
+import { cardClass } from '../components/ui/card'
 import {
   addDays,
   addMonths,
@@ -41,21 +41,44 @@ import {
   withWatched,
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
+import { MISSED_DAYS, applyFilter, catchUp } from '../lib/calendar/filters'
+import type {
+  CalendarFilter,
+  CalendarView,
+  KindFilter,
+  OnlyFilter,
+} from '../lib/calendar/filters'
 import { getCalendar } from '../lib/calendar/server'
 import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
 import { cn } from '../lib/cn'
 import { slideIn } from '../lib/motion'
 
-// APP-010 on the web: what airs from the user's own shows, as CAT's dense week or Stremio's
-// month with an agenda. Rendered in the browser: "today" and every day boundary are the
-// viewer's, not the Worker's (UTC).
-type View = 'week' | 'month'
+// APP-010, CAL-002 on the web: what airs from the user's own shows, as CAT's dense week,
+// Stremio's month with an agenda, or what was missed. Rendered in the browser: "today" and
+// every day boundary are the viewer's, not the Worker's (UTC). Filters and the view live in the
+// URL; the sheets and Missed load on first use, so the page stays inside its size budget.
+
+const CalendarEpisodeSheet = lazy(
+  () => import('../components/calendar/CalendarEpisodeSheet'),
+)
+const DaySheet = lazy(() => import('../components/calendar/DaySheet'))
+const CatchUpList = lazy(() => import('../components/calendar/CatchUpList'))
+
+interface Search {
+  view?: CalendarView
+  hide?: 'watched'
+  only?: OnlyFilter
+  kind?: KindFilter
+}
 
 export const Route = createFileRoute('/app_/week')({
   head: () => ({ meta: [{ title: 'Calendar · Aaru' }] }),
-  validateSearch: (search): { view?: 'week' | 'month' } => ({
-    view: optionalEnum(search.view, ['week', 'month']),
+  validateSearch: (search): Search => ({
+    view: optionalEnum(search.view, ['week', 'month', 'missed']),
+    hide: optionalEnum(search.hide, ['watched']),
+    only: optionalEnum(search.only, ['premieres', 'finales']),
+    kind: optionalEnum(search.kind, ['show', 'anime']),
   }),
   beforeLoad: async () => {
     const session = await getSession()
@@ -69,16 +92,18 @@ const LOOK_BEHIND = 7
 const LOOK_AHEAD = 13
 const VIEW_KEY = 'calendar.view'
 
-function savedView(): View | null {
+function savedView(): CalendarView | null {
   try {
     const value = localStorage.getItem(VIEW_KEY)
-    return value === 'week' || value === 'month' ? value : null
+    return value === 'week' || value === 'month' || value === 'missed'
+      ? value
+      : null
   } catch {
     return null // storage blocked: the default view it is
   }
 }
 
-function saveView(view: View) {
+function saveView(view: CalendarView) {
   try {
     localStorage.setItem(VIEW_KEY, view)
   } catch {
@@ -86,10 +111,15 @@ function saveView(view: View) {
   }
 }
 
+/** Below `lg` the month's agenda sits under the grid, so a tapped day opens as a sheet. */
+const wide = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(min-width: 64rem)').matches
+
 function Calendar() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const [view, setView] = createSignal<View>(search().view ?? 'week')
+  const [view, setView] = createSignal<CalendarView>(search().view ?? 'week')
   const [today, setToday] = createSignal<string | null>(null)
   const [start, setStart] = createSignal('')
   const [month, setMonth] = createSignal('')
@@ -98,8 +128,18 @@ function Calendar() {
   const [loaded, setLoaded] = createSignal<{ first: string; last: string }>()
   const [loading, setLoading] = createSignal(true)
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [pending, setPending] = createSignal<ReadonlySet<string>>(new Set())
+  const [openKey, setOpenKey] = createSignal<string | null>(null)
+  const [dayOpen, setDayOpen] = createSignal<string | null>(null)
+  let opened: CalendarEntry | undefined
   let request = 0
   let content: HTMLDivElement | undefined
+
+  const filter = createMemo<CalendarFilter>(() => ({
+    hideWatched: search().hide === 'watched',
+    only: search().only,
+    kind: search().kind,
+  }))
 
   /** Week view paging: the moved week slides in from the side it came from. */
   function slide(direction: number) {
@@ -110,11 +150,30 @@ function Calendar() {
   const weekDays = createMemo(() => (start() ? daysFrom(start()) : []))
   const grid = createMemo(() => (month() ? monthGrid(month()) : []))
   const visible = () => (view() === 'week' ? weekDays() : grid())
-  const byDay = createMemo(() => groupByDay(entries(), visible()))
+  const shown = createMemo(() => applyFilter(entries(), filter()))
+  const byDay = createMemo(() => groupByDay(shown(), visible()))
+  const missed = createMemo(() =>
+    view() === 'missed'
+      ? catchUp(
+          applyFilter(entries(), { ...filter(), hideWatched: false }),
+          new Date(),
+        )
+      : [],
+  )
+  const missedCount = () =>
+    missed().reduce((sum, show) => sum + show.episodes.length, 0)
   const empty = createMemo(
     () =>
-      !loading() && [...byDay().values()].every((list) => list.length === 0),
+      !loading() &&
+      view() !== 'missed' &&
+      [...byDay().values()].every((list) => list.length === 0),
   )
+  /** The open sheet's entry, live: a tick in the sheet shows at once. */
+  const openEntry = createMemo(() => {
+    const key = openKey()
+    if (!key) return undefined
+    return entries().find((entry) => entryKey(entry) === key) ?? opened
+  })
 
   onMount(() => {
     const now = localDayKey(new Date())
@@ -130,13 +189,13 @@ function Calendar() {
     const onKey = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
         return
-      if (event.defaultPrevented) return
+      if (event.defaultPrevented || openKey() || dayOpen()) return
       const target = event.target as HTMLElement | null
       // Fields keep their keys, the view switch's radios included; the day tabs move their
       // own selection with the arrows.
       if (
         target?.closest(
-          'input:not([type=checkbox]), textarea, select, [role=tablist]',
+          'input:not([type=checkbox]), textarea, select, [role=tablist], [role=radiogroup]',
         )
       )
         return
@@ -145,21 +204,32 @@ function Calendar() {
       if (view() === 'week') {
         if (key === 'ArrowLeft') step(-1)
         else if (key === 'ArrowRight') step(1)
+        else if (key === 'PageUp') step(-7)
+        else if (key === 'PageDown') step(7)
         else return
-      } else if (key === 'ArrowLeft') moveDay(-1)
-      else if (key === 'ArrowRight') moveDay(1)
-      else if (key === 'PageUp') changeMonth(-1)
-      else if (key === 'PageDown') changeMonth(1)
-      else return
+      } else if (view() === 'month') {
+        if (key === 'ArrowLeft') moveDay(-1)
+        else if (key === 'ArrowRight') moveDay(1)
+        else if (key === 'PageUp') changeMonth(-1)
+        else if (key === 'PageDown') changeMonth(1)
+        else return
+      } else return
       event.preventDefault()
     }
     window.addEventListener('keydown', onKey)
     onCleanup(() => window.removeEventListener('keydown', onKey))
   })
 
-  // What the current view needs loaded: the week with margin, or the whole month grid.
+  // What the current view needs loaded: the week with margin, the month grid, or the weeks
+  // just past for Missed.
   const wanted = createMemo(
     () => {
+      if (view() === 'missed') {
+        const now = today()
+        if (!now) return null
+        const first = addDays(now, -MISSED_DAYS)
+        return { first, last: now, fetchFirst: first, fetchLast: now }
+      }
       if (view() === 'week') {
         const first = start()
         if (!first) return null
@@ -226,18 +296,34 @@ function Calendar() {
     }
   }
 
-  function switchView(next: View) {
+  function switchView(next: CalendarView) {
     if (next === view()) return
     batch(() => {
-      // Both views open on the selected day.
+      // Week and month open on the selected day.
       if (next === 'week') setStart(mondayOf(selected()))
-      else setMonth(monthOf(selected()))
+      if (next === 'month') setMonth(monthOf(selected()))
       setView(next)
     })
     saveView(next)
-    void navigate({ search: { view: next }, replace: true })
+    void navigate({
+      search: (prev) => ({ ...prev, view: next }),
+      replace: true,
+    })
   }
 
+  function setFilter(next: CalendarFilter) {
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        hide: next.hideWatched ? 'watched' : undefined,
+        only: next.only,
+        kind: next.kind,
+      }),
+      replace: true,
+    })
+  }
+
+  /** Week view: by a day or a week; the selected day moves with it. */
   function step(delta: number) {
     if (!start()) return
     batch(() => {
@@ -260,6 +346,12 @@ function Calendar() {
     })
   }
 
+  /** A tapped month day: selected everywhere, and opened as a sheet on phones. */
+  function tapDay(day: string) {
+    selectDay(day)
+    if (!wide()) setDayOpen(day)
+  }
+
   function changeMonth(delta: number) {
     if (!month()) return
     const next = addMonths(month(), delta)
@@ -270,22 +362,33 @@ function Calendar() {
     })
   }
 
-  function goToday() {
-    const now = today()
-    if (!now) return
+  function goTo(day: string) {
     const from = start()
-    const to = mondayOf(now)
+    const to = mondayOf(day)
     batch(() => {
       setStart(to)
-      setMonth(monthOf(now))
-      setSelected(now)
+      setMonth(monthOf(day))
+      setSelected(day)
     })
     slide(to === from ? 0 : to > from ? 1 : -1)
   }
 
+  function goToday() {
+    const now = today()
+    if (now) goTo(now)
+  }
+
+  function openEpisode(entry: CalendarEntry) {
+    opened = entry
+    setOpenKey(entryKey(entry))
+  }
+
   async function toggle(entry: CalendarEntry) {
+    const key = entryKey(entry)
+    if (pending().has(key)) return
     const watched = !entry.watched
     setProblem(null)
+    setPending((set) => new Set(set).add(key))
     setEntries((list) => withWatched(list, entry, watched))
     try {
       await setEpisode({
@@ -301,8 +404,16 @@ function Calendar() {
       setProblem(
         err instanceof Error ? err.message : 'That episode was not saved.',
       )
+    } finally {
+      setPending((set) => {
+        const next = new Set(set)
+        next.delete(key)
+        return next
+      })
     }
   }
+
+  const pendingSet = () => pending() as Set<string>
 
   return (
     <div class="min-h-[100dvh]">
@@ -317,66 +428,30 @@ function Calendar() {
             <p class="mt-1 text-sm text-muted" aria-live="polite">
               <Show
                 when={view() === 'week' && weekDays().length}
-                fallback="Your shows, by the day they air"
+                fallback={
+                  view() === 'missed'
+                    ? 'Aired in the last four weeks, not watched yet'
+                    : 'Your shows, by the day they air'
+                }
               >
                 {rangeLabel(weekDays()[0], weekDays()[6])}
               </Show>
             </p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <SegmentedControl
-              class="flex rounded-full border border-line p-0.5"
-              aria-label="Calendar view"
-              value={view()}
-              onChange={(next) => switchView(next as View)}
-            >
-              <For each={['week', 'month'] as const}>
-                {(option) => (
-                  <SegmentedControlItem
-                    value={option}
-                    class="px-3 py-1 text-sm"
-                  >
-                    {option === 'week' ? 'Week' : 'Month'}
-                  </SegmentedControlItem>
-                )}
-              </For>
-            </SegmentedControl>
-            <nav class="flex items-center gap-2" aria-label="Days">
-              <Show when={view() === 'week'}>
-                <Button
-                  variant="quiet"
-                  size="sm"
-                  disabled={!today()}
-                  onClick={() => step(-1)}
-                  aria-keyshortcuts="ArrowLeft"
-                >
-                  <span aria-hidden="true">‹</span>
-                  <span class="sr-only sm:not-sr-only"> Previous day</span>
-                </Button>
-              </Show>
-              <Button
-                variant="quiet"
-                size="sm"
-                disabled={!today()}
-                onClick={goToday}
-              >
-                Today
-              </Button>
-              <Show when={view() === 'week'}>
-                <Button
-                  variant="quiet"
-                  size="sm"
-                  disabled={!today()}
-                  onClick={() => step(1)}
-                  aria-keyshortcuts="ArrowRight"
-                >
-                  <span class="sr-only sm:not-sr-only">Next day </span>
-                  <span aria-hidden="true">›</span>
-                </Button>
-              </Show>
-            </nav>
-          </div>
+          <CalendarToolbar
+            view={view()}
+            ready={!!today()}
+            selected={selected()}
+            filter={filter()}
+            missedCount={missedCount()}
+            onView={switchView}
+            onStep={step}
+            onToday={goToday}
+            onGoTo={goTo}
+            onFilter={setFilter}
+          />
         </div>
+        <FilterChips filter={filter()} onFilter={setFilter} />
 
         <Show when={problem()}>
           {(message) => <Alert class="mt-4">{message()}</Alert>}
@@ -386,7 +461,8 @@ function Calendar() {
           <div class={cn(cardClass, 'mt-6 p-6')}>
             <p class="font-display text-xl">
               Nothing from your shows airs this{' '}
-              {view() === 'week' ? 'week' : 'month'}.
+              {view() === 'week' ? 'week' : 'month'}
+              {entries().length > 0 ? ' with these filters' : ''}.
             </p>
             <p class="mt-1 text-sm text-muted">
               Shows you add, or mark as watching, appear here as their episodes
@@ -412,33 +488,86 @@ function Calendar() {
           >
             {(now) => (
               <Show
-                when={view() === 'month'}
+                when={view() !== 'missed'}
                 fallback={
-                  <WeekGrid
-                    days={weekDays()}
+                  <Show
+                    when={!loading()}
+                    fallback={
+                      <p class="text-sm text-muted">Looking back four weeks…</p>
+                    }
+                  >
+                    <CatchUpList
+                      shows={missed()}
+                      pending={pendingSet()}
+                      keyOf={entryKey}
+                      onOpen={openEpisode}
+                      onToggle={(entry) => void toggle(entry)}
+                    />
+                  </Show>
+                }
+              >
+                <Show
+                  when={view() === 'month'}
+                  fallback={
+                    <WeekGrid
+                      days={weekDays()}
+                      today={now()}
+                      selected={selected()}
+                      byDay={byDay()}
+                      pending={pendingSet()}
+                      keyOf={entryKey}
+                      onSelect={setSelected}
+                      onOpen={openEpisode}
+                      onToggle={(entry) => void toggle(entry)}
+                    />
+                  }
+                >
+                  <MonthCalendar
+                    month={month()}
+                    grid={grid()}
                     today={now()}
                     selected={selected()}
                     byDay={byDay()}
-                    onSelect={setSelected}
+                    pending={pendingSet()}
+                    keyOf={entryKey}
+                    onSelect={tapDay}
+                    onMonth={changeMonth}
+                    onOpen={openEpisode}
                     onToggle={(entry) => void toggle(entry)}
                   />
-                }
-              >
-                <MonthCalendar
-                  month={month()}
-                  grid={grid()}
-                  today={now()}
-                  selected={selected()}
-                  byDay={byDay()}
-                  onSelect={selectDay}
-                  onMonth={changeMonth}
-                  onToggle={(entry) => void toggle(entry)}
-                />
+                </Show>
               </Show>
             )}
           </Show>
         </div>
       </main>
+
+      <Show when={dayOpen()}>
+        {(day) => (
+          <DaySheet
+            day={day()}
+            entries={byDay().get(day()) ?? []}
+            pending={pendingSet()}
+            keyOf={entryKey}
+            onOpen={(entry) => {
+              setDayOpen(null)
+              openEpisode(entry)
+            }}
+            onToggle={(entry) => void toggle(entry)}
+            onClose={() => setDayOpen(null)}
+          />
+        )}
+      </Show>
+      <Show when={openEntry()}>
+        {(entry) => (
+          <CalendarEpisodeSheet
+            entry={entry()}
+            pending={pending().has(entryKey(entry()))}
+            onToggle={(next) => void toggle(next)}
+            onClose={() => setOpenKey(null)}
+          />
+        )}
+      </Show>
     </div>
   )
 }

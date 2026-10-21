@@ -1547,10 +1547,11 @@ paths:
           required: true
           schema:
             type: string
-            enum: [auto, imdb, letterboxd, goodreads, mal, csv]
+            enum: [auto, imdb, letterboxd, netflix, goodreads, mal, csv]
           description: >-
             `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList),
-            an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+            an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by
+            its column names (`csv`).
         - name: filename
           in: query
           required: false
@@ -2113,7 +2114,7 @@ components:
         id: {type: string, format: uuid}
         source:
           type: string
-          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, mal_xml, anilist, csv]
+          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, netflix_csv, mal_xml, anilist, csv]
         state:
           type: string
           enum: [queued, running, planned, succeeded, failed, partial]
@@ -3082,6 +3083,9 @@ components:
         episodeOverview:
           type: string
           description: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
+        stillUrl:
+          type: string
+          description: The episode's still image (TMDB), when the catalog has one.
         airsAt: {type: string, format: date-time}
         airTimeKnown:
           type: boolean

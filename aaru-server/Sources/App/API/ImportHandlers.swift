@@ -21,6 +21,7 @@ extension APIImplementation {
         switch input.query.source {
         case .imdb: source = .imdbCSV
         case .letterboxd: source = .letterboxdCSV
+        case .netflix: source = .netflixCSV
         case .goodreads: source = .goodreadsCSV
         case .mal: source = .malXML
         case .csv: source = .genericCSV

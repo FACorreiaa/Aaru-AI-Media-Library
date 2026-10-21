@@ -59,7 +59,14 @@ export const listImports = createServerFn({ method: 'GET' }).handler(
 export const uploadImport = createServerFn({ method: 'POST' })
   .validator(
     z.object({
-      source: z.enum(['auto', 'imdb', 'letterboxd', 'goodreads', 'mal']),
+      source: z.enum([
+        'auto',
+        'imdb',
+        'letterboxd',
+        'netflix',
+        'goodreads',
+        'mal',
+      ]),
       filename: z.string().max(255),
       text: z.string().max(MAX_BYTES, 'That file is larger than 5 MB.'),
     }),
