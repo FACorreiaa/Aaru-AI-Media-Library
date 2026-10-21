@@ -23,8 +23,7 @@ struct ImportMergeTests {
         let service = service(env)
         for _ in 0 ..< 50 {
             let state = try await env.stores.importJobs.job(id: job.id, userID: env.userID)?.state
-            guard state == .queued || state == .running else { break }
-            guard try await service.runNext(for: env.userID) else { break }
+            guard state == .queued || state == .running, try await service.runNext(for: env.userID) else { break }
         }
         _ = try await service.apply(job.id, userID: env.userID)
         return try await env.stores.importJobs.rows(jobID: job.id)

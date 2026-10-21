@@ -1,16 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { isWorking, sourceLabel, stateLabel, traktResult } from './model'
+import {
+  importSteps,
+  isWorking,
+  sourceLabel,
+  stateLabel,
+  traktResult,
+} from './model'
 import type { components } from '../api/schema'
 
-const job = (
-  state: components['schemas']['ImportJob']['state'],
-): components['schemas']['ImportJob'] => ({
+type Job = components['schemas']['ImportJob']
+
+const job = (state: Job['state'], extra: Partial<Job> = {}): Job => ({
   id: 'j',
   source: 'goodreads_csv',
   state,
   stats: { created: 3, updated: 1, skipped: 0, unmatched: 2 },
   createdAt: '2026-10-15T00:00:00Z',
   updatedAt: '2026-10-15T00:00:00Z',
+  rowsTotal: 0,
+  rowsMatched: 0,
+  ...extra,
 })
 
 describe('import labels', () => {
@@ -33,5 +42,68 @@ describe('Trakt sign-in result', () => {
     expect(traktResult('failed')?.message).toContain('two apps')
     expect(traktResult(undefined)).toBeNull()
     expect(traktResult('<script>')).toBeNull()
+  })
+})
+
+describe('import ledger (IMP-017)', () => {
+  const mal = (state: Job['state'], extra: Partial<Job> = {}) =>
+    job(state, { source: 'mal_xml', rowsTotal: 2001, ...extra })
+  const states = (j: Job) => importSteps(j).map((s) => s.state)
+
+  it('starts with the file read and the job in line', () => {
+    const steps = importSteps(mal('queued'))
+    expect(steps[0]).toMatchObject({
+      label: 'Read your file',
+      detail: '2,001 entries',
+      state: 'done',
+    })
+    expect(steps[1]).toMatchObject({
+      state: 'current',
+      detail: 'Starts in a few seconds.',
+    })
+    expect(states(mal('queued'))).toEqual([
+      'done',
+      'current',
+      'todo',
+      'todo',
+      'todo',
+    ])
+    expect(stateLabel(mal('queued'))).toBe('In line')
+  })
+
+  it('shows a retry as a pause, with the reason', () => {
+    const paused = mal('queued', {
+      errorSummary: 'anilist could not be reached while matching titles.',
+    })
+    expect(importSteps(paused)[1].detail).toContain('Paused: anilist')
+    expect(stateLabel(paused)).toBe('Paused, retrying soon')
+  })
+
+  it('counts matched rows while running, then checks the shelf', () => {
+    const running = mal('running', { rowsMatched: 840 })
+    const match = importSteps(running)[2]
+    expect(match).toMatchObject({ state: 'current', detail: '840 of 2,001' })
+    expect(match.progress).toBeCloseTo(840 / 2001)
+    expect(stateLabel(running)).toBe('Matching titles… 41%')
+    expect(states(mal('running', { rowsMatched: 2001 }))).toEqual([
+      'done',
+      'done',
+      'done',
+      'current',
+      'todo',
+    ])
+  })
+
+  it('reads an account first when the rows are not known yet', () => {
+    const trakt = job('running', { source: 'trakt' })
+    expect(importSteps(trakt)[0]).toMatchObject({
+      label: 'Read your Trakt library',
+      state: 'current',
+    })
+    expect(stateLabel(trakt)).toBe('Matching titles…')
+  })
+
+  it('has no ledger once there is a plan', () => {
+    expect(importSteps(mal('planned'))).toEqual([])
   })
 })

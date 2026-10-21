@@ -67,7 +67,7 @@ refuses and substitutes the nearest catalog piece.
 | `TitleCard` | Add / status / owned / rating | `titleId` or `MediaRef`, `status`, `isOwned`, `rating` |
 | `SeasonMap` | Episode heat + bulk tick | `libraryItemId`, seasons (episode number, name, still, air time), watched set, `nextEpisode` |
 | `PlanCard` | Preview of a mutation | `planId`, summary counts, per-op diff, autonomy setting |
-| `JobLedger` | Import or bulk progress | `importJobId`, step rows, `state`, `stats`, unmatched count |
+| `JobLedger` | Import or bulk progress | `importJobId`, step rows (done / current / to do), `state`, `stats`, `rowsMatched` of `rowsTotal` on the matching step, unmatched count |
 | `TonightStrip` | 1–3 next actions | ordered `libraryItemId` + reason + est. minutes |
 | `Shelf` | Filtered library page | `shelfId` or inline query, result page, `isPinned` |
 | `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (dots on phones), selected day, agenda by date with an expandable row (episode name, synopsis, network · time, badge, watched check, open show); agent highlight string later |

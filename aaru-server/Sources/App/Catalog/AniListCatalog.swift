@@ -3,7 +3,7 @@ import Foundation
 
 /// AniList adapter (CAT-007): the anime catalog, over GraphQL. Reads need no key.
 /// Each AniList entry is one season/cour, so its episodes are season 1.
-struct AniListCatalog: CatalogSearching, EpisodeListing {
+struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
     static let endpoint = URL(string: "https://graphql.anilist.co")!
 
     let client: ProviderClient
@@ -35,6 +35,33 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
             hit: hit, status: media.titleStatus, runtimeMinutes: media.duration, genres: media.genres ?? []
         )
     }
+
+    /// IMP-017: many MyAnimeList entries at once, 50 per request, keyed by MAL id. One request
+    /// instead of 50 matters under AniList's 90-a-minute limit: a 2,000-entry export takes
+    /// seconds, not 20 minutes. An id AniList does not know is simply missing from the result.
+    func hydrate(malIDs: [String]) async throws -> [String: CatalogTitle] {
+        let ids = Array(Set(malIDs.compactMap { Int($0) })).sorted()
+        var titles: [String: CatalogTitle] = [:]
+        for start in stride(from: 0, to: ids.count, by: Self.batchSize) {
+            let batch = Array(ids[start ..< min(start + Self.batchSize, ids.count)])
+            let body = try await post(SearchData.self, """
+            query ($ids: [Int]) {
+              Page(perPage: \(Self.batchSize)) { media(idMal_in: $ids, type: ANIME) { \(Self.mediaFields) } }
+            }
+            """, variables: ["ids": .ints(batch)])
+            for media in body.page.media {
+                guard let mal = media.idMal else { continue }
+                titles[String(mal)] = CatalogTitle(
+                    hit: media.hit, status: media.titleStatus, runtimeMinutes: media.duration,
+                    genres: media.genres ?? []
+                )
+            }
+        }
+        return titles
+    }
+
+    /// AniList's largest page.
+    static let batchSize = 50
 
     func episodes(ids: ExternalIDs) async throws -> CatalogEpisodes? {
         guard let media = try await media(for: ids, withSchedule: true) else { return nil }
@@ -136,12 +163,14 @@ struct AniListCatalog: CatalogSearching, EpisodeListing {
 private enum GraphQLValue: Encodable {
     case string(String)
     case int(Int)
+    case ints([Int])
 
     func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
         case let .string(value): try container.encode(value)
         case let .int(value): try container.encode(value)
+        case let .ints(value): try container.encode(value)
         }
     }
 }
@@ -257,25 +286,6 @@ private struct Media: Decodable {
         case "CANCELLED": .canceled
         default: nil
         }
-    }
-}
-
-enum AniListText {
-    /// AniList sends `<br>` and `<i>` even with `asHtml: false`. Clients get plain text.
-    static func plain(_ html: String) -> String {
-        var text = html.replacingOccurrences(
-            of: "<br\\s*/?>", with: "\n", options: [.regularExpression, .caseInsensitive]
-        )
-        text = text.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-        for (entity, character) in [
-            ("&amp;", "&"), ("&quot;", "\""), ("&#039;", "'"), ("&#39;", "'"), ("&lt;", "<"), ("&gt;", ">"),
-            ("&nbsp;", " "),
-        ] {
-            text = text.replacingOccurrences(of: entity, with: character)
-        }
-        text = text.replacingOccurrences(of: "[ \\t]+\n", with: "\n", options: .regularExpression)
-        text = text.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

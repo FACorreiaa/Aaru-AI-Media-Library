@@ -18,19 +18,26 @@ struct PostgresImportJobStore: ImportJobStore {
         let createdAt: Date
         let updatedAt: Date
         var attempts: Int?
+        var rowsTotal: Int?
+        var rowsMatched: Int?
 
         var job: ImportJob? {
             guard let source = ImportSource(rawValue: source), let state = ImportJobState(rawValue: state)
             else { return nil }
             return ImportJob(
                 id: ImportJobID(id), userID: UserID(userId), source: source, state: state, stats: stats,
-                errorSummary: errorSummary, filename: filename, createdAt: createdAt, updatedAt: updatedAt
+                errorSummary: errorSummary, filename: filename, createdAt: createdAt, updatedAt: updatedAt,
+                rowsTotal: rowsTotal ?? 0, rowsMatched: rowsMatched ?? 0
             )
         }
     }
 
-    private static let columns: SQLQueryString =
-        "id, user_id, source, state, stats, error_summary, filename, created_at, updated_at, attempts"
+    private static let columns: SQLQueryString = """
+    id, user_id, source, state, stats, error_summary, filename, created_at, updated_at, attempts, rows_matched,
+    (SELECT count(*)::integer FROM import_rows r WHERE r.job_id = import_jobs.id) AS rows_total
+    """
+    /// Rows per INSERT: well under Postgres's 65,535 bind parameters at three per row.
+    private static let insertChunk = 500
 
     func insert(_ job: ImportJob) async throws {
         try await insert(job, on: sql)
@@ -39,23 +46,24 @@ struct PostgresImportJobStore: ImportJobStore {
     func insert(_ job: ImportJob, rows: [ImportRow]) async throws {
         try await sql.transaction { sql in
             try await insert(job, on: sql)
-            for (index, row) in rows.enumerated() {
-                try await sql.raw("""
-                INSERT INTO import_rows (job_id, idx, row)
-                VALUES (\(bind: job.id.rawValue), \(bind: index), \(bind: row))
-                """).run()
-            }
+            try await insertRows(rows, jobID: job.id, on: sql)
         }
     }
 
     func appendRows(_ rows: [ImportRow], jobID: ImportJobID) async throws {
         try await sql.transaction { sql in
-            for (index, row) in rows.enumerated() {
-                try await sql.raw("""
-                INSERT INTO import_rows (job_id, idx, row)
-                VALUES (\(bind: jobID.rawValue), \(bind: index), \(bind: row))
-                """).run()
-            }
+            try await insertRows(rows, jobID: jobID, on: sql)
+        }
+    }
+
+    /// A few hundred rows per statement: a 2,000-row export is four round trips, not 2,000.
+    private func insertRows(_ rows: [ImportRow], jobID: ImportJobID, on sql: any SQLDatabase) async throws {
+        for start in stride(from: 0, to: rows.count, by: Self.insertChunk) {
+            let chunk = rows[start ..< min(start + Self.insertChunk, rows.count)]
+            let values = SQLList(chunk.indices.map { index in
+                SQLQueryString("(\(bind: jobID.rawValue), \(bind: index), \(bind: rows[index]))")
+            })
+            try await sql.raw("INSERT INTO import_rows (job_id, idx, row) VALUES \(values)").run()
         }
     }
 
@@ -93,7 +101,7 @@ struct PostgresImportJobStore: ImportJobStore {
         let owner: SQLQueryString = userID.map { "AND user_id = \(bind: $0.rawValue)" } ?? ""
         // One statement: SKIP LOCKED means two workers never lease the same job.
         guard let row = try await sql.raw("""
-        UPDATE import_jobs SET state = 'running', attempts = attempts + 1,
+        UPDATE import_jobs SET state = 'running', attempts = attempts + 1, rows_matched = 0,
             locked_until = \(bind: now.addingTimeInterval(lease)), updated_at = \(bind: now)
         WHERE id = (
             SELECT id FROM import_jobs
@@ -115,6 +123,13 @@ struct PostgresImportJobStore: ImportJobStore {
         UPDATE import_jobs SET state = 'queued', error_summary = \(bind: error),
             locked_until = \(bind: notBefore), updated_at = \(bind: now)
         WHERE id = \(bind: id.rawValue)
+        """).run()
+    }
+
+    func progress(_ id: ImportJobID, matched: Int, lockedUntil: Date) async throws {
+        try await sql.raw("""
+        UPDATE import_jobs SET rows_matched = \(bind: matched), locked_until = \(bind: lockedUntil)
+        WHERE id = \(bind: id.rawValue) AND state = 'running'
         """).run()
     }
 

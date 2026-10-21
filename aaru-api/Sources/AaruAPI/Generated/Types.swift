@@ -2784,6 +2784,14 @@ public enum Components {
             public var createdAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/ImportJob/updatedAt`.
             public var updatedAt: Foundation.Date
+            /// Rows read from the file or provider. 0 for a Trakt or AniList import until the worker has read the account.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportJob/rowsTotal`.
+            public var rowsTotal: Swift.Int
+            /// Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportJob/rowsMatched`.
+            public var rowsMatched: Swift.Int
             /// Creates a new `ImportJob`.
             ///
             /// - Parameters:
@@ -2795,6 +2803,8 @@ public enum Components {
             ///   - filename: The uploaded file's name, or the AniList username for an `anilist` import.
             ///   - createdAt:
             ///   - updatedAt:
+            ///   - rowsTotal: Rows read from the file or provider. 0 for a Trakt or AniList import until the worker has read the account.
+            ///   - rowsMatched: Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress.
             public init(
                 id: Swift.String,
                 source: Components.Schemas.ImportJob.SourcePayload,
@@ -2803,7 +2813,9 @@ public enum Components {
                 errorSummary: Swift.String? = nil,
                 filename: Swift.String? = nil,
                 createdAt: Foundation.Date,
-                updatedAt: Foundation.Date
+                updatedAt: Foundation.Date,
+                rowsTotal: Swift.Int,
+                rowsMatched: Swift.Int
             ) {
                 self.id = id
                 self.source = source
@@ -2813,6 +2825,8 @@ public enum Components {
                 self.filename = filename
                 self.createdAt = createdAt
                 self.updatedAt = updatedAt
+                self.rowsTotal = rowsTotal
+                self.rowsMatched = rowsMatched
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -2823,6 +2837,8 @@ public enum Components {
                 case filename
                 case createdAt
                 case updatedAt
+                case rowsTotal
+                case rowsMatched
             }
         }
         /// - Remark: Generated from `#/components/schemas/ImportStats`.

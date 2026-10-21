@@ -1792,6 +1792,10 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+      /** @description Rows read from the file or provider. 0 for a Trakt or AniList import until the worker has read the account. */
+      rowsTotal: number
+      /** @description Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress. */
+      rowsMatched: number
     }
     ImportStats: {
       created: number

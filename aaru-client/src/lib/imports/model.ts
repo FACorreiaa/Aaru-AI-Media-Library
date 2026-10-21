@@ -54,9 +54,13 @@ export const sourceLabel = (job: ImportJob) => SOURCE_LABELS[job.source]
 export function stateLabel(job: ImportJob): string {
   switch (job.state) {
     case 'queued':
-      return 'Waiting'
-    case 'running':
-      return 'Matching titles…'
+      return job.errorSummary ? 'Paused, retrying soon' : 'In line'
+    case 'running': {
+      const share = progressShare(job)
+      return share === null
+        ? 'Matching titles…'
+        : `Matching titles… ${Math.floor(share * 100)}%`
+    }
     case 'planned':
       return 'Ready to review'
     case 'succeeded':
@@ -66,6 +70,73 @@ export function stateLabel(job: ImportJob): string {
     case 'failed':
       return 'Failed'
   }
+}
+
+/** 0…1 of the rows matched while running; null before the rows are known. */
+export function progressShare(job: ImportJob): number | null {
+  if (job.state !== 'running' || job.rowsTotal === 0) return null
+  return Math.min(1, job.rowsMatched / job.rowsTotal)
+}
+
+/** One row of a working import's ledger (DESIGN §3, IMP-017): a step, not a spinner. */
+export interface ImportStep {
+  label: string
+  detail?: string
+  state: 'done' | 'current' | 'todo'
+  /** 0…1 on the matching step while it runs; absent elsewhere. */
+  progress?: number
+}
+
+const count = (n: number) => n.toLocaleString('en')
+
+/** Sources whose rows the worker reads from an account, not from an upload. */
+const READ_BY_WORKER: ReadonlyArray<ImportJob['source']> = ['trakt', 'anilist']
+
+/** The steps of a queued or running import, in order; empty once it has a plan or an end. */
+export function importSteps(job: ImportJob): ImportStep[] {
+  if (!isWorking(job)) return []
+  const source = sourceLabel(job)
+  const running = job.state === 'running'
+  const known = job.rowsTotal > 0
+  const entries = `${count(job.rowsTotal)} ${job.rowsTotal === 1 ? 'entry' : 'entries'}`
+  const fromAccount = READ_BY_WORKER.includes(job.source)
+  const matching = running && known && job.rowsMatched < job.rowsTotal
+  const checking = running && known && job.rowsMatched >= job.rowsTotal
+  return [
+    {
+      label: fromAccount ? `Read your ${source} library` : 'Read your file',
+      detail: known ? entries : undefined,
+      state: known ? 'done' : running ? 'current' : 'todo',
+    },
+    {
+      label: 'Wait for a free slot',
+      detail: running
+        ? undefined
+        : job.errorSummary
+          ? `Paused: ${job.errorSummary} Trying again shortly; nothing is lost.`
+          : 'Starts in a few seconds.',
+      state: running ? 'done' : 'current',
+    },
+    {
+      label: 'Match each title to the catalog',
+      detail: matching
+        ? `${count(job.rowsMatched)} of ${count(job.rowsTotal)}`
+        : checking
+          ? `All ${entries}`
+          : undefined,
+      state: checking ? 'done' : matching ? 'current' : 'todo',
+      progress: matching ? job.rowsMatched / job.rowsTotal : undefined,
+    },
+    {
+      label: 'Check against your shelf',
+      state: checking ? 'current' : 'todo',
+    },
+    {
+      label: 'Ready for you to review',
+      detail: 'Nothing is added until you approve.',
+      state: 'todo',
+    },
+  ]
 }
 
 /** Still changing on the server: the page polls until it is not. */

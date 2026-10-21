@@ -8,12 +8,32 @@ import Foundation
 extension ImportService {
     // MARK: Plan
 
-    /// Matches every row and decides what the approval would do with it.
-    func plan(_ rows: [PlannedRow], userID: UserID) async throws -> [PlannedRow] {
-        var planned: [PlannedRow] = []
-        for row in rows {
-            try await planned.append(match(row))
+    /// Rows per chunk: one AniList page, so a MyAnimeList export costs one request per chunk.
+    static let chunkSize = 50
+    /// Chunks in flight. AniList answers a page in a second or two; three at once keep its pacer,
+    /// not its latency, the limit.
+    static let chunksInFlight = 3
+    /// Rows matched at once inside a chunk. Each is a few short queries (and a TMDB call for a
+    /// new title), so this stays small enough to leave request handlers their connections.
+    static let rowsInFlight = 4
+
+    /// Matches every row and decides what the approval would do with it. `progress` hears how many
+    /// rows are matched as each chunk finishes (and renews the job's lease).
+    func plan(
+        _ rows: [PlannedRow],
+        userID: UserID,
+        progress: @Sendable (Int) async throws -> Void = { _ in }
+    ) async throws -> [PlannedRow] {
+        let chunks = stride(from: 0, to: rows.count, by: Self.chunkSize).map { start in
+            Array(rows[start ..< min(start + Self.chunkSize, rows.count)])
         }
+        var matched = 0
+        var planned = try await Self.boundedMap(chunks, limit: Self.chunksInFlight) { chunk in
+            try await matchChunk(chunk)
+        } finished: { chunk in
+            matched += chunk.count
+            try await progress(matched)
+        }.flatMap(\.self)
         for (titleID, indices) in Self.groups(planned) {
             let merged = try await Self.merged(seasonRows(indices.map { planned[$0] }))
             for index in indices.dropFirst() {
@@ -33,8 +53,47 @@ extension ImportService {
         return planned
     }
 
+    /// One chunk: AniList's answers for its MyAnimeList-only rows in one request, then each row.
+    private func matchChunk(_ chunk: [PlannedRow]) async throws -> [PlannedRow] {
+        let resolver = try await resolver.prefetchingMAL(chunk.compactMap { row in
+            row.row.unsupported == nil ? row.row.mediaRef : nil
+        })
+        return try await Self.boundedMap(chunk, limit: Self.rowsInFlight) { row in
+            try await match(row, with: resolver)
+        }
+    }
+
+    /// `transform` over `items`, at most `limit` at once, the results in the items' order.
+    /// `finished` hears each result as it lands, on the calling task.
+    static func boundedMap<Item: Sendable, Result: Sendable>(
+        _ items: [Item],
+        limit: Int,
+        _ transform: @escaping @Sendable (Item) async throws -> Result,
+        finished: (Result) async throws -> Void = { _ in }
+    ) async throws -> [Result] {
+        var results = [Result?](repeating: nil, count: items.count)
+        try await withThrowingTaskGroup(of: (Int, Result).self) { group in
+            var next = 0
+            func start() {
+                guard next < items.count else { return }
+                let index = next
+                next += 1
+                group.addTask { try await (index, transform(items[index])) }
+            }
+            for _ in 0 ..< limit {
+                start()
+            }
+            while let (index, result) = try await group.next() {
+                results[index] = result
+                try await finished(result)
+                start()
+            }
+        }
+        return results.compactMap(\.self)
+    }
+
     /// Resolves one row to a title, or says why it could not.
-    private func match(_ planned: PlannedRow) async throws -> PlannedRow {
+    private func match(_ planned: PlannedRow, with resolver: TitleResolver) async throws -> PlannedRow {
         var row = planned
         if let reason = row.row.unsupported {
             row.outcome = .unmatched

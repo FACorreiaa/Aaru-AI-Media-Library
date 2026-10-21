@@ -47,7 +47,8 @@ struct ImportService: Sendable {
             )
         }
         let job = ImportJob(
-            userID: userID, source: source, filename: filename, createdAt: now(), updatedAt: now()
+            userID: userID, source: source, filename: filename, createdAt: now(), updatedAt: now(),
+            rowsTotal: rows.count
         )
         try await stores.importJobs.insert(job, rows: rows)
         return job
@@ -93,7 +94,12 @@ struct ImportService: Sendable {
             if job.source == .stremio {
                 stored = try await expandStremioWatched(stored)
             }
-            let rows = try await plan(stored, userID: job.userID)
+            let jobID = job.id
+            let rows = try await plan(stored, userID: job.userID) { matched in
+                try await stores.importJobs.progress(
+                    jobID, matched: matched, lockedUntil: now().addingTimeInterval(Self.lease)
+                )
+            }
             job.state = .planned
             job.stats = Self.stats(rows)
             job.errorSummary = nil

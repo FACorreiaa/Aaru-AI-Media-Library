@@ -72,6 +72,12 @@ protocol CatalogSearching: Sendable {
     func hydrate(ids: ExternalIDs, type: MediaType) async throws -> CatalogTitle?
 }
 
+/// Many anime by MyAnimeList id in few requests (IMP-017). AniList's `idMal_in`.
+protocol MALBatchHydrating: Sendable {
+    /// Keyed by MAL id; an id the provider does not know is missing.
+    func hydrate(malIDs: [String]) async throws -> [String: CatalogTitle]
+}
+
 /// One query across films and shows at once (CAT-019's All scope). TMDB's `search/multi`.
 protocol MultiSearching: Sendable {
     /// Films and shows, best first; people and adult titles are never returned.

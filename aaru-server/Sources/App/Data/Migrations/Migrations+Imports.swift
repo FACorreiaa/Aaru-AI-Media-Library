@@ -309,3 +309,10 @@ struct CreateStremioLinkRequests: SQLMigration {
     ]
     let backward = ["DROP TABLE stremio_link_requests"]
 }
+
+/// IMP-017 · how far the worker has matched a job's rows, so an import shows progress instead of
+/// a bare "Waiting". Written every few rows while matching, reset when a job is retried.
+struct AddImportProgress: SQLMigration {
+    let forward = ["ALTER TABLE import_jobs ADD COLUMN rows_matched integer NOT NULL DEFAULT 0"]
+    let backward = ["ALTER TABLE import_jobs DROP COLUMN rows_matched"]
+}

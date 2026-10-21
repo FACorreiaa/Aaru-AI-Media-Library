@@ -56,8 +56,10 @@ extension ImportJob {
 
     var stateLabel: String {
         switch state {
-        case .queued: "Waiting"
-        case .running: "Matching titles…"
+        case .queued: errorSummary == nil ? "In line" : "Paused, retrying soon"
+        case .running: rowsTotal > 0
+            ? "Matching titles… \(min(100, rowsMatched * 100 / rowsTotal))%"
+            : "Matching titles…"
         case .planned: "Ready to review"
         case .succeeded: "Imported"
         case .partial: "Imported, \(stats.unmatched) unmatched"
@@ -221,6 +223,13 @@ final class ImportsModel {
             return .pending
         }
         return .failed
+    }
+
+    /// One job without its rows, from the job list: what polling needs while a big import is
+    /// matched (IMP-017). The rows are read once, when the plan is ready.
+    func job(_ id: String) async -> ImportJob? {
+        await load()
+        return jobs.first { $0.id == id }
     }
 
     func detail(_ id: String) async -> ImportDetail? {

@@ -36,6 +36,41 @@ enum ResolutionError: Error, Equatable {
 struct TitleResolver: Sendable {
     let stores: Stores
     let catalogs: CatalogProviders
+    /// AniList entries fetched ahead for one import run, by MAL id (IMP-017), and the MAL ids
+    /// AniList was asked about and does not know.
+    private var prefetchedMAL: [String: CatalogTitle] = [:]
+    private var unknownMAL: Set<String> = []
+
+    init(stores: Stores, catalogs: CatalogProviders) {
+        self.stores = stores
+        self.catalogs = catalogs
+    }
+
+    /// A resolver that already holds AniList's answer for every MyAnimeList-only ref that is not
+    /// in the catalog yet and has no TMDB mapping: one request per 50 entries instead of one
+    /// each. Refs that resolve another way are left alone.
+    func prefetchingMAL(_ refs: [MediaRef]) async throws -> TitleResolver {
+        guard let batch = catalogs.anilist as? any MALBatchHydrating else { return self }
+        var wanted: Set<String> = []
+        for ref in refs where ref.type != .book && ref.titleID == nil {
+            let ids = ref.ids
+            guard let mal = ids.mal, ids.anilist == nil, ids.tmdb == nil, ids.imdb == nil, ids.tvdb == nil,
+                  !wanted.contains(mal)
+            else { continue }
+            if try await stores.titles.find(ids: ids, type: ref.type) != nil {
+                continue
+            }
+            if try await animeMapping(ids)?.tmdb != nil {
+                continue
+            }
+            wanted.insert(mal)
+        }
+        guard !wanted.isEmpty else { return self }
+        var resolver = self
+        resolver.prefetchedMAL = try await batch.hydrate(malIDs: Array(wanted))
+        resolver.unknownMAL = wanted.subtracting(resolver.prefetchedMAL.keys)
+        return resolver
+    }
 
     /// `searchHint` (an author, for books) narrows a title search; it never loosens the match.
     func resolve(_ ref: MediaRef, searchHint: String? = nil) async throws -> Title {
@@ -115,6 +150,15 @@ struct TitleResolver: Sendable {
         }
         if ids.tmdb != nil || ids.imdb != nil || ids.tvdb != nil {
             return try await catalogs.tmdb.hydrate(ids: ids, type: type)
+        }
+        if ids.anilist == nil, let mal = ids.mal {
+            if var title = prefetchedMAL[mal] {
+                title.hit.ids = title.hit.ids.filling(from: ids)
+                return title
+            }
+            if unknownMAL.contains(mal) {
+                return nil
+            }
         }
         if ids.anilist != nil || ids.mal != nil {
             return try await catalogs.anilist.hydrate(ids: ids, type: type)
