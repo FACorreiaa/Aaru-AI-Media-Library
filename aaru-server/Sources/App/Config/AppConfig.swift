@@ -105,7 +105,8 @@ struct AppConfig: Sendable {
     }
 
     /// The trial's env contract (`platform/infra/docs/llm-haiku-trial.md`): `ANTHROPIC_API_KEY`,
-    /// `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`; `ANTHROPIC_BASE_URL` only for tests and proxies.
+    /// `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`; `ANTHROPIC_WORKSPACE_ID` when the key is not scoped
+    /// to a workspace; `ANTHROPIC_BASE_URL` only for tests and proxies.
     static func anthropicSettings(from reader: ConfigReader) throws -> AnthropicSettings? {
         guard let key = reader.string(forKey: "anthropic.api.key"), !key.isEmpty else { return nil }
         let base = reader.string(forKey: "anthropic.base.url", default: "https://api.anthropic.com")
@@ -113,9 +114,10 @@ struct AppConfig: Sendable {
             throw MissingConfigError(environmentName: "ANTHROPIC_BASE_URL", key: "anthropic.base.url")
         }
         let effort = reader.string(forKey: "anthropic.effort", default: "low")
+        let workspace = reader.string(forKey: "anthropic.workspace.id", default: "")
         return AnthropicSettings(
             apiKey: key, model: reader.string(forKey: "anthropic.model", default: "claude-haiku-5-5"),
-            effort: effort.isEmpty ? nil : effort, baseURL: url
+            effort: effort.isEmpty ? nil : effort, baseURL: url, workspaceID: workspace.isEmpty ? nil : workspace
         )
     }
 
@@ -188,4 +190,5 @@ struct AnthropicSettings: Sendable {
     var model: String
     var effort: String?
     var baseURL: URL
+    var workspaceID: String?
 }

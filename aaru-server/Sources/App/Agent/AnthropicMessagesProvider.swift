@@ -15,20 +15,26 @@ struct AnthropicMessagesProvider: ModelProviding {
     var baseURL = URL(string: "https://api.anthropic.com")!
     /// `output_config.effort`; nil leaves the model's default.
     var effort: String? = "low"
+    /// `anthropic-workspace-id`, which a key not scoped to one workspace must send.
+    var workspaceID: String?
     var timeout: Duration = .seconds(60)
 
     static let apiVersion = "2023-06-01"
 
     func complete(_ request: ModelRequest) async throws -> ModelResponse {
         let body = try JSONEncoder().encode(Self.body(request, model: model, effort: effort))
+        var headers = [
+            ("content-type", "application/json"),
+            ("x-api-key", apiKey),
+            ("anthropic-version", Self.apiVersion),
+        ]
+        if let workspaceID {
+            headers.append(("anthropic-workspace-id", workspaceID))
+        }
         let response = try await transport.send(OutboundRequest(
             method: "POST",
             url: baseURL.appendingPathComponent("v1/messages"),
-            headers: [
-                ("content-type", "application/json"),
-                ("x-api-key", apiKey),
-                ("anthropic-version", Self.apiVersion),
-            ],
+            headers: headers,
             body: body,
             timeout: timeout
         ))

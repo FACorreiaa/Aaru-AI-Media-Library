@@ -40,6 +40,7 @@ extension Components.Schemas.CalendarEntry {
             number: entry.key.episode,
             episodeName: entry.episodeName,
             episodeOverview: entry.episodeOverview,
+            stillUrl: entry.stillURL?.absoluteString,
             airsAt: entry.airsAt,
             airTimeKnown: entry.airTimeKnown,
             runtimeMinutes: entry.runtimeMinutes,
