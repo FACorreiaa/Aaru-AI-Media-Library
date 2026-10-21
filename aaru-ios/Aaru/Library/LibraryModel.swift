@@ -15,6 +15,8 @@ final class LibraryModel {
     /// Goes up whenever the shelf changes (a write here, or a sync that brought anything), so
     /// screens built from other endpoints, like Home, know to refetch.
     private(set) var revision = 0
+    /// Items with a Now write in flight (APP-017), so a double tap sends one.
+    var nowPending: Set<String> = []
 
     @ObservationIgnored private var entries: [String: LibraryEntry] = [:]
     @ObservationIgnored private var token: String?
@@ -36,6 +38,11 @@ final class LibraryModel {
 
     func entry(forTitle titleID: String) -> LibraryEntry? {
         entries.values.first { $0.title.id == titleID }
+    }
+
+    /// Everything in progress, newest change first: what "Now" is built from.
+    var inProgress: [LibraryEntry] {
+        entries.values.filter { $0.status == .inProgress }.sorted { $0.updatedAt > $1.updatedAt }
     }
 
     func rows(kind: MediaKind?, status: LibraryStatus?) -> [LibraryRow] {
