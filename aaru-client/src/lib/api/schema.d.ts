@@ -1656,6 +1656,8 @@ export interface components {
       allowLibraryWrites?: boolean
       /** @description MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default. */
       allowImports?: boolean
+      /** @description Music tokens only: which scrobbler this token is for. It names the token and picks the setup steps in `music`. `other` when left out. */
+      scrobbler?: components['schemas']['MusicScrobbler']
     }
     AgentPlan: {
       /** Format: uuid */
@@ -1721,6 +1723,32 @@ export interface components {
     /** @enum {string} */
     AgentMCPKind:
       'claude' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
+    /** @enum {string} */
+    MusicScrobbler:
+      'web_scrobbler' | 'pano_scrobbler' | 'navidrome' | 'jellyfin' | 'other'
+    /** @description How to point one scrobbler at Aaru (MUS-007): numbered steps, some with a link to open and values to copy. The token appears in full only here, right after minting. */
+    MusicSetup: {
+      scrobbler: components['schemas']['MusicScrobbler']
+      title: string
+      /** @description The full `submit-listens` URL, for clients that ask for it. */
+      submitUrl: string
+      /** @description The ListenBrainz-style root, for clients that add `1/submit-listens` themselves. */
+      baseUrl: string
+      steps: {
+        text: string
+        link?: {
+          label: string
+          url: string
+        }
+        /** @description Values to copy, each with the label the scrobbler shows next to its field. */
+        fields?: {
+          label: string
+          value: string
+          /** @description The token. Clients mask it until copied. */
+          secret?: boolean
+        }[]
+      }[]
+    }
     /** @description How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`. */
     AgentSetup: {
       kind: components['schemas']['AgentMCPKind']
@@ -1754,6 +1782,7 @@ export interface components {
         webInstallUrl: string
       }
       setup?: components['schemas']['AgentSetup']
+      music?: components['schemas']['MusicSetup']
     }
     /** @description The one error shape every route returns. */
     ErrorResponse: {
