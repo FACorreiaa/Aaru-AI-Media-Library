@@ -52,6 +52,7 @@ import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { getSession } from '../lib/session/session'
 import { listPendingPlans } from '../lib/plans/server'
 import type { AgentPlan } from '../lib/plans/server'
+import { flip, leave } from '../lib/motion'
 import { setEpisode } from '../lib/title/server'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
@@ -239,13 +240,19 @@ function Home() {
 
   /** Marks the card's next episode watched: the card advances at once, the server's answer
    * then replaces the guess, and a failed write puts the card back where it was. */
-  async function markWatched(entry: ContinueEntry) {
+  async function markWatched(entry: ContinueEntry, card: HTMLElement) {
     const id = entry.libraryItemId
     if (busy().has(id)) return
     const index = continuing().findIndex((r) => r.libraryItemId === id)
     setBusyFor(id, true)
     setProblem(null)
-    setContinuing((rows) => advance(rows, entry))
+    const step = () => setContinuing((rows) => advance(rows, entry))
+    // The last episode takes the show off the row: it fades out, the cards after it slide in.
+    const row = card.parentElement
+    if (entry.remainingCount <= 1 && row) {
+      await leave(card)
+      void flip(row, step)
+    } else step()
     try {
       await setEpisode({
         data: {

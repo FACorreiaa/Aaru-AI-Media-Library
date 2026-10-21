@@ -403,8 +403,11 @@ On the web (2026-10-20), performance comes first:
   +36 KB gzip, +29 KB on the week page, for what the browser already does. Entrances stay CSS
   keyframes.
 - **Motion only for what CSS cannot do:** an exit before an element leaves, siblings sliding
-  into the gap (FLIP), direction-aware swaps. Through `src/lib/motion.ts` on `motion/mini`, only
-  `transform` and `opacity`, and nothing at all with reduced motion.
+  into the gap (FLIP), direction-aware swaps, and one short scale pop when the user ticks an
+  episode (never on load). Through `src/lib/motion.ts` on `motion/mini`, only `transform` and
+  `opacity`, and nothing at all with reduced motion. Pages that only ask whether motion is
+  reduced import `src/lib/reduced-motion.ts`, so they do not load `motion/mini`. Every
+  animation follows a tap, so `motion/mini` is never preloaded: it loads when the browser is idle.
 - `npm run size` holds every route to `size-budget.json` in CI.
 
 ---

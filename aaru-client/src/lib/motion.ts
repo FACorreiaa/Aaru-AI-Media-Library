@@ -1,9 +1,12 @@
-import { animate } from 'motion/mini'
+import type { animate } from 'motion/mini'
+import { prefersReducedMotion } from './reduced-motion'
 
 // The web's motion helpers (DESIGN.md §17). CSS keyframes stay the default; these are for what
 // CSS cannot do: an exit before an element leaves the DOM, siblings sliding into a gap (FLIP),
 // and direction-aware swaps. Only transform and opacity move, through `motion/mini` (native
 // WAAPI, about 3 KB). With reduced motion nothing animates and every promise resolves at once.
+// Every animation follows a tap, so `motion/mini` stays off the routes' critical path: it loads
+// on its own when the browser is idle after a page that uses it, or on the first animation.
 
 /** The same ease-out as the CSS `.rise` entrance. */
 export const EASE_OUT = [0.2, 0.7, 0.2, 1] as const
@@ -12,12 +15,16 @@ const DURATION = 0.24
 
 type Frames = Parameters<typeof animate>[1]
 
-/** The viewer asked for less motion. False on the server: the page renders still, then moves. */
-export function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
+let engine: Promise<typeof animate> | undefined
+function load(): Promise<typeof animate> {
+  engine ??= import('motion/mini').then((m) => m.animate)
+  return engine
+}
+
+if (typeof window !== 'undefined' && !prefersReducedMotion()) {
+  const warm = () => void load()
+  if ('requestIdleCallback' in window) requestIdleCallback(warm)
+  else setTimeout(warm, 1)
 }
 
 /** No animation on the server, nor for a viewer who asked for less motion. */
@@ -32,12 +39,18 @@ export async function play(
   duration = DURATION,
 ): Promise<void> {
   if (still()) return
+  const animate = await load()
   await animate(el, frames, { duration, ease: [...EASE_OUT] })
 }
 
 /** An element leaving: fade and shrink a little. Remove it from state after this resolves. */
 export function leave(el: Element): Promise<void> {
   return play(el, { opacity: [1, 0], transform: ['scale(1)', 'scale(0.96)'] })
+}
+
+/** A user's tick landing: one short scale up to rest, no overshoot. Never on load. */
+export function pop(el: Element): Promise<void> {
+  return play(el, { transform: ['scale(0.85)', 'scale(1)'] }, 0.2)
 }
 
 /** A view arriving from one side: `direction` 1 comes from the right, -1 from the left. */
@@ -60,6 +73,8 @@ export async function flip(
     mutate()
     return
   }
+  // Loaded before measuring, so the moved children never paint a frame in their new place first.
+  await load()
   const before = new Map<Element, DOMRect>()
   for (const child of container.children) {
     before.set(child, child.getBoundingClientRect())

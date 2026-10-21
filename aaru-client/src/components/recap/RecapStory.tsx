@@ -1,7 +1,7 @@
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import type { RecapCard, Stats } from '../../lib/recap/model'
 import { RecapCardView } from './RecapCards'
-import { prefersReducedMotion } from '../../lib/motion'
+import { prefersReducedMotion } from '../../lib/reduced-motion'
 import { shareRecap } from './share'
 import { Dialog } from '../ui/dialog'
 

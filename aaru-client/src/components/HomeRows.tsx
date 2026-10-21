@@ -18,6 +18,7 @@ import type {
   StartEntry,
   UnfinishedEntry,
 } from '../lib/home/model'
+import { prefersReducedMotion } from '../lib/reduced-motion'
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 import { Badge, badgeVariants } from './ui/badge'
@@ -37,7 +38,7 @@ export function Row(props: {
   const scroll = (direction: 1 | -1) =>
     scroller?.scrollBy({
       left: direction * scroller.clientWidth * 0.85,
-      behavior: 'smooth',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
     })
   const arrow =
     'grid h-8 w-8 place-items-center rounded-full border border-line text-ink hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent'
@@ -134,16 +135,18 @@ function Art(props: { sources: (string | undefined)[]; title: string }) {
 /** Text on art: a dark scrim chip, legible on any image in either theme. */
 const chip = badgeVariants({ tone: 'scrim' })
 
-/** Continue watching: the next episode of an in-progress show, with a check to mark it. */
+/** Continue watching: the next episode of an in-progress show, with a check to mark it. The
+ * card hands back its element, so a show that leaves the row can play its exit first. */
 export function ContinueCard(props: {
   entry: ContinueEntry
   busy: boolean
-  onWatched: (entry: ContinueEntry) => void
+  onWatched: (entry: ContinueEntry, card: HTMLElement) => void
 }) {
   const e = () => props.entry
   const runtime = () => runtimeLabel(e().nextRuntimeMinutes)
+  let card!: HTMLElement
   return (
-    <article class="w-[min(78vw,22rem)] shrink-0 snap-start">
+    <article ref={card} class="w-[min(78vw,22rem)] shrink-0 snap-start">
       <Link
         to="/app/title/$id"
         params={{ id: e().libraryItemId }}
@@ -183,7 +186,7 @@ export function ContinueCard(props: {
         <button
           type="button"
           disabled={props.busy}
-          onClick={() => props.onWatched(e())}
+          onClick={() => props.onWatched(e(), card)}
           aria-label={`Mark ${e().title.title} ${shortCode(e().next.season, e().next.number)} watched`}
           class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-accent transition-colors hover:bg-accent hover:text-on-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50"
         >
