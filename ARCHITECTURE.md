@@ -474,6 +474,14 @@ protocol UserLibraryImporting: Sendable {
 - Covers are Cover Art Archive URLs (`release-group/{mbid}/front-250`), square, never hosted
 - `CatalogProviders.music` is optional; without it album search is `incomplete` and album pages
   show no tracklist
+- Listens (MUS-006): `ListenResolver` runs every minute and asks `ws/2/recording` once per track
+  and album (`rid:` when the scrobbler sent a recording id, else `isrc:`, else the exact artist
+  and title). Only a score-100 recording with the same folded title and artist counts; the album
+  is the release group named like the listen's album, or the only Album/EP when none was sent.
+  Answers, misses included, live in `music_lookups` (shared, keyed by track and album) and fill
+  new listens as they are stored; a miss is asked again after 30 days. It uses the same
+  `MusicBrainzCatalog`, so album search and lookups share the one-a-second pacer. A listen's
+  `albumRef` points at the album by MusicBrainz id, and by Aaru's title id once it is in the catalog
 
 ### Anime catalog (AniList)
 

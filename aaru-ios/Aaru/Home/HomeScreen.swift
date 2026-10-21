@@ -1,15 +1,18 @@
 import AaruAPI
 import SwiftUI
 
-/// Home (APP-009, APP-013, DESIGN.md §13): this month's numbers and the shelf's counts, then
-/// Continue watching, the albums being listened to (MUS-001), what airs next, Start watching, Unfinished and the user's
-/// lists, as
-/// Trakt-style rows of cards, then Discover's public rows (DISC-001). Renders from the cache
-/// first, then refreshes.
+/// Home, drawn as the Field (APP-009, APP-013, DESIGN.md §1 and §13): Tonight leads, then
+/// Continue watching, the albums being listened to (MUS-001), what airs next, Start watching and
+/// Unfinished as Trakt-style rows of cards, then Discover's public rows (DISC-001). Requests
+/// waiting for the user, the last import, the week, the shelf's counts, the recap and the user's
+/// lists sit in a side column on wide screens and after the rows on a phone. Renders from the
+/// cache first, then refreshes.
 struct HomeScreen: View {
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
+    /// The user's imports, for the newest one's note. Nil in previews.
+    var imports: ImportsModel?
     /// Switches the app to another destination (Calendar, Discover, Lists).
     var onSelectTab: (RootView.AppTab) -> Void
     /// Switches to Library, filtered to one status.
@@ -35,6 +38,7 @@ struct HomeScreen: View {
         api: Client?,
         library: LibraryModel,
         lists: ListsModel,
+        imports: ImportsModel? = nil,
         model: HomeModel? = nil,
         onSelectTab: @escaping (RootView.AppTab) -> Void = { _ in },
         onShowLibrary: @escaping (LibraryStatus) -> Void = { _ in }
@@ -42,6 +46,7 @@ struct HomeScreen: View {
         self.api = api
         self.library = library
         self.lists = lists
+        self.imports = imports
         self.onSelectTab = onSelectTab
         self.onShowLibrary = onShowLibrary
         _model = State(initialValue: model ?? HomeModel(api: api, library: library))
@@ -51,6 +56,9 @@ struct HomeScreen: View {
         NavigationStack {
             content
                 .navigationTitle("Home")
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Search", systemImage: "magnifyingglass") { showsSearch = true }
@@ -69,6 +77,7 @@ struct HomeScreen: View {
                     await model.shelfChanged()
                 }
                 .task { await loadPlans() }
+                .task { await imports?.load() }
                 .task {
                     if !lists.hasLoaded {
                         await lists.load()
@@ -77,6 +86,7 @@ struct HomeScreen: View {
                 .refreshable {
                     await model.load()
                     await loadPlans()
+                    await imports?.load()
                 }
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
@@ -99,7 +109,7 @@ struct HomeScreen: View {
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: model.problem) { model.problem = nil }
                 }
-                .background(Color(.paper))
+                .background { FieldBackground() }
         }
     }
 
@@ -122,95 +132,30 @@ struct HomeScreen: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    if let api, !plans.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Waiting for you").font(.title2.weight(.medium))
-                            ForEach(plans, id: \.id) { plan in
-                                PlanCardView(api: api, plan: plan) { decided in
-                                    if decided.status == .applied {
-                                        Task { await model.load() }
-                                    }
-                                }
+                    header
+                    if compact {
+                        tonightSection
+                        waitingSection
+                        welcome
+                        ownRows
+                        sideBlocks
+                        discoverRows
+                    } else {
+                        HStack(alignment: .top, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 28) {
+                                tonightSection
+                                welcome
+                                ownRows
+                                discoverRows
                             }
-                        }
-                        .padding(.horizontal, 16)
-                    }
-                    if model.isEmpty {
-                        HomeWelcome { showsSearch = true }
-                            .padding(.horizontal, 16)
-                    }
-                    if let offered = RecapPeriod.offered(now: .now, calendar: model.calendar) {
-                        RecapBanner(period: offered) { recap = offered }
-                            .padding(.horizontal, 16)
-                    }
-                    summary
-                    if !model.continueWatching.isEmpty {
-                        HomeRow(title: "Continue watching") {
-                            ForEach(model.continueWatching, id: \.libraryItemId) { entry in
-                                ContinueCard(
-                                    entry: entry,
-                                    width: HomeCardSize.wide.width(compact: compact),
-                                    isPending: model.pending.contains(entry.libraryItemId)
-                                ) { Task { await model.markNextWatched(entry) } }
-                                #if os(iOS)
-                                    .contextMenu {
-                                        Button("Start watching", systemImage: "play.circle") {
-                                            Task { await model.startWatching(entry) }
-                                        }
-                                    }
-                                #endif
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 24) {
+                                waitingSection
+                                sideBlocks
                             }
+                            .frame(width: 340)
                         }
                     }
-                    if !model.listening.isEmpty {
-                        HomeRow(title: "Listening") {
-                            ForEach(model.listening) { row in
-                                ListeningCard(row: row, width: HomeCardSize.poster.width(compact: compact))
-                            }
-                        }
-                    }
-                    if !model.upcoming.isEmpty {
-                        HomeRow(title: "Airing soon", trailing: ("See calendar", { onSelectTab(.calendar) })) {
-                            ForEach(model.upcoming, id: \.cellID) { entry in
-                                AiringCard(
-                                    entry: entry,
-                                    when: model.airingLabel(entry),
-                                    width: HomeCardSize.banner.width(compact: compact)
-                                )
-                            }
-                        }
-                    }
-                    if !model.startWatching.isEmpty {
-                        HomeRow(title: "Start watching") {
-                            ForEach(model.startWatching, id: \.libraryItemId) { entry in
-                                StartCard(entry: entry, width: HomeCardSize.poster.width(compact: compact))
-                            }
-                        }
-                    }
-                    if !model.unfinished.isEmpty {
-                        HomeRow(title: "Unfinished") {
-                            ForEach(model.unfinished, id: \.libraryItemId) { entry in
-                                UnfinishedCard(
-                                    entry: entry,
-                                    reason: model.unfinishedLabel(entry),
-                                    width: HomeCardSize.poster.width(compact: compact)
-                                )
-                            }
-                        }
-                    }
-                    if !lists.lists.isEmpty {
-                        HomeRow(title: "Your lists", trailing: ("All lists", { onSelectTab(.lists) })) {
-                            ForEach(lists.lists, id: \.id) { list in
-                                NavigationLink {
-                                    ListDetailView(listID: list.id, lists: lists, library: library, api: api)
-                                } label: {
-                                    ListChip(list: list)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                    discoverRows
                 }
                 .padding(.vertical, 16)
             }
@@ -240,6 +185,161 @@ struct HomeScreen: View {
         if let counts = model.counts, counts.total > 0 {
             CountChips(counts: counts, onSelect: onShowLibrary)
         }
+    }
+}
+
+// MARK: The Field's sections
+
+extension HomeScreen {
+    /// "The Field", and when it is: "Tuesday evening · 3 in progress · 2 airing today".
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("The Field")
+                .font(.aaruDisplay(.largeTitle, weight: .semibold))
+                .foregroundStyle(Color(.ink))
+                .accessibilityAddTraits(.isHeader)
+            Text(model.fieldLine)
+                .font(.subheadline)
+                .monospacedDigit()
+                .foregroundStyle(Color(.muted))
+        }
+        .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder private var tonightSection: some View {
+        if let tonight = model.tonight {
+            TonightCard(
+                tonight: tonight,
+                isPending: model.pending.contains(tonight.primary.libraryItemId),
+                wide: !compact
+            ) { entry in Task { await model.markNextWatched(entry) } }
+                .padding(.horizontal, 20)
+        }
+    }
+
+    /// Agent requests waiting for the user (OUT-004), with the heron while any wait.
+    @ViewBuilder private var waitingSection: some View {
+        if let api, !plans.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Text("Waiting for you").eyebrow()
+                        .accessibilityAddTraits(.isHeader)
+                    AgentPresence(label: "Aaru is waiting for your answer")
+                }
+                ForEach(plans, id: \.id) { plan in
+                    PlanCardView(api: api, plan: plan) { decided in
+                        if decided.status == .applied {
+                            Task { await model.load() }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    @ViewBuilder private var welcome: some View {
+        if model.isEmpty {
+            HomeWelcome { showsSearch = true }
+                .padding(.horizontal, 20)
+        }
+    }
+
+    /// The user's own rows. Continue watching leaves out the show Tonight already leads with.
+    @ViewBuilder private var ownRows: some View {
+        let continuing = model.continueWatching.filter { entry in
+            guard case let .continuing(lead)? = model.tonight?.primary else { return true }
+            return entry.libraryItemId != lead.libraryItemId
+        }
+        if !continuing.isEmpty {
+            HomeRow(title: "Continue watching") {
+                ForEach(continuing, id: \.libraryItemId) { entry in
+                    ContinueCard(
+                        entry: entry,
+                        width: HomeCardSize.wide.width(compact: compact),
+                        isPending: model.pending.contains(entry.libraryItemId)
+                    ) { Task { await model.markNextWatched(entry) } }
+                    #if os(iOS)
+                        .contextMenu {
+                            Button("Start watching", systemImage: "play.circle") {
+                                Task { await model.startWatching(entry) }
+                            }
+                        }
+                    #endif
+                }
+            }
+        }
+        if !model.listening.isEmpty {
+            HomeRow(title: "Listening") {
+                ForEach(model.listening) { row in
+                    ListeningCard(row: row, width: HomeCardSize.poster.width(compact: compact))
+                }
+            }
+        }
+        if !model.upcoming.isEmpty {
+            HomeRow(title: "Airing soon", trailing: ("See calendar", { onSelectTab(.calendar) })) {
+                ForEach(model.upcoming, id: \.cellID) { entry in
+                    AiringCard(
+                        entry: entry,
+                        when: model.airingLabel(entry),
+                        width: HomeCardSize.banner.width(compact: compact)
+                    )
+                }
+            }
+        }
+        if !model.startWatching.isEmpty {
+            HomeRow(title: "Start watching") {
+                ForEach(model.startWatching, id: \.libraryItemId) { entry in
+                    StartCard(entry: entry, width: HomeCardSize.poster.width(compact: compact))
+                }
+            }
+        }
+        if !model.unfinished.isEmpty {
+            HomeRow(title: "Unfinished") {
+                ForEach(model.unfinished, id: \.libraryItemId) { entry in
+                    UnfinishedCard(
+                        entry: entry,
+                        reason: model.unfinishedLabel(entry),
+                        width: HomeCardSize.poster.width(compact: compact)
+                    )
+                }
+            }
+        }
+    }
+
+    /// The side column on wide screens, after the rows on a phone: the last import, the week,
+    /// the shelf's counts, the recap and the user's lists.
+    @ViewBuilder private var sideBlocks: some View {
+        if let imports, let job = lastImport {
+            NavigationLink {
+                ImportDetailView(id: job.id, imports: imports, library: library, lists: lists, api: api)
+            } label: {
+                LastImportCard(job: job)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+        }
+        summary
+        if let offered = RecapPeriod.offered(now: .now, calendar: model.calendar) {
+            RecapBanner(period: offered) { recap = offered }
+                .padding(.horizontal, 20)
+        }
+        if !lists.lists.isEmpty {
+            HomeRow(title: "Your lists", trailing: ("All lists", { onSelectTab(.lists) })) {
+                ForEach(lists.lists, id: \.id) { list in
+                    NavigationLink {
+                        ListDetailView(listID: list.id, lists: lists, library: library, api: api)
+                    } label: {
+                        ListChip(list: list)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var lastImport: ImportJob? {
+        imports?.jobs.max { $0.createdAt < $1.createdAt }
     }
 }
 

@@ -41,6 +41,9 @@ struct SettingsView: View {
                     }
                 }
                 Section {
+                    AppearancePicker()
+                }
+                Section {
                     NavigationLink(value: SettingsRoute.page(.imports)) {
                         SettingsRowLabel("Imports & export", systemImage: "tray.and.arrow.down.fill", tint: .blue)
                     }

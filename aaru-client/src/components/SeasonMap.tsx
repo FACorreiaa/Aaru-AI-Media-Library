@@ -7,7 +7,7 @@ import { cardClass } from './ui/card'
 
 const CELL: Record<CellState, string> = {
   watched: 'bg-accent text-on-accent',
-  next: 'bg-paper text-ink ring-2 ring-accent',
+  next: 'bg-paper text-ink ring-2 ring-gold',
   aired: 'bg-paper text-muted hover:text-ink',
   unaired: 'bg-transparent text-muted/60 ring-1 ring-line cursor-not-allowed',
 }

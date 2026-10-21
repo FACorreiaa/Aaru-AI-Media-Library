@@ -1,4 +1,5 @@
 import { createSignal, onCleanup, onMount } from 'solid-js'
+import { resolvedScheme } from '../lib/appearance'
 
 /** Apple's JS SDK, loaded only on the sign-in page. */
 const SDK =
@@ -53,9 +54,7 @@ export function AppleSignInButton(props: {
 }) {
   const [loaded, setLoaded] = createSignal(false)
   const nonce = randomNonce()
-  const dark =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
+  const dark = resolvedScheme() === 'dark'
 
   const onSuccess = (event: Event) => {
     const result = (event as CustomEvent<AppleSignInResult>).detail

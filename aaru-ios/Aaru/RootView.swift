@@ -208,7 +208,7 @@ struct RootView: View {
         switch destination {
         case .home:
             HomeScreen(
-                api: api, library: library, lists: lists,
+                api: api, library: library, lists: lists, imports: imports,
                 onSelectTab: { tab = $0 },
                 onShowLibrary: { status in
                     libraryFilter = LibraryFilter(status: status)

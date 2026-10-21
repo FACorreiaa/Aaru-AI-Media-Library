@@ -3,12 +3,13 @@ import SwiftUI
 
 /// A4: the centre of the Title room. One heat grid per season, one cell per episode; a tap
 /// corrects one episode, "Mark watched" paints the season. Every write goes through the model.
+/// Watched cells are filled teal; the next one stands on Paper inside a gold ring.
 struct SeasonMap: View {
     let model: TitleDetailModel
     let onOpen: (EpisodeKey) -> Void
 
     var body: some View {
-        Section("Season map") {
+        VStack(alignment: .leading, spacing: 16) {
             ForEach(model.orderedSeasons, id: \.number) { season in
                 SeasonMapRow(season: season, next: model.nextEpisode, model: model, onOpen: onOpen)
             }
@@ -115,8 +116,8 @@ private struct SeasonMapCell: View {
 
     private var fill: Color {
         switch state {
-        case .watched: .accentColor
-        case .next: .accentColor.opacity(0.15)
+        case .watched: Color(.accent)
+        case .next: Color(.paper)
         case .aired: Color(.muted).opacity(0.15)
         case .unaired: .clear
         }
@@ -124,8 +125,8 @@ private struct SeasonMapCell: View {
 
     private var foreground: Color {
         switch state {
-        case .watched: .white
-        case .next: .accentColor
+        case .watched: Color(.paper)
+        case .next: Color(.ink)
         case .aired: Color(.ink)
         case .unaired: Color(.muted).opacity(0.6)
         }
@@ -133,7 +134,7 @@ private struct SeasonMapCell: View {
 
     @ViewBuilder private var border: some View {
         switch state {
-        case .next: shape.strokeBorder(Color.accentColor, lineWidth: 1.5)
+        case .next: shape.strokeBorder(Color(.gold), lineWidth: 2)
         case .unaired: shape.strokeBorder(Color(.muted).opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
         case .watched, .aired: EmptyView()
         }

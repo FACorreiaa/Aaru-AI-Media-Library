@@ -42,6 +42,16 @@ library layer stay separate, external IDs stored whenever known, no second backe
   an outage, and until AniList returns, TMDB's Japanese animation fills the anime Discover rows
   (with a note) and anime search (with a notice). The stand-in approximates AniList: a continuing
   show keeps its first air date, so sequels can miss "this season".
+- **Mindspace redesign, and Tonight pulled forward client-composed (owner, 2026-10-21).** Aaru
+  keeps its name, marks and teal → gold, and gets one visual language on both clients (DESIGN.md
+  "Mindspace"): shared tokens generated from `design/tokens.json` with an AA contrast gate,
+  Newsreader bundled for headings, a System / Light / Dark setting per device, and texture
+  (pinstripe, grain, edge light) on the Field and the Title room only. The first slice is the
+  design system, the Field and the Title room on web, iPhone, iPad and Mac; lists, library,
+  calendar, import detail, plans, widgets and the settings/groups palette follow as small PRs.
+  **Tonight** (`TonightStrip`) is an owner exception before M13: composed on the device from
+  Continue watching and today's airings, no new endpoint, no ranking, no reject. The agent's
+  Tonight stays M13. No API, auth, import, permission or persistence change.
 
 - **Music scrobbling (MUS-004…008) is built before the P2 gate**, by the owner's call, after
   albums (MUS-001). Aaru speaks ListenBrainz's submit protocol at `/listenbrainz/1/`, so the
@@ -383,6 +393,7 @@ account or a stranger that has not happened yet.
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
 | MUS-005 | Built, unverified | ListenBrainzRouteTests | Not deployed; not tried with a real scrobbler |
+| MUS-006 | Built, unverified | RecordingMatchTests, ListenResolverTests | Not deployed; not run against MusicBrainz itself |
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |

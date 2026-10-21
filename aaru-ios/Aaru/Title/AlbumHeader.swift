@@ -16,7 +16,7 @@ struct AlbumHeader: View {
                 .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
             VStack(spacing: 4) {
                 Text(title)
-                    .font(.system(.title2, design: .serif, weight: .medium))
+                    .font(.aaruDisplay(.title2))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                 if let artist {
