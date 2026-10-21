@@ -3,9 +3,10 @@ import wordmark from '../assets/brand/wordmark.webp'
 import mascot from '../assets/brand/mascot.webp'
 import mascot2x from '../assets/brand/mascot@2x.webp'
 
-export function Wordmark(props: { class?: string }) {
+/** Links home: the landing page by default, `/app` on signed-in pages. */
+export function Wordmark(props: { class?: string; to?: '/' | '/app' }) {
   return (
-    <Link to="/" class="block" aria-label="Aaru">
+    <Link to={props.to ?? '/'} class="block" aria-label="Aaru">
       <img
         src={wordmark}
         alt="Aaru"

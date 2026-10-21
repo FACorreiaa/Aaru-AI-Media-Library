@@ -10,9 +10,11 @@ export function RouteError(props: { error: unknown }) {
     props.error instanceof Error && props.error.message
       ? props.error.message
       : 'Something went wrong.'
+  // A signed-in page that failed keeps its way back into the app, not out to the landing page.
+  const home = router.state.location.pathname.startsWith('/app') ? '/app' : '/'
   return (
     <main class="mx-auto flex min-h-[100dvh] max-w-md flex-col items-center justify-center px-5 text-center">
-      <Wordmark class="h-9 w-auto" />
+      <Wordmark class="h-9 w-auto" to={home} />
       <h1 class="mt-10 font-display text-3xl font-medium">
         This page did not load
       </h1>

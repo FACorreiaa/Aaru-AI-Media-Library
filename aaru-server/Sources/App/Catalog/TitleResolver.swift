@@ -40,6 +40,9 @@ struct TitleResolver: Sendable {
     /// AniList was asked about and does not know.
     private var prefetchedMAL: [String: CatalogTitle] = [:]
     private var unknownMAL: Set<String> = []
+    /// AniList's failure on this run's batch, when the caller chose to go on without it: refs
+    /// only AniList could match fail with it at once instead of each asking again.
+    private var aniListDown: ProviderError?
 
     init(stores: Stores, catalogs: CatalogProviders) {
         self.stores = stores
@@ -65,10 +68,18 @@ struct TitleResolver: Sendable {
             }
             wanted.insert(mal)
         }
-        guard !wanted.isEmpty else { return self }
+        guard !wanted.isEmpty, aniListDown == nil else { return self }
         var resolver = self
         resolver.prefetchedMAL = try await batch.hydrate(malIDs: Array(wanted))
         resolver.unknownMAL = wanted.subtracting(resolver.prefetchedMAL.keys)
+        return resolver
+    }
+
+    /// A resolver that no longer asks AniList, after it failed with `error`. Anime with a TMDB
+    /// mapping still resolve through TMDB.
+    func withoutAniList(_ error: ProviderError) -> TitleResolver {
+        var resolver = self
+        resolver.aniListDown = error
         return resolver
     }
 
@@ -161,6 +172,9 @@ struct TitleResolver: Sendable {
             }
         }
         if ids.anilist != nil || ids.mal != nil {
+            if let aniListDown {
+                throw aniListDown
+            }
             return try await catalogs.anilist.hydrate(ids: ids, type: type)
         }
         return nil // e.g. a Trakt-only id: Trakt resolution arrives with M8

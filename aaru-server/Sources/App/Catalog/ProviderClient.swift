@@ -16,6 +16,24 @@ struct ProviderError: Error, Equatable {
 
     let provider: String
     let kind: Kind
+
+    /// The provider's name as people read it.
+    var displayName: String {
+        switch provider {
+        case "anilist": "AniList"
+        case "tmdb": "TMDB"
+        case "openlibrary": "Open Library"
+        case "trakt": "Trakt"
+        case "tvmaze": "TVmaze"
+        case "pogdesign": "Pogdesign CAT"
+        default: provider
+        }
+    }
+
+    /// AniList failing as a whole (down, disabled, answering garbage), not missing one entry.
+    var isAniListOutage: Bool {
+        provider == "anilist" && kind != .notFound
+    }
 }
 
 /// Token bucket shared by every caller of one provider (CAT-001, X-002), so two
