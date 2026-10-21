@@ -25,6 +25,7 @@ This file is the working contract for anyone — human or agent — changing the
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
 | Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI primitives in `src/components/ui` (solid-ui's shapes on native elements, no Kobalte), animation through `motion/mini` (DESIGN.md §17). No DB access, no business logic |
+| Browser extension | `aaru-extension/` — WXT, one Manifest V3 source for Chrome and Firefox (SCR-007). Reads the player on Netflix, Disney+ and Prime Video and calls `/v1/scrobble/*` with a scrobble-only token. A client like the others: no rules of its own |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
@@ -34,7 +35,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001) |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
-| Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
+| Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped, scrobble tokens only), the browser extension for Netflix / Disney+ / Prime Video (SCR-007, owner exception 2026-10-21), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | Realtime | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
 | Groups | Friends-only spaces with channels (`text`, `title`, `watch`, `shelf`) and `#general`. Server-visible messages in Postgres; `@aaru` replies through `ModelProviding` (pulled forward 2026-10-20) |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
@@ -53,6 +54,7 @@ aaru/
   aaru-server/           # Hummingbird API
   aaru-ios/              # SwiftUI iPhone + Mac + widget extension (not scaffolded)
   aaru-client/           # SolidJS + TanStack Start on Workers: landing + the web app on /v1
+  aaru-extension/        # Browser extension (Chrome + Firefox): scrobbles streaming sites
   README.md
   ARCHITECTURE.md
   DESIGN.md              # what Aaru feels like: surfaces, agentic rules
@@ -91,6 +93,10 @@ cd aaru-client && npm run check && npm run lint && npm run typecheck
 cd aaru-client && npm test
 cd aaru-client && npm run api:generate   # after any openapi.yaml change
 cd aaru-client && npm run build && npm run size   # JS/CSS budget per route (size-budget.json)
+
+# Browser extension
+cd aaru-extension && npm run check && npm run lint && npm run typecheck && npm test
+cd aaru-extension && npm run build   # .output/chrome-mv3, .output/firefox-mv3; store submission by hand
 
 # Apple
 xcodebuild build -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO

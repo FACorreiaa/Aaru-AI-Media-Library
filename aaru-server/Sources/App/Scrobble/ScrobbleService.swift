@@ -31,41 +31,78 @@ struct ScrobbleService: Sendable {
 
     @discardableResult
     func report(_ report: PlaybackReport, from caller: AgentCaller) async throws -> ScrobbleOutcome {
+        try await record(report, from: caller).outcome
+    }
+
+    /// `report`, also naming the title it matched, so a player can show what Aaru heard (SCR-007).
+    func record(
+        _ report: PlaybackReport,
+        from caller: AgentCaller
+    ) async throws -> (outcome: ScrobbleOutcome, title: Title?) {
         let now = now()
         let userID = caller.userID
         if report.action == .stop, try await stores.watchEvents.stoppedRecently(
             userID: userID, source: report.source, externalRef: report.externalRef,
             since: now.addingTimeInterval(-Self.repeatWindow)
         ) {
-            return .stoppedWithoutChange
+            return (.stoppedWithoutChange, nil)
         }
-        let title = try await resolve(MediaRef(titleID: report.titleID, type: report.type, ids: report.ids))
+        let title = try await resolve(report)
         let session = try await stores.watchEvents.record(
             report, titleID: title?.id, userID: userID, agentTokenID: caller.token.id, now: now
         )
-        guard report.action == .stop else { return title == nil ? .unmatched : .recorded }
+        guard report.action == .stop else { return (title == nil ? .unmatched : .recorded, title) }
         try await stores.watchEvents.close(session.id, at: now)
         guard let title else {
             logger.info("Unmatched scrobble", metadata: [
                 "source": "\(report.source.rawValue)", "agentToken": "\(caller.token.id)",
             ])
-            return .unmatched
+            return (.unmatched, nil)
         }
-        guard let progress = session.progress, progress >= Self.watchedThreshold else { return .stoppedWithoutChange }
-        let wrote = try await markWatched(title, episodes: report.episode.map { [$0] } ?? [], caller: caller)
-        return wrote ? .watched : .stoppedWithoutChange
+        guard let progress = session.progress, progress >= Self.watchedThreshold else {
+            return (.stoppedWithoutChange, title)
+        }
+        let episodes = try await episodes(of: title, in: report)
+        let wrote = try await markWatched(title, episodes: episodes, caller: caller)
+        return (wrote ? .watched : .stoppedWithoutChange, title)
+    }
+
+    /// The title a report names. A report with no id names its title instead (SCR-007): matched
+    /// only when exactly one catalog entry has the name.
+    private func resolve(_ report: PlaybackReport) async throws -> Title? {
+        guard report.titleID == nil, report.ids.isEmpty, let name = report.title else {
+            return try await resolve(MediaRef(titleID: report.titleID, type: report.type, ids: report.ids))
+        }
+        if let year = report.year {
+            return try await resolve(MediaRef(type: report.type, title: name, year: year))
+        }
+        return try await unlessUnknown { try await resolver.resolve(named: name, type: report.type) }
     }
 
     /// The title a ref names, hydrating it from the catalog when Aaru has not seen it yet; nil
     /// when nothing matches.
     func resolve(_ ref: MediaRef) async throws -> Title? {
+        try await unlessUnknown { try await resolver.resolve(ref) }
+    }
+
+    /// nil when the catalog does not know the title, or knows more than one by that name.
+    private func unlessUnknown(_ body: () async throws -> Title) async throws -> Title? {
         do {
-            return try await resolver.resolve(ref)
+            return try await body()
         } catch is ResolutionError {
             return nil
         } catch let error as ProviderError where error.kind == .notFound {
             return nil
         }
+    }
+
+    /// The episode a stop ticks: the number the player gave, else the one its name matches.
+    private func episodes(of title: Title, in report: PlaybackReport) async throws -> [EpisodeKey] {
+        if let episode = report.episode {
+            return [episode]
+        }
+        guard let named = report.episodeName else { return [] }
+        return try await resolver.episodes(of: title, named: [named])
     }
 
     /// Ticks the episodes (one action), or finishes the movie. A title not in the library is

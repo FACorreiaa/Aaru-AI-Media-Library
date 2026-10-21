@@ -26,16 +26,41 @@ function check<T>(
   return result.data
 }
 
-/** The user's live MCP connections, newest first. */
+/** The user's live MCP and browser-extension connections, newest first. */
 export const listConnections = createServerFn({ method: 'GET' }).handler(
-  async (): Promise<AgentToken[]> =>
-    check(
-      await api(sessionToken()).GET('/v1/agent/tokens', {
-        params: { query: { for: 'mcp' } },
-      }),
-      'Your connections could not be loaded.',
-    ).items,
+  async (): Promise<AgentToken[]> => {
+    const client = api(sessionToken())
+    const [mcp, browsers] = await Promise.all(
+      (['mcp', 'scrobble'] as const).map(async (group) =>
+        check(
+          await client.GET('/v1/agent/tokens', {
+            params: { query: { for: group } },
+          }),
+          'Your connections could not be loaded.',
+        ),
+      ),
+    )
+    return [...mcp.items, ...browsers.items].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    )
+  },
 )
+
+/**
+ * SCR-007: a token for this browser's Aaru extension, which can only scrobble. The connect page
+ * hands the secret straight to the extension; it is never shown.
+ */
+export const connectExtension = createServerFn({ method: 'POST' })
+  .validator(z.object({ name: z.string().max(80).optional() }))
+  .handler(async ({ data }): Promise<{ id: string; secret: string }> => {
+    const created = check(
+      await api(sessionToken()).POST('/v1/agent/tokens', {
+        body: { kind: 'browser', name: data.name?.trim() || undefined },
+      }),
+      'This browser could not be connected.',
+    )
+    return { id: created.token.id, secret: created.secret }
+  })
 
 /** One client's steps, with a placeholder where the token goes. */
 export const getSetup = createServerFn({ method: 'GET' })

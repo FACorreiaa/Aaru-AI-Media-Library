@@ -1671,7 +1671,7 @@ export interface components {
       redirectTo: string
     }
     /**
-     * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
+     * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension: it can only scrobble.
      * @enum {string}
      */
     AgentTokenKind:
@@ -1682,6 +1682,7 @@ export interface components {
       | 'gemini'
       | 'other'
       | 'claude'
+      | 'browser'
     /** @enum {string} */
     AgentMCPKind:
       'claude' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
@@ -4153,8 +4154,8 @@ export interface operations {
   listAgentTokens: {
     parameters: {
       query?: {
-        /** @description Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token. */
-        for?: 'stremio' | 'mcp'
+        /** @description Which surface's tokens: the Stremio addon, MCP clients, or the browser extension (`scrobble`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind. */
+        for?: 'stremio' | 'mcp' | 'scrobble'
       }
       header?: never
       path?: never

@@ -664,8 +664,9 @@ default. `library:write` is an opt-in at connect time and only lets Stremio's `u
 An MCP token (`kind` = `claude_code`, `codex`, `hermes`, `gemini` or `other`) gets
 `library:read`, plus `library:write` when the user allows changes and `imports:write` when the
 user allows imports at connect time; never `scrobble:write`. The kind only picks the setup Settings shows (`GET /v1/agent/setup/{kind}`,
-written once on the server for web and Apple). Secrets carry a per-surface prefix
-(`aaru_st_`, `aaru_mcp_`) and a token authenticates only on its own surface. The tools live in
+written once on the server for web and Apple). A browser-extension token (`kind = browser`, SCR-007) gets
+`scrobble:write` only: it never reads the library. Secrets carry a per-surface prefix
+(`aaru_st_`, `aaru_mcp_`, `aaru_scr_`) and a token authenticates only on its own surface. The tools live in
 `aaru-server/Sources/App/Agent/AgentTools.swift`, transport-neutral, and answer the `/v1` DTOs.
 
 ### Remote approval
@@ -1122,6 +1123,7 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Backend | Hummingbird only |
 | First clients | iOS and Mac, with widgets and a Live Activity |
 | Web | `aaru-client`: SolidJS + TanStack Start on Cloudflare Workers, pure `/v1` client at parity with the Apple apps (2026-10-14; SvelteKit 2026-10-09 to 10-14) |
+| Browser extension | `aaru-extension` (SCR-007, 2026-10-21): Chrome + Firefox, Manifest V3. A client of `/v1/scrobble/*` only, with a `browser` token (scrobble only) handed over on `/connect/extension`. Reads the playing title from the player page in the user's browser; the server fetches nothing from the sites |
 | Beta | Client-side only: TestFlight `.beta` + staging Worker, both on the prod API. One backend (2026-10-09) |
 | Anime | First-class from Phase 1: AniList catalog, `anilist`/`mal`/`anidb` ids (2026-10-09) |
 | DMs | Signal-grade via libsignal; server stores ciphertext only. Licence and web are OPEN (2026-10-09) |

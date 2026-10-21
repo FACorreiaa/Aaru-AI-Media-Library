@@ -21,12 +21,14 @@ const labels: Record<AgentToken['kind'], string> = {
   other: 'Other MCP client',
   stremio: 'Stremio',
   claude: 'Claude',
+  browser: 'Browser extension',
 }
 
 export const kindLabel = (kind: AgentToken['kind']) => labels[kind]
 
 /** What a connection may do, in the words Settings uses. */
 export function accessLabel(token: AgentToken): string {
+  if (token.kind === 'browser') return 'Marks what you watch'
   const access = token.scopes.includes('library:write')
     ? 'Can change one item at a time'
     : 'Read only'
