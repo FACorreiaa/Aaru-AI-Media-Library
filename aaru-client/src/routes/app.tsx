@@ -7,6 +7,7 @@ import { PlanCard } from '../components/PlanCard'
 import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
 import { cardClass } from '../components/ui/card'
+import { Dialog } from '../components/ui/dialog'
 import { cn } from '../lib/cn'
 import {
   AiringCard,
@@ -512,14 +513,10 @@ function Home() {
         </Show>
       </main>
 
-      <dialog
+      <Dialog
         ref={dialog}
         aria-label="Search"
-        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-card bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
-        onClick={(e) => {
-          // A click on the backdrop closes it.
-          if (e.target === dialog) dialog.close()
-        }}
+        class="w-[min(40rem,calc(100vw-2rem))]"
       >
         <Show when={searchOpened()}>
           <SearchPanel
@@ -528,7 +525,7 @@ function Home() {
             onClose={() => dialog?.close()}
           />
         </Show>
-      </dialog>
+      </Dialog>
     </div>
   )
 }

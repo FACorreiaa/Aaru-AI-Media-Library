@@ -1,6 +1,7 @@
 import { For, Show, createSignal } from 'solid-js'
 import { canChangeLibrary, lastUsedLabel } from '../lib/stremio/model'
 import { StremioHistoryImport } from './StremioHistoryImport'
+import { AlertDialog } from './ui/alert-dialog'
 import { Button, buttonVariants } from './ui/button'
 import { Card } from './ui/card'
 import {
@@ -19,6 +20,8 @@ export function StremioSection(props: { links: AgentToken[] }) {
   const [problem, setProblem] = createSignal<string | null>(null)
   const [fresh, setFresh] = createSignal<StremioConnection | null>(null)
   const [copied, setCopied] = createSignal(false)
+  const [pending, setPending] = createSignal<AgentToken | null>(null)
+  const [revoking, setRevoking] = createSignal(false)
 
   const fail = (error: unknown, fallback: string) =>
     setProblem(error instanceof Error ? error.message : fallback)
@@ -41,12 +44,16 @@ export function StremioSection(props: { links: AgentToken[] }) {
 
   async function revoke(token: AgentToken) {
     setProblem(null)
+    setRevoking(true)
     try {
       await revokeStremio({ data: { id: token.id } })
       if (fresh()?.token.id === token.id) setFresh(null)
       setLinks(links().filter((link) => link.id !== token.id))
     } catch (error) {
       fail(error, 'That Stremio link was not revoked.')
+    } finally {
+      setRevoking(false)
+      setPending(null)
     }
   }
 
@@ -161,7 +168,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
                   variant="danger-outline"
                   size="sm"
                   class="shrink-0"
-                  onClick={() => void revoke(link)}
+                  onClick={() => setPending(link)}
                 >
                   Revoke
                 </Button>
@@ -170,6 +177,18 @@ export function StremioSection(props: { links: AgentToken[] }) {
           </For>
         </ul>
       </Show>
+      <AlertDialog
+        open={pending() !== null}
+        title="Revoke this Stremio link?"
+        description="Stremio stops showing your Aaru library."
+        confirmLabel="Revoke"
+        busy={revoking()}
+        onConfirm={() => {
+          const token = pending()
+          if (token) void revoke(token)
+        }}
+        onCancel={() => setPending(null)}
+      />
 
       <StremioHistoryImport />
     </Card>

@@ -1,6 +1,7 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show, createSignal } from 'solid-js'
+import { For, Show, createMemo, createSignal } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
+import { AlertDialog } from '../components/ui/alert-dialog'
 import { Button } from '../components/ui/button'
 import {
   createList,
@@ -28,6 +29,13 @@ function Lists() {
   const [name, setName] = createSignal('')
   const [editing, setEditing] = createSignal<string | null>(null)
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [pending, setPending] = createSignal<ListSummary | null>(null)
+  const [deleting, setDeleting] = createSignal(false)
+  // The last list asked about, so the dialog keeps its title while it fades out.
+  const asked = createMemo<ListSummary | null>(
+    (last) => pending() ?? last,
+    null,
+  )
 
   const summary = (detail: {
     id: string
@@ -172,12 +180,7 @@ function Lists() {
                   <button
                     type="button"
                     class="text-sm text-muted hover:text-danger"
-                    onClick={() =>
-                      void run(async () => {
-                        await deleteList({ data: { id: list.id } })
-                        setLists(lists().filter((l) => l.id !== list.id))
-                      })
-                    }
+                    onClick={() => setPending(list)}
                   >
                     Delete
                   </button>
@@ -186,6 +189,26 @@ function Lists() {
             </For>
           </ul>
         </Show>
+        <AlertDialog
+          open={pending() !== null}
+          title={`Delete ${asked()?.name ?? ''}?`}
+          description="The list goes; the titles stay in your library."
+          confirmLabel="Delete list"
+          busy={deleting()}
+          onConfirm={() => {
+            const list = pending()
+            if (!list) return
+            setDeleting(true)
+            void run(async () => {
+              await deleteList({ data: { id: list.id } })
+              setLists(lists().filter((l) => l.id !== list.id))
+            }).finally(() => {
+              setDeleting(false)
+              setPending(null)
+            })
+          }}
+          onCancel={() => setPending(null)}
+        />
       </main>
     </div>
   )

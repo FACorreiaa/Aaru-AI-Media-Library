@@ -6,6 +6,7 @@ import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
 import { SearchPanel } from '../components/SearchPanel'
 import { Button } from '../components/ui/button'
+import { Dialog } from '../components/ui/dialog'
 import { getLibrary } from '../lib/library/server'
 import {
   KINDS,
@@ -290,21 +291,17 @@ function Library() {
         </Show>
       </main>
 
-      <dialog
+      <Dialog
         ref={dialog}
         aria-label="Search"
-        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-card bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
-        onClick={(e) => {
-          // A click on the backdrop closes it.
-          if (e.target === dialog) dialog.close()
-        }}
+        class="w-[min(40rem,calc(100vw-2rem))]"
       >
         <SearchPanel
           entries={entries()}
           onAdded={(entry) => setEntries(upsert(entries(), entry))}
           onClose={() => dialog?.close()}
         />
-      </dialog>
+      </Dialog>
       <Show when={listTarget()}>
         {(entry) => (
           <AddToListDialog
