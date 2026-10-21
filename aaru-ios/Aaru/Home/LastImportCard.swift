@@ -40,3 +40,14 @@ struct LastImportCard: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+// MARK: Previews
+
+#Preview("Last import") {
+    VStack(spacing: 16) {
+        LastImportCard(job: .sampleWorking)
+        LastImportCard(job: .sampleDone)
+    }
+    .padding(20)
+    .frame(width: 360)
+}

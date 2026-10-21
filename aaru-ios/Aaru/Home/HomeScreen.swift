@@ -370,29 +370,3 @@ extension HomeScreen {
         }
     }
 }
-
-// MARK: Previews
-
-#Preview("Home") {
-    HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .sample)
-}
-
-#Preview("Home, new account") {
-    HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .newAccount)
-}
-
-#Preview("Home · dark") {
-    HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .sample)
-        .preferredColorScheme(.dark)
-}
-
-#Preview("Mac", traits: .fixedLayout(width: 1280, height: 800)) {
-    HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .sample)
-}
-
-#Preview("Empty") {
-    HomeScreen(
-        api: nil, library: LibraryModel(), lists: ListsModel(api: nil),
-        model: HomeModel(preview: .init(upNext: .init(continueWatching: [], startWatching: []), airing: []))
-    )
-}

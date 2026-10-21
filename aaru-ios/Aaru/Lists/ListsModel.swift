@@ -20,6 +20,13 @@ final class ListsModel {
         self.api = api
     }
 
+    /// For previews: these lists, already loaded.
+    convenience init(preview lists: [ListSummary]) {
+        self.init(api: nil)
+        self.lists = lists
+        hasLoaded = true
+    }
+
     func load() async {
         guard let api else { return }
         do {

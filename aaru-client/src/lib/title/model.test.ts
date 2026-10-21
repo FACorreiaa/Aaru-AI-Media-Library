@@ -6,6 +6,7 @@ import {
   neighbours,
   nextEpisode,
   nextRating,
+  ratingLabel,
   orderedSeasons,
 } from './model'
 import type { TitleDetail } from './model'
@@ -54,6 +55,12 @@ describe('title model', () => {
   it('rates in two-point stars, and the same star clears', () => {
     expect(nextRating(undefined, 4)).toBe(8)
     expect(nextRating(8, 4)).toBeNull()
+  })
+
+  it('names the rating with its value', () => {
+    expect(ratingLabel(8)).toBe('Rating, 8 of 10')
+    expect(ratingLabel(7)).toBe('Rating, 7 of 10')
+    expect(ratingLabel(undefined)).toBe('Rating, not rated')
   })
 
   const now = new Date('2026-10-15T00:00:00Z')

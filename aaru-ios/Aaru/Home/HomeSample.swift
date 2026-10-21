@@ -50,7 +50,11 @@ extension HomeModel {
         ]
         return HomeModel(
             preview: .init(
-                upNext: .init(continueWatching: continueWatching, startWatching: startWatching),
+                upNext: .init(
+                    continueWatching: continueWatching,
+                    startWatching: startWatching,
+                    counts: .init(wishlist: 60, inProgress: 12, finished: 186, dropped: 4)
+                ),
                 airing: airing
             ),
             discover: sampleDiscover,
@@ -104,5 +108,36 @@ extension HomeModel {
                 ),
             ]),
         ]
+    }
+}
+
+extension ImportJob {
+    /// For previews: one import still matching, one done.
+    static var sampleWorking: ImportJob {
+        .init(
+            id: UUID().uuidString, source: .netflixCsv, state: .running,
+            stats: .init(created: 0, updated: 0, skipped: 0, unmatched: 0),
+            filename: "NetflixViewingHistory.csv", createdAt: .now, updatedAt: .now,
+            rowsTotal: 1240, rowsMatched: 512
+        )
+    }
+
+    static var sampleDone: ImportJob {
+        .init(
+            id: UUID().uuidString, source: .letterboxdCsv, state: .partial,
+            stats: .init(created: 210, updated: 14, skipped: 3, unmatched: 18),
+            filename: "diary.csv", createdAt: .now.addingTimeInterval(-86400), updatedAt: .now,
+            rowsTotal: 245, rowsMatched: 245
+        )
+    }
+}
+
+extension ListsModel {
+    /// For previews: two lists.
+    static var sample: ListsModel {
+        ListsModel(preview: [
+            .init(id: UUID().uuidString, name: "Rainy-night books", itemCount: 9, createdAt: .now, updatedAt: .now),
+            .init(id: UUID().uuidString, name: "Winter movies", itemCount: 14, createdAt: .now, updatedAt: .now),
+        ])
     }
 }
