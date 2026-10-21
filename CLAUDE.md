@@ -21,7 +21,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation). No HTTP client in it |
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
-| Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI primitives in `src/components/ui` (solid-ui adapted, Kobalte only where native HTML falls short), animation through `motion/mini` (DESIGN.md §17). No DB access, no business logic |
+| Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI primitives in `src/components/ui` (solid-ui's shapes on native elements, no Kobalte), animation through `motion/mini` (DESIGN.md §17). No DB access, no business logic |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |

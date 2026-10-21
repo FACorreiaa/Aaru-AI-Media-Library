@@ -9,6 +9,7 @@ import {
 import type { PushSetup } from '../lib/push/server'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
+import { Switch } from './ui/switch'
 
 // Airing alerts in this browser. "New episodes" is the account's switch, shared with the Apple
 // apps; "this browser" is one push subscription. Permission is asked only on a tap.
@@ -38,10 +39,14 @@ export function NotificationsSection(props: { setup: PushSetup }) {
   })
 
   async function toggleAiring(on: boolean) {
+    const before = airing()
     setProblem(null)
+    // The switch moves at once; the server's answer decides.
+    setAiringState(on)
     try {
       setAiringState(await setAiring({ data: { airing: on } }))
     } catch (error) {
+      setAiringState(before)
       fail(error, 'That was not saved.')
     }
   }
@@ -102,21 +107,13 @@ export function NotificationsSection(props: { setup: PushSetup }) {
   return (
     <Card class="mt-10 p-5">
       <h2 class="font-display text-xl font-medium">Notifications</h2>
-      <label class="mt-3 flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          class="mt-0.5"
-          checked={airing()}
-          onChange={(e) => void toggleAiring(e.currentTarget.checked)}
-        />
-        <span>
-          New episodes
-          <span class="block text-xs text-muted">
-            When a show you are watching airs a new episode, on every device
-            where alerts are on.
-          </span>
-        </span>
-      </label>
+      <Switch
+        class="mt-3 flex items-start gap-3 text-sm"
+        checked={airing()}
+        onChange={(checked) => void toggleAiring(checked)}
+        label="New episodes"
+        description="When a show you are watching airs a new episode, on every device where alerts are on."
+      />
 
       <Show
         when={props.setup.publicKey}

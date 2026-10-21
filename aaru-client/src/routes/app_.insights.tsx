@@ -13,6 +13,10 @@ import { AppHeader } from '../components/AppHeader'
 import { StatsPanel } from '../components/StatsPanel'
 import { Alert } from '../components/ui/alert'
 import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '../components/ui/segmented-control'
+import {
   SPANS,
   insightsLabel,
   periodFromSearch,
@@ -119,31 +123,30 @@ function Insights() {
         </h1>
 
         <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <div
+          <SegmentedControl
             class="flex overflow-hidden rounded-full border border-line text-sm"
-            role="group"
             aria-label="Period"
+            // '' until the period is known: controlled, with nothing chosen yet.
+            value={period()?.span ?? ''}
+            onChange={(span) => {
+              const p = period()
+              const current = now()
+              const option = SPANS.find((o) => o.span === span)
+              if (p && current && option) go(withSpan(p, option.span, current))
+            }}
           >
             <For each={SPANS}>
               {(option) => (
-                <button
-                  type="button"
-                  aria-pressed={period()?.span === option.span}
+                <SegmentedControlItem
+                  value={option.span}
+                  variant="surface"
                   class="px-4 py-1.5"
-                  classList={{
-                    'bg-surface font-semibold': period()?.span === option.span,
-                  }}
-                  onClick={() => {
-                    const p = period()
-                    const current = now()
-                    if (p && current) go(withSpan(p, option.span, current))
-                  }}
                 >
                   {option.label}
-                </button>
+                </SegmentedControlItem>
               )}
             </For>
-          </div>
+          </SegmentedControl>
           <Show when={period()}>
             {(p) => (
               <div class="flex items-center gap-2">
