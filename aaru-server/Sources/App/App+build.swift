@@ -40,9 +40,11 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let webPush = makeWebPushSender(config.vapidConfigJSON, logger: logger)
     var services = Services.make(
         stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
-        publicBaseURL: config.publicBaseURL
+        publicBaseURL: config.publicBaseURL, oauth: (config.webBaseURL, config.oauthCookieDomain)
     )
     services.webPush = webPush
+    let pushSender = makePushSender(config.push, logger: logger)
+    services.plans.push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -51,9 +53,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         fluent,
         ImportWorker(imports: services.imports, logger: logger),
         AiringNotifierService(
-            notifier: AiringNotifier(
-                stores: stores, sender: makePushSender(config.push, logger: logger), webPush: webPush
-            ),
+            notifier: AiringNotifier(stores: stores, sender: pushSender, webPush: webPush),
             logger: logger
         ),
         CatalogRefreshService(
@@ -187,7 +187,9 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()
     }
-    try APIImplementation(stores: stores, services: services).registerHandlers(on: router)
+    try APIImplementation(stores: stores, services: services).registerHandlers(
+        on: router, configuration: .init(dateTranscoder: LenientDateTranscoder())
+    )
     // Trakt's browser redirect (IMP-002). Plain, not generated: the generated server would
     // percent-encode the `aaru://` Location.
     router.get("/v1/imports/trakt/callback") { request, _ -> Response in
@@ -205,6 +207,8 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         ),
         tokens: services.agentTokens
     ).register(on: router)
+    MCPRoutes(tools: AgentTools(services: services, stores: stores), tokens: services.agentTokens).register(on: router)
+    OAuthRoutes(service: services.oauth).register(on: router)
     return router
 }
 

@@ -29,6 +29,10 @@ let allMigrations: [any Migration] = [
     AddStatusByHand(),
     CreateWebPush(),
     CreateStremioLinkRequests(),
+    AddAgentTokenKinds(),
+    CreateAgentPlans(),
+    AddMCPOAuth(),
+    AddImportsWriteScope(),
     CreateSocial(),
     CreateGroups(),
 ]

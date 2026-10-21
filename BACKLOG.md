@@ -71,6 +71,20 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **The iPhone tab bar stops at five**: Home · Discover · Library · Calendar · Lists. Insights
   is not a tab; it opens from Home's stats strip and next to Recap.
 
+- **Agent connections, MCP, the Claude connector and remote approval are built before the P2
+  gate**, by the owner's call, with 0 strangers (flagged; the owner chose). The owner wants Aaru
+  reachable from Claude, Claude Code, Codex, Hermes and Gemini the way Loci, Khepri and
+  LuminaVault are. Items: OUT-001 (all MCP client kinds), OUT-002, OUT-004 with the OAuth front
+  door the 2026-10-15 Claude connector note asks for, AG-001's tools (in-process, no model) and
+  AG-003's remote-plan slice. Remote plans are always "ask me": there is no autonomy dial
+  (AG-007). Not included: the composer, The Field (pending plans pin to Home instead), App
+  Intents (OUT-003), `ModelProviding` and capture. MCP lives in `aaru-server/Sources/App/MCP`, a
+  folder rather than a SwiftPM target: `aaru` is an executable target, and the done-when
+  ("deleting it leaves `/v1` whole") holds for the folder plus its one line in `buildRouter`.
+- **MCP tokens are listed apart from Stremio links.** `GET /v1/agent/tokens` takes
+  `for=stremio|mcp` and defaults to `stremio`, because shipped Apple builds decode the token kind
+  as a closed enum and would fail on an MCP kind. Drop the default once those builds age out.
+
 ## Decisions recorded 2026-10-20
 
 - **Imports move status forward only.** A later import may take a title from wishlist to in
@@ -362,17 +376,17 @@ account or a stranger that has not happened yet.
 | ROOM-002 | Open | none | |
 | ROOM-003 | Open | none | |
 | ROOM-004 | Open | none | |
-| AG-001 | Open | none | |
+| AG-001 | Built | Agent/AgentTools.swift | All five tools, over MCP; no in-app composer (AG-004) |
 | AG-002 | Open | none | |
-| AG-003 | Open | none | Import plan/apply exists, not the agent one |
+| AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
 | AG-005 | Open | none | |
 | AG-006 | Open | none | |
 | AG-007 | Open | no ModelProviding | |
-| OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio kind only; no general scopes |
+| OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
-| OUT-004 | Open | no AppMCP | |
+| OUT-004 | Built | Sources/App/MCP, `/v1/plans`, Sources/App/OAuth | Claude connector unverified against claude.ai until deployed |
 | OUT-005 | Open | none | |
 | MOAT-001 | Dropped (promoted) | now SCR-003 | SCR-003 built |
 | MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
@@ -1665,6 +1679,11 @@ placeholder domain (`src/lib/site.ts`).
 **2026-10-14:** ported to SolidJS (`src/routes/index.tsx`), English only (see the 2026-10-14
 decision). The hero CTA now goes to sign-in.
 
+**2026-10-20:** redesigned after bingers.app, in Aaru's own palette and type: poster fan hero,
+App Store and Google Play buttons (Coming soon), one card per kind (TV shows, movies, anime,
+books, music, sports), X link (@fatc88). Music and sports cards read as live by owner's call;
+the library itself still tracks films, shows, anime and books only.
+
 ### LAND-002 · Waitlist · S
 **Needs:** LAND-001.
 Email capture with double opt-in and an export. Stored through a `/v1` route, not in a Worker
@@ -2292,6 +2311,15 @@ by the server, and echoed on the plan. The model does not select it.
 **Done when:** applying a plan whose underlying library changed since the dry run is rejected
 rather than silently re-planned, and first-run imports cannot be applied without a plan.
 
+**Progress 2026-10-20 (remote plans, for OUT-004):** every library write is split into a dry
+run (`LibraryService+Prepare.swift`, `PreparedWrite`) and a commit; a tap still does both at
+once. An outside agent's change bigger than a tap is stored as an `agent_plans` row holding the
+exact `LibraryOp` batch and a basis (each touched item's `updated_at` in microseconds, and the
+titles it adds). Approval runs in one transaction: status, expiry (24 h) and basis are checked
+again, then the op is applied and journaled as one `external_agent` action, undoable. A moved
+item or a title added meanwhile makes the plan `stale` and nothing is written. No autonomy dial:
+remote plans are always "ask me".
+
 ### AG-004 · Composer and The Field · L
 **Needs:** AG-002, APP-003.
 Home becomes the vertical canvas: composer on top, pinned artifacts below (Now, Airs this
@@ -2381,6 +2409,11 @@ written at most hourly; 120 requests per token per minute. `POST` answers the St
 `https://api.aaruapp.com`). Request logs redact `/stremio/<token>/` and the Trakt callback's
 query. All done-when conditions are server tests; the Settings UI comes with SCR-003.
 
+**Progress 2026-10-20 (MCP kinds):** `kind` adds `claude_code`, `codex`, `hermes`, `gemini` and
+`other` (migration `AddAgentTokenKinds`). Their secrets are `aaru_mcp_…`, scoped `library:read`
+plus `library:write` if allowed, never `scrobble:write`. A token authenticates only on its own
+surface: an MCP secret is not a Stremio link and a Stremio link cannot call MCP.
+
 ### OUT-002 · Action provenance for external callers · S
 **Needs:** AUD-001, OUT-001.
 `actions.actor` gains `external_agent`; `actions` gains a nullable `agentTokenId`. The undo
@@ -2393,6 +2426,7 @@ renders that name, and revoking the token does not alter or hide the row.
 take a `Caller` (`.user` by default, `.agent(token)` for outside callers) so the row is
 `external_agent` and the summary starts with the token's name ("Stremio: marked S1E2 of X
 watched"). `GET /v1/actions` returns `agentName`, still readable after revoke. Undo is unchanged.
+`LibraryService.delete` and `markSeasonWatched` take a `Caller` too, for the MCP tools.
 
 ### OUT-003 · App Intents and Shortcuts · M
 **Needs:** AG-002, APP-003.
@@ -2405,7 +2439,7 @@ from Shortcuts without opening the app, and each one produces the same journal r
 
 ### OUT-004 · MCP endpoint and remote approval · L
 **Needs:** OUT-001, OUT-002, AG-003.
-`POST /v1/mcp` (streamable HTTP) in `aaru-server/Sources/AppMCP` — inside the existing server,
+`POST /v1/mcp` (streamable HTTP) in `aaru-server/Sources/App/MCP` — inside the existing server,
 because MCP is a transport and the no-second-backend rule stands. Exposes exactly M13's tools.
 
 Remote approval: a caller with `library:write` may write a single item directly, exactly as a
@@ -2415,9 +2449,50 @@ are the only way through, and no scope grants a caller access to them. Denials a
 Until push exists (`MARKETING.md` item 18), pending plans show in The Field as a pinned
 artifact.
 
-**Done when:** deleting `AppMCP` leaves every feature reachable through `/v1`; a multi-item
+**Done when:** deleting `App/MCP` leaves every feature reachable through `/v1`; a multi-item
 write requested over MCP cannot land without an in-app approval; a stale plan is rejected
 rather than re-planned; and no MCP response contains vendor JSON.
+
+**Progress 2026-10-20 (endpoint):** `POST /v1/mcp` built, hand-rolled JSON-RPC (no SDK), stateless:
+`initialize` (2025-11-25, 2025-06-18, 2025-03-26), `ping`, `tools/list`, `tools/call`;
+notifications get 202, `GET`/`DELETE` 405. It authenticates itself: only an `aaru_mcp_` token,
+never a session or a Stremio link; a browser `Origin` is refused; 401 carries
+`WWW-Authenticate`. Tools are AG-001's (`Agent/AgentTools.swift`) and answer `/v1` DTOs. A
+caller with `library:write` applies one change to one item (at most one episode, never a
+removal) at once, journaled as the token; anything larger is refused until plans land.
+`GET /v1/agent/setup/{kind}` serves each client's setup (Claude Code, Codex, Hermes, Gemini CLI,
+other) so web and Apple show the same steps.
+
+**Progress 2026-10-20 (remote approval):** anything bigger than a tap, and any removal, now
+becomes a plan (AG-003): the tool answers `applied: false` with a `planId`, and the user gets a
+push ("Laptop wants to change your library"). `GET /v1/plans`, `GET /v1/plans/{id}`,
+`POST /v1/plans/{id}/approve` and `/deny` take a session only, so an agent token gets 401 and no
+caller approves its own plan. A token has at most 20 plans waiting; revoking it expires them.
+Pending plans pin to the top of Home on web and Apple ("Waiting for you"), and the push opens
+the plan. **Denials are recorded on the plan row** (`status = denied`, `decided_at`, the token),
+not as an `actions` row: the action journal holds only undoable writes, and `agent_plans` is the
+ledger of what each token asked for.
+
+**Progress 2026-10-20 (OAuth front door, the Claude connector):** `Sources/App/OAuth`, per the
+MCP authorization spec. `/.well-known/oauth-protected-resource` (and `/v1/mcp` under it),
+`/.well-known/oauth-authorization-server`, `POST /oauth/register` (RFC 7591; every client is
+public, https or loopback redirects only, 20 per address per hour), `GET /oauth/authorize`
+(S256 PKCE only; `resource` must be the MCP endpoint), `POST /oauth/token`, `POST /oauth/revoke`,
+all CORS `*` without credentials. Authorize sets an `aaru_oauth` binding cookie on
+`OAUTH_COOKIE_DOMAIN` and sends the browser to the web consent page (`/oauth/consent`), which
+answers through `GET/POST /v1/oauth/requests/{id}…` with the session and that binding, so a
+consent link sent to someone else approves nothing. The access token is an `agent_tokens` row
+(`issuance = oauth`, `aaru_oat_`, one hour, kind from the client's name: `claude`,
+`claude_code`, …); the refresh token (30 days) rotates, and a replayed refresh token or a reused
+code revokes the connection. MCP's 401 names the resource metadata. Settings lists these
+connections with the others; revoking one stops its refresh. `kind = claude` cannot be minted
+with a pasted token. New env: `WEB_BASE_URL`, `OAUTH_COOKIE_DOMAIN`.
+
+**Progress 2026-10-20 (`plan_import`):** the fifth tool. `imports:write` is mintable for MCP
+clients ("Allow imports", off by default; migration `AddImportsWriteScope`). The agent hands Aaru
+a list export as text (format detected, or named); it becomes an ordinary import job, matched by
+the worker and approved by the user in Aaru like any other import. The tool never writes the
+library. The user gets a push that opens the import on the web.
 
 ### OUT-005 · Agent-readable digest · S
 **Needs:** LIB-002, SHF-002, OUT-001.

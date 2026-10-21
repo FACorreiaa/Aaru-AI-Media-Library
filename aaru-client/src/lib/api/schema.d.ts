@@ -635,8 +635,142 @@ export interface paths {
     /** The user's live agent tokens (OUT-001), newest first. Secrets are never returned. */
     get: operations['listAgentTokens']
     put?: never
-    /** Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once. */
+    /** Mint a token for an outside caller. A Stremio token's answer carries the addon's install links; an MCP client's carries its setup, with the secret filled in. The secret is shown once. */
     post: operations['createAgentToken']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/plans': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does. */
+    get: operations['listPlans']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/plans/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['getPlan']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/plans/{id}/approve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`. */
+    post: operations['approvePlan']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/plans/{id}/deny': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Refuse the plan. Nothing is written; the plan stays as the record of what was asked. */
+    post: operations['denyPlan']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/oauth/requests/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked. */
+    get: operations['getOAuthRequest']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/oauth/requests/{id}/approve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next. */
+    post: operations['approveOAuthRequest']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/oauth/requests/{id}/deny': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['denyOAuthRequest']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/agent/setup/{kind}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists. */
+    get: operations['getAgentSetup']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -1236,9 +1370,10 @@ export interface components {
       /** Format: uuid */
       id: string
       name: string
-      /** @enum {string} */
-      kind: 'stremio'
-      scopes: ('library:read' | 'library:write' | 'scrobble:write')[]
+      kind: components['schemas']['AgentTokenKind']
+      scopes: (
+        'library:read' | 'library:write' | 'scrobble:write' | 'imports:write'
+      )[]
       /** Format: date-time */
       createdAt: string
       /**
@@ -1248,22 +1383,108 @@ export interface components {
       lastUsedAt?: string
     }
     AgentTokenCreate: {
-      /** @enum {string} */
-      kind: 'stremio'
+      kind: components['schemas']['AgentTokenKind']
       name?: string
-      /** @description Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by default; removing from Stremio's library never deletes anything in Aaru. */
+      /** @description Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default. */
       allowLibraryWrites?: boolean
+      /** @description MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default. */
+      allowImports?: boolean
+    }
+    AgentPlan: {
+      /** Format: uuid */
+      id: string
+      /** @enum {string} */
+      status: 'pending' | 'applied' | 'denied' | 'stale' | 'expired'
+      /** @description The connection that asked, as the user named it. */
+      agentName: string
+      summary: string
+      changes: {
+        text: string
+        /** Format: uuid */
+        titleId: string
+        title: string
+        type: components['schemas']['MediaType']
+        posterUrl?: string
+        /** @description Absent when the change adds the title. */
+        libraryItemId?: string
+      }[]
+      counts: {
+        adds: number
+        updates: number
+        removes: number
+        episodes: number
+      }
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      expiresAt: string
+      /** Format: date-time */
+      decidedAt?: string
+      /** @description The journaled action, once applied; undo it like any other. */
+      actionId?: string
+    }
+    OAuthConsentRequest: {
+      /** Format: uuid */
+      id: string
+      /** @description The name the app registered with. Apps name themselves; show the host too. */
+      clientName: string
+      /** @description Where the app returns the user. This part an impostor cannot fake. */
+      redirectHost: string
+      kind: components['schemas']['AgentTokenKind']
+      /** Format: date-time */
+      expiresAt: string
+    }
+    OAuthRedirect: {
+      redirectTo: string
+    }
+    /**
+     * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
+     * @enum {string}
+     */
+    AgentTokenKind:
+      | 'stremio'
+      | 'claude_code'
+      | 'codex'
+      | 'hermes'
+      | 'gemini'
+      | 'other'
+      | 'claude'
+    /** @enum {string} */
+    AgentMCPKind:
+      'claude' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
+    /** @description How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`. */
+    AgentSetup: {
+      kind: components['schemas']['AgentMCPKind']
+      title: string
+      /**
+       * @description `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
+       * @enum {string}
+       */
+      auth: 'token' | 'oauth'
+      /** @description The MCP endpoint (streamable HTTP). */
+      url: string
+      steps: {
+        label: string
+        /** @enum {string} */
+        language: 'bash' | 'json' | 'toml' | 'yaml' | 'text'
+        text: string
+        note?: string
+      }[]
+      /** @description A message to paste into the agent once it is connected. */
+      prompt: string
     }
     AgentTokenCreated: {
       token: components['schemas']['AgentToken']
       /** @description Shown once. Anyone holding it, or the install links, can use the token. */
       secret: string
-      stremio: {
+      /** @description Only for a Stremio token. */
+      stremio?: {
         manifestUrl: string
         /** @description The `stremio://` link that opens the Stremio app. */
         installUrl: string
         webInstallUrl: string
       }
+      setup?: components['schemas']['AgentSetup']
     }
     /** @description The one error shape every route returns. */
     ErrorResponse: {
@@ -3150,7 +3371,10 @@ export interface operations {
   }
   listAgentTokens: {
     parameters: {
-      query?: never
+      query?: {
+        /** @description Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token. */
+        for?: 'stremio' | 'mcp'
+      }
       header?: never
       path?: never
       cookie?: never
@@ -3191,6 +3415,210 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['AgentTokenCreated']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listPlans: {
+    parameters: {
+      query?: {
+        /** @description `pending` (default) leaves out decided and expired plans. */
+        status?: 'pending' | 'all'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Plans. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            items: components['schemas']['AgentPlan'][]
+          }
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getPlan: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The plan. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AgentPlan']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  approvePlan: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Applied. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            plan: components['schemas']['AgentPlan']
+            action: components['schemas']['Action']
+          }
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  denyPlan: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Denied. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AgentPlan']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getOAuthRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The request. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OAuthConsentRequest']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  approveOAuthRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          binding: string
+          name?: string
+          allowLibraryWrites?: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Send the browser here. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OAuthRedirect']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  denyOAuthRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          binding: string
+        }
+      }
+    }
+    responses: {
+      /** @description Send the browser here. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OAuthRedirect']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getAgentSetup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['AgentMCPKind']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The client's setup. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AgentSetup']
         }
       }
       default: components['responses']['Error']

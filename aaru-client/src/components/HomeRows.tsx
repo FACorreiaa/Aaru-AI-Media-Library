@@ -20,6 +20,8 @@ import type {
 } from '../lib/home/model'
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
+import { Badge, badgeVariants } from './ui/badge'
+import { Button } from './ui/button'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
 // the arrow keys scroll it, and on desktop it has its own back / forward buttons.
@@ -130,8 +132,7 @@ function Art(props: { sources: (string | undefined)[]; title: string }) {
 }
 
 /** Text on art: a dark scrim chip, legible on any image in either theme. */
-const chip =
-  'rounded-full bg-black/65 px-2 py-0.5 text-xs font-semibold text-white'
+const chip = badgeVariants({ tone: 'scrim' })
 
 /** Continue watching: the next episode of an in-progress show, with a check to mark it. */
 export function ContinueCard(props: {
@@ -148,16 +149,16 @@ export function ContinueCard(props: {
         params={{ id: e().libraryItemId }}
         tabindex="-1"
         aria-hidden="true"
-        class="relative block aspect-video overflow-hidden rounded-[14px]"
+        class="relative block aspect-video overflow-hidden rounded-panel"
       >
         <Art
           sources={[e().title.backdropUrl, e().title.posterUrl]}
           title={e().title.title}
         />
         <Show when={e().isFinale}>
-          <span class="absolute top-2 right-2 rounded-full bg-ink px-2 py-0.5 text-xs font-semibold text-paper">
+          <Badge tone="ink" class="absolute top-2 right-2">
             Finale
-          </span>
+          </Badge>
         </Show>
         <div class="absolute inset-x-2 bottom-2 flex items-end justify-between gap-2">
           <Show when={runtime()} fallback={<span />}>
@@ -286,15 +287,12 @@ export function AiringCard(props: {
         </Show>
         <Show when={kind()}>
           {(text) => (
-            <span
-              class="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-semibold"
-              classList={{
-                'bg-accent text-on-accent': e().kind === 'premiere',
-                'bg-ink text-paper': e().kind === 'finale',
-              }}
+            <Badge
+              tone={e().kind === 'finale' ? 'ink' : 'accent'}
+              class="absolute top-2 right-2"
             >
               {text()}
-            </span>
+            </Badge>
           )}
         </Show>
       </div>
@@ -383,13 +381,14 @@ export function DiscoverCard(props: {
             onAdd={props.onAdd}
             idPrefix={`discover-${props.rowId}`}
           />
-          <button
-            type="button"
-            class="text-xs font-medium text-muted hover:text-ink"
+          <Button
+            variant="ghost"
+            size="bare"
+            class="text-xs"
             onClick={() => props.onList()}
           >
             List…
-          </button>
+          </Button>
         </div>
       </Show>
     </div>

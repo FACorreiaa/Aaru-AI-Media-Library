@@ -22,7 +22,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation). No HTTP client in it |
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
-| Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). No DB access, no business logic |
+| Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI primitives in `src/components/ui` (solid-ui adapted, Kobalte only where native HTML falls short), animation through `motion/mini` (DESIGN.md §17). No DB access, no business logic |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
@@ -39,7 +39,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
 | Agent model | Pluggable `ModelProviding` in `Server`. Anthropic default, user key supported, spend metered daily |
-| Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/AppMCP`. Not a second backend |
+| Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`, with an OAuth front door (`Sources/App/OAuth`) so Claude can add Aaru as a custom connector. Not a second backend |
 
 ## Repo layout
 
@@ -87,6 +87,7 @@ cd aaru-client && npm run dev
 cd aaru-client && npm run check && npm run lint && npm run typecheck
 cd aaru-client && npm test
 cd aaru-client && npm run api:generate   # after any openapi.yaml change
+cd aaru-client && npm run build && npm run size   # JS/CSS budget per route (size-budget.json)
 
 # Apple
 xcodebuild build -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
@@ -198,8 +199,9 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 Do not write code for a later phase before the P2 gate, and do not add empty abstractions for it.
 Owner's exceptions are recorded in `BACKLOG.md` decisions (Recap 2026-10-16; Stremio tokens,
 scrobble service and addon 2026-10-19; Discover rows (DISC-001), the Discover tab, Insights
-and Home stats 2026-10-20; groups, with minimal friends, the groups gateway and a minimal model
-provider, 2026-10-20).
+and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remote approval
+2026-10-20; groups, with minimal friends, the groups gateway and a minimal model provider,
+2026-10-20).
 
 ## Out of scope (do not add unless asked)
 

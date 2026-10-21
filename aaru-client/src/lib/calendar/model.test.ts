@@ -70,7 +70,7 @@ describe('week grid model', () => {
   it('asks for a padded window around the visible days', () => {
     const { from, to } = fetchWindow('2026-10-05', '2026-10-26')
     const days = (Date.parse(to) - Date.parse(from)) / 86_400_000
-    expect(from).toBe('2026-10-03T00:00:00.000Z')
+    expect(from).toBe('2026-10-03T00:00:00Z')
     expect(days).toBeLessThanOrEqual(35)
   })
 

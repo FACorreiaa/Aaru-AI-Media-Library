@@ -12,9 +12,14 @@ extension APIImplementation {
     }
 
     func getUpNext(_: Operations.GetUpNext.Input) async throws -> Operations.GetUpNext.Output {
-        let rows = try await services.schedule.upNext(userID: currentUser())
+        try await .ok(.init(body: .json(.init(services.schedule.upNext(userID: currentUser())))))
+    }
+}
+
+extension Components.Schemas.UpNext {
+    init(_ rows: UpNext) {
         let counts = rows.counts
-        return .ok(.init(body: .json(.init(
+        self.init(
             continueWatching: rows.continueWatching.map(Components.Schemas.ContinueEntry.init),
             startWatching: rows.startWatching.map(Components.Schemas.StartEntry.init),
             counts: .init(
@@ -22,7 +27,7 @@ extension APIImplementation {
                 dropped: counts.dropped
             ),
             unfinished: rows.unfinished.map(Components.Schemas.UnfinishedEntry.init)
-        ))))
+        )
     }
 }
 
