@@ -223,22 +223,37 @@ struct TitleResolver: Sendable {
 
     // MARK: By name only
 
-    /// A show known only by its name (Pogdesign CAT, IMP-009): the one TMDB show whose normalized
-    /// title equals it, in any year. Two shows with the name (a remake) are ambiguous, never a guess,
-    /// unless `airing` (from CAT's calendar) is an episode exactly one of them airs that day.
-    func resolveShow(named name: String, airing: ImportAiring? = nil) async throws -> Title {
+    /// A movie or show known only by its name (Pogdesign CAT, IMP-009; Netflix, IMP-018): the one
+    /// TMDB entry of `type` whose normalized title equals it, in any year up to `notAfter` (the year
+    /// it was watched). Two with the name (a remake) are ambiguous, never a guess, unless `airing`
+    /// (from CAT's calendar) is an episode exactly one of the shows airs that day.
+    func resolve(
+        named name: String, type: MediaType, airing: ImportAiring? = nil, notAfter: Int? = nil
+    ) async throws -> Title {
         let wanted = MatchKey.normalize(name)
-        guard !wanted.isEmpty else { throw ResolutionError.notFound }
-        let hits = try await catalogs.tmdb.search(query: name, type: .show)
+        guard type != .book, !wanted.isEmpty else { throw ResolutionError.notFound }
+        let hits = try await catalogs.tmdb.search(query: name, type: type)
         let matches = hits.filter { hit in
-            hit.type == .show && hit.year != nil && MatchKey.normalize(hit.title) == wanted
+            guard hit.type == type, let year = hit.year, MatchKey.normalize(hit.title) == wanted else { return false }
+            return notAfter.map { year <= $0 } ?? true
         }
         guard !matches.isEmpty else { throw ResolutionError.notFound }
         if matches.count == 1 {
-            return try await resolve(ids: matches[0].ids, type: .show)
+            return try await resolve(ids: matches[0].ids, type: type)
         }
-        guard let airing, let hit = try await airs(airing, among: matches) else { throw ResolutionError.ambiguous }
+        guard type == .show, let airing, let hit = try await airs(airing, among: matches)
+        else { throw ResolutionError.ambiguous }
         return try await resolve(ids: hit.ids, type: .show)
+    }
+
+    /// The episodes of `title` that `names` describe (Netflix names episodes, it does not number
+    /// them). Names that match nothing, or more than one episode, are left out.
+    func episodes(of title: Title, named names: [NamedEpisode]) async throws -> [EpisodeKey] {
+        guard title.type == .show, !names.isEmpty,
+              let list = try await catalogs.tmdb.episodes(ids: title.ids)
+        else { return [] }
+        let keys = names.compactMap { EpisodeNameMatcher.match($0, in: list.episodes) }
+        return Array(Set(keys)).sorted()
     }
 
     /// More same-name shows than this are not worth reading every episode list for.

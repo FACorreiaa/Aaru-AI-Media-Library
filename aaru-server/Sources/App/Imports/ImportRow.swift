@@ -34,6 +34,11 @@ struct ImportRow: Codable, Sendable, Equatable {
     /// One episode CAT's calendar says this show airs. When several shows share the name, the
     /// one that airs that episode that day is the match (IMP-010).
     var airing: ImportAiring?
+    /// Netflix names the episodes it played, it does not number them (IMP-018). Numbered into
+    /// `watched` once the show is matched, then cleared.
+    var namedEpisodes: [NamedEpisode]?
+    /// A name-only row: the year it was first watched, so a title released later is not it.
+    var notAfter: Int?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)

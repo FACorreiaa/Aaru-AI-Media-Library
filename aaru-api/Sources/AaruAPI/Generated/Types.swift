@@ -2773,6 +2773,7 @@ public enum Components {
                 case goodreadsCsv = "goodreads_csv"
                 case catList = "cat_list"
                 case catIcs = "cat_ics"
+                case netflixCsv = "netflix_csv"
                 case malXml = "mal_xml"
                 case anilist = "anilist"
                 case csv = "csv"
@@ -6376,6 +6377,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/episodeOverview`.
             public var episodeOverview: Swift.String?
+            /// The episode's still image (TMDB), when the catalog has one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CalendarEntry/stillUrl`.
+            public var stillUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CalendarEntry/airsAt`.
             public var airsAt: Foundation.Date
             /// False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
@@ -6403,6 +6408,7 @@ public enum Components {
             ///   - number:
             ///   - episodeName:
             ///   - episodeOverview: The episode's synopsis, when the catalog has one (TMDB; AniList has none).
+            ///   - stillUrl: The episode's still image (TMDB), when the catalog has one.
             ///   - airsAt:
             ///   - airTimeKnown: False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time.
             ///   - runtimeMinutes:
@@ -6415,6 +6421,7 @@ public enum Components {
                 number: Swift.Int,
                 episodeName: Swift.String? = nil,
                 episodeOverview: Swift.String? = nil,
+                stillUrl: Swift.String? = nil,
                 airsAt: Foundation.Date,
                 airTimeKnown: Swift.Bool,
                 runtimeMinutes: Swift.Int? = nil,
@@ -6427,6 +6434,7 @@ public enum Components {
                 self.number = number
                 self.episodeName = episodeName
                 self.episodeOverview = episodeOverview
+                self.stillUrl = stillUrl
                 self.airsAt = airsAt
                 self.airTimeKnown = airTimeKnown
                 self.runtimeMinutes = runtimeMinutes
@@ -6440,6 +6448,7 @@ public enum Components {
                 case number
                 case episodeName
                 case episodeOverview
+                case stillUrl
                 case airsAt
                 case airTimeKnown
                 case runtimeMinutes
@@ -21271,11 +21280,12 @@ public enum Operations {
                     case auto = "auto"
                     case imdb = "imdb"
                     case letterboxd = "letterboxd"
+                    case netflix = "netflix"
                     case goodreads = "goodreads"
                     case mal = "mal"
                     case csv = "csv"
                 }
-                /// `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+                /// `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by its column names (`csv`).
                 ///
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
                 public var source: Operations.CreateCSVImport.Input.Query.SourcePayload
@@ -21286,7 +21296,7 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - source: `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`).
+                ///   - source: `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by its column names (`csv`).
                 ///   - filename: The file's name. Letterboxd's watchlist export is told apart by it.
                 public init(
                     source: Operations.CreateCSVImport.Input.Query.SourcePayload,

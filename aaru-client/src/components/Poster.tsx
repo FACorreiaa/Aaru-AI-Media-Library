@@ -21,6 +21,8 @@ const glyph: Record<MediaKind, string> = {
 export function Poster(props: {
   url?: string
   kind: MediaKind
+  /** `thumb` for small posters inside a cell or row. */
+  radius?: 'field' | 'thumb'
   class?: string
   frame?: boolean
   children?: JSX.Element
@@ -30,7 +32,7 @@ export function Poster(props: {
   const framed = () => square() && !!props.frame
   const art = (extra: string) => (
     <div
-      class={`relative overflow-hidden rounded-field bg-surface ${square() ? 'aspect-square' : 'aspect-[2/3]'} ${extra}`}
+      class={`relative overflow-hidden ${props.radius === 'thumb' ? 'rounded-thumb' : 'rounded-field'} bg-surface ${square() ? 'aspect-square' : 'aspect-[2/3]'} ${extra}`}
     >
       <Show
         when={props.url && !failed()}

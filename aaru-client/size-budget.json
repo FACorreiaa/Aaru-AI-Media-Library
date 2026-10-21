@@ -1,5 +1,5 @@
 {
-  "totalJs": 219858,
+  "totalJs": 222862,
   "css": 12027,
   "shared": 72869,
   "routes": {
@@ -21,7 +21,7 @@
     "/app_/recap": 86685,
     "/app_/settings": 94868,
     "/app_/title/$id": 85921,
-    "/app_/week": 86899,
+    "/app_/week": 89650,
     "/auth/verify": 73874,
     "/oauth/consent": 74707,
     "/privacy": 78116,

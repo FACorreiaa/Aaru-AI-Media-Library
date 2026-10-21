@@ -45,7 +45,7 @@ export function AlbumHeader(props: {
               </span>
             </Show>
             <For each={props.genres ?? []}>
-              {(genre) => <Badge tone="quiet">{genre}</Badge>}
+              {(genre) => <Badge tone="soft">{genre}</Badge>}
             </For>
           </div>
         </Show>

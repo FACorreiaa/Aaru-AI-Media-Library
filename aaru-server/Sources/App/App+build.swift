@@ -151,7 +151,7 @@ func makeModelProvider(
     }
     return AnthropicMessagesProvider(
         transport: transport, apiKey: settings.apiKey, model: settings.model, baseURL: settings.baseURL,
-        effort: settings.effort
+        effort: settings.effort, workspaceID: settings.workspaceID
     )
 }
 

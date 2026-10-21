@@ -1795,6 +1795,7 @@ export interface components {
         | 'goodreads_csv'
         | 'cat_list'
         | 'cat_ics'
+        | 'netflix_csv'
         | 'mal_xml'
         | 'anilist'
         | 'csv'
@@ -2572,6 +2573,8 @@ export interface components {
       episodeName?: string
       /** @description The episode's synopsis, when the catalog has one (TMDB; AniList has none). */
       episodeOverview?: string
+      /** @description The episode's still image (TMDB), when the catalog has one. */
+      stillUrl?: string
       /** Format: date-time */
       airsAt: string
       /** @description False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time. */
@@ -5088,8 +5091,15 @@ export interface operations {
   createCSVImport: {
     parameters: {
       query: {
-        /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd or Goodreads CSV, or any other CSV read by its column names (`csv`). */
-        source: 'auto' | 'imdb' | 'letterboxd' | 'goodreads' | 'mal' | 'csv'
+        /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by its column names (`csv`). */
+        source:
+          | 'auto'
+          | 'imdb'
+          | 'letterboxd'
+          | 'netflix'
+          | 'goodreads'
+          | 'mal'
+          | 'csv'
         /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
         filename?: string
       }

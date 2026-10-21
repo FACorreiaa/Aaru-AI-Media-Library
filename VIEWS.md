@@ -28,7 +28,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4); for an album, a square cover and the tracklist instead of the season map (MUS-001) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
 | Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 |
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
-| Catch-up calendar | `CalendarMonth` + agenda | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7 |
+| Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
 | Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage | 2 · M9 |
 | Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | 7 · M13 |
 | Undo ribbon | `UndoRibbon` | action journal + undo endpoint | 1 · M4 |
@@ -70,7 +70,7 @@ refuses and substitutes the nearest catalog piece.
 | `JobLedger` | Import or bulk progress | `importJobId`, step rows (done / current / to do), `state`, `stats`, `rowsMatched` of `rowsTotal` on the matching step, unmatched count |
 | `TonightStrip` | 1–3 next actions | ordered `libraryItemId` + reason + est. minutes |
 | `Shelf` | Filtered library page | `shelfId` or inline query, result page, `isPinned` |
-| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (dots on phones), selected day, agenda by date with an expandable row (episode name, synopsis, network · time, badge, watched check, open show); agent highlight string later |
+| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (two and "+N" on phones, three wider), selected day (a sheet on phones), agenda by date with poster rows that open the episode sheet (still, synopsis, network · time, badge, watched toggle, open show), filters (hide watched, premieres/finales, shows/anime); agent highlight string later |
 | `MatchTable` | Import reconciliation | `importJobId`, three buckets: matched / needs eyes / unknown |
 | `UndoRibbon` | Last agent write | `actionId`, human summary, expiry, `isUndoable` |
 | `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, synopsis, network, local time or none when `airTimeKnown` is false, banner URL = `backdropUrl` → poster → tint, state: watched / premiere / new season / finale / today); Monday start |
