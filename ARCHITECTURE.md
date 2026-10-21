@@ -637,8 +637,9 @@ default. `library:write` is an opt-in at connect time and only lets Stremio's `u
 An MCP token (`kind` = `claude_code`, `codex`, `hermes`, `gemini` or `other`) gets
 `library:read`, plus `library:write` when the user allows changes and `imports:write` when the
 user allows imports at connect time; never `scrobble:write`. The kind only picks the setup Settings shows (`GET /v1/agent/setup/{kind}`,
-written once on the server for web and Apple). Secrets carry a per-surface prefix
-(`aaru_st_`, `aaru_mcp_`) and a token authenticates only on its own surface. The tools live in
+written once on the server for web and Apple). A browser-extension token (`kind = browser`, SCR-007) gets
+`scrobble:write` only: it never reads the library. Secrets carry a per-surface prefix
+(`aaru_st_`, `aaru_mcp_`, `aaru_scr_`) and a token authenticates only on its own surface. The tools live in
 `aaru-server/Sources/App/Agent/AgentTools.swift`, transport-neutral, and answer the `/v1` DTOs.
 
 ### Remote approval

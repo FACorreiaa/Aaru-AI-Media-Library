@@ -21,6 +21,7 @@ const labels: Record<AgentToken['kind'], string> = {
   other: 'Other MCP client',
   stremio: 'Stremio',
   claude: 'Claude',
+  browser: 'Browser extension',
 }
 
 export const kindLabel = (kind: AgentToken['kind']) => labels[kind]

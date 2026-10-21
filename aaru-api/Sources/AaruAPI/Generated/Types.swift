@@ -2279,7 +2279,7 @@ public enum Components {
                 case redirectTo
             }
         }
-        /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
+        /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension: it can only scrobble.
         ///
         /// - Remark: Generated from `#/components/schemas/AgentTokenKind`.
         @frozen public enum AgentTokenKind: String, Codable, Hashable, Sendable, CaseIterable {
@@ -2290,6 +2290,7 @@ public enum Components {
             case gemini = "gemini"
             case other = "other"
             case claude = "claude"
+            case browser = "browser"
         }
         /// - Remark: Generated from `#/components/schemas/AgentMCPKind`.
         @frozen public enum AgentMCPKind: String, Codable, Hashable, Sendable, CaseIterable {
@@ -15273,15 +15274,16 @@ public enum Operations {
                 @frozen public enum ForPayload: String, Codable, Hashable, Sendable, CaseIterable {
                     case stremio = "stremio"
                     case mcp = "mcp"
+                    case scrobble = "scrobble"
                 }
-                /// Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token.
+                /// Which surface's tokens: the Stremio addon, MCP clients, or the browser extension (`scrobble`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind.
                 ///
                 /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/query/for`.
                 public var _for: Operations.ListAgentTokens.Input.Query.ForPayload?
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - _for: Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token.
+                ///   - _for: Which surface's tokens: the Stremio addon, MCP clients, or the browser extension (`scrobble`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind.
                 public init(_for: Operations.ListAgentTokens.Input.Query.ForPayload? = nil) {
                     self._for = _for
                 }

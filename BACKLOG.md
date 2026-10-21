@@ -395,7 +395,7 @@ account or a stranger that has not happened yet.
 | LAND-002 | Open | no waitlist code | |
 | LAND-003 | Done | #27; docs/privacy.md, /privacy | Names all six third parties |
 | WEB-001 | Done | #9 da50ed5 + later; ARCHITECTURE.md lists it | |
-| SCR-001 | Partial | #36; ScrobbleService.swift, ScrobbleTests | No `/v1/scrobble/*` routes; service only |
+| SCR-001 | Built | #36; ScrobbleService.swift, ScrobbleRoutes.swift, ScrobbleTests, ScrobbleRouteTests | `/v1/scrobble/*` for scrobble tokens only (SCR-007); no live player yet |
 | SCR-002 | Open | no Plex/Jellyfin code | |
 | SCR-003 | Done | #36 e8bdebb; Sources/App/Stremio; deployed | Verified in Stremio Web on local server; playback events not tried |
 | SCR-004 | Open | none | |
@@ -1868,6 +1868,16 @@ movie) through `LibraryService` as the token's caller; already watched, short of
 duration, or a second `stop` within 10 minutes writes nothing. A title not in the library is
 added (in progress / finished) and then ticked: two journal rows, not one. Unknown ids are kept
 as unmatched rows with no library write. The 403 condition lives in the Stremio adapter.
+
+**Progress 2026-10-21 (HTTP):** `POST /v1/scrobble/start|pause|stop` (`Scrobble/ScrobbleRoutes.swift`),
+hand-written like MCP: only a scrobble token (`kind = browser`, `aaru_scr_…`, `scrobble:write`
+only) gets in; a session, MCP token or Stremio link is 401. Trakt's body (`movie`, or `show` +
+`episode` with `season`/`number`/`title`; `progress` in percent; `ids` as numbers or strings) plus
+`source` (`netflix`, `disney_plus`, `prime_video`), `ref` (the player's id for one film or
+episode) and optional `durationMs`. No ids → matched by title + year, else by name alone
+(2026-10-21 decision); no number → episode by name. The answer names the outcome (`recorded`,
+`watched`, `stopped`, `unmatched`) and the matched title. A title not in the library is added and
+ticked: two journal rows.
 
 ### SCR-002 · Plex and Jellyfin webhooks · M
 **Needs:** SCR-001.

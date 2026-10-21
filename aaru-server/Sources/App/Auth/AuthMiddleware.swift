@@ -16,6 +16,10 @@ struct AuthMiddleware: RouterMiddleware {
         "/v1/imports/trakt/callback",
         // MCP authenticates itself with an agent token, never a session (OUT-004).
         "/v1/mcp",
+        // Scrobbles authenticate themselves with a scrobble token, never a session (SCR-007).
+        "/v1/scrobble/start",
+        "/v1/scrobble/pause",
+        "/v1/scrobble/stop",
     ]
 
     let sessions: any SessionStore
