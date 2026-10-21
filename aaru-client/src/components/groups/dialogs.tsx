@@ -445,7 +445,10 @@ export function InviteDialog(props: {
             fallback={
               <p class="mt-6 text-sm text-muted">
                 No friends yet. Add friends by handle in{' '}
-                <a href="/app/settings#profile" class="text-accent underline">
+                <a
+                  href="/app/settings/account#profile"
+                  class="text-accent underline"
+                >
                   Settings
                 </a>
                 .

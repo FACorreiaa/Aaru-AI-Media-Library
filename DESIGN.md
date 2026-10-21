@@ -362,6 +362,18 @@ day strip (tall day pills) over that day's episodes as poster rows.
 Tapping the bar flips between time left and end time. Set by a manual check-in in Phase 2 and
 by scrobbles from Plex, Jellyfin or Stremio in Phase 3. The same data drives the Live Activity.
 
+**Settings groups, 2026-10-21** (owner). Settings is a list of groups, each its own page, so no
+page grows into one long scroll: **Account** (name, sign-in, Sign out, profile and friends,
+notifications), **Imports & export** (Trakt, the file sources, AniList, CAT, Stremio history,
+the job list, export), **Connected apps** (Stremio, agent connections), **Insights & recaps**,
+and **About** (credits, privacy, Delete account). iPhone: a grouped list in the system Settings
+style, the account on top with your name and how you sign in, each group a row with its symbol
+in a small tinted square, drilling in. Mac: the same pages as toolbar panes in the Settings
+window (Cmd-,), Insights staying in the main window. Web: a rail of the groups beside the page
+on a desktop, where `/app/settings` opens Account; a phone gets the group list and opens one
+page at a time with "‹ Settings" back. A new connected app or import source joins its group's
+page; it does not get a group of its own.
+
 **Stremio, built 2026-10-20.** Settings has a Stremio section on web, iPhone and Mac: connect,
 then the install links (Open in Stremio, Install on Stremio Web, Copy) show once, because they
 carry the secret. Live links list their last use and a Revoke. Writing back to the library
@@ -371,7 +383,7 @@ not built yet; `watch_events` holds what it will read. Under the intro, a collap
 up" lists the install steps, what Stremio's marks do here, where it works, and that a lost link is
 revoked and made again; the same text on web and Apple.
 
-The same section offers **Import my Stremio history** (IMP-016): a sheet (web: an inline panel)
+Imports & export offers **Import from Stremio** (IMP-016): a sheet (web: an inline panel)
 with the code in large monospace, an "Approve on stremio.com" button and a QR for approving
 from another device, and a quiet "Waiting for approval…" line. It polls on its own and, once
 approved, opens the import's plan, which is approved like any other import. Nothing is written

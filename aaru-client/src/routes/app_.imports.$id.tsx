@@ -83,7 +83,7 @@ function ImportPage() {
     setProblem(null)
     try {
       await discardImport({ data: { id: job().id } })
-      await navigate({ to: '/app/settings' })
+      await navigate({ to: '/app/settings/imports' })
     } catch (error) {
       setProblem(
         error instanceof Error
@@ -107,7 +107,7 @@ function ImportPage() {
       <header class="mx-auto flex h-18 max-w-3xl items-center justify-between px-5 md:px-8">
         <Wordmark to="/app" />
         <Link
-          to="/app/settings"
+          to="/app/settings/imports"
           hash="imports"
           class="text-sm font-medium text-muted hover:text-ink"
         >

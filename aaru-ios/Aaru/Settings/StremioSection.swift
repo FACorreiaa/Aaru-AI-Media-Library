@@ -5,11 +5,8 @@ import SwiftUI
 /// Aaru's addon to Stremio, lists the links already made, and revokes them.
 struct StremioSection: View {
     let api: Client?
-    let imports: ImportsModel
     /// Shows a failure in Settings' problem banner.
     var onProblem: (String) -> Void
-    /// Opens a history import once Stremio approved it (IMP-016).
-    var onImported: (ImportJob) -> Void
 
     @State private var tokens: [Components.Schemas.AgentToken] = []
     @State private var loaded = false
@@ -19,7 +16,6 @@ struct StremioSection: View {
     @State private var created: Components.Schemas.AgentTokenCreated?
     @State private var copied = false
     @State private var revoking: Components.Schemas.AgentToken?
-    @State private var importsHistory = false
 
     var body: some View {
         Section {
@@ -59,12 +55,6 @@ struct StremioSection: View {
                 }
                 .disabled(connecting || api == nil)
             }
-            Button {
-                importsHistory = true
-            } label: {
-                Label("Import my Stremio history", systemImage: "clock.arrow.circlepath")
-            }
-            .disabled(api == nil)
         } header: {
             Text("Stremio")
         } footer: {
@@ -76,8 +66,7 @@ struct StremioSection: View {
             } else {
                 Text(
                     "Your Continue watching, Next 7 days and Plan to watch show up in Stremio, and episodes you "
-                        + "play there tick off here. Works with Stremio Web and Stremio 5 desktop. "
-                        + "Importing your history brings in what you watched before, once."
+                        + "play there tick off here. Works with Stremio Web and Stremio 5 desktop."
                 )
             }
         }
@@ -94,9 +83,6 @@ struct StremioSection: View {
             Button("Revoke", role: .destructive) { Task { await revoke(token) } }
         } message: { _ in
             Text("Stremio stops showing your Aaru library.")
-        }
-        .sheet(isPresented: $importsHistory) {
-            StremioHistoryImport(imports: imports, onImported: onImported)
         }
         .task { await load() }
     }
@@ -228,9 +214,9 @@ private struct StremioGuide: View {
                 }
                 heading("History and lost links")
                 Text(
-                    "Import my Stremio history brings in what you watched before, once: approve the code on "
-                        + "stremio.com, then review the import before anything changes. The install link is shown "
-                        + "only once. If you lose it, revoke it and connect again."
+                    "Import from Stremio, in Imports & export, brings in what you watched before, once: approve "
+                        + "the code on stremio.com, then review the import before anything changes. The install "
+                        + "link is shown only once. If you lose it, revoke it and connect again."
                 )
             }
             .font(.subheadline)

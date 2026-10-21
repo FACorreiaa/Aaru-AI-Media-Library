@@ -1,6 +1,5 @@
 import { For, Show, createSignal } from 'solid-js'
 import { canChangeLibrary, lastUsedLabel } from '../lib/stremio/model'
-import { StremioHistoryImport } from './StremioHistoryImport'
 import { AlertDialog } from './ui/alert-dialog'
 import { Button, buttonVariants } from './ui/button'
 import { Card } from './ui/card'
@@ -189,8 +188,6 @@ export function StremioSection(props: { links: AgentToken[] }) {
         }}
         onCancel={() => setPending(null)}
       />
-
-      <StremioHistoryImport />
     </Card>
   )
 }
@@ -233,10 +230,10 @@ function StremioGuide() {
         </ul>
         <h3 class="mt-4 font-semibold text-ink">History and lost links</h3>
         <p class="mt-1.5">
-          Import my Stremio history brings in what you watched before, once:
-          approve the code on stremio.com, then review the import before
-          anything changes. The install link is shown only once. If you lose it,
-          revoke it and connect again.
+          Import from Stremio, in Imports &amp; export, brings in what you
+          watched before, once: approve the code on stremio.com, then review the
+          import before anything changes. The install link is shown only once.
+          If you lose it, revoke it and connect again.
         </p>
       </div>
     </details>

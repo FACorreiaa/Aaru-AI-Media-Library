@@ -17,7 +17,7 @@ struct StremioService: Sendable {
     /// Wishlist pages Stremio may ask for, in items.
     static let maxSkip = 2000
     static let types = ["movie", "series"]
-    static let configureURL = URL(string: "https://aaruapp.com/app/settings")!
+    static let configureURL = URL(string: "https://aaruapp.com/app/settings/connected")!
 
     let library: LibraryService
     let schedule: ScheduleService
