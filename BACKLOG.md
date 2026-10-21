@@ -324,6 +324,7 @@ account or a stranger that has not happened yet.
 | SHF-001 | Done | #2; `saved_queries` | API-only by decision |
 | SHF-002 | Done | #2; `/v1/shelves/{id}/items` | |
 | CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
+| CAL-002 | Built (web) | app_.week.tsx, components/calendar/* | Posters, sheets, Missed, filters; `stillUrl` on `CalendarEntry` |
 | UPN-001 | Done | #2; `/v1/up-next` | |
 | APP-001 | Done | #7 432e35f; SessionMiddleware (12 concurrent 401s) | |
 | APP-002 | Done | #8; SessionKeychain.swift | Mac relaunch persistence not recorded |

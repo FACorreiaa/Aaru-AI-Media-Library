@@ -43,6 +43,8 @@
   --radius-card: 20px;
   --radius-panel: 14px;
   --radius-field: 10px;
+  /* Poster thumbnails inside a cell: calendar days, agenda rows. */
+  --radius-thumb: 6px;
   --font-display: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
