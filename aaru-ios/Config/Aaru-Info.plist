@@ -25,6 +25,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSLocationDefaultAccuracyReduced</key>
+	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Find concerts near you. Aaru uses an approximate location once and doesn't save it.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIBackgroundModes</key>
