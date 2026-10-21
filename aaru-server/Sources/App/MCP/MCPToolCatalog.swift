@@ -148,8 +148,8 @@ enum MCPToolCatalog {
         name: "plan_import",
         title: "Hand Aaru a list to import",
         description: """
-        Give Aaru a list export (IMDb, Letterboxd or Goodreads CSV, MyAnimeList XML, or any CSV with title \
-        columns) as text. Aaru matches every row and the user reviews and approves the import in Aaru; this \
+        Give Aaru a list export (IMDb, Letterboxd or Goodreads CSV, MyAnimeList XML, a Pogdesign CAT iCal \
+        file or show list with source cat, or any CSV with title columns) as text. Aaru matches every row and the user reviews and approves the import in Aaru; this \
         tool never changes the library itself. Needs a connection the user allowed imports for.
         """,
         inputSchema: object(
@@ -157,8 +157,8 @@ enum MCPToolCatalog {
                 "text": string("The file's contents, at most 5 MB."),
                 "filename": string("The file's name, if it has one. Helps tell formats apart."),
                 "source": enumeration(
-                    ["auto", "imdb", "letterboxd", "goodreads", "mal", "csv"],
-                    "Defaults to auto: detected from the text."
+                    ["auto", "imdb", "letterboxd", "goodreads", "mal", "csv", "cat"],
+                    "Defaults to auto: detected from the text. A plain list of show names needs cat."
                 ),
             ],
             required: ["text"]

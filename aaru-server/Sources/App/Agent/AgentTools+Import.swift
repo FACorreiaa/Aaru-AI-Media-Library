@@ -39,6 +39,7 @@ extension AgentTools {
         case "goodreads": source = .goodreadsCSV
         case "mal": source = .malXML
         case "csv": source = .genericCSV
+        case "cat": source = CATCalendarParser.isCalendar(input.text) ? .catICS : .catList
         case "auto":
             do {
                 source = try ImportFormatDetector.detect(input.text)
@@ -46,7 +47,7 @@ extension AgentTools {
                 throw AgentToolError(message: error.message)
             }
         default:
-            throw AgentToolError(message: "source must be auto, imdb, letterboxd, goodreads, mal or csv.")
+            throw AgentToolError(message: "source must be auto, imdb, letterboxd, goodreads, mal, csv or cat.")
         }
         let job = try await services.imports.createCSVImport(
             userID: caller.userID, source: source, filename: input.filename, text: input.text

@@ -34,6 +34,14 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-21
+
+- **CAT import (IMP-009/010), by the owner's call:** shows come in as a pasted list, the iCal file,
+  or the user's own CAT iCal link. The link is the one request Aaru makes to pogdesign.co.uk: read
+  once when pasted, never stored or logged (it holds the user's CAT key); no other CAT page is read,
+  so "no scraping" stands. Every CAT show is planned `wishlist`, no progress. CAT names carry no ids
+  and rarely a year, so they match by exact normalized name and only when one TMDB show has it.
+
 ## Decisions recorded 2026-10-20
 
 - **Discover rows on Home (DISC-001), by the owner's call:** a new account opened to an empty
@@ -202,7 +210,7 @@ are on `main` and wait for the next promote PR. Unmerged branches (Groups, realt
 | --- | --- | --- | --- |
 | **P0 — Rails** | 14/16 (1 built, unverified; 1 dropped) | **Met** | Nothing. `INFRA_TOKEN` is unset by choice, so promote PRs are opened by hand and Server Deploy's promote job shows red |
 | **P1 — Basics (API)** | 30/31 (1 built, unverified) | **Met** | Nothing; CAT-010's first production load of the anime mappings is unconfirmed (CronJob first fires 2026-11-02) |
-| **P2 — Clients, widgets, imports** | 29/54 (10 built, unverified; 3 partial; 9 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) and unmatched-row triage (IMP-011) open |
+| **P2 — Clients, widgets, imports** | 29/54 (10 built, unverified; 3 partial; 9 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) built but never run on a real CAT export; unmatched-row triage (IMP-011) open |
 | **P3 — Tracking** | 1/6 (1 partial) | Not met | Stremio addon built and deployed (SCR-003) but playback never tried live; no `/v1/scrobble/*` routes, no Plex/Jellyfin |
 | **P4 — Social** | 0/6 (1 partial) | Not met | Only push plumbing (SOC-005, airing alerts) is on `main` |
 | **P5 — Gamification** | 1/9 (1 partial) | Not met | Recap (GAM-006a) only; no points ledger, streaks, badges |
@@ -301,8 +309,8 @@ account or a stranger that has not happened yet.
 | IMP-006 | Done | #13; CSVImportParser.swift | |
 | IMP-007 | Done | #13; CSVImportParser.swift | |
 | IMP-008 | Done | #13; ImportParserTests | |
-| IMP-009 | Open | only `cat_list` enum in ImportJob.swift | Parser rejects it ("not a CSV import") |
-| IMP-010 | Open | only `cat_ics` enum | No ICS parser |
+| IMP-009 | Built, unverified | `feat/cat-import`; CATImport.swift, CATImportTests | Stub catalog and synthetic lists only; no real CAT profile paste yet |
+| IMP-010 | Built, unverified | `feat/cat-import`; CATCalendarParser, CATCalendarFeed | SUMMARY format assumed (`Show: S01E02 …`); not yet run on a real CAT export or link |
 | IMP-011 | Open | ImportDetailView lists unmatched rows only | No resolve/search-and-pick UI |
 | IMP-012 | Deferred | BACKLOG "Parked 2026-10-16 by the owner" | Needs a real export |
 | IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |

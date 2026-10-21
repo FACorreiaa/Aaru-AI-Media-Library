@@ -144,4 +144,20 @@ struct TitleResolver: Sendable {
         guard matches.count == 1 else { throw ResolutionError.ambiguous }
         return try await resolve(ids: matches[0].ids, type: ref.type)
     }
+
+    // MARK: By name only
+
+    /// A show known only by its name (Pogdesign CAT, IMP-009): the one TMDB show whose normalized
+    /// title equals it, in any year. Two shows with the name (a remake) are ambiguous, never a guess.
+    func resolveShow(named name: String) async throws -> Title {
+        let wanted = MatchKey.normalize(name)
+        guard !wanted.isEmpty else { throw ResolutionError.notFound }
+        let hits = try await catalogs.tmdb.search(query: name, type: .show)
+        let matches = hits.filter { hit in
+            hit.type == .show && hit.year != nil && MatchKey.normalize(hit.title) == wanted
+        }
+        guard !matches.isEmpty else { throw ResolutionError.notFound }
+        guard matches.count == 1 else { throw ResolutionError.ambiguous }
+        return try await resolve(ids: matches[0].ids, type: .show)
+    }
 }

@@ -18,6 +18,8 @@ struct ImportService: Sendable {
     var anilistLists: (any AniListListReading)?
     /// Stremio's account API and Cinemeta, for history imports (IMP-016). Nil in most tests.
     var stremio: StremioAccount?
+    /// The user's CAT calendar by its link (IMP-010). Nil in most tests.
+    var catFeed: CATCalendarFeed?
     var now: @Sendable () -> Date = { Date() }
 
     // MARK: Requests

@@ -10,6 +10,7 @@ import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { StremioSection } from '../components/StremioSection'
+import { CatImport } from '../components/CatImport'
 import { ConnectionsSection } from '../components/ConnectionsSection'
 import { NotificationsSection } from '../components/NotificationsSection'
 import { Alert } from '../components/ui/alert'
@@ -282,6 +283,15 @@ function Settings() {
                 )}
               </Show>
             </form>
+            <CatImport
+              onImported={(job) => {
+                setJobs([job, ...jobs()])
+                void navigate({
+                  to: '/app/imports/$id',
+                  params: { id: job.id },
+                })
+              }}
+            />
           </div>
         </section>
 

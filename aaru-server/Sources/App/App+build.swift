@@ -40,6 +40,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let webPush = makeWebPushSender(config.vapidConfigJSON, logger: logger)
     var services = Services.make(
         stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
+        catFeed: makeCATCalendarFeed(transport),
         publicBaseURL: config.publicBaseURL, oauth: (config.webBaseURL, config.oauthCookieDomain)
     )
     services.webPush = webPush
@@ -242,6 +243,13 @@ func makeStremioAccount(_ transport: any HTTPTransport) -> StremioAccount {
         api: client("stremio", perSecond: 2),
         cinemeta: client("cinemeta", perSecond: 5)
     )
+}
+
+/// The user's own CAT calendar link (IMP-010): one request per import, so a slow pacer.
+func makeCATCalendarFeed(_ transport: any HTTPTransport) -> CATCalendarFeed {
+    CATCalendarFeed(client: ProviderClient(
+        name: "pogdesign", transport: transport, pacer: RequestPacer(requestsPerSecond: 1, burst: 3)
+    ))
 }
 
 /// One `ProviderClient` (and so one rate pacer) per provider, shared by every caller.

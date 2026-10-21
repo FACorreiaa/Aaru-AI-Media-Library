@@ -721,6 +721,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/cat': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across. */
+    post: operations['createCATImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/cat/feed': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept. */
+    post: operations['createCATFeedImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/anilist': {
     parameters: {
       query?: never
@@ -2946,6 +2980,60 @@ export interface operations {
       content: {
         'text/csv': string
         'application/xml': string
+      }
+    }
+    responses: {
+      /** @description Queued for matching. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createCATImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'text/plain': string
+        'text/calendar': string
+      }
+    }
+    responses: {
+      /** @description Queued for matching. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createCATFeedImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description The iCal link from CAT. */
+          url: string
+        }
       }
     }
     responses: {

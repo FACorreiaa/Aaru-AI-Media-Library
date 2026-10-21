@@ -10,7 +10,9 @@ This file is the working contract for anyone — human or agent — changing the
 - Private by default. A new account has no visible surface. Social is opt-in per user and friends-only; there is no global feed and no public profile page.
 - Catalog metadata and user library are different layers. Never treat TMDB/Trakt/Open Library/AniList payloads as the user’s library row.
 - Every saved title must store external IDs when known: `tmdb`, `imdb`, `trakt`, `tvdb`, `isbn`, `anilist`, `mal`, `anidb`.
-- Pogdesign CAT is a minor on-ramp (show list + optional ICS), not a first-class sync target. No CAT scraping.
+- Pogdesign CAT is a minor on-ramp (show list + optional ICS), not a first-class sync target. No CAT scraping:
+  the one request Aaru makes to pogdesign.co.uk is reading the user's own iCal export link, once, when they
+  paste it (owner, 2026-10-21). Every CAT show is planned as `wishlist`; CAT's watched episodes do not come across.
 - Do not mention or implement the tattoo-artist product in this repo.
 
 ## Stack
@@ -29,7 +31,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
-| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
+| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | Realtime (P6) | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server` |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
