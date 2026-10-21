@@ -347,6 +347,7 @@ account or a stranger that has not happened yet.
 | APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
 | DISC-002 | Built | #84; DiscoverSeasonTests, season model tests | Not deployed; not run on a device |
+| MUS-001 | Built | MusicTests, StatsTests | Not deployed; not run on a device |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -1247,6 +1248,49 @@ Seasons control (`SeasonBrowser.swift`). The Today row "Fall 2026 anime" links t
 **Done when:** on iPhone, Mac and web, flipping Fall 2026 → Winter 2027 → Summer 2025 shows each
 kind's titles, a title adds in one tap and turns into a link to the item, and AniList being down
 says so on the Anime tab only.
+
+### MUS-001 · Albums as a fifth kind · L · pulled forward 2026-10-21
+**Needs:** LIB-001, APP-004.
+`MediaType.album`: one MusicBrainz release group of type Album or EP, stored with its
+`musicbrainz` id, the artist credit as `byline`, the first release year, up to five genres by
+tag count, and a Cover Art Archive cover URL (`release-group/{mbid}/front-250`, referenced,
+never hosted). MusicBrainz is paced at one request a second with a contact User-Agent. Search
+`type=album` goes to MusicBrainz alone; `all` never includes albums, as with books. An album has
+status, rating and notes, no progress: Plan to listen / Listening / Listened / Dropped. Its page
+carries a tracklist (`album_tracks`) from the release group's earliest official release, fetched
+the first time the page opens and again after 30 days; MusicBrainz failing shows the album
+without it. Stats count an album finish with no minutes (`albumsFinished`; `byKind` lists
+`album` only when the period has one, so older clients keep decoding). Clients: a square cover
+everywhere, Music in search and the Library kind filter, a Home "Listening" row, albums in
+Insights and the Recap, and a Listening widget on iPhone and Mac. Calendar, Up Next, episodes
+and the Live Activity stay video only. Artist MBIDs for concerts are stored with MUS-003, not
+here.
+
+**Done when:** on iPhone, Mac and web, searching "Radiohead" finds *OK Computer* with its square
+cover, it adds in one tap, its page shows the tracklist, Listened moves it into the year's
+Insights, and the Listening row and widget show an album in progress.
+
+### MUS-002 · New albums and Coming soon on Discover · M
+**Needs:** MUS-001, DISC-001.
+Two Discover rows from one ListenBrainz `explore/fresh-releases` call (no key) per 6 h: New
+albums (last 14 days, albums with a cover, by listen count) and Coming soon (the next 30 days,
+by date). Hits are albums with their `musicbrainz` id, so "already in your library" works.
+
+**Done when:** both rows show on Today on three clients and a card adds the album in one tap.
+
+### MUS-003 · Concerts · L
+**Needs:** MUS-001, the owner's Ticketmaster key (sealed `TICKETMASTER_API_KEY`).
+Ticketmaster Discovery events near a saved city (Open-Meteo geocoding, rounded to 2 decimals)
+or a one-off approximate location sent in a POST body and never stored, 25 · 50 · 100 km; and
+upcoming concerts for artists in the user's library, matched by MusicBrainz artist id only.
+A daily call budget under the 5,000 limit; tickets link out. Discover gains a Concerts view.
+
+**Done when:** concerts near a saved city and near "Use my location" list on three clients, and
+an artist in the library with a tour shows under "Your artists on tour".
+
+### MUS-004 · Listening history import · M · later
+ListenBrainz / Last.fm listens as an import source, so albums gain listening activity. Not
+scheduled.
 
 ### APP-010 · Week grid · L
 **Needs:** APP-001, CAL-001.

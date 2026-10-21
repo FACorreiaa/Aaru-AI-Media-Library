@@ -110,6 +110,12 @@ optimistic write as the list. Below it each season's list shows a still, the nam
 previous/next. Only the season holding the next episode starts open. A title that fails to load
 says so with a retry, never an endless spinner.
 
+**An album's room (MUS-001, 2026-10-21)** is an album page, not a season map: a big square
+cover with almost no chrome, the title in the serif, the artist under it in muted, the year,
+genre chips, the same status / rating / notes as any title, then the tracklist (number, name,
+length in tabular figures; "Disc 1"… only when there is more than one). No playback and no
+ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not available yet".
+
 ## 5. Tonight
 
 A nightly composed view. Not recommendations-as-a-product — a **short plan**.
@@ -260,6 +266,11 @@ rows of wide cards, one job per row.
   anything in progress untouched for 30 days, "Dropped" or "Paused 6 weeks", with "Resume at
   S2 · E3" for a show. Never a title already in Continue watching.
 - **Lists** — chips for the user's lists plus "New list".
+- **Listening** (MUS-001, 2026-10-21) — square album covers for albums in progress, after
+  Continue watching; absent when there are none.
+
+Album covers are **square everywhere** (Apple Music style), the same width as a poster in the
+same row, with the artist in muted under the title and the year as the badge.
 
 Discover on Home is DISC-001's rows above, not a separate teaser. On the web, Search opens in
 place on Home and an add shows up in the rows without a reload.
@@ -373,6 +384,7 @@ ships.
 - **Airing countdown** + Lock Screen accessories — next airing of a tracked show or anime.
 - **Week** (L / XL) — the week grid in miniature, CAT style.
 - **Now watching** Live Activity — Lock Screen and Dynamic Island, progress plus "Ends at".
+- **Listening** (S / M, MUS-001) — square covers of albums in progress; a tap opens the album.
 - **Streak** (Phase 5) — current streak and this week's ticks.
 - **macOS** — the same widgets on the desktop and in Notification Center. Almost no tracker
   ships Mac widgets.

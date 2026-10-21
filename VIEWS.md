@@ -17,7 +17,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, Listening row (albums in progress, MUS-001), `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20) (+ `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists` | 2 · M7, DISC-001, APP-013 |
 | Discover | Today: `DiscoverRow` per DISC-001 row, add with status or to a list. Seasons: `SeasonBrowser` (DISC-002) | `GET /v1/discover`, `GET /v1/discover/season`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20), DISC-002 (2026-10-21) |
 | Insights | `StatsPanel` (7 days / 30 days / month / year / all time) | `GET /v1/me/stats?year&month` or `?span=all|last7|last30` | 2 · GAM-006c (pulled forward 2026-10-20), GAM-006d (2026-10-21) |
 | Lists | `Shelf` rendering a list's items: show status, next airing, library status and progress (LST-003) | `GET /v1/lists`, `GET /v1/lists/{id}` (`items`), `POST /v1/lists/{id}/items` | 2 · APP-015: a tab on iPhone, sidebar on iPad and Mac, header link on web |
@@ -25,7 +25,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
 | Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
-| Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
+| Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4); for an album, a square cover and the tracklist instead of the season map (MUS-001) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}` | 2 · M7 |
 | Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 |
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
 | Catch-up calendar | `CalendarMonth` + agenda | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7 |
@@ -34,7 +34,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Undo ribbon | `UndoRibbon` | action journal + undo endpoint | 1 · M4 |
 | Mac companion | sidebar + inspector over the same components | same `/v1` | 2 · M7 |
 | Web (`aaru-client`) | same components as SolidJS views | same `/v1` | 2 · WEB-001 |
-| Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard` (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
+| Widgets + Live Activity | widget renderings of `ContinueRow`, `CalendarRow`, `WeekGrid`, `NowPlayingCard`, Listening (MUS-001) (+ `StreakBar` in 5) | App Group snapshot; writes via App Intent → same `/v1` route as a tap | 2 · WID-* |
 | Now playing | `NowPlayingCard` | check-in (2), `POST /v1/scrobble/*` (3); Stremio `player` events already fill `watch_events` (2026-10-20) | 2–3 |
 | Settings | none — account, notifications, imports, connected apps, export, delete account. A tab on Apple (plus Cmd-, on Mac), `/app/settings` on the web | `GET /v1/me`, `/v1/me/notifications`, `/v1/imports`, `/v1/agent/tokens` | 2 · APP-007 |
 | Connected apps (Settings) | none — a Settings section: connect, one-time install links, live links with last use, revoke | `GET`/`POST /v1/agent/tokens?for=stremio`, `DELETE /v1/agent/tokens/{id}` | 3 · SCR-003 (owner un-deferred 2026-10-19) |

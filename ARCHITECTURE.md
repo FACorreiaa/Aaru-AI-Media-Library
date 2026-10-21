@@ -54,7 +54,7 @@ These types are the contract. Persistence tables map to them; they do not have t
 
 ```swift
 enum MediaType: String, Codable, Sendable {
-    case movie, show, book
+    case movie, show, book, album   // album: MUS-001
 }
 
 struct ExternalIDs: Codable, Hashable, Sendable {
@@ -67,6 +67,7 @@ struct ExternalIDs: Codable, Hashable, Sendable {
     var anilist: String?   // CAT-008
     var mal: String?       // CAT-008
     var anidb: String?     // CAT-008
+    var musicbrainz: String? // MUS-001: an album's release-group MBID
 }
 ```
 
@@ -82,7 +83,11 @@ A canonical work Aaru knows about. Created on first add or during import hydrati
 - `synopsis` (optional, from catalog)
 - `posterURL` (catalog URL, not hosted)
 - `ids` — `ExternalIDs`
+- `byline` — authors for books, the artist credit for albums
 - `seasons` — only for shows; episode lists may be lazy-loaded
+- tracklist (server-only, MUS-001) — `album_tracks`, an album's earliest official release,
+  stored the first time its page opens (`tracks_hydrated_at`, refreshed after 30 days) and
+  returned on `TitleDetail.tracks`. Never ticked
 - `genres` (server-only, CAT-018) — the provider's genre names, stored at hydration (TMDB,
   AniList; books none) and backfilled by the catalog refresher. Not on the `Title` DTO; the
   stats read them
@@ -329,8 +334,9 @@ in every time zone.
 Insights (GAM-006c) reads the same rows. `year` is optional; `span=all` runs from the first
 active year to the end of the current one with one bucket per year (422 with `year` or `month`;
 a request with neither `year` nor `span` is a 422 too), so all-time totals equal the years summed. The
-response adds `span` (`month` | `year` | `all`), `byKind` (`movie` | `show` | `anime` | `book`:
-episodes, minutes, finished) and `ratings.distribution`: ten bins, index `ceil(rating) - 1`,
+response adds `span` (`month` | `year` | `all`), `byKind` (`movie` | `show` | `anime` | `book`,
+then `album` only when the period finished one, so pre-MUS-001 clients keep decoding:
+episodes, minutes, finished; albums never have minutes) and `ratings.distribution`: ten bins, index `ceil(rating) - 1`,
 so a 7.5 counts as an 8. No new query and no table.
 
 The last 7 and 30 days (GAM-006d) are `span=last7|last30`: the local days ending today in `tz`,
@@ -449,6 +455,17 @@ protocol UserLibraryImporting: Sendable {
 - Search and detail for `book`
 - ISBN and cover URL
 - Discover's books row: `trending/weekly.json` (DISC-001)
+
+### MusicBrainz (MUS-001)
+
+- Search, hydrate and tracklist for `album`: release groups of type Album or EP
+  (`ws/2/release-group`, Lucene query with the user's punctuation escaped), lookup with
+  `inc=artist-credits+genres` (top five genres by count), and `ws/2/release?release-group=`
+  for the earliest dated official release's tracks
+- One `ProviderClient` paced at 1 request/s, `User-Agent` with a contact, as MusicBrainz asks
+- Covers are Cover Art Archive URLs (`release-group/{mbid}/front-250`), square, never hosted
+- `CatalogProviders.music` is optional; without it album search is `incomplete` and album pages
+  show no tracklist
 
 ### Anime catalog (AniList)
 
