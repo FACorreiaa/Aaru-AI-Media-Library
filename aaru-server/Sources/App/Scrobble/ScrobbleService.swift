@@ -26,6 +26,8 @@ struct ScrobbleService: Sendable {
     let stores: Stores
     let library: LibraryService
     let resolver: TitleResolver
+    /// Nil when no APNs key is configured: no Live Activity pushes (SCR-008).
+    var liveActivity: NowPlayingNotifier?
     var logger = Logger(label: "aaru-scrobble")
     var now: @Sendable () -> Date = { Date() }
 
@@ -48,23 +50,71 @@ struct ScrobbleService: Sendable {
             return (.stoppedWithoutChange, nil)
         }
         let title = try await resolve(report)
+        let open = try await stores.watchEvents.openSessions(userID: userID, source: report.source, limit: 10)
+        if report.action == .start {
+            for previous in open where previous.externalRef != report.externalRef {
+                try await moveOn(from: previous, caller: caller, now: now)
+            }
+        }
         let session = try await stores.watchEvents.record(
             report, titleID: title?.id, userID: userID, agentTokenID: caller.token.id, now: now
         )
-        guard report.action == .stop else { return (title == nil ? .unmatched : .recorded, title) }
+        guard report.action == .stop else {
+            if let title, let liveActivity, let current = try await stores.watchEvents
+                .openSessions(userID: userID, source: report.source, limit: 10).first(where: { $0.id == session.id })
+            {
+                await liveActivity.changed(current, title: title, userID: userID, now: now)
+            }
+            return (title == nil ? .unmatched : .recorded, title)
+        }
         try await stores.watchEvents.close(session.id, at: now)
+        let outcome = try await stop(session, title: title, report: report, caller: caller)
+        if let liveActivity, var ended = open.first(where: { $0.id == session.id }) {
+            ended.positionMs = session.positionMs
+            ended.durationMs = session.durationMs
+            await liveActivity.ended(ended, now: now, watched: outcome == .watched)
+        }
+        return (outcome, title)
+    }
+
+    /// What a `stop` writes: the episode ticked or the movie finished at 80% or more.
+    private func stop(
+        _ session: WatchSession, title: Title?, report: PlaybackReport, caller: AgentCaller
+    ) async throws -> ScrobbleOutcome {
         guard let title else {
             logger.info("Unmatched scrobble", metadata: [
                 "source": "\(report.source.rawValue)", "agentToken": "\(caller.token.id)",
             ])
-            return (.unmatched, nil)
+            return .unmatched
         }
         guard let progress = session.progress, progress >= Self.watchedThreshold else {
-            return (.stoppedWithoutChange, title)
+            return .stoppedWithoutChange
         }
         let episodes = try await episodes(of: title, in: report)
-        let wrote = try await markWatched(title, episodes: episodes, caller: caller)
-        return (wrote ? .watched : .stoppedWithoutChange, title)
+        return try await markWatched(title, episodes: episodes, caller: caller) ? .watched : .stoppedWithoutChange
+    }
+
+    /// The player started something else without stopping `previous` (Stremio's next episode):
+    /// it closes, and ticks when the player last reported it at 80% or more. Only the reported
+    /// position counts, so a player closed mid-episode never fakes a watch.
+    private func moveOn(from previous: OpenSession, caller: AgentCaller, now: Date) async throws {
+        try await stores.watchEvents.close(previous.id, at: now)
+        var watched = false
+        if let progress = previous.reportedProgress, progress >= Self.watchedThreshold,
+           let title = try await stores.titles.title(id: previous.titleID)
+        {
+            watched = try await markWatched(title, episodes: previous.episode.map { [$0] } ?? [], caller: caller)
+        }
+        await liveActivity?.ended(previous, now: now, watched: watched)
+    }
+
+    /// What a player is playing for the user now (SCR-008), or nil.
+    func nowPlaying(userID: UserID) async throws -> NowPlaying? {
+        let sessions = try await stores.watchEvents.openSessions(userID: userID, source: nil, limit: 5)
+        guard let live = NowPlaying.pick(sessions, now: now()),
+              let title = try await stores.titles.title(id: live.titleID)
+        else { return nil }
+        return NowPlaying(session: live, title: title)
     }
 
     /// The title a report names. A report with no id names its title instead (SCR-007): matched

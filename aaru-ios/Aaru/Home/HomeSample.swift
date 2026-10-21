@@ -63,6 +63,30 @@ extension HomeModel {
         )
     }
 
+    /// The sample Home while Stremio plays an episode of the first Continue watching show
+    /// (SCR-008): Now playing leads, and Tonight moves on to the next thing.
+    static var samplePlaying: HomeModel {
+        let home = sample
+        guard let lead = home.continueWatching.first else { return home }
+        var playing = NowPlaying.sample(libraryItemId: lead.libraryItemId)
+        playing.title = lead.title
+        playing.episode = lead.next
+        playing.episodeName = lead.nextName
+        return HomeModel(
+            preview: .init(
+                upNext: .init(
+                    continueWatching: home.continueWatching,
+                    startWatching: home.startWatching,
+                    counts: home.counts
+                ),
+                airing: home.upcoming
+            ),
+            discover: home.discover,
+            listening: sampleListening,
+            nowPlaying: playing
+        )
+    }
+
     /// Albums marked Listening (MUS-001), square covers left to the fallback.
     static var sampleListening: [LibraryRow] {
         [

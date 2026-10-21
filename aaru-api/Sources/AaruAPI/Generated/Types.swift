@@ -280,6 +280,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/devices/{token}`.
     /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)`.
     func unregisterDevice(_ input: Operations.UnregisterDevice.Input) async throws -> Operations.UnregisterDevice.Output
+    /// Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles.
+    ///
+    /// - Remark: HTTP `PUT /v1/devices/live-activity`.
+    /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)`.
+    func registerLiveActivityToken(_ input: Operations.RegisterLiveActivityToken.Input) async throws -> Operations.RegisterLiveActivityToken.Output
     /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
     ///
     /// - Remark: HTTP `GET /v1/web-push/key`.
@@ -357,6 +362,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
     func getStats(_ input: Operations.GetStats.Input) async throws -> Operations.GetStats.Output
+    /// What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe.
+    ///
+    /// - Remark: HTTP `GET /v1/me/now-playing`.
+    /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)`.
+    func getNowPlaying(_ input: Operations.GetNowPlaying.Input) async throws -> Operations.GetNowPlaying.Output
     /// Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
     ///
     /// - Remark: HTTP `GET /v1/me/listens`.
@@ -1278,6 +1288,19 @@ extension APIProtocol {
             headers: headers
         ))
     }
+    /// Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles.
+    ///
+    /// - Remark: HTTP `PUT /v1/devices/live-activity`.
+    /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)`.
+    public func registerLiveActivityToken(
+        headers: Operations.RegisterLiveActivityToken.Input.Headers = .init(),
+        body: Operations.RegisterLiveActivityToken.Input.Body
+    ) async throws -> Operations.RegisterLiveActivityToken.Output {
+        try await registerLiveActivityToken(Operations.RegisterLiveActivityToken.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
     ///
     /// - Remark: HTTP `GET /v1/web-push/key`.
@@ -1482,6 +1505,13 @@ extension APIProtocol {
             query: query,
             headers: headers
         ))
+    }
+    /// What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe.
+    ///
+    /// - Remark: HTTP `GET /v1/me/now-playing`.
+    /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)`.
+    public func getNowPlaying(headers: Operations.GetNowPlaying.Input.Headers = .init()) async throws -> Operations.GetNowPlaying.Output {
+        try await getNowPlaying(Operations.GetNowPlaying.Input(headers: headers))
     }
     /// Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
     ///
@@ -3362,6 +3392,169 @@ public enum Components {
                 case token
                 case environment
                 case bundleId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration`.
+        public struct LiveActivityRegistration: Codable, Hashable, Sendable {
+            /// The ActivityKit push token
+            ///
+            /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/token`.
+            public var token: Swift.String
+            /// `start` is the device's push-to-start token; `update` one activity's own.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case start = "start"
+                case update = "update"
+            }
+            /// `start` is the device's push-to-start token; `update` one activity's own.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/kind`.
+            public var kind: Components.Schemas.LiveActivityRegistration.KindPayload
+            /// Required for `update`; the activity's `watchEventId` attribute.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/watchEventId`.
+            public var watchEventId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/environment`.
+            @frozen public enum EnvironmentPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case sandbox = "sandbox"
+                case production = "production"
+            }
+            /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/environment`.
+            public var environment: Components.Schemas.LiveActivityRegistration.EnvironmentPayload
+            /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/bundleId`.
+            public var bundleId: Swift.String
+            /// Creates a new `LiveActivityRegistration`.
+            ///
+            /// - Parameters:
+            ///   - token: The ActivityKit push token
+            ///   - kind: `start` is the device's push-to-start token; `update` one activity's own.
+            ///   - watchEventId: Required for `update`; the activity's `watchEventId` attribute.
+            ///   - environment:
+            ///   - bundleId:
+            public init(
+                token: Swift.String,
+                kind: Components.Schemas.LiveActivityRegistration.KindPayload,
+                watchEventId: Swift.String? = nil,
+                environment: Components.Schemas.LiveActivityRegistration.EnvironmentPayload,
+                bundleId: Swift.String
+            ) {
+                self.token = token
+                self.kind = kind
+                self.watchEventId = watchEventId
+                self.environment = environment
+                self.bundleId = bundleId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case token
+                case kind
+                case watchEventId
+                case environment
+                case bundleId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/NowPlayingReply`.
+        public struct NowPlayingReply: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NowPlayingReply/nowPlaying`.
+            public var nowPlaying: Components.Schemas.NowPlaying?
+            /// Creates a new `NowPlayingReply`.
+            ///
+            /// - Parameters:
+            ///   - nowPlaying:
+            public init(nowPlaying: Components.Schemas.NowPlaying? = nil) {
+                self.nowPlaying = nowPlaying
+            }
+            public enum CodingKeys: String, CodingKey {
+                case nowPlaying
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/NowPlaying`.
+        public struct NowPlaying: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/watchEventId`.
+            public var watchEventId: Swift.String
+            /// Absent when the title is not in the library yet.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/episode`.
+            public var episode: Components.Schemas.EpisodeRef?
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/episodeName`.
+            public var episodeName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/source`.
+            @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case stremio = "stremio"
+                case netflix = "netflix"
+                case disneyPlus = "disney_plus"
+                case primeVideo = "prime_video"
+            }
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/source`.
+            public var source: Components.Schemas.NowPlaying.SourcePayload
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case playing = "playing"
+                case paused = "paused"
+            }
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/state`.
+            public var state: Components.Schemas.NowPlaying.StatePayload
+            /// Where the player was at `updatedAt`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/positionMs`.
+            public var positionMs: Swift.Int64
+            /// The player's duration, else the catalog runtime; 0 when neither is known.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/durationMs`.
+            public var durationMs: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/NowPlaying/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `NowPlaying`.
+            ///
+            /// - Parameters:
+            ///   - watchEventId:
+            ///   - libraryItemId: Absent when the title is not in the library yet.
+            ///   - title:
+            ///   - episode:
+            ///   - episodeName:
+            ///   - source:
+            ///   - state:
+            ///   - positionMs: Where the player was at `updatedAt`.
+            ///   - durationMs: The player's duration, else the catalog runtime; 0 when neither is known.
+            ///   - updatedAt:
+            public init(
+                watchEventId: Swift.String,
+                libraryItemId: Swift.String? = nil,
+                title: Components.Schemas.TitleSummary,
+                episode: Components.Schemas.EpisodeRef? = nil,
+                episodeName: Swift.String? = nil,
+                source: Components.Schemas.NowPlaying.SourcePayload,
+                state: Components.Schemas.NowPlaying.StatePayload,
+                positionMs: Swift.Int64,
+                durationMs: Swift.Int64,
+                updatedAt: Foundation.Date
+            ) {
+                self.watchEventId = watchEventId
+                self.libraryItemId = libraryItemId
+                self.title = title
+                self.episode = episode
+                self.episodeName = episodeName
+                self.source = source
+                self.state = state
+                self.positionMs = positionMs
+                self.durationMs = durationMs
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case watchEventId
+                case libraryItemId
+                case title
+                case episode
+                case episodeName
+                case source
+                case state
+                case positionMs
+                case durationMs
+                case updatedAt
             }
         }
         /// - Remark: Generated from `#/components/schemas/WebPushKey`.
@@ -16130,6 +16323,130 @@ public enum Operations {
             }
         }
     }
+    /// Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles.
+    ///
+    /// - Remark: HTTP `PUT /v1/devices/live-activity`.
+    /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)`.
+    public enum RegisterLiveActivityToken {
+        public static let id: Swift.String = "registerLiveActivityToken"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/devices/live-activity/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RegisterLiveActivityToken.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RegisterLiveActivityToken.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RegisterLiveActivityToken.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/devices/live-activity/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/devices/live-activity/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.LiveActivityRegistration)
+            }
+            public var body: Operations.RegisterLiveActivityToken.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.RegisterLiveActivityToken.Input.Headers = .init(),
+                body: Operations.RegisterLiveActivityToken.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Registered.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RegisterLiveActivityToken.Output.NoContent)
+            /// Registered.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RegisterLiveActivityToken.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
     ///
     /// - Remark: HTTP `GET /v1/web-push/key`.
@@ -18631,6 +18948,135 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe.
+    ///
+    /// - Remark: HTTP `GET /v1/me/now-playing`.
+    /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)`.
+    public enum GetNowPlaying {
+        public static let id: Swift.String = "getNowPlaying"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/now-playing/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetNowPlaying.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetNowPlaying.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetNowPlaying.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetNowPlaying.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/now-playing/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/now-playing/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.NowPlayingReply)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.NowPlayingReply {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetNowPlaying.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetNowPlaying.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// What plays, if anything.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetNowPlaying.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetNowPlaying.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

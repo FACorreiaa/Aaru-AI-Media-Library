@@ -68,4 +68,70 @@ protocol WatchEventStore: Sendable {
     func close(_ id: UUID, at date: Date) async throws
     /// Whether a session for this item was closed since `since`: a second `stop` is a repeat.
     func stoppedRecently(userID: UserID, source: WatchSource, externalRef: String, since: Date) async throws -> Bool
+    /// The user's open, matched sessions, newest report first; only `source`'s when given.
+    func openSessions(userID: UserID, source: WatchSource?, limit: Int) async throws -> [OpenSession]
+    /// Claims the push that starts this session's Live Activity. False when it was already sent.
+    func claimLiveActivityStart(_ id: UUID, at date: Date) async throws -> Bool
+    /// A token belongs to one user: registering it again moves it. An `update` token whose watch
+    /// event is not the user's is refused (false).
+    func registerLiveActivity(_ token: LiveActivityToken, userID: UserID, now: Date) async throws -> Bool
+    /// The user's push-to-start tokens, one per device.
+    func liveActivityStartTokens(userID: UserID) async throws -> [LiveActivityToken]
+    /// The tokens of the activities following this watch event.
+    func liveActivityUpdateTokens(watchEventID: UUID) async throws -> [LiveActivityToken]
+    /// Apple said the token is dead (activity ended, app removed).
+    func forgetLiveActivity(token: String) async throws
+}
+
+/// An ActivityKit push token the app handed over (SCR-008).
+struct LiveActivityToken: Sendable, Equatable {
+    enum Kind: String, Sendable {
+        /// Push-to-start: lets the server start a "Now watching" activity on this device.
+        case start
+        /// One running activity's own token, for updates and the end.
+        case update
+    }
+
+    var token: String
+    var kind: Kind
+    var environment: PushEnvironment
+    /// The app's bundle id; APNs gets `<topic>.push-type.liveactivity`.
+    var topic: String
+    /// Set for `update`: the watch event the activity follows.
+    var watchEventID: UUID?
+}
+
+/// A matched session no `stop` has closed yet, with what Home and the Live Activity show (SCR-008).
+struct OpenSession: Sendable, Equatable {
+    enum State: String, Sendable {
+        case playing, paused
+    }
+
+    var id: UUID
+    var source: WatchSource
+    var externalRef: String
+    var titleID: TitleID
+    /// Nil when the title is not in the user's library yet (a first episode, before its stop).
+    var libraryItemID: LibraryItemID?
+    var episode: EpisodeKey?
+    var episodeName: String?
+    /// The episode's runtime, else the title's: a duration before the player reports one.
+    var runtimeMinutes: Int?
+    var state: State
+    /// Where the player was at its last report.
+    var positionMs: Int64
+    var durationMs: Int64
+    /// When the player last reported. Stremio reports only on start, pause and stop.
+    var updatedAt: Date
+
+    /// The player's duration, else the catalog runtime; 0 when neither is known.
+    var knownDurationMs: Int64 {
+        durationMs > 0 ? durationMs : Int64(runtimeMinutes ?? 0) * 60000
+    }
+
+    /// The reported progress in percent, nil while no duration is known. Never extrapolated: a
+    /// player closed mid-episode must not count as watched.
+    var reportedProgress: Double? {
+        durationMs > 0 ? min(100, Double(positionMs) / Double(durationMs) * 100) : nil
+    }
 }

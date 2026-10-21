@@ -769,6 +769,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/devices/live-activity': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles. */
+    put: operations['registerLiveActivityToken']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/web-push/key': {
     parameters: {
       query?: never
@@ -998,6 +1015,23 @@ export interface paths {
     }
     /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date. */
     get: operations['getStats']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/now-playing': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe. */
+    get: operations['getNowPlaying']
     put?: never
     post?: never
     delete?: never
@@ -1997,6 +2031,54 @@ export interface components {
        */
       environment: 'sandbox' | 'production'
       bundleId: string
+    }
+    LiveActivityRegistration: {
+      /** @description The ActivityKit push token */
+      token: string
+      /**
+       * @description `start` is the device's push-to-start token; `update` one activity's own.
+       * @enum {string}
+       */
+      kind: 'start' | 'update'
+      /**
+       * Format: uuid
+       * @description Required for `update`; the activity's `watchEventId` attribute.
+       */
+      watchEventId?: string
+      /** @enum {string} */
+      environment: 'sandbox' | 'production'
+      bundleId: string
+    }
+    NowPlayingReply: {
+      nowPlaying?: components['schemas']['NowPlaying']
+    }
+    NowPlaying: {
+      /** Format: uuid */
+      watchEventId: string
+      /**
+       * Format: uuid
+       * @description Absent when the title is not in the library yet.
+       */
+      libraryItemId?: string
+      title: components['schemas']['TitleSummary']
+      episode?: components['schemas']['EpisodeRef']
+      episodeName?: string
+      /** @enum {string} */
+      source: 'stremio' | 'netflix' | 'disney_plus' | 'prime_video'
+      /** @enum {string} */
+      state: 'playing' | 'paused'
+      /**
+       * Format: int64
+       * @description Where the player was at `updatedAt`.
+       */
+      positionMs: number
+      /**
+       * Format: int64
+       * @description The player's duration, else the catalog runtime; 0 when neither is known.
+       */
+      durationMs: number
+      /** Format: date-time */
+      updatedAt: string
     }
     WebPushKey: {
       /** @description VAPID public key, base64url: the browser's applicationServerKey. */
@@ -4386,6 +4468,29 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  registerLiveActivityToken: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LiveActivityRegistration']
+      }
+    }
+    responses: {
+      /** @description Registered. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
   getWebPushKey: {
     parameters: {
       query?: never
@@ -4798,6 +4903,27 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Stats']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getNowPlaying: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description What plays, if anything. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NowPlayingReply']
         }
       }
       default: components['responses']['Error']

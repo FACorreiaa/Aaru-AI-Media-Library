@@ -6,6 +6,10 @@ import SwiftUI
     HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .sample)
 }
 
+#Preview("Home, now playing") {
+    HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .samplePlaying)
+}
+
 #Preview("Home, new account") {
     HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .newAccount)
 }

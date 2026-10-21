@@ -462,6 +462,7 @@ account or a stranger that has not happened yet.
 | SCR-005 | Open | none | |
 | SCR-006 | Open | none | |
 | SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
+| SCR-008 | Built, unverified | NowPlaying.swift, NowPlayingNotifier.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device |
 | SOC-001 | Open | none on main (PR #44 open) | |
 | SOC-002 | Open | none on main (PR #44 open) | |
 | SOC-003 | Open | none | |
@@ -2187,6 +2188,26 @@ markup with fixtures; **check them on the live sites** before a store submission
 **Done when:** an episode played past 80% on each site ticks that episode once, journaled as
 the browser extension; a film nobody can tell apart from a remake stays unmatched; a revoked
 token gets 401 and the extension asks to connect again.
+
+### SCR-008 · Now playing on Home and the Live Activity by push · M · 2026-10-21
+**Needs:** SCR-001, SCR-003, WID-005, SOC-005 (APNs). Owner, 2026-10-21: watching Cyberpunk:
+Edgerunners S2·E7 in Stremio showed nothing on web or iOS, though Stremio's `player` events had
+been arriving all along (prod logs) and were stored in `watch_events` with nothing reading them.
+`GET /v1/me/now-playing` reads the newest open session back (playing until its end plus 10
+minutes, paused for 30). Home shows it as the `NowPlayingCard`: full width above Tonight on the
+web (polled every 30 s while visible), above Tonight on iPhone and Mac; Tonight and Continue
+watching leave that show out meanwhile. The server pushes the "Now watching" Live Activity over
+APNs: push-to-start on a session's first `start`, update on pause and resume, end on the stop,
+from tokens the app registers at `PUT /v1/devices/live-activity`; the app also starts it when it
+opens on a session. A `start` for the next episode closes the last one, ticking it only when it
+was last reported at ≥ 80%. With it, the web's last-7-days block became a wide strip under
+Tonight (owner, same day). This closes WID-005's "scrobble start is P3" and SCR-001's "may start
+the WID-005 Live Activity via push".
+
+**Done when:** an episode playing in Stremio shows on web Home within 30 s and on iPhone Home;
+the Live Activity appears on a locked phone without opening Aaru (after one launch), reads
+"Paused" on a pause, and ends with "Watched" when the episode ticks; episode after episode each
+ticks once, also when Stremio skips the `stop`.
 
 ---
 

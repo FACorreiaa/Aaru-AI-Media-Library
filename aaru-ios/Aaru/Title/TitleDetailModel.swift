@@ -1,4 +1,5 @@
 import AaruAPI
+import AaruCore
 import Foundation
 import Observation
 
