@@ -20,6 +20,30 @@ extension UntouchedStore: AgentTokenStore, WatchEventStore {
         throw Touched()
     }
 
+    func openSessions(userID _: UserID, source _: WatchSource?, limit _: Int) async throws -> [OpenSession] {
+        throw Touched()
+    }
+
+    func claimLiveActivityStart(_: UUID, at _: Date) async throws -> Bool {
+        throw Touched()
+    }
+
+    func registerLiveActivity(_: LiveActivityToken, userID _: UserID, now _: Date) async throws -> Bool {
+        throw Touched()
+    }
+
+    func liveActivityStartTokens(userID _: UserID) async throws -> [LiveActivityToken] {
+        throw Touched()
+    }
+
+    func liveActivityUpdateTokens(watchEventID _: UUID) async throws -> [LiveActivityToken] {
+        throw Touched()
+    }
+
+    func forgetLiveActivity(token _: String) async throws {
+        throw Touched()
+    }
+
     func create(_: AgentToken, tokenHash _: String, userID _: UserID) async throws {
         throw Touched()
     }

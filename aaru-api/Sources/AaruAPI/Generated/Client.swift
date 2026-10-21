@@ -4202,6 +4202,72 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles.
+    ///
+    /// - Remark: HTTP `PUT /v1/devices/live-activity`.
+    /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)`.
+    public func registerLiveActivityToken(_ input: Operations.RegisterLiveActivityToken.Input) async throws -> Operations.RegisterLiveActivityToken.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.RegisterLiveActivityToken.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/devices/live-activity",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .put
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
     ///
     /// - Remark: HTTP `GET /v1/web-push/key`.
@@ -5515,6 +5581,83 @@ public struct Client: APIProtocol {
                     case "application/json":
                         body = try await converter.getResponseBodyAsJSON(
                             Components.Schemas.Stats.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe.
+    ///
+    /// - Remark: HTTP `GET /v1/me/now-playing`.
+    /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)`.
+    public func getNowPlaying(_ input: Operations.GetNowPlaying.Input) async throws -> Operations.GetNowPlaying.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetNowPlaying.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/me/now-playing",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetNowPlaying.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.NowPlayingReply.self,
                             from: responseBody,
                             transforming: { value in
                                 .json(value)

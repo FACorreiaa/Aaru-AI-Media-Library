@@ -13,6 +13,8 @@ final class AppServices {
     let realtime: RealtimeClient
     #if os(iOS)
         let push: PushRegistrar
+        /// Live Activity push tokens (SCR-008), uploaded while signed in.
+        let liveActivities: LiveActivityRegistrar
     #endif
     /// `nil` only when the build has no API host configured.
     let api: Client?
@@ -36,6 +38,8 @@ final class AppServices {
         #if os(iOS)
             push = PushRegistrar(api: api)
             PushRegistrar.current = push
+            liveActivities = LiveActivityRegistrar(api: api)
+            LiveActivityRegistrar.current = liveActivities
         #endif
     }
 }

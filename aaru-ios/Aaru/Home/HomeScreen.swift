@@ -1,7 +1,8 @@
 import AaruAPI
 import SwiftUI
 
-/// Home, drawn as the Field (APP-009, APP-013, DESIGN.md §1 and §13): Tonight leads, then
+/// Home, drawn as the Field (APP-009, APP-013, DESIGN.md §1 and §13): what a player is playing
+/// now (SCR-008, §15) sits under the heading when there is something; Tonight leads, then
 /// Continue watching, the albums being listened to (MUS-001), what airs next, Start watching and
 /// Unfinished as Trakt-style rows of cards, then Discover's public rows (DISC-001). Requests
 /// waiting for the user, the last import, the week, the shelf's counts, the recap and the user's
@@ -24,6 +25,7 @@ struct HomeScreen: View {
     @State private var listTarget: CatalogHit?
     /// Agent requests waiting for the user (OUT-004), pinned above the rows.
     @State private var plans: [AgentPlan] = []
+    @Environment(\.scenePhase) private var scenePhase
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -77,6 +79,15 @@ struct HomeScreen: View {
                     await model.shelfChanged()
                 }
                 .task { await loadPlans() }
+                // Players report only on a change, so what is playing is asked again every 30 s
+                // while Home is open and the app is in front; the card's clock runs in between.
+                .task(id: scenePhase) {
+                    guard scenePhase == .active else { return }
+                    while !Task.isCancelled {
+                        await model.loadNowPlaying()
+                        try? await Task.sleep(for: .seconds(30))
+                    }
+                }
                 .task { await imports?.load() }
                 .task {
                     if !lists.hasLoaded {
@@ -85,6 +96,7 @@ struct HomeScreen: View {
                 }
                 .refreshable {
                     await model.load()
+                    await model.loadNowPlaying()
                     await loadPlans()
                     await imports?.load()
                 }
@@ -115,7 +127,7 @@ struct HomeScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if model.isEmpty, model.discover.isEmpty, model.hasLoaded {
+        if model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil, model.hasLoaded {
             ContentUnavailableView {
                 Label("Add a show to see what's next", systemImage: "sparkles.tv")
             } description: {
@@ -126,13 +138,14 @@ struct HomeScreen: View {
                 Button("Search") { showsSearch = true }
                     .buttonStyle(.bordered)
             }
-        } else if model.isEmpty, model.discover.isEmpty {
+        } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     header
+                    nowPlayingSection
                     if compact {
                         tonightSection
                         waitingSection
@@ -204,6 +217,14 @@ extension HomeScreen {
                 .foregroundStyle(Color(.muted))
         }
         .padding(.horizontal, 20)
+    }
+
+    /// Full width under the heading, above the split, so it leads on every screen size.
+    @ViewBuilder private var nowPlayingSection: some View {
+        if let playing = model.nowPlaying {
+            NowPlayingCard(playing: playing, wide: !compact)
+                .padding(.horizontal, 20)
+        }
     }
 
     @ViewBuilder private var tonightSection: some View {

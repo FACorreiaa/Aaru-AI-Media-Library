@@ -11,8 +11,10 @@ import {
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { LastImportCard } from '../components/LastImportCard'
+import { NowPlayingCard } from '../components/NowPlayingCard'
 import { PlanCard } from '../components/PlanCard'
 import { TonightStrip } from '../components/TonightStrip'
+import { WeekStripCard } from '../components/WeekStripCard'
 import { Alert } from '../components/ui/alert'
 import { Button, buttonVariants } from '../components/ui/button'
 import { cardClass } from '../components/ui/card'
@@ -54,6 +56,10 @@ import { daypartHeading } from '../lib/appearance'
 import type { ImportJob } from '../lib/imports/server'
 import { upsert } from '../lib/library/model'
 import type { LibraryEntry } from '../lib/library/model'
+import { NOW_PLAYING_POLL_MS } from '../lib/nowplaying/model'
+import type { NowPlaying } from '../lib/nowplaying/model'
+import { getNowPlaying } from '../lib/nowplaying/server'
+import { useVisiblePoll } from '../lib/visible-poll'
 import type { ListSummary } from '../lib/lists/server'
 import { offeredRecap, periodLabel } from '../lib/recap/model'
 import { requireSession } from '../lib/session/query'
@@ -84,6 +90,10 @@ import type { QueryClient } from '@tanstack/solid-query'
 // beside them on a wide screen sits the work happening in the room: requests waiting for the
 // user, the last import, the week in numbers, lists. A phone stacks the same pieces, with
 // requests right under Tonight.
+//
+// Now playing (SCR-008, DESIGN.md §15): what Stremio or the browser extension plays crosses the
+// top of the Field, asked again every half minute while the tab is in view. Tonight and
+// Continue watching leave that show out meanwhile, so it is never on the page twice.
 const SearchPanel = lazy(() =>
   import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
 )
@@ -146,6 +156,10 @@ function Home() {
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
   const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
+  const [playing, setPlaying] = createSignal<NowPlaying | null>(null)
+  const [playingAt, setPlayingAt] = createSignal(new Date())
+  /** Sessions marked watched here: the player may still report them for a while. */
+  const [setAside, setSetAside] = createSignal<ReadonlySet<string>>(new Set())
   let dialog: HTMLDialogElement | undefined
   let libraryRequested = false
 
@@ -225,6 +239,58 @@ function Home() {
     }
   }
 
+  /** What a player is playing now. When a session ends (its stop may have ticked the
+   * episode), the rows are fetched again so Continue watching moves on. */
+  async function loadNowPlaying() {
+    const before = playing()
+    let fresh: NowPlaying | null
+    try {
+      fresh = await getNowPlaying()
+    } catch {
+      return
+    }
+    setPlaying(fresh)
+    setPlayingAt(new Date())
+    if (before && before.watchEventId !== fresh?.watchEventId)
+      void freshUpNext().then(showUpNext, () => {})
+  }
+
+  useVisiblePoll(loadNowPlaying, NOW_PLAYING_POLL_MS)
+
+  /** The card shown: none once the user marked its episode watched here. */
+  const nowPlaying = createMemo(() => {
+    const current = playing()
+    return current && !setAside().has(current.watchEventId) ? current : null
+  })
+  const playingItem = () => nowPlaying()?.libraryItemId ?? null
+
+  /** Mark watched on the Now playing card: the same write as a tick anywhere else. */
+  async function markPlayingWatched(current: NowPlaying) {
+    const id = current.libraryItemId
+    const episode = current.episode
+    if (!id || !episode || busy().has(id)) return
+    setBusyFor(id, true)
+    setProblem(null)
+    try {
+      await setEpisode({
+        data: {
+          id,
+          season: episode.season,
+          episode: episode.number,
+          watched: true,
+        },
+      })
+      setSetAside((ids) => new Set(ids).add(current.watchEventId))
+      showUpNext(await freshUpNext())
+    } catch (err) {
+      setProblem(
+        err instanceof Error ? err.message : 'The episode was not marked.',
+      )
+    } finally {
+      setBusyFor(id, false)
+    }
+  }
+
   async function loadDiscover() {
     try {
       setDiscover(await queryClient.query(discoverQuery))
@@ -252,6 +318,7 @@ function Home() {
     void loadPlans()
     void loadLists()
     void loadLastImport()
+    void loadNowPlaying()
     loadLibrary()
     try {
       setAirings(await queryClient.query(calendarQuery(airingWindow(today))))
@@ -283,16 +350,24 @@ function Home() {
 
   // Continue watching alone needs no clock, so the server draws Tonight's lead too; today's
   // airings join in the browser.
-  const tonight = createMemo(() =>
-    composeTonight(continuing(), airings(), now() ?? new Date()),
-  )
+  const tonight = createMemo(() => {
+    const away = playingItem()
+    return composeTonight(
+      continuing().filter((e) => e.libraryItemId !== away),
+      airings().filter((a) => a.libraryItemId !== away),
+      now() ?? new Date(),
+    )
+  })
   /** The show Tonight leads with leaves Continue watching, so no card shows twice. */
   const tonightItem = () => {
     const pick = tonight()?.primary
     return pick?.kind === 'continue' ? pick.entry.libraryItemId : null
   }
   const continuingRow = createMemo(() =>
-    continuing().filter((e) => e.libraryItemId !== tonightItem()),
+    continuing().filter(
+      (e) =>
+        e.libraryItemId !== tonightItem() && e.libraryItemId !== playingItem(),
+    ),
   )
   const subline = createMemo(() => {
     const current = now()
@@ -393,6 +468,17 @@ function Home() {
           {(message) => <Alert class="mt-4">{message()}</Alert>}
         </Show>
 
+        <Show when={nowPlaying()}>
+          {(current) => (
+            <NowPlayingCard
+              playing={current()}
+              now={playingAt()}
+              busy={busy().has(current().libraryItemId ?? '')}
+              onWatched={() => void markPlayingWatched(current())}
+            />
+          )}
+        </Show>
+
         <div class="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr] lg:gap-x-10">
           <div class="order-1 lg:col-start-1 lg:row-start-1">
             <Show when={tonight()}>
@@ -406,6 +492,9 @@ function Home() {
                   onWatched={(entry) => void markWatched(entry)}
                 />
               )}
+            </Show>
+            <Show when={strip()}>
+              {(week) => <WeekStripCard week={week()} />}
             </Show>
           </div>
 
@@ -439,64 +528,6 @@ function Home() {
               <Show when={lastImport()}>
                 {(job) => <LastImportCard job={job()} />}
               </Show>
-              <Show when={strip()}>
-                {(week) => (
-                  <Link
-                    to="/app/insights"
-                    search={{ span: 'last7' }}
-                    class={cn(
-                      cardClass,
-                      'flex items-center gap-4 px-5 py-4 hover:text-accent',
-                    )}
-                  >
-                    <span
-                      class="flex h-8 w-20 shrink-0 items-end gap-[3px] text-accent"
-                      aria-hidden="true"
-                    >
-                      <For each={week().days}>
-                        {(height) => (
-                          <span
-                            class="flex-1 rounded-[2px]"
-                            classList={{
-                              'bg-current': height > 0,
-                              'bg-line': height === 0,
-                            }}
-                            style={{
-                              height:
-                                height > 0
-                                  ? `${Math.max(height * 100, 15)}%`
-                                  : '3px',
-                            }}
-                          />
-                        )}
-                      </For>
-                    </span>
-                    <span class="min-w-0 flex-1">
-                      <span class="block text-sm text-muted">Last 7 days</span>
-                      {/* Each figure keeps its words together; lines break only between them. */}
-                      <span class="font-medium tabular-nums">
-                        <Show
-                          when={week().parts.length > 0}
-                          fallback="Nothing tracked yet"
-                        >
-                          <For each={week().parts}>
-                            {(part, i) => (
-                              <>
-                                {i() > 0 && ' · '}
-                                <span class="whitespace-nowrap">{part}</span>
-                              </>
-                            )}
-                          </For>
-                        </Show>
-                      </span>
-                    </span>
-                    <span class="shrink-0 text-sm font-semibold text-accent">
-                      Insights
-                    </span>
-                  </Link>
-                )}
-              </Show>
-
               <Show when={chips().length > 0}>
                 <nav
                   aria-label="Your shelf by status"

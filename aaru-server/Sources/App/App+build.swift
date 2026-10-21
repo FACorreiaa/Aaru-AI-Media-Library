@@ -43,6 +43,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
     services.plans.push = push
     services.groups.push = push
+    services.scrobble.liveActivity = pushSender.map { NowPlayingNotifier(stores: stores, sender: $0) }
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -188,7 +189,7 @@ func waitForDatabase(
 }
 
 /// The APNs sender, or nil (with a notice) when no key is configured or the key does not parse.
-func makePushSender(_ settings: PushSettings?, logger: Logger) -> (any PushSending)? {
+func makePushSender(_ settings: PushSettings?, logger: Logger) -> APNSPushSender? {
     guard let settings else {
         logger.notice("Push disabled: APNS_PRIVATE_KEY is not set")
         return nil

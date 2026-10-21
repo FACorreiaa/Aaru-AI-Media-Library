@@ -65,6 +65,13 @@ heron while it matches, opens the import), the last 7 days, status counts, the r
 the user's lists. On a phone the same blocks follow the rows. The composer is still M13; the
 nav label stays "Home".
 
+**Now playing and the week, 2026-10-21 (owner, SCR-008):** while a player plays, the
+`NowPlayingCard` (§15) runs across the full width between the heading and Tonight, and Tonight
+and Continue watching leave that show out. The last 7 days left the side column: it is a
+horizontal strip in the main column under Tonight (four figures in a row, the week's bars with
+their days, "Insights →"). The side column keeps requests, the last import, status counts, the
+recap banner and lists.
+
 ## 2. Intent preview (before it writes)
 
 Never let the agent mutate the library invisibly.
@@ -308,7 +315,9 @@ rows of wide cards, one job per row.
 
 - **Last 7 days** (GAM-006d, 2026-10-21; was "This month") — a quiet stats strip: seven small
   bars, one per day by time, with a muted track under empty days, then episodes · hours ·
-  finished · active days. Tapping it opens Insights on 7 days. Shown at zero too ("Nothing
+  finished · active days. Tapping it opens Insights on 7 days. On the web it is a wide strip
+  under Tonight since 2026-10-21 (§1): the four figures as number over word, always all four,
+  and the bars with each day's initial; "Insights →" opens Insights. Shown at zero too ("Nothing
   tracked yet"), so a new account sees where its week will land.
 - **Status counts** — one chip per status with its per-kind label and count; a tap opens
   Library filtered to it.
@@ -412,6 +421,18 @@ day strip (tall day pills) over that day's episodes as poster rows.
 Tapping the bar flips between time left and end time. Set by a manual check-in in Phase 2 and
 by scrobbles from Plex, Jellyfin or Stremio in Phase 3. The same data drives the Live Activity.
 
+**Live 2026-10-21 (SCR-008):** fed by `GET /v1/me/now-playing` from Stremio's `player` events
+and the browser extension. Players report only on start, pause and stop, so the client adds the
+time since the last report while playing. A playing session counts until its end plus 10
+minutes, a paused one for 30 minutes after the pause. The eyebrow names the state and the player
+("Now playing · Stremio", "Paused · Disney+"); a pause shows time left only. Web: full width
+across the top of the Field, asked again every 30 s while the tab is visible, with Mark watched
+and Open. iPhone and Mac: the same card above Tonight. The Live Activity is pushed by the server
+over APNs (push-to-start on a session's first start, updated on pause and resume, ended by the
+stop: "Watched" for 8 s when it ticked), and the app starts it itself when it opens on a
+session it has no activity for. A push-started activity has no poster until the app opens.
+Nothing animates.
+
 **Settings groups, 2026-10-21** (owner): five groups (Account, Imports & export, Connected apps,
 Insights & recaps, About). Superseded the same day by the eight pages of §18.
 
@@ -419,8 +440,8 @@ Insights & recaps, About). Superseded the same day by the eight pages of §18.
 then the install links (Open in Stremio, Install on Stremio Web, Copy) show once, because they
 carry the secret. Live links list their last use and a Revoke. Writing back to the library
 beyond "watched" is an opt-in at connect time. Stremio's events land as journaled actions
-named "Stremio: …", so the undo ribbon and history treat them like a tap. The card itself is
-not built yet; `watch_events` holds what it will read. Under the intro, a collapsed "How to set it
+named "Stremio: …", so the undo ribbon and history treat them like a tap. What Stremio plays
+shows as the Now playing card (§15, SCR-008). Under the intro, a collapsed "How to set it
 up" lists the install steps, what Stremio's marks do here, where it works, and that a lost link is
 revoked and made again; the same text on web and Apple.
 
