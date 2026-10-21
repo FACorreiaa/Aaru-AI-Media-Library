@@ -66,7 +66,7 @@ struct MCPTests {
             let listed = try await rpc(env, "tools/list", token: token)
             let tools = try #require((listed["result"] as? [String: Any])?["tools"] as? [[String: Any]])
             #expect(tools.compactMap { $0["name"] as? String }
-                == ["search_titles", "read_library", "list_airs", "apply_library_patch"])
+                == ["search_titles", "read_library", "list_airs", "apply_library_patch", "plan_import"])
             let unknown = try await rpc(env, "resources/list", token: token)
             #expect((unknown["error"] as? [String: Any])?["code"] as? Int == -32601)
         }
@@ -182,6 +182,30 @@ struct MCPTests {
             #expect(proposed?["applied"] as? Bool == false)
             #expect(proposed?["planId"] is String, "bigger than a tap: a plan, not a write")
             #expect(try await env.actionCount() == before + 2, "the tick and its undo only")
+        }
+    }
+
+    @Test("plan_import queues an import for review and never writes; it needs the imports scope")
+    func planImport() async throws {
+        try await LibraryHarness.run { env in
+            let csv = "Title,Year\nArrival,2016\nDune,2021\n"
+            let plain = try await connect(env, writes: true)
+            let refused = try await call(env, "plan_import", ["text": csv, "source": "csv"], token: plain)
+            #expect(refused["isError"] as? Bool == true)
+
+            let body = try await env.send(.post, "/v1/agent/tokens", json: [
+                "kind": "codex", "allowImports": true,
+            ]).json()
+            #expect((body["token"] as? [String: Any])?["scopes"] as? [String] == ["imports:write", "library:read"])
+            let importer = try #require(body["secret"] as? String)
+            let before = try await env.actionCount()
+            let queued = try await call(env, "plan_import", ["text": csv, "source": "csv"], token: importer)
+            let structured = try #require(queued["structuredContent"] as? [String: Any])
+            #expect(structured["applied"] as? Bool == false)
+            let importID = try #require(structured["importId"] as? String)
+            let jobs = try await env.send(.get, "/v1/imports").json()["items"] as? [[String: Any]]
+            #expect(jobs?.contains { $0["id"] as? String == importID } == true)
+            #expect(try await env.actionCount() == before, "nothing lands before the user approves the import")
         }
     }
 }

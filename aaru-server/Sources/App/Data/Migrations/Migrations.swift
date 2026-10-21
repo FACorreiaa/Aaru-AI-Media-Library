@@ -32,6 +32,7 @@ let allMigrations: [any Migration] = [
     AddAgentTokenKinds(),
     CreateAgentPlans(),
     AddMCPOAuth(),
+    AddImportsWriteScope(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

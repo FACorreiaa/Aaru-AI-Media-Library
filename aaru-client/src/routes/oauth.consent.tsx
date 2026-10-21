@@ -3,6 +3,7 @@ import { Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { z } from 'zod'
 import { Wordmark } from '../components/Brand'
+import { Button } from '../components/ui/button'
 import { answerOAuthRequest, getOAuthRequest } from '../lib/oauth/server'
 import { getSession } from '../lib/session/session'
 
@@ -94,7 +95,7 @@ function Consent() {
           type="text"
           maxLength={80}
           placeholder={request().clientName}
-          class="min-h-11 rounded-[10px] border border-line bg-paper px-3"
+          class="min-h-11 rounded-field border border-line bg-paper px-3"
           value={name()}
           onInput={(e) => setName(e.currentTarget.value)}
         />
@@ -116,22 +117,16 @@ function Consent() {
       </label>
 
       <div class="mt-6 flex flex-wrap gap-2">
-        <button
-          type="button"
-          class="min-h-11 rounded-full bg-accent px-5 text-sm font-semibold text-on-accent disabled:opacity-50"
+        <Button
+          variant="primary"
           disabled={busy()}
           onClick={() => void answer(true)}
         >
           Allow
-        </button>
-        <button
-          type="button"
-          class="min-h-11 rounded-full border border-ink/25 px-5 text-sm font-semibold disabled:opacity-50"
-          disabled={busy()}
-          onClick={() => void answer(false)}
-        >
+        </Button>
+        <Button disabled={busy()} onClick={() => void answer(false)}>
           Not now
-        </button>
+        </Button>
       </div>
       <Show when={problem()}>
         {(message) => (

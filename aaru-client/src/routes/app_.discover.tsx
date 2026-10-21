@@ -2,6 +2,7 @@ import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { Show, createSignal, onMount } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { DiscoverRows } from '../components/DiscoverRows'
+import { Alert } from '../components/ui/alert'
 import { CREDITS, TMDB_URL } from '../lib/credits'
 import { localDayKey } from '../lib/calendar/model'
 import type { DiscoverRow } from '../lib/home/model'
@@ -56,14 +57,7 @@ function DiscoverPage() {
         </p>
 
         <Show when={problem()}>
-          {(message) => (
-            <p
-              role="alert"
-              class="mt-4 rounded-[14px] bg-danger/10 px-4 py-3 text-sm text-danger"
-            >
-              {message()}
-            </p>
-          )}
+          {(message) => <Alert class="mt-4">{message()}</Alert>}
         </Show>
 
         <DiscoverRows

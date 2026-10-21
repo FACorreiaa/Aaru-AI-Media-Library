@@ -1160,7 +1160,7 @@ components:
         kind: {$ref: '#/components/schemas/AgentTokenKind'}
         scopes:
           type: array
-          items: {type: string, enum: ['library:read', 'library:write', 'scrobble:write']}
+          items: {type: string, enum: ['library:read', 'library:write', 'scrobble:write', 'imports:write']}
         createdAt: {type: string, format: date-time}
         lastUsedAt:
           type: string
@@ -1179,6 +1179,11 @@ components:
             removing from Stremio's library never deletes anything in Aaru. For an MCP client, it
             may change one item directly, as a tap does; anything larger waits for approval in
             Aaru. Off by default.
+        allowImports:
+          type: boolean
+          description: >-
+            MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import.
+            The import is reviewed and approved in Aaru like any other. Off by default.
     AgentPlan:
       type: object
       required: [id, status, agentName, summary, changes, counts, createdAt, expiresAt]

@@ -1148,6 +1148,7 @@ public enum Components {
                 case library_colon_read = "library:read"
                 case library_colon_write = "library:write"
                 case scrobble_colon_write = "scrobble:write"
+                case imports_colon_write = "imports:write"
             }
             /// - Remark: Generated from `#/components/schemas/AgentToken/scopes`.
             public typealias ScopesPayload = [Components.Schemas.AgentToken.ScopesPayloadPayload]
@@ -1202,25 +1203,33 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/allowLibraryWrites`.
             public var allowLibraryWrites: Swift.Bool?
+            /// MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/allowImports`.
+            public var allowImports: Swift.Bool?
             /// Creates a new `AgentTokenCreate`.
             ///
             /// - Parameters:
             ///   - kind:
             ///   - name:
             ///   - allowLibraryWrites: Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default.
+            ///   - allowImports: MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default.
             public init(
                 kind: Components.Schemas.AgentTokenKind,
                 name: Swift.String? = nil,
-                allowLibraryWrites: Swift.Bool? = nil
+                allowLibraryWrites: Swift.Bool? = nil,
+                allowImports: Swift.Bool? = nil
             ) {
                 self.kind = kind
                 self.name = name
                 self.allowLibraryWrites = allowLibraryWrites
+                self.allowImports = allowImports
             }
             public enum CodingKeys: String, CodingKey {
                 case kind
                 case name
                 case allowLibraryWrites
+                case allowImports
             }
         }
         /// - Remark: Generated from `#/components/schemas/AgentPlan`.

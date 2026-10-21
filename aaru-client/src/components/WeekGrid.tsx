@@ -39,7 +39,7 @@ export function WeekGrid(props: WeekGridProps) {
                   role="tab"
                   aria-selected={chosen()}
                   aria-label={`${parts.weekday} ${parts.day}`}
-                  class="flex flex-col items-center rounded-[10px] py-1.5 text-xs"
+                  class="flex flex-col items-center rounded-field py-1.5 text-xs"
                   classList={{
                     'bg-ink text-paper': chosen(),
                     'text-accent font-semibold':
@@ -67,7 +67,7 @@ export function WeekGrid(props: WeekGridProps) {
           <For
             each={props.byDay.get(props.selected) ?? []}
             fallback={
-              <p class="rounded-[14px] bg-surface px-4 py-6 text-center text-sm text-muted">
+              <p class="rounded-panel bg-surface px-4 py-6 text-center text-sm text-muted">
                 Nothing airs on{' '}
                 {props.selected ? dayParts(props.selected).weekday : 'this day'}
                 .
@@ -106,11 +106,11 @@ function DayColumn(props: {
   return (
     <section
       aria-label={`${parts.weekday} ${parts.day}${props.today ? ', today' : ''}`}
-      class="flex w-64 shrink-0 snap-start flex-col rounded-[14px] bg-surface xl:w-auto xl:min-w-0"
+      class="flex w-64 shrink-0 snap-start flex-col rounded-panel bg-surface xl:w-auto xl:min-w-0"
       classList={{ 'ring-2 ring-accent': props.today }}
     >
       <header
-        class="flex items-baseline gap-2 rounded-t-[14px] px-3 py-2"
+        class="flex items-baseline gap-2 rounded-t-panel px-3 py-2"
         classList={{ 'bg-accent text-on-accent': props.today }}
       >
         <span class="font-display text-3xl leading-none font-medium">
@@ -143,7 +143,7 @@ function EpisodeCell(props: {
   const meta = () => metaLine(e())
   return (
     <article
-      class="group relative rounded-[10px] bg-paper ring-1 transition-opacity"
+      class="group relative rounded-field bg-paper ring-1 transition-opacity"
       classList={{
         'opacity-55': e().watched,
         'ring-accent': e().kind === 'premiere',
@@ -188,7 +188,7 @@ function EpisodeCell(props: {
       <div
         id={tip()}
         role="tooltip"
-        class="pointer-events-none invisible absolute inset-x-0 top-full z-20 mt-1 rounded-[10px] bg-ink p-3 text-xs leading-relaxed text-paper opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+        class="pointer-events-none invisible absolute inset-x-0 top-full z-20 mt-1 rounded-field bg-ink p-3 text-xs leading-relaxed text-paper opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
       >
         <p class="font-semibold">
           {e().title.title} · {code()}
@@ -221,7 +221,7 @@ function Banner(props: { entry: CalendarEntry }) {
   const url = () => sources()[failed()]
   return (
     <div
-      class="aspect-[3/1] overflow-hidden rounded-t-[10px] bg-accent/15"
+      class="aspect-[3/1] overflow-hidden rounded-t-field bg-accent/15"
       aria-hidden="true"
     >
       <Show

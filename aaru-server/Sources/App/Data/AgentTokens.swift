@@ -1,14 +1,20 @@
 import AaruCore
 import Foundation
 
+// Agent tokens (OUT-001, OUT-004): the scoped, revocable credentials the Stremio addon and MCP
+// clients use. Part of the data layer boundary in Stores.swift.
+
 /// What an agent token may do (OUT-001). A token never has more than a signed-in session.
 enum AgentScope: String, Codable, Sendable, CaseIterable {
     case libraryRead = "library:read"
     case libraryWrite = "library:write"
     case scrobbleWrite = "scrobble:write"
+    /// Queue an import for the user to review (`plan_import`). Never an apply.
+    case importsWrite = "imports:write"
 }
 
-/// The Stremio addon, or an MCP client (OUT-004): MCP kinds differ only in their setup steps.
+/// Which outside caller a token is for: the Stremio addon, or an MCP client (OUT-004).
+/// The MCP kinds differ only in the setup Settings shows; they reach the same tools.
 enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
     case stremio
     case claudeCode = "claude_code"

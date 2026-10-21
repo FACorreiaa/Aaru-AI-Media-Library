@@ -18,7 +18,7 @@ extension APIImplementation {
         guard let kind = AgentTokenKind(rawValue: body.kind.rawValue) else { throw AppError.badRequest() }
         let minted = try await tokens.create(
             userID: currentUser(), kind: kind, name: body.name,
-            allowLibraryWrites: body.allowLibraryWrites ?? false
+            allowLibraryWrites: body.allowLibraryWrites ?? false, allowImports: body.allowImports ?? false
         )
         return .created(.init(body: .json(.init(
             token: .init(minted.token),

@@ -333,7 +333,8 @@ before that approval.
 and Mac for AI agents that reach the library over MCP. Pick the agent (Claude Code, Codex,
 Hermes, Gemini CLI, any other MCP client) and its setup steps show at once, with a placeholder
 where the token goes; every block has Copy. Name it, choose **Allow changes** (off by default:
-one item at a time, as a tap would; never a removal or many items at once), and connect: the same
+one item at a time, as a tap would; never a removal or many items at once) and **Allow imports**
+(off by default: it may hand Aaru a list, which you review as any import), and connect: the same
 steps come back with the token filled in, shown once, and the sheet will not swipe away until
 Done. Last comes a message to paste into the agent so it checks itself. Live connections list
 their agent, what they may do and their last use, with a confirmed Revoke. Changes they make
@@ -401,6 +402,16 @@ Motion rules (the first written ones; they hold for any later surface):
   no auto-advance; cards cross-fade and wait for a tap.
 - The share image carries only the user's own numbers and the brand, no posters, so the web
   canvas and the Apple renderer draw the same card. Nothing is shared without a tap.
+
+On the web (2026-10-20), performance comes first:
+- **Native HTML before Kobalte, CSS before Motion.** `<dialog>`, `<details>`, checkboxes and
+  `<select>` stay native. Kobalte (the base of solid-ui, adapted into
+  `aaru-client/src/components/ui`) only where the browser has no pattern: tabs, toggle and radio
+  groups, tooltips, toasts, switches. Entrances stay CSS keyframes.
+- **Motion only for what CSS cannot do:** an exit before an element leaves, siblings sliding
+  into the gap (FLIP), direction-aware swaps. Through `src/lib/motion.ts` on `motion/mini`, only
+  `transform` and `opacity`, and nothing at all with reduced motion.
+- `npm run size` holds every route to `size-budget.json` in CI.
 
 ---
 

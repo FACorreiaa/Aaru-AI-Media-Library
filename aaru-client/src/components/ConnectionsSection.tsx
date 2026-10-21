@@ -1,7 +1,11 @@
-import { For, Show, createResource, createSignal } from 'solid-js'
+import { For, Show, createMemo, createResource, createSignal } from 'solid-js'
 import { AGENT_KINDS, accessLabel, kindLabel } from '../lib/agents/model'
 import type { AgentKind } from '../lib/agents/model'
 import { lastUsedLabel } from '../lib/stremio/model'
+import { cn } from '../lib/cn'
+import { AlertDialog } from './ui/alert-dialog'
+import { Button } from './ui/button'
+import { cardClass } from './ui/card'
 import {
   createConnection,
   getSetup,
@@ -21,10 +25,14 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
   const [kind, setKind] = createSignal<AgentKind>('claude')
   const [name, setName] = createSignal('')
   const [allowWrites, setAllowWrites] = createSignal(false)
+  const [allowImports, setAllowImports] = createSignal(false)
   const [busy, setBusy] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
   const [fresh, setFresh] = createSignal<AgentConnection | null>(null)
-  const [confirming, setConfirming] = createSignal<string | null>(null)
+  const [pending, setPending] = createSignal<AgentToken | null>(null)
+  const [revoking, setRevoking] = createSignal(false)
+  // The last token asked about, so the dialog keeps its title while it fades out.
+  const asked = createMemo<AgentToken | null>((last) => pending() ?? last, null)
   const [preview] = createResource(kind, (k) => getSetup({ data: { kind: k } }))
 
   const fail = (error: unknown, fallback: string) =>
@@ -40,6 +48,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
             kind: kind(),
             name: name() || undefined,
             allowLibraryWrites: allowWrites(),
+            allowImports: allowImports(),
           },
         }),
       )
@@ -54,18 +63,21 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
 
   async function revoke(token: AgentToken) {
     setProblem(null)
+    setRevoking(true)
     try {
       await revokeConnection({ data: { id: token.id } })
       if (fresh()?.token.id === token.id) setFresh(null)
-      setConfirming(null)
       setConnections(connections().filter((c) => c.id !== token.id))
     } catch (error) {
       fail(error, 'That connection was not revoked.')
+    } finally {
+      setRevoking(false)
+      setPending(null)
     }
   }
 
   return (
-    <section class="mt-10 rounded-[20px] bg-surface p-5">
+    <section class={cn(cardClass, 'mt-10 p-5')}>
       <h2 class="font-display text-xl font-medium">Connections</h2>
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
         Let an AI agent read your library over MCP: what you are watching, what
@@ -113,7 +125,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                   type="text"
                   maxLength={80}
                   placeholder={kindLabel(kind())}
-                  class="min-h-11 max-w-sm rounded-[10px] border border-line bg-paper px-3"
+                  class="min-h-11 max-w-sm rounded-field border border-line bg-paper px-3"
                   value={name()}
                   onInput={(e) => setName(e.currentTarget.value)}
                 />
@@ -133,20 +145,36 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                   </span>
                 </span>
               </label>
-              <button
-                type="button"
-                class="min-h-11 self-start rounded-full bg-accent px-5 text-sm font-semibold text-on-accent disabled:opacity-50"
+              <label class="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  class="mt-0.5"
+                  checked={allowImports()}
+                  onChange={(e) => setAllowImports(e.currentTarget.checked)}
+                />
+                <span>
+                  Allow imports
+                  <span class="block text-xs text-muted">
+                    It can hand Aaru a list (IMDb, Letterboxd, Goodreads,
+                    MyAnimeList, any CSV). You review the import here before
+                    anything is added.
+                  </span>
+                </span>
+              </label>
+              <Button
+                variant="primary"
+                class="self-start"
                 disabled={busy()}
                 onClick={() => void create()}
               >
                 {busy() ? 'Creating…' : `Connect ${kindLabel(kind())}`}
-              </button>
+              </Button>
             </Show>
           </div>
         }
       >
         {(connection) => (
-          <div class="mt-4 flex flex-col gap-3 rounded-[14px] border border-line p-4">
+          <div class="mt-4 flex flex-col gap-3 rounded-panel border border-line p-4">
             <p class="text-sm font-medium">
               Your token is in the steps below. Anyone with it can read your
               library, so treat it like a password; it is shown only now.
@@ -185,40 +213,31 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                     {lastUsedLabel(token)}
                   </span>
                 </span>
-                <Show
-                  when={confirming() === token.id}
-                  fallback={
-                    <button
-                      type="button"
-                      class="shrink-0 rounded-full border border-danger/50 px-4 py-1.5 text-sm font-semibold text-danger"
-                      onClick={() => setConfirming(token.id)}
-                    >
-                      Revoke
-                    </button>
-                  }
+                <Button
+                  variant="danger-outline"
+                  size="sm"
+                  class="shrink-0"
+                  onClick={() => setPending(token)}
                 >
-                  <span class="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      class="rounded-full bg-danger px-4 py-1.5 text-sm font-semibold text-on-accent"
-                      onClick={() => void revoke(token)}
-                    >
-                      Revoke now
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold"
-                      onClick={() => setConfirming(null)}
-                    >
-                      Keep
-                    </button>
-                  </span>
-                </Show>
+                  Revoke
+                </Button>
               </li>
             )}
           </For>
         </ul>
       </Show>
+      <AlertDialog
+        open={pending() !== null}
+        title={`Revoke ${asked()?.name ?? ''}?`}
+        description="Anything using it stops working at once."
+        confirmLabel="Revoke"
+        busy={revoking()}
+        onConfirm={() => {
+          const token = pending()
+          if (token) void revoke(token)
+        }}
+        onCancel={() => setPending(null)}
+      />
     </section>
   )
 }
@@ -257,7 +276,7 @@ function CopyBlock(props: { text: string; wrap?: boolean }) {
     }
   }
   return (
-    <div class="relative rounded-[10px] bg-paper">
+    <div class="relative rounded-field bg-paper">
       <pre
         class="overflow-x-auto p-3 pr-20 font-mono text-xs"
         classList={{ 'whitespace-pre-wrap': props.wrap }}

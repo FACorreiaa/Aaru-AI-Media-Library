@@ -11,6 +11,7 @@ import {
 import { z } from 'zod'
 import { AppHeader } from '../components/AppHeader'
 import { StatsPanel } from '../components/StatsPanel'
+import { Alert } from '../components/ui/alert'
 import {
   SPANS,
   insightsLabel,
@@ -182,14 +183,7 @@ function Insights() {
 
         <Switch>
           <Match when={failed()}>
-            {(message) => (
-              <p
-                role="alert"
-                class="mt-6 rounded-[14px] bg-danger/10 px-4 py-3 text-sm text-danger"
-              >
-                {message()}
-              </p>
-            )}
+            {(message) => <Alert class="mt-6">{message()}</Alert>}
           </Match>
           <Match when={ready()}>
             {(stats) => (

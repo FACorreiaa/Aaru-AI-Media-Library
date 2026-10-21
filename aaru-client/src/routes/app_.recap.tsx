@@ -8,6 +8,7 @@ import { Match, Switch, createSignal, onMount } from 'solid-js'
 import { z } from 'zod'
 import { AppHeader } from '../components/AppHeader'
 import { RecapStory } from '../components/recap/RecapStory'
+import { Alert } from '../components/ui/alert'
 import { cards, periodLabel } from '../lib/recap/model'
 import type { RecapCard, Stats } from '../lib/recap/model'
 import { getStats } from '../lib/recap/server'
@@ -82,12 +83,9 @@ function Recap() {
           </Match>
           <Match when={state().kind === 'failed' && state()}>
             {(failed) => (
-              <p
-                role="alert"
-                class="mt-4 rounded-[14px] bg-danger/10 px-4 py-3 text-sm text-danger"
-              >
+              <Alert class="mt-4">
                 {(failed() as { message: string }).message}
-              </p>
+              </Alert>
             )}
           </Match>
           <Match when={ready()?.deck.length === 0}>

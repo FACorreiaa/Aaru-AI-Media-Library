@@ -954,7 +954,9 @@ export interface components {
       id: string
       name: string
       kind: components['schemas']['AgentTokenKind']
-      scopes: ('library:read' | 'library:write' | 'scrobble:write')[]
+      scopes: (
+        'library:read' | 'library:write' | 'scrobble:write' | 'imports:write'
+      )[]
       /** Format: date-time */
       createdAt: string
       /**
@@ -968,6 +970,8 @@ export interface components {
       name?: string
       /** @description Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default. */
       allowLibraryWrites?: boolean
+      /** @description MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default. */
+      allowImports?: boolean
     }
     AgentPlan: {
       /** Format: uuid */
