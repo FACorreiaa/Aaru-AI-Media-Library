@@ -5,7 +5,9 @@ import SwiftUI
 /// unmatched row can be found by hand (IMP-011), before or after the plan is approved.
 struct ImportDetailView: View {
     let id: String
-    let context: SettingsContext
+    let imports: ImportsModel
+    /// After the plan is applied: the library and lists catch up.
+    var onApplied: @MainActor () async -> Void
 
     @State private var detail: ImportDetail?
     @State private var applying = false
@@ -15,8 +17,20 @@ struct ImportDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppRouter.self) private var router
 
-    private var imports: ImportsModel {
-        context.imports
+    /// From Home's last-import card, outside Settings.
+    init(id: String, imports: ImportsModel, library: LibraryModel, lists: ListsModel, api: Client?) {
+        self.id = id
+        self.imports = imports
+        onApplied = {
+            await library.sync(api: api)
+            await lists.load()
+        }
+    }
+
+    init(id: String, context: SettingsContext) {
+        self.id = id
+        imports = context.imports
+        onApplied = { await context.refreshLibrary() }
     }
 
     private var job: ImportJob? {
@@ -209,7 +223,7 @@ struct ImportDetailView: View {
         defer { applying = false }
         if await imports.apply(id) != nil {
             detail = await imports.detail(id)
-            await context.refreshLibrary()
+            await onApplied()
         }
     }
 }

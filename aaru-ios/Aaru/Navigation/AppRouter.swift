@@ -155,7 +155,8 @@ final class AppRouter {
     func open(_ url: URL) -> Bool {
         guard url.scheme == "aaru", url.host() == "settings" else { return false }
         let slug = url.pathComponents.first { $0 != "/" }
-        openSettings(slug.flatMap(SettingsPage.init(rawValue:)))
+        // Trakt's sign-in returns to `aaru://settings/trakt`: that is Import.
+        openSettings(slug == "trakt" ? .imports : slug.flatMap(SettingsPage.init(rawValue:)))
         return true
     }
 
