@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const animate = vi.fn(() => Promise.resolve())
 vi.mock('motion/mini', () => ({ animate }))
 
-const { flip, leave, play } = await import('./motion')
+const { flip, leave, play, pop } = await import('./motion')
 
 function reduceMotion(reduce: boolean) {
   vi.stubGlobal('window', {
@@ -44,6 +44,25 @@ describe('play', () => {
 
   it('does nothing on the server', async () => {
     await play(box(0, 0) as unknown as Element, { opacity: [0, 1] })
+    expect(animate).not.toHaveBeenCalled()
+  })
+})
+
+describe('pop', () => {
+  it('scales up to rest once, short and without overshoot', async () => {
+    reduceMotion(false)
+    const el = box(0, 0) as unknown as Element
+    await pop(el)
+    expect(animate).toHaveBeenCalledWith(
+      el,
+      { transform: ['scale(0.85)', 'scale(1)'] },
+      { duration: 0.2, ease: [0.2, 0.7, 0.2, 1] },
+    )
+  })
+
+  it('does nothing with reduced motion', async () => {
+    reduceMotion(true)
+    await pop(box(0, 0) as unknown as Element)
     expect(animate).not.toHaveBeenCalled()
   })
 })
