@@ -38,6 +38,8 @@ struct CatalogTitle: Sendable, Equatable {
     var hit: CatalogHit
     var status: TitleStatus?
     var runtimeMinutes: Int?
+    /// CAT-018: the provider's genre names, in its order. Empty for books.
+    var genres: [String] = []
 }
 
 struct CatalogEpisode: Sendable, Equatable {

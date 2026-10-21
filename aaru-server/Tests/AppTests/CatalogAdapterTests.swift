@@ -178,4 +178,27 @@ struct CatalogAdapterTests {
         #expect(result.episodes.allSatisfy { $0.season == 1 && $0.airsAt != nil })
         #expect(result.episodes.map(\.name) == ["Pilot", "The Second One", nil], "named from streaming links")
     }
+
+    @Test("CAT-018: TMDB and AniList records carry their genre names")
+    func genres() async throws {
+        let tmdb = transport([
+            "/movie/329865": #"""
+            {"id":329865,"title":"Arrival","release_date":"2016-11-10","runtime":116,
+             "genres":[{"id":18,"name":"Drama"},{"id":878,"name":"Science Fiction"},{"id":9648,"name":" "}]}
+            """#,
+        ])
+        let movie = try await TMDBCatalog(client: client(tmdb, "tmdb"), apiKey: "v3key")
+            .hydrate(ids: ExternalIDs(tmdb: "329865"), type: .movie)
+        #expect(movie?.genres == ["Drama", "Science Fiction"])
+
+        let anilist = transport(["": #"""
+        {"data":{"Media":{"id":154587,"format":"TV","title":{"romaji":"Sousou no Frieren"},
+          "genres":["Adventure","Drama","Fantasy"]}}}
+        """#])
+        let anime = try await AniListCatalog(client: client(anilist, "anilist"))
+            .hydrate(ids: ExternalIDs(anilist: "154587"), type: .show)
+        #expect(anime?.genres == ["Adventure", "Drama", "Fantasy"])
+        let body = try #require(anilist.requests.first?.body.flatMap { String(bytes: $0, encoding: .utf8) })
+        #expect(body.contains("genres"))
+    }
 }

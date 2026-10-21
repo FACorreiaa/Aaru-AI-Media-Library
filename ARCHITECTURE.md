@@ -83,6 +83,9 @@ A canonical work Aaru knows about. Created on first add or during import hydrati
 - `posterURL` (catalog URL, not hosted)
 - `ids` — `ExternalIDs`
 - `seasons` — only for shows; episode lists may be lazy-loaded
+- `genres` (server-only, CAT-018) — the provider's genre names, stored at hydration (TMDB,
+  AniList; books none) and backfilled by the catalog refresher. Not on the `Title` DTO; the
+  stats read them
 
 Titles are shared across users. Do not put ratings or status on `Title`.
 
