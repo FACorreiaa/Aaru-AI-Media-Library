@@ -15,8 +15,9 @@ extension ImportService {
         var watch: [EpisodeKey] = []
     }
 
-    func decide(_ row: ImportRow, titleID: TitleID, userID: UserID) async throws -> Decision {
-        guard let item = try await stores.library.item(userID: userID, titleID: titleID) else {
+    /// `item` is the user's item for the title as `importStates` read it, nil when they have none.
+    static func decide(_ row: ImportRow, item: ImportItemState?) -> Decision {
+        guard let item else {
             let status = row.status ?? (row.watched?.isEmpty == false ? .inProgress : .wishlist)
             let fields = ItemFields(
                 status: status, rating: Self.rating(row.rating), notes: nil, isOwned: false,
@@ -24,14 +25,8 @@ extension ImportService {
             )
             return Decision(outcome: .create, fields: fields, watch: row.watched ?? [])
         }
-        guard let entry = try await stores.library.entry(id: item.id, userID: userID, now: now()) else {
-            return Decision(outcome: .skip, reason: "Already on your shelf.")
-        }
-        var fields = ItemFields(
-            status: item.status, rating: item.rating?.value, notes: item.notes, isOwned: item.isOwned,
-            finishedAt: item.finishedAt, bookPage: entry.bookProgress?.page, bookPercent: entry.bookProgress?.percent
-        )
-        let moved = try await promote(&fields, by: row, itemID: item.id)
+        var fields = item.fields
+        let moved = promote(&fields, by: row, byHand: item.statusByHand)
         var filled: [String] = []
         if fields.rating == nil, let rating = Self.rating(row.rating) {
             fields.rating = rating
@@ -42,8 +37,7 @@ extension ImportService {
             filled.append("finish date")
         }
         let fieldsChanged = moved != nil || !filled.isEmpty
-        let ticked = try await stores.library.watched(itemID: item.id)
-        let missing = (row.watched ?? []).filter { !ticked.contains($0) }.sorted()
+        let missing = (row.watched ?? []).filter { !item.watched.contains($0) }.sorted()
         if !missing.isEmpty {
             filled.append(missing.count == 1 ? "1 watched episode" : "\(missing.count) watched episodes")
         }
@@ -51,18 +45,15 @@ extension ImportService {
             return Decision(outcome: .skip, reason: "Already on your shelf; nothing new to add.")
         }
         return Decision(
-            outcome: .update, reason: reason, fields: fields, fieldsChanged: fieldsChanged, itemID: item.id,
+            outcome: .update, reason: reason, fields: fields, fieldsChanged: fieldsChanged, itemID: item.itemID,
             watch: missing
         )
     }
 
     /// Moves the status forward when the row is further along. Returns the new status, if any.
-    private func promote(_ fields: inout ItemFields, by row: ImportRow, itemID: LibraryItemID) async throws
-        -> LibraryStatus?
-    {
+    private static func promote(_ fields: inout ItemFields, by row: ImportRow, byHand: Bool) -> LibraryStatus? {
         let incoming = row.status ?? (row.watched?.isEmpty == false ? .inProgress : nil)
-        guard let incoming, fields.status != .dropped, incoming.importRank > fields.status.importRank,
-              try await !stores.library.statusSetByHand(itemID: itemID)
+        guard let incoming, fields.status != .dropped, incoming.importRank > fields.status.importRank, !byHand
         else { return nil }
         fields.status = incoming
         return incoming

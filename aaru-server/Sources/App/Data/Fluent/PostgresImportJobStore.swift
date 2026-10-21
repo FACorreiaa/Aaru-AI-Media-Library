@@ -154,11 +154,18 @@ struct PostgresImportJobStore: ImportJobStore {
 
     func savePlan(_ job: ImportJob, rows: [PlannedRow]) async throws {
         try await sql.transaction { sql in
-            for row in rows {
+            // A few hundred rows per statement, like `insertRows`: a 2,000-row plan is four UPDATEs.
+            for start in stride(from: 0, to: rows.count, by: Self.insertChunk) {
+                let values = SQLList(rows[start ..< min(start + Self.insertChunk, rows.count)].map { row in
+                    SQLQueryString("""
+                    (\(bind: row.index)::int, \(bind: row.outcome.rawValue)::text, \(bind: row.reason)::text,
+                     \(bind: row.titleID?.rawValue)::uuid, \(bind: row.row)::jsonb)
+                    """)
+                })
                 try await sql.raw("""
-                UPDATE import_rows SET outcome = \(bind: row.outcome.rawValue), reason = \(bind: row.reason),
-                    title_id = \(bind: row.titleID?.rawValue), row = \(bind: row.row)
-                WHERE job_id = \(bind: job.id.rawValue) AND idx = \(bind: row.index)
+                UPDATE import_rows r SET outcome = v.outcome, reason = v.reason, title_id = v.title_id, row = v.row
+                FROM (VALUES \(values)) AS v(idx, outcome, reason, title_id, row)
+                WHERE r.job_id = \(bind: job.id.rawValue) AND r.idx = v.idx
                 """).run()
             }
             try await sql.raw("""

@@ -144,9 +144,22 @@ protocol AnimeMappingStore: Sendable {
     func mapping(mal: String) async throws -> AnimeMapping?
     /// The mappings known for any of these AniList ids, in one query.
     func mappings(anilist: [String]) async throws -> [AnimeMapping]
+    /// `mapping(mal:)` for many MAL ids in one query, keyed by MAL id.
+    func mappings(mal: [String]) async throws -> [String: AnimeMapping]
     func upsert(_ mapping: AnimeMapping) async throws
     /// Upserts in batches inside one transaction; re-running with the same rows changes nothing.
     func upsertMany(_ mappings: [AnimeMapping]) async throws
+}
+
+extension AnimeMappingStore {
+    /// Id by id, for stores without a batched read.
+    func mappings(mal ids: [String]) async throws -> [String: AnimeMapping] {
+        var result: [String: AnimeMapping] = [:]
+        for id in Set(ids) {
+            result[id] = try await mapping(mal: id)
+        }
+        return result
+    }
 }
 
 /// The library and its journal. Every write goes through `apply`, which runs the op,
@@ -181,6 +194,52 @@ protocol LibraryStore: Sendable {
     func undo(actionID: UUID, userID: UserID) async throws -> ActionRecord
     /// The user's items among titles carrying these provider ids: Discover's "in library" mark.
     func itemIDs(userID: UserID, matching keys: Set<CatalogKey>) async throws -> [CatalogKey: LibraryItemID]
+    /// Episode ticks of many items at once (the account export), keyed by item.
+    func watched(itemIDs: [LibraryItemID]) async throws -> [LibraryItemID: Set<EpisodeKey>]
+    /// What an import decides against for each of these titles the user has: the item's fields,
+    /// whether its status was set by hand, and its ticks. A plan asks once, not per title.
+    func importStates(userID: UserID, titleIDs: [TitleID]) async throws -> [TitleID: ImportItemState]
+}
+
+/// One library item as an import sees it (IMP-004).
+struct ImportItemState: Sendable, Equatable {
+    var itemID: LibraryItemID
+    /// `statusByHand` stays nil here, so a write built from these fields leaves the flag alone.
+    var fields: ItemFields
+    var statusByHand: Bool
+    var watched: Set<EpisodeKey>
+}
+
+extension LibraryStore {
+    /// Item by item, for stores without a batched read.
+    func watched(itemIDs: [LibraryItemID]) async throws -> [LibraryItemID: Set<EpisodeKey>] {
+        var result: [LibraryItemID: Set<EpisodeKey>] = [:]
+        for id in itemIDs {
+            result[id] = try await watched(itemID: id)
+        }
+        return result
+    }
+
+    /// Title by title, for stores without a batched read.
+    func importStates(userID: UserID, titleIDs: [TitleID]) async throws -> [TitleID: ImportItemState] {
+        var result: [TitleID: ImportItemState] = [:]
+        for titleID in titleIDs {
+            guard let item = try await item(userID: userID, titleID: titleID),
+                  let entry = try await entry(id: item.id, userID: userID, now: Date())
+            else { continue }
+            result[titleID] = try await ImportItemState(
+                itemID: item.id,
+                fields: ItemFields(
+                    status: item.status, rating: item.rating?.value, notes: item.notes, isOwned: item.isOwned,
+                    finishedAt: item.finishedAt, bookPage: entry.bookProgress?.page,
+                    bookPercent: entry.bookProgress?.percent
+                ),
+                statusByHand: statusSetByHand(itemID: item.id),
+                watched: watched(itemID: item.id)
+            )
+        }
+        return result
+    }
 }
 
 /// One provider id on a title of one type. TMDB reuses numbers across movies and shows, so
