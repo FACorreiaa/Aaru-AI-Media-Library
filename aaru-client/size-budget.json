@@ -1,12 +1,12 @@
 {
-  "totalJs": 222862,
+  "totalJs": 229992,
   "css": 12455,
   "shared": 72695,
   "routes": {
     "/": 81648,
     "/about": 76061,
     "/app": 92235,
-    "/app_/discover": 86366,
+    "/app_/discover": 90227,
     "/app_/groups": 85948,
     "/app_/groups/": 74759,
     "/app_/groups/$groupId": 76711,
