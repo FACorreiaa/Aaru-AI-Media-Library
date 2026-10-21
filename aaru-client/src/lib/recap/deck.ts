@@ -22,6 +22,13 @@ export type RecapCard =
   | { kind: 'top'; entry: StatsTitle }
   | { kind: 'topList'; entries: StatsTitle[] }
   | { kind: 'genres'; genres: StatsGenre[] }
+  | {
+      kind: 'onRepeat'
+      artist: string
+      plays: number
+      minutes: number
+      tracks: string[]
+    }
   | { kind: 'kinds'; parts: KindPart[] }
   | { kind: 'finished'; parts: Array<{ kind: MediaKind; count: number }> }
   | { kind: 'run'; days: number; range: string }
@@ -135,6 +142,16 @@ export function cards(stats: Stats): RecapCard[] {
     deck.push({ kind: 'top', entry: stats.topTitles[0] })
   if (stats.topTitles.length > 1)
     deck.push({ kind: 'topList', entries: stats.topTitles })
+  // MUS-008: the period's top artist, only when something was heard.
+  const music = stats.music
+  if (music?.topArtist)
+    deck.push({
+      kind: 'onRepeat',
+      artist: music.topArtist.artist,
+      plays: music.topArtist.count,
+      minutes: music.topArtist.minutes,
+      tracks: music.topArtistTracks.map((row) => row.track),
+    })
   if (stats.topGenres.length > 0)
     deck.push({ kind: 'genres', genres: stats.topGenres })
   const kinds = kindParts(stats)

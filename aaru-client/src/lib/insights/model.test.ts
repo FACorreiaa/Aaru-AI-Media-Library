@@ -4,6 +4,7 @@ import {
   insightsLabel,
   kindDetail,
   kindShares,
+  musicTotals,
   periodFromSearch,
   ratingBars,
   recapPeriod,
@@ -292,5 +293,32 @@ describe('last 7 and 30 days (GAM-006d)', () => {
       { text: '−2', up: false },
     ])
     expect(totals(stats()).every((tile) => tile.delta === undefined)).toBe(true)
+  })
+})
+
+describe('musicTotals', () => {
+  it('counts listens and time, with a change only where it shows (MUS-008)', () => {
+    const tiles = musicTotals({
+      listens: 40,
+      minutes: 150,
+      priorListens: 35,
+      priorMinutes: 140,
+      topArtistTracks: [],
+    })
+    expect(tiles.map((tile) => [tile.label, tile.value])).toEqual([
+      ['Listens', '40'],
+      ['Time', '3 h'],
+    ])
+    expect(tiles[0].delta).toEqual({ text: '+5', up: true })
+    expect(tiles[1].delta).toEqual({ text: '+10 min', up: true })
+    // No prior window, or no change: nothing shows.
+    expect(
+      musicTotals({
+        listens: 1,
+        minutes: 30,
+        priorMinutes: 30,
+        topArtistTracks: [],
+      }).map((tile) => tile.delta),
+    ).toEqual([undefined, undefined])
   })
 })

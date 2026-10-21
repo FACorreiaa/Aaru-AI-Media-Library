@@ -175,7 +175,7 @@ struct HomeScreen: View {
     @ViewBuilder private var summary: some View {
         if let stats = model.weekStats {
             NavigationLink {
-                InsightsView(api: api, model: InsightsModel(api: api, span: .last7))
+                InsightsView(api: api, library: library, model: InsightsModel(api: api, span: .last7))
             } label: {
                 WeekStrip(stats: stats)
             }

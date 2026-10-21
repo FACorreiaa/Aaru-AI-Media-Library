@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js'
 import {
   FIRST_LISTEN_POLL_MS,
@@ -135,6 +136,12 @@ export function MusicSection(props: {
             <span class="block text-xs text-muted">
               {listenDetail(listen())}
             </span>
+            <Link
+              to="/app/music"
+              class="mt-1 inline-block font-semibold text-accent hover:underline"
+            >
+              All listening ›
+            </Link>
           </p>
         )}
       </Show>

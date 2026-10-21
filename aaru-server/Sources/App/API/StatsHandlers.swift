@@ -50,7 +50,26 @@ extension Components.Schemas.Stats {
             last: stats.last.map { .init(title: .init($0.title), at: $0.date) },
             topGenres: stats.topGenres.map { .init(name: $0.name, minutes: $0.minutes, titles: $0.titles) },
             biggestDay: stats.biggestDay.map(Components.Schemas.StatsBucket.init),
-            persona: stats.persona.flatMap { .init(rawValue: $0.rawValue) }
+            persona: stats.persona.flatMap { .init(rawValue: $0.rawValue) },
+            music: stats.music.map(Components.Schemas.StatsMusic.init)
+        )
+    }
+}
+
+extension Components.Schemas.StatsMusic {
+    init(_ music: ListenSummary) {
+        self.init(
+            listens: music.listens,
+            minutes: Int(music.durationMs / 60000),
+            priorListens: music.priorListens,
+            priorMinutes: music.priorDurationMs.map { Int($0 / 60000) },
+            topArtist: music.topArtist.map { top in
+                .init(
+                    artist: top.artist, count: top.count, minutes: Int(top.durationMs / 60000),
+                    coverUrl: top.releaseGroupMBID.flatMap(MusicBrainzCatalog.coverURL(releaseGroup:))?.absoluteString
+                )
+            },
+            topArtistTracks: music.topArtistTracks.map { .init(track: $0.track ?? "", count: $0.count) }
         )
     }
 }

@@ -377,6 +377,14 @@ empty days. They have no "Play as story" and no stepper.
 Static: bars are drawn at their final height, nothing counts up. The Recap motion rules (§17)
 still apply to anything that ever moves here.
 
+Music (MUS-008, 2026-10-21) comes last, under the library's numbers, and shows even when nothing
+was tracked: listening is not library activity. Two tiles (listens, hours) with the same change
+rules, an Artists / Tracks / Albums switch over the top five, and "All listening ›" to the Music
+page. That page is Recent and Top: rows of a 40pt cover (a ♪ while the album is unknown), the
+track, "artist · album" and the time, under Today / Yesterday / date headings, fifty at a time;
+Top is twenty rows for 7 days, 30 days, this year or all time. Wide screens show both side by
+side; a phone switches Recent | Top. An album row is a link only where it leads somewhere.
+
 ## 14. Week grid (Phase 2)
 
 The `CalendarMonth` (§7) answers "what did I miss." The week grid answers "what is on this
@@ -564,6 +572,11 @@ Explorer, The Steady One; copy is the owner's to approve). Year order: intro · 
 biggest day · top · top five · genres · kinds · finished · run · ratings · bookends · persona ·
 summary. The share image adds the top genre and the persona, stepping its type down a size past
 five lines; still no posters.
+
+"On repeat" (MUS-008, 2026-10-21) follows the top five, month or year, only when the period has
+listens: the top artist large, "N plays · H hours", and that artist's three most played tracks.
+The share image and the persona ignore music, and a period with listens but no library activity
+still gets no story.
 
 Motion rules (the first written ones; they hold for any later surface):
 - Entrances only. Elements rise in once on a short stagger, numbers count up once, bars grow

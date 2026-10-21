@@ -7419,6 +7419,8 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/persona`.
             public var persona: Components.Schemas.Stats.PersonaPayload?
+            /// - Remark: Generated from `#/components/schemas/Stats/music`.
+            public var music: Components.Schemas.StatsMusic?
             /// Creates a new `Stats`.
             ///
             /// - Parameters:
@@ -7443,6 +7445,7 @@ public enum Components {
             ///   - topGenres: GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored.
             ///   - biggestDay:
             ///   - persona: GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+            ///   - music:
             public init(
                 span: Components.Schemas.Stats.SpanPayload,
                 year: Swift.Int,
@@ -7464,7 +7467,8 @@ public enum Components {
                 last: Components.Schemas.StatsMoment? = nil,
                 topGenres: [Components.Schemas.StatsGenre],
                 biggestDay: Components.Schemas.StatsBucket? = nil,
-                persona: Components.Schemas.Stats.PersonaPayload? = nil
+                persona: Components.Schemas.Stats.PersonaPayload? = nil,
+                music: Components.Schemas.StatsMusic? = nil
             ) {
                 self.span = span
                 self.year = year
@@ -7487,6 +7491,7 @@ public enum Components {
                 self.topGenres = topGenres
                 self.biggestDay = biggestDay
                 self.persona = persona
+                self.music = music
             }
             public enum CodingKeys: String, CodingKey {
                 case span
@@ -7510,6 +7515,124 @@ public enum Components {
                 case topGenres
                 case biggestDay
                 case persona
+                case music
+            }
+        }
+        /// MUS-008: the period's listening, apart from the library's numbers (listening never adds to them). Absent when nothing was heard.
+        ///
+        /// - Remark: Generated from `#/components/schemas/StatsMusic`.
+        public struct StatsMusic: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/listens`.
+            public var listens: Swift.Int
+            /// Listens whose length is known
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/minutes`.
+            public var minutes: Swift.Int
+            /// The previous equal-length window; rolling spans only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/priorListens`.
+            public var priorListens: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/priorMinutes`.
+            public var priorMinutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/topArtist`.
+            public struct TopArtistPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/StatsMusic/topArtist/artist`.
+                public var artist: Swift.String
+                /// - Remark: Generated from `#/components/schemas/StatsMusic/topArtist/count`.
+                public var count: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/StatsMusic/topArtist/minutes`.
+                public var minutes: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/StatsMusic/topArtist/coverUrl`.
+                public var coverUrl: Swift.String?
+                /// Creates a new `TopArtistPayload`.
+                ///
+                /// - Parameters:
+                ///   - artist:
+                ///   - count:
+                ///   - minutes:
+                ///   - coverUrl:
+                public init(
+                    artist: Swift.String,
+                    count: Swift.Int,
+                    minutes: Swift.Int,
+                    coverUrl: Swift.String? = nil
+                ) {
+                    self.artist = artist
+                    self.count = count
+                    self.minutes = minutes
+                    self.coverUrl = coverUrl
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case artist
+                    case count
+                    case minutes
+                    case coverUrl
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/topArtist`.
+            public var topArtist: Components.Schemas.StatsMusic.TopArtistPayload?
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/TopArtistTracksPayload`.
+            public struct TopArtistTracksPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/StatsMusic/TopArtistTracksPayload/track`.
+                public var track: Swift.String
+                /// - Remark: Generated from `#/components/schemas/StatsMusic/TopArtistTracksPayload/count`.
+                public var count: Swift.Int
+                /// Creates a new `TopArtistTracksPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - track:
+                ///   - count:
+                public init(
+                    track: Swift.String,
+                    count: Swift.Int
+                ) {
+                    self.track = track
+                    self.count = count
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case track
+                    case count
+                }
+            }
+            /// The top artist's three most played tracks.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/topArtistTracks`.
+            public typealias TopArtistTracksPayload = [Components.Schemas.StatsMusic.TopArtistTracksPayloadPayload]
+            /// The top artist's three most played tracks.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsMusic/topArtistTracks`.
+            public var topArtistTracks: Components.Schemas.StatsMusic.TopArtistTracksPayload
+            /// Creates a new `StatsMusic`.
+            ///
+            /// - Parameters:
+            ///   - listens:
+            ///   - minutes: Listens whose length is known
+            ///   - priorListens: The previous equal-length window; rolling spans only.
+            ///   - priorMinutes:
+            ///   - topArtist:
+            ///   - topArtistTracks: The top artist's three most played tracks.
+            public init(
+                listens: Swift.Int,
+                minutes: Swift.Int,
+                priorListens: Swift.Int? = nil,
+                priorMinutes: Swift.Int? = nil,
+                topArtist: Components.Schemas.StatsMusic.TopArtistPayload? = nil,
+                topArtistTracks: Components.Schemas.StatsMusic.TopArtistTracksPayload
+            ) {
+                self.listens = listens
+                self.minutes = minutes
+                self.priorListens = priorListens
+                self.priorMinutes = priorMinutes
+                self.topArtist = topArtist
+                self.topArtistTracks = topArtistTracks
+            }
+            public enum CodingKeys: String, CodingKey {
+                case listens
+                case minutes
+                case priorListens
+                case priorMinutes
+                case topArtist
+                case topArtistTracks
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsGenre`.
@@ -7709,6 +7832,14 @@ public enum Components {
                 public var count: Swift.Int
                 /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/minutes`.
                 public var minutes: Swift.Int
+                /// The cover of the newest identified album among the row's listens.
+                ///
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/coverUrl`.
+                public var coverUrl: Swift.String?
+                /// Ranking tracks or albums: that album, by MusicBrainz id, and by Aaru's title id once it is in the catalog.
+                ///
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/albumRef`.
+                public var albumRef: Components.Schemas.MediaRef?
                 /// Creates a new `ItemsPayloadPayload`.
                 ///
                 /// - Parameters:
@@ -7717,18 +7848,24 @@ public enum Components {
                 ///   - album: Present when ranking albums.
                 ///   - count:
                 ///   - minutes:
+                ///   - coverUrl: The cover of the newest identified album among the row's listens.
+                ///   - albumRef: Ranking tracks or albums: that album, by MusicBrainz id, and by Aaru's title id once it is in the catalog.
                 public init(
                     artist: Swift.String,
                     track: Swift.String? = nil,
                     album: Swift.String? = nil,
                     count: Swift.Int,
-                    minutes: Swift.Int
+                    minutes: Swift.Int,
+                    coverUrl: Swift.String? = nil,
+                    albumRef: Components.Schemas.MediaRef? = nil
                 ) {
                     self.artist = artist
                     self.track = track
                     self.album = album
                     self.count = count
                     self.minutes = minutes
+                    self.coverUrl = coverUrl
+                    self.albumRef = albumRef
                 }
                 public enum CodingKeys: String, CodingKey {
                     case artist
@@ -7736,6 +7873,8 @@ public enum Components {
                     case album
                     case count
                     case minutes
+                    case coverUrl
+                    case albumRef
                 }
             }
             /// - Remark: Generated from `#/components/schemas/ListenTop/items`.
@@ -18730,6 +18869,10 @@ public enum Operations {
                 ///
                 /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/limit`.
                 public var limit: Swift.Int?
+                /// Only this artist's listens, compared case- and space-folded (MUS-008).
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/artist`.
+                public var artist: Swift.String?
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
@@ -18739,13 +18882,15 @@ public enum Operations {
                 ///   - month: 1–12. Absent means the whole year.
                 ///   - tz: IANA time zone for day and month boundaries. Absent means UTC.
                 ///   - limit: 1–50, default 10.
+                ///   - artist: Only this artist's listens, compared case- and space-folded (MUS-008).
                 public init(
                     by: Operations.GetTopListens.Input.Query.ByPayload,
                     year: Swift.Int? = nil,
                     span: Operations.GetTopListens.Input.Query.SpanPayload? = nil,
                     month: Swift.Int? = nil,
                     tz: Swift.String? = nil,
-                    limit: Swift.Int? = nil
+                    limit: Swift.Int? = nil,
+                    artist: Swift.String? = nil
                 ) {
                     self.by = by
                     self.year = year
@@ -18753,6 +18898,7 @@ public enum Operations {
                     self.month = month
                     self.tz = tz
                     self.limit = limit
+                    self.artist = artist
                 }
             }
             public var query: Operations.GetTopListens.Input.Query

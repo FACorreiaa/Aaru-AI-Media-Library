@@ -6,12 +6,16 @@ import SwiftUI
 /// strip and Library's menu.
 struct InsightsView: View {
     let api: Client?
+    /// Lets Music's album rows open their title page; only stacks that route library item ids
+    /// pass it.
+    let library: LibraryModel?
 
     @State private var model: InsightsModel
     @State private var recap: RecapPeriod?
 
-    init(api: Client?, model: InsightsModel? = nil) {
+    init(api: Client?, library: LibraryModel? = nil, model: InsightsModel? = nil) {
         self.api = api
+        self.library = library
         _model = State(initialValue: model ?? InsightsModel(api: api))
     }
 
@@ -55,6 +59,11 @@ struct InsightsView: View {
                         .buttonStyle(.bordered)
                 }
                 StatsPanel(stats: stats)
+            }
+            // MUS-008: listening is not library activity, so it shows even when nothing was tracked.
+            if let music = stats.music {
+                MusicInsights(music: music, period: model.period, api: api, library: library)
+                    .padding(.top, 8)
             }
         } else if model.problem == nil {
             ProgressView().frame(maxWidth: .infinity, minHeight: 200)

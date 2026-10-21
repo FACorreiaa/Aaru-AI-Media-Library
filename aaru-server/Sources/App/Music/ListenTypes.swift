@@ -61,6 +61,18 @@ struct Listen: Sendable, Equatable {
     }
 }
 
+/// MUS-008 · a period's listening, for Insights and the Recap.
+struct ListenSummary: Sendable, Equatable {
+    var listens: Int
+    var durationMs: Int64
+    /// The previous equal-length window; rolling spans only, as with the library's totals.
+    var priorListens: Int?
+    var priorDurationMs: Int64?
+    var topArtist: ListenTotal?
+    /// The top artist's three most played tracks.
+    var topArtistTracks: [ListenTotal]
+}
+
 /// MUS-006 · one track no one has asked MusicBrainz about yet: its keys, and the newest listen's
 /// spelling with any ids a scrobbler sent.
 struct ListenLookup: Sendable, Equatable {
@@ -82,6 +94,10 @@ struct ListenTotal: Sendable, Equatable {
     var album: String?
     var count: Int
     var durationMs: Int64
+    /// The newest identified album among the row's listens: its cover, and its link once the
+    /// album is in the catalog (MUS-008).
+    var releaseGroupMBID: String?
+    var albumTitleID: UUID?
 }
 
 /// A period's top list and the period's totals.
@@ -99,7 +115,9 @@ protocol ListenStore: Sendable {
     /// Newest first, older than `before` when it is set.
     func listens(userID: UserID, before: Date?, limit: Int) async throws -> [Listen]
     /// The period's totals and its `limit` most played artists, tracks or albums.
-    func top(userID: UserID, by grouping: ListenGrouping, period: StatsPeriod, limit: Int) async throws -> ListenTop
+    /// `artist` narrows it to one artist, compared folded.
+    func top(userID: UserID, by grouping: ListenGrouping, period: StatsPeriod, limit: Int, artist: String?)
+        async throws -> ListenTop
     /// Tracks still waiting for an album that were never looked up, or whose last miss is older
     /// than `retryBefore`; newest listens first.
     func unresolved(retryBefore: Date, limit: Int) async throws -> [ListenLookup]

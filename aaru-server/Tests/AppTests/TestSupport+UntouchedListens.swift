@@ -11,7 +11,9 @@ extension UntouchedStore: ListenStore {
         throw Touched()
     }
 
-    func top(userID _: UserID, by _: ListenGrouping, period _: StatsPeriod, limit _: Int) async throws -> ListenTop {
+    func top(userID _: UserID, by _: ListenGrouping, period _: StatsPeriod, limit _: Int, artist _: String?)
+        async throws -> ListenTop
+    {
         throw Touched()
     }
 

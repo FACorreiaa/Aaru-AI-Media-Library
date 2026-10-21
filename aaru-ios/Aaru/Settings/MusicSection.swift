@@ -21,9 +21,13 @@ struct MusicSection: View {
                 ProgressView().frame(maxWidth: .infinity)
             }
             if let latest {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Last listen: \(latest.track) — \(latest.artist)").foregroundStyle(Color(.ink))
-                    ListenDetail(listen: latest).font(.caption).foregroundStyle(Color(.muted))
+                NavigationLink {
+                    MusicView(api: api)
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Last listen: \(latest.track) — \(latest.artist)").foregroundStyle(Color(.ink))
+                        ListenDetail(listen: latest).font(.caption).foregroundStyle(Color(.muted))
+                    }
                 }
             }
             ForEach(tokens, id: \.id) { token in
