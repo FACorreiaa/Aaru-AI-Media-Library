@@ -4,6 +4,7 @@ import {
   appearanceCookie,
   appearanceFromCookieHeader,
   daypart,
+  daypartHeading,
   parseAppearance,
   themeColorMeta,
 } from './appearance'
@@ -75,5 +76,22 @@ describe('daypart', () => {
       })
       expect(dataset.daypart).toBe(daypart(hour))
     }
+  })
+})
+
+describe('daypartHeading', () => {
+  it('names the weekday and the part of the day', () => {
+    expect(daypartHeading(new Date('2026-10-20T19:00:00Z'), 'UTC')).toBe(
+      'Tuesday evening',
+    )
+    expect(daypartHeading(new Date('2026-10-20T12:00:00Z'), 'UTC')).toBe(
+      'Tuesday',
+    )
+    expect(daypartHeading(new Date('2026-10-20T06:00:00Z'), 'UTC')).toBe(
+      'Tuesday morning',
+    )
+    expect(daypartHeading(new Date('2026-10-20T23:30:00Z'), 'UTC')).toBe(
+      'Tuesday night',
+    )
   })
 })

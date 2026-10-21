@@ -102,3 +102,21 @@ export function daypart(hour: number): Daypart {
 export const DAYPART_SCRIPT = `(function(){var h=new Date().getHours(),p='night';${DAYPART_STARTS.map(
   ([name, start]) => `if(h>=${start})p='${name}';`,
 ).join('')}document.documentElement.dataset.daypart=p})()`
+
+/** "Tuesday evening": the Field's sense of when it is. */
+export function daypartHeading(date: Date, timeZone?: string): string {
+  const weekday = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    timeZone,
+  }).format(date)
+  const hour = Number(
+    new Intl.DateTimeFormat('en-GB', {
+      hour: 'numeric',
+      hourCycle: 'h23',
+      timeZone,
+    }).format(date),
+  )
+  const part = daypart(hour)
+  if (part === 'day') return weekday
+  return `${weekday} ${part === 'dawn' ? 'morning' : part === 'dusk' ? 'evening' : 'night'}`
+}
