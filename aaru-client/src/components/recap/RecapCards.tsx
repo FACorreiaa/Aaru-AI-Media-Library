@@ -2,14 +2,10 @@ import { For, Match, Show, Switch } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { Poster } from '../Poster'
 import { hoursLabel } from '../../lib/home/model'
-import {
-  countLabel,
-  dayLabel,
-  periodLabel,
-  ratingLabel,
-  titleKind,
-} from '../../lib/recap/model'
-import type { RecapCard, Stats, StatsTitle } from '../../lib/recap/model'
+import { countLabel, ratingLabel, titleKind } from '../../lib/recap/deck'
+import type { RecapCard } from '../../lib/recap/deck'
+import { dayLabel, periodLabel } from '../../lib/recap/model'
+import type { Stats, StatsTitle } from '../../lib/recap/model'
 import { createCountUp } from './motion'
 
 // GAM-006a/e: one full-height card of the Recap story per `RecapCard` kind. Entrances are CSS

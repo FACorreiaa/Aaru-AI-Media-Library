@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  bars,
-  cards,
-  kindParts,
-  offeredRecap,
-  periodLabel,
-  shareLines,
-  timeCaption,
-} from './model'
+import { cards, kindParts, shareLines, timeCaption } from './deck'
+import { bars, offeredRecap, periodLabel } from './model'
 import type { Stats, TitleSummary } from './model'
 
 function title(

@@ -1,4 +1,5 @@
-import { periodLabel, shareLines } from '../../lib/recap/model'
+import { shareLines } from '../../lib/recap/deck'
+import { periodLabel } from '../../lib/recap/model'
 import type { Stats } from '../../lib/recap/model'
 
 // GAM-006a: the Recap's share image, drawn on a canvas from the user's own numbers. Text and
