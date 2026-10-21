@@ -21,6 +21,27 @@ extension APIImplementation {
         }))))
     }
 
+    func getDiscoverSeason(
+        _ input: Operations.GetDiscoverSeason.Input
+    ) async throws -> Operations.GetDiscoverSeason.Output {
+        let query = input.query
+        guard let kind = SeasonKind(rawValue: query.kind.rawValue),
+              let season = SeasonOfYear(rawValue: query.season.rawValue)
+        else { throw AppError.badRequest() }
+        let key = SeasonKey(season: season, year: query.year)
+        let result = try await services.discover.season(
+            key, kind: kind, page: query.page ?? 1, userID: currentUser()
+        )
+        let (from, until) = key.days
+        return .ok(.init(body: .json(.init(
+            kind: .init(rawValue: kind.rawValue) ?? .anime,
+            season: .init(rawValue: season.rawValue) ?? .winter,
+            year: key.year, from: from, until: until, title: key.title,
+            items: result.items.map { Components.Schemas.CatalogHit($0.hit, libraryItemID: $0.libraryItemID) },
+            page: result.page, hasMore: result.hasMore, total: result.total, unavailable: result.unavailable
+        ))))
+    }
+
     func getTitle(_ input: Operations.GetTitle.Input) async throws -> Operations.GetTitle.Output {
         guard let id = TitleID(uuidString: input.path.id) else { throw AppError.notFound() }
         return try await .ok(.init(body: .json(.init(catalog.detail(id)))))

@@ -1175,6 +1175,47 @@ paths:
                 $ref: '#/components/schemas/DiscoverRows'
         default:
           $ref: '#/components/responses/Error'
+  /v1/discover/season:
+    get:
+      operationId: getDiscoverSeason
+      summary: One season's titles for the Seasons view (DISC-002), a page at a time.
+      description: >-
+        A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep,
+        fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date,
+        returning shows by an episode airing that season, films by first release. The same
+        lists for every user, cached by the server; items the caller has carry `libraryItemId`.
+      parameters:
+        - name: kind
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [anime, shows_new, shows_returning, movies]
+        - name: season
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [winter, spring, summer, fall]
+        - name: year
+          in: query
+          required: true
+          description: 1970 to next year; anything else is 422 `validation_failed`.
+          schema: {type: integer}
+        - name: page
+          in: query
+          required: false
+          description: 1-based, at most 20.
+          schema: {type: integer, default: 1}
+      responses:
+        '200':
+          description: The page. `unavailable` when the provider is down and nothing is cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonPage'
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}:
     get:
       operationId: getTitle
@@ -2642,6 +2683,37 @@ components:
         rows:
           type: array
           items: {$ref: '#/components/schemas/DiscoverRow'}
+    SeasonPage:
+      type: object
+      required: [kind, season, year, from, until, title, items, page, hasMore, unavailable]
+      properties:
+        kind:
+          type: string
+          enum: [anime, shows_new, shows_returning, movies]
+        season:
+          type: string
+          enum: [winter, spring, summer, fall]
+        year: {type: integer}
+        from:
+          type: string
+          description: First day of the season, YYYY-MM-DD.
+        until:
+          type: string
+          description: Last day of the season, YYYY-MM-DD.
+        title:
+          type: string
+          description: Display name, e.g. "Fall 2026".
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CatalogHit'}
+        page: {type: integer}
+        hasMore: {type: boolean}
+        total:
+          type: integer
+          description: The provider's count for the whole season, when it gives one.
+        unavailable:
+          type: boolean
+          description: The provider did not answer and nothing was cached; not an empty season.
     Episode:
       type: object
       required: [season, number, airTimeKnown]

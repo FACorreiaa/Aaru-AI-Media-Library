@@ -203,7 +203,8 @@ Owner's exceptions are recorded in `BACKLOG.md` decisions (Recap 2026-10-16; Str
 scrobble service and addon 2026-10-19; Discover rows (DISC-001), the Discover tab, Insights
 and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remote approval
 2026-10-20; groups, with minimal friends, the groups gateway and a minimal model provider,
-2026-10-20).
+2026-10-20; Seasons on Discover (DISC-002) and music as a fifth kind with new albums and
+concerts (MUS-001…003), 2026-10-21).
 
 ## Out of scope (do not add unless asked)
 
