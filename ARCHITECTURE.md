@@ -872,6 +872,13 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
 - It is a pure client: no database binding, no business logic, no vendor calls. A rule that
   matters lives on the server.
 - Do not fork DTO meaning for the web.
+- UI layer (2026-10-21): every shadcn-solid component, on Kobalte (and corvu, embla, cmdk-solid,
+  somoto, unovis where the registry uses them), copied as source into `src/components/ui` and
+  imported only through its barrel `~/components/ui`. Its CSS variables point at Aaru's design
+  tokens (`src/styles.css`), so the look is Aaru's. Routes and feature components compose those
+  primitives; compositions such as `ConfirmDialog` live in `src/components`, not in `ui`. ESLint
+  enforces the barrel and (from step 2 of the web audit) bans raw form controls and modals.
+  Motion stays in `src/lib/motion.ts` (DESIGN.md §17).
 
 ## Tracking integrations (Phase 3)
 

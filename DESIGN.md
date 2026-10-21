@@ -580,13 +580,25 @@ Motion rules (the first written ones; they hold for any later surface):
 - The share image carries only the user's own numbers and the brand, no posters, so the web
   canvas and the Apple renderer draw the same card. Nothing is shared without a tap.
 
-On the web (2026-10-20), performance comes first:
-- **Native HTML first, CSS before Motion.** `aaru-client/src/components/ui` keeps solid-ui's
-  component shapes on native elements: `<dialog>` for modals and confirms, native radios for
-  segmented controls and radio groups, a `role="switch"` checkbox, `<details>`, `<select>`.
-  Tabs and toasts are a few lines of our own. Kobalte was measured and dropped (2026-10-21):
-  +36 KB gzip, +29 KB on the week page, for what the browser already does. Entrances stay CSS
-  keyframes.
+On the web, one component library, then performance:
+- **shadcn-solid on Kobalte, every component (owner, 2026-10-21).** This reverses the
+  2026-10-20 "native HTML first, Kobalte measured and dropped" rule. All 46 shadcn-solid
+  components live as source in `aaru-client/src/components/ui` (Kobalte, plus corvu, embla,
+  cmdk-solid, somoto, unovis and solid-table where the registry uses them) and are imported
+  only through the `~/components/ui` barrel. One `cn` (`tailwind-merge` + `clsx`, in
+  `~/lib/utils`), `cva`/`cx` as the registry ships them (`~/lib/cva`). shadcn's CSS variables
+  are Aaru's tokens, so `bg-primary` is the teal and a menu's highlighted row is teal with
+  on-accent text, the way a system menu highlights; Aaru's own looks (pill buttons at 44 pt,
+  `quiet`/`ink`/`soft`, segment chips) are variants on those components.
+- **Enter and exit from `tw-animate-css`.** Kobalte overlays animate with its
+  `data-[expanded]:animate-in` / `data-[closed]:animate-out` classes. With reduced motion a
+  global rule in `styles.css` turns every one of them off (and the components' transitions),
+  so Kobalte unmounts at once. Page entrances stay CSS keyframes.
+- **Measured (2026-10-21, gzip):** every page's shared JS 72.0 → 83.7 KB (+11.7), `/app`
+  95.3 → 115.4, `/app_/week` 88.8 → 111.5, `/app_/settings` 75.4 → 95.5, `/app_/title/$id`
+  88.3 → 125.4 (the heaviest, with Kobalte's ToggleGroup, Switch, Dialog and somoto), all JS
+  247.5 → 291.5, CSS 13.9 → 25.2. Accepted by the owner. Without `"sideEffects"` in
+  `package.json` the barrel did not tree-shake and every page carried 152 KB; keep it.
 - **Motion only for what CSS cannot do:** an exit before an element leaves, siblings sliding
   into the gap (FLIP), direction-aware swaps, and one short scale pop when the user ticks an
   episode (never on load). Through `src/lib/motion.ts` on `motion/mini`, only `transform` and
