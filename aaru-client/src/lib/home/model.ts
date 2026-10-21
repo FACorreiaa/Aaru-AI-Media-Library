@@ -138,11 +138,18 @@ export function hoursLabel(minutes: number): string {
   return plural(Math.round(minutes / 60), 'hour')
 }
 
+export interface WeekStrip {
+  /** Episodes · hours · finished · active days, each left out at zero. */
+  parts: string[]
+  /** Seven heights, 0…1 of the busiest day by time, oldest first. */
+  days: number[]
+}
+
 /**
- * Home's "this month" strip: episodes · hours · finished · active days, each left out at zero.
- * Empty when nothing was tracked, and then the strip is not shown.
+ * GAM-006d: Home's "last 7 days" strip from `span=last7`. Shown at zero too, so a new account
+ * sees where its week will land; `parts` is empty then.
  */
-export function monthStrip(stats: Stats): string[] {
+export function weekStrip(stats: Stats): WeekStrip {
   const t = stats.totals
   const finished =
     t.moviesFinished + t.showsFinished + t.animeFinished + t.booksFinished
@@ -151,7 +158,8 @@ export function monthStrip(stats: Stats): string[] {
   if (t.minutesWatched > 0) parts.push(hoursLabel(t.minutesWatched))
   if (finished > 0) parts.push(`${finished} finished`)
   if (t.activeDays > 0) parts.push(plural(t.activeDays, 'active day'))
-  return parts
+  const tallest = Math.max(1, ...stats.buckets.map((b) => b.minutes))
+  return { parts, days: stats.buckets.map((b) => b.minutes / tallest) }
 }
 
 export interface CountChip {

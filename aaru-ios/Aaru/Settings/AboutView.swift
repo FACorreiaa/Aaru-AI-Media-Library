@@ -47,6 +47,11 @@ struct AboutView: View {
                     licence: "https://opensource.org/license/mit"
                 )
                 CreditLink("Book data from Open Library", url: "https://openlibrary.org")
+                CreditLink(
+                    "History import from Trakt",
+                    detail: "Aaru uses Trakt but is not endorsed or certified by Trakt.",
+                    url: "https://trakt.tv"
+                )
             } header: {
                 Text("Credits")
             }

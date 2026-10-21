@@ -158,13 +158,13 @@ struct StatsDigestTests {
         let combined: [(year: Int?, month: Int?)] = [(2026, nil), (nil, 3), (2026, 3)]
         for (year, month) in combined {
             #expect {
-                try StatsService.period(allTime: true, year: year, month: month, timeZone: nil, now: now)
+                try StatsService.period(span: .all, year: year, month: month, timeZone: nil, now: now)
             } throws: { ($0 as? AppError)?.details?["span"] != nil }
         }
         #expect {
-            try StatsService.period(allTime: false, year: nil, month: 3, timeZone: nil, now: now)
+            try StatsService.period(span: nil, year: nil, month: 3, timeZone: nil, now: now)
         } throws: { ($0 as? AppError)?.details?["year"] != nil }
-        let lisbon = try StatsService.period(allTime: true, year: nil, month: nil, timeZone: "Europe/Lisbon", now: now)
+        let lisbon = try StatsService.period(span: .all, year: nil, month: nil, timeZone: "Europe/Lisbon", now: now)
         #expect(lisbon.span == .all && lisbon.timeZone.identifier == "Europe/Lisbon")
     }
 

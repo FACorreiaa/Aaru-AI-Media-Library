@@ -83,6 +83,9 @@ A canonical work Aaru knows about. Created on first add or during import hydrati
 - `posterURL` (catalog URL, not hosted)
 - `ids` — `ExternalIDs`
 - `seasons` — only for shows; episode lists may be lazy-loaded
+- `genres` (server-only, CAT-018) — the provider's genre names, stored at hydration (TMDB,
+  AniList; books none) and backfilled by the catalog refresher. Not on the `Title` DTO; the
+  stats read them
 
 Titles are shared across users. Do not put ratings or status on `Title`.
 
@@ -323,6 +326,16 @@ response adds `span` (`month` | `year` | `all`), `byKind` (`movie` | `show` | `a
 episodes, minutes, finished) and `ratings.distribution`: ten bins, index `ceil(rating) - 1`,
 so a 7.5 counts as an 8. No new query and no table.
 
+The last 7 and 30 days (GAM-006d) are `span=last7|last30`: the local days ending today in `tz`,
+one bucket per day, `from`/`until` inclusive. The service reads the window and the equal-length
+window before it in one `activity` call, splits the rows at the window's first day, and digests
+each; the earlier one returns only as `prior` totals, for the clients' deltas. Same rows, same
+rule on imported ticks, no new query and no table.
+
+The Year in Review (GAM-006e) reads `titles.genres` (CAT-018) in the same query and derives
+`topGenres`, `biggestDay` and `persona` in `StatsDigest`. The persona rule lives in the server;
+clients only map its key to words.
+
 ### Calendar and Up Next
 
 Both are derived reads over the user's library. Neither has its own table.
@@ -453,7 +466,10 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - PKCE only: Trakt issues this app no client secret. The server holds the verifier; the browser
   carries a one-time `state` and the `code`. Redirect URI `https://api.<domain>/v1/imports/trakt/callback`
 - OAuth user token stored encrypted at rest (AES-GCM, `TRAKT_TOKEN_KEY`), refreshed before expiry
-- Pull watched history, watchlist, ratings, lists
+  with the connection row locked (refresh tokens are single use); disconnect revokes on Trakt
+- OAuth calls go to `auth.trakt.tv`, data to `api.trakt.tv`; every call sends a `User-Agent`
+- Pull watched history, watchlist, ratings, lists: every list paged at 250, watched shows with
+  `extended=progress` (Trakt sends no episodes without it); 1.5 requests/s, `Retry-After` honoured
 - Map Trakt ids → TMDB/IMDb → `Title`
 - First importer in the merge order
 

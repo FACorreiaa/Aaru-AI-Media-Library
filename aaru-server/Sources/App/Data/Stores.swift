@@ -65,7 +65,7 @@ protocol MagicLinkStore: Sendable {
 
 protocol TitleStore: Sendable {
     /// Throws `StoreConflict` when another title already holds one of its external ids.
-    func insert(_ title: Title, status: TitleStatus?, runtimeMinutes: Int?) async throws
+    func insert(_ title: Title, status: TitleStatus?, runtimeMinutes: Int?, genres: [String]) async throws
     func title(id: TitleID) async throws -> Title?
     /// The title of this type holding any of these ids. TMDB/Trakt ids are type-scoped.
     func find(ids: ExternalIDs, type: MediaType) async throws -> Title?
@@ -86,11 +86,21 @@ protocol TitleStore: Sendable {
     func staleTrackedShows(now: Date, retryAfter: Date, limit: Int) async throws -> [TitleID]
     /// Records an episode refresh attempt, successful or not.
     func markEpisodesAttempted(_ id: TitleID, at date: Date) async throws
+    /// CAT-018 backfill: films, shows and anime in someone's library or on a list that have no
+    /// genres yet and were not tried since `retryAfter`, oldest first.
+    func titlesMissingGenres(retryAfter: Date, limit: Int) async throws -> [Title]
+    /// Stores genres when the title has none yet, and stamps the attempt either way.
+    func fillGenres(_ id: TitleID, _ genres: [String], attemptedAt: Date) async throws
+    func genres(_ id: TitleID) async throws -> [String]
 }
 
 extension TitleStore {
     func insert(_ title: Title) async throws {
-        try await insert(title, status: nil, runtimeMinutes: nil)
+        try await insert(title, status: nil, runtimeMinutes: nil, genres: [])
+    }
+
+    func insert(_ title: Title, status: TitleStatus?, runtimeMinutes: Int?) async throws {
+        try await insert(title, status: status, runtimeMinutes: runtimeMinutes, genres: [])
     }
 }
 
@@ -262,6 +272,13 @@ protocol TraktStore: Sendable {
     func consumeAuthRequest(stateHash: String, now: Date) async throws -> TraktAuthRequest?
     func saveConnection(_ connection: TraktConnectionRecord, userID: UserID) async throws
     func connection(userID: UserID) async throws -> TraktConnectionRecord?
+    /// Replaces the connection with `refresh`'s result while holding its row, so two callers
+    /// never spend the same single-use refresh token. `refresh` sees the row as it is after the
+    /// wait. Nil when the user has no connection.
+    func refreshConnection(
+        userID: UserID,
+        _ refresh: @escaping @Sendable (TraktConnectionRecord) async throws -> TraktConnectionRecord
+    ) async throws -> TraktConnectionRecord?
     func deleteConnection(userID: UserID) async throws
 }
 

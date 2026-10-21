@@ -5,23 +5,33 @@ import {
   useNavigate,
   useRouter,
 } from '@tanstack/solid-router'
-import { For, Show, createSignal } from 'solid-js'
+import { For, Show, createSignal, onMount } from 'solid-js'
+import { optionalString } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { TMDB_NOTICE } from '../lib/credits'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { StremioSection } from '../components/StremioSection'
 import { CatImport } from '../components/CatImport'
+import { TraktImport } from '../components/TraktImport'
 import { ConnectionsSection } from '../components/ConnectionsSection'
 import { NotificationsSection } from '../components/NotificationsSection'
 import { Alert } from '../components/ui/alert'
+import { AlertDialog } from '../components/ui/alert-dialog'
 import { Button, buttonVariants } from '../components/ui/button'
 import { Card } from '../components/ui/card'
-import { FILE_SOURCES, sourceLabel, stateLabel } from '../lib/imports/model'
+import { Toaster } from '../components/ui/toast'
+import {
+  FILE_SOURCES,
+  sourceLabel,
+  stateLabel,
+  traktResult,
+} from '../lib/imports/model'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
 import { readImportFile } from '../lib/imports/file'
 import {
   deleteAccount,
   getAccount,
+  getTraktConnection,
   listImports,
   startAniListImport,
   uploadImport,
@@ -45,12 +55,16 @@ const providerNames = {
 } as const
 export const Route = createFileRoute('/app_/settings')({
   head: () => ({ meta: [{ title: 'Settings · Aaru' }] }),
+  // Trakt's sign-in comes back here with `?trakt=connected|denied|failed`.
+  validateSearch: (search): { trakt?: string } => ({
+    trakt: optionalString(search.trakt),
+  }),
   beforeLoad: async () => {
     const session = await getSession()
     if (!session.signedIn) throw redirect({ to: '/sign-in' })
   },
   loader: async () => {
-    const [account, imports, signIn, stremio, connections, push] =
+    const [account, imports, signIn, stremio, connections, push, trakt] =
       await Promise.all([
         getAccount(),
         listImports(),
@@ -58,11 +72,13 @@ export const Route = createFileRoute('/app_/settings')({
         listStremio(),
         listConnections(),
         getPushSetup(),
+        getTraktConnection(),
       ])
     return {
       account,
       imports,
       stremio,
+      trakt,
       connections,
       push,
       googleClientId: signIn.googleClientId,
@@ -75,12 +91,21 @@ type FileSource = (typeof FILE_SOURCES)[number]['source']
 
 function Settings() {
   const loaded = Route.useLoaderData()
+  const search = Route.useSearch()
   const router = useRouter()
   const navigate = useNavigate()
+  const [trakt, setTrakt] = createSignal(loaded().trakt)
+  const traktReturn = traktResult(search().trakt)
+  // The result is read once; a reload should not repeat it.
+  onMount(() => {
+    if (search().trakt !== undefined)
+      void navigate({ to: '/app/settings', search: {}, replace: true })
+  })
   const [jobs, setJobs] = createSignal<ImportJob[]>(loaded().imports)
   const [uploading, setUploading] = createSignal<FileSource | null>(null)
   const [problem, setProblem] = createSignal<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = createSignal(false)
+  const [deleting, setDeleting] = createSignal(false)
   const [anilistName, setAnilistName] = createSignal('')
   const [anilistBusy, setAnilistBusy] = createSignal(false)
   const [anilistProblem, setAnilistProblem] = createSignal<string | null>(null)
@@ -147,6 +172,7 @@ function Settings() {
 
   async function remove() {
     setProblem(null)
+    setDeleting(true)
     try {
       await deleteAccount()
       await router.invalidate()
@@ -155,6 +181,9 @@ function Settings() {
       setProblem(
         error instanceof Error ? error.message : 'The account was not deleted.',
       )
+    } finally {
+      setDeleting(false)
+      setConfirmingDelete(false)
     }
   }
 
@@ -168,6 +197,20 @@ function Settings() {
 
         <Show when={problem()}>
           {(message) => <Alert class="mt-4">{message()}</Alert>}
+        </Show>
+        <Show when={traktReturn}>
+          {(result) =>
+            result().ok ? (
+              <p
+                role="status"
+                class="mt-4 rounded-panel bg-surface p-3 text-sm"
+              >
+                {result().message}
+              </p>
+            ) : (
+              <Alert class="mt-4">{result().message}</Alert>
+            )
+          }
         </Show>
 
         <Card class="mt-8 p-5">
@@ -216,6 +259,11 @@ function Settings() {
             until you approve it, and an import undoes in one step.
           </p>
           <div class="mt-5 grid gap-3 sm:grid-cols-2">
+            <TraktImport
+              connection={trakt()}
+              returnTo={() => `${window.location.origin}/app/settings`}
+              onDisconnected={() => setTrakt({ connected: false })}
+            />
             <For each={FILE_SOURCES}>
               {(option) => (
                 <label class="flex cursor-pointer flex-col gap-1 rounded-card border border-line p-4 hover:bg-surface">
@@ -402,39 +450,28 @@ function Settings() {
             Deletes your library, lists, imports and sessions from Aaru for
             good.
           </p>
-          <Show
-            when={confirmingDelete()}
-            fallback={
-              <Button
-                variant="danger-outline"
-                size="sm"
-                onClick={() => setConfirmingDelete(true)}
-                class="mt-4"
-              >
-                Delete account
-              </Button>
-            }
+          <Button
+            variant="danger-outline"
+            size="sm"
+            onClick={() => setConfirmingDelete(true)}
+            class="mt-4"
           >
-            <div class="mt-4 flex flex-wrap items-center gap-3">
-              <span class="text-sm font-medium">
-                This cannot be undone. Export your data first if you want to
-                keep it.
-              </span>
-              <Button variant="danger" size="sm" onClick={remove}>
-                Delete account and library
-              </Button>
-              <Button
-                variant="ghost"
-                size="bare"
-                onClick={() => setConfirmingDelete(false)}
-                class="text-sm"
-              >
-                Keep it
-              </Button>
-            </div>
-          </Show>
+            Delete account
+          </Button>
+          <AlertDialog
+            open={confirmingDelete()}
+            title="Delete account?"
+            description="This cannot be undone. Export your data first if you want to keep it."
+            confirmLabel="Delete account and library"
+            cancelLabel="Keep it"
+            busy={deleting()}
+            onConfirm={() => void remove()}
+            onCancel={() => setConfirmingDelete(false)}
+          />
         </section>
       </main>
+      {/* ConnectionsSection's "Copied" toasts. */}
+      <Toaster />
     </div>
   )
 }

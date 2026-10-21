@@ -7,11 +7,15 @@ struct TraktImporter: Sendable {
     let api: TraktAPI
 
     func rows(token: String) async throws -> [ImportRow] {
-        async let movies = api.get([TraktWatchedMovie].self, "sync/watched/movies", token: token)
-        async let shows = api.get([TraktWatchedShow].self, "sync/watched/shows", token: token)
-        async let watchlist = api.get([TraktItem].self, "sync/watchlist", token: token)
-        async let ratings = api.get([TraktItem].self, "sync/ratings", token: token)
-        async let lists = api.get([TraktList].self, "users/me/lists", token: token)
+        async let movies = api.paged(TraktWatchedMovie.self, "sync/watched/movies", token: token)
+        // Since 2026-06-30 watched shows carry no seasons unless asked for progress.
+        async let shows = api.paged(
+            TraktWatchedShow.self, "sync/watched/shows",
+            query: [URLQueryItem(name: "extended", value: "progress")], token: token
+        )
+        async let watchlist = both("sync/watchlist", token: token)
+        async let ratings = both("sync/ratings", token: token)
+        async let lists = api.paged(TraktList.self, "users/me/lists", token: token)
 
         var builder = Builder()
         for entry in try await movies {
@@ -33,7 +37,7 @@ struct TraktImporter: Sendable {
             builder.rate(media, type: type, rating: Double(rating))
         }
         for list in try await lists {
-            let items = try await api.get([TraktItem].self, "users/me/lists/\(list.ids.trakt)/items", token: token)
+            let items = try await api.paged(TraktItem.self, "users/me/lists/\(list.ids.trakt)/items", token: token)
             for item in items {
                 if let (media, type) = Self.media(item) {
                     builder.list(media, type: type, name: list.name)
@@ -41,6 +45,13 @@ struct TraktImporter: Sendable {
             }
         }
         return builder.rows
+    }
+
+    /// Movies then shows of one kind of entry; seasons and episodes are skipped anyway.
+    private func both(_ path: String, token: String) async throws -> [TraktItem] {
+        async let movies = api.paged(TraktItem.self, path + "/movies", token: token)
+        async let shows = api.paged(TraktItem.self, path + "/shows", token: token)
+        return try await movies + shows
     }
 
     /// Rows keyed by Trakt id, so a title that is watched, rated and on a list is one row.

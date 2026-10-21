@@ -28,7 +28,8 @@ can be undone.
 **Imports.** When you import a file (IMDb, Letterboxd, Goodreads, and others), Aaru reads it and
 keeps the rows it found with that import so you can review the plan before anything changes.
 The uploaded file itself is not kept. If you connect Trakt, Aaru stores Trakt's access tokens
-encrypted and uses them only to import your history; disconnecting removes them.
+encrypted and uses them only to import your history when you ask; disconnecting revokes them on
+Trakt and deletes them here. Aaru uses Trakt but is not endorsed or certified by Trakt.
 
 **Stremio.** If you connect Stremio, Aaru stores the link only as a one-way hash, with its name,
 what it may do, and when it was last used. While it is connected, Stremio tells Aaru when you

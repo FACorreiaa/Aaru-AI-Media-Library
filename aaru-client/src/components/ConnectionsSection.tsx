@@ -1,9 +1,12 @@
-import { For, Show, createResource, createSignal } from 'solid-js'
+import { For, Show, createMemo, createResource, createSignal } from 'solid-js'
 import { AGENT_KINDS, accessLabel, kindLabel } from '../lib/agents/model'
 import type { AgentKind } from '../lib/agents/model'
 import { lastUsedLabel } from '../lib/stremio/model'
 import { cn } from '../lib/cn'
+import { AlertDialog } from './ui/alert-dialog'
 import { Button } from './ui/button'
+import { RadioGroup, RadioGroupItem } from './ui/radio-group'
+import { showToast } from './ui/toast'
 import { cardClass } from './ui/card'
 import {
   createConnection,
@@ -28,7 +31,10 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
   const [busy, setBusy] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
   const [fresh, setFresh] = createSignal<AgentConnection | null>(null)
-  const [confirming, setConfirming] = createSignal<string | null>(null)
+  const [pending, setPending] = createSignal<AgentToken | null>(null)
+  const [revoking, setRevoking] = createSignal(false)
+  // The last token asked about, so the dialog keeps its title while it fades out.
+  const asked = createMemo<AgentToken | null>((last) => pending() ?? last, null)
   const [preview] = createResource(kind, (k) => getSetup({ data: { kind: k } }))
 
   const fail = (error: unknown, fallback: string) =>
@@ -59,13 +65,16 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
 
   async function revoke(token: AgentToken) {
     setProblem(null)
+    setRevoking(true)
     try {
       await revokeConnection({ data: { id: token.id } })
       if (fresh()?.token.id === token.id) setFresh(null)
-      setConfirming(null)
       setConnections(connections().filter((c) => c.id !== token.id))
     } catch (error) {
       fail(error, 'That connection was not revoked.')
+    } finally {
+      setRevoking(false)
+      setPending(null)
     }
   }
 
@@ -82,30 +91,20 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
         when={fresh()}
         fallback={
           <div class="mt-4 flex flex-col gap-4">
-            <div
-              role="radiogroup"
+            <RadioGroup
               aria-label="Agent"
               class="flex flex-wrap gap-2"
+              value={kind()}
+              onChange={(next) => setKind(next as AgentKind)}
             >
               <For each={AGENT_KINDS}>
                 {(option) => (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={kind() === option}
-                    class="min-h-11 rounded-full border px-4 text-sm font-semibold"
-                    classList={{
-                      'border-accent bg-accent text-on-accent':
-                        kind() === option,
-                      'border-ink/25': kind() !== option,
-                    }}
-                    onClick={() => setKind(option)}
-                  >
+                  <RadioGroupItem value={option}>
                     {kindLabel(option)}
-                  </button>
+                  </RadioGroupItem>
                 )}
               </For>
-            </div>
+            </RadioGroup>
 
             <Show when={preview()}>
               {(setup) => <SetupSteps setup={setup()} />}
@@ -126,7 +125,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
               <label class="flex items-start gap-2 text-sm">
                 <input
                   type="checkbox"
-                  class="mt-0.5"
+                  class="mt-0.5 accent-accent"
                   checked={allowWrites()}
                   onChange={(e) => setAllowWrites(e.currentTarget.checked)}
                 />
@@ -206,37 +205,31 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                     {lastUsedLabel(token)}
                   </span>
                 </span>
-                <Show
-                  when={confirming() === token.id}
-                  fallback={
-                    <Button
-                      variant="danger-outline"
-                      size="sm"
-                      class="shrink-0"
-                      onClick={() => setConfirming(token.id)}
-                    >
-                      Revoke
-                    </Button>
-                  }
+                <Button
+                  variant="danger-outline"
+                  size="sm"
+                  class="shrink-0"
+                  onClick={() => setPending(token)}
                 >
-                  <span class="flex shrink-0 gap-2">
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => void revoke(token)}
-                    >
-                      Revoke now
-                    </Button>
-                    <Button size="sm" onClick={() => setConfirming(null)}>
-                      Keep
-                    </Button>
-                  </span>
-                </Show>
+                  Revoke
+                </Button>
               </li>
             )}
           </For>
         </ul>
       </Show>
+      <AlertDialog
+        open={pending() !== null}
+        title={`Revoke ${asked()?.name ?? ''}?`}
+        description="Anything using it stops working at once."
+        confirmLabel="Revoke"
+        busy={revoking()}
+        onConfirm={() => {
+          const token = pending()
+          if (token) void revoke(token)
+        }}
+        onCancel={() => setPending(null)}
+      />
     </section>
   )
 }
@@ -269,6 +262,8 @@ function CopyBlock(props: { text: string; wrap?: boolean }) {
     try {
       await navigator.clipboard.writeText(props.text)
       setCopied(true)
+      // The label change is silent to a screen reader; the toast is announced.
+      showToast('Copied to the clipboard.')
       setTimeout(() => setCopied(false), 2000)
     } catch {
       // Clipboard can be blocked; the text stays selectable.

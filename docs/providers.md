@@ -36,7 +36,7 @@ notice and the AniList and Open Library credits in its footer, besides About.
 | Resend | Sign-in emails (code + link) | API key | `RESEND_API_KEY` in `aaru-env` | Email address and the sign-in email |
 | Stremio (optional, per user) | Importing a user's Stremio history once (IMP-016): `link.stremio.com` device-link code, `api.strem.io` library read + logout. Unofficial API | none | — | The approved link code; the session key is used for one read and never stored |
 | Pogdesign CAT (optional, per user) | Reading the user's own CAT iCal export once, when they paste its link (IMP-010). No other CAT page | none | — | The link, which holds the user's CAT key; used for one GET and never stored or logged |
-| Trakt (optional, per user) | Importing a user's Trakt history (IMP-002/003) | OAuth client | `TRAKT_*` (not configured yet) | The user's Trakt authorisation; tokens stored encrypted |
+| Trakt (optional, per user) | Importing a user's Trakt history (IMP-002/003) | OAuth client (PKCE, no secret) | `TRAKT_CLIENT_ID` env, `TRAKT_TOKEN_KEY` in `aaru-env` | The user's Trakt authorisation; tokens stored encrypted, revoked on disconnect. Credit: "Aaru uses Trakt but is not endorsed or certified by Trakt." |
 
 ## Hosting
 

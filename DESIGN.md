@@ -244,8 +244,10 @@ rows of wide cards, one job per row.
 
 **Added 2026-10-20 (APP-013),** so Home is never blank:
 
-- **This month** — a quiet stats strip (episodes · hours · finished · active days). Tapping it
-  opens Insights. Hidden while the month is all zeros.
+- **Last 7 days** (GAM-006d, 2026-10-21; was "This month") — a quiet stats strip: seven small
+  bars, one per day by time, with a muted track under empty days, then episodes · hours ·
+  finished · active days. Tapping it opens Insights on 7 days. Shown at zero too ("Nothing
+  tracked yet"), so a new account sees where its week will land.
 - **Status counts** — one chip per status with its per-kind label and count; a tap opens
   Library filtered to it.
 - **Unfinished business** (`UnfinishedRow`) — the §1 artifact made real: every dropped item and
@@ -273,11 +275,17 @@ the web.
 
 ## 13b. Insights (pulled forward 2026-10-20)
 
-The Recap's numbers, browsable instead of played. `StatsPanel`: a month / year / all time
-switch, totals, bars per bucket, by kind (films, shows, anime, books), the top titles, a
+The Recap's numbers, browsable instead of played. `StatsPanel`: a 7 days / 30 days / month /
+year / all time switch, totals, bars per bucket, by kind (films, shows, anime, books), the top titles, a
 ratings histogram, and the longest run. Opened from Home's stats strip and next to Recap
 (Library's More menu on Apple, Settings on the web); "Play as story" hands a month or year to
 the Recap. Not a tab.
+
+The rolling windows (GAM-006d) add a line "Oct 15 – Oct 21 · Private to you", and each tile
+shows its change against the window just before as an arrow and an absolute number (`↗ +3`,
+`↘ −2 h`): accent when up, muted when down, never colour alone, hidden when nothing changed,
+never a percentage. Their chart is time per day (so a film night shows), with a track under
+empty days. They have no "Play as story" and no stepper.
 
 Static: bars are drawn at their final height, nothing counts up. The Recap motion rules (§17)
 still apply to anything that ever moves here.
@@ -385,6 +393,16 @@ longest run of days, ratings, the first and last title, and a summary that share
 A card with nothing to say is left out, and an empty period gets a sentence, not a story.
 Backdrops cycle Ink, accent and Surface; type is the serif display face.
 
+The Year in Review (GAM-006e, 2026-10-21) adds, for a year only: the biggest day after the
+episodes chart; a soft glow of the top title's own poster behind it (blurred, on screen only);
+the top three genres after the top five (a month gets this card too); where the time went by
+kind; and a persona card before the summary, one of six words the server picks by rule from
+the user's own numbers (The Binger, The Bookworm, The Anime Devotee, The Completionist, The
+Explorer, The Steady One; copy is the owner's to approve). Year order: intro · time · episodes ·
+biggest day · top · top five · genres · kinds · finished · run · ratings · bookends · persona ·
+summary. The share image adds the top genre and the persona, stepping its type down a size past
+five lines; still no posters.
+
 Motion rules (the first written ones; they hold for any later surface):
 - Entrances only. Elements rise in once on a short stagger, numbers count up once, bars grow
   from the baseline once. Nothing loops, pulses or bounces after it lands.
@@ -396,13 +414,18 @@ Motion rules (the first written ones; they hold for any later surface):
   canvas and the Apple renderer draw the same card. Nothing is shared without a tap.
 
 On the web (2026-10-20), performance comes first:
-- **Native HTML before Kobalte, CSS before Motion.** `<dialog>`, `<details>`, checkboxes and
-  `<select>` stay native. Kobalte (the base of solid-ui, adapted into
-  `aaru-client/src/components/ui`) only where the browser has no pattern: tabs, toggle and radio
-  groups, tooltips, toasts, switches. Entrances stay CSS keyframes.
+- **Native HTML first, CSS before Motion.** `aaru-client/src/components/ui` keeps solid-ui's
+  component shapes on native elements: `<dialog>` for modals and confirms, native radios for
+  segmented controls and radio groups, a `role="switch"` checkbox, `<details>`, `<select>`.
+  Tabs and toasts are a few lines of our own. Kobalte was measured and dropped (2026-10-21):
+  +36 KB gzip, +29 KB on the week page, for what the browser already does. Entrances stay CSS
+  keyframes.
 - **Motion only for what CSS cannot do:** an exit before an element leaves, siblings sliding
-  into the gap (FLIP), direction-aware swaps. Through `src/lib/motion.ts` on `motion/mini`, only
-  `transform` and `opacity`, and nothing at all with reduced motion.
+  into the gap (FLIP), direction-aware swaps, and one short scale pop when the user ticks an
+  episode (never on load). Through `src/lib/motion.ts` on `motion/mini`, only `transform` and
+  `opacity`, and nothing at all with reduced motion. Pages that only ask whether motion is
+  reduced import `src/lib/reduced-motion.ts`, so they do not load `motion/mini`. Every
+  animation follows a tap, so `motion/mini` is never preloaded: it loads when the browser is idle.
 - `npm run size` holds every route to `size-budget.json` in CI.
 
 ---

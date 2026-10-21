@@ -134,7 +134,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -279,7 +279,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/get(getTraktConnection)`.
     func getTraktConnection(_ input: Operations.GetTraktConnection.Input) async throws -> Operations.GetTraktConnection.Output
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
@@ -637,7 +637,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -1022,7 +1022,7 @@ extension APIProtocol {
     public func getTraktConnection(headers: Operations.GetTraktConnection.Input.Headers = .init()) async throws -> Operations.GetTraktConnection.Output {
         try await getTraktConnection(Operations.GetTraktConnection.Input(headers: headers))
     }
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
@@ -4164,7 +4164,7 @@ public enum Components {
                 case next
             }
         }
-        /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner.
+        /// `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. `biggestDay` is the single local day with the most time (then episodes), the earliest on a tie.
         ///
         /// - Remark: Generated from `#/components/schemas/Stats`.
         public struct Stats: Codable, Hashable, Sendable {
@@ -4173,6 +4173,8 @@ public enum Components {
                 case month = "month"
                 case year = "year"
                 case all = "all"
+                case last7 = "last7"
+                case last30 = "last30"
             }
             /// - Remark: Generated from `#/components/schemas/Stats/span`.
             public var span: Components.Schemas.Stats.SpanPayload
@@ -4182,6 +4184,14 @@ public enum Components {
             public var year: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Stats/month`.
             public var month: Swift.Int?
+            /// First day of a rolling span (YYYY-MM-DD); absent for calendar spans.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/from`.
+            public var from: Swift.String?
+            /// Last day of a rolling span (YYYY-MM-DD, inclusive, today); absent for calendar spans.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/until`.
+            public var until: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Stats/timeZone`.
             public var timeZone: Swift.String
             /// The period is not over yet in the user's time zone (always true for `all`).
@@ -4190,11 +4200,13 @@ public enum Components {
             public var isPartial: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/Stats/totals`.
             public var totals: Components.Schemas.StatsTotals
+            /// - Remark: Generated from `#/components/schemas/Stats/prior`.
+            public var prior: Components.Schemas.StatsTotals?
             /// Movie, show, anime and book, always all four in that order; they sum to `totals`.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/byKind`.
             public var byKind: [Components.Schemas.StatsKind]
-            /// One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order.
+            /// One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/buckets`.
             public var buckets: [Components.Schemas.StatsBucket]
@@ -4214,17 +4226,41 @@ public enum Components {
             public var first: Components.Schemas.StatsMoment?
             /// - Remark: Generated from `#/components/schemas/Stats/last`.
             public var last: Components.Schemas.StatsMoment?
+            /// GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/topGenres`.
+            public var topGenres: [Components.Schemas.StatsGenre]
+            /// - Remark: Generated from `#/components/schemas/Stats/biggestDay`.
+            public var biggestDay: Components.Schemas.StatsBucket?
+            /// GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/persona`.
+            @frozen public enum PersonaPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case binger = "binger"
+                case bookworm = "bookworm"
+                case anime = "anime"
+                case completionist = "completionist"
+                case explorer = "explorer"
+                case steady = "steady"
+            }
+            /// GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/persona`.
+            public var persona: Components.Schemas.Stats.PersonaPayload?
             /// Creates a new `Stats`.
             ///
             /// - Parameters:
             ///   - span:
             ///   - year: The last year the period touches; for `all`, the current year.
             ///   - month:
+            ///   - from: First day of a rolling span (YYYY-MM-DD); absent for calendar spans.
+            ///   - until: Last day of a rolling span (YYYY-MM-DD, inclusive, today); absent for calendar spans.
             ///   - timeZone:
             ///   - isPartial: The period is not over yet in the user's time zone (always true for `all`).
             ///   - totals:
+            ///   - prior:
             ///   - byKind: Movie, show, anime and book, always all four in that order; they sum to `totals`.
-            ///   - buckets: One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order.
+            ///   - buckets: One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order.
             ///   - busiest:
             ///   - mostEpisodes:
             ///   - longestRun:
@@ -4232,13 +4268,19 @@ public enum Components {
             ///   - ratings:
             ///   - first:
             ///   - last:
+            ///   - topGenres: GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored.
+            ///   - biggestDay:
+            ///   - persona: GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
             public init(
                 span: Components.Schemas.Stats.SpanPayload,
                 year: Swift.Int,
                 month: Swift.Int? = nil,
+                from: Swift.String? = nil,
+                until: Swift.String? = nil,
                 timeZone: Swift.String,
                 isPartial: Swift.Bool,
                 totals: Components.Schemas.StatsTotals,
+                prior: Components.Schemas.StatsTotals? = nil,
                 byKind: [Components.Schemas.StatsKind],
                 buckets: [Components.Schemas.StatsBucket],
                 busiest: Components.Schemas.StatsBucket? = nil,
@@ -4247,14 +4289,20 @@ public enum Components {
                 topTitles: [Components.Schemas.StatsTitle],
                 ratings: Components.Schemas.StatsRatings,
                 first: Components.Schemas.StatsMoment? = nil,
-                last: Components.Schemas.StatsMoment? = nil
+                last: Components.Schemas.StatsMoment? = nil,
+                topGenres: [Components.Schemas.StatsGenre],
+                biggestDay: Components.Schemas.StatsBucket? = nil,
+                persona: Components.Schemas.Stats.PersonaPayload? = nil
             ) {
                 self.span = span
                 self.year = year
                 self.month = month
+                self.from = from
+                self.until = until
                 self.timeZone = timeZone
                 self.isPartial = isPartial
                 self.totals = totals
+                self.prior = prior
                 self.byKind = byKind
                 self.buckets = buckets
                 self.busiest = busiest
@@ -4264,14 +4312,20 @@ public enum Components {
                 self.ratings = ratings
                 self.first = first
                 self.last = last
+                self.topGenres = topGenres
+                self.biggestDay = biggestDay
+                self.persona = persona
             }
             public enum CodingKeys: String, CodingKey {
                 case span
                 case year
                 case month
+                case from
+                case until
                 case timeZone
                 case isPartial
                 case totals
+                case prior
                 case byKind
                 case buckets
                 case busiest
@@ -4281,6 +4335,40 @@ public enum Components {
                 case ratings
                 case first
                 case last
+                case topGenres
+                case biggestDay
+                case persona
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsGenre`.
+        public struct StatsGenre: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/minutes`.
+            public var minutes: Swift.Int
+            /// How many titles in the period carried this genre.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsGenre/titles`.
+            public var titles: Swift.Int
+            /// Creates a new `StatsGenre`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - minutes:
+            ///   - titles: How many titles in the period carried this genre.
+            public init(
+                name: Swift.String,
+                minutes: Swift.Int,
+                titles: Swift.Int
+            ) {
+                self.name = name
+                self.minutes = minutes
+                self.titles = titles
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case minutes
+                case titles
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsTotals`.
@@ -8460,7 +8548,7 @@ public enum Operations {
             }
         }
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -8469,15 +8557,17 @@ public enum Operations {
         public struct Input: Sendable, Hashable {
             /// - Remark: Generated from `#/paths/v1/me/stats/GET/query`.
             public struct Query: Sendable, Hashable {
-                /// Required unless `span=all`.
+                /// Required unless `span` is sent.
                 ///
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/year`.
                 public var year: Swift.Int?
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/span`.
                 @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
                     case all = "all"
+                    case last7 = "last7"
+                    case last30 = "last30"
                 }
-                /// `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise).
+                /// `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. `last7` and `last30` are the 7 or 30 days ending today, one bucket per day, with `prior` holding the window just before. A span takes no `year` or `month` (422 otherwise).
                 ///
                 /// - Remark: Generated from `#/paths/v1/me/stats/GET/query/span`.
                 public var span: Operations.GetStats.Input.Query.SpanPayload?
@@ -8492,8 +8582,8 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - year: Required unless `span=all`.
-                ///   - span: `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise).
+                ///   - year: Required unless `span` is sent.
+                ///   - span: `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. `last7` and `last30` are the 7 or 30 days ending today, one bucket per day, with `prior` holding the window just before. A span takes no `year` or `month` (422 otherwise).
                 ///   - month: 1–12. Absent means the whole year.
                 ///   - tz: IANA time zone for day and month boundaries. Absent means UTC.
                 public init(
@@ -13416,7 +13506,7 @@ public enum Operations {
             }
         }
     }
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.

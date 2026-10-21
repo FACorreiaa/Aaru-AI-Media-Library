@@ -35,6 +35,9 @@ struct SettingsView: View {
                         NotificationsSection(push: push)
                     }
                 #endif
+                TraktSection(api: api) { imports.problem = $0 } onImported: { job in
+                    path.append(job.id)
+                }
                 importSection
                 if !imports.jobs.isEmpty {
                     jobsSection

@@ -36,6 +36,7 @@ struct PostgresTitleStore: TitleStore {
         let status: String?
         let runtimeMinutes: Int?
         let episodesHydratedAt: Date?
+        let genres: [String]
 
         var asTitle: Title? {
             guard let type = MediaType(rawValue: type) else { return nil }
@@ -58,7 +59,7 @@ struct PostgresTitleStore: TitleStore {
         }
     }
 
-    func insert(_ title: Title, status: TitleStatus?, runtimeMinutes: Int?) async throws {
+    func insert(_ title: Title, status: TitleStatus?, runtimeMinutes: Int?, genres: [String]) async throws {
         try title.validate()
         let ids = title.ids
         let row = Row(
@@ -69,7 +70,7 @@ struct PostgresTitleStore: TitleStore {
             tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb, isbn: ids.isbn,
             openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb,
             isAnime: title.isAnime, status: status?.rawValue, runtimeMinutes: runtimeMinutes,
-            episodesHydratedAt: nil
+            episodesHydratedAt: nil, genres: genres
         )
         do {
             try await sql.insert(into: "titles").model(row, keyEncodingStrategy: .convertToSnakeCase).run()
@@ -260,6 +261,37 @@ struct PostgresTitleStore: TitleStore {
                     stillURL: $0.stillUrl.flatMap(URL.init(string:))
                 )
             }
+    }
+}
+
+/// CAT-018: genres stored at hydration, and the backfill's queue.
+extension PostgresTitleStore {
+    func titlesMissingGenres(retryAfter: Date, limit: Int) async throws -> [Title] {
+        try await sql.raw("""
+        SELECT t.* FROM titles t
+        WHERE t.type <> 'book' AND t.genres = '{}'
+          AND (t.genres_attempted_at IS NULL OR t.genres_attempted_at < \(bind: retryAfter))
+          AND (EXISTS (SELECT 1 FROM library_items li WHERE li.title_id = t.id)
+               OR EXISTS (SELECT 1 FROM list_items lst WHERE lst.title_id = t.id))
+        ORDER BY t.genres_attempted_at NULLS FIRST, t.created_at, t.id
+        LIMIT \(literal: limit)
+        """).all(decoding: Row.self, keyDecodingStrategy: snake).compactMap(\.asTitle)
+    }
+
+    func fillGenres(_ id: TitleID, _ genres: [String], attemptedAt: Date) async throws {
+        try await sql.raw("""
+        UPDATE titles
+        SET genres = CASE WHEN genres = '{}' THEN \(bind: genres)::text[] ELSE genres END,
+            genres_attempted_at = \(bind: attemptedAt)
+        WHERE id = \(bind: id.rawValue)
+        """).run()
+    }
+
+    func genres(_ id: TitleID) async throws -> [String] {
+        struct GenresRow: Decodable { let genres: [String] }
+        return try await sql.select().column("genres").from("titles")
+            .where("id", .equal, id.rawValue)
+            .first(decoding: GenresRow.self)?.genres ?? []
     }
 }
 

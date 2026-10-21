@@ -17,9 +17,12 @@ struct RecapShareCard: View {
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .padding(.top, 24)
-            VStack(alignment: .leading, spacing: 40) {
-                ForEach(RecapDeck.shareLines(stats), id: \.self) { line in
-                    Text(line).font(.system(size: 64, weight: .medium, design: .serif))
+            // A year review can carry seven lines; they step down a size, as on the web.
+            let lines = RecapDeck.shareLines(stats)
+            let compact = lines.count > 5
+            VStack(alignment: .leading, spacing: compact ? 28 : 40) {
+                ForEach(lines, id: \.self) { line in
+                    Text(line).font(.system(size: compact ? 52 : 64, weight: .medium, design: .serif))
                 }
             }
             .padding(.top, 96)

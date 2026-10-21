@@ -6,6 +6,10 @@ export const TMDB_NOTICE =
 
 export const TMDB_URL = 'https://www.themoviedb.org'
 
+/** Trakt's API use policy asks for this line wherever the integration is offered. */
+export const TRAKT_NOTICE =
+  'Aaru uses Trakt but is not endorsed or certified by Trakt.'
+
 export const CONTACT_EMAIL = 'privacy@aaruapp.com'
 
 export interface Credit {
@@ -38,4 +42,5 @@ export const CREDITS: Credit[] = [
     name: 'Open Library',
     href: 'https://openlibrary.org',
   },
+  { lead: 'History import from ', name: 'Trakt', href: 'https://trakt.tv' },
 ]

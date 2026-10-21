@@ -2107,7 +2107,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date.
+    /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
@@ -4885,7 +4885,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
