@@ -6,6 +6,7 @@ import {
   createMemo,
   createSignal,
   lazy,
+  onCleanup,
   onMount,
 } from 'solid-js'
 import type { JSX } from 'solid-js'
@@ -19,6 +20,7 @@ import { toListRow } from '../lib/lists/model'
 import type { ListRow } from '../lib/lists/model'
 import { getList, removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
+import { flip, leave } from '../lib/motion'
 import { getSession } from '../lib/session/session'
 
 // APP-006 on the web: one list, in order, with remove and move up/down. LST-003: rows carry
@@ -50,11 +52,26 @@ function ListPage() {
   // The last row asked about, so the dialog keeps its title while it fades out.
   const asked = createMemo<ListRow | null>((last) => pending() ?? last, null)
   let dialog: HTMLDialogElement | undefined
+  let list: HTMLOListElement | undefined
+  // Each row's element, so a removal can play its exit before it leaves the DOM.
+  const rowEls = new Map<string, HTMLLIElement>()
   onMount(() => setNow(new Date()))
 
   const rows = createMemo(() =>
     detail().items.map((item) => toListRow(item, now())),
   )
+  const rowById = createMemo(
+    () => new Map(rows().map((row) => [row.titleId, row])),
+  )
+  // Rows are keyed by title id, so a server answer keeps their elements and a move or a
+  // removal can slide the others (FLIP) instead of redrawing the list.
+  const ids = createMemo(() => rows().map((row) => row.titleId))
+
+  /** Applies a state change, sliding the rows that move. */
+  function reflow(mutate: () => void) {
+    if (list) void flip(list, mutate)
+    else mutate()
+  }
 
   function openSearch() {
     setSearchOpened(true)
@@ -66,7 +83,7 @@ function ListPage() {
     const items = [...before.items]
     const [moved] = items.splice(index, 1)
     items.splice(index + by, 0, moved)
-    setDetail({ ...before, items }) // optimistic; the server's order wins
+    reflow(() => setDetail({ ...before, items })) // optimistic; the server's order wins
     setProblem(null)
     try {
       setDetail(
@@ -82,17 +99,27 @@ function ListPage() {
     }
   }
 
+  /** Removes after the confirm: the dialog closes, the row fades out, the rest slide up. */
   async function remove(titleId: string) {
     setProblem(null)
+    setRemoving(true)
+    let next: ListDetail
     try {
-      setDetail(await removeFromList({ data: { id: detail().id, titleId } }))
+      next = await removeFromList({ data: { id: detail().id, titleId } })
     } catch (error) {
       setProblem(
         error instanceof Error
           ? error.message
           : 'The title could not be removed.',
       )
+      return
+    } finally {
+      setRemoving(false)
+      setPending(null)
     }
+    const el = rowEls.get(titleId)
+    if (el) await leave(el)
+    reflow(() => setDetail(next))
   }
 
   return (
@@ -138,85 +165,103 @@ function ListPage() {
             </div>
           }
         >
-          <ol class="mt-8 divide-y divide-line">
-            <For each={rows()}>
-              {(row, index) => (
-                <li class="flex items-center gap-4 py-3">
-                  <RowLink libraryItemId={row.libraryItemId}>
-                    <Poster
-                      url={row.posterUrl}
-                      kind={row.kind}
-                      class="w-11 shrink-0"
-                    />
-                    <div class="min-w-0 flex-1">
-                      <p class="line-clamp-2 font-medium">{row.title}</p>
-                      <p class="truncate text-sm text-muted">
-                        {[
-                          row.year,
-                          KINDS.find((k) => k.kind === row.kind)?.label,
-                          row.network,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                      <Show when={row.status || row.showStatus || row.airing}>
-                        <p class="flex flex-wrap items-center gap-x-2 text-sm text-muted">
-                          <Show when={row.showStatus}>
-                            {(label) => (
-                              <span class="rounded-full border border-line px-2 text-xs">
-                                {label()}
-                              </span>
-                            )}
-                          </Show>
-                          <Show when={row.airing}>
-                            {(label) => (
-                              <span class="text-accent">{label()}</span>
-                            )}
-                          </Show>
-                          <Show when={row.status}>
-                            {(status) => (
-                              <span>
-                                {[statusLabel(status(), row.kind), row.detail]
-                                  .filter(Boolean)
-                                  .join(' · ')}
-                              </span>
-                            )}
-                          </Show>
+          <ol ref={list} class="mt-8 divide-y divide-line">
+            <For each={ids()}>
+              {(id, index) => {
+                // The last known row: it stays drawn while a removed one is torn down.
+                const row = createMemo<ListRow>(
+                  (last) => rowById().get(id) ?? last,
+                  rowById().get(id)!,
+                )
+                onCleanup(() => rowEls.delete(id))
+                return (
+                  <li
+                    ref={(el) => rowEls.set(id, el)}
+                    class="flex items-center gap-4 py-3"
+                  >
+                    <RowLink libraryItemId={row().libraryItemId}>
+                      <Poster
+                        url={row().posterUrl}
+                        kind={row().kind}
+                        class="w-11 shrink-0"
+                      />
+                      <div class="min-w-0 flex-1">
+                        <p class="line-clamp-2 font-medium">{row().title}</p>
+                        <p class="truncate text-sm text-muted">
+                          {[
+                            row().year,
+                            KINDS.find((k) => k.kind === row().kind)?.label,
+                            row().network,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
                         </p>
-                      </Show>
+                        <Show
+                          when={
+                            row().status || row().showStatus || row().airing
+                          }
+                        >
+                          <p class="flex flex-wrap items-center gap-x-2 text-sm text-muted">
+                            <Show when={row().showStatus}>
+                              {(label) => (
+                                <span class="rounded-full border border-line px-2 text-xs">
+                                  {label()}
+                                </span>
+                              )}
+                            </Show>
+                            <Show when={row().airing}>
+                              {(label) => (
+                                <span class="text-accent">{label()}</span>
+                              )}
+                            </Show>
+                            <Show when={row().status}>
+                              {(status) => (
+                                <span>
+                                  {[
+                                    statusLabel(status(), row().kind),
+                                    row().detail,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(' · ')}
+                                </span>
+                              )}
+                            </Show>
+                          </p>
+                        </Show>
+                      </div>
+                    </RowLink>
+                    <div class="flex items-center gap-1 text-sm">
+                      <Button
+                        variant="soft"
+                        size="bare"
+                        aria-label={`Move ${row().title} up`}
+                        disabled={index() === 0}
+                        class="px-2 py-1"
+                        onClick={() => move(index(), -1)}
+                      >
+                        ↑
+                      </Button>
+                      <Button
+                        variant="soft"
+                        size="bare"
+                        aria-label={`Move ${row().title} down`}
+                        disabled={index() === rows().length - 1}
+                        class="px-2 py-1"
+                        onClick={() => move(index(), 1)}
+                      >
+                        ↓
+                      </Button>
+                      <button
+                        type="button"
+                        class="ml-2 text-muted hover:text-danger"
+                        onClick={() => setPending(row())}
+                      >
+                        Remove
+                      </button>
                     </div>
-                  </RowLink>
-                  <div class="flex items-center gap-1 text-sm">
-                    <Button
-                      variant="soft"
-                      size="bare"
-                      aria-label={`Move ${row.title} up`}
-                      disabled={index() === 0}
-                      class="px-2 py-1"
-                      onClick={() => move(index(), -1)}
-                    >
-                      ↑
-                    </Button>
-                    <Button
-                      variant="soft"
-                      size="bare"
-                      aria-label={`Move ${row.title} down`}
-                      disabled={index() === rows().length - 1}
-                      class="px-2 py-1"
-                      onClick={() => move(index(), 1)}
-                    >
-                      ↓
-                    </Button>
-                    <button
-                      type="button"
-                      class="ml-2 text-muted hover:text-danger"
-                      onClick={() => setPending(row)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </li>
-              )}
+                  </li>
+                )
+              }}
             </For>
           </ol>
         </Show>
@@ -227,12 +272,7 @@ function ListPage() {
           busy={removing()}
           onConfirm={() => {
             const row = pending()
-            if (!row) return
-            setRemoving(true)
-            void remove(row.titleId).finally(() => {
-              setRemoving(false)
-              setPending(null)
-            })
+            if (row) void remove(row.titleId)
           }}
           onCancel={() => setPending(null)}
         />

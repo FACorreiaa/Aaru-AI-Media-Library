@@ -45,6 +45,7 @@ import { getCalendar } from '../lib/calendar/server'
 import { getSession } from '../lib/session/session'
 import { setEpisode } from '../lib/title/server'
 import { cn } from '../lib/cn'
+import { slideIn } from '../lib/motion'
 
 // APP-010 on the web: what airs from the user's own shows, as CAT's dense week or Stremio's
 // month with an agenda. Rendered in the browser: "today" and every day boundary are the
@@ -96,6 +97,13 @@ function Calendar() {
   const [loading, setLoading] = createSignal(true)
   const [problem, setProblem] = createSignal<string | null>(null)
   let request = 0
+  let content: HTMLDivElement | undefined
+
+  /** Week view paging: the moved week slides in from the side it came from. */
+  function slide(direction: number) {
+    if (content && direction !== 0 && view() === 'week')
+      void slideIn(content, direction > 0 ? 1 : -1)
+  }
 
   const weekDays = createMemo(() => (start() ? daysFrom(start()) : []))
   const grid = createMemo(() => (month() ? monthGrid(month()) : []))
@@ -234,6 +242,7 @@ function Calendar() {
       setStart((s) => addDays(s, delta))
       setSelected((s) => addDays(s, delta))
     })
+    slide(delta)
   }
 
   /** Month view: the selected day moves, and the month follows it across an edge. */
@@ -262,11 +271,14 @@ function Calendar() {
   function goToday() {
     const now = today()
     if (!now) return
+    const from = start()
+    const to = mondayOf(now)
     batch(() => {
-      setStart(mondayOf(now))
+      setStart(to)
       setMonth(monthOf(now))
       setSelected(now)
     })
+    slide(to === from ? 0 : to > from ? 1 : -1)
   }
 
   async function toggle(entry: CalendarEntry) {
@@ -391,7 +403,7 @@ function Calendar() {
           </div>
         </Show>
 
-        <div class="mt-6" aria-busy={loading()}>
+        <div ref={content} class="mt-6" aria-busy={loading()}>
           <Show
             when={today()}
             fallback={<p class="text-sm text-muted">Loading the calendar…</p>}
