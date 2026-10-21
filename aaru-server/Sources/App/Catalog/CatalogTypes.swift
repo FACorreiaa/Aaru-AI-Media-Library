@@ -102,6 +102,9 @@ struct CatalogProviders: Sendable {
     var music: (any CatalogSearching & TrackListing)?
     /// Discover's album rows (MUS-002, ListenBrainz). Optional: without it they are not shown.
     var releases: (any DiscoverListing)?
+    /// Identifies scrobbled tracks (MUS-006). The same MusicBrainz client as `music`, so both share
+    /// one rate pacer. Optional: without it listens keep only what the scrobbler sent.
+    var recordings: (any RecordingMatching)?
 }
 
 extension Date {

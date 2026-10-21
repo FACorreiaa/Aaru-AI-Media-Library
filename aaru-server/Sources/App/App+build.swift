@@ -79,6 +79,9 @@ func backgroundServices(
             logger: logger
         ),
     ] + (services.agentReplies.map { [AgentReplyWorker(replies: $0, logger: logger)] } ?? [])
+        + (services.catalog.catalogs.recordings.map {
+            [ListenResolverService(resolver: ListenResolver(stores: stores, recordings: $0), logger: logger)]
+        } ?? [])
 }
 
 /// HTTP/1 with the `/v1/ws` upgrade (GRP-006). A ping every 25 s keeps a proxy with a 60 s idle
@@ -312,7 +315,17 @@ func makeCATCalendarFeed(_ transport: any HTTPTransport) -> CATCalendarFeed {
 
 /// One `ProviderClient` (and so one rate pacer) per provider, shared by every caller.
 func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> CatalogProviders {
-    CatalogProviders(
+    let musicBrainz = MusicBrainzCatalog(
+        // MusicBrainz allows one request a second per client: album search and listen lookups
+        // (MUS-006) share this one.
+        client: ProviderClient(
+            name: "musicbrainz",
+            transport: transport,
+            pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
+        ),
+        userAgent: config.openLibraryUserAgent
+    )
+    return CatalogProviders(
         tmdb: TMDBCatalog(
             client: ProviderClient(
                 name: "tmdb",
@@ -345,15 +358,7 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
                 pacer: RequestPacer(requestsPerSecond: 1.8, burst: 5)
             )
         ),
-        music: MusicBrainzCatalog(
-            // MusicBrainz allows one request a second per client.
-            client: ProviderClient(
-                name: "musicbrainz",
-                transport: transport,
-                pacer: RequestPacer(requestsPerSecond: 1, burst: 1)
-            ),
-            userAgent: config.openLibraryUserAgent
-        ),
+        music: musicBrainz,
         releases: ListenBrainzReleases(
             client: ProviderClient(
                 name: "listenbrainz",
@@ -361,6 +366,7 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
                 pacer: RequestPacer(requestsPerSecond: 1, burst: 2)
             ),
             userAgent: config.openLibraryUserAgent
-        )
+        ),
+        recordings: musicBrainz
     )
 }

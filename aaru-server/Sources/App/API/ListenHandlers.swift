@@ -55,7 +55,13 @@ extension Components.Schemas.Listen {
             coverUrl: listen.releaseGroupMBID.flatMap(MusicBrainzCatalog.coverURL(releaseGroup:))?.absoluteString,
             originUrl: listen.originURL,
             client: listen.client,
-            musicService: listen.musicService
+            musicService: listen.musicService,
+            albumRef: listen.releaseGroupMBID.map { mbid in
+                .init(
+                    titleId: listen.albumTitleID?.uuidString, _type: .album,
+                    ids: .init(musicbrainz: mbid), title: listen.album
+                )
+            }
         )
     }
 }

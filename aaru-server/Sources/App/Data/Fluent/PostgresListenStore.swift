@@ -29,6 +29,11 @@ struct PostgresListenStore: ListenStore {
         struct Inserted: Decodable { let id: UUID }
         let key = listen.trackKey
         let window = listen.duplicateWindow
+        // A track MusicBrainz already identified (MUS-006) gets its ids now, not on the next pass.
+        let cached: SQLQueryString = """
+        FROM music_lookups WHERE track_key = \(bind: key)
+          AND album_key = lower(coalesce(\(bind: listen.album)::text, ''))
+        """
         return try await sql.raw("""
         INSERT INTO listens
             (id, user_id, listened_at, artist, track, album, track_key, duration_ms, isrc, recording_mbid,
@@ -36,8 +41,12 @@ struct PostgresListenStore: ListenStore {
              source, agent_token_id)
         SELECT \(bind: UUID()), \(bind: userID.rawValue), \(bind: listen.listenedAt), \(bind: listen.artist),
                \(bind: listen.track), \(bind: listen.album), \(bind: key), \(bind: listen.durationMs),
-               \(bind: listen.isrc), \(bind: listen.recordingMBID), \(bind: listen.releaseMBID),
-               \(bind: listen.releaseGroupMBID), \(bind: listen.artistMBID), \(bind: listen.spotifyID),
+               \(bind: listen.isrc),
+               coalesce(\(bind: listen.recordingMBID), (SELECT recording_mbid \(cached))),
+               \(bind: listen.releaseMBID),
+               coalesce(\(bind: listen.releaseGroupMBID), (SELECT release_group_mbid \(cached))),
+               coalesce(\(bind: listen.artistMBID), (SELECT artist_mbid \(cached))),
+               \(bind: listen.spotifyID),
                \(bind: listen.originURL), \(bind: listen.client), \(bind: listen.musicService), 'live',
                \(bind: agentTokenID)
         WHERE NOT EXISTS (
@@ -59,6 +68,7 @@ struct PostgresListenStore: ListenStore {
         let album: String?
         let durationMs: Int?
         let releaseGroupMbid: String?
+        let albumTitleId: UUID?
         let originUrl: String?
         let client: String?
         let musicService: String?
@@ -66,7 +76,8 @@ struct PostgresListenStore: ListenStore {
         var listen: Listen {
             Listen(
                 id: id, listenedAt: listenedAt, artist: artist, track: track, album: album, durationMs: durationMs,
-                releaseGroupMBID: releaseGroupMbid, originURL: originUrl, client: client, musicService: musicService
+                releaseGroupMBID: releaseGroupMbid, albumTitleID: albumTitleId, originURL: originUrl, client: client,
+                musicService: musicService
             )
         }
     }
@@ -74,12 +85,13 @@ struct PostgresListenStore: ListenStore {
     func listens(userID: UserID, before: Date?, limit: Int) async throws -> [Listen] {
         let sql = try sqlDatabase(database)
         return try await sql.raw("""
-        SELECT id, listened_at, artist, track, album, duration_ms, release_group_mbid, origin_url, client,
-               music_service
-        FROM listens
-        WHERE user_id = \(bind: userID.rawValue)
-          AND (\(bind: before)::timestamptz IS NULL OR listened_at < \(bind: before))
-        ORDER BY listened_at DESC, id DESC
+        SELECT l.id, l.listened_at, l.artist, l.track, l.album, l.duration_ms, l.release_group_mbid,
+               t.id AS album_title_id, l.origin_url, l.client, l.music_service
+        FROM listens l
+        LEFT JOIN titles t ON t.musicbrainz = l.release_group_mbid
+        WHERE l.user_id = \(bind: userID.rawValue)
+          AND (\(bind: before)::timestamptz IS NULL OR l.listened_at < \(bind: before))
+        ORDER BY l.listened_at DESC, l.id DESC
         LIMIT \(bind: limit)
         """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map(\.listen)
     }
@@ -140,5 +152,73 @@ struct PostgresListenStore: ListenStore {
                 )
             }
         )
+    }
+
+    private struct Unresolved: Decodable {
+        let trackKey: String
+        let albumKey: String
+        let artist: String
+        let track: String
+        let album: String?
+        let recordingMbid: String?
+        let isrc: String?
+    }
+
+    func unresolved(retryBefore: Date, limit: Int) async throws -> [ListenLookup] {
+        let sql = try sqlDatabase(database)
+        // One row per track and album: the listen with the most ids, then the newest, speaks for it.
+        return try await sql.raw("""
+        SELECT track_key, album_key, artist, track, album, recording_mbid, isrc FROM (
+            SELECT DISTINCT ON (l.track_key, lower(coalesce(l.album, '')))
+                   l.track_key, lower(coalesce(l.album, '')) AS album_key, l.artist, l.track, l.album,
+                   l.recording_mbid, l.isrc, l.listened_at
+            FROM listens l
+            WHERE l.release_group_mbid IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM music_lookups m
+                  WHERE m.track_key = l.track_key AND m.album_key = lower(coalesce(l.album, ''))
+                    AND (m.release_group_mbid IS NOT NULL OR m.looked_up_at > \(bind: retryBefore))
+              )
+            ORDER BY l.track_key, lower(coalesce(l.album, '')), l.recording_mbid IS NULL, l.isrc IS NULL,
+                     l.listened_at DESC
+        ) due
+        ORDER BY listened_at DESC
+        LIMIT \(bind: limit)
+        """).all(decoding: Unresolved.self, keyDecodingStrategy: .convertFromSnakeCase).map { row in
+            ListenLookup(
+                trackKey: row.trackKey, albumKey: row.albumKey,
+                query: RecordingQuery(
+                    artist: row.artist, track: row.track, album: row.album, recordingMBID: row.recordingMbid,
+                    isrc: row.isrc
+                )
+            )
+        }
+    }
+
+    func resolve(_ lookup: ListenLookup, as match: RecordingMatch, at date: Date) async throws -> Int {
+        struct Filled: Decodable { let id: UUID }
+        return try await database.transaction { transaction in
+            let sql = try sqlDatabase(transaction)
+            try await sql.raw("""
+            INSERT INTO music_lookups
+                (track_key, album_key, recording_mbid, release_group_mbid, artist_mbid, looked_up_at)
+            VALUES (\(bind: lookup.trackKey), \(bind: lookup.albumKey), \(bind: match.recordingMBID),
+                    \(bind: match.releaseGroupMBID), \(bind: match.artistMBID), \(bind: date))
+            ON CONFLICT (track_key, album_key) DO UPDATE SET
+                recording_mbid = excluded.recording_mbid, release_group_mbid = excluded.release_group_mbid,
+                artist_mbid = excluded.artist_mbid, looked_up_at = excluded.looked_up_at
+            """).run()
+            // Ids a scrobbler sent are never overwritten.
+            let filled = try await sql.raw("""
+            UPDATE listens SET
+                recording_mbid = coalesce(recording_mbid, \(bind: match.recordingMBID)),
+                release_group_mbid = coalesce(release_group_mbid, \(bind: match.releaseGroupMBID)),
+                artist_mbid = coalesce(artist_mbid, \(bind: match.artistMBID))
+            WHERE track_key = \(bind: lookup.trackKey) AND lower(coalesce(album, '')) = \(bind: lookup.albumKey)
+              AND release_group_mbid IS NULL
+            RETURNING id
+            """).all(decoding: Filled.self).count
+            return match.releaseGroupMBID == nil ? 0 : filled
+        }
     }
 }

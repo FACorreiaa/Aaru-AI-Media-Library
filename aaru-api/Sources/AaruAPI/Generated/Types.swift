@@ -7136,6 +7136,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Listen/musicService`.
             public var musicService: Swift.String?
+            /// The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is in the catalog, always by its MusicBrainz id. Open or add it like a search hit.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/albumRef`.
+            public var albumRef: Components.Schemas.MediaRef?
             /// Creates a new `Listen`.
             ///
             /// - Parameters:
@@ -7149,6 +7153,7 @@ public enum Components {
             ///   - originUrl: Where it played
             ///   - client: The scrobbler, e.g. "Web Scrobbler".
             ///   - musicService: Where it was heard, e.g. "YouTube Music".
+            ///   - albumRef: The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is in the catalog, always by its MusicBrainz id. Open or add it like a search hit.
             public init(
                 id: Swift.String,
                 listenedAt: Foundation.Date,
@@ -7159,7 +7164,8 @@ public enum Components {
                 coverUrl: Swift.String? = nil,
                 originUrl: Swift.String? = nil,
                 client: Swift.String? = nil,
-                musicService: Swift.String? = nil
+                musicService: Swift.String? = nil,
+                albumRef: Components.Schemas.MediaRef? = nil
             ) {
                 self.id = id
                 self.listenedAt = listenedAt
@@ -7171,6 +7177,7 @@ public enum Components {
                 self.originUrl = originUrl
                 self.client = client
                 self.musicService = musicService
+                self.albumRef = albumRef
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -7183,6 +7190,7 @@ public enum Components {
                 case originUrl
                 case client
                 case musicService
+                case albumRef
             }
         }
         /// - Remark: Generated from `#/components/schemas/ListenPage`.

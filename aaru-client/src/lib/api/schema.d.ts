@@ -2772,6 +2772,8 @@ export interface components {
       client?: string
       /** @description Where it was heard, e.g. "YouTube Music". */
       musicService?: string
+      /** @description The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is in the catalog, always by its MusicBrainz id. Open or add it like a search hit. */
+      albumRef?: components['schemas']['MediaRef']
     }
     ListenPage: {
       items: components['schemas']['Listen'][]
