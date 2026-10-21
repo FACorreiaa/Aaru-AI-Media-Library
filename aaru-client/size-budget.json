@@ -1,6 +1,6 @@
 {
   "totalJs": 222862,
-  "css": 11932,
+  "css": 12455,
   "shared": 72695,
   "routes": {
     "/": 81648,
@@ -14,7 +14,7 @@
     "/app_/groups/$groupId/$channelId": 91145,
     "/app_/imports/$id": 75552,
     "/app_/insights": 82571,
-    "/app_/library": 80994,
+    "/app_/library": 85327,
     "/app_/lists/": 77574,
     "/app_/lists/$id": 81661,
     "/app_/plans/$id": 75473,
