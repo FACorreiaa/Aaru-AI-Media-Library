@@ -22,6 +22,7 @@ const labels: Record<AgentToken['kind'], string> = {
   stremio: 'Stremio',
   claude: 'Claude',
   browser: 'Browser extension',
+  music: 'Music scrobbler',
 }
 
 export const kindLabel = (kind: AgentToken['kind']) => labels[kind]

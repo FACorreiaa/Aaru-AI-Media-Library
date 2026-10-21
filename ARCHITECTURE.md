@@ -850,6 +850,15 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   feed the scrobble service; `library` `watched` marks tick episodes; `libraryRemove` is always
   ignored. The token is minted in Settings. It serves no streams, ever. No subtitles-request
   inference.
+- **Music (MUS-005):** `ListenBrainzRoutes` serves ListenBrainz's `POST /listenbrainz/1/submit-listens`
+  and `GET /listenbrainz/1/validate-token` outside `/v1`, in ListenBrainz's shapes (`Authorization:
+  Token …`, `{listen_type, payload}`, `{code, error}`), so scrobblers that let you set a
+  ListenBrainz server send to Aaru. Only a `music` token (`aaru_lb_…`, `scrobble:write`) gets in.
+  Listens go to `listens`, a log apart from the library: `ListenService` never calls
+  `LibraryService`. `PostgresListenStore` inserts under a per-user advisory lock and drops a listen
+  whose normalized artist and track (`track_key`) is within half its length (≤ 90 s) of a stored
+  one, so two scrobblers on one play keep one row. Spotify, Apple Music and YouTube are reached
+  only through those scrobblers and through history imports (MUS-004).
 
 ### Outbound sync
 

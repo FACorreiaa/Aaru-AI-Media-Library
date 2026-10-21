@@ -36,6 +36,17 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-21
 
+- **Music scrobbling (MUS-004…008) is built before the P2 gate**, by the owner's call, after
+  albums (MUS-001). Aaru speaks ListenBrainz's submit protocol at `/listenbrainz/1/`, so the
+  scrobblers people already use send their listens with a music token: Web Scrobbler (YouTube,
+  YouTube Music, Spotify and Apple Music on the web), Pano Scrobbler on Android, Navidrome and
+  Jellyfin's ListenBrainz plugin. **No Spotify OAuth**: since February 2026 a Spotify app in
+  development mode has 5 users, and extended quota needs a registered business with 250k monthly
+  users. **No native Apple Music path on iPhone**: Apple's API gives no play times, and iOS
+  cannot watch playback in the background. YouTube has no history API. Listens are a separate,
+  append-only log and never touch the library; the same play sent twice (one scrobbler retrying,
+  or two scrobblers on one play) is kept once. Past listening comes in through MUS-004. Settings
+  was split into groups first (#88) so Music joins Connected apps rather than lengthening it.
 - **Seasons on Discover (DISC-002) and music as a fifth kind (MUS-001…003) are built before the
   P2 gate**, by the owner's call, with 0 strangers (flagged; the owner chose). Discover gets a
   Seasons view: one season at a time, its name as the headline, kinds Anime · New shows ·
@@ -363,6 +374,7 @@ account or a stranger that has not happened yet.
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
+| MUS-005 | Built, unverified | ListenBrainzRouteTests | Not deployed; not tried with a real scrobbler; no client surface yet (MUS-007) |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -1306,9 +1318,49 @@ A daily call budget under the 5,000 limit; tickets link out. Discover gains a Co
 **Done when:** concerts near a saved city and near "Use my location" list on three clients, and
 an artist in the library with a tour shows under "Your artists on tour".
 
-### MUS-004 · Listening history import · M · later
-ListenBrainz / Last.fm listens as an import source, so albums gain listening activity. Not
-scheduled.
+### MUS-004 · Listening history import · M · pulled forward 2026-10-21
+**Needs:** MUS-005.
+Past listens into the listening log, as import jobs the user confirms, undone by job: Last.fm by
+username (`user.getRecentTracks`), ListenBrainz by username, Spotify's extended streaming
+history (`ts` is when a play ended; plays under 30 s and podcast episodes are skipped), and
+YouTube Music from Google Takeout's `watch-history.json` (`header` "YouTube Music" only). The
+same duplicate window as live listens applies. Never part of the library import order.
+
+**Done when:** a Last.fm username and a Spotify history file each import with a count of new and
+duplicate listens, show in the log, and undo in one step.
+
+### MUS-005 · Listening log and ListenBrainz ingest · M · pulled forward 2026-10-21
+**Needs:** OUT-001.
+`listens`: one row per play (artist, track, album, length, ISRC and MusicBrainz ids when sent,
+the scrobbler and the service it heard), append-only, deleted with the account, in the export.
+A `music` token (`aaru_lb_`, `scrobble:write` only) opens `POST /listenbrainz/1/submit-listens`
+(`single`, `playing_now` which stores nothing, `import` of up to 1,000) and
+`GET /listenbrainz/1/validate-token`, in ListenBrainz's shapes. A listen of the same normalized
+artist and track within half its length (at most 90 s, 30 s when unknown) of a stored one is the
+same play and is dropped. `GET /v1/me/listens` pages the log; `GET /v1/me/listens/top` ranks
+artists, tracks or albums over a period read like `/v1/me/stats`.
+
+**Done when:** Web Scrobbler pointed at Aaru logs a YouTube Music play once, Pano Scrobbler the
+same, and the play shows in `/v1/me/listens`.
+
+### MUS-006 · Listens resolved to MusicBrainz · M
+**Needs:** MUS-005, MUS-001.
+A background pass looks each new track up once (sent ids, then ISRC, then an exact
+artist-and-title search) through `MusicBrainzCatalog`'s paced client, and fills recording,
+release group and artist ids. A listen then has its album's cover, and links to the album when
+it is in the catalog. Nothing is guessed: only an exact match fills ids.
+
+### MUS-007 · Music in Settings → Connected apps · S
+**Needs:** MUS-005, APP-007 groups (#88).
+Web and Apple: connect a scrobbler (the token shown once), the address each scrobbler wants with
+Copy, a collapsed "How to set it up" for Web Scrobbler, Pano Scrobbler, Navidrome and Jellyfin,
+live connections with last use and Revoke, and the last listen received.
+
+### MUS-008 · Listening on Insights, a Music page and the Recap · M
+**Needs:** MUS-005, MUS-006.
+Insights gains a Music block (listens, minutes, top artists, tracks and albums); a Music page
+lists recent listens with the top lists by period; the Recap gains a top-artist card when the
+period has listens.
 
 ### APP-010 · Week grid · L
 **Needs:** APP-001, CAL-001.
