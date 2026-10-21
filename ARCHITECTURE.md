@@ -511,7 +511,9 @@ Unmatched rows are counted and listed on the job; they are not silently dropped 
   ("Pick the right one by hand"); never a guess. A row with a year takes the normal title + year path
 - ICS (file or the user's iCal link): show names from each event's `SUMMARY` with the episode part
   (`S01E02`, `1x02`) removed; events collapse to one row per show. A summary with no readable show
-  name is listed unmatched, once
+  name is listed unmatched, once. Each row keeps its first episode and that event's `DTSTART` day
+  (`airing`): when several TMDB shows share the name (at most 4), the one whose episode list dates
+  that episode within a day of it is the match. None or several airing it stays ambiguous
 - Every CAT show is planned `wishlist` with no progress (owner, 2026-10-21). No watched-episode import
   from CAT
 - The iCal link (`/cat/download_ics/<key>` or `generate_ics`) is checked strictly (https, pogdesign

@@ -242,8 +242,8 @@ struct OAuthService: Sendable {
             throw OAuthError(error: "invalid_request", description: "code, code_verifier and client_id are required.")
         }
         let codeHash = OpaqueToken.hash(code)
-        guard case let .fresh(grant)? = try await oauth.redeemCode(hash: codeHash, now: now()) else { throw invalid }
-        guard grant.clientID == clientID, form["redirect_uri"].map({ $0 == grant.redirectURI }) ?? true,
+        guard case let .fresh(grant)? = try await oauth.redeemCode(hash: codeHash, now: now()),
+              grant.clientID == clientID, form["redirect_uri"].map({ $0 == grant.redirectURI }) ?? true,
               Self.challenge(for: verifier) == grant.codeChallenge,
               form["resource"].map({ $0.trimmingSuffix("/") == resource }) ?? true
         else { throw invalid }

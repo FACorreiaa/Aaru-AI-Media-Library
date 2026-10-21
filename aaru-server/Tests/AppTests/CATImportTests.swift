@@ -79,6 +79,36 @@ struct CATImportTests {
         #expect(rows[2].unsupported == "Couldn't read a show name from “Season premiere night”.")
     }
 
+    @Test("ICS: each show keeps its first episode and that event's day")
+    func calendarAirings() throws {
+        let text = """
+        BEGIN:VCALENDAR\r
+        BEGIN:VEVENT\r
+        DTSTART:20261026T000000\r
+        SUMMARY:The Simpsons S38E04 - \\nTreehouse of Horror XXXVII\r
+        END:VEVENT\r
+        BEGIN:VEVENT\r
+        DTSTART:20261102T010000\r
+        SUMMARY:The Simpsons S38E05 - \\nThe Kosmic Kruiser\r
+        END:VEVENT\r
+        BEGIN:VEVENT\r
+        SUMMARY:Doctor Who - 2x05\r
+        DTSTART;VALUE=DATE:20261031\r
+        END:VEVENT\r
+        BEGIN:VEVENT\r
+        SUMMARY:Tracker S03E04\r
+        END:VEVENT\r
+        END:VCALENDAR\r
+        """
+        let rows = try CATCalendarParser.parse(text)
+        #expect(rows.map(\.title) == ["The Simpsons", "Doctor Who", "Tracker"])
+        #expect(rows.map(\.airing) == [
+            ImportAiring(season: 38, episode: 4, day: "2026-10-26"),
+            ImportAiring(season: 2, episode: 5, day: "2026-10-31"),
+            nil,
+        ])
+    }
+
     @Test("Detection: a calendar is CAT's; a list is never mistaken for one")
     func detection() throws {
         #expect(try ImportFormatDetector.detect("\u{FEFF}BEGIN:VCALENDAR\r\nEND:VCALENDAR") == .catICS)
@@ -160,6 +190,35 @@ struct CATImportTests {
             let ownedTitle = try #require(try await env.stores.titles.find(ids: ownedHit.ids, type: .show))
             #expect(try await env.stores.library.item(userID: env.userID, titleID: ownedTitle.id)?.status ==
                 .inProgress)
+        }
+    }
+
+    @Test("ICS: of two shows with one name, the one airing that episode that day is the match")
+    func airingTiebreak() async throws {
+        try await LibraryHarness.run { env in
+            let (remade, bothAir) = (uniqueID("Remade"), uniqueID("BothAir"))
+            func episodes(_ hit: CatalogHit, airs day: String) throws {
+                try env.fake.stubEpisodes(#require(hit.ids.tmdb), CatalogEpisodes(status: .returning, episodes: [
+                    CatalogEpisode(season: 2, episode: 3, airsAt: Date.catalogDay(day)),
+                ]))
+            }
+            let (original, remake) = (stubShow(env, remade, year: 2005), stubShow(env, remade, year: 2025))
+            try episodes(original, airs: "2006-03-01")
+            try episodes(remake, airs: "2026-10-20")
+            env.fake.stubSearch(remade, [original, remake])
+            let (first, second) = (stubShow(env, bothAir, year: 2010), stubShow(env, bothAir, year: 2024))
+            try episodes(first, airs: "2026-10-21")
+            try episodes(second, airs: "2026-10-22")
+            env.fake.stubSearch(bothAir, [first, second])
+            let service = importer(env)
+            let job = try await service.createCATImport(
+                userID: env.userID, text: Self.calendar(["\(remade) S02E03", "\(bothAir) S02E03"])
+            )
+            while try await service.runNext(for: env.userID) {}
+            let planned = try await env.stores.importJobs.rows(jobID: job.id)
+            #expect(planned.map(\.outcome) == [.create, .unmatched])
+            #expect(try await planned[0].titleID == env.stores.titles.find(ids: remake.ids, type: .show)?.id)
+            #expect(planned[1].reason == "Several shows are called “\(bothAir)”. Pick the right one by hand.")
         }
     }
 

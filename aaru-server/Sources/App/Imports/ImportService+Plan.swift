@@ -44,7 +44,7 @@ extension ImportService {
         let nameOnly = row.row.nameOnly == true && row.row.year == nil && row.row.ids.isEmpty
         do {
             row.titleID = if nameOnly {
-                try await resolver.resolveShow(named: row.row.title).id
+                try await resolver.resolveShow(named: row.row.title, airing: row.row.airing).id
             } else {
                 try await resolver.resolve(row.row.mediaRef, searchHint: row.row.author).id
             }

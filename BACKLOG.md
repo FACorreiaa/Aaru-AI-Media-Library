@@ -336,7 +336,7 @@ account or a stranger that has not happened yet.
 | IMP-007 | Done | #13; CSVImportParser.swift | |
 | IMP-008 | Done | #13; ImportParserTests | |
 | IMP-009 | Built, unverified | `feat/cat-import`; CATImport.swift, CATImportTests | Stub catalog and synthetic lists only; no real CAT profile paste yet |
-| IMP-010 | Built, unverified | `feat/cat-import`; CATCalendarParser, CATCalendarFeed | SUMMARY format assumed (`Show: S01E02 …`); not yet run on a real CAT export or link |
+| IMP-010 | Built, unverified | `feat/cat-import`; CATCalendarParser, CATCalendarFeed | SUMMARY format confirmed on a real export (`Show S01E02 - \nTitle`, 45 shows); a same-name tie breaks on the episode's air date; link not yet run live |
 | IMP-011 | Open | ImportDetailView lists unmatched rows only | No resolve/search-and-pick UI |
 | IMP-012 | Deferred | BACKLOG "Parked 2026-10-16 by the owner" | Needs a real export |
 | IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |
