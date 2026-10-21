@@ -2,6 +2,7 @@ import { For, Show, createSignal, onMount } from 'solid-js'
 import { addToList, createList, getLists } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { Button } from './ui/button'
+import { Dialog } from './ui/dialog'
 
 export interface MediaRefInput {
   titleId?: string
@@ -25,7 +26,6 @@ export function AddToListDialog(props: {
   const [problem, setProblem] = createSignal<string | null>(null)
 
   onMount(async () => {
-    dialog?.showModal()
     try {
       setLists(await getLists())
     } catch (error) {
@@ -85,10 +85,11 @@ export function AddToListDialog(props: {
   }
 
   return (
-    <dialog
+    <Dialog
       ref={dialog}
+      openOnMount
       aria-label={`Add ${props.titleName} to a list`}
-      class="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-card bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
+      class="w-[min(26rem,calc(100vw-2rem))]"
       onClose={() => props.onClose()}
     >
       <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
@@ -157,6 +158,6 @@ export function AddToListDialog(props: {
           )}
         </For>
       </ul>
-    </dialog>
+    </Dialog>
   )
 }

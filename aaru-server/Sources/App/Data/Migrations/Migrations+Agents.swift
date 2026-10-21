@@ -128,3 +128,23 @@ struct AddMCPOAuth: SQLMigration {
         """,
     ]
 }
+
+/// AG-001 `plan_import` · an MCP token may queue an import when the user allowed it. The import
+/// still waits for the user's approval like any other; the scope never applies anything.
+struct AddImportsWriteScope: SQLMigration {
+    let forward = [
+        "ALTER TABLE agent_tokens DROP CONSTRAINT agent_tokens_scopes_check",
+        """
+        ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_scopes_check
+            CHECK (scopes <@ ARRAY['library:read', 'library:write', 'scrobble:write', 'imports:write']::text[])
+        """,
+    ]
+    let backward = [
+        "UPDATE agent_tokens SET scopes = array_remove(scopes, 'imports:write')",
+        "ALTER TABLE agent_tokens DROP CONSTRAINT agent_tokens_scopes_check",
+        """
+        ALTER TABLE agent_tokens ADD CONSTRAINT agent_tokens_scopes_check
+            CHECK (scopes <@ ARRAY['library:read', 'library:write', 'scrobble:write']::text[])
+        """,
+    ]
+}

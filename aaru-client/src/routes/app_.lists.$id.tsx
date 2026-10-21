@@ -4,9 +4,12 @@ import type { JSX } from 'solid-js'
 import { Wordmark } from '../components/Brand'
 import { Poster } from '../components/Poster'
 import { SearchPanel } from '../components/SearchPanel'
+import { AlertDialog } from '../components/ui/alert-dialog'
 import { Button } from '../components/ui/button'
+import { Dialog } from '../components/ui/dialog'
 import { KINDS, statusLabel } from '../lib/library/model'
 import { toListRow } from '../lib/lists/model'
+import type { ListRow } from '../lib/lists/model'
 import { getList, removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
 import { getSession } from '../lib/session/session'
@@ -30,6 +33,10 @@ function ListPage() {
   // Set on mount, not during SSR: "Tomorrow" depends on the viewer's clock and timezone.
   const [now, setNow] = createSignal<Date | null>(null)
   const [searchOpened, setSearchOpened] = createSignal(false)
+  const [pending, setPending] = createSignal<ListRow | null>(null)
+  const [removing, setRemoving] = createSignal(false)
+  // The last row asked about, so the dialog keeps its title while it fades out.
+  const asked = createMemo<ListRow | null>((last) => pending() ?? last, null)
   let dialog: HTMLDialogElement | undefined
   onMount(() => setNow(new Date()))
 
@@ -191,7 +198,7 @@ function ListPage() {
                     <button
                       type="button"
                       class="ml-2 text-muted hover:text-danger"
-                      onClick={() => remove(row.titleId)}
+                      onClick={() => setPending(row)}
                     >
                       Remove
                     </button>
@@ -201,16 +208,28 @@ function ListPage() {
             </For>
           </ol>
         </Show>
+        <AlertDialog
+          open={pending() !== null}
+          title={`Remove ${asked()?.title ?? ''} from this list?`}
+          confirmLabel="Remove"
+          busy={removing()}
+          onConfirm={() => {
+            const row = pending()
+            if (!row) return
+            setRemoving(true)
+            void remove(row.titleId).finally(() => {
+              setRemoving(false)
+              setPending(null)
+            })
+          }}
+          onCancel={() => setPending(null)}
+        />
       </main>
 
-      <dialog
+      <Dialog
         ref={dialog}
         aria-label={`Add to ${detail().name}`}
-        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-card bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
-        onClick={(e) => {
-          // A click on the backdrop closes it.
-          if (e.target === dialog) dialog.close()
-        }}
+        class="w-[min(40rem,calc(100vw-2rem))]"
       >
         <Show when={searchOpened()}>
           <SearchPanel
@@ -219,7 +238,7 @@ function ListPage() {
             onClose={() => dialog?.close()}
           />
         </Show>
-      </dialog>
+      </Dialog>
     </div>
   )
 }

@@ -376,7 +376,7 @@ account or a stranger that has not happened yet.
 | ROOM-002 | Open | none | |
 | ROOM-003 | Open | none | |
 | ROOM-004 | Open | none | |
-| AG-001 | Partial | Agent/AgentTools.swift | Four tools; `plan_import` waits for `imports:write` |
+| AG-001 | Built | Agent/AgentTools.swift | All five tools, over MCP; no in-app composer (AG-004) |
 | AG-002 | Open | none | |
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
@@ -2482,6 +2482,12 @@ consent link sent to someone else approves nothing. The access token is an `agen
 code revokes the connection. MCP's 401 names the resource metadata. Settings lists these
 connections with the others; revoking one stops its refresh. `kind = claude` cannot be minted
 with a pasted token. New env: `WEB_BASE_URL`, `OAUTH_COOKIE_DOMAIN`.
+
+**Progress 2026-10-20 (`plan_import`):** the fifth tool. `imports:write` is mintable for MCP
+clients ("Allow imports", off by default; migration `AddImportsWriteScope`). The agent hands Aaru
+a list export as text (format detected, or named); it becomes an ordinary import job, matched by
+the worker and approved by the user in Aaru like any other import. The tool never writes the
+library. The user gets a push that opens the import on the web.
 
 ### OUT-005 · Agent-readable digest · S
 **Needs:** LIB-002, SHF-002, OUT-001.

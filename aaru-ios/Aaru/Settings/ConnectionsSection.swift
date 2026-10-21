@@ -68,7 +68,10 @@ struct ConnectionsSection: View {
     }
 
     private func detail(_ token: Components.Schemas.AgentToken) -> Text {
-        let access = token.scopes.contains(.library_colon_write) ? "Can change one item at a time" : "Read only"
+        var access = token.scopes.contains(.library_colon_write) ? "Can change one item at a time" : "Read only"
+        if token.scopes.contains(.imports_colon_write) {
+            access += " · can send imports"
+        }
         let used = token.lastUsedAt.map { Text("used \($0, format: .relative(presentation: .named))") }
             ?? Text("not used yet")
         return Text("\(ConnectionSetupView.label(token.kind)) · \(access) · ") + used
