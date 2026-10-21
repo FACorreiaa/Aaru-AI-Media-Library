@@ -32,23 +32,7 @@ extension AgentTools {
         guard input.text.utf8.count <= ImportService.maxUploadBytes else {
             throw AgentToolError(message: "text is at most 5 MB.")
         }
-        let source: ImportSource
-        switch input.source ?? "auto" {
-        case "imdb": source = .imdbCSV
-        case "letterboxd": source = .letterboxdCSV
-        case "goodreads": source = .goodreadsCSV
-        case "mal": source = .malXML
-        case "csv": source = .genericCSV
-        case "cat": source = CATCalendarParser.isCalendar(input.text) ? .catICS : .catList
-        case "auto":
-            do {
-                source = try ImportFormatDetector.detect(input.text)
-            } catch let error as ImportFormatError {
-                throw AgentToolError(message: error.message)
-            }
-        default:
-            throw AgentToolError(message: "source must be auto, imdb, letterboxd, goodreads, mal, csv or cat.")
-        }
+        let source = try Self.importSource(input.source ?? "auto", text: input.text)
         let job = try await services.imports.createCSVImport(
             userID: caller.userID, source: source, filename: input.filename, text: input.text
         )
@@ -58,5 +42,25 @@ extension AgentTools {
             payload: ["importId": job.id.description]
         ), userID: caller.userID)
         return ImportQueued(importId: job.id.description, source: source.rawValue)
+    }
+
+    /// The tool's `source` argument as an import source; `auto` and `cat` look at the text.
+    static func importSource(_ name: String, text: String) throws -> ImportSource {
+        switch name {
+        case "imdb": return .imdbCSV
+        case "letterboxd": return .letterboxdCSV
+        case "goodreads": return .goodreadsCSV
+        case "mal": return .malXML
+        case "csv": return .genericCSV
+        case "cat": return CATCalendarParser.isCalendar(text) ? .catICS : .catList
+        case "auto":
+            do {
+                return try ImportFormatDetector.detect(text)
+            } catch let error as ImportFormatError {
+                throw AgentToolError(message: error.message)
+            }
+        default:
+            throw AgentToolError(message: "source must be auto, imdb, letterboxd, goodreads, mal, csv or cat.")
+        }
     }
 }
