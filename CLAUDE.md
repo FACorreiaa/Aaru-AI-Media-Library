@@ -1,6 +1,6 @@
 # Aaru
 
-Aaru is a private-first media library and tracking app for movies, TV shows, anime, and books. The name comes from the Egyptian Field of Reeds: a calm place where stories live. Social features (friends, activity, encrypted DMs, watch-together), gamification, and scrobbling are planned. They are scheduled in `BACKLOG.md` phases P3–P6 and do not start until the P2 gate ("basics done") is met.
+Aaru is a private-first media library and tracking app for movies, TV shows, anime, books, and music albums. The name comes from the Egyptian Field of Reeds: a calm place where stories live. Social features (friends, activity, encrypted DMs, watch-together), gamification, and scrobbling are planned. They are scheduled in `BACKLOG.md` phases P3–P6 and do not start until the P2 gate ("basics done") is met.
 
 This file is the working contract for anyone — human or agent — changing the repo.
 
@@ -10,7 +10,7 @@ This file is the working contract for anyone — human or agent — changing the
 - Private by default. A new account has no visible surface. Social is opt-in per user and friends-only; there is no global feed and no public profile page. Groups are friends-only too: no invite links, no public or discoverable groups.
 - Group messages are server-visible and every channel says "not end-to-end". DMs are end-to-end and the server never reads them. Never blur the two.
 - Catalog metadata and user library are different layers. Never treat TMDB/Trakt/Open Library/AniList payloads as the user’s library row.
-- Every saved title must store external IDs when known: `tmdb`, `imdb`, `trakt`, `tvdb`, `isbn`, `anilist`, `mal`, `anidb`.
+- Every saved title must store external IDs when known: `tmdb`, `imdb`, `trakt`, `tvdb`, `isbn`, `anilist`, `mal`, `anidb`, `musicbrainz`.
 - Pogdesign CAT is a minor on-ramp (show list + optional ICS), not a first-class sync target. No CAT scraping:
   the one request Aaru makes to pogdesign.co.uk is reading the user's own iCal export link, once, when they
   paste it (owner, 2026-10-21). Every CAT show is planned as `wishlist`; CAT's watched episodes do not come across.
@@ -25,15 +25,18 @@ This file is the working contract for anyone — human or agent — changing the
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
 | Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI primitives in `src/components/ui` (solid-ui's shapes on native elements, no Kobalte), animation through `motion/mini` (DESIGN.md §17). No DB access, no business logic |
+| Browser extension | `aaru-extension/` — WXT, one Manifest V3 source for Chrome and Firefox (SCR-007). Reads the player on Netflix, Disney+ and Prime Video and calls `/v1/scrobble/*` with a scrobble-only token. A client like the others: no rules of its own |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021) |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
+| Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
-| Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
+| Scrobble — music | ListenBrainz's submit protocol at `/listenbrainz/1/` with music tokens only (MUS-005, owner 2026-10-21): Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin's plugin. No Spotify OAuth, no native Apple Music path |
+| Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped, scrobble tokens only), the browser extension for Netflix / Disney+ / Prime Video (SCR-007, owner exception 2026-10-21), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | Realtime | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
 | Groups | Friends-only spaces with channels (`text`, `title`, `watch`, `shelf`) and `#general`. Server-visible messages in Postgres; `@aaru` replies through `ModelProviding` (pulled forward 2026-10-20) |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
@@ -52,6 +55,7 @@ aaru/
   aaru-server/           # Hummingbird API
   aaru-ios/              # SwiftUI iPhone + Mac + widget extension (not scaffolded)
   aaru-client/           # SolidJS + TanStack Start on Workers: landing + the web app on /v1
+  aaru-extension/        # Browser extension (Chrome + Firefox): scrobbles streaming sites
   README.md
   ARCHITECTURE.md
   DESIGN.md              # what Aaru feels like: surfaces, agentic rules
@@ -90,6 +94,10 @@ cd aaru-client && npm run check && npm run lint && npm run typecheck
 cd aaru-client && npm test
 cd aaru-client && npm run api:generate   # after any openapi.yaml change
 cd aaru-client && npm run build && npm run size   # JS/CSS budget per route (size-budget.json)
+
+# Browser extension
+cd aaru-extension && npm run check && npm run lint && npm run typecheck && npm test
+cd aaru-extension && npm run build   # .output/chrome-mv3, .output/firefox-mv3; store submission by hand
 
 # Apple
 xcodebuild build -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
@@ -130,12 +138,15 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
 
 Use these words in code, APIs, and UI:
 
-- **Title** — a movie, show, anime, or book in the catalog
+- **Title** — a movie, show, anime, book, or album in the catalog
 - **Library item** — a user’s relationship to a title
 - **Status** — consumption only: `wishlist` | `in_progress` | `finished` | `dropped`. These
   stored values never change; UI labels are per kind: films, shows and anime read Plan to
-  watch / Watching / Watched / Dropped, books Plan to read / Reading / Read / Dropped, no kind
-  Planned / In progress / Finished / Dropped
+  watch / Watching / Watched / Dropped, books Plan to read / Reading / Read / Dropped, albums
+  Plan to listen / Listening / Listened / Dropped, no kind Planned / In progress / Finished /
+  Dropped
+- **Album** — one MusicBrainz release group of type Album or EP: the tracked unit of music.
+  Status, rating and notes only; its tracklist is catalog data, never ticked
 - **Owned** — separate `isOwned` flag; do not overload status
 - **Progress** — episode ticks for TV; page/percentage optional for books
 - **List** — user-curated collection of library items, stored as membership rows
@@ -146,7 +157,8 @@ Use these words in code, APIs, and UI:
 - **Capture** — one-shot intake of pasted text, an image, or a URL. It is an *import source*,
   not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never writes unplanned
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
-  theaters, this season's anime, trending books), the same for every user. Shown on Home and
+  theaters, this season's anime, trending books; MUS-002: new albums, albums coming soon), the
+  same for every user. Shown on Home and
   as the Discover tab/page. Catalog data like search, never a recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer
@@ -154,6 +166,8 @@ Use these words in code, APIs, and UI:
   caller approves its own plan
 - **Watch event** — one scrobble (start/pause/stop with progress) from a player. It may tick
   progress; it is never library truth on its own
+- **Listen** — one play of a track a music scrobbler sent (MUS-005). Append-only and never a
+  library write; the same play sent twice is kept once
 - **Friend** — a mutual, accepted connection. There is no one-way follow
 - **Points event** — one row in the append-only points ledger, idempotent by dedupe key.
   Never a counter
@@ -214,8 +228,8 @@ concerts (MUS-001…003), 2026-10-21).
   (trending, this season, DISC-001) are allowed; anything personalised is not
 - A global or public activity feed; public profile pages indexed by search engines
 - Serializd / SIMKL integrations
-- Music, manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`
-  decisions 2026-10-15)
+- Manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`
+  decisions 2026-10-15). Music albums were pulled forward by the owner (MUS-001…003, 2026-10-21)
 - Scraping Pogdesign, IMDb pages, AniDB, or any site without an official export/API. The one owner
   exception (2026-10-21) is SCR-007's browser extension reading the player page the user is
   watching, in their own browser; Aaru's server fetches nothing from those sites

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  KINDS,
+  coverShape,
   idKeys,
   isOnShelf,
   kindOf,
@@ -38,6 +40,36 @@ describe('library model', () => {
     expect(kindOf('movie', true)).toBe('anime')
     expect(kindOf('movie', false)).toBe('film')
     expect(kindOf('book', false)).toBe('book')
+    expect(kindOf('album', false)).toBe('album')
+  })
+
+  it('files albums under Music, with a square cover', () => {
+    expect(KINDS.find((k) => k.kind === 'album')).toEqual({
+      kind: 'album',
+      label: 'Music',
+      search: 'album',
+    })
+    expect(coverShape('album')).toBe('square')
+    expect(coverShape('film')).toBe('poster')
+    expect(coverShape('book')).toBe('poster')
+  })
+
+  it("carries an album's artist on its row", () => {
+    const album = entry('m', {
+      title: {
+        id: 't-m',
+        type: 'album',
+        title: 'OK Computer',
+        byline: 'Radiohead',
+        isAnime: false,
+        ids: { musicbrainz: 'b1392450-e666-3926-a536-22c65f834433' },
+      },
+    })
+    expect(toRow(album)).toMatchObject({
+      kind: 'album',
+      byline: 'Radiohead',
+      detail: undefined,
+    })
   })
 
   it('shows progress as episodes or pages', () => {
@@ -109,6 +141,16 @@ describe('status labels', () => {
     expect(statusLabel('finished', 'book')).toBe('Read')
   })
 
+  it('speaks of listening for albums', () => {
+    expect(labels('album')).toEqual([
+      'Plan to listen',
+      'Listening',
+      'Listened',
+      'Dropped',
+    ])
+    expect(statusLabel('in_progress', 'album')).toBe('Listening')
+  })
+
   it('uses neutral words when no kind is chosen', () => {
     expect(labels(null)).toEqual([
       'Planned',
@@ -120,7 +162,7 @@ describe('status labels', () => {
   })
 
   it('keeps the stored values and their order whatever the words', () => {
-    for (const kind of ['film', 'book', null] as const) {
+    for (const kind of ['film', 'book', 'album', null] as const) {
       expect(statusOptions(kind).map((o) => o.status)).toEqual([
         'wishlist',
         'in_progress',

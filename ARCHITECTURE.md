@@ -54,7 +54,7 @@ These types are the contract. Persistence tables map to them; they do not have t
 
 ```swift
 enum MediaType: String, Codable, Sendable {
-    case movie, show, book
+    case movie, show, book, album   // album: MUS-001
 }
 
 struct ExternalIDs: Codable, Hashable, Sendable {
@@ -67,6 +67,7 @@ struct ExternalIDs: Codable, Hashable, Sendable {
     var anilist: String?   // CAT-008
     var mal: String?       // CAT-008
     var anidb: String?     // CAT-008
+    var musicbrainz: String? // MUS-001: an album's release-group MBID
 }
 ```
 
@@ -82,7 +83,11 @@ A canonical work Aaru knows about. Created on first add or during import hydrati
 - `synopsis` (optional, from catalog)
 - `posterURL` (catalog URL, not hosted)
 - `ids` — `ExternalIDs`
+- `byline` — authors for books, the artist credit for albums
 - `seasons` — only for shows; episode lists may be lazy-loaded
+- tracklist (server-only, MUS-001) — `album_tracks`, an album's earliest official release,
+  stored the first time its page opens (`tracks_hydrated_at`, refreshed after 30 days) and
+  returned on `TitleDetail.tracks`. Never ticked
 - `genres` (server-only, CAT-018) — the provider's genre names, stored at hydration (TMDB,
   AniList; books none) and backfilled by the catalog refresher. Not on the `Title` DTO; the
   stats read them
@@ -329,8 +334,9 @@ in every time zone.
 Insights (GAM-006c) reads the same rows. `year` is optional; `span=all` runs from the first
 active year to the end of the current one with one bucket per year (422 with `year` or `month`;
 a request with neither `year` nor `span` is a 422 too), so all-time totals equal the years summed. The
-response adds `span` (`month` | `year` | `all`), `byKind` (`movie` | `show` | `anime` | `book`:
-episodes, minutes, finished) and `ratings.distribution`: ten bins, index `ceil(rating) - 1`,
+response adds `span` (`month` | `year` | `all`), `byKind` (`movie` | `show` | `anime` | `book`,
+then `album` only when the period finished one, so pre-MUS-001 clients keep decoding:
+episodes, minutes, finished; albums never have minutes) and `ratings.distribution`: ten bins, index `ceil(rating) - 1`,
 so a 7.5 counts as an 8. No new query and no table.
 
 The last 7 and 30 days (GAM-006d) are `span=last7|last30`: the local days ending today in `tz`,
@@ -393,6 +399,14 @@ entries; 6 h, or 7 days for a season that has ended), coalesces fetches and serv
 failure; nothing cached and the provider down returns `unavailable: true`. Marking against the
 library is the same `DiscoverService.mark` the rows use.
 
+**Album rows (MUS-002).** `ListenBrainzReleases` (`Catalog/ListenBrainzReleases.swift`, no key,
+1 req/s with a contact User-Agent) serves `music_new` and `music_upcoming` through the same
+`DiscoverListing` and cache. Each list is two calls: `explore/fresh-releases` (30 days back, or
+30 days ahead) and a sitewide stat for this month (`stats/sitewide/release-groups` for New
+albums, `stats/sitewide/artists` for Coming soon), because fresh releases carry no listens of
+their own. Hits are `album`s keyed by the release-group MBID, so marking works; covers are Cover
+Art Archive release URLs. `CatalogProviders.releases` is optional: without it the rows are absent.
+
 ### MediaRef
 
 ```swift
@@ -449,6 +463,17 @@ protocol UserLibraryImporting: Sendable {
 - Search and detail for `book`
 - ISBN and cover URL
 - Discover's books row: `trending/weekly.json` (DISC-001)
+
+### MusicBrainz (MUS-001)
+
+- Search, hydrate and tracklist for `album`: release groups of type Album or EP
+  (`ws/2/release-group`, Lucene query with the user's punctuation escaped), lookup with
+  `inc=artist-credits+genres` (top five genres by count), and `ws/2/release?release-group=`
+  for the earliest dated official release's tracks
+- One `ProviderClient` paced at 1 request/s, `User-Agent` with a contact, as MusicBrainz asks
+- Covers are Cover Art Archive URLs (`release-group/{mbid}/front-250`), square, never hosted
+- `CatalogProviders.music` is optional; without it album search is `incomplete` and album pages
+  show no tracklist
 
 ### Anime catalog (AniList)
 
@@ -655,8 +680,9 @@ default. `library:write` is an opt-in at connect time and only lets Stremio's `u
 An MCP token (`kind` = `claude_code`, `codex`, `hermes`, `gemini` or `other`) gets
 `library:read`, plus `library:write` when the user allows changes and `imports:write` when the
 user allows imports at connect time; never `scrobble:write`. The kind only picks the setup Settings shows (`GET /v1/agent/setup/{kind}`,
-written once on the server for web and Apple). Secrets carry a per-surface prefix
-(`aaru_st_`, `aaru_mcp_`) and a token authenticates only on its own surface. The tools live in
+written once on the server for web and Apple). A browser-extension token (`kind = browser`, SCR-007) gets
+`scrobble:write` only: it never reads the library. Secrets carry a per-surface prefix
+(`aaru_st_`, `aaru_mcp_`, `aaru_scr_`) and a token authenticates only on its own surface. The tools live in
 `aaru-server/Sources/App/Agent/AgentTools.swift`, transport-neutral, and answer the `/v1` DTOs.
 
 ### Remote approval
@@ -840,6 +866,18 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   feed the scrobble service; `library` `watched` marks tick episodes; `libraryRemove` is always
   ignored. The token is minted in Settings. It serves no streams, ever. No subtitles-request
   inference.
+- **Music (MUS-005):** `ListenBrainzRoutes` serves ListenBrainz's `POST /listenbrainz/1/submit-listens`
+  and `GET /listenbrainz/1/validate-token` outside `/v1`, in ListenBrainz's shapes (`Authorization:
+  Token …`, `{listen_type, payload}`, `{code, error}`), so scrobblers that let you set a
+  ListenBrainz server send to Aaru. Only a `music` token (`aaru_lb_…`, `scrobble:write`) gets in.
+  Listens go to `listens`, a log apart from the library: `ListenService` never calls
+  `LibraryService`. `PostgresListenStore` inserts under a per-user advisory lock and drops a listen
+  whose normalized artist and track (`track_key`) is within half its length (≤ 90 s) of a stored
+  one, so two scrobblers on one play keep one row. Spotify, Apple Music and YouTube are reached
+  only through those scrobblers and through history imports (MUS-004). `MusicSetup` writes each
+  scrobbler's steps once, with the token filled in, and `POST /v1/agent/tokens` answers them in `music`
+  for a music token (MUS-007), so the web and Apple apps show the same ones. The clients disagree on
+  the address (submit URL, root with or without `/`, root plus `1/`); the steps give each its own.
 
 ### Outbound sync
 
@@ -1113,6 +1151,7 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Backend | Hummingbird only |
 | First clients | iOS and Mac, with widgets and a Live Activity |
 | Web | `aaru-client`: SolidJS + TanStack Start on Cloudflare Workers, pure `/v1` client at parity with the Apple apps (2026-10-14; SvelteKit 2026-10-09 to 10-14) |
+| Browser extension | `aaru-extension` (SCR-007, 2026-10-21): Chrome + Firefox, Manifest V3. A client of `/v1/scrobble/*` only, with a `browser` token (scrobble only) handed over on `/connect/extension`. Reads the playing title from the player page in the user's browser; the server fetches nothing from the sites |
 | Beta | Client-side only: TestFlight `.beta` + staging Worker, both on the prod API. One backend (2026-10-09) |
 | Anime | First-class from Phase 1: AniList catalog, `anilist`/`mal`/`anidb` ids (2026-10-09) |
 | DMs | Signal-grade via libsignal; server stores ciphertext only. Licence and web are OPEN (2026-10-09) |

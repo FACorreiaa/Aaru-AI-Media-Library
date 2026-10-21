@@ -357,6 +357,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
     func getStats(_ input: Operations.GetStats.Input) async throws -> Operations.GetStats.Output
+    /// Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)`.
+    func listListens(_ input: Operations.ListListens.Input) async throws -> Operations.ListListens.Output
+    /// Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens/top`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)`.
+    func getTopListens(_ input: Operations.GetTopListens.Input) async throws -> Operations.GetTopListens.Output
     /// Search the catalog. Results are catalog projections, never library rows.
     ///
     /// - Remark: HTTP `GET /v1/search`.
@@ -1439,6 +1449,32 @@ extension APIProtocol {
             headers: headers
         ))
     }
+    /// Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)`.
+    public func listListens(
+        query: Operations.ListListens.Input.Query = .init(),
+        headers: Operations.ListListens.Input.Headers = .init()
+    ) async throws -> Operations.ListListens.Output {
+        try await listListens(Operations.ListListens.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens/top`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)`.
+    public func getTopListens(
+        query: Operations.GetTopListens.Input.Query,
+        headers: Operations.GetTopListens.Input.Headers = .init()
+    ) async throws -> Operations.GetTopListens.Output {
+        try await getTopListens(Operations.GetTopListens.Input(
+            query: query,
+            headers: headers
+        ))
+    }
     /// Search the catalog. Results are catalog projections, never library rows.
     ///
     /// - Remark: HTTP `GET /v1/search`.
@@ -2047,6 +2083,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/allowImports`.
             public var allowImports: Swift.Bool?
+            /// Music tokens only: which scrobbler this token is for. It names the token and picks the setup steps in `music`. `other` when left out.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/scrobbler`.
+            public var scrobbler: Components.Schemas.MusicScrobbler?
             /// Creates a new `AgentTokenCreate`.
             ///
             /// - Parameters:
@@ -2054,22 +2094,26 @@ public enum Components {
             ///   - name:
             ///   - allowLibraryWrites: Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default.
             ///   - allowImports: MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default.
+            ///   - scrobbler: Music tokens only: which scrobbler this token is for. It names the token and picks the setup steps in `music`. `other` when left out.
             public init(
                 kind: Components.Schemas.AgentTokenKind,
                 name: Swift.String? = nil,
                 allowLibraryWrites: Swift.Bool? = nil,
-                allowImports: Swift.Bool? = nil
+                allowImports: Swift.Bool? = nil,
+                scrobbler: Components.Schemas.MusicScrobbler? = nil
             ) {
                 self.kind = kind
                 self.name = name
                 self.allowLibraryWrites = allowLibraryWrites
                 self.allowImports = allowImports
+                self.scrobbler = scrobbler
             }
             public enum CodingKeys: String, CodingKey {
                 case kind
                 case name
                 case allowLibraryWrites
                 case allowImports
+                case scrobbler
             }
         }
         /// - Remark: Generated from `#/components/schemas/AgentPlan`.
@@ -2301,7 +2345,7 @@ public enum Components {
                 case redirectTo
             }
         }
-        /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
+        /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension and `music` a music scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
         ///
         /// - Remark: Generated from `#/components/schemas/AgentTokenKind`.
         @frozen public enum AgentTokenKind: String, Codable, Hashable, Sendable, CaseIterable {
@@ -2312,6 +2356,8 @@ public enum Components {
             case gemini = "gemini"
             case other = "other"
             case claude = "claude"
+            case browser = "browser"
+            case music = "music"
         }
         /// - Remark: Generated from `#/components/schemas/AgentMCPKind`.
         @frozen public enum AgentMCPKind: String, Codable, Hashable, Sendable, CaseIterable {
@@ -2321,6 +2367,152 @@ public enum Components {
             case hermes = "hermes"
             case gemini = "gemini"
             case other = "other"
+        }
+        /// - Remark: Generated from `#/components/schemas/MusicScrobbler`.
+        @frozen public enum MusicScrobbler: String, Codable, Hashable, Sendable, CaseIterable {
+            case webScrobbler = "web_scrobbler"
+            case panoScrobbler = "pano_scrobbler"
+            case navidrome = "navidrome"
+            case jellyfin = "jellyfin"
+            case other = "other"
+        }
+        /// How to point one scrobbler at Aaru (MUS-007): numbered steps, some with a link to open and values to copy. The token appears in full only here, right after minting.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MusicSetup`.
+        public struct MusicSetup: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/scrobbler`.
+            public var scrobbler: Components.Schemas.MusicScrobbler
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/title`.
+            public var title: Swift.String
+            /// The full `submit-listens` URL, for clients that ask for it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/submitUrl`.
+            public var submitUrl: Swift.String
+            /// The ListenBrainz-style root, for clients that add `1/submit-listens` themselves.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/baseUrl`.
+            public var baseUrl: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload`.
+            public struct StepsPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/text`.
+                public var text: Swift.String
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/link`.
+                public struct LinkPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/link/label`.
+                    public var label: Swift.String
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/link/url`.
+                    public var url: Swift.String
+                    /// Creates a new `LinkPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - label:
+                    ///   - url:
+                    public init(
+                        label: Swift.String,
+                        url: Swift.String
+                    ) {
+                        self.label = label
+                        self.url = url
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case label
+                        case url
+                    }
+                }
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/link`.
+                public var link: Components.Schemas.MusicSetup.StepsPayloadPayload.LinkPayload?
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/FieldsPayload`.
+                public struct FieldsPayloadPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/FieldsPayload/label`.
+                    public var label: Swift.String
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/FieldsPayload/value`.
+                    public var value: Swift.String
+                    /// The token. Clients mask it until copied.
+                    ///
+                    /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/FieldsPayload/secret`.
+                    public var secret: Swift.Bool?
+                    /// Creates a new `FieldsPayloadPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - label:
+                    ///   - value:
+                    ///   - secret: The token. Clients mask it until copied.
+                    public init(
+                        label: Swift.String,
+                        value: Swift.String,
+                        secret: Swift.Bool? = nil
+                    ) {
+                        self.label = label
+                        self.value = value
+                        self.secret = secret
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case label
+                        case value
+                        case secret
+                    }
+                }
+                /// Values to copy, each with the label the scrobbler shows next to its field.
+                ///
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/fields`.
+                public typealias FieldsPayload = [Components.Schemas.MusicSetup.StepsPayloadPayload.FieldsPayloadPayload]
+                /// Values to copy, each with the label the scrobbler shows next to its field.
+                ///
+                /// - Remark: Generated from `#/components/schemas/MusicSetup/StepsPayload/fields`.
+                public var fields: Components.Schemas.MusicSetup.StepsPayloadPayload.FieldsPayload?
+                /// Creates a new `StepsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - text:
+                ///   - link:
+                ///   - fields: Values to copy, each with the label the scrobbler shows next to its field.
+                public init(
+                    text: Swift.String,
+                    link: Components.Schemas.MusicSetup.StepsPayloadPayload.LinkPayload? = nil,
+                    fields: Components.Schemas.MusicSetup.StepsPayloadPayload.FieldsPayload? = nil
+                ) {
+                    self.text = text
+                    self.link = link
+                    self.fields = fields
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case text
+                    case link
+                    case fields
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/steps`.
+            public typealias StepsPayload = [Components.Schemas.MusicSetup.StepsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/MusicSetup/steps`.
+            public var steps: Components.Schemas.MusicSetup.StepsPayload
+            /// Creates a new `MusicSetup`.
+            ///
+            /// - Parameters:
+            ///   - scrobbler:
+            ///   - title:
+            ///   - submitUrl: The full `submit-listens` URL, for clients that ask for it.
+            ///   - baseUrl: The ListenBrainz-style root, for clients that add `1/submit-listens` themselves.
+            ///   - steps:
+            public init(
+                scrobbler: Components.Schemas.MusicScrobbler,
+                title: Swift.String,
+                submitUrl: Swift.String,
+                baseUrl: Swift.String,
+                steps: Components.Schemas.MusicSetup.StepsPayload
+            ) {
+                self.scrobbler = scrobbler
+                self.title = title
+                self.submitUrl = submitUrl
+                self.baseUrl = baseUrl
+                self.steps = steps
+            }
+            public enum CodingKeys: String, CodingKey {
+                case scrobbler
+                case title
+                case submitUrl
+                case baseUrl
+                case steps
+            }
         }
         /// How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`.
         ///
@@ -2476,6 +2668,8 @@ public enum Components {
             public var stremio: Components.Schemas.AgentTokenCreated.StremioPayload?
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/setup`.
             public var setup: Components.Schemas.AgentSetup?
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/music`.
+            public var music: Components.Schemas.MusicSetup?
             /// Creates a new `AgentTokenCreated`.
             ///
             /// - Parameters:
@@ -2483,22 +2677,26 @@ public enum Components {
             ///   - secret: Shown once. Anyone holding it, or the install links, can use the token.
             ///   - stremio: Only for a Stremio token.
             ///   - setup:
+            ///   - music:
             public init(
                 token: Components.Schemas.AgentToken,
                 secret: Swift.String,
                 stremio: Components.Schemas.AgentTokenCreated.StremioPayload? = nil,
-                setup: Components.Schemas.AgentSetup? = nil
+                setup: Components.Schemas.AgentSetup? = nil,
+                music: Components.Schemas.MusicSetup? = nil
             ) {
                 self.token = token
                 self.secret = secret
                 self.stremio = stremio
                 self.setup = setup
+                self.music = music
             }
             public enum CodingKeys: String, CodingKey {
                 case token
                 case secret
                 case stremio
                 case setup
+                case music
             }
         }
         /// The one error shape every route returns.
@@ -4692,6 +4890,10 @@ public enum Components {
             public var mal: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ExternalIds/anidb`.
             public var anidb: Swift.String?
+            /// An album's MusicBrainz release-group id (MUS-001).
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExternalIds/musicbrainz`.
+            public var musicbrainz: Swift.String?
             /// Creates a new `ExternalIds`.
             ///
             /// - Parameters:
@@ -4704,6 +4906,7 @@ public enum Components {
             ///   - anilist:
             ///   - mal:
             ///   - anidb:
+            ///   - musicbrainz: An album's MusicBrainz release-group id (MUS-001).
             public init(
                 tmdb: Swift.String? = nil,
                 imdb: Swift.String? = nil,
@@ -4713,7 +4916,8 @@ public enum Components {
                 openLibrary: Swift.String? = nil,
                 anilist: Swift.String? = nil,
                 mal: Swift.String? = nil,
-                anidb: Swift.String? = nil
+                anidb: Swift.String? = nil,
+                musicbrainz: Swift.String? = nil
             ) {
                 self.tmdb = tmdb
                 self.imdb = imdb
@@ -4724,6 +4928,7 @@ public enum Components {
                 self.anilist = anilist
                 self.mal = mal
                 self.anidb = anidb
+                self.musicbrainz = musicbrainz
             }
             public enum CodingKeys: String, CodingKey {
                 case tmdb
@@ -4735,13 +4940,17 @@ public enum Components {
                 case anilist
                 case mal
                 case anidb
+                case musicbrainz
             }
         }
+        /// `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress.
+        ///
         /// - Remark: Generated from `#/components/schemas/MediaType`.
         @frozen public enum MediaType: String, Codable, Hashable, Sendable, CaseIterable {
             case movie = "movie"
             case show = "show"
             case book = "book"
+            case album = "album"
         }
         /// - Remark: Generated from `#/components/schemas/CatalogHit`.
         public struct CatalogHit: Codable, Hashable, Sendable {
@@ -4757,7 +4966,7 @@ public enum Components {
             public var posterUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CatalogHit/overview`.
             public var overview: Swift.String?
-            /// Authors, for books.
+            /// Authors, for books; the artist credit, for albums.
             ///
             /// - Remark: Generated from `#/components/schemas/CatalogHit/byline`.
             public var byline: Swift.String?
@@ -4782,7 +4991,7 @@ public enum Components {
             ///   - year:
             ///   - posterUrl:
             ///   - overview:
-            ///   - byline: Authors, for books.
+            ///   - byline: Authors, for books; the artist credit, for albums.
             ///   - isAnime:
             ///   - ids:
             ///   - libraryItemId: The caller's library item for this title, when they have one. Discover only.
@@ -4861,7 +5070,7 @@ public enum Components {
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
         public struct DiscoverRow: Codable, Hashable, Sendable {
-            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get.
+            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
             ///
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/id`.
             public var id: Swift.String
@@ -4878,7 +5087,7 @@ public enum Components {
             /// Creates a new `DiscoverRow`.
             ///
             /// - Parameters:
-            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum: the server may add rows, and clients render any row they get.
+            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
             ///   - title: Display title, e.g. "Fall 2026 anime".
             ///   - items:
             ///   - note: Where a stand-in row came from, e.g. TMDB while AniList is down.
@@ -5139,6 +5348,18 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleDetail/seasons`.
             public var seasons: [Components.Schemas.Season]?
+            /// Authors, for books; the artist credit, for albums.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleDetail/byline`.
+            public var byline: Swift.String?
+            /// Albums only (MUS-001), at most five, most tagged first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleDetail/genres`.
+            public var genres: [Swift.String]?
+            /// Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleDetail/tracks`.
+            public var tracks: [Components.Schemas.AlbumTrack]?
             /// Creates a new `TitleDetail`.
             ///
             /// - Parameters:
@@ -5154,6 +5375,9 @@ public enum Components {
             ///   - status:
             ///   - runtimeMinutes:
             ///   - seasons: Shows only.
+            ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - genres: Albums only (MUS-001), at most five, most tagged first.
+            ///   - tracks: Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet.
             public init(
                 id: Swift.String,
                 _type: Components.Schemas.MediaType,
@@ -5166,7 +5390,10 @@ public enum Components {
                 ids: Components.Schemas.ExternalIds,
                 status: Components.Schemas.TitleDetail.StatusPayload? = nil,
                 runtimeMinutes: Swift.Int? = nil,
-                seasons: [Components.Schemas.Season]? = nil
+                seasons: [Components.Schemas.Season]? = nil,
+                byline: Swift.String? = nil,
+                genres: [Swift.String]? = nil,
+                tracks: [Components.Schemas.AlbumTrack]? = nil
             ) {
                 self.id = id
                 self._type = _type
@@ -5180,6 +5407,9 @@ public enum Components {
                 self.status = status
                 self.runtimeMinutes = runtimeMinutes
                 self.seasons = seasons
+                self.byline = byline
+                self.genres = genres
+                self.tracks = tracks
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -5194,6 +5424,44 @@ public enum Components {
                 case status
                 case runtimeMinutes
                 case seasons
+                case byline
+                case genres
+                case tracks
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AlbumTrack`.
+        public struct AlbumTrack: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AlbumTrack/disc`.
+            public var disc: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/AlbumTrack/position`.
+            public var position: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/AlbumTrack/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AlbumTrack/lengthMs`.
+            public var lengthMs: Swift.Int?
+            /// Creates a new `AlbumTrack`.
+            ///
+            /// - Parameters:
+            ///   - disc:
+            ///   - position:
+            ///   - name:
+            ///   - lengthMs:
+            public init(
+                disc: Swift.Int,
+                position: Swift.Int,
+                name: Swift.String,
+                lengthMs: Swift.Int? = nil
+            ) {
+                self.disc = disc
+                self.position = position
+                self.name = name
+                self.lengthMs = lengthMs
+            }
+            public enum CodingKeys: String, CodingKey {
+                case disc
+                case position
+                case name
+                case lengthMs
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryStatus`.
@@ -5450,6 +5718,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/network`.
             public var network: Swift.String?
+            /// Authors, for books; the artist credit, for albums.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/byline`.
+            public var byline: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/isAnime`.
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/TitleSummary/ids`.
@@ -5465,6 +5737,7 @@ public enum Components {
             ///   - posterUrl:
             ///   - backdropUrl: Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
             ///   - network: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
+            ///   - byline: Authors, for books; the artist credit, for albums.
             ///   - isAnime:
             ///   - ids:
             public init(
@@ -5476,6 +5749,7 @@ public enum Components {
                 posterUrl: Swift.String? = nil,
                 backdropUrl: Swift.String? = nil,
                 network: Swift.String? = nil,
+                byline: Swift.String? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds
             ) {
@@ -5487,6 +5761,7 @@ public enum Components {
                 self.posterUrl = posterUrl
                 self.backdropUrl = backdropUrl
                 self.network = network
+                self.byline = byline
                 self.isAnime = isAnime
                 self.ids = ids
             }
@@ -5499,6 +5774,7 @@ public enum Components {
                 case posterUrl
                 case backdropUrl
                 case network
+                case byline
                 case isAnime
                 case ids
             }
@@ -5709,6 +5985,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AccountExport/groupMessages`.
             public var groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload?
+            /// Every listen in your listening log, newest first (MUS-005).
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountExport/listens`.
+            public var listens: [Components.Schemas.Listen]?
             /// Creates a new `AccountExport`.
             ///
             /// - Parameters:
@@ -5721,6 +6001,7 @@ public enum Components {
             ///   - blocked:
             ///   - groups:
             ///   - groupMessages: Messages you wrote in groups, oldest first.
+            ///   - listens: Every listen in your listening log, newest first (MUS-005).
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
@@ -5730,7 +6011,8 @@ public enum Components {
                 friends: [Components.Schemas.SocialUser]? = nil,
                 blocked: [Components.Schemas.SocialUser]? = nil,
                 groups: Components.Schemas.AccountExport.GroupsPayload? = nil,
-                groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil
+                groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil,
+                listens: [Components.Schemas.Listen]? = nil
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
@@ -5741,6 +6023,7 @@ public enum Components {
                 self.blocked = blocked
                 self.groups = groups
                 self.groupMessages = groupMessages
+                self.listens = listens
             }
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
@@ -5752,6 +6035,7 @@ public enum Components {
                 case blocked
                 case groups
                 case groupMessages
+                case listens
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.
@@ -6665,7 +6949,7 @@ public enum Components {
             public var totals: Components.Schemas.StatsTotals
             /// - Remark: Generated from `#/components/schemas/Stats/prior`.
             public var prior: Components.Schemas.StatsTotals?
-            /// Movie, show, anime and book, always all four in that order; they sum to `totals`.
+            /// Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/byKind`.
             public var byKind: [Components.Schemas.StatsKind]
@@ -6722,7 +7006,7 @@ public enum Components {
             ///   - isPartial: The period is not over yet in the user's time zone (always true for `all`).
             ///   - totals:
             ///   - prior:
-            ///   - byKind: Movie, show, anime and book, always all four in that order; they sum to `totals`.
+            ///   - byKind: Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`.
             ///   - buckets: One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order.
             ///   - busiest:
             ///   - mostEpisodes:
@@ -6834,6 +7118,238 @@ public enum Components {
                 case titles
             }
         }
+        /// One play of a track a scrobbler sent (MUS-005). Never a library item: listening does not change the library.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Listen`.
+        public struct Listen: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Listen/id`.
+            public var id: Swift.String
+            /// When the track started.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/listenedAt`.
+            public var listenedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Listen/artist`.
+            public var artist: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Listen/track`.
+            public var track: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Listen/album`.
+            public var album: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Listen/durationMs`.
+            public var durationMs: Swift.Int?
+            /// The album's Cover Art Archive cover when Aaru knows the album.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/coverUrl`.
+            public var coverUrl: Swift.String?
+            /// Where it played
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/originUrl`.
+            public var originUrl: Swift.String?
+            /// The scrobbler, e.g. "Web Scrobbler".
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/client`.
+            public var client: Swift.String?
+            /// Where it was heard, e.g. "YouTube Music".
+            ///
+            /// - Remark: Generated from `#/components/schemas/Listen/musicService`.
+            public var musicService: Swift.String?
+            /// Creates a new `Listen`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - listenedAt: When the track started.
+            ///   - artist:
+            ///   - track:
+            ///   - album:
+            ///   - durationMs:
+            ///   - coverUrl: The album's Cover Art Archive cover when Aaru knows the album.
+            ///   - originUrl: Where it played
+            ///   - client: The scrobbler, e.g. "Web Scrobbler".
+            ///   - musicService: Where it was heard, e.g. "YouTube Music".
+            public init(
+                id: Swift.String,
+                listenedAt: Foundation.Date,
+                artist: Swift.String,
+                track: Swift.String,
+                album: Swift.String? = nil,
+                durationMs: Swift.Int? = nil,
+                coverUrl: Swift.String? = nil,
+                originUrl: Swift.String? = nil,
+                client: Swift.String? = nil,
+                musicService: Swift.String? = nil
+            ) {
+                self.id = id
+                self.listenedAt = listenedAt
+                self.artist = artist
+                self.track = track
+                self.album = album
+                self.durationMs = durationMs
+                self.coverUrl = coverUrl
+                self.originUrl = originUrl
+                self.client = client
+                self.musicService = musicService
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case listenedAt
+                case artist
+                case track
+                case album
+                case durationMs
+                case coverUrl
+                case originUrl
+                case client
+                case musicService
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListenPage`.
+        public struct ListenPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListenPage/items`.
+            public var items: [Components.Schemas.Listen]
+            /// Pass as `before` for the next page; absent on the last page.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListenPage/next`.
+            public var next: Foundation.Date?
+            /// Creates a new `ListenPage`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - next: Pass as `before` for the next page; absent on the last page.
+            public init(
+                items: [Components.Schemas.Listen],
+                next: Foundation.Date? = nil
+            ) {
+                self.items = items
+                self.next = next
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case next
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListenTop`.
+        public struct ListenTop: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListenTop/by`.
+            @frozen public enum ByPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case artist = "artist"
+                case track = "track"
+                case album = "album"
+            }
+            /// - Remark: Generated from `#/components/schemas/ListenTop/by`.
+            public var by: Components.Schemas.ListenTop.ByPayload
+            /// - Remark: Generated from `#/components/schemas/ListenTop/span`.
+            @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case month = "month"
+                case year = "year"
+                case all = "all"
+                case last7 = "last7"
+                case last30 = "last30"
+            }
+            /// - Remark: Generated from `#/components/schemas/ListenTop/span`.
+            public var span: Components.Schemas.ListenTop.SpanPayload
+            /// - Remark: Generated from `#/components/schemas/ListenTop/year`.
+            public var year: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ListenTop/month`.
+            public var month: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ListenTop/timeZone`.
+            public var timeZone: Swift.String
+            /// Every listen in the period.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListenTop/listens`.
+            public var listens: Swift.Int
+            /// Their length summed
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListenTop/minutes`.
+            public var minutes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload`.
+            public struct ItemsPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/artist`.
+                public var artist: Swift.String
+                /// Present when ranking tracks.
+                ///
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/track`.
+                public var track: Swift.String?
+                /// Present when ranking albums.
+                ///
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/album`.
+                public var album: Swift.String?
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/count`.
+                public var count: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/ListenTop/ItemsPayload/minutes`.
+                public var minutes: Swift.Int
+                /// Creates a new `ItemsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - artist:
+                ///   - track: Present when ranking tracks.
+                ///   - album: Present when ranking albums.
+                ///   - count:
+                ///   - minutes:
+                public init(
+                    artist: Swift.String,
+                    track: Swift.String? = nil,
+                    album: Swift.String? = nil,
+                    count: Swift.Int,
+                    minutes: Swift.Int
+                ) {
+                    self.artist = artist
+                    self.track = track
+                    self.album = album
+                    self.count = count
+                    self.minutes = minutes
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case artist
+                    case track
+                    case album
+                    case count
+                    case minutes
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ListenTop/items`.
+            public typealias ItemsPayload = [Components.Schemas.ListenTop.ItemsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/ListenTop/items`.
+            public var items: Components.Schemas.ListenTop.ItemsPayload
+            /// Creates a new `ListenTop`.
+            ///
+            /// - Parameters:
+            ///   - by:
+            ///   - span:
+            ///   - year:
+            ///   - month:
+            ///   - timeZone:
+            ///   - listens: Every listen in the period.
+            ///   - minutes: Their length summed
+            ///   - items:
+            public init(
+                by: Components.Schemas.ListenTop.ByPayload,
+                span: Components.Schemas.ListenTop.SpanPayload,
+                year: Swift.Int,
+                month: Swift.Int? = nil,
+                timeZone: Swift.String,
+                listens: Swift.Int,
+                minutes: Swift.Int,
+                items: Components.Schemas.ListenTop.ItemsPayload
+            ) {
+                self.by = by
+                self.span = span
+                self.year = year
+                self.month = month
+                self.timeZone = timeZone
+                self.listens = listens
+                self.minutes = minutes
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case by
+                case span
+                case year
+                case month
+                case timeZone
+                case listens
+                case minutes
+                case items
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/StatsTotals`.
         public struct StatsTotals: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/StatsTotals/episodesWatched`.
@@ -6854,6 +7370,10 @@ public enum Components {
             public var animeFinished: Swift.Int
             /// - Remark: Generated from `#/components/schemas/StatsTotals/booksFinished`.
             public var booksFinished: Swift.Int
+            /// MUS-001. Albums have no minutes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/albumsFinished`.
+            public var albumsFinished: Swift.Int
             /// Creates a new `StatsTotals`.
             ///
             /// - Parameters:
@@ -6864,6 +7384,7 @@ public enum Components {
             ///   - showsFinished:
             ///   - animeFinished: Anime shows and films. Not counted again as shows or movies.
             ///   - booksFinished:
+            ///   - albumsFinished: MUS-001. Albums have no minutes.
             public init(
                 episodesWatched: Swift.Int,
                 minutesWatched: Swift.Int,
@@ -6871,7 +7392,8 @@ public enum Components {
                 moviesFinished: Swift.Int,
                 showsFinished: Swift.Int,
                 animeFinished: Swift.Int,
-                booksFinished: Swift.Int
+                booksFinished: Swift.Int,
+                albumsFinished: Swift.Int
             ) {
                 self.episodesWatched = episodesWatched
                 self.minutesWatched = minutesWatched
@@ -6880,6 +7402,7 @@ public enum Components {
                 self.showsFinished = showsFinished
                 self.animeFinished = animeFinished
                 self.booksFinished = booksFinished
+                self.albumsFinished = albumsFinished
             }
             public enum CodingKeys: String, CodingKey {
                 case episodesWatched
@@ -6889,6 +7412,7 @@ public enum Components {
                 case showsFinished
                 case animeFinished
                 case booksFinished
+                case albumsFinished
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsKind`.
@@ -6901,6 +7425,7 @@ public enum Components {
                 case show = "show"
                 case anime = "anime"
                 case book = "book"
+                case album = "album"
             }
             /// Anime is its own kind, films and shows alike; never counted again as either.
             ///
@@ -15420,15 +15945,17 @@ public enum Operations {
                 @frozen public enum ForPayload: String, Codable, Hashable, Sendable, CaseIterable {
                     case stremio = "stremio"
                     case mcp = "mcp"
+                    case scrobble = "scrobble"
+                    case music = "music"
                 }
-                /// Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token.
+                /// Which surface's tokens: the Stremio addon, MCP clients, the browser extension (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind.
                 ///
                 /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/query/for`.
                 public var _for: Operations.ListAgentTokens.Input.Query.ForPayload?
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - _for: Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token.
+                ///   - _for: Which surface's tokens: the Stremio addon, MCP clients, the browser extension (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind.
                 public init(_for: Operations.ListAgentTokens.Input.Query.ForPayload? = nil) {
                     self._for = _for
                 }
@@ -17571,6 +18098,358 @@ public enum Operations {
             }
         }
     }
+    /// Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)`.
+    public enum ListListens {
+        public static let id: Swift.String = "listListens"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/listens/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Only listens that started before this time; the previous page's `next`.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/GET/query/before`.
+                public var before: Foundation.Date?
+                /// 1–100, default 20.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/GET/query/limit`.
+                public var limit: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - before: Only listens that started before this time; the previous page's `next`.
+                ///   - limit: 1–100, default 20.
+                public init(
+                    before: Foundation.Date? = nil,
+                    limit: Swift.Int? = nil
+                ) {
+                    self.before = before
+                    self.limit = limit
+                }
+            }
+            public var query: Operations.ListListens.Input.Query
+            /// - Remark: Generated from `#/paths/v1/me/listens/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListListens.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListListens.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListListens.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListListens.Input.Query = .init(),
+                headers: Operations.ListListens.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/listens/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/listens/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ListenPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ListenPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListListens.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListListens.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// A page of listens.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListListens.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListListens.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/listens/get(listListens)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span.
+    ///
+    /// - Remark: HTTP `GET /v1/me/listens/top`.
+    /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)`.
+    public enum GetTopListens {
+        public static let id: Swift.String = "getTopListens"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/by`.
+                @frozen public enum ByPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case artist = "artist"
+                    case track = "track"
+                    case album = "album"
+                }
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/by`.
+                public var by: Operations.GetTopListens.Input.Query.ByPayload
+                /// Required unless `span` is sent.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/year`.
+                public var year: Swift.Int?
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/span`.
+                @frozen public enum SpanPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case all = "all"
+                    case last7 = "last7"
+                    case last30 = "last30"
+                }
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/span`.
+                public var span: Operations.GetTopListens.Input.Query.SpanPayload?
+                /// 1–12. Absent means the whole year.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/month`.
+                public var month: Swift.Int?
+                /// IANA time zone for day and month boundaries. Absent means UTC.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/tz`.
+                public var tz: Swift.String?
+                /// 1–50, default 10.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/query/limit`.
+                public var limit: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - by:
+                ///   - year: Required unless `span` is sent.
+                ///   - span:
+                ///   - month: 1–12. Absent means the whole year.
+                ///   - tz: IANA time zone for day and month boundaries. Absent means UTC.
+                ///   - limit: 1–50, default 10.
+                public init(
+                    by: Operations.GetTopListens.Input.Query.ByPayload,
+                    year: Swift.Int? = nil,
+                    span: Operations.GetTopListens.Input.Query.SpanPayload? = nil,
+                    month: Swift.Int? = nil,
+                    tz: Swift.String? = nil,
+                    limit: Swift.Int? = nil
+                ) {
+                    self.by = by
+                    self.year = year
+                    self.span = span
+                    self.month = month
+                    self.tz = tz
+                    self.limit = limit
+                }
+            }
+            public var query: Operations.GetTopListens.Input.Query
+            /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTopListens.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTopListens.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTopListens.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetTopListens.Input.Query,
+                headers: Operations.GetTopListens.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/listens/top/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ListenTop)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ListenTop {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTopListens.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTopListens.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The period's top list.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTopListens.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTopListens.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/listens/top/get(getTopListens)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Search the catalog. Results are catalog projections, never library rows.
     ///
     /// - Remark: HTTP `GET /v1/search`.
@@ -17589,8 +18468,9 @@ public enum Operations {
                     case show = "show"
                     case anime = "anime"
                     case book = "book"
+                    case album = "album"
                 }
-                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
+                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
                 ///
                 /// - Remark: Generated from `#/paths/v1/search/GET/query/type`.
                 public var _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -17598,7 +18478,7 @@ public enum Operations {
                 ///
                 /// - Parameters:
                 ///   - q:
-                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library.
+                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
                 public init(
                     q: Swift.String,
                     _type: Operations.SearchCatalog.Input.Query._TypePayload

@@ -53,7 +53,8 @@ extension Components.Schemas.ExternalIds {
     init(_ ids: ExternalIDs) {
         self.init(
             tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb, isbn: ids.isbn,
-            openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb
+            openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb,
+            musicbrainz: ids.musicbrainz
         )
     }
 }
@@ -64,6 +65,7 @@ extension Components.Schemas.MediaType {
         case .movie: self = .movie
         case .show: self = .show
         case .book: self = .book
+        case .album: self = .album
         }
     }
 }
@@ -119,7 +121,12 @@ extension Components.Schemas.TitleDetail {
             ids: .init(title.ids),
             status: detail.status.flatMap { .init(rawValue: $0.rawValue) },
             runtimeMinutes: detail.runtimeMinutes,
-            seasons: seasons
+            seasons: seasons,
+            byline: title.byline,
+            genres: title.type == .album ? detail.genres : nil,
+            tracks: detail.tracks?.map {
+                .init(disc: $0.disc, position: $0.position, name: $0.name, lengthMs: $0.lengthMs)
+            }
         )
     }
 }

@@ -1,13 +1,15 @@
 import AaruAPI
+import CoreGraphics
 import Foundation
 
 typealias LibraryEntry = Components.Schemas.LibraryEntry
 typealias LibraryStatus = Components.Schemas.LibraryStatus
 typealias CatalogHit = Components.Schemas.CatalogHit
 
-/// How the library is browsed: anime is its own shelf even though it is a show or a film.
+/// How the library is browsed: anime is its own shelf even though it is a show or a film. Music
+/// is albums (MUS-001).
 enum MediaKind: String, CaseIterable, Identifiable {
-    case film, show, anime, book
+    case film, show, anime, book, music
 
     var id: String {
         rawValue
@@ -19,16 +21,18 @@ enum MediaKind: String, CaseIterable, Identifiable {
         case .show: "Shows"
         case .anime: "Anime"
         case .book: "Books"
+        case .music: "Music"
         }
     }
 
-    /// One of them: "Film", "Show", "Anime", "Book".
+    /// One of them: "Film", "Show", "Anime", "Book", "Album".
     var noun: String {
         switch self {
         case .film: "Film"
         case .show: "Show"
         case .anime: "Anime"
         case .book: "Book"
+        case .music: "Album"
         }
     }
 
@@ -38,12 +42,19 @@ enum MediaKind: String, CaseIterable, Identifiable {
         case .show: "tv"
         case .anime: "sparkles.tv"
         case .book: "book.closed"
+        case .music: "music.note"
         }
+    }
+
+    /// Width over height of the kind's artwork: a square album cover, a 2:3 poster for the rest.
+    var posterAspect: CGFloat {
+        self == .music ? 1 : 2 / 3
     }
 
     init(type: Components.Schemas.MediaType, isAnime: Bool) {
         switch type {
         case .book: self = .book
+        case .album: self = .music
         case _ where isAnime: self = .anime
         case .movie: self = .film
         case .show: self = .show
@@ -57,6 +68,7 @@ enum MediaKind: String, CaseIterable, Identifiable {
         case .show: .show
         case .anime: .anime
         case .book: .book
+        case .music: .album
         }
     }
 }
@@ -66,21 +78,28 @@ extension LibraryStatus: @retroactive Identifiable {
         rawValue
     }
 
-    /// The status in the words of what it is on: "Watching" a show, "Reading" a book. With no
-    /// kind (a mixed shelf, the Any filter) the neutral words.
+    /// The status in the words of what it is on: "Watching" a show, "Reading" a book,
+    /// "Listening" to an album. With no kind (a mixed shelf, the Any filter) the neutral words.
     func label(for kind: MediaKind?) -> String {
-        switch (self, kind) {
-        case (.wishlist, .book): "Plan to read"
-        case (.wishlist, .some): "Plan to watch"
-        case (.wishlist, nil): "Planned"
-        case (.inProgress, .book): "Reading"
-        case (.inProgress, .some): "Watching"
-        case (.inProgress, nil): "In progress"
-        case (.finished, .book): "Read"
-        case (.finished, .some): "Watched"
-        case (.finished, nil): "Finished"
-        case (.dropped, _): "Dropped"
+        let words = switch kind {
+        case .book: Words(planned: "Plan to read", active: "Reading", done: "Read")
+        case .music: Words(planned: "Plan to listen", active: "Listening", done: "Listened")
+        case .film, .show, .anime: Words(planned: "Plan to watch", active: "Watching", done: "Watched")
+        case nil: Words(planned: "Planned", active: "In progress", done: "Finished")
         }
+        return switch self {
+        case .wishlist: words.planned
+        case .inProgress: words.active
+        case .finished: words.done
+        case .dropped: "Dropped"
+        }
+    }
+
+    /// One kind's words for planned, in progress and finished.
+    private struct Words {
+        let planned: String
+        let active: String
+        let done: String
     }
 }
 
@@ -89,6 +108,8 @@ struct LibraryRow: Identifiable, Hashable {
     let id: String
     let title: String
     let year: Int?
+    /// The artist for an album, the authors for a book.
+    let byline: String?
     let posterURL: URL?
     let kind: MediaKind
     let status: LibraryStatus
@@ -99,6 +120,7 @@ struct LibraryRow: Identifiable, Hashable {
         id = entry.id
         title = entry.title.title
         year = entry.title.year
+        byline = entry.title.byline
         posterURL = entry.title.posterUrl.flatMap(URL.init(string:))
         kind = MediaKind(type: entry.title._type, isAnime: entry.title.isAnime)
         status = entry.status
@@ -120,7 +142,7 @@ extension Components.Schemas.ExternalIds {
     var keys: Set<String> {
         let pairs: [(String, String?)] = [
             ("tmdb", tmdb), ("imdb", imdb), ("isbn", isbn), ("openLibrary", openLibrary),
-            ("anilist", anilist), ("mal", mal), ("trakt", trakt), ("tvdb", tvdb),
+            ("anilist", anilist), ("mal", mal), ("trakt", trakt), ("tvdb", tvdb), ("musicbrainz", musicbrainz),
         ]
         return Set(pairs.compactMap { name, value in value.map { "\(name):\($0)" } })
     }

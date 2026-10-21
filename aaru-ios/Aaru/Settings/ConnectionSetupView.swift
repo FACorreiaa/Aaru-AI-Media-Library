@@ -177,6 +177,8 @@ struct ConnectionSetupView: View {
         case "hermes": "Hermes"
         case "gemini": "Gemini CLI"
         case "stremio": "Stremio"
+        case "browser": "Browser extension"
+        case "music": "Music scrobbler"
         default: "MCP client"
         }
     }

@@ -221,6 +221,7 @@ struct StatsDigest {
     /// GAM-006e: the first persona whose rule holds; nil when nothing happened.
     func persona() -> PeriodStats.Persona? {
         let finished = totals.moviesFinished + totals.showsFinished + totals.animeFinished + totals.booksFinished
+            + totals.albumsFinished
         guard totals.activeDays > 0 else { return nil }
         if (biggestDay?.episodes ?? 0) >= 6 || (longestRun?.days ?? 0) >= 14 {
             return .binger
@@ -248,6 +249,7 @@ struct StatsDigest {
         case (.movie, false): .movie
         case (.show, false): .show
         case (.book, false): .book
+        case (.album, false): .album
         }
         return PeriodStats.Kind.allCases.firstIndex(of: kind) ?? 0
     }
@@ -264,6 +266,7 @@ struct StatsDigest {
         case (.movie, false): totals.moviesFinished += 1
         case (.show, false): totals.showsFinished += 1
         case (.book, false): totals.booksFinished += 1
+        case (.album, false): totals.albumsFinished += 1
         }
     }
 
@@ -305,7 +308,8 @@ struct StatsDigest {
             period: period,
             isPartial: isPartial,
             totals: totals,
-            byKind: byKind,
+            // Old clients know four kinds; an album row appears only once there is one to show.
+            byKind: byKind.filter { $0.kind != .album || $0.finished > 0 },
             buckets: buckets,
             busiest: buckets.filter { !$0.isEmpty }.max {
                 ($0.minutes, $0.episodes, $0.finished) < ($1.minutes, $1.episodes, $1.finished)

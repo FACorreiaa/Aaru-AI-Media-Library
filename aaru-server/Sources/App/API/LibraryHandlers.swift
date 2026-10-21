@@ -125,6 +125,7 @@ extension MediaType {
         case .movie: self = .movie
         case .show: self = .show
         case .book: self = .book
+        case .album: self = .album
         }
     }
 }
@@ -155,7 +156,8 @@ extension ExternalIDs {
     init(_ dto: Components.Schemas.ExternalIds?) {
         self.init(
             tmdb: dto?.tmdb, imdb: dto?.imdb, trakt: dto?.trakt, tvdb: dto?.tvdb, isbn: dto?.isbn,
-            openLibrary: dto?.openLibrary, anilist: dto?.anilist, mal: dto?.mal, anidb: dto?.anidb
+            openLibrary: dto?.openLibrary, anilist: dto?.anilist, mal: dto?.mal, anidb: dto?.anidb,
+            musicbrainz: dto?.musicbrainz
         )
     }
 }
@@ -190,7 +192,7 @@ extension Components.Schemas.TitleSummary {
         self.init(
             id: title.id.description, _type: .init(title.type), title: title.title,
             originalTitle: title.originalTitle, year: title.year, posterUrl: title.posterURL?.absoluteString,
-            backdropUrl: title.backdropURL?.absoluteString, network: title.network,
+            backdropUrl: title.backdropURL?.absoluteString, network: title.network, byline: title.byline,
             isAnime: title.isAnime, ids: .init(title.ids)
         )
     }

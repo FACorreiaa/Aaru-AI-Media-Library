@@ -110,6 +110,12 @@ optimistic write as the list. Below it each season's list shows a still, the nam
 previous/next. Only the season holding the next episode starts open. A title that fails to load
 says so with a retry, never an endless spinner.
 
+**An album's room (MUS-001, 2026-10-21)** is an album page, not a season map: a big square
+cover with almost no chrome, the title in the serif, the artist under it in muted, the year,
+genre chips, the same status / rating / notes as any title, then the tracklist (number, name,
+length in tabular figures; "Disc 1"… only when there is more than one). No playback and no
+ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not available yet".
+
 ## 5. Tonight
 
 A nightly composed view. Not recommendations-as-a-product — a **short plan**.
@@ -132,6 +138,16 @@ Classic filters are how a shelf is edited, not how you enter the app.
 
 Visual cue: Letterboxd lists + Ryot filters, presented as pages of reeds rather than a
 spreadsheet.
+
+**Now (APP-017, built 2026-10-21).** Library opens with what you are in the middle of, the
+"Now" of §1 made real before The Field: **Watching** (shows, anime, films) and **Reading**
+(books), newest activity first, as big cards, not posters in a grid. A video card is the
+backdrop with the title on it; a book card is its cover. Each shows how far along it is ("4 of
+10 episodes" with a bar, "35%", "Page 120") and the one next step: **Watched S1 · E5** ticks the
+next aired episode, **Update page** moves a book, **Finished** / **Mark watched** closes it. A
+kind chip narrows Now with the shelf; another status hides it. Cards scroll sideways on phones
+and sit in a grid wider. A **Listening** group joins when albums land (MUS-001). Book progress
+bars appear only for a percent until books carry a page count.
 
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
 library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
@@ -253,7 +269,8 @@ rows of wide cards, one job per row.
 
 - **Discover** (`DiscoverRow`, DISC-001) — after the user's own rows, public poster rows from
   the catalogs: Trending shows, this season's anime ("Fall 2026 anime"), Trending movies, On
-  the air, Trending anime, New shows, In theaters, Trending books. A card not on the shelf is
+  the air, Trending anime, New shows, In theaters, Trending books, then New albums and Coming
+  soon (MUS-002, square covers; an upcoming album wears its release day, "Tomorrow", "Oct 30"). A card not on the shelf is
   an add (tap: wishlist; hold or "As…": a status or a list); a card on the shelf wears a check
   and opens the item. A new account sees a slim "Add a show to see what's next" header above
   them instead of an empty screen. The same rows for everyone; never "because you watched".
@@ -270,6 +287,11 @@ rows of wide cards, one job per row.
   anything in progress untouched for 30 days, "Dropped" or "Paused 6 weeks", with "Resume at
   S2 · E3" for a show. Never a title already in Continue watching.
 - **Lists** — chips for the user's lists plus "New list".
+- **Listening** (MUS-001, 2026-10-21) — square album covers for albums in progress, after
+  Continue watching; absent when there are none.
+
+Album covers are **square everywhere** (Apple Music style), the same width as a poster in the
+same row, with the artist in muted under the title and the year as the badge.
 
 Discover on Home is DISC-001's rows above, not a separate teaser. On the web, Search opens in
 place on Home and an add shows up in the rows without a reload.
@@ -341,6 +363,18 @@ day strip (tall day pills) over that day's episodes as poster rows.
 Tapping the bar flips between time left and end time. Set by a manual check-in in Phase 2 and
 by scrobbles from Plex, Jellyfin or Stremio in Phase 3. The same data drives the Live Activity.
 
+**Settings groups, 2026-10-21** (owner). Settings is a list of groups, each its own page, so no
+page grows into one long scroll: **Account** (name, sign-in, Sign out, profile and friends,
+notifications), **Imports & export** (Trakt, the file sources, AniList, CAT, Stremio history,
+the job list, export), **Connected apps** (Stremio, agent connections), **Insights & recaps**,
+and **About** (credits, privacy, Delete account). iPhone: a grouped list in the system Settings
+style, the account on top with your name and how you sign in, each group a row with its symbol
+in a small tinted square, drilling in. Mac: the same pages as toolbar panes in the Settings
+window (Cmd-,), Insights staying in the main window. Web: a rail of the groups beside the page
+on a desktop, where `/app/settings` opens Account; a phone gets the group list and opens one
+page at a time with "‹ Settings" back. A new connected app or import source joins its group's
+page; it does not get a group of its own.
+
 **Stremio, built 2026-10-20.** Settings has a Stremio section on web, iPhone and Mac: connect,
 then the install links (Open in Stremio, Install on Stremio Web, Copy) show once, because they
 carry the secret. Live links list their last use and a Revoke. Writing back to the library
@@ -350,7 +384,7 @@ not built yet; `watch_events` holds what it will read. Under the intro, a collap
 up" lists the install steps, what Stremio's marks do here, where it works, and that a lost link is
 revoked and made again; the same text on web and Apple.
 
-The same section offers **Import my Stremio history** (IMP-016): a sheet (web: an inline panel)
+Imports & export offers **Import from Stremio** (IMP-016): a sheet (web: an inline panel)
 with the code in large monospace, an "Approve on stremio.com" button and a QR for approving
 from another device, and a quiet "Waiting for approval…" line. It polls on its own and, once
 approved, opens the import's plan, which is approved like any other import. Nothing is written
@@ -374,6 +408,26 @@ watched"), so history and undo treat them like a tap.
 name themselves; the host they cannot fake), then a name for the history, **Allow changes**
 (off), and **Allow** / **Not now**. A signed-out visitor signs in first and lands back on it.
 
+**Browser extension, 2026-10-21** (SCR-007, owner's choices). It is the last choice in the same
+Connections picker, not a section of its own. Choosing it shows no token: one sentence on what it
+does (finish an episode or a film on Netflix, Disney+ or Prime Video in your browser and it is
+marked watched; it can't read your library), three numbered steps (install for Chrome or Firefox;
+click Aaru in the toolbar, then Connect; approve on the page it opens) and the store buttons once
+they are listed. On iPhone and Mac the row "Browser extension" opens a sheet with the same
+sentence and steps; connecting happens in the desktop browser. Connected browsers list with the
+others ("Chrome on macOS · Marks what you watch · used 2 h ago"), with Revoke.
+
+Connecting is **one click, no secret shown**: the extension opens `/connect/extension`, styled
+like the consent page — "Connect Chrome on macOS to Aaru?", the same sentence, **Approve** /
+**Not now**. Approve stays disabled until the extension answers on the page, so a browser
+without it is told to install it instead of minting a token nobody holds; a token the extension
+does not take within five seconds is revoked. Then: "Connected. You can close this tab."
+
+The extension draws nothing inside the streaming sites. Its toolbar badge is the only signal:
+✓ matched, ? not matched, ! connect again. Its popup shows what is playing now and what Aaru
+matched it to, the last few plays with their result (marked, finished, not matched), and
+Connected · Disconnect, in Aaru's paper and ink with the display serif for the title.
+
 ## 16. Widgets (Phase 2)
 
 Widgets are where a tracker earns a daily glance. Sequel ships the richest set and the only
@@ -385,6 +439,7 @@ ships.
 - **Airing countdown** + Lock Screen accessories — next airing of a tracked show or anime.
 - **Week** (L / XL) — the week grid in miniature, CAT style.
 - **Now watching** Live Activity — Lock Screen and Dynamic Island, progress plus "Ends at".
+- **Listening** (S / M, MUS-001) — square covers of albums in progress; a tap opens the album.
 - **Streak** (Phase 5) — current streak and this week's ticks.
 - **macOS** — the same widgets on the desktop and in Notification Center. Almost no tracker
   ships Mac widgets.

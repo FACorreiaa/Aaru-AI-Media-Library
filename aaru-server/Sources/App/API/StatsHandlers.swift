@@ -61,7 +61,7 @@ extension Components.Schemas.StatsTotals {
             episodesWatched: totals.episodesWatched, minutesWatched: totals.minutesWatched,
             activeDays: totals.activeDays, moviesFinished: totals.moviesFinished,
             showsFinished: totals.showsFinished, animeFinished: totals.animeFinished,
-            booksFinished: totals.booksFinished
+            booksFinished: totals.booksFinished, albumsFinished: totals.albumsFinished
         )
     }
 }

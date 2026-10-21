@@ -4,7 +4,11 @@ import type { JSX } from 'solid-js'
 import { badge, metaLine, shortCode } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
 import { kindOf } from '../lib/library/model'
-import type { CatalogHit, LibraryStatus } from '../lib/library/model'
+import type {
+  CatalogHit,
+  LibraryEntry,
+  LibraryStatus,
+} from '../lib/library/model'
 import { cardBadge } from '../lib/discover/model'
 import {
   nextLine,
@@ -213,22 +217,42 @@ export function ContinueCard(props: {
   )
 }
 
-/** Start watching: a wishlist title and how long it takes. */
+/** Start watching: a wishlist title and how long it takes; an album, who made it. */
 export function StartCard(props: { entry: StartEntry }) {
   const e = () => props.entry
+  const kind = () => kindOf(e().title.type, e().title.isAnime)
+  const detail = () =>
+    kind() === 'album'
+      ? e().title.byline
+      : runtimeLabel(e().runtimeMinutes) || undefined
   return (
     <Link
       to="/app/title/$id"
       params={{ id: e().libraryItemId }}
       class="block w-32 shrink-0 snap-start md:w-36"
     >
-      <Poster
-        url={e().title.posterUrl}
-        kind={kindOf(e().title.type, e().title.isAnime)}
-      />
+      <Poster url={e().title.posterUrl} kind={kind()} frame />
       <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
-      <Show when={runtimeLabel(e().runtimeMinutes)}>
-        {(runtime) => <p class="text-xs text-muted">{runtime()}</p>}
+      <Show when={detail()}>
+        {(text) => <p class="truncate text-xs text-muted">{text()}</p>}
+      </Show>
+    </Link>
+  )
+}
+
+/** MUS-001, Home's Listening row: an album in progress, square, with its artist under it. */
+export function ListeningCard(props: { entry: LibraryEntry }) {
+  const e = () => props.entry
+  return (
+    <Link
+      to="/app/title/$id"
+      params={{ id: e().id }}
+      class="block w-32 shrink-0 snap-start md:w-36"
+    >
+      <Poster url={e().title.posterUrl} kind="album" />
+      <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
+      <Show when={e().title.byline}>
+        {(artist) => <p class="truncate text-xs text-muted">{artist()}</p>}
       </Show>
     </Link>
   )
@@ -251,17 +275,17 @@ export function UnfinishedCard(props: {
       params={{ id: e().libraryItemId }}
       class="block w-32 shrink-0 snap-start md:w-36"
     >
-      <div class="relative">
-        <Poster
-          url={e().title.posterUrl}
-          kind={kindOf(e().title.type, e().title.isAnime)}
-        />
+      <Poster
+        url={e().title.posterUrl}
+        kind={kindOf(e().title.type, e().title.isAnime)}
+        frame
+      >
         <Show when={reason()}>
           {(text) => (
             <span class={`absolute top-2 left-2 ${chip}`}>{text()}</span>
           )}
         </Show>
-      </div>
+      </Poster>
       <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
       <Show when={resumeLine(e())}>
         {(line) => <p class="text-xs text-muted">{line()}</p>}
@@ -334,7 +358,11 @@ export function DiscoverCard(props: {
 }) {
   const h = () => props.hit
   const kind = () => kindOf(h().type, h().isAnime)
-  const meta = () => [h().year, h().byline].filter(Boolean).join(' · ')
+  // An album leads with its artist; the year stands where other kinds name a kind.
+  const meta = () =>
+    (kind() === 'album' ? [h().byline, h().year] : [h().year, h().byline])
+      .filter(Boolean)
+      .join(' · ')
   const dateLabel = () =>
     props.today ? cardBadge(props.rowId, h().releaseDate, props.today) : null
   // A component, not one element: the poster is drawn in either branch below.

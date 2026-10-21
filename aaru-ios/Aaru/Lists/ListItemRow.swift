@@ -18,8 +18,7 @@ struct ListItemRow: View {
                 .frame(width: 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title.title).font(.body.weight(.medium)).lineLimit(2)
-                Text([item.title.year.map(String.init), kind.label, item.title.network].compactMap(\.self)
-                    .joined(separator: " · "))
+                Text(metaLine)
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
                     .lineLimit(1)
@@ -53,6 +52,13 @@ struct ListItemRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// "2022 · Shows · Apple TV+", or the artist and year for an album.
+    private var metaLine: String {
+        let year = item.title.year.map(String.init)
+        let parts = kind == .music ? [item.title.byline, year] : [year, kind.label, item.title.network]
+        return parts.compactMap(\.self).joined(separator: " · ")
     }
 }
 

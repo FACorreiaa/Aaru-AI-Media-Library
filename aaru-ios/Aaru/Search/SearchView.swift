@@ -1,10 +1,11 @@
 import AaruAPI
 import SwiftUI
 
-/// What a search covers: everything on screen at once, or one kind. Books are never in All (Open
-/// Library is slow and noisy), so All ends with a row that searches Books instead.
+/// What a search covers: everything on screen at once, or one kind. Books and music are never in
+/// All (Open Library and MusicBrainz are slow and noisy), so All ends with rows that search them
+/// instead.
 enum SearchScope: String, CaseIterable, Identifiable {
-    case all, film, show, anime, book
+    case all, film, show, anime, book, music
 
     var id: String {
         rawValue
@@ -20,6 +21,32 @@ enum SearchScope: String, CaseIterable, Identifiable {
 
     var searchType: Operations.SearchCatalog.Input.Query._TypePayload {
         kind?.searchType ?? .all
+    }
+
+    /// The search field's hint: what the provider matches on.
+    var prompt: String {
+        kind?.searchPrompt ?? "Title"
+    }
+}
+
+extension MediaKind {
+    /// The search field's hint for one kind.
+    var searchPrompt: String {
+        switch self {
+        case .book: "Title, author or ISBN"
+        case .music: "Album or artist"
+        case .film, .show, .anime: "Title"
+        }
+    }
+}
+
+extension CatalogHit {
+    /// The line under a hit's name: "Show · 2022", "Book · 2016 · James Clear", or the artist and
+    /// year for an album.
+    func detailLine(kind: MediaKind) -> String {
+        let year = year.map(String.init)
+        let parts = kind == .music ? [byline, year] : [kind.noun, year, byline]
+        return parts.compactMap(\.self).joined(separator: " · ")
     }
 }
 
@@ -98,7 +125,7 @@ struct SearchView: View {
                     }
                 }
                 if scope == .all, trimmedQuery.count >= 2, !isSearching || !hits.isEmpty {
-                    SearchBooksRow(query: trimmedQuery, isFirst: hits.isEmpty) { scope = .book }
+                    SearchElsewhereRow(query: trimmedQuery, isFirst: hits.isEmpty) { scope = $0 }
                         .listRowBackground(Color.clear)
                 }
             }
@@ -113,7 +140,7 @@ struct SearchView: View {
                 }
             }
             .navigationTitle(intoList.map { "Add to \($0.wrappedValue.name)" } ?? "Search")
-            .searchable(text: $query, prompt: scope == .book ? "Title, author or ISBN" : "Title")
+            .searchable(text: $query, prompt: scope.prompt)
             .task(id: SearchKey(query: query, scope: scope)) { await search() }
             .sheet(item: $listTarget) { hit in
                 ListPickerSheet(
@@ -202,7 +229,7 @@ private struct ListHitRow: View {
                 .frame(width: 52)
             VStack(alignment: .leading, spacing: 3) {
                 Text(hit.title).font(.body.weight(.medium)).lineLimit(2)
-                Text([kind.noun, hit.year.map(String.init), hit.byline].compactMap(\.self).joined(separator: " · "))
+                Text(hit.detailLine(kind: kind))
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
                     .lineLimit(1)
@@ -244,7 +271,7 @@ private struct SearchHitRow: View {
                 .frame(width: 52)
             VStack(alignment: .leading, spacing: 3) {
                 Text(hit.title).font(.body.weight(.medium)).lineLimit(2)
-                Text([kind.noun, hit.year.map(String.init), hit.byline].compactMap(\.self).joined(separator: " · "))
+                Text(hit.detailLine(kind: kind))
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
                     .lineLimit(1)
@@ -265,12 +292,12 @@ private struct SearchHitRow: View {
     }
 }
 
-/// The last row of an All search: books are searched on their own.
-private struct SearchBooksRow: View {
+/// The last row of an All search: books and music are searched on their own.
+private struct SearchElsewhereRow: View {
     let query: String
     /// Nothing else matched, so the row says so first.
     let isFirst: Bool
-    let action: () -> Void
+    let onSearch: (SearchScope) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -279,11 +306,17 @@ private struct SearchBooksRow: View {
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
             }
-            Button(action: action) {
-                Label("Search Books for \u{201C}\(query)\u{201D}", systemImage: MediaKind.book.symbol)
-                    .font(.subheadline.weight(.medium))
+            ForEach([SearchScope.book, .music]) { scope in
+                if let kind = scope.kind {
+                    Button {
+                        onSearch(scope)
+                    } label: {
+                        Label("Search \(kind.label) for \u{201C}\(query)\u{201D}", systemImage: kind.symbol)
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .buttonStyle(.borderless)
+                }
             }
-            .buttonStyle(.borderless)
         }
         .padding(.vertical, 6)
     }

@@ -23,6 +23,7 @@ import { Route as AppRecapRouteImport } from './routes/app_.recap'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
+import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as AppGroupsIndexRouteImport } from './routes/app_.groups.index'
 import { Route as AppGroupsGroupIdRouteImport } from './routes/app_.groups.$groupId'
@@ -30,6 +31,12 @@ import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
 import { Route as AppListsIndexRouteImport } from './routes/app_.lists.index'
 import { Route as AppListsIdRouteImport } from './routes/app_.lists.$id'
 import { Route as AppPlansIdRouteImport } from './routes/app_.plans.$id'
+import { Route as AppSettingsIndexRouteImport } from './routes/app_.settings.index'
+import { Route as AppSettingsAboutRouteImport } from './routes/app_.settings.about'
+import { Route as AppSettingsAccountRouteImport } from './routes/app_.settings.account'
+import { Route as AppSettingsConnectedRouteImport } from './routes/app_.settings.connected'
+import { Route as AppSettingsImportsRouteImport } from './routes/app_.settings.imports'
+import { Route as AppSettingsRecapsRouteImport } from './routes/app_.settings.recaps'
 import { Route as AppTitleIdRouteImport } from './routes/app_.title.$id'
 import { Route as AppGroupsGroupIdIndexRouteImport } from './routes/app_.groups.$groupId.index'
 import { Route as AppGroupsGroupIdChannelIdRouteImport } from './routes/app_.groups.$groupId.$channelId'
@@ -104,6 +111,11 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/auth/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConnectExtensionRoute = ConnectExtensionRouteImport.update({
+  id: '/connect/extension',
+  path: '/connect/extension',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
@@ -139,6 +151,36 @@ const AppPlansIdRoute = AppPlansIdRouteImport.update({
   path: '/app/plans/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsAboutRoute = AppSettingsAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsConnectedRoute = AppSettingsConnectedRouteImport.update({
+  id: '/connected',
+  path: '/connected',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsImportsRoute = AppSettingsImportsRouteImport.update({
+  id: '/imports',
+  path: '/imports',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsRecapsRoute = AppSettingsRecapsRouteImport.update({
+  id: '/recaps',
+  path: '/recaps',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const AppTitleIdRoute = AppTitleIdRouteImport.update({
   id: '/app_/title/$id',
   path: '/app/title/$id',
@@ -168,17 +210,24 @@ export interface FileRoutesByFullPath {
   '/app/insights': typeof AppInsightsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/recap': typeof AppRecapRoute
-  '/app/settings': typeof AppSettingsRoute
+  '/app/settings': typeof AppSettingsRouteWithChildren
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/plans/$id': typeof AppPlansIdRoute
+  '/app/settings/about': typeof AppSettingsAboutRoute
+  '/app/settings/account': typeof AppSettingsAccountRoute
+  '/app/settings/connected': typeof AppSettingsConnectedRoute
+  '/app/settings/imports': typeof AppSettingsImportsRoute
+  '/app/settings/recaps': typeof AppSettingsRecapsRoute
   '/app/title/$id': typeof AppTitleIdRoute
   '/app/groups/': typeof AppGroupsIndexRoute
   '/app/lists/': typeof AppListsIndexRoute
+  '/app/settings/': typeof AppSettingsIndexRoute
   '/app/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
   '/app/groups/$groupId/': typeof AppGroupsGroupIdIndexRoute
 }
@@ -193,16 +242,22 @@ export interface FileRoutesByTo {
   '/app/insights': typeof AppInsightsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/recap': typeof AppRecapRoute
-  '/app/settings': typeof AppSettingsRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/plans/$id': typeof AppPlansIdRoute
+  '/app/settings/about': typeof AppSettingsAboutRoute
+  '/app/settings/account': typeof AppSettingsAccountRoute
+  '/app/settings/connected': typeof AppSettingsConnectedRoute
+  '/app/settings/imports': typeof AppSettingsImportsRoute
+  '/app/settings/recaps': typeof AppSettingsRecapsRoute
   '/app/title/$id': typeof AppTitleIdRoute
   '/app/groups': typeof AppGroupsIndexRoute
   '/app/lists': typeof AppListsIndexRoute
+  '/app/settings': typeof AppSettingsIndexRoute
   '/app/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
   '/app/groups/$groupId': typeof AppGroupsGroupIdIndexRoute
 }
@@ -219,17 +274,24 @@ export interface FileRoutesById {
   '/app_/insights': typeof AppInsightsRoute
   '/app_/library': typeof AppLibraryRoute
   '/app_/recap': typeof AppRecapRoute
-  '/app_/settings': typeof AppSettingsRoute
+  '/app_/settings': typeof AppSettingsRouteWithChildren
   '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/connect/extension': typeof ConnectExtensionRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app_/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app_/imports/$id': typeof AppImportsIdRoute
   '/app_/lists/$id': typeof AppListsIdRoute
   '/app_/plans/$id': typeof AppPlansIdRoute
+  '/app_/settings/about': typeof AppSettingsAboutRoute
+  '/app_/settings/account': typeof AppSettingsAccountRoute
+  '/app_/settings/connected': typeof AppSettingsConnectedRoute
+  '/app_/settings/imports': typeof AppSettingsImportsRoute
+  '/app_/settings/recaps': typeof AppSettingsRecapsRoute
   '/app_/title/$id': typeof AppTitleIdRoute
   '/app_/groups/': typeof AppGroupsIndexRoute
   '/app_/lists/': typeof AppListsIndexRoute
+  '/app_/settings/': typeof AppSettingsIndexRoute
   '/app_/groups/$groupId/$channelId': typeof AppGroupsGroupIdChannelIdRoute
   '/app_/groups/$groupId/': typeof AppGroupsGroupIdIndexRoute
 }
@@ -250,14 +312,21 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/week'
     | '/auth/verify'
+    | '/connect/extension'
     | '/oauth/consent'
     | '/app/groups/$groupId'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/plans/$id'
+    | '/app/settings/about'
+    | '/app/settings/account'
+    | '/app/settings/connected'
+    | '/app/settings/imports'
+    | '/app/settings/recaps'
     | '/app/title/$id'
     | '/app/groups/'
     | '/app/lists/'
+    | '/app/settings/'
     | '/app/groups/$groupId/$channelId'
     | '/app/groups/$groupId/'
   fileRoutesByTo: FileRoutesByTo
@@ -272,16 +341,22 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/library'
     | '/app/recap'
-    | '/app/settings'
     | '/app/week'
     | '/auth/verify'
+    | '/connect/extension'
     | '/oauth/consent'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/plans/$id'
+    | '/app/settings/about'
+    | '/app/settings/account'
+    | '/app/settings/connected'
+    | '/app/settings/imports'
+    | '/app/settings/recaps'
     | '/app/title/$id'
     | '/app/groups'
     | '/app/lists'
+    | '/app/settings'
     | '/app/groups/$groupId/$channelId'
     | '/app/groups/$groupId'
   id:
@@ -300,14 +375,21 @@ export interface FileRouteTypes {
     | '/app_/settings'
     | '/app_/week'
     | '/auth/verify'
+    | '/connect/extension'
     | '/oauth/consent'
     | '/app_/groups/$groupId'
     | '/app_/imports/$id'
     | '/app_/lists/$id'
     | '/app_/plans/$id'
+    | '/app_/settings/about'
+    | '/app_/settings/account'
+    | '/app_/settings/connected'
+    | '/app_/settings/imports'
+    | '/app_/settings/recaps'
     | '/app_/title/$id'
     | '/app_/groups/'
     | '/app_/lists/'
+    | '/app_/settings/'
     | '/app_/groups/$groupId/$channelId'
     | '/app_/groups/$groupId/'
   fileRoutesById: FileRoutesById
@@ -324,9 +406,10 @@ export interface RootRouteChildren {
   AppInsightsRoute: typeof AppInsightsRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppRecapRoute: typeof AppRecapRoute
-  AppSettingsRoute: typeof AppSettingsRoute
+  AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppWeekRoute: typeof AppWeekRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  ConnectExtensionRoute: typeof ConnectExtensionRoute
   OauthConsentRoute: typeof OauthConsentRoute
   AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
@@ -435,6 +518,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/connect/extension': {
+      id: '/connect/extension'
+      path: '/connect/extension'
+      fullPath: '/connect/extension'
+      preLoaderRoute: typeof ConnectExtensionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth/consent': {
       id: '/oauth/consent'
       path: '/oauth/consent'
@@ -483,6 +573,48 @@ declare module '@tanstack/solid-router' {
       fullPath: '/app/plans/$id'
       preLoaderRoute: typeof AppPlansIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app_/settings/': {
+      id: '/app_/settings/'
+      path: '/'
+      fullPath: '/app/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/app_/settings/about': {
+      id: '/app_/settings/about'
+      path: '/about'
+      fullPath: '/app/settings/about'
+      preLoaderRoute: typeof AppSettingsAboutRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/app_/settings/account': {
+      id: '/app_/settings/account'
+      path: '/account'
+      fullPath: '/app/settings/account'
+      preLoaderRoute: typeof AppSettingsAccountRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/app_/settings/connected': {
+      id: '/app_/settings/connected'
+      path: '/connected'
+      fullPath: '/app/settings/connected'
+      preLoaderRoute: typeof AppSettingsConnectedRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/app_/settings/imports': {
+      id: '/app_/settings/imports'
+      path: '/imports'
+      fullPath: '/app/settings/imports'
+      preLoaderRoute: typeof AppSettingsImportsRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/app_/settings/recaps': {
+      id: '/app_/settings/recaps'
+      path: '/recaps'
+      fullPath: '/app/settings/recaps'
+      preLoaderRoute: typeof AppSettingsRecapsRouteImport
+      parentRoute: typeof AppSettingsRoute
     }
     '/app_/title/$id': {
       id: '/app_/title/$id'
@@ -535,6 +667,28 @@ const AppGroupsRouteWithChildren = AppGroupsRoute._addFileChildren(
   AppGroupsRouteChildren,
 )
 
+interface AppSettingsRouteChildren {
+  AppSettingsAboutRoute: typeof AppSettingsAboutRoute
+  AppSettingsAccountRoute: typeof AppSettingsAccountRoute
+  AppSettingsConnectedRoute: typeof AppSettingsConnectedRoute
+  AppSettingsImportsRoute: typeof AppSettingsImportsRoute
+  AppSettingsRecapsRoute: typeof AppSettingsRecapsRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+}
+
+const AppSettingsRouteChildren: AppSettingsRouteChildren = {
+  AppSettingsAboutRoute: AppSettingsAboutRoute,
+  AppSettingsAccountRoute: AppSettingsAccountRoute,
+  AppSettingsConnectedRoute: AppSettingsConnectedRoute,
+  AppSettingsImportsRoute: AppSettingsImportsRoute,
+  AppSettingsRecapsRoute: AppSettingsRecapsRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
+}
+
+const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
+  AppSettingsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -547,9 +701,10 @@ const rootRouteChildren: RootRouteChildren = {
   AppInsightsRoute: AppInsightsRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppRecapRoute: AppRecapRoute,
-  AppSettingsRoute: AppSettingsRoute,
+  AppSettingsRoute: AppSettingsRouteWithChildren,
   AppWeekRoute: AppWeekRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  ConnectExtensionRoute: ConnectExtensionRoute,
   OauthConsentRoute: OauthConsentRoute,
   AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,
@@ -560,3 +715,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/solid-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -4,7 +4,7 @@ import Foundation
 /// The search scopes a client can ask for. `anime` is AniList; `all` is films, shows and anime
 /// together (books stay out); the others map to their `MediaType`.
 enum SearchScope: String, Sendable {
-    case all, movie, show, anime, book
+    case all, movie, show, anime, book, album
 }
 
 /// Search hits, and whether a provider failed so the hits are only part of the answer.
@@ -24,6 +24,9 @@ struct TitleDetail: Sendable {
     var runtimeMinutes: Int?
     /// Shows only; nil for movies and books.
     var episodes: [CatalogEpisode]?
+    /// Albums only (MUS-001).
+    var tracks: [AlbumTrack]?
+    var genres: [String] = []
 }
 
 /// Catalog reads: search (CAT-004) and title detail with lazy episode hydration (CAT-006).
@@ -59,6 +62,9 @@ struct CatalogService: Sendable {
         case .book: return try await CatalogSearchResult(
                 hits: catalogs.openLibrary.search(query: trimmed, type: .book)
             )
+        case .album:
+            guard let music = catalogs.music else { return CatalogSearchResult(hits: [], incomplete: true) }
+            return try await CatalogSearchResult(hits: music.search(query: trimmed, type: .album))
         }
     }
 
@@ -66,6 +72,9 @@ struct CatalogService: Sendable {
         guard let title = try await stores.titles.title(id: id),
               let state = try await stores.titles.catalogState(id)
         else { throw AppError.notFound() }
+        if title.type == .album {
+            return try await albumDetail(title, state: state)
+        }
         guard title.type == .show else {
             return TitleDetail(title: title, status: state.status, runtimeMinutes: state.runtimeMinutes, episodes: nil)
         }
@@ -111,6 +120,22 @@ struct CatalogService: Sendable {
             let hits = try await catalogs.tmdb.searchMulti(query: query).filter(\.isAnime)
             return CatalogSearchResult(hits: hits, incomplete: true, notice: CatalogSearchResult.aniListDown)
         }
+    }
+
+    /// An album with its tracklist, fetched the first time and again after `dormantStaleness`.
+    /// MusicBrainz failing never fails the page: the album shows without its tracks.
+    private func albumDetail(_ title: Title, state: TitleCatalogState) async throws -> TitleDetail {
+        // Nil until a tracklist was fetched once; an album MusicBrainz lists no tracks for is empty.
+        var tracks: [AlbumTrack]? = state.tracksHydratedAt == nil ? nil : try await stores.titles.tracks(title.id)
+        let stale = state.tracksHydratedAt.map { now().timeIntervalSince($0) >= Self.dormantStaleness } ?? true
+        if stale, let music = catalogs.music, let fresh = try? await music.tracks(ids: title.ids) {
+            try await stores.titles.saveTracks(title.id, fresh, hydratedAt: now())
+            tracks = fresh
+        }
+        let genres = try await stores.titles.genres(title.id)
+        return TitleDetail(
+            title: title, status: nil, runtimeMinutes: nil, episodes: nil, tracks: tracks, genres: genres
+        )
     }
 
     /// Never hydrated, or older than its window: 24h while an episode airs within 30

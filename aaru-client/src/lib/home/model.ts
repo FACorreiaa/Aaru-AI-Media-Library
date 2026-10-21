@@ -152,7 +152,11 @@ export interface WeekStrip {
 export function weekStrip(stats: Stats): WeekStrip {
   const t = stats.totals
   const finished =
-    t.moviesFinished + t.showsFinished + t.animeFinished + t.booksFinished
+    t.moviesFinished +
+    t.showsFinished +
+    t.animeFinished +
+    t.booksFinished +
+    t.albumsFinished
   const parts: string[] = []
   if (t.episodesWatched > 0) parts.push(plural(t.episodesWatched, 'episode'))
   if (t.minutesWatched > 0) parts.push(hoursLabel(t.minutesWatched))
@@ -233,4 +237,11 @@ export function markOnShelf(
         : hit,
     ),
   }))
+}
+
+/** MUS-001: Home's Listening row. Albums in progress, the last one touched first. */
+export function listening(entries: LibraryEntry[]): LibraryEntry[] {
+  return entries
+    .filter((e) => e.title.type === 'album' && e.status === 'in_progress')
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }

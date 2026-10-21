@@ -19,6 +19,7 @@ import { cn } from '../lib/cn'
 import {
   AiringCard,
   ContinueCard,
+  ListeningCard,
   Row,
   StartCard,
   UnfinishedCard,
@@ -36,6 +37,7 @@ import {
   advance,
   airingBadge,
   countChips,
+  listening,
   markOnShelf,
   weekStrip,
   upcoming,
@@ -64,7 +66,8 @@ import { setEpisode } from '../lib/title/server'
 // watching come with the page; the calendar row loads in the browser, which knows the
 // viewer's "today", as do this month's stats, Discover's public rows (DISC-001) and the list
 // chips, so a cold provider cache never holds the page. Each of those hides itself if it
-// fails. Search opens in place and shares the library for its "On your shelf" marks.
+// fails. Search opens in place and shares the library for its "On your shelf" marks; the same
+// library fills the Listening row (MUS-001), which stays hidden until it holds an album.
 // Search loads only when it is first opened: it is not part of the page's first paint.
 const SearchPanel = lazy(() =>
   import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
@@ -226,11 +229,14 @@ function Home() {
   }
 
   const chips = createMemo(() => countChips(counts()))
+  /** MUS-001: albums in progress, from the library Home already loads for Search. */
+  const listeningNow = createMemo(() => listening(entries()))
 
   const empty = () =>
     continuing().length === 0 &&
     starting().length === 0 &&
     unfinished().length === 0 &&
+    listeningNow().length === 0 &&
     airingsReady() &&
     nextAirings().length === 0
 
@@ -423,6 +429,14 @@ function Home() {
                   onWatched={markWatched}
                 />
               )}
+            </For>
+          </Row>
+        </Show>
+
+        <Show when={listeningNow().length > 0}>
+          <Row title="Listening">
+            <For each={listeningNow()}>
+              {(entry) => <ListeningCard entry={entry} />}
             </For>
           </Row>
         </Show>

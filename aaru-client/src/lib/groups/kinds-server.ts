@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { z } from 'zod'
+import { MEDIA_TYPES } from '../media'
 import { api } from '../api/client'
 import { sessionToken } from '../session/guard'
 import type { components } from '../api/schema'
@@ -18,7 +19,7 @@ const uuid = z.string().uuid()
 // The server's `MediaRef`, as in ./server. Private for the same reason: no zod in the browser.
 const mediaRef = z.object({
   titleId: uuid.optional(),
-  type: z.enum(['movie', 'show', 'book']),
+  type: z.enum(MEDIA_TYPES),
   ids: z.record(z.string(), z.string()).optional(),
   title: z.string().optional(),
   year: z.number().int().optional(),
@@ -95,9 +96,7 @@ export const removeChannelItem = createServerFn({ method: 'POST' })
 
 /** "Add to my library" from a shelf: the same journaled add as anywhere else. */
 export const addTitleToLibrary = createServerFn({ method: 'POST' })
-  .validator(
-    z.object({ titleId: uuid, type: z.enum(['movie', 'show', 'book']) }),
-  )
+  .validator(z.object({ titleId: uuid, type: z.enum(MEDIA_TYPES) }))
   .handler(async ({ data }): Promise<LibraryEntry> =>
     check(
       await api(sessionToken()).POST('/v1/library/items', {

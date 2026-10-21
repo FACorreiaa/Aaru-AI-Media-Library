@@ -13,8 +13,9 @@ enum AgentScope: String, Codable, Sendable, CaseIterable {
     case importsWrite = "imports:write"
 }
 
-/// Which outside caller a token is for: the Stremio addon, or an MCP client (OUT-004).
-/// The MCP kinds differ only in the setup Settings shows; they reach the same tools.
+/// Which outside caller a token is for: the Stremio addon, an MCP client (OUT-004), or Aaru's
+/// browser extension (SCR-007). The MCP kinds differ only in the setup Settings shows; they reach
+/// the same tools.
 enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
     case stremio
     case claudeCode = "claude_code"
@@ -24,14 +25,24 @@ enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
     case other
     /// Claude (claude.ai, Desktop, mobile) through its custom connector, over OAuth.
     case claude
+    /// Aaru's browser extension: scrobbles plays on streaming sites, nothing else (SCR-007).
+    case browser
+    /// A music scrobbler speaking ListenBrainz's protocol (Web Scrobbler, Pano Scrobbler,
+    /// Navidrome, …): sends listens, nothing else (MUS-005).
+    case music
 
     /// Which surface a token opens. A token for one never authenticates on the other.
     enum Group: String, Sendable {
-        case stremio, mcp
+        case stremio, mcp, scrobble, music
     }
 
     var group: Group {
-        self == .stremio ? .stremio : .mcp
+        switch self {
+        case .stremio: .stremio
+        case .browser: .scrobble
+        case .music: .music
+        case .claudeCode, .codex, .hermes, .gemini, .other, .claude: .mcp
+        }
     }
 
     /// The default token name, and the client's name in Settings.
@@ -44,6 +55,8 @@ enum AgentTokenKind: String, Codable, Sendable, CaseIterable {
         case .gemini: "Gemini CLI"
         case .other: "MCP client"
         case .claude: "Claude"
+        case .browser: "Browser extension"
+        case .music: "Music scrobbler"
         }
     }
 }

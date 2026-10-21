@@ -14,6 +14,7 @@ struct Services: Sendable {
     var traktConnect: TraktConnectService
     var agentTokens: AgentTokenService
     var scrobble: ScrobbleService
+    var listens: ListenService
     var plans: PlanService
     var oauth: OAuthService
     var social: SocialService
@@ -50,7 +51,8 @@ struct Services: Sendable {
             catalog: catalog,
             discover: DiscoverService(
                 stores: stores,
-                providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary],
+                providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
+                    + [catalogs.releases].compactMap(\.self),
                 animeFallback: catalogs.tmdb as? any DiscoverListing
             ),
             library: library,
@@ -68,6 +70,7 @@ struct Services: Sendable {
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
+            listens: ListenService(stores: stores),
             plans: PlanService(stores: stores, library: library),
             oauth: OAuthService(
                 stores: stores, oauth: stores.oauth,

@@ -1,9 +1,13 @@
 import AaruCore
 import Foundation
 
-/// Where a watch event came from. Only Stremio until SCR-002.
-enum WatchSource: String, Codable, Sendable {
+/// Where a watch event came from: Stremio's addon, or a streaming site through the browser
+/// extension (SCR-007).
+enum WatchSource: String, Codable, Sendable, CaseIterable {
     case stremio
+    case netflix
+    case disneyPlus = "disney_plus"
+    case primeVideo = "prime_video"
 }
 
 enum PlaybackAction: String, Sendable {
@@ -29,6 +33,12 @@ struct PlaybackReport: Sendable {
     var titleID: TitleID?
     /// Set for an episode; nil for a movie.
     var episode: EpisodeKey?
+    /// A player with no ids names what plays instead (SCR-007): matched by name, never guessed.
+    var title: String?
+    /// With `title`: matched by title + year when the player knows the year.
+    var year: Int?
+    /// The episode's own name, when the player gives no number Aaru can trust.
+    var episodeName: NamedEpisode?
     var action: PlaybackAction
     var positionMs: Int64
     /// 0 when the player does not know it yet (Stremio's first `start`).

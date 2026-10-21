@@ -29,14 +29,19 @@ import { AddToListDialog } from './AddToListDialog'
 import { Button } from './ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 
-/** All searches films, shows and anime together; books are never in it, and the last row of
- * an All search offers them instead. */
+/** All searches films, shows and anime together; books and albums are never in it, and the last
+ * rows of an All search offer them instead. */
 type Scope = MediaKind | 'all'
 
 const SCOPES: Array<{ kind: Scope; label: string }> = [
   { kind: 'all', label: 'All' },
   ...KINDS.map((k) => ({ kind: k.kind, label: k.label })),
 ]
+
+const PLACEHOLDERS: Partial<Record<Scope, string>> = {
+  book: 'Title, author or ISBN',
+  album: 'Album or artist',
+}
 
 /** APP-004 on the web: scoped search, debounced, with add and an initial status. Given a
  * `list` (LST-003), each hit adds to that list instead of the library. */
@@ -190,7 +195,7 @@ export function SearchPanel(props: {
           type="search"
           autofocus
           autocomplete="off"
-          placeholder={kind() === 'book' ? 'Title, author or ISBN' : 'Title'}
+          placeholder={PLACEHOLDERS[kind()] ?? 'Title'}
           value={query()}
           onInput={(e) => setQuery(e.currentTarget.value)}
           class="min-h-12 w-full rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
@@ -249,7 +254,10 @@ export function SearchPanel(props: {
                   <div class="min-w-0 flex-1">
                     <p class="line-clamp-2 font-medium">{hit.title}</p>
                     <p class="truncate text-sm text-muted">
-                      {[kindName(kindOfHit), hit.year, hit.byline]
+                      {(kindOfHit === 'album'
+                        ? [hit.byline, hit.year]
+                        : [kindName(kindOfHit), hit.year, hit.byline]
+                      )
                         .filter(Boolean)
                         .join(' · ')}
                     </p>
@@ -324,6 +332,13 @@ export function SearchPanel(props: {
                 class="w-full rounded-panel px-3 py-2 text-left text-sm font-medium text-accent hover:bg-surface"
               >
                 Search Books for “{query().trim()}”
+              </button>
+              <button
+                type="button"
+                onClick={() => setKind('album')}
+                class="w-full rounded-panel px-3 py-2 text-left text-sm font-medium text-accent hover:bg-surface"
+              >
+                Search Music for “{query().trim()}”
               </button>
             </li>
           </Show>

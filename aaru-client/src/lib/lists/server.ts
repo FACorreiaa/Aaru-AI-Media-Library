@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { z } from 'zod'
+import { MEDIA_TYPES } from '../media'
 import { api } from '../api/client'
 import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
@@ -14,7 +15,7 @@ const id = z.string().uuid()
 const name = z.string().trim().min(1).max(120)
 const mediaRef = z.object({
   titleId: z.string().uuid().optional(),
-  type: z.enum(['movie', 'show', 'book']),
+  type: z.enum(MEDIA_TYPES),
   ids: z.record(z.string(), z.string()).optional(),
   title: z.string().optional(),
   year: z.number().int().optional(),

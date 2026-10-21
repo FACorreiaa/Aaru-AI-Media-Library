@@ -1,8 +1,10 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { z } from 'zod'
+import { MEDIA_TYPES } from '../media'
 import { api } from '../api/client'
 import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
+import { SEARCH_TYPES } from './model'
 import type { LibraryEntry, SearchResults } from './model'
 
 // APP-003/APP-004 on the web: the same `/v1` routes the Apple apps call, sent with the session.
@@ -23,7 +25,7 @@ export const searchCatalog = createServerFn({ method: 'GET' })
   .validator(
     z.object({
       q: z.string().trim().min(2).max(200),
-      type: z.enum(['all', 'movie', 'show', 'anime', 'book']),
+      type: z.enum(SEARCH_TYPES),
     }),
   )
   /** `incomplete` is true when a catalog did not answer: the hits are what the others found. */
@@ -56,13 +58,14 @@ const externalIds = z
     anilist: z.string(),
     mal: z.string(),
     anidb: z.string(),
+    musicbrainz: z.string(),
   })
   .partial()
 
 export const addToLibrary = createServerFn({ method: 'POST' })
   .validator(
     z.object({
-      type: z.enum(['movie', 'show', 'book']),
+      type: z.enum(MEDIA_TYPES),
       ids: externalIds,
       title: z.string(),
       year: z.number().int().optional(),

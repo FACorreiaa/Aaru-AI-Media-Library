@@ -128,7 +128,7 @@ function GroupsHome() {
                 Choose a handle first, so friends can see who is talking.
               </p>
               <Link
-                to="/app/settings"
+                to="/app/settings/account"
                 hash="profile"
                 class="mt-6 inline-block rounded-full bg-accent px-5 py-2.5 font-semibold text-on-accent"
               >

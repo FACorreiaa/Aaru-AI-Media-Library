@@ -135,7 +135,7 @@ struct UnfinishedCard: View {
     var body: some View {
         NavigationLink(value: entry.libraryItemId) {
             VStack(alignment: .leading, spacing: 6) {
-                HomeArt(url: entry.title.posterURL, aspect: 2 / 3)
+                HomeArt(url: entry.title.posterURL, aspect: entry.title.mediaKind.posterAspect)
                     .overlay(alignment: .bottomLeading) {
                         HomeChip(text: reason).padding(6)
                     }

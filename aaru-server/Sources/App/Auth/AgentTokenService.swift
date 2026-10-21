@@ -26,11 +26,14 @@ struct MintedAgentToken: Sendable {
     var stremio: StremioLinks?
 }
 
-/// OUT-001: per-user tokens for outside callers, the Stremio addon and MCP clients (OUT-004).
+/// OUT-001: per-user tokens for outside callers: the Stremio addon, MCP clients (OUT-004), the
+/// browser extension (SCR-007) and music scrobblers (MUS-005).
 /// The secret is a per-surface prefix + 32 random bytes; Postgres keeps only its SHA-256.
 struct AgentTokenService: Sendable {
     static let stremioPrefix = "aaru_st_"
     static let mcpPrefix = "aaru_mcp_"
+    static let scrobblePrefix = "aaru_scr_"
+    static let listenPrefix = "aaru_lb_"
     /// An access token the OAuth front door issued (one hour). Also an MCP credential.
     static let oauthPrefix = "aaru_oat_"
     /// `last_used_at` is written at most this often, so a busy addon does not write per request.
@@ -65,9 +68,14 @@ struct AgentTokenService: Sendable {
                 message: "Names are at most 80 characters.", details: ["name": "At most 80 characters."]
             )
         }
-        // An MCP client reads and, if allowed, writes the library; only a player scrobbles.
-        var scopes: Set<AgentScope> = kind.group == .stremio ? [.libraryRead, .scrobbleWrite] : [.libraryRead]
-        if allowLibraryWrites {
+        // An MCP client reads and, if allowed, writes the library; only a player scrobbles. The
+        // browser extension and music scrobblers only scrobble: they never read the library.
+        var scopes: Set<AgentScope> = switch kind.group {
+        case .stremio: [.libraryRead, .scrobbleWrite]
+        case .mcp: [.libraryRead]
+        case .scrobble, .music: [.scrobbleWrite]
+        }
+        if allowLibraryWrites, kind.group == .stremio || kind.group == .mcp {
             scopes.insert(.libraryWrite)
         }
         if allowImports, kind.group == .mcp {
@@ -91,7 +99,12 @@ struct AgentTokenService: Sendable {
     }
 
     static func prefix(for group: AgentTokenKind.Group) -> String {
-        group == .stremio ? stremioPrefix : mcpPrefix
+        switch group {
+        case .stremio: stremioPrefix
+        case .mcp: mcpPrefix
+        case .scrobble: scrobblePrefix
+        case .music: listenPrefix
+        }
     }
 
     func revoke(id: UUID, userID: UserID) async throws {
@@ -102,7 +115,7 @@ struct AgentTokenService: Sendable {
 
     /// The live token for a presented secret on one surface, or nil. Records use at most hourly.
     func authenticate(_ secret: String, for group: AgentTokenKind.Group) async throws -> AgentCaller? {
-        let prefixes = group == .mcp ? [Self.mcpPrefix, Self.oauthPrefix] : [Self.stremioPrefix]
+        let prefixes = group == .mcp ? [Self.mcpPrefix, Self.oauthPrefix] : [Self.prefix(for: group)]
         guard prefixes.contains(where: secret.hasPrefix), secret.count < 200 else { return nil }
         let now = now()
         guard let (token, userID) = try await stores.agentTokens.token(forHash: OpaqueToken.hash(secret), now: now),

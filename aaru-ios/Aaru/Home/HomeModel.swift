@@ -9,7 +9,8 @@ typealias LibraryCounts = Components.Schemas.LibraryCounts
 typealias DiscoverRow = Components.Schemas.DiscoverRow
 
 /// Home (APP-009, APP-013): Continue watching, Start watching, Unfinished and the status counts
-/// from `/v1/up-next`; the next two weeks of airings from `/v1/calendar`; this month's numbers
+/// from `/v1/up-next`; the albums being listened to from the shelf (MUS-001); the next two weeks of airings from
+/// `/v1/calendar`; this month's numbers
 /// from `/v1/me/stats`; then Discover's public rows from `/v1/discover` (DISC-001). Each part
 /// loads on its own, so one failing keeps the rest. The last good load is cached so Home opens
 /// offline.
@@ -33,6 +34,9 @@ final class HomeModel {
     private(set) var pending: Set<String> = []
     /// The last load or check that failed. Shown until the next action.
     var problem: String?
+
+    /// Previews only: the Listening row without a shelf behind it.
+    @ObservationIgnored private var previewListening: [LibraryRow]?
 
     @ObservationIgnored private let api: Client?
     @ObservationIgnored private let library: LibraryModel?
@@ -69,16 +73,29 @@ final class HomeModel {
     }
 
     /// For previews: rows already in place, nothing to fetch.
-    convenience init(preview snapshot: HomeCache.Snapshot, discover: [DiscoverRow] = [], now: Date = .now) {
+    convenience init(
+        preview snapshot: HomeCache.Snapshot,
+        discover: [DiscoverRow] = [],
+        listening: [LibraryRow] = [],
+        now: Date = .now
+    ) {
         self.init(api: nil, library: nil, cache: nil, now: { now })
         apply(snapshot)
         self.discover = discover
+        previewListening = listening
         hasLoaded = true
     }
 
     /// Nothing of the user's own: no rows from the library. Discover's rows may still be there.
     var isEmpty: Bool {
         continueWatching.isEmpty && startWatching.isEmpty && upcoming.isEmpty && unfinished.isEmpty
+            && listening.isEmpty
+    }
+
+    /// MUS-001: albums marked Listening, most recently touched first. Read from the shelf, so an
+    /// album set to Listening shows here at once, offline too.
+    var listening: [LibraryRow] {
+        previewListening ?? library?.rows(kind: .music, status: .inProgress) ?? []
     }
 
     // MARK: Loading
@@ -124,6 +141,7 @@ final class HomeModel {
                     WidgetSync.publish(WidgetSync.snapshot(
                         upNext: snapshot.upNext,
                         airing: snapshot.airing,
+                        listening: listening.compactMap { library?.entry($0.id) },
                         now: now()
                     ))
                 }
