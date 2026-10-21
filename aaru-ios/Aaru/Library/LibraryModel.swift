@@ -17,6 +17,14 @@ final class LibraryModel {
     private(set) var revision = 0
     /// Items with a Now write in flight (APP-017), so a double tap sends one.
     var nowPending: Set<String> = []
+    /// The title just removed from the library (UX-061): Library says so and points to History,
+    /// where the removal undoes. Cleared when dismissed.
+    var lastRemoval: String?
+
+    /// Nothing has loaded yet and the first sync failed: show the error, never "empty" (UX-062).
+    var firstSyncProblem: String? {
+        hasSynced || !rows.isEmpty || isSyncing ? nil : syncProblem
+    }
 
     @ObservationIgnored private var entries: [String: LibraryEntry] = [:]
     @ObservationIgnored private var token: String?
@@ -49,12 +57,12 @@ final class LibraryModel {
         rows.filter { (kind == nil || $0.kind == kind) && (status == nil || $0.status == status) }
     }
 
-    /// Whether a search hit is already on the shelf, by any shared provider id.
+    /// Whether a search hit is already in the library, by any shared provider id.
     func contains(_ hit: CatalogHit) -> Bool {
         !knownKeys.isDisjoint(with: hit.ids.keys)
     }
 
-    /// The shelf's entry for a catalog hit: same type, any shared provider id.
+    /// The library's entry for a catalog hit: same type, any shared provider id.
     func entry(matching hit: CatalogHit) -> LibraryEntry? {
         let keys = hit.ids.keys
         guard contains(hit) else { return nil }
@@ -95,20 +103,47 @@ final class LibraryModel {
     }
 
     /// Adds a catalog hit (Search, Discover) with a starting status. Returns what went wrong, or
-    /// nil when the title is on the shelf.
+    /// nil when the title is in the library.
     func add(_ hit: CatalogHit, status: LibraryStatus, api: Client?) async -> String? {
+        await add(MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year), named: hit.title,
+                  status: status, api: api)
+    }
+
+    /// Adds a title by reference (a list member not yet in the library, UX-072).
+    func add(_ ref: MediaRef, named name: String, status: LibraryStatus, api: Client?) async -> String? {
         guard let api else { return "Aaru could not reach the server." }
-        let ref = MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year)
         do {
             switch try await api.addLibraryItem(body: .json(.init(mediaRef: ref, status: status))) {
             case let .ok(response):
                 try upsert(response.body.json)
                 return nil
             case let .default(_, error):
-                return (try? error.body.json.message) ?? "\(hit.title) could not be added."
+                return (try? error.body.json.message) ?? "\(name) could not be added."
             }
         } catch {
             return "Aaru could not reach the server."
+        }
+    }
+
+    /// Removes an item from the library (UX-061). The server journals it, so it undoes from
+    /// Settings → Your data → History. Returns what went wrong, or nil once it is gone.
+    func remove(_ id: String, api: Client?) async -> String? {
+        guard let api else { return "Aaru could not reach the server." }
+        let name = entries[id]?.title.title ?? "The title"
+        do {
+            switch try await api.deleteLibraryItem(path: .init(id: id)) {
+            case .noContent:
+                entries[id] = nil
+                publish()
+                persist()
+                revision += 1
+                lastRemoval = name
+                return nil
+            case let .default(_, error):
+                return (try? error.body.json.message) ?? "\(name) was not removed."
+            }
+        } catch {
+            return "\(name) was not removed. Aaru could not reach the server."
         }
     }
 
@@ -125,6 +160,7 @@ final class LibraryModel {
         token = nil
         hasSynced = false
         syncProblem = nil
+        lastRemoval = nil
         cache.clear()
         publish()
     }

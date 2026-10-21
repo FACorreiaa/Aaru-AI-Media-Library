@@ -36,7 +36,7 @@ struct NowItem: Identifiable {
             switch kind {
             case .book: label = entry.title.pageCount.map { "\($0) pages" } ?? "Just started"
             case .music: label = "Listening"
-            default: label = "In progress"
+            default: label = "Watching"
             }
             next = nil
         }

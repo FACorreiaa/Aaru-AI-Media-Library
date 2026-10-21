@@ -10,6 +10,7 @@ struct NowSection: View {
     /// Shows a failed write in the screen's banner.
     var onProblem: (String) -> Void
 
+    @Environment(\.dynamicTypeSize) private var typeSize
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
         private var isWide: Bool {
@@ -66,7 +67,24 @@ struct NowSection: View {
                     }
                 }
             }
-            .frame(width: isWide ? nil : 290)
+            .modifier(NowCardWidth(isScrolling: !isWide, isLarge: typeSize.isAccessibilitySize))
+        }
+    }
+}
+
+/// On a phone the cards scroll sideways at 290 pt; at accessibility sizes each takes most of the
+/// width so its text wraps instead of clipping. The wide grid sizes them itself.
+private struct NowCardWidth: ViewModifier {
+    let isScrolling: Bool
+    let isLarge: Bool
+
+    func body(content: Content) -> some View {
+        if isScrolling {
+            content.containerRelativeFrame(.horizontal) { width, _ in
+                isLarge ? width - 48 : min(290, width - 48)
+            }
+        } else {
+            content
         }
     }
 }
@@ -91,6 +109,9 @@ private struct NowCard: View {
         VStack(alignment: .leading, spacing: 0) {
             NavigationLink(value: item.entry.id) { art }
                 .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(title.title)
+                .accessibilityHint("Opens the title")
             VStack(alignment: .leading, spacing: 10) {
                 progress
                 actions
@@ -169,7 +190,7 @@ private struct NowCard: View {
                 Text(item.label).font(.subheadline.weight(.medium))
                 Spacer()
                 if let next = item.next {
-                    Text("Next S\(next.season) · E\(next.number)")
+                    Text("Next " + EpisodeCode.short(season: next.season, number: next.number))
                         .font(.subheadline)
                         .foregroundStyle(Color(.muted))
                 }
@@ -182,11 +203,19 @@ private struct NowCard: View {
         }
     }
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     private var actions: some View {
-        HStack(spacing: 8) {
+        // Side by side, or stacked at accessibility sizes so neither label is cut.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 8))
+        return layout {
             if let next = item.next {
                 Button { perform(.tickNext) } label: {
-                    Label("Watched S\(next.season) · E\(next.number)", systemImage: "checkmark")
+                    Label(
+                        "Mark \(EpisodeCode.short(season: next.season, number: next.number)) watched",
+                        systemImage: "checkmark"
+                    )
                         .frame(minHeight: 30)
                 }
                 .buttonStyle(.borderedProminent)
@@ -203,7 +232,7 @@ private struct NowCard: View {
             }
             if item.next == nil {
                 Button { perform(.finish) } label: {
-                    Text(item.kind == .book ? "Finished" : item.kind == .music ? "Listened" : "Mark watched")
+                    Text(item.kind == .book ? "Mark read" : item.kind == .music ? "Mark listened" : "Mark watched")
                         .frame(minHeight: 30)
                 }
                 .buttonStyle(.bordered)
