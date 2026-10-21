@@ -46,7 +46,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
-    let router = try buildRouter(stores: stores, services: services)
+    let router = try buildRouter(stores: stores, services: services, metricsSecret: config.metricsSecret)
     return Application(
         router: router,
         server: realtimeServer(
@@ -236,7 +236,7 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
 }
 
 /// Builds the router: logging, the shared error shape, auth, then the generated `/v1` handlers.
-func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequestContext> {
+func buildRouter(stores: Stores, services: Services, metricsSecret: String = "") throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
         RedactedLogRequestsMiddleware(.info)
@@ -269,6 +269,7 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
     ScrobbleRoutes(scrobble: services.scrobble, tokens: services.agentTokens).register(on: router)
     ListenBrainzRoutes(listens: services.listens, tokens: services.agentTokens).register(on: router)
     OAuthRoutes(service: services.oauth).register(on: router)
+    InternalMetricsRoutes(users: stores.users, secret: metricsSecret).register(on: router)
     return router
 }
 

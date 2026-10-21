@@ -43,6 +43,13 @@ extension PostgresUserStore {
             try await sql.delete(from: "users").where("id", .equal, id.rawValue).run()
         }
     }
+
+    func count() async throws -> Int {
+        struct Row: Decodable { let count: Int }
+        let row = try await sqlDatabase(database).raw("SELECT count(*)::int AS count FROM users")
+            .first(decoding: Row.self)
+        return row?.count ?? 0
+    }
 }
 
 extension PostgresUserStore {
