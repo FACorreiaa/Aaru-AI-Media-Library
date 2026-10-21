@@ -34,6 +34,25 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-21
+
+- **"Synced with Trakt" means connect + import, re-run by the user** (owner). Each user connects
+  their own Trakt account (IMP-002) and imports it (IMP-003); importing again fills gaps and moves
+  statuses forward under the IMP-004 merge rules. No polling of Trakt, no push out before SCR-004
+  (P3), never two-way.
+- **Trakt's 2026 API, checked against github.com/trakt/trakt-api:** OAuth calls must use
+  `auth.trakt.tv` from 2027-02-01; `/sync/watched/*` is paged (max 250) and shows carry episodes
+  only with `extended=progress` (enforced after 2026-06-30); watchlists default to 10 items without
+  `page`/`limit`; refresh tokens are single use; requests need a `User-Agent`; reads are 500 per
+  5 minutes per user. **Free Trakt accounts can connect only two apps**, so disconnecting revokes
+  the token on Trakt to give the slot back. Trakt's policy asks for "Aaru uses Trakt but is not
+  endorsed or certified by Trakt" wherever the integration is offered and in the App Store
+  description.
+- **Owner actions:** GitHub-verify the Trakt developer account before 2027-01-01 (unverified apps
+  become unapproved); confirm the app's redirect URI is exactly
+  `https://api.aaruapp.com/v1/imports/trakt/callback`; Trakt deletes apps unused for 30 days, so
+  connect a real account soon after this ships.
+
 ## Decisions recorded 2026-10-20
 
 - **Discover rows on Home (DISC-001), by the owner's call:** a new account opened to an empty
@@ -294,8 +313,8 @@ account or a stranger that has not happened yet.
 | WID-006 | Built, unverified | #26; same extension for macOS | Mac intent not shown working |
 | JOB-001 | Done | #13, #36; ImportWorker.swift, CatalogRefreshService.swift | Journal pruning not built |
 | IMP-001 | Done | #13 c12c751; `/v1/imports/{id}` + apply | |
-| IMP-002 | Done | #16 9cb13d5; TraktTests (PKCE, state, refresh); infra #341 | No real Trakt account connected yet |
-| IMP-003 | Built, unverified | #16; TraktImporter.swift | Stub Trakt only; 10,000-item run not measured |
+| IMP-002 | Done | #16 9cb13d5; TraktTests (PKCE, state, refresh, refresh lock, revoke); infra #341 | No real Trakt account connected yet |
+| IMP-003 | Built, unverified | #16; TraktImporter.swift (paged, `extended=progress`) | Stub Trakt only; 10,000-item run not measured |
 | IMP-004 | Done | #41 f54b1e7; ImportMergeTests | Not deployed; no literal Trakt→Letterboxd rating test |
 | IMP-005 | Done | #13; `/v1/imports/csv` 413/422 tests | 5 MB cap |
 | IMP-006 | Done | #13; CSVImportParser.swift | |
@@ -1116,6 +1135,9 @@ Connected sources, start an import, watch job state and stats, see unmatched row
 surfaces its unmatched count with a way to see the rows.
 
 **Progress 2026-10-15 (all three clients):** built for file imports; Trakt waits for IMP-002.
+**Progress 2026-10-21:** Trakt on all three clients: Connect (the web redirects, Apple uses the
+system web-auth sheet back to `aaru://settings/trakt`), "Connected as …", Import from Trakt (opens
+the plan), Disconnect. Unverified against a real Trakt account.
 Settings (from the library's More menu on Apple, a "Settings" link on the web): account name and
 sign-in providers, sign out, delete account (confirmed, cannot be undone), "Import from IMDb /
 Letterboxd / Goodreads" with a file picker, and every import with its state. An import's page
@@ -1305,6 +1327,12 @@ and the web origin are allowed). Tokens refresh an hour before expiry. `GET`/`DE
 bytes), `TRAKT_REDIRECT_URI`, `TRAKT_RETURN_PREFIXES`. **Blocked on the domain** for production:
 the redirect URI must be `https://api.<domain>/v1/imports/trakt/callback`.
 
+**Progress 2026-10-21:** token, refresh and revoke go to `auth.trakt.tv`; every call sends a
+`User-Agent`. A refresh runs with the connection row locked (`SELECT … FOR UPDATE`), so two
+callers never spend the single-use refresh token twice; a refresh Trakt refuses (`invalid_grant`)
+counts as revoked. The lifetime comes from `expires_in` (Trakt has said both 24 hours and 7 days).
+`DELETE /v1/imports/trakt/connection` revokes on Trakt first, best effort.
+
 ### IMP-003 · Trakt import worker · L
 **Needs:** IMP-002, CAT-005.
 Pull watched history, watchlist, ratings, and lists. Page through the API respecting rate
@@ -1323,6 +1351,12 @@ existing item only gains the ticks it lacks); a rating alone means watched; a ti
 Trakt list joins the Aaru list without joining the library. A revoked token fails the job at once
 and drops the dead connection. Re-runs are skip/update, never duplicates (the plan's existing
 rule). Not yet measured: a 10,000-item history.
+
+**Progress 2026-10-21:** every read is paged (`page`, `limit=250`, until `X-Pagination-Page-Count`
+or an empty page); watched shows ask for `extended=progress`; watchlist and ratings are read per
+type (`/movies`, `/shows`). The Trakt pacer is 1.5 requests/s (Trakt: 500 reads per 5 minutes per
+user), and a 429 waits for `Retry-After` (up to a minute). Trakt's 420 (an account limit) and 423
+(a locked account) fail the job at once with the reason.
 
 ### IMP-004 · Merge policy · M
 **Needs:** IMP-003.

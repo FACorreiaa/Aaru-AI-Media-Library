@@ -4707,7 +4707,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Forget the Trakt tokens. Imported items stay.
+    /// Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
     ///
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.

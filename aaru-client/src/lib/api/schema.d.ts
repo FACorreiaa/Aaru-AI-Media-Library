@@ -816,7 +816,7 @@ export interface paths {
     get: operations['getTraktConnection']
     put?: never
     post?: never
-    /** Forget the Trakt tokens. Imported items stay. */
+    /** Revoke the Trakt tokens on Trakt, then forget them. Imported items stay. */
     delete: operations['disconnectTrakt']
     options?: never
     head?: never

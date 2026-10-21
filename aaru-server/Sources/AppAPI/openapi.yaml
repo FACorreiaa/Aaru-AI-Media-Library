@@ -989,7 +989,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: disconnectTrakt
-      summary: Forget the Trakt tokens. Imported items stay.
+      summary: Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
       responses:
         '204':
           description: Disconnected.
