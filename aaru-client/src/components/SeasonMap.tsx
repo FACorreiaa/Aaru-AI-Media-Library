@@ -1,6 +1,8 @@
 import { For } from 'solid-js'
 import { cellState, episodeKey } from '../lib/title/model'
 import type { CellState, Episode, Season } from '../lib/title/model'
+import { cn } from '../lib/cn'
+import { cardClass } from './ui/card'
 
 const CELL: Record<CellState, string> = {
   watched: 'bg-accent text-on-accent',
@@ -26,7 +28,7 @@ export function SeasonMap(props: {
   onToggle: (season: number, number: number) => void
 }) {
   return (
-    <div class="flex flex-col gap-3 rounded-[20px] bg-surface p-5">
+    <div class={cn(cardClass, 'flex flex-col gap-3 p-5')}>
       <For each={props.seasons}>
         {(season) => (
           <div class="flex items-start gap-3">

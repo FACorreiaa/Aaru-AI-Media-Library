@@ -26,7 +26,7 @@ struct StremioRoutes: Sendable {
             return Self.json(StremioMessage(err: "Not a Stremio addon path."), status: .notFound, maxAge: 0)
         }
         do {
-            let caller = try await tokens.authenticate(parsed.token)
+            let caller = try await tokens.authenticate(parsed.token, for: .stremio)
             if let caller, await !tokens.allow(caller) {
                 return Self.json(StremioMessage(err: "Too many requests."), status: .tooManyRequests, maxAge: 0)
             }

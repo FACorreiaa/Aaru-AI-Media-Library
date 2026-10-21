@@ -325,39 +325,6 @@ struct WebPushSubscription: Sendable, Equatable {
 }
 
 /// Everything handlers may touch, injected once at boot.
-/// What an agent token may do (OUT-001). A token never has more than a signed-in session.
-enum AgentScope: String, Codable, Sendable, CaseIterable {
-    case libraryRead = "library:read"
-    case libraryWrite = "library:write"
-    case scrobbleWrite = "scrobble:write"
-}
-
-/// Which outside caller a token is for. Only Stremio exists until OUT-004.
-enum AgentTokenKind: String, Codable, Sendable {
-    case stremio
-}
-
-/// One agent token as its owner sees it. The secret is never stored, only its SHA-256.
-struct AgentToken: Sendable, Equatable {
-    var id: UUID
-    var name: String
-    var kind: AgentTokenKind
-    var scopes: Set<AgentScope>
-    var createdAt: Date
-    var lastUsedAt: Date?
-}
-
-protocol AgentTokenStore: Sendable {
-    func create(_ token: AgentToken, tokenHash: String, userID: UserID) async throws
-    /// Tokens not revoked, newest first.
-    func tokens(userID: UserID) async throws -> [AgentToken]
-    /// True when the user's token existed and was live.
-    func revoke(id: UUID, userID: UserID, now: Date) async throws -> Bool
-    /// The live token with this hash and its owner; nil when unknown, revoked or expired.
-    func token(forHash hash: String, now: Date) async throws -> (token: AgentToken, userID: UserID)?
-    func touch(id: UUID, at date: Date) async throws
-}
-
 struct Stores: Sendable {
     var health: any DatabaseHealth
     var users: any UserStore
@@ -375,6 +342,8 @@ struct Stores: Sendable {
     var push: any PushStore
     var agentTokens: any AgentTokenStore
     var watchEvents: any WatchEventStore
+    var plans: any PlanStore
+    var oauth: any OAuthStore
     var social: any SocialStore
     var groups: any GroupStore
 }

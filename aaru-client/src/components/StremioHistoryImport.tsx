@@ -2,6 +2,8 @@ import { useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal, onCleanup } from 'solid-js'
 import { pollStremioImport, startStremioImport } from '../lib/imports/server'
 import type { StremioLink } from '../lib/imports/server'
+import { cn } from '../lib/cn'
+import { Button, buttonVariants } from './ui/button'
 
 const POLL_MS = 3000
 
@@ -74,19 +76,18 @@ export function StremioHistoryImport() {
               films and ticked episodes in once. You approve it on stremio.com;
               your Stremio password never reaches Aaru.
             </p>
-            <button
-              type="button"
-              class="min-h-11 self-start rounded-full border border-ink/25 px-5 text-sm font-semibold disabled:opacity-50"
+            <Button
+              class="self-start"
               disabled={busy()}
               onClick={() => void start()}
             >
               {busy() ? 'Starting…' : 'Import my Stremio history'}
-            </button>
+            </Button>
           </div>
         }
       >
         {(current) => (
-          <div class="flex flex-wrap items-start gap-5 rounded-[14px] border border-line p-4">
+          <div class="flex flex-wrap items-start gap-5 rounded-panel border border-line p-4">
             <img
               src={current().qrcode}
               alt="QR code that opens the Stremio approval page"
@@ -106,7 +107,7 @@ export function StremioHistoryImport() {
                 href={current().link}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="min-h-11 self-start rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent"
+                class={cn(buttonVariants({ variant: 'primary' }), 'self-start')}
               >
                 Approve on stremio.com
               </a>

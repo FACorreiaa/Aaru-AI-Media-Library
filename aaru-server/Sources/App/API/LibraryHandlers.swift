@@ -42,16 +42,7 @@ extension APIImplementation {
         .Output
     {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
-        let patch = ItemPatch(
-            status: body.status.map(LibraryStatus.init),
-            rating: body.rating,
-            notes: body.notes,
-            isOwned: body.isOwned,
-            bookPage: body.bookPage,
-            bookPercent: body.bookPercent,
-            clear: Set((body.clear ?? []).compactMap { ItemPatch.Clearable(rawValue: $0.rawValue) })
-        )
-        let entry = try await library.patch(itemID(input.path.id), userID: currentUser(), patch: patch)
+        let entry = try await library.patch(itemID(input.path.id), userID: currentUser(), patch: ItemPatch(body))
         return .ok(.init(body: .json(.init(entry))))
     }
 
@@ -82,15 +73,8 @@ extension APIImplementation {
         return try await .ok(.init(body: .json(withWatched(entry))))
     }
 
-    /// A single-item response: the entry plus every watched episode, so a client can draw ticks.
     private func withWatched(_ entry: LibraryEntry) async throws -> Components.Schemas.LibraryEntry {
-        var response = Components.Schemas.LibraryEntry(entry)
-        if entry.title.type == .show {
-            response.watchedEpisodes = try await stores.library.watched(itemID: entry.item.id)
-                .sorted()
-                .map { .init(season: $0.season, number: $0.episode) }
-        }
-        return response
+        try await .withWatched(entry, stores: stores)
     }
 
     func syncLibrary(_ input: Operations.SyncLibrary.Input) async throws -> Operations.SyncLibrary.Output {
@@ -119,6 +103,21 @@ extension APIImplementation {
 }
 
 // MARK: - DTO mapping
+
+extension ItemPatch {
+    /// The route and the agent tools (`apply_library_patch`) read the same patch shape.
+    init(_ dto: Components.Schemas.LibraryItemPatch) {
+        self.init(
+            status: dto.status.map(LibraryStatus.init),
+            rating: dto.rating,
+            notes: dto.notes,
+            isOwned: dto.isOwned,
+            bookPage: dto.bookPage,
+            bookPercent: dto.bookPercent,
+            clear: Set((dto.clear ?? []).compactMap { ItemPatch.Clearable(rawValue: $0.rawValue) })
+        )
+    }
+}
 
 extension MediaType {
     init(_ dto: Components.Schemas.MediaType) {
@@ -158,6 +157,19 @@ extension ExternalIDs {
             tmdb: dto?.tmdb, imdb: dto?.imdb, trakt: dto?.trakt, tvdb: dto?.tvdb, isbn: dto?.isbn,
             openLibrary: dto?.openLibrary, anilist: dto?.anilist, mal: dto?.mal, anidb: dto?.anidb
         )
+    }
+}
+
+extension Components.Schemas.LibraryEntry {
+    /// A single-item response: the entry plus every watched episode, so a client can draw ticks.
+    static func withWatched(_ entry: LibraryEntry, stores: Stores) async throws -> Self {
+        var response = Self(entry)
+        if entry.title.type == .show {
+            response.watchedEpisodes = try await stores.library.watched(itemID: entry.item.id)
+                .sorted()
+                .map { .init(season: $0.season, number: $0.episode) }
+        }
+        return response
     }
 }
 

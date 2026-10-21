@@ -233,7 +233,7 @@ struct PostgresLibraryStore: LibraryStore {
         var agentTokenID: UUID?
     }
 
-    private static func journal(
+    static func journal(
         _ entry: JournalEntry,
         userID: UserID,
         sql: any SQLDatabase

@@ -4,8 +4,12 @@ import type { JSX } from 'solid-js'
 import { Wordmark } from '../components/Brand'
 import { Poster } from '../components/Poster'
 import { SearchPanel } from '../components/SearchPanel'
+import { AlertDialog } from '../components/ui/alert-dialog'
+import { Button } from '../components/ui/button'
+import { Dialog } from '../components/ui/dialog'
 import { KINDS, statusLabel } from '../lib/library/model'
 import { toListRow } from '../lib/lists/model'
+import type { ListRow } from '../lib/lists/model'
 import { getList, removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
 import { getSession } from '../lib/session/session'
@@ -29,6 +33,10 @@ function ListPage() {
   // Set on mount, not during SSR: "Tomorrow" depends on the viewer's clock and timezone.
   const [now, setNow] = createSignal<Date | null>(null)
   const [searchOpened, setSearchOpened] = createSignal(false)
+  const [pending, setPending] = createSignal<ListRow | null>(null)
+  const [removing, setRemoving] = createSignal(false)
+  // The last row asked about, so the dialog keeps its title while it fades out.
+  const asked = createMemo<ListRow | null>((last) => pending() ?? last, null)
   let dialog: HTMLDialogElement | undefined
   onMount(() => setNow(new Date()))
 
@@ -91,13 +99,9 @@ function ListPage() {
           <h1 class="font-display text-4xl font-medium tracking-tight">
             {detail().name}
           </h1>
-          <button
-            type="button"
-            onClick={openSearch}
-            class="shrink-0 rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold hover:bg-surface"
-          >
+          <Button size="sm" class="shrink-0" onClick={openSearch}>
             Add titles
-          </button>
+          </Button>
         </div>
         <Show when={problem()}>
           {(message) => (
@@ -111,13 +115,14 @@ function ListPage() {
           fallback={
             <div class="mt-16 text-center">
               <p class="text-muted">Nothing on this list yet.</p>
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="lg"
+                class="mt-6"
                 onClick={openSearch}
-                class="mt-6 rounded-full bg-accent px-6 py-3 font-semibold text-on-accent"
               >
                 Add titles
-              </button>
+              </Button>
             </div>
           }
         >
@@ -170,28 +175,30 @@ function ListPage() {
                     </div>
                   </RowLink>
                   <div class="flex items-center gap-1 text-sm">
-                    <button
-                      type="button"
+                    <Button
+                      variant="soft"
+                      size="bare"
                       aria-label={`Move ${row.title} up`}
                       disabled={index() === 0}
-                      class="rounded-full px-2 py-1 hover:bg-surface disabled:opacity-30"
+                      class="px-2 py-1"
                       onClick={() => move(index(), -1)}
                     >
                       ↑
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="soft"
+                      size="bare"
                       aria-label={`Move ${row.title} down`}
                       disabled={index() === rows().length - 1}
-                      class="rounded-full px-2 py-1 hover:bg-surface disabled:opacity-30"
+                      class="px-2 py-1"
                       onClick={() => move(index(), 1)}
                     >
                       ↓
-                    </button>
+                    </Button>
                     <button
                       type="button"
                       class="ml-2 text-muted hover:text-danger"
-                      onClick={() => remove(row.titleId)}
+                      onClick={() => setPending(row)}
                     >
                       Remove
                     </button>
@@ -201,16 +208,28 @@ function ListPage() {
             </For>
           </ol>
         </Show>
+        <AlertDialog
+          open={pending() !== null}
+          title={`Remove ${asked()?.title ?? ''} from this list?`}
+          confirmLabel="Remove"
+          busy={removing()}
+          onConfirm={() => {
+            const row = pending()
+            if (!row) return
+            setRemoving(true)
+            void remove(row.titleId).finally(() => {
+              setRemoving(false)
+              setPending(null)
+            })
+          }}
+          onCancel={() => setPending(null)}
+        />
       </main>
 
-      <dialog
+      <Dialog
         ref={dialog}
         aria-label={`Add to ${detail().name}`}
-        class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
-        onClick={(e) => {
-          // A click on the backdrop closes it.
-          if (e.target === dialog) dialog.close()
-        }}
+        class="w-[min(40rem,calc(100vw-2rem))]"
       >
         <Show when={searchOpened()}>
           <SearchPanel
@@ -219,7 +238,7 @@ function ListPage() {
             onClose={() => dialog?.close()}
           />
         </Show>
-      </dialog>
+      </Dialog>
     </div>
   )
 }

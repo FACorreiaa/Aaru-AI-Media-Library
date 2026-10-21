@@ -243,11 +243,47 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/agent/tokens`.
     /// - Remark: Generated from `#/paths//v1/agent/tokens/get(listAgentTokens)`.
     func listAgentTokens(_ input: Operations.ListAgentTokens.Input) async throws -> Operations.ListAgentTokens.Output
-    /// Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once.
+    /// Mint a token for an outside caller. A Stremio token's answer carries the addon's install links; an MCP client's carries its setup, with the secret filled in. The secret is shown once.
     ///
     /// - Remark: HTTP `POST /v1/agent/tokens`.
     /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)`.
     func createAgentToken(_ input: Operations.CreateAgentToken.Input) async throws -> Operations.CreateAgentToken.Output
+    /// Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does.
+    ///
+    /// - Remark: HTTP `GET /v1/plans`.
+    /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)`.
+    func listPlans(_ input: Operations.ListPlans.Input) async throws -> Operations.ListPlans.Output
+    /// - Remark: HTTP `GET /v1/plans/{id}`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)`.
+    func getPlan(_ input: Operations.GetPlan.Input) async throws -> Operations.GetPlan.Output
+    /// Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)`.
+    func approvePlan(_ input: Operations.ApprovePlan.Input) async throws -> Operations.ApprovePlan.Output
+    /// Refuse the plan. Nothing is written; the plan stays as the record of what was asked.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)`.
+    func denyPlan(_ input: Operations.DenyPlan.Input) async throws -> Operations.DenyPlan.Output
+    /// A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked.
+    ///
+    /// - Remark: HTTP `GET /v1/oauth/requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)`.
+    func getOAuthRequest(_ input: Operations.GetOAuthRequest.Input) async throws -> Operations.GetOAuthRequest.Output
+    /// Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next.
+    ///
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)`.
+    func approveOAuthRequest(_ input: Operations.ApproveOAuthRequest.Input) async throws -> Operations.ApproveOAuthRequest.Output
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)`.
+    func denyOAuthRequest(_ input: Operations.DenyOAuthRequest.Input) async throws -> Operations.DenyOAuthRequest.Output
+    /// How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists.
+    ///
+    /// - Remark: HTTP `GET /v1/agent/setup/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/agent/setup/{kind}/get(getAgentSetup)`.
+    func getAgentSetup(_ input: Operations.GetAgentSetup.Input) async throws -> Operations.GetAgentSetup.Output
     /// Revoke a token. Its addon stops answering at once.
     ///
     /// - Remark: HTTP `DELETE /v1/agent/tokens/{id}`.
@@ -1006,10 +1042,16 @@ extension APIProtocol {
     ///
     /// - Remark: HTTP `GET /v1/agent/tokens`.
     /// - Remark: Generated from `#/paths//v1/agent/tokens/get(listAgentTokens)`.
-    public func listAgentTokens(headers: Operations.ListAgentTokens.Input.Headers = .init()) async throws -> Operations.ListAgentTokens.Output {
-        try await listAgentTokens(Operations.ListAgentTokens.Input(headers: headers))
+    public func listAgentTokens(
+        query: Operations.ListAgentTokens.Input.Query = .init(),
+        headers: Operations.ListAgentTokens.Input.Headers = .init()
+    ) async throws -> Operations.ListAgentTokens.Output {
+        try await listAgentTokens(Operations.ListAgentTokens.Input(
+            query: query,
+            headers: headers
+        ))
     }
-    /// Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once.
+    /// Mint a token for an outside caller. A Stremio token's answer carries the addon's install links; an MCP client's carries its setup, with the secret filled in. The secret is shown once.
     ///
     /// - Remark: HTTP `POST /v1/agent/tokens`.
     /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)`.
@@ -1020,6 +1062,110 @@ extension APIProtocol {
         try await createAgentToken(Operations.CreateAgentToken.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does.
+    ///
+    /// - Remark: HTTP `GET /v1/plans`.
+    /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)`.
+    public func listPlans(
+        query: Operations.ListPlans.Input.Query = .init(),
+        headers: Operations.ListPlans.Input.Headers = .init()
+    ) async throws -> Operations.ListPlans.Output {
+        try await listPlans(Operations.ListPlans.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `GET /v1/plans/{id}`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)`.
+    public func getPlan(
+        path: Operations.GetPlan.Input.Path,
+        headers: Operations.GetPlan.Input.Headers = .init()
+    ) async throws -> Operations.GetPlan.Output {
+        try await getPlan(Operations.GetPlan.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)`.
+    public func approvePlan(
+        path: Operations.ApprovePlan.Input.Path,
+        headers: Operations.ApprovePlan.Input.Headers = .init()
+    ) async throws -> Operations.ApprovePlan.Output {
+        try await approvePlan(Operations.ApprovePlan.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Refuse the plan. Nothing is written; the plan stays as the record of what was asked.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)`.
+    public func denyPlan(
+        path: Operations.DenyPlan.Input.Path,
+        headers: Operations.DenyPlan.Input.Headers = .init()
+    ) async throws -> Operations.DenyPlan.Output {
+        try await denyPlan(Operations.DenyPlan.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked.
+    ///
+    /// - Remark: HTTP `GET /v1/oauth/requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)`.
+    public func getOAuthRequest(
+        path: Operations.GetOAuthRequest.Input.Path,
+        headers: Operations.GetOAuthRequest.Input.Headers = .init()
+    ) async throws -> Operations.GetOAuthRequest.Output {
+        try await getOAuthRequest(Operations.GetOAuthRequest.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next.
+    ///
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)`.
+    public func approveOAuthRequest(
+        path: Operations.ApproveOAuthRequest.Input.Path,
+        headers: Operations.ApproveOAuthRequest.Input.Headers = .init(),
+        body: Operations.ApproveOAuthRequest.Input.Body
+    ) async throws -> Operations.ApproveOAuthRequest.Output {
+        try await approveOAuthRequest(Operations.ApproveOAuthRequest.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)`.
+    public func denyOAuthRequest(
+        path: Operations.DenyOAuthRequest.Input.Path,
+        headers: Operations.DenyOAuthRequest.Input.Headers = .init(),
+        body: Operations.DenyOAuthRequest.Input.Body
+    ) async throws -> Operations.DenyOAuthRequest.Output {
+        try await denyOAuthRequest(Operations.DenyOAuthRequest.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists.
+    ///
+    /// - Remark: HTTP `GET /v1/agent/setup/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/agent/setup/{kind}/get(getAgentSetup)`.
+    public func getAgentSetup(
+        path: Operations.GetAgentSetup.Input.Path,
+        headers: Operations.GetAgentSetup.Input.Headers = .init()
+    ) async throws -> Operations.GetAgentSetup.Output {
+        try await getAgentSetup(Operations.GetAgentSetup.Input(
+            path: path,
+            headers: headers
         ))
     }
     /// Revoke a token. Its addon stops answering at once.
@@ -1566,16 +1712,13 @@ public enum Components {
             /// - Remark: Generated from `#/components/schemas/AgentToken/name`.
             public var name: Swift.String
             /// - Remark: Generated from `#/components/schemas/AgentToken/kind`.
-            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
-                case stremio = "stremio"
-            }
-            /// - Remark: Generated from `#/components/schemas/AgentToken/kind`.
-            public var kind: Components.Schemas.AgentToken.KindPayload
+            public var kind: Components.Schemas.AgentTokenKind
             /// - Remark: Generated from `#/components/schemas/AgentToken/ScopesPayload`.
             @frozen public enum ScopesPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case library_colon_read = "library:read"
                 case library_colon_write = "library:write"
                 case scrobble_colon_write = "scrobble:write"
+                case imports_colon_write = "imports:write"
             }
             /// - Remark: Generated from `#/components/schemas/AgentToken/scopes`.
             public typealias ScopesPayload = [Components.Schemas.AgentToken.ScopesPayloadPayload]
@@ -1599,7 +1742,7 @@ public enum Components {
             public init(
                 id: Swift.String,
                 name: Swift.String,
-                kind: Components.Schemas.AgentToken.KindPayload,
+                kind: Components.Schemas.AgentTokenKind,
                 scopes: Components.Schemas.AgentToken.ScopesPayload,
                 createdAt: Foundation.Date,
                 lastUsedAt: Foundation.Date? = nil
@@ -1623,36 +1766,397 @@ public enum Components {
         /// - Remark: Generated from `#/components/schemas/AgentTokenCreate`.
         public struct AgentTokenCreate: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/kind`.
-            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
-                case stremio = "stremio"
-            }
-            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/kind`.
-            public var kind: Components.Schemas.AgentTokenCreate.KindPayload
+            public var kind: Components.Schemas.AgentTokenKind
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/name`.
             public var name: Swift.String?
-            /// Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by default; removing from Stremio's library never deletes anything in Aaru.
+            /// Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default.
             ///
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/allowLibraryWrites`.
             public var allowLibraryWrites: Swift.Bool?
+            /// MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreate/allowImports`.
+            public var allowImports: Swift.Bool?
             /// Creates a new `AgentTokenCreate`.
             ///
             /// - Parameters:
             ///   - kind:
             ///   - name:
-            ///   - allowLibraryWrites: Adds `library:write`, so Stremio's "unwatched" and "add to library" reach Aaru. Off by default; removing from Stremio's library never deletes anything in Aaru.
+            ///   - allowLibraryWrites: Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default.
+            ///   - allowImports: MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default.
             public init(
-                kind: Components.Schemas.AgentTokenCreate.KindPayload,
+                kind: Components.Schemas.AgentTokenKind,
                 name: Swift.String? = nil,
-                allowLibraryWrites: Swift.Bool? = nil
+                allowLibraryWrites: Swift.Bool? = nil,
+                allowImports: Swift.Bool? = nil
             ) {
                 self.kind = kind
                 self.name = name
                 self.allowLibraryWrites = allowLibraryWrites
+                self.allowImports = allowImports
             }
             public enum CodingKeys: String, CodingKey {
                 case kind
                 case name
                 case allowLibraryWrites
+                case allowImports
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AgentPlan`.
+        public struct AgentPlan: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/status`.
+            @frozen public enum StatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case pending = "pending"
+                case applied = "applied"
+                case denied = "denied"
+                case stale = "stale"
+                case expired = "expired"
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/status`.
+            public var status: Components.Schemas.AgentPlan.StatusPayload
+            /// The connection that asked, as the user named it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/agentName`.
+            public var agentName: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/summary`.
+            public var summary: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload`.
+            public struct ChangesPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/text`.
+                public var text: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/titleId`.
+                public var titleId: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/title`.
+                public var title: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/type`.
+                public var _type: Components.Schemas.MediaType
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/posterUrl`.
+                public var posterUrl: Swift.String?
+                /// Absent when the change adds the title.
+                ///
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/ChangesPayload/libraryItemId`.
+                public var libraryItemId: Swift.String?
+                /// Creates a new `ChangesPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - text:
+                ///   - titleId:
+                ///   - title:
+                ///   - _type:
+                ///   - posterUrl:
+                ///   - libraryItemId: Absent when the change adds the title.
+                public init(
+                    text: Swift.String,
+                    titleId: Swift.String,
+                    title: Swift.String,
+                    _type: Components.Schemas.MediaType,
+                    posterUrl: Swift.String? = nil,
+                    libraryItemId: Swift.String? = nil
+                ) {
+                    self.text = text
+                    self.titleId = titleId
+                    self.title = title
+                    self._type = _type
+                    self.posterUrl = posterUrl
+                    self.libraryItemId = libraryItemId
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case text
+                    case titleId
+                    case title
+                    case _type = "type"
+                    case posterUrl
+                    case libraryItemId
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/changes`.
+            public typealias ChangesPayload = [Components.Schemas.AgentPlan.ChangesPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/changes`.
+            public var changes: Components.Schemas.AgentPlan.ChangesPayload
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/counts`.
+            public struct CountsPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/counts/adds`.
+                public var adds: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/counts/updates`.
+                public var updates: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/counts/removes`.
+                public var removes: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/AgentPlan/counts/episodes`.
+                public var episodes: Swift.Int
+                /// Creates a new `CountsPayload`.
+                ///
+                /// - Parameters:
+                ///   - adds:
+                ///   - updates:
+                ///   - removes:
+                ///   - episodes:
+                public init(
+                    adds: Swift.Int,
+                    updates: Swift.Int,
+                    removes: Swift.Int,
+                    episodes: Swift.Int
+                ) {
+                    self.adds = adds
+                    self.updates = updates
+                    self.removes = removes
+                    self.episodes = episodes
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case adds
+                    case updates
+                    case removes
+                    case episodes
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/counts`.
+            public var counts: Components.Schemas.AgentPlan.CountsPayload
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/decidedAt`.
+            public var decidedAt: Foundation.Date?
+            /// The journaled action, once applied; undo it like any other.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentPlan/actionId`.
+            public var actionId: Swift.String?
+            /// Creates a new `AgentPlan`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - status:
+            ///   - agentName: The connection that asked, as the user named it.
+            ///   - summary:
+            ///   - changes:
+            ///   - counts:
+            ///   - createdAt:
+            ///   - expiresAt:
+            ///   - decidedAt:
+            ///   - actionId: The journaled action, once applied; undo it like any other.
+            public init(
+                id: Swift.String,
+                status: Components.Schemas.AgentPlan.StatusPayload,
+                agentName: Swift.String,
+                summary: Swift.String,
+                changes: Components.Schemas.AgentPlan.ChangesPayload,
+                counts: Components.Schemas.AgentPlan.CountsPayload,
+                createdAt: Foundation.Date,
+                expiresAt: Foundation.Date,
+                decidedAt: Foundation.Date? = nil,
+                actionId: Swift.String? = nil
+            ) {
+                self.id = id
+                self.status = status
+                self.agentName = agentName
+                self.summary = summary
+                self.changes = changes
+                self.counts = counts
+                self.createdAt = createdAt
+                self.expiresAt = expiresAt
+                self.decidedAt = decidedAt
+                self.actionId = actionId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case status
+                case agentName
+                case summary
+                case changes
+                case counts
+                case createdAt
+                case expiresAt
+                case decidedAt
+                case actionId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest`.
+        public struct OAuthConsentRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/id`.
+            public var id: Swift.String
+            /// The name the app registered with. Apps name themselves; show the host too.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/clientName`.
+            public var clientName: Swift.String
+            /// Where the app returns the user. This part an impostor cannot fake.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/redirectHost`.
+            public var redirectHost: Swift.String
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/kind`.
+            public var kind: Components.Schemas.AgentTokenKind
+            /// - Remark: Generated from `#/components/schemas/OAuthConsentRequest/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// Creates a new `OAuthConsentRequest`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - clientName: The name the app registered with. Apps name themselves; show the host too.
+            ///   - redirectHost: Where the app returns the user. This part an impostor cannot fake.
+            ///   - kind:
+            ///   - expiresAt:
+            public init(
+                id: Swift.String,
+                clientName: Swift.String,
+                redirectHost: Swift.String,
+                kind: Components.Schemas.AgentTokenKind,
+                expiresAt: Foundation.Date
+            ) {
+                self.id = id
+                self.clientName = clientName
+                self.redirectHost = redirectHost
+                self.kind = kind
+                self.expiresAt = expiresAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case clientName
+                case redirectHost
+                case kind
+                case expiresAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OAuthRedirect`.
+        public struct OAuthRedirect: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OAuthRedirect/redirectTo`.
+            public var redirectTo: Swift.String
+            /// Creates a new `OAuthRedirect`.
+            ///
+            /// - Parameters:
+            ///   - redirectTo:
+            public init(redirectTo: Swift.String) {
+                self.redirectTo = redirectTo
+            }
+            public enum CodingKeys: String, CodingKey {
+                case redirectTo
+            }
+        }
+        /// Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools.
+        ///
+        /// - Remark: Generated from `#/components/schemas/AgentTokenKind`.
+        @frozen public enum AgentTokenKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case stremio = "stremio"
+            case claudeCode = "claude_code"
+            case codex = "codex"
+            case hermes = "hermes"
+            case gemini = "gemini"
+            case other = "other"
+            case claude = "claude"
+        }
+        /// - Remark: Generated from `#/components/schemas/AgentMCPKind`.
+        @frozen public enum AgentMCPKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case claude = "claude"
+            case claudeCode = "claude_code"
+            case codex = "codex"
+            case hermes = "hermes"
+            case gemini = "gemini"
+            case other = "other"
+        }
+        /// How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`.
+        ///
+        /// - Remark: Generated from `#/components/schemas/AgentSetup`.
+        public struct AgentSetup: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/kind`.
+            public var kind: Components.Schemas.AgentMCPKind
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/title`.
+            public var title: Swift.String
+            /// `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/auth`.
+            @frozen public enum AuthPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case token = "token"
+                case oauth = "oauth"
+            }
+            /// `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/auth`.
+            public var auth: Components.Schemas.AgentSetup.AuthPayload
+            /// The MCP endpoint (streamable HTTP).
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/url`.
+            public var url: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/StepsPayload`.
+            public struct StepsPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AgentSetup/StepsPayload/label`.
+                public var label: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentSetup/StepsPayload/language`.
+                @frozen public enum LanguagePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case bash = "bash"
+                    case json = "json"
+                    case toml = "toml"
+                    case yaml = "yaml"
+                    case text = "text"
+                }
+                /// - Remark: Generated from `#/components/schemas/AgentSetup/StepsPayload/language`.
+                public var language: Components.Schemas.AgentSetup.StepsPayloadPayload.LanguagePayload
+                /// - Remark: Generated from `#/components/schemas/AgentSetup/StepsPayload/text`.
+                public var text: Swift.String
+                /// - Remark: Generated from `#/components/schemas/AgentSetup/StepsPayload/note`.
+                public var note: Swift.String?
+                /// Creates a new `StepsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - label:
+                ///   - language:
+                ///   - text:
+                ///   - note:
+                public init(
+                    label: Swift.String,
+                    language: Components.Schemas.AgentSetup.StepsPayloadPayload.LanguagePayload,
+                    text: Swift.String,
+                    note: Swift.String? = nil
+                ) {
+                    self.label = label
+                    self.language = language
+                    self.text = text
+                    self.note = note
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case label
+                    case language
+                    case text
+                    case note
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/steps`.
+            public typealias StepsPayload = [Components.Schemas.AgentSetup.StepsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/steps`.
+            public var steps: Components.Schemas.AgentSetup.StepsPayload
+            /// A message to paste into the agent once it is connected.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AgentSetup/prompt`.
+            public var prompt: Swift.String
+            /// Creates a new `AgentSetup`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - title:
+            ///   - auth: `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
+            ///   - url: The MCP endpoint (streamable HTTP).
+            ///   - steps:
+            ///   - prompt: A message to paste into the agent once it is connected.
+            public init(
+                kind: Components.Schemas.AgentMCPKind,
+                title: Swift.String,
+                auth: Components.Schemas.AgentSetup.AuthPayload,
+                url: Swift.String,
+                steps: Components.Schemas.AgentSetup.StepsPayload,
+                prompt: Swift.String
+            ) {
+                self.kind = kind
+                self.title = title
+                self.auth = auth
+                self.url = url
+                self.steps = steps
+                self.prompt = prompt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case title
+                case auth
+                case url
+                case steps
+                case prompt
             }
         }
         /// - Remark: Generated from `#/components/schemas/AgentTokenCreated`.
@@ -1663,6 +2167,8 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/secret`.
             public var secret: Swift.String
+            /// Only for a Stremio token.
+            ///
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/stremio`.
             public struct StremioPayload: Codable, Hashable, Sendable {
                 /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/stremio/manifestUrl`.
@@ -1694,27 +2200,35 @@ public enum Components {
                     case webInstallUrl
                 }
             }
+            /// Only for a Stremio token.
+            ///
             /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/stremio`.
-            public var stremio: Components.Schemas.AgentTokenCreated.StremioPayload
+            public var stremio: Components.Schemas.AgentTokenCreated.StremioPayload?
+            /// - Remark: Generated from `#/components/schemas/AgentTokenCreated/setup`.
+            public var setup: Components.Schemas.AgentSetup?
             /// Creates a new `AgentTokenCreated`.
             ///
             /// - Parameters:
             ///   - token:
             ///   - secret: Shown once. Anyone holding it, or the install links, can use the token.
-            ///   - stremio:
+            ///   - stremio: Only for a Stremio token.
+            ///   - setup:
             public init(
                 token: Components.Schemas.AgentToken,
                 secret: Swift.String,
-                stremio: Components.Schemas.AgentTokenCreated.StremioPayload
+                stremio: Components.Schemas.AgentTokenCreated.StremioPayload? = nil,
+                setup: Components.Schemas.AgentSetup? = nil
             ) {
                 self.token = token
                 self.secret = secret
                 self.stremio = stremio
+                self.setup = setup
             }
             public enum CodingKeys: String, CodingKey {
                 case token
                 case secret
                 case stremio
+                case setup
             }
         }
         /// The one error shape every route returns.
@@ -12132,6 +12646,26 @@ public enum Operations {
     public enum ListAgentTokens {
         public static let id: Swift.String = "listAgentTokens"
         public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/query/for`.
+                @frozen public enum ForPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case stremio = "stremio"
+                    case mcp = "mcp"
+                }
+                /// Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token.
+                ///
+                /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/query/for`.
+                public var _for: Operations.ListAgentTokens.Input.Query.ForPayload?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - _for: Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so Apple builds that only know the Stremio kind never see an MCP token.
+                public init(_for: Operations.ListAgentTokens.Input.Query.ForPayload? = nil) {
+                    self._for = _for
+                }
+            }
+            public var query: Operations.ListAgentTokens.Input.Query
             /// - Remark: Generated from `#/paths/v1/agent/tokens/GET/header`.
             public struct Headers: Sendable, Hashable {
                 public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListAgentTokens.AcceptableContentType>]
@@ -12147,8 +12681,13 @@ public enum Operations {
             /// Creates a new `Input`.
             ///
             /// - Parameters:
+            ///   - query:
             ///   - headers:
-            public init(headers: Operations.ListAgentTokens.Input.Headers = .init()) {
+            public init(
+                query: Operations.ListAgentTokens.Input.Query = .init(),
+                headers: Operations.ListAgentTokens.Input.Headers = .init()
+            ) {
+                self.query = query
                 self.headers = headers
             }
         }
@@ -12269,7 +12808,7 @@ public enum Operations {
             }
         }
     }
-    /// Mint a token for an outside caller. Today only Stremio: the answer carries the addon's install links. The secret is shown once.
+    /// Mint a token for an outside caller. A Stremio token's answer carries the addon's install links; an MCP client's carries its setup, with the secret filled in. The secret is shown once.
     ///
     /// - Remark: HTTP `POST /v1/agent/tokens`.
     /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)`.
@@ -12362,6 +12901,1285 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/agent/tokens/post(createAgentToken)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does.
+    ///
+    /// - Remark: HTTP `GET /v1/plans`.
+    /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)`.
+    public enum ListPlans {
+        public static let id: Swift.String = "listPlans"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/plans/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/GET/query/status`.
+                @frozen public enum StatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case pending = "pending"
+                    case all = "all"
+                }
+                /// `pending` (default) leaves out decided and expired plans.
+                ///
+                /// - Remark: Generated from `#/paths/v1/plans/GET/query/status`.
+                public var status: Operations.ListPlans.Input.Query.StatusPayload?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - status: `pending` (default) leaves out decided and expired plans.
+                public init(status: Operations.ListPlans.Input.Query.StatusPayload? = nil) {
+                    self.status = status
+                }
+            }
+            public var query: Operations.ListPlans.Input.Query
+            /// - Remark: Generated from `#/paths/v1/plans/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListPlans.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListPlans.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListPlans.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListPlans.Input.Query = .init(),
+                headers: Operations.ListPlans.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/plans/GET/responses/200/content/json`.
+                    public struct JsonPayload: Codable, Hashable, Sendable {
+                        /// - Remark: Generated from `#/paths/v1/plans/GET/responses/200/content/json/items`.
+                        public var items: [Components.Schemas.AgentPlan]
+                        /// Creates a new `JsonPayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - items:
+                        public init(items: [Components.Schemas.AgentPlan]) {
+                            self.items = items
+                        }
+                        public enum CodingKeys: String, CodingKey {
+                            case items
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/plans/GET/responses/200/content/application\/json`.
+                    case json(Operations.ListPlans.Output.Ok.Body.JsonPayload)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Operations.ListPlans.Output.Ok.Body.JsonPayload {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListPlans.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListPlans.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Plans.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListPlans.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListPlans.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/get(listPlans)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `GET /v1/plans/{id}`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)`.
+    public enum GetPlan {
+        public static let id: Swift.String = "getPlan"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetPlan.Input.Path
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetPlan.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetPlan.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetPlan.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetPlan.Input.Path,
+                headers: Operations.GetPlan.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/plans/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AgentPlan)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AgentPlan {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetPlan.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetPlan.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The plan.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetPlan.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetPlan.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/get(getPlan)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)`.
+    public enum ApprovePlan {
+        public static let id: Swift.String = "approvePlan"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.ApprovePlan.Input.Path
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApprovePlan.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApprovePlan.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ApprovePlan.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.ApprovePlan.Input.Path,
+                headers: Operations.ApprovePlan.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content/json`.
+                    public struct JsonPayload: Codable, Hashable, Sendable {
+                        /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content/json/plan`.
+                        public var plan: Components.Schemas.AgentPlan
+                        /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content/json/action`.
+                        public var action: Components.Schemas.Action
+                        /// Creates a new `JsonPayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - plan:
+                        ///   - action:
+                        public init(
+                            plan: Components.Schemas.AgentPlan,
+                            action: Components.Schemas.Action
+                        ) {
+                            self.plan = plan
+                            self.action = action
+                        }
+                        public enum CodingKeys: String, CodingKey {
+                            case plan
+                            case action
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/plans/{id}/approve/POST/responses/200/content/application\/json`.
+                    case json(Operations.ApprovePlan.Output.Ok.Body.JsonPayload)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Operations.ApprovePlan.Output.Ok.Body.JsonPayload {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ApprovePlan.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ApprovePlan.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Applied.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ApprovePlan.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ApprovePlan.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/approve/post(approvePlan)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Refuse the plan. Nothing is written; the plan stays as the record of what was asked.
+    ///
+    /// - Remark: HTTP `POST /v1/plans/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)`.
+    public enum DenyPlan {
+        public static let id: Swift.String = "denyPlan"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DenyPlan.Input.Path
+            /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DenyPlan.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DenyPlan.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DenyPlan.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DenyPlan.Input.Path,
+                headers: Operations.DenyPlan.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/plans/{id}/deny/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AgentPlan)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AgentPlan {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.DenyPlan.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.DenyPlan.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Denied.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.DenyPlan.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.DenyPlan.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/plans/{id}/deny/post(denyPlan)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked.
+    ///
+    /// - Remark: HTTP `GET /v1/oauth/requests/{id}`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)`.
+    public enum GetOAuthRequest {
+        public static let id: Swift.String = "getOAuthRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetOAuthRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetOAuthRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetOAuthRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetOAuthRequest.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetOAuthRequest.Input.Path,
+                headers: Operations.GetOAuthRequest.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.OAuthConsentRequest)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.OAuthConsentRequest {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetOAuthRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetOAuthRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The request.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetOAuthRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetOAuthRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/get(getOAuthRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next.
+    ///
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/approve`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)`.
+    public enum ApproveOAuthRequest {
+        public static let id: Swift.String = "approveOAuthRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.ApproveOAuthRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApproveOAuthRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ApproveOAuthRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ApproveOAuthRequest.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/json/binding`.
+                    public var binding: Swift.String
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/json/name`.
+                    public var name: Swift.String?
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/json/allowLibraryWrites`.
+                    public var allowLibraryWrites: Swift.Bool?
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - binding:
+                    ///   - name:
+                    ///   - allowLibraryWrites:
+                    public init(
+                        binding: Swift.String,
+                        name: Swift.String? = nil,
+                        allowLibraryWrites: Swift.Bool? = nil
+                    ) {
+                        self.binding = binding
+                        self.name = name
+                        self.allowLibraryWrites = allowLibraryWrites
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case binding
+                        case name
+                        case allowLibraryWrites
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/requestBody/content/application\/json`.
+                case json(Operations.ApproveOAuthRequest.Input.Body.JsonPayload)
+            }
+            public var body: Operations.ApproveOAuthRequest.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.ApproveOAuthRequest.Input.Path,
+                headers: Operations.ApproveOAuthRequest.Input.Headers = .init(),
+                body: Operations.ApproveOAuthRequest.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/approve/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.OAuthRedirect)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.OAuthRedirect {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ApproveOAuthRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ApproveOAuthRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Send the browser here.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ApproveOAuthRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ApproveOAuthRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/approve/post(approveOAuthRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `POST /v1/oauth/requests/{id}/deny`.
+    /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)`.
+    public enum DenyOAuthRequest {
+        public static let id: Swift.String = "denyOAuthRequest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DenyOAuthRequest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DenyOAuthRequest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DenyOAuthRequest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DenyOAuthRequest.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/requestBody/json/binding`.
+                    public var binding: Swift.String
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - binding:
+                    public init(binding: Swift.String) {
+                        self.binding = binding
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case binding
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/requestBody/content/application\/json`.
+                case json(Operations.DenyOAuthRequest.Input.Body.JsonPayload)
+            }
+            public var body: Operations.DenyOAuthRequest.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.DenyOAuthRequest.Input.Path,
+                headers: Operations.DenyOAuthRequest.Input.Headers = .init(),
+                body: Operations.DenyOAuthRequest.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/oauth/requests/{id}/deny/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.OAuthRedirect)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.OAuthRedirect {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.DenyOAuthRequest.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.DenyOAuthRequest.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Send the browser here.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.DenyOAuthRequest.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.DenyOAuthRequest.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/oauth/requests/{id}/deny/post(denyOAuthRequest)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists.
+    ///
+    /// - Remark: HTTP `GET /v1/agent/setup/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/agent/setup/{kind}/get(getAgentSetup)`.
+    public enum GetAgentSetup {
+        public static let id: Swift.String = "getAgentSetup"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/agent/setup/{kind}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/agent/setup/{kind}/GET/path/kind`.
+                public var kind: Components.Schemas.AgentMCPKind
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - kind:
+                public init(kind: Components.Schemas.AgentMCPKind) {
+                    self.kind = kind
+                }
+            }
+            public var path: Operations.GetAgentSetup.Input.Path
+            /// - Remark: Generated from `#/paths/v1/agent/setup/{kind}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAgentSetup.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAgentSetup.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetAgentSetup.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetAgentSetup.Input.Path,
+                headers: Operations.GetAgentSetup.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/agent/setup/{kind}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/agent/setup/{kind}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AgentSetup)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AgentSetup {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetAgentSetup.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetAgentSetup.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The client's setup.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/setup/{kind}/get(getAgentSetup)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetAgentSetup.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetAgentSetup.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/agent/setup/{kind}/get(getAgentSetup)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

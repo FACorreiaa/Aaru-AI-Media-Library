@@ -12,14 +12,19 @@
     "format": "prettier --write . && eslint --fix .",
     "test": "vitest run",
     "api:generate": "npx --yes openapi-typescript@7.13.0 ../aaru-server/Sources/AppAPI/openapi.yaml -o src/lib/api/schema.d.ts && prettier --write src/lib/api/schema.d.ts",
-    "cf:types": "wrangler types --strict-vars false"
+    "cf:types": "wrangler types --strict-vars false",
+    "size": "node scripts/size-budget.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.26.0",
+    "@kobalte/core": "0.13.14",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/solid-query": "5.104.2",
     "@tanstack/solid-router": "1.170.41",
     "@tanstack/solid-start": "1.169.2",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "motion": "13.5.1",
     "openapi-fetch": "^0.17.0",
     "solid-js": "^1.9.12",
     "tailwindcss": "^4.1.18",
