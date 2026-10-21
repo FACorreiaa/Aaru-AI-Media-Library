@@ -1,39 +1,61 @@
+import type { ComponentProps, ValidComponent } from 'solid-js'
 import { splitProps } from 'solid-js'
-import type { JSX } from 'solid-js'
-import { cva } from 'class-variance-authority'
-import type { VariantProps } from 'class-variance-authority'
-import { cn } from '../../lib/cn'
+import { Badge as BadgePrimitive } from '@kobalte/core/badge'
+import type { VariantProps } from 'cva'
 
-export const badgeVariants = cva('rounded-full font-semibold', {
+import { cva } from '~/lib/cva'
+
+// shadcn-solid's Badge on Aaru's look: a pill, plus Aaru's tones (ink, scrim, soft) and an
+// extra-small size for calendar cells and thumbnails. Kobalte gives it role="status".
+export const badgeVariants = cva({
+  base: 'inline-flex items-center justify-center rounded-full border font-semibold w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden',
   variants: {
-    tone: {
-      accent: 'bg-accent text-on-accent',
-      ink: 'bg-ink text-paper',
+    variant: {
+      default:
+        'border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90',
+      secondary:
+        'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
+      destructive:
+        'border-transparent bg-destructive text-on-accent [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
+      outline:
+        'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+      // Aaru
+      ink: 'border-transparent bg-ink text-paper',
       /** On top of artwork, where the page's colours would not read. */
-      scrim: 'bg-black/65 text-white',
+      scrim: 'border-transparent bg-black/65 text-white',
       /** Quiet: a count or a filter on the page's own colours. */
-      soft: 'bg-ink/10 text-ink',
+      soft: 'border-transparent bg-ink/10 text-ink',
     },
     size: {
-      md: 'px-2 py-0.5 text-xs',
+      default: 'px-2 py-0.5 text-xs',
       /** Inside a calendar cell or on a thumbnail. */
       xs: 'px-1.5 text-xs leading-5',
     },
   },
-  defaultVariants: { tone: 'accent', size: 'md' },
+  defaultVariants: {
+    variant: 'default',
+    size: 'default',
+  },
 })
 
-export function Badge(
-  props: JSX.HTMLAttributes<HTMLSpanElement> &
-    VariantProps<typeof badgeVariants>,
-) {
-  const [local, rest] = splitProps(props, ['tone', 'size', 'class'])
+export type BadgeProps<T extends ValidComponent = 'span'> = ComponentProps<
+  typeof BadgePrimitive<T>
+> &
+  VariantProps<typeof badgeVariants>
+
+export const Badge = <T extends ValidComponent = 'span'>(
+  props: BadgeProps<T>,
+) => {
+  const [, rest] = splitProps(props as BadgeProps, ['class', 'variant', 'size'])
+
   return (
-    <span
-      class={cn(
-        badgeVariants({ tone: local.tone, size: local.size }),
-        local.class,
-      )}
+    <BadgePrimitive
+      data-slot="badge"
+      class={badgeVariants({
+        variant: props.variant,
+        size: props.size,
+        class: props.class,
+      })}
       {...rest}
     />
   )

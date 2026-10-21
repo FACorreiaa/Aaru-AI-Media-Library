@@ -1,115 +1,104 @@
-import { createContext, createUniqueId, splitProps, useContext } from 'solid-js'
-import type { JSX } from 'solid-js'
-import { cn } from '../../lib/cn'
+import type { ComponentProps, ValidComponent } from 'solid-js'
+import { splitProps } from 'solid-js'
+import { Tabs as TabsPrimitive } from '@kobalte/core/tabs'
 
-// Tabs on plain buttons (the ARIA tabs pattern, no Kobalte): one tab stop on the selected tab,
-// Left/Right/Home/End move focus and select (automatic activation), and the tab ↔ panel ids
-// are in the server's HTML too. Selected and unselected tabs swap plain utilities. Use one
-// `TabsContent` whose `value` follows the selection: the panel stays mounted as it changes.
+import { cx } from '~/lib/cva'
 
-type TabsContextValue = {
-  id: string
-  value: () => string
-  select: (value: string) => void
-}
+export type TabsProps<T extends ValidComponent = 'div'> = ComponentProps<
+  typeof TabsPrimitive<T>
+>
 
-const TabsContext = createContext<TabsContextValue>()
+export const Tabs = <T extends ValidComponent = 'div'>(props: TabsProps<T>) => {
+  const [, rest] = splitProps(props as TabsProps, ['class'])
 
-const tabId = (id: string, value: string) => `${id}-tab-${value}`
-const panelId = (id: string, value: string) => `${id}-panel-${value}`
-
-export function Tabs(props: {
-  value: string
-  onChange: (value: string) => void
-  class?: string
-  children: JSX.Element
-}) {
-  const id = `tabs-${createUniqueId()}`
   return (
-    <TabsContext.Provider
-      value={{ id, value: () => props.value, select: props.onChange }}
-    >
-      <div class={props.class}>{props.children}</div>
-    </TabsContext.Provider>
-  )
-}
-
-const KEYS = ['ArrowLeft', 'ArrowRight', 'Home', 'End']
-
-export function TabsList(props: JSX.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      role="tablist"
-      {...props}
-      onKeyDown={(event) => {
-        if (!KEYS.includes(event.key)) return
-        const tabs = [
-          ...event.currentTarget.querySelectorAll<HTMLElement>('[role=tab]'),
-        ]
-        const at = tabs.indexOf(event.target as HTMLElement)
-        if (at < 0) return
-        const next =
-          event.key === 'Home'
-            ? 0
-            : event.key === 'End'
-              ? tabs.length - 1
-              : (at + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) %
-                tabs.length
-        // The week page's own arrow keys skip a prevented event.
-        event.preventDefault()
-        tabs[next].focus()
-        tabs[next].click()
-      }}
-    />
-  )
-}
-
-/** The look of each tab, as the classes it has when selected and when not. `bare` leaves the
- *  shape and the unselected colours to the caller. */
-const TAB_LOOKS = {
-  pill: [
-    'shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
-    'bg-ink text-paper',
-    'border border-line text-ink hover:bg-surface',
-  ],
-  bare: ['transition-colors', 'bg-ink text-paper', ''],
-} as const
-
-export function TabsTrigger(
-  props: Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'value'> & {
-    value: string
-    variant?: keyof typeof TAB_LOOKS
-  },
-) {
-  const [local, rest] = splitProps(props, ['value', 'variant', 'class'])
-  const tabs = useContext(TabsContext)!
-  const selected = () => tabs.value() === local.value
-  const look = () => TAB_LOOKS[local.variant ?? 'pill']
-  return (
-    <button
-      type="button"
-      role="tab"
-      id={tabId(tabs.id, local.value)}
-      aria-selected={selected()}
-      aria-controls={selected() ? panelId(tabs.id, local.value) : undefined}
-      tabindex={selected() ? 0 : -1}
-      class={cn(look()[0], look()[selected() ? 1 : 2], local.class)}
-      onClick={() => tabs.select(local.value)}
+    <TabsPrimitive
+      data-slot="tabs"
+      class={cx(
+        'flex flex-col gap-2',
+        'data-[orientation=vertical]:flex-row',
+        props.class,
+      )}
       {...rest}
     />
   )
 }
 
-export function TabsContent(
-  props: JSX.HTMLAttributes<HTMLDivElement> & { value: string },
-) {
-  const [local, rest] = splitProps(props, ['value'])
-  const tabs = useContext(TabsContext)!
+export type TabsListProps<T extends ValidComponent = 'div'> = ComponentProps<
+  typeof TabsPrimitive.List<T>
+>
+
+export const TabsList = <T extends ValidComponent = 'div'>(
+  props: TabsListProps<T>,
+) => {
+  const [, rest] = splitProps(props as TabsListProps, ['class'])
+
   return (
-    <div
-      role="tabpanel"
-      id={panelId(tabs.id, local.value)}
-      aria-labelledby={tabId(tabs.id, local.value)}
+    <TabsPrimitive.List
+      data-slot="tabs-list"
+      class={cx(
+        'bg-muted text-muted-foreground ring-muted relative flex h-[calc(var(--spacing)*7.5)] w-fit items-center justify-center rounded-lg ring-[3px]',
+        'data-[orientation=vertical]:mt-[3px] data-[orientation=vertical]:size-full data-[orientation=vertical]:flex-col',
+        props.class,
+      )}
+      {...rest}
+    />
+  )
+}
+
+export type TabsTriggerProps<T extends ValidComponent = 'button'> =
+  ComponentProps<typeof TabsPrimitive.Trigger<T>>
+
+export const TabsTrigger = <T extends ValidComponent = 'button'>(
+  props: TabsTriggerProps<T>,
+) => {
+  const [, rest] = splitProps(props as TabsTriggerProps, ['class'])
+
+  return (
+    <TabsPrimitive.Trigger
+      data-slot="tabs-trigger"
+      class={cx(
+        "text-foreground dark:text-muted-foreground dark:data-[selected]:text-foreground peer relative z-10 inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        props.class,
+      )}
+      {...rest}
+    />
+  )
+}
+
+export type TabsContentProps<T extends ValidComponent = 'div'> = ComponentProps<
+  typeof TabsPrimitive.Content<T>
+>
+
+export const TabsContent = <T extends ValidComponent = 'div'>(
+  props: TabsContentProps<T>,
+) => {
+  const [, rest] = splitProps(props as TabsContentProps, ['class'])
+
+  return (
+    <TabsPrimitive.Content
+      data-slot="tabs-content"
+      class={cx('flex-1 outline-none', props.class)}
+      {...rest}
+    />
+  )
+}
+
+export type TabsIndicatorProps<T extends ValidComponent = 'div'> =
+  ComponentProps<typeof TabsPrimitive.Indicator<T>>
+
+export const TabsIndicator = <T extends ValidComponent = 'div'>(
+  props: TabsIndicatorProps<T>,
+) => {
+  const [, rest] = splitProps(props as TabsIndicatorProps, ['class'])
+
+  return (
+    <TabsPrimitive.Indicator
+      data-slot="tabs-indicator"
+      class={cx(
+        'bg-background dark:bg-input/30 dark:border-input peer-focus-visible:border-ring peer-focus-visible:ring-ring/50 peer-focus-visible:outline-ring absolute inset-0 rounded-lg border border-transparent shadow-sm transition-[box-shadow,transform,width,height] duration-200 peer-focus-visible:ring-[3px] peer-focus-visible:outline-1',
+        props.class,
+      )}
       {...rest}
     />
   )
