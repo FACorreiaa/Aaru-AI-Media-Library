@@ -33,12 +33,15 @@ export function TonightStrip(props: {
           params={{ id: primary().entry.libraryItemId }}
           tabindex="-1"
           aria-hidden="true"
-          class="relative block aspect-video md:aspect-auto md:min-h-64"
+          class="relative block aspect-video md:aspect-auto md:min-h-72"
         >
-          <Art
-            sources={[title().backdropUrl, title().posterUrl]}
-            title={title().title}
-          />
+          {/* Out of the flow on a wide screen: the text sets the card's height, not the art. */}
+          <span class="absolute inset-0">
+            <Art
+              sources={[title().backdropUrl, title().posterUrl]}
+              title={title().title}
+            />
+          </span>
           <span class="veil absolute inset-x-0 bottom-0 h-1/3 md:hidden" />
         </Link>
         <div class="flex min-w-0 flex-col p-5 md:p-6">

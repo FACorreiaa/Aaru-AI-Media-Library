@@ -433,12 +433,12 @@ body {
     linear-gradient(to bottom, transparent, var(--paper) 100%),
     repeating-linear-gradient(
       90deg,
-      color-mix(in srgb, var(--ink) 6%, transparent) 0 1px,
+      color-mix(in srgb, var(--ink) 4.5%, transparent) 0 1px,
       transparent 1px var(--code-a, 6px)
     ),
     repeating-linear-gradient(
       90deg,
-      color-mix(in srgb, var(--ink) 5%, transparent) 0 1px,
+      color-mix(in srgb, var(--ink) 3.5%, transparent) 0 1px,
       transparent 1px var(--code-b, 17px)
     );
   background-repeat: repeat, no-repeat, no-repeat, repeat-x, repeat-x;

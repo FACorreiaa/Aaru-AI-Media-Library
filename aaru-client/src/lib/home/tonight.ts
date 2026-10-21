@@ -51,8 +51,8 @@ export function composeTonight(
       .slice(1)
       .map((entry) => ({ kind: 'continue', entry }) as const),
   ]
+  if (candidates.length === 0) return null
   const [primary, ...rest] = candidates
-  if (!primary) return null
   const also = rest.find((pick) => pickId(pick) !== pickId(primary)) ?? null
   return { primary, also }
 }
