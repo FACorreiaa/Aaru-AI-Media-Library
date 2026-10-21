@@ -400,7 +400,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), or in all time (GAM-006c). Derived only from their own library. Imported history counts only where it carries a real date. */
+    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date. */
     get: operations['getStats']
     put?: never
     post?: never
@@ -1590,20 +1590,25 @@ export interface components {
       since: string
       next?: components['schemas']['EpisodeRef']
     }
-    /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. */
+    /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. */
     Stats: {
       /** @enum {string} */
-      span: 'month' | 'year' | 'all'
+      span: 'month' | 'year' | 'all' | 'last7' | 'last30'
       /** @description The last year the period touches; for `all`, the current year. */
       year: number
       month?: number
+      /** @description First day of a rolling span (YYYY-MM-DD); absent for calendar spans. */
+      from?: string
+      /** @description Last day of a rolling span (YYYY-MM-DD, inclusive, today); absent for calendar spans. */
+      until?: string
       timeZone: string
       /** @description The period is not over yet in the user's time zone (always true for `all`). */
       isPartial: boolean
       totals: components['schemas']['StatsTotals']
+      prior?: components['schemas']['StatsTotals']
       /** @description Movie, show, anime and book, always all four in that order; they sum to `totals`. */
       byKind: components['schemas']['StatsKind'][]
-      /** @description One per month of the year, one per day of the month, or one per year (all time) from the first active year to this one, in order. */
+      /** @description One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order. */
       buckets: components['schemas']['StatsBucket'][]
       busiest?: components['schemas']['StatsBucket']
       mostEpisodes?: components['schemas']['StatsBucket']
@@ -2341,10 +2346,10 @@ export interface operations {
   getStats: {
     parameters: {
       query?: {
-        /** @description Required unless `span=all`. */
+        /** @description Required unless `span` is sent. */
         year?: number
-        /** @description `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. It takes no `year` or `month` (422 otherwise). */
-        span?: 'all'
+        /** @description `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. `last7` and `last30` are the 7 or 30 days ending today, one bucket per day, with `prior` holding the window just before. A span takes no `year` or `month` (422 otherwise). */
+        span?: 'all' | 'last7' | 'last30'
         /** @description 1–12. Absent means the whole year. */
         month?: number
         /** @description IANA time zone for day and month boundaries. Absent means UTC. */

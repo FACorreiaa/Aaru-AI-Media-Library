@@ -3,11 +3,13 @@ import { For, Show } from 'solid-js'
 import type { JSX } from 'solid-js'
 import {
   chartBars,
+  isRolling,
   kindShares,
   ratingBars,
   recapPeriod,
   timeLabel,
   totals,
+  windowLabel,
 } from '../lib/insights/model'
 import type { InsightsPeriod } from '../lib/insights/model'
 import { kindOf } from '../lib/library/model'
@@ -41,16 +43,53 @@ export function StatsPanel(props: { stats: Stats; period: InsightsPeriod }) {
     bars().length <= 12 || i === 0 || (i + 1) % 5 === 0
   const recap = () => recapPeriod(props.period)
   const ratings = () => ratingBars(s().ratings.distribution)
+  const rolling = () => isRolling(s().span)
+  const chartUnit = () =>
+    rolling() || s().span === 'month'
+      ? 'day'
+      : s().span === 'year'
+        ? 'month'
+        : 'year'
 
   return (
     <div>
+      <Show when={windowLabel(s())}>
+        {(days) => (
+          <p class="mt-6 text-sm text-muted">
+            {days()} · Private to you
+            <Show when={s().prior}>
+              {' '}
+              · compared with the {s().span === 'last7' ? '7' : '30'} days
+              before
+            </Show>
+          </p>
+        )}
+      </Show>
+
       <dl class="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
         <For each={totals(s())}>
           {(total) => (
             <div class="rounded-[20px] bg-surface p-5">
               <dt class="text-sm text-muted">{total.label}</dt>
-              <dd class="mt-1 font-display text-3xl font-medium tabular-nums">
-                {total.value}
+              <dd class="mt-1 flex items-baseline gap-2">
+                <span class="font-display text-3xl font-medium tabular-nums">
+                  {total.value}
+                </span>
+                <Show when={total.delta}>
+                  {(change) => (
+                    <span
+                      class="text-xs font-medium tabular-nums"
+                      classList={{
+                        'text-accent': change().up,
+                        'text-muted': !change().up,
+                      }}
+                    >
+                      <span aria-hidden="true">{change().up ? '↗' : '↘'}</span>{' '}
+                      {change().text}
+                      <span class="sr-only"> from the period before</span>
+                    </span>
+                  )}
+                </Show>
               </dd>
             </div>
           )}
@@ -69,12 +108,18 @@ export function StatsPanel(props: { stats: Stats; period: InsightsPeriod }) {
         )}
       </Show>
 
-      <Show when={s().totals.episodesWatched > 0}>
-        <Section title="Episodes">
+      <Show
+        when={
+          rolling()
+            ? s().totals.minutesWatched > 0
+            : s().totals.episodesWatched > 0
+        }
+      >
+        <Section title={rolling() ? 'Time per day' : 'Episodes'}>
           <div
             class="flex h-40 items-end gap-[3px] text-accent"
             role="img"
-            aria-label={`Episodes per ${s().span === 'month' ? 'day' : s().span === 'year' ? 'month' : 'year'}`}
+            aria-label={`${rolling() ? 'Time' : 'Episodes'} per ${chartUnit()}`}
           >
             <For each={bars()}>
               {(bar, i) => (
@@ -83,7 +128,8 @@ export function StatsPanel(props: { stats: Stats; period: InsightsPeriod }) {
                     class="rounded-t-[3px]"
                     classList={{
                       'bg-current': bar.busiest,
-                      'bg-current/35': !bar.busiest,
+                      'bg-current/35': !bar.busiest && bar.height > 0,
+                      'bg-line': bar.height === 0,
                     }}
                     style={{
                       height: `${Math.max(bar.height * 100, bar.height > 0 ? 4 : 1)}%`,
