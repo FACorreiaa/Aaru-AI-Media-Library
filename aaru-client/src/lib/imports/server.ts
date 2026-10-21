@@ -82,6 +82,44 @@ export const uploadImport = createServerFn({ method: 'POST' })
     ),
   )
 
+/** IMP-009/010: Pogdesign CAT, as a pasted show list or the exported iCal file's text. */
+export const uploadCatImport = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      text: z
+        .string()
+        .trim()
+        .min(1, 'Paste your shows, one per line.')
+        .max(MAX_BYTES, 'That file is larger than 5 MB.'),
+    }),
+  )
+  .handler(async ({ data }): Promise<ImportJob> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/cat', {
+        body: data.text as never,
+        bodySerializer: (body: unknown) => body as string,
+        headers: {
+          'Content-Type': /^\uFEFF?\s*BEGIN:VCALENDAR/i.test(data.text)
+            ? 'text/calendar'
+            : 'text/plain',
+        },
+      }),
+      'Those shows could not be imported.',
+    ),
+  )
+
+/** IMP-010: the user's CAT iCal link. The server reads it once; the link is not kept. */
+export const startCatFeedImport = createServerFn({ method: 'POST' })
+  .validator(z.object({ url: z.string().trim().min(1).max(512) }))
+  .handler(async ({ data }): Promise<ImportJob> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/cat/feed', {
+        body: { url: data.url },
+      }),
+      'That CAT link could not be imported.',
+    ),
+  )
+
 /** IMP-014: a public AniList anime list, read by the server in the background. */
 export const startAniListImport = createServerFn({ method: 'POST' })
   .validator(z.object({ username: z.string().trim().min(1).max(40) }))

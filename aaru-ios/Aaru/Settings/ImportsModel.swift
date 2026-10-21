@@ -139,6 +139,46 @@ final class ImportsModel {
         return nil
     }
 
+    /// IMP-009/010: Pogdesign CAT, as a pasted show list or the exported iCal file's text.
+    func importCAT(_ text: String) async -> ImportJob? {
+        guard let api else { return nil }
+        problem = nil
+        let body = HTTPBody(text)
+        let isCalendar = text.drop { $0.isWhitespace || $0 == "\u{FEFF}" }.uppercased().hasPrefix("BEGIN:VCALENDAR")
+        do {
+            switch try await api.createCATImport(body: isCalendar ? .textCalendar(body) : .plainText(body)) {
+            case let .accepted(response):
+                let job = try response.body.json
+                jobs.insert(job, at: 0)
+                return job
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "Those shows could not be imported."
+            }
+        } catch {
+            problem = "The import did not start. Aaru could not reach the server."
+        }
+        return nil
+    }
+
+    /// IMP-010: the user's CAT iCal link. The server reads it once and does not keep it.
+    func importCATLink(_ url: String) async -> ImportJob? {
+        guard let api else { return nil }
+        problem = nil
+        do {
+            switch try await api.createCATFeedImport(body: .json(.init(url: url))) {
+            case let .accepted(response):
+                let job = try response.body.json
+                jobs.insert(job, at: 0)
+                return job
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "That CAT link could not be imported."
+            }
+        } catch {
+            problem = "The import did not start. Aaru could not reach the server."
+        }
+        return nil
+    }
+
     /// IMP-016: a code the user approves on stremio.com. No Stremio password reaches Aaru.
     func startStremioImport() async -> Components.Schemas.StremioLink? {
         guard let api else { return nil }

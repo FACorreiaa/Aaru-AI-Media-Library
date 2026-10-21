@@ -41,14 +41,21 @@ extension ImportService {
             row.reason = reason
             return row
         }
+        let nameOnly = row.row.nameOnly == true && row.row.year == nil && row.row.ids.isEmpty
         do {
-            row.titleID = try await resolver.resolve(row.row.mediaRef, searchHint: row.row.author).id
+            row.titleID = if nameOnly {
+                try await resolver.resolveShow(named: row.row.title).id
+            } else {
+                try await resolver.resolve(row.row.mediaRef, searchHint: row.row.author).id
+            }
         } catch ResolutionError.notFound {
             row.outcome = .unmatched
             row.reason = "No catalog entry matches “\(row.row.title)”\(row.row.year.map { " (\($0))" } ?? "")."
         } catch ResolutionError.ambiguous {
             row.outcome = .unmatched
-            row.reason = "More than one catalog entry matches. Pick the right one by hand."
+            row.reason = nameOnly
+                ? "Several shows are called “\(row.row.title)”. Pick the right one by hand."
+                : "More than one catalog entry matches. Pick the right one by hand."
         } catch is ValidationError {
             row.outcome = .unmatched
             row.reason = "Not enough to match: the row needs an id or a year."

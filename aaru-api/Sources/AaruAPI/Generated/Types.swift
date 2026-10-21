@@ -241,6 +241,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/csv`.
     /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)`.
     func createCSVImport(_ input: Operations.CreateCSVImport.Input) async throws -> Operations.CreateCSVImport.Output
+    /// Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)`.
+    func createCATImport(_ input: Operations.CreateCATImport.Input) async throws -> Operations.CreateCATImport.Output
+    /// Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat/feed`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)`.
+    func createCATFeedImport(_ input: Operations.CreateCATFeedImport.Input) async throws -> Operations.CreateCATFeedImport.Output
     /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
@@ -924,6 +934,32 @@ extension APIProtocol {
     ) async throws -> Operations.CreateCSVImport.Output {
         try await createCSVImport(Operations.CreateCSVImport.Input(
             query: query,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)`.
+    public func createCATImport(
+        headers: Operations.CreateCATImport.Input.Headers = .init(),
+        body: Operations.CreateCATImport.Input.Body
+    ) async throws -> Operations.CreateCATImport.Output {
+        try await createCATImport(Operations.CreateCATImport.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat/feed`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)`.
+    public func createCATFeedImport(
+        headers: Operations.CreateCATFeedImport.Input.Headers = .init(),
+        body: Operations.CreateCATFeedImport.Input.Body
+    ) async throws -> Operations.CreateCATFeedImport.Output {
+        try await createCATFeedImport(Operations.CreateCATFeedImport.Input(
             headers: headers,
             body: body
         ))
@@ -12260,6 +12296,305 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/csv/post(createCSVImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)`.
+    public enum CreateCATImport {
+        public static let id: Swift.String = "createCATImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/cat/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCATImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCATImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateCATImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/cat/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/cat/POST/requestBody/content/text\/plain`.
+                case plainText(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/imports/cat/POST/requestBody/content/text\/calendar`.
+                case textCalendar(OpenAPIRuntime.HTTPBody)
+            }
+            public var body: Operations.CreateCATImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateCATImport.Input.Headers = .init(),
+                body: Operations.CreateCATImport.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/cat/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/cat/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateCATImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateCATImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued for matching.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateCATImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateCATImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/cat/post(createCATImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/cat/feed`.
+    /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)`.
+    public enum CreateCATFeedImport {
+        public static let id: Swift.String = "createCATFeedImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCATFeedImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCATFeedImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateCATFeedImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// The iCal link from CAT.
+                    ///
+                    /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/requestBody/json/url`.
+                    public var url: Swift.String
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - url: The iCal link from CAT.
+                    public init(url: Swift.String) {
+                        self.url = url
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case url
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/requestBody/content/application\/json`.
+                case json(Operations.CreateCATFeedImport.Input.Body.JsonPayload)
+            }
+            public var body: Operations.CreateCATFeedImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateCATFeedImport.Input.Headers = .init(),
+                body: Operations.CreateCATFeedImport.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/cat/feed/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateCATFeedImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateCATFeedImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued for matching.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateCATFeedImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateCATFeedImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

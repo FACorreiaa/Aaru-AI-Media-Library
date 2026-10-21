@@ -193,6 +193,9 @@ enum ImportFormatDetector {
             }
             return .malXML
         }
+        if CATCalendarParser.isCalendar(text) {
+            return .catICS
+        }
         let headers = Set(CSVTable(String(text.prefix(4096))).headers)
         if headers.isSuperset(of: ["Const", "Title Type"]) {
             return .imdbCSV

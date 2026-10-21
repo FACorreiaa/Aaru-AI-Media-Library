@@ -26,6 +26,7 @@ struct Services: Sendable {
         auth: AuthService,
         trakt: TraktAPI? = nil,
         stremio: StremioAccount? = nil,
+        catFeed: CATCalendarFeed? = nil,
         publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!,
         // The web app's base URL and the binding cookie's domain, for the OAuth consent page.
         oauth: (webBaseURL: URL, cookieDomain: String?) = (URL(string: "https://aaruapp.com")!, "aaruapp.com")
@@ -49,7 +50,8 @@ struct Services: Sendable {
                 stores: stores, resolver: resolver,
                 trakt: trakt.map { TraktImport(connect: traktConnect(stores, $0), importer: TraktImporter(api: $0)) },
                 anilistLists: catalogs.anilist as? any AniListListReading,
-                stremio: stremio
+                stremio: stremio,
+                catFeed: catFeed
             ),
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),

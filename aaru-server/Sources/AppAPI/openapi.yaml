@@ -891,6 +891,51 @@ paths:
               schema: {$ref: '#/components/schemas/ImportJob'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/imports/cat:
+    post:
+      operationId: createCATImport
+      summary: >-
+        Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the
+        exported iCal file. Parsed now, matched in the background, written only after approval. Every show
+        is planned as wishlist; CAT's watched episodes do not come across.
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema: {type: string, format: binary}
+          text/calendar:
+            schema: {type: string, format: binary}
+      responses:
+        '202':
+          description: Queued for matching.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/cat/feed:
+    post:
+      operationId: createCATFeedImport
+      summary: >-
+        Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or
+        generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: {type: string, maxLength: 512, description: The iCal link from CAT.}
+      responses:
+        '202':
+          description: Queued for matching.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/imports/anilist:
     post:
       operationId: createAniListImport

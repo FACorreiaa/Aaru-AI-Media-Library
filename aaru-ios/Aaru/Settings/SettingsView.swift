@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var path: [String] = []
     @State private var asksAniListName = false
     @State private var aniListName = ""
+    @State private var showsCAT = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -85,6 +86,9 @@ struct SettingsView: View {
                 if case let .success(url) = result {
                     Task { await upload(url, source: source) }
                 }
+            }
+            .sheet(isPresented: $showsCAT) {
+                CATImportSheet(imports: imports) { path.append($0.id) }
             }
             .alert("Import from AniList", isPresented: $asksAniListName) {
                 TextField("Username", text: $aniListName)
@@ -149,6 +153,15 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Import from AniList").foregroundStyle(Color(.ink))
                     Text("Your public anime list, by username.").font(.caption).foregroundStyle(Color(.muted))
+                }
+            }
+            .disabled(uploading)
+            Button {
+                showsCAT = true
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Import from Pogdesign CAT").foregroundStyle(Color(.ink))
+                    Text("Your iCal link or file, or a list of shows.").font(.caption).foregroundStyle(Color(.muted))
                 }
             }
             .disabled(uploading)

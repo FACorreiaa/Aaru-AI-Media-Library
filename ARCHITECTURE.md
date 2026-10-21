@@ -181,7 +181,7 @@ what any user watched or read.
 
 Shape:
 
-- `source` — import source (`trakt`, `imdb_csv`, `letterboxd_csv`, `goodreads_csv`, `cat`)
+- `source` — import source (`trakt`, `imdb_csv`, `letterboxd_csv`, `goodreads_csv`, `cat_list`, `cat_ics`)
 - `source_key` — the normalized row identity from that source (Letterboxd URI, Goodreads
   book id, normalized title + year for sources with no stable id)
 - `external_id` — the resolved `ExternalID` (`tmdb`, `imdb`, `trakt`, `tvdb`, `isbn`)
@@ -269,7 +269,8 @@ POST   /v1/imports/stremio/link/{code}    # 204 pending | 202 queued import | 41
 POST   /v1/imports/csv                    # text/csv body; ?source=imdb|letterboxd|goodreads&filename=
 POST   /v1/imports/{id}/apply             # approve the plan: one journaled, undoable action
 DELETE /v1/imports/{id}                   # discard
-POST   /v1/imports/cat                    # text list or ics
+POST   /v1/imports/cat                    # text/plain list or text/calendar ics (IMP-009/010)
+POST   /v1/imports/cat/feed               # {url}: the user's CAT iCal link, read once, not kept
 POST   /v1/imports/capture                # one-shot capture: text | image | url
 GET    /v1/imports/{id}
 
@@ -504,10 +505,18 @@ Unmatched rows are counted and listed on the job; they are not silently dropped 
 
 ### CAT
 
-- Text list of show names → TMDB search, first high-confidence hit
-- ICS: extract show titles from event names; treat as tracked series (`wishlist` or `in_progress` if currently airing is knowable, else `wishlist`)
-- No watched-episode import from CAT in v1
-- No HTTP scraping of pogdesign.co.uk
+- Text list of show names, one per line (`Name` or CAT's `Name (2026)`) → `nameOnly` rows. A
+  name-only row matches through `TitleResolver.resolveShow(named:)`: the one TMDB show whose
+  normalized title equals it, any year. Two shows with the name are ambiguous and listed unmatched
+  ("Pick the right one by hand"); never a guess. A row with a year takes the normal title + year path
+- ICS (file or the user's iCal link): show names from each event's `SUMMARY` with the episode part
+  (`S01E02`, `1x02`) removed; events collapse to one row per show. A summary with no readable show
+  name is listed unmatched, once
+- Every CAT show is planned `wishlist` with no progress (owner, 2026-10-21). No watched-episode import
+  from CAT
+- The iCal link (`/cat/download_ics/<key>` or `generate_ics`) is checked strictly (https, pogdesign
+  host, that path), read once at request time through a `ProviderClient`, and never stored or logged:
+  it holds the user's CAT key. No other pogdesign.co.uk page is ever read
 
 ## Import pipeline
 
@@ -985,7 +994,7 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Video catalog | TMDB |
 | Book catalog | Open Library |
 | Primary user import | Trakt |
-| CAT | Manual list / ICS only |
+| CAT | Pasted list, ICS file, or the user's own iCal link read once; no scraping |
 | Scraping | Forbidden |
 | Backend | Hummingbird only |
 | First clients | iOS and Mac, with widgets and a Live Activity |

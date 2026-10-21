@@ -28,6 +28,9 @@ struct ImportRow: Codable, Sendable, Equatable {
     /// Stremio's compressed watched-episode bitfield, still undecoded. The worker turns it into
     /// `watched` once it has the show's episode list, then clears it.
     var stremioWatched: String?
+    /// Pogdesign CAT gives a show's name and nothing else: matched by exact name across every
+    /// year, still only when exactly one show has it (IMP-009).
+    var nameOnly: Bool?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)
