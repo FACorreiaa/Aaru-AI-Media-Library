@@ -18,7 +18,7 @@ struct EmailSignInSheet: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 20) {
                 Text(codeSent ? "Check your email" : "Sign in with email")
-                    .font(.system(.title, design: .serif, weight: .medium))
+                    .font(.aaruDisplay(.title))
                 Text(codeSent
                     ? "We sent a six-digit code to \(email). It works once, for 15 minutes."
                     : "We'll email you a six-digit code. No password.")

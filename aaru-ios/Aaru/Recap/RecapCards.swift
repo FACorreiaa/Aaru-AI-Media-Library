@@ -12,7 +12,7 @@ struct RecapCardView: View {
             case let .intro(heading, partial):
                 Eyebrow(text: partial ? "So far" : "Your recap")
                 Text(heading)
-                    .font(.system(size: 56, weight: .medium, design: .serif))
+                    .font(.aaruDisplay(size: 56))
                     .lineSpacing(-4)
                     .padding(.top, 16)
                     .rise(0.12)
@@ -32,7 +32,7 @@ struct RecapCardView: View {
             case let .biggestDay(day, episodes, minutes):
                 Eyebrow(text: "Your biggest day")
                 Text(day)
-                    .font(.system(size: 64, weight: .medium, design: .serif))
+                    .font(.aaruDisplay(size: 64))
                     .padding(.top, 16)
                     .rise(0.12)
                 Line(text: dayLine(episodes: episodes, minutes: minutes))
@@ -55,7 +55,7 @@ struct RecapCardView: View {
                     .padding(.top, 24)
                     .pop(0.12)
                 Text(entry.title.title)
-                    .font(.system(size: 40, weight: .medium, design: .serif))
+                    .font(.aaruDisplay(size: 40))
                     .padding(.top, 24)
                     .rise(0.32)
                 Line(text: timeLine(entry), delay: 0.46)
@@ -73,12 +73,12 @@ struct RecapCardView: View {
                     ForEach(Array(genres.enumerated()), id: \.offset) { rank, genre in
                         HStack(alignment: .firstTextBaseline, spacing: 16) {
                             Text("\(rank + 1)")
-                                .font(.system(.title2, design: .serif))
+                                .font(.aaruDisplay(.title2))
                                 .monospacedDigit()
                                 .opacity(0.7)
                                 .frame(width: 24, alignment: .leading)
                             Text(genre.name)
-                                .font(.system(size: 44, weight: .medium, design: .serif))
+                                .font(.aaruDisplay(size: 44))
                                 .minimumScaleFactor(0.6)
                                 .lineLimit(1)
                         }
@@ -95,7 +95,7 @@ struct RecapCardView: View {
                     ForEach(Array(parts.enumerated()), id: \.offset) { offset, part in
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(alignment: .firstTextBaseline) {
-                                Text(part.kind.label).font(.system(.title, design: .serif))
+                                Text(part.kind.label).font(.aaruDisplay(.title))
                                 Spacer()
                                 Text(part.share.formatted(.percent.precision(.fractionLength(0))))
                                     .font(.title3)
@@ -122,7 +122,7 @@ struct RecapCardView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(Array(parts.enumerated()), id: \.offset) { offset, part in
                         Text(RecapDeck.countLabel(part.kind, part.count))
-                            .font(.system(size: 48, weight: .medium, design: .serif))
+                            .font(.aaruDisplay(size: 48))
                             .monospacedDigit()
                             .rise(0.12 + Double(offset) * 0.14)
                     }
@@ -143,7 +143,7 @@ struct RecapCardView: View {
                         VStack(alignment: .leading) {
                             Text("Rated highest").font(.subheadline).opacity(0.75)
                             HStack(alignment: .firstTextBaseline) {
-                                Text(highest.title).font(.system(.title2, design: .serif))
+                                Text(highest.title).font(.aaruDisplay(.title2))
                                 if let highestRating {
                                     Text(RecapDeck.ratingLabel(highestRating)).monospacedDigit().opacity(0.8)
                                 }
@@ -163,7 +163,7 @@ struct RecapCardView: View {
             case let .persona(title, line):
                 Eyebrow(text: "Your \(String(stats.year)), in a word")
                 Text(title)
-                    .font(.system(size: 56, weight: .medium, design: .serif))
+                    .font(.aaruDisplay(size: 56))
                     .padding(.top, 16)
                     .pop(0.16)
                 Line(text: line, delay: 0.48)
@@ -172,7 +172,7 @@ struct RecapCardView: View {
                 Text(stats.isPartial
                     ? "That's your \(stats.month == nil ? "year" : "month") in Aaru so far."
                     : "That was your \(stats.month == nil ? "year" : "month") in Aaru.")
-                    .font(.system(size: 40, weight: .medium, design: .serif))
+                    .font(.aaruDisplay(size: 40))
                     .padding(.top, 16)
                     .rise(0.12)
                 RecapShareButton(stats: stats).padding(.top, 40).rise(0.32)
@@ -218,7 +218,7 @@ private struct Big<Content: View>: View {
 
     var body: some View {
         content
-            .font(.system(size: 88, weight: .medium, design: .serif))
+            .font(.aaruDisplay(size: 88))
             .monospacedDigit()
             .minimumScaleFactor(0.5)
             .lineLimit(1)
@@ -248,13 +248,13 @@ private struct TopRow: View {
     var body: some View {
         HStack(spacing: 16) {
             Text("\(rank)")
-                .font(.system(.title2, design: .serif))
+                .font(.aaruDisplay(.title2))
                 .monospacedDigit()
                 .opacity(0.7)
                 .frame(width: 24, alignment: .leading)
             OutlinedPoster(url: entry.title.posterURL, kind: entry.title.mediaKind).frame(width: 48)
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.title.title).font(.system(.title3, design: .serif)).lineLimit(1)
+                Text(entry.title.title).font(.aaruDisplay(.title3)).lineLimit(1)
                 Text(entry.episodes > 0 ? "\(entry.episodes) episodes" : "\(entry.minutes) minutes")
                     .font(.subheadline)
                     .opacity(0.75)
@@ -274,7 +274,7 @@ private struct Moment: View {
                 Text("\(label) · \(moment.at.formatted(.dateTime.month(.abbreviated).day()))")
                     .font(.subheadline)
                     .opacity(0.75)
-                Text(moment.title.title).font(.system(size: 28, design: .serif))
+                Text(moment.title.title).font(.aaruDisplay(size: 28))
             }
         }
     }

@@ -13,7 +13,7 @@ struct RecapShareCard: View {
                 .font(.system(size: 40, weight: .medium))
                 .tracking(4)
             Text(RecapPeriod(year: stats.year, month: stats.month).label)
-                .font(.system(size: 132, weight: .medium, design: .serif))
+                .font(.aaruDisplay(size: 132))
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .padding(.top, 24)
@@ -22,13 +22,13 @@ struct RecapShareCard: View {
             let compact = lines.count > 5
             VStack(alignment: .leading, spacing: compact ? 28 : 40) {
                 ForEach(lines, id: \.self) { line in
-                    Text(line).font(.system(size: compact ? 52 : 64, weight: .medium, design: .serif))
+                    Text(line).font(.aaruDisplay(size: compact ? 52 : 64))
                 }
             }
             .padding(.top, 96)
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline) {
-                Text("Aaru").font(.system(size: 44, weight: .semibold, design: .serif))
+                Text("Aaru").font(.aaruDisplay(size: 44, weight: .semibold))
                 Spacer()
                 Text("aaruapp.com").font(.system(size: 32)).opacity(0.75)
             }
