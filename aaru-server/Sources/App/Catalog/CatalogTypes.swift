@@ -100,6 +100,8 @@ struct CatalogProviders: Sendable {
     var airTimes: (any AirTimeRefining)?
     /// Albums (MUS-001, MusicBrainz). Optional: without it music search and hydration find nothing.
     var music: (any CatalogSearching & TrackListing)?
+    /// Discover's album rows (MUS-002, ListenBrainz). Optional: without it they are not shown.
+    var releases: (any DiscoverListing)?
 }
 
 extension Date {

@@ -32,7 +32,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
-| Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001) |
+| Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped, scrobble tokens only), the browser extension for Netflix / Disney+ / Prime Video (SCR-007, owner exception 2026-10-21), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
@@ -156,7 +156,8 @@ Use these words in code, APIs, and UI:
 - **Capture** — one-shot intake of pasted text, an image, or a URL. It is an *import source*,
   not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never writes unplanned
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
-  theaters, this season's anime, trending books), the same for every user. Shown on Home and
+  theaters, this season's anime, trending books; MUS-002: new albums, albums coming soon), the
+  same for every user. Shown on Home and
   as the Discover tab/page. Catalog data like search, never a recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer

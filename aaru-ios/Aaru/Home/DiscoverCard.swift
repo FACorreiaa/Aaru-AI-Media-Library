@@ -101,10 +101,11 @@ struct DiscoverCard: View {
     }
 
     /// Rows mix kinds only for anime films; say "Film" there so a poster is not mistaken. An
-    /// album wears its year here instead, with the artist under the name.
+    /// album wears its year here instead, with the artist under the name, unless a release date
+    /// already says when (Coming soon, MUS-002).
     private var kindChip: String? {
         if kind == .music {
-            return hit.year.map(String.init)
+            return badge == nil ? hit.year.map(String.init) : nil
         }
         return hit.isAnime && hit._type == .movie ? "Film" : nil
     }

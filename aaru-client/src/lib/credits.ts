@@ -52,6 +52,11 @@ export const CREDITS: Credit[] = [
     },
   },
   {
+    lead: 'Album rows from ',
+    name: 'ListenBrainz',
+    href: 'https://listenbrainz.org',
+  },
+  {
     lead: 'Album covers from ',
     name: 'Cover Art Archive',
     href: 'https://coverartarchive.org',

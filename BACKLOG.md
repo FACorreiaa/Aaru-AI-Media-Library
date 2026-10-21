@@ -363,6 +363,7 @@ account or a stranger that has not happened yet.
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
+| MUS-002 | Built | ListenBrainzReleasesTests | Not deployed; not run on a device |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -1290,9 +1291,13 @@ Insights, and the Listening row and widget show an album in progress.
 
 ### MUS-002 · New albums and Coming soon on Discover · M
 **Needs:** MUS-001, DISC-001.
-Two Discover rows from one ListenBrainz `explore/fresh-releases` call (no key) per 6 h: New
-albums (last 14 days, albums with a cover, by listen count) and Coming soon (the next 30 days,
-by date). Hits are albums with their `musicbrainz` id, so "already in your library" works.
+Two Discover rows from ListenBrainz (no key), each cached 6 h like the other rows. Fresh releases
+carry no listen counts of their own (checked 2026-10-21: every `listen_count` is 0), so each row
+is ranked by this month's sitewide stats: New albums are the month's most-played release groups
+that came out in the last 30 days; Coming soon is the next 30 days of releases by the month's
+1,000 most-played artists (never "Various Artists"), soonest first. Albums and EPs of new work
+with a cover only: no singles, live records, compilations or spoken word. Hits are albums with
+their `musicbrainz` id, so "already in your library" works.
 
 **Done when:** both rows show on Today on three clients and a card adds the album in one tap.
 

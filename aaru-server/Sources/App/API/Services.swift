@@ -51,6 +51,7 @@ struct Services: Sendable {
             discover: DiscoverService(
                 stores: stores,
                 providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
+                    + [catalogs.releases].compactMap(\.self)
             ),
             library: library,
             lists: ListService(stores: stores, resolver: resolver, catalog: catalog),

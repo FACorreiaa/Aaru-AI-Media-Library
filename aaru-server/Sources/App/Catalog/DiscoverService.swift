@@ -14,6 +14,8 @@ enum DiscoverList: String, Sendable, CaseIterable {
     case tvNew = "tv_new"
     case moviesInTheaters = "movies_in_theaters"
     case booksTrending = "books_trending"
+    case musicNew = "music_new"
+    case musicUpcoming = "music_upcoming"
 
     func title(now: Date) -> String {
         switch self {
@@ -26,6 +28,8 @@ enum DiscoverList: String, Sendable, CaseIterable {
         case .tvNew: "New shows"
         case .moviesInTheaters: "In theaters"
         case .booksTrending: "Trending books"
+        case .musicNew: "New albums"
+        case .musicUpcoming: "Coming soon"
         }
     }
 }

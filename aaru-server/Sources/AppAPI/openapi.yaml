@@ -2676,7 +2676,7 @@ components:
         id:
           type: string
           description: >-
-            Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`. Not an enum:
+            Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum:
             the server may add rows, and clients render any row they get.
         title:
           type: string

@@ -399,6 +399,14 @@ entries; 6 h, or 7 days for a season that has ended), coalesces fetches and serv
 failure; nothing cached and the provider down returns `unavailable: true`. Marking against the
 library is the same `DiscoverService.mark` the rows use.
 
+**Album rows (MUS-002).** `ListenBrainzReleases` (`Catalog/ListenBrainzReleases.swift`, no key,
+1 req/s with a contact User-Agent) serves `music_new` and `music_upcoming` through the same
+`DiscoverListing` and cache. Each list is two calls: `explore/fresh-releases` (30 days back, or
+30 days ahead) and a sitewide stat for this month (`stats/sitewide/release-groups` for New
+albums, `stats/sitewide/artists` for Coming soon), because fresh releases carry no listens of
+their own. Hits are `album`s keyed by the release-group MBID, so marking works; covers are Cover
+Art Archive release URLs. `CatalogProviders.releases` is optional: without it the rows are absent.
+
 ### MediaRef
 
 ```swift
