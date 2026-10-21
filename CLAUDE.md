@@ -186,14 +186,16 @@ Use these words in code, APIs, and UI:
 - **Group** — a friends-only space a user creates and invites friends into. It holds channels
   and always has `#general`
 - **Channel** — one place to talk inside a group. Kind: `text` | `title` (one title, with a
-  spoiler guard) | `watch` (a watch-together session) | `shelf` (a list the group edits)
+  spoiler guard) | `watch` (a watch-together session) | `shelf` (a list the group edits). The
+  UI calls a `shelf` channel a "List" (owner, 2026-10-21: a label only; the stored kind stays)
 - **Member** — a user's place in a group. Role: `owner` | `admin` | `member`
 - **Group message** — one post in a channel, by a member or by Aaru. Server-visible. Never call
   it a Message, which is the encrypted DM
 - **Mention** — `@handle` or `@aaru` inside a group message. Mentioning `@aaru` is the only way
   the agent posts in a group
 - **Room** — a watch-together session: invite, countdown, reactions, shared check-off. Aaru
-  does not control anyone's player. Since 2026-10-20 it lives in a `watch` channel
+  does not control anyone's player. Since 2026-10-20 it lives in a `watch` channel. The UI
+  word is "Watch party" (owner, 2026-10-21: a label only; code keeps Room)
 - **Conversation / Message** — an end-to-end encrypted DM thread. The server only ever holds
   ciphertext
 - **Device** — one installed client, the unit for push tokens and Signal keys
