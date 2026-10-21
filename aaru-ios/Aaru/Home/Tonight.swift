@@ -27,7 +27,7 @@ enum TonightPick {
     var episodeLine: String {
         switch self {
         case let .continuing(entry):
-            ["S\(entry.next.season) · E\(entry.next.number)", entry.nextName].compactMap(\.self)
+            [EpisodeCode.short(season: entry.next.season, number: entry.next.number), entry.nextName].compactMap(\.self)
                 .joined(separator: " · ")
         case let .airing(entry):
             [entry.shortCode, entry.episodeName].compactMap(\.self).joined(separator: " · ")
