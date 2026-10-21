@@ -1,5 +1,5 @@
 {
-  "totalJs": 240648,
+  "totalJs": 251168,
   "css": 12592,
   "shared": 73130,
   "routes": {
@@ -23,7 +23,7 @@
     "/app_/settings/": 81897,
     "/app_/settings/about": 77278,
     "/app_/settings/account": 81799,
-    "/app_/settings/connected": 81879,
+    "/app_/settings/connected": 84704,
     "/app_/settings/imports": 81789,
     "/app_/settings/recaps": 75072,
     "/app_/title/$id": 88315,

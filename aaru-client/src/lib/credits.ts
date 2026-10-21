@@ -61,5 +61,15 @@ export const CREDITS: Credit[] = [
     name: 'Cover Art Archive',
     href: 'https://coverartarchive.org',
   },
+  {
+    lead: 'Concerts from ',
+    name: 'Ticketmaster',
+    href: 'https://www.ticketmaster.com',
+  },
+  {
+    lead: 'City search by ',
+    name: 'Open-Meteo',
+    href: 'https://open-meteo.com',
+  },
   { lead: 'History import from ', name: 'Trakt', href: 'https://trakt.tv' },
 ]

@@ -1,5 +1,6 @@
 import { useNavigate, useRouter } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
+import { ConcertPlaceSection } from '../ConcertPlaceSection'
 import { GoogleSignInButton } from '../GoogleSignInButton'
 import { NotificationsSection } from '../NotificationsSection'
 import { SocialSection } from '../SocialSection'
@@ -16,7 +17,7 @@ const providerNames = {
   google: 'Google',
 } as const
 
-/** Settings → Account: who you are, how you sign in, friends, and notifications. */
+/** Settings → Account: who you are, how you sign in, friends, notifications and concerts. */
 export function AccountPage(props: { data: AccountPageData }) {
   const router = useRouter()
   const navigate = useNavigate()
@@ -97,6 +98,10 @@ export function AccountPage(props: { data: AccountPageData }) {
       />
 
       <NotificationsSection setup={props.data.push} />
+
+      <Show when={props.data.concerts?.available ? props.data.concerts : null}>
+        {(setting) => <ConcertPlaceSection setting={setting()} />}
+      </Show>
     </>
   )
 }
