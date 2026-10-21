@@ -36,6 +36,19 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-21
 
+- **Netflix viewing history and a browser-extension scrobbler, both now (owner, 2026-10-21).**
+  Netflix's per-profile *Viewing activity* download is an official export: imported like any file
+  (IMP-018). Netflix, Disney+ and Prime Video have no API, so live plays in a browser come through
+  an Aaru browser extension (SCR-007). **This is an owner exception to "no scraping"**: the
+  extension reads the player page in the user's own browser, for the user's own session, and
+  sends a scrobble to Aaru. It makes no request to the site beyond what the page already makes,
+  Aaru's server fetches nothing from these sites, it never controls playback, and it touches no
+  stream source. Scrobbling is P3; built ahead of the gate like SCR-003. Its token is a new
+  `browser` kind that can only scrobble.
+- **Titles known only by name** (CAT, Netflix, a browser player) match by exact normalized name,
+  only when exactly one TMDB entry of that type has it and came out by the year it was watched.
+  Episodes named but not numbered (Netflix) match by name: in the same season first, else the one
+  episode in the show with that name. Anything else stays unmatched; nothing is guessed.
 - **Last 7 and 30 days on Home, a fuller Year in Review, and stored genres are built before the
   P2 gate**, by the owner's call, with 0 strangers. Modelled on north's recap: Home gets a
   compact "Last 7 days" strip (a bar per day plus the week's figures) that opens Insights on a
@@ -361,6 +374,7 @@ account or a stranger that has not happened yet.
 | IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
 | IMP-016 | Built, unverified | #46 62dfe1d; Imports/Stremio/*, StremioImportTests | Not deployed; no real account library |
 | IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Live 2026-10-21 (API c8b19e7, LuminaVaultInfra#405; web prod); Apple ledger not run on a device |
+| IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -389,6 +403,7 @@ account or a stranger that has not happened yet.
 | SCR-004 | Open | none | |
 | SCR-005 | Open | none | |
 | SCR-006 | Open | none | |
+| SCR-007 | Open | none | Owner exception to "no scraping" 2026-10-21 |
 | SOC-001 | Open | none on main (PR #44 open) | |
 | SOC-002 | Open | none on main (PR #44 open) | |
 | SOC-003 | Open | none | |
@@ -1560,6 +1575,22 @@ line be cancelled.
 **Done when:** a 2,000-entry export shows steady progress and plans in about a minute (local run
 with an empty catalog: 70 s, bounded by AniList's rate; was ~22 min at one request per entry).
 
+### IMP-018 · Netflix viewing history · M · 2026-10-21
+**Needs:** IMP-005, IMP-011.
+`source=netflix` (and `auto`, by its `Title,Date` columns): Netflix → Account → Profile →
+Viewing activity → Download all, `NetflixViewingHistory.csv`, one profile per file. The full
+account download (`Profile Name` column, every profile in the household) is refused with a
+pointer to the per-profile file. `Show: Season 1: Episode name` (also `Limited Series`, `Part N`,
+`<Show> 4`, and Netflix's season words in other languages) is a show; anything else is a film.
+One row per show (`in_progress`, its episodes by name) and per film (`finished`, last watched
+date). Dates are read in the file's own layout (month first unless a day passes 12). Matching
+follows the 2026-10-21 name-only decision; `notAfter` is the year first watched, so a later
+remake drops out. Merge order: after CAT, before TV Time.
+
+**Done when:** a file with a show, a film, a remade title and an unknown episode plans the show
+with its named episodes ticked, the film finished, the remake unmatched with "Several films are
+called …", and the unknown episode not ticked (`NetflixImportTests`).
+
 ---
 
 ## P2 · Catalog sources
@@ -1920,6 +1951,25 @@ token appears in a response or log.
 `pause` positions feed Continue Watching for movies ("1h 27m left").
 
 **Done when:** a paused movie shows time left on home and drops off when stopped past 80%.
+
+### SCR-007 · Browser extension scrobbler · L · 2026-10-21
+**Needs:** SCR-001, OUT-001, IMP-018 (name-only matching). Owner exception to "no scraping",
+recorded 2026-10-21.
+`aaru-extension/`: one Manifest V3 codebase for Chrome and Firefox (Safari later, through the Mac
+target). Content scripts on Netflix, Disney+ and Prime Video read the playing title from the
+player's title overlay and the page URL only (title, season and episode or episode name; no
+calls to the sites' internal APIs) and follow the page's main `<video>` for position and
+duration. The background worker sends `start`, `pause` (also every 5 minutes while playing),
+and `stop` (on end, on the next episode, on leaving the page) to `POST /v1/scrobble/*` with a
+`kind = browser` token that has `scrobble:write` only and works nowhere else. The server
+resolves names through `TitleResolver`; a play it cannot match is kept as an unmatched watch
+event and the extension says "Not matched". Settings on the web and the Apple app list and
+revoke browser tokens; the web connect page hands a new token to the extension. Store
+submission (Chrome Web Store, AMO) waits for the owner.
+
+**Done when:** an episode played past 80% on each site ticks that episode once, journaled as
+the browser extension; a film nobody can tell apart from a remake stays unmatched; a revoked
+token gets 401 and the extension asks to connect again.
 
 ---
 
@@ -2689,7 +2739,8 @@ Now **SCR-004** (P3): user-triggered push with a dry-run diff, one-way out.
 Two-way sync · conflict engine · recommendations engine (DISC-001's public provider rows are
 not one: nothing personalised) · a global or public activity feed ·
 public profile pages indexed by search engines · scraping any site
-without an official export (Pogdesign, IMDb pages, AniDB) · a Stremio `stream` resource or any
+without an official export (Pogdesign, IMDb pages, AniDB; the one owner exception is SCR-007's
+browser extension reading the user's own player page, 2026-10-21) · a Stremio `stream` resource or any
 stream source · hosting TMDB, Open Library or AniList artwork · a second backend · a documented
 public API with third-party clients (M14's agent access and P3's scrobble tokens are per-user
 and token-scoped, which is a different thing).
