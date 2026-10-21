@@ -60,7 +60,7 @@ func hoursValue(minutes: Int) -> String {
         : Int(hours.rounded()).formatted()
 }
 
-private struct PanelSection<Content: View>: View {
+struct PanelSection<Content: View>: View {
     let title: String
     @ViewBuilder let content: () -> Content
 
@@ -102,25 +102,33 @@ private struct TotalsGrid: View {
     }
 
     private func countDelta(_ now: Int, _ before: Int) -> StatTile.Delta? {
-        now == before ? nil : StatTile.Delta(
-            text: (now - before).formatted(.number.sign(strategy: .always())),
-            isUp: now > before
-        )
+        StatTile.Delta.count(now, before)
     }
 
-    /// Hours round, so a change that rounds to nothing says nothing.
     private func hoursDelta(_ now: Int, _ before: Int) -> StatTile.Delta? {
-        guard hoursValue(minutes: now) != hoursValue(minutes: before) else { return nil }
-        let sign = now > before ? "+" : "−"
-        return StatTile.Delta(text: sign + hoursValue(minutes: abs(now - before)), isUp: now > before)
+        StatTile.Delta.hours(now, before)
     }
 }
 
-private struct StatTile: View {
+struct StatTile: View {
     /// An absolute change against the window before: "+3", "−2". Never a percentage.
     struct Delta {
         var text: String
         var isUp: Bool
+
+        static func count(_ now: Int, _ before: Int) -> Delta? {
+            now == before ? nil : Delta(
+                text: (now - before).formatted(.number.sign(strategy: .always())),
+                isUp: now > before
+            )
+        }
+
+        /// Hours round, so a change that rounds to nothing says nothing.
+        static func hours(_ now: Int, _ before: Int) -> Delta? {
+            guard hoursValue(minutes: now) != hoursValue(minutes: before) else { return nil }
+            let sign = now > before ? "+" : "−"
+            return Delta(text: sign + hoursValue(minutes: abs(now - before)), isUp: now > before)
+        }
     }
 
     let value: String

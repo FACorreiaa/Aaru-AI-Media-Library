@@ -105,39 +105,57 @@ struct PostgresListenStore: ListenStore {
         let artist: String
         let track: String
         let album: String?
+        let releaseGroupMbid: String?
+        let albumTitleId: UUID?
         let count: Int
         let durationMs: Int64
     }
 
-    func top(userID: UserID, by grouping: ListenGrouping, period: StatsPeriod, limit: Int) async throws -> ListenTop {
+    private func totals(_ sql: any SQLDatabase, where filter: SQLQueryString) async throws -> Totals? {
+        try await sql.raw("""
+        SELECT count(*)::int AS listens, coalesce(sum(duration_ms), 0)::bigint AS duration_ms
+        FROM listens WHERE \(filter)
+        """).first(decoding: Totals.self, keyDecodingStrategy: .convertFromSnakeCase)
+    }
+
+    func top(userID: UserID, by grouping: ListenGrouping, period: StatsPeriod, limit: Int, artist: String?)
+        async throws -> ListenTop
+    {
         let sql = try sqlDatabase(database)
         let zone = period.timeZone.identifier
+        let artistKey = "split_part(track_key, chr(31), 1)"
         let inPeriod: SQLQueryString = """
         user_id = \(bind: userID.rawValue)
           AND (listened_at AT TIME ZONE \(bind: zone))::date >= \(bind: period.start.description)::date
           AND (listened_at AT TIME ZONE \(bind: zone))::date < \(bind: period.end.description)::date
+          AND (\(bind: artist.map(Listen.fold))::text IS NULL
+               OR \(unsafeRaw: artistKey) = \(bind: artist.map(Listen.fold)))
         """
-        let totals = try await sql.raw("""
-        SELECT count(*)::int AS listens, coalesce(sum(duration_ms), 0)::bigint AS duration_ms
-        FROM listens WHERE \(inPeriod)
-        """).first(decoding: Totals.self, keyDecodingStrategy: .convertFromSnakeCase)
-        // Grouped by the folded spelling; the newest listen's spelling is the one shown.
-        let artistKey = "split_part(track_key, chr(31), 1)"
+        let totals = try await totals(sql, where: inPeriod)
+        // Grouped by the folded spelling; the newest listen's spelling is the one shown, and the
+        // newest identified album gives the row its cover.
         let key = switch grouping {
         case .artist: artistKey
         case .track: "track_key"
         case .album: "\(artistKey) || chr(31) || lower(album)"
         }
         let rows = try await sql.raw("""
-        SELECT (array_agg(artist ORDER BY listened_at DESC))[1] AS artist,
-               (array_agg(track ORDER BY listened_at DESC))[1] AS track,
-               (array_agg(album ORDER BY listened_at DESC))[1] AS album,
-               count(*)::int AS count, coalesce(sum(duration_ms), 0)::bigint AS duration_ms
-        FROM listens
-        WHERE \(inPeriod) \(unsafeRaw: grouping == .album ? "AND album IS NOT NULL" : "")
-        GROUP BY \(unsafeRaw: key)
-        ORDER BY count(*) DESC, sum(duration_ms) DESC NULLS LAST, \(unsafeRaw: key)
-        LIMIT \(bind: limit)
+        SELECT ranked.*, t.id AS album_title_id FROM (
+            SELECT (array_agg(artist ORDER BY listened_at DESC))[1] AS artist,
+                   (array_agg(track ORDER BY listened_at DESC))[1] AS track,
+                   (array_agg(album ORDER BY listened_at DESC))[1] AS album,
+                   (array_agg(release_group_mbid ORDER BY listened_at DESC)
+                        FILTER (WHERE release_group_mbid IS NOT NULL))[1] AS release_group_mbid,
+                   count(*)::int AS count, coalesce(sum(duration_ms), 0)::bigint AS duration_ms,
+                   \(unsafeRaw: key) AS sort_key
+            FROM listens
+            WHERE \(inPeriod) \(unsafeRaw: grouping == .album ? "AND album IS NOT NULL" : "")
+            GROUP BY \(unsafeRaw: key)
+            ORDER BY count(*) DESC, sum(duration_ms) DESC NULLS LAST, \(unsafeRaw: key)
+            LIMIT \(bind: limit)
+        ) ranked
+        LEFT JOIN titles t ON t.musicbrainz = ranked.release_group_mbid
+        ORDER BY ranked.count DESC, ranked.duration_ms DESC, ranked.sort_key
         """).all(decoding: Ranked.self, keyDecodingStrategy: .convertFromSnakeCase)
         return ListenTop(
             period: period,
@@ -148,7 +166,8 @@ struct PostgresListenStore: ListenStore {
                     artist: row.artist,
                     track: grouping == .track ? row.track : nil,
                     album: grouping == .album ? row.album : nil,
-                    count: row.count, durationMs: row.durationMs
+                    count: row.count, durationMs: row.durationMs, releaseGroupMBID: row.releaseGroupMbid,
+                    albumTitleID: row.albumTitleId
                 )
             }
         )

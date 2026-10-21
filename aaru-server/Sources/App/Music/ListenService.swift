@@ -32,8 +32,13 @@ struct ListenService: Sendable {
         try StatsService.period(span: span, year: year, month: month, timeZone: timeZone, now: now())
     }
 
-    /// The period's top artists, tracks or albums: 10 unless asked, never more than 50.
-    func top(userID: UserID, by grouping: ListenGrouping, period: StatsPeriod, limit: Int?) async throws -> ListenTop {
-        try await stores.listens.top(userID: userID, by: grouping, period: period, limit: min(max(limit ?? 10, 1), 50))
+    /// The period's top artists, tracks or albums: 10 unless asked, never more than 50. `artist`
+    /// narrows it to one artist.
+    func top(userID: UserID, by grouping: ListenGrouping, period: StatsPeriod, limit: Int?, artist: String? = nil)
+        async throws -> ListenTop
+    {
+        try await stores.listens.top(
+            userID: userID, by: grouping, period: period, limit: min(max(limit ?? 10, 1), 50), artist: artist
+        )
     }
 }

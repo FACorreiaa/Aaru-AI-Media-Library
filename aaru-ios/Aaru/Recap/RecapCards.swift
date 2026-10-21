@@ -67,6 +67,8 @@ struct RecapCardView: View {
                     }
                 }
                 .padding(.top, 24)
+            case let .onRepeat(artist, plays, minutes, tracks):
+                OnRepeatCard(artist: artist, plays: plays, minutes: minutes, tracks: tracks)
             case let .genres(genres):
                 Eyebrow(text: "Your genres")
                 VStack(alignment: .leading, spacing: 8) {
@@ -201,7 +203,7 @@ struct RecapCardView: View {
     }
 }
 
-private struct Eyebrow: View {
+struct Eyebrow: View {
     let text: String
 
     var body: some View {
@@ -359,7 +361,7 @@ private struct Entrance: ViewModifier {
     }
 }
 
-private extension View {
+extension View {
     /// Fades and lifts in after `delay` seconds.
     func rise(_ delay: Double) -> some View {
         modifier(Entrance(delay: delay, pop: false))

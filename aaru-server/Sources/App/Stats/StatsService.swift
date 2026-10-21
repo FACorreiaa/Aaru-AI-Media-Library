@@ -31,7 +31,31 @@ struct StatsService: Sendable {
         if let previous {
             stats.prior = StatsDigest(rows.filter { $0.day < period.start }, period: previous, today: today).totals
         }
+        stats.music = try await music(userID: userID, period: period, previous: previous)
         return stats
+    }
+
+    /// MUS-008: the period's listens and minutes, the top artist and their three most played
+    /// tracks. Listening never adds to the library's totals.
+    private func music(userID: UserID, period: StatsPeriod, previous: StatsPeriod?) async throws -> ListenSummary? {
+        let listens = stores.listens
+        let artists = try await listens.top(userID: userID, by: .artist, period: period, limit: 1, artist: nil)
+        guard artists.listens > 0 else { return nil }
+        let prior = if let previous {
+            try await listens.top(userID: userID, by: .artist, period: previous, limit: 1, artist: nil)
+        } else {
+            ListenTop?.none
+        }
+        let topArtist = artists.items.first
+        let tracks = if let topArtist {
+            try await listens.top(userID: userID, by: .track, period: period, limit: 3, artist: topArtist.artist).items
+        } else {
+            [ListenTotal]()
+        }
+        return ListenSummary(
+            listens: artists.listens, durationMs: artists.durationMs, priorListens: prior?.listens,
+            priorDurationMs: prior?.durationMs, topArtist: topArtist, topArtistTracks: tracks
+        )
     }
 
     /// GAM-006c/d: a year, a month of it, all time up to today, or the last 7 or 30 days ending

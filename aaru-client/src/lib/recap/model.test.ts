@@ -85,6 +85,34 @@ describe('cards', () => {
     ])
   })
 
+  it('adds On repeat after the top five only when something was heard (MUS-008)', () => {
+    const heard = stats({
+      music: {
+        listens: 40,
+        minutes: 150,
+        topArtist: { artist: 'Massive Attack', count: 12, minutes: 60 },
+        topArtistTracks: [{ track: 'Teardrop', count: 5 }],
+      },
+    })
+    const deck = cards(heard)
+    expect(deck.map((c) => c.kind).slice(3, 6)).toEqual([
+      'top',
+      'topList',
+      'onRepeat',
+    ])
+    expect(deck.find((c) => c.kind === 'onRepeat')).toEqual({
+      kind: 'onRepeat',
+      artist: 'Massive Attack',
+      plays: 12,
+      minutes: 60,
+      tracks: ['Teardrop'],
+    })
+    const silent = stats({
+      music: { listens: 0, minutes: 0, topArtistTracks: [] },
+    })
+    expect(cards(silent).some((c) => c.kind === 'onRepeat')).toBe(false)
+  })
+
   it('has no deck for a period with no activity', () => {
     const empty = stats({
       totals: { ...stats().totals, activeDays: 0, episodesWatched: 0 },

@@ -1181,6 +1181,10 @@ paths:
           in: query
           description: 1–50, default 10.
           schema: {type: integer}
+        - name: artist
+          in: query
+          description: Only this artist's listens, compared case- and space-folded (MUS-008).
+          schema: {type: string, maxLength: 500}
       responses:
         '200':
           description: The period's top list.
@@ -3584,6 +3588,35 @@ components:
             most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+
             finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
           enum: [binger, bookworm, anime, completionist, explorer, steady]
+        music: {$ref: '#/components/schemas/StatsMusic'}
+    StatsMusic:
+      type: object
+      description: >-
+        MUS-008: the period's listening, apart from the library's numbers (listening never adds
+        to them). Absent when nothing was heard.
+      required: [listens, minutes, topArtistTracks]
+      properties:
+        listens: {type: integer}
+        minutes: {type: integer, description: Listens whose length is known, summed.}
+        priorListens: {type: integer, description: The previous equal-length window; rolling spans only.}
+        priorMinutes: {type: integer}
+        topArtist:
+          type: object
+          required: [artist, count, minutes]
+          properties:
+            artist: {type: string}
+            count: {type: integer}
+            minutes: {type: integer}
+            coverUrl: {type: string}
+        topArtistTracks:
+          type: array
+          description: The top artist's three most played tracks.
+          items:
+            type: object
+            required: [track, count]
+            properties:
+              track: {type: string}
+              count: {type: integer}
     StatsGenre:
       type: object
       required: [name, minutes, titles]
@@ -3648,6 +3681,14 @@ components:
               album: {type: string, description: Present when ranking albums.}
               count: {type: integer}
               minutes: {type: integer}
+              coverUrl:
+                type: string
+                description: The cover of the newest identified album among the row's listens.
+              albumRef:
+                $ref: '#/components/schemas/MediaRef'
+                description: >-
+                  Ranking tracks or albums: that album, by MusicBrainz id, and by Aaru's title id
+                  once it is in the catalog.
     StatsTotals:
       type: object
       required: [episodesWatched, minutesWatched, activeDays, moviesFinished, showsFinished, animeFinished,

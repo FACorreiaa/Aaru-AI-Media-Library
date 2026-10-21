@@ -11,6 +11,7 @@ import {
 import { optionalEnum, optionalInt } from '../lib/search-params'
 import { AppHeader } from '../components/AppHeader'
 import { StatsPanel } from '../components/StatsPanel'
+import { MusicInsights } from '../components/music/MusicInsights'
 import { Alert } from '../components/ui/alert'
 import {
   SegmentedControl,
@@ -72,6 +73,15 @@ function Insights() {
   const [period, setPeriod] = createSignal<InsightsPeriod | null>(null)
   const [state, setState] = createSignal<State>({ kind: 'loading' })
   let latest = 0
+
+  // MUS-008: listening for the same period, apart from the library's numbers.
+  const music = (stats: Stats) => {
+    const p = period()
+    const heard = stats.music
+    if (!p || !heard) return undefined
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    return <MusicInsights music={heard} query={statsQuery(p, tz)} />
+  }
 
   onMount(() => setNow(new Date()))
 
@@ -196,21 +206,26 @@ function Insights() {
               <Show
                 when={!isEmpty(stats())}
                 fallback={
-                  <p class="mt-10 text-muted">
-                    {period()?.span === 'all'
-                      ? 'Nothing tracked yet.'
-                      : period()?.span === 'last7'
-                        ? 'Nothing tracked in the last 7 days.'
-                        : period()?.span === 'last30'
-                          ? 'Nothing tracked in the last 30 days.'
-                          : `Nothing tracked in ${insightsLabel(period() ?? { span: 'all' })} yet.`}{' '}
-                    Tick an episode or finish a title, and it will show up here.
-                  </p>
+                  <>
+                    <p class="mt-10 text-muted">
+                      {period()?.span === 'all'
+                        ? 'Nothing tracked yet.'
+                        : period()?.span === 'last7'
+                          ? 'Nothing tracked in the last 7 days.'
+                          : period()?.span === 'last30'
+                            ? 'Nothing tracked in the last 30 days.'
+                            : `Nothing tracked in ${insightsLabel(period() ?? { span: 'all' })} yet.`}{' '}
+                      Tick an episode or finish a title, and it will show up
+                      here.
+                    </p>
+                    {music(stats())}
+                  </>
                 }
               >
                 <StatsPanel
                   stats={stats()}
                   period={period() ?? { span: 'all' }}
+                  music={music(stats())}
                 />
               </Show>
             )}

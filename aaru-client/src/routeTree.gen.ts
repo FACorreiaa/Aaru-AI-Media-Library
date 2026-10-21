@@ -19,6 +19,7 @@ import { Route as AppExportRouteImport } from './routes/app_.export'
 import { Route as AppGroupsRouteImport } from './routes/app_.groups'
 import { Route as AppInsightsRouteImport } from './routes/app_.insights'
 import { Route as AppLibraryRouteImport } from './routes/app_.library'
+import { Route as AppMusicRouteImport } from './routes/app_.music'
 import { Route as AppRecapRouteImport } from './routes/app_.recap'
 import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
@@ -89,6 +90,11 @@ const AppInsightsRoute = AppInsightsRouteImport.update({
 const AppLibraryRoute = AppLibraryRouteImport.update({
   id: '/app_/library',
   path: '/app/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppMusicRoute = AppMusicRouteImport.update({
+  id: '/app_/music',
+  path: '/app/music',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRecapRoute = AppRecapRouteImport.update({
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/app/groups': typeof AppGroupsRouteWithChildren
   '/app/insights': typeof AppInsightsRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/music': typeof AppMusicRoute
   '/app/recap': typeof AppRecapRoute
   '/app/settings': typeof AppSettingsRouteWithChildren
   '/app/week': typeof AppWeekRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/app/export': typeof AppExportRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/music': typeof AppMusicRoute
   '/app/recap': typeof AppRecapRoute
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -273,6 +281,7 @@ export interface FileRoutesById {
   '/app_/groups': typeof AppGroupsRouteWithChildren
   '/app_/insights': typeof AppInsightsRoute
   '/app_/library': typeof AppLibraryRoute
+  '/app_/music': typeof AppMusicRoute
   '/app_/recap': typeof AppRecapRoute
   '/app_/settings': typeof AppSettingsRouteWithChildren
   '/app_/week': typeof AppWeekRoute
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/app/groups'
     | '/app/insights'
     | '/app/library'
+    | '/app/music'
     | '/app/recap'
     | '/app/settings'
     | '/app/week'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/app/export'
     | '/app/insights'
     | '/app/library'
+    | '/app/music'
     | '/app/recap'
     | '/app/week'
     | '/auth/verify'
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/app_/groups'
     | '/app_/insights'
     | '/app_/library'
+    | '/app_/music'
     | '/app_/recap'
     | '/app_/settings'
     | '/app_/week'
@@ -405,6 +417,7 @@ export interface RootRouteChildren {
   AppGroupsRoute: typeof AppGroupsRouteWithChildren
   AppInsightsRoute: typeof AppInsightsRoute
   AppLibraryRoute: typeof AppLibraryRoute
+  AppMusicRoute: typeof AppMusicRoute
   AppRecapRoute: typeof AppRecapRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppWeekRoute: typeof AppWeekRoute
@@ -488,6 +501,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/library'
       fullPath: '/app/library'
       preLoaderRoute: typeof AppLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/music': {
+      id: '/app_/music'
+      path: '/app/music'
+      fullPath: '/app/music'
+      preLoaderRoute: typeof AppMusicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/recap': {
@@ -700,6 +720,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppGroupsRoute: AppGroupsRouteWithChildren,
   AppInsightsRoute: AppInsightsRoute,
   AppLibraryRoute: AppLibraryRoute,
+  AppMusicRoute: AppMusicRoute,
   AppRecapRoute: AppRecapRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppWeekRoute: AppWeekRoute,
@@ -715,13 +736,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/solid-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

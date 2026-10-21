@@ -274,6 +274,26 @@ export function totals(stats: Stats): Total[] {
   ]
 }
 
+/** MUS-008: Insights' music tiles, on their own: listening never adds to the library's. */
+export function musicTotals(music: NonNullable<Stats['music']>): Total[] {
+  return [
+    {
+      label: 'Listens',
+      value: music.listens.toLocaleString('en'),
+      delta: delta(music.listens, music.priorListens),
+    },
+    {
+      label: 'Time',
+      value: timeLabel(music.minutes),
+      delta:
+        music.priorMinutes !== undefined &&
+        timeLabel(music.minutes) !== timeLabel(music.priorMinutes)
+          ? delta(music.minutes, music.priorMinutes, timeLabel)
+          : undefined,
+    },
+  ]
+}
+
 const KIND_LABELS: Record<
   Stats['byKind'][number]['kind'],
   [MediaKind, string]

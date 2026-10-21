@@ -285,4 +285,6 @@ struct PeriodStats: Sendable, Equatable {
     /// GAM-006e: the single local day with the most time (then episodes); the earliest on a tie.
     var biggestDay: Bucket?
     var persona: Persona?
+    /// MUS-008: listening, apart from the library's numbers; nil when nothing was heard.
+    var music: ListenSummary?
 }

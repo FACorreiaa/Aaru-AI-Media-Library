@@ -40,7 +40,12 @@ function runDay(day: string, withYear: boolean): string {
   return withYear ? `${dayLabel(day)}, ${day.slice(0, 4)}` : dayLabel(day)
 }
 
-export function StatsPanel(props: { stats: Stats; period: InsightsPeriod }) {
+export function StatsPanel(props: {
+  stats: Stats
+  period: InsightsPeriod
+  /** MUS-008: the Music section, before the footnote. */
+  music?: JSX.Element
+}) {
   const s = () => props.stats
   const bars = () => chartBars(s())
   const showLabel = (i: number) =>
@@ -259,6 +264,8 @@ export function StatsPanel(props: { stats: Stats; period: InsightsPeriod }) {
           </Section>
         )}
       </Show>
+
+      {props.music}
 
       <p class="mt-12 text-sm text-muted">
         Counts what you tracked in Aaru. Imported history without dates isn’t

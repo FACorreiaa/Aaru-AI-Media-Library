@@ -2899,6 +2899,27 @@ export interface components {
         | 'completionist'
         | 'explorer'
         | 'steady'
+      music?: components['schemas']['StatsMusic']
+    }
+    /** @description MUS-008: the period's listening, apart from the library's numbers (listening never adds to them). Absent when nothing was heard. */
+    StatsMusic: {
+      listens: number
+      /** @description Listens whose length is known */
+      minutes: number
+      /** @description The previous equal-length window; rolling spans only. */
+      priorListens?: number
+      priorMinutes?: number
+      topArtist?: {
+        artist: string
+        count: number
+        minutes: number
+        coverUrl?: string
+      }
+      /** @description The top artist's three most played tracks. */
+      topArtistTracks: {
+        track: string
+        count: number
+      }[]
     }
     StatsGenre: {
       name: string
@@ -2957,6 +2978,10 @@ export interface components {
         album?: string
         count: number
         minutes: number
+        /** @description The cover of the newest identified album among the row's listens. */
+        coverUrl?: string
+        /** @description Ranking tracks or albums: that album, by MusicBrainz id, and by Aaru's title id once it is in the catalog. */
+        albumRef?: components['schemas']['MediaRef']
       }[]
     }
     StatsTotals: {
@@ -4815,6 +4840,8 @@ export interface operations {
         tz?: string
         /** @description 1–50, default 10. */
         limit?: number
+        /** @description Only this artist's listens, compared case- and space-folded (MUS-008). */
+        artist?: string
       }
       header?: never
       path?: never

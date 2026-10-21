@@ -68,6 +68,8 @@ enum RecapCard {
     case biggestDay(day: String, episodes: Int, minutes: Int)
     case top(StatsTitle)
     case topList([StatsTitle])
+    /// MUS-008: the period's top artist and its three most played tracks.
+    case onRepeat(artist: String, plays: Int, minutes: Int, tracks: [String])
     case genres([StatsGenre])
     case kinds([(kind: MediaKind, share: Double)])
     case finished([(kind: MediaKind, count: Int)])
@@ -124,6 +126,13 @@ enum RecapDeck {
         }
         if stats.topTitles.count > 1 {
             deck.append(.topList(stats.topTitles))
+        }
+        // MUS-008: only when something was heard.
+        if let music = stats.music, let artist = music.topArtist {
+            deck.append(.onRepeat(
+                artist: artist.artist, plays: artist.count, minutes: artist.minutes,
+                tracks: music.topArtistTracks.map(\.track)
+            ))
         }
         if !stats.topGenres.isEmpty {
             deck.append(.genres(stats.topGenres))

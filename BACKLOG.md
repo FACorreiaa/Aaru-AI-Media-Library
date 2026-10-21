@@ -397,6 +397,7 @@ account or a stranger that has not happened yet.
 | MUS-005 | Built, unverified | ListenBrainzRouteTests | Not deployed; not tried with a real scrobbler |
 | MUS-006 | Built, unverified | RecordingMatchTests, ListenResolverTests | Not deployed; not run against MusicBrainz itself |
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
+| MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |

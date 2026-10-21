@@ -225,6 +225,37 @@ export function RecapCardView(props: {
           </>
         )}
       </Match>
+      <Match when={props.card.kind === 'onRepeat' && props.card}>
+        {(card) => (
+          <>
+            <Eyebrow>On repeat</Eyebrow>
+            <Big>{card().artist}</Big>
+            <p class="recap-rise mt-2 text-xl" style={{ '--delay': '200ms' }}>
+              {card().plays.toLocaleString('en')} play
+              {card().plays === 1 ? '' : 's'}
+              <Show when={card().minutes > 0}>
+                {' '}
+                · {hoursLabel(card().minutes)}
+              </Show>
+            </p>
+            <ol class="mt-6 space-y-2">
+              <For each={card().tracks}>
+                {(track, i) => (
+                  <li
+                    class="recap-rise flex items-baseline gap-4 text-2xl"
+                    style={{ '--delay': `${360 + i() * 160}ms` }}
+                  >
+                    <span class="w-6 font-display tabular-nums opacity-70">
+                      {i() + 1}
+                    </span>
+                    <span class="min-w-0 truncate font-display">{track}</span>
+                  </li>
+                )}
+              </For>
+            </ol>
+          </>
+        )}
+      </Match>
       <Match when={props.card.kind === 'genres' && props.card}>
         {(card) => (
           <>

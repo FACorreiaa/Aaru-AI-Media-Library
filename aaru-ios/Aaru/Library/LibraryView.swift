@@ -17,6 +17,7 @@ struct LibraryView: View {
     @AppStorage("library.layout") private var layout = Layout.grid
     @State private var showsSearch = false
     @State private var showsInsights = false
+    @State private var showsMusic = false
     @State private var recap: RecapPeriod?
     /// The row whose "Add to list…" was chosen.
     @State private var listTarget: LibraryRow?
@@ -56,7 +57,8 @@ struct LibraryView: View {
                         )
                     }
                 }
-                .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api) }
+                .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api, library: library) }
+                .navigationDestination(isPresented: $showsMusic) { MusicView(api: api, library: library) }
                 .recapStory($recap, api: api)
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: nowProblem) { nowProblem = nil }
@@ -182,6 +184,7 @@ struct LibraryView: View {
                 }
                 Divider()
                 Button("Insights", systemImage: "chart.bar") { showsInsights = true }
+                Button("Music", systemImage: "music.note") { showsMusic = true }
                 Menu("Recaps", systemImage: "sparkles") {
                     ForEach(RecapPeriod.shortcuts(now: .now, calendar: .aaru)) { period in
                         Button(period.label) { recap = period }
