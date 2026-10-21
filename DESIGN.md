@@ -139,6 +139,16 @@ Classic filters are how a shelf is edited, not how you enter the app.
 Visual cue: Letterboxd lists + Ryot filters, presented as pages of reeds rather than a
 spreadsheet.
 
+**Now (APP-017, built 2026-10-21).** Library opens with what you are in the middle of, the
+"Now" of §1 made real before The Field: **Watching** (shows, anime, films) and **Reading**
+(books), newest activity first, as big cards, not posters in a grid. A video card is the
+backdrop with the title on it; a book card is its cover. Each shows how far along it is ("4 of
+10 episodes" with a bar, "35%", "Page 120") and the one next step: **Watched S1 · E5** ticks the
+next aired episode, **Update page** moves a book, **Finished** / **Mark watched** closes it. A
+kind chip narrows Now with the shelf; another status hides it. Cards scroll sideways on phones
+and sit in a grid wider. A **Listening** group joins when albums land (MUS-001). Book progress
+bars appear only for a percent until books carry a page count.
+
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
 library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
 reads "On this list" once it is there. Every library row also offers "Add to list". A list row

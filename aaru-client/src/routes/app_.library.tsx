@@ -19,6 +19,7 @@ import {
   SegmentedControlItem,
 } from '../components/ui/segmented-control'
 import { getLibrary } from '../lib/library/server'
+import { NowSection } from '../components/library/NowSection'
 import {
   KINDS,
   shelf,
@@ -136,6 +137,12 @@ function Library() {
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
           Library
         </h1>
+
+        <NowSection
+          entries={entries()}
+          kind={kind()}
+          onEntry={(entry) => setEntries((list) => upsert(list, entry))}
+        />
 
         <div class="mt-6 flex flex-wrap items-center gap-2">
           <SegmentedControl

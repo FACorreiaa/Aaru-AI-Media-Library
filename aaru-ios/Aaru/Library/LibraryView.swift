@@ -20,6 +20,8 @@ struct LibraryView: View {
     @State private var recap: RecapPeriod?
     /// The row whose "Add to list…" was chosen.
     @State private var listTarget: LibraryRow?
+    /// A failed "Now" write (APP-017).
+    @State private var nowProblem: String?
 
     enum Layout: String {
         case grid, list
@@ -56,6 +58,9 @@ struct LibraryView: View {
                 }
                 .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api) }
                 .recapStory($recap, api: api)
+                .safeAreaInset(edge: .bottom) {
+                    ProblemBanner(message: nowProblem) { nowProblem = nil }
+                }
                 .background(Color(.paper))
         }
     }
@@ -82,6 +87,7 @@ struct LibraryView: View {
             }
         } else if layout == .grid {
             ScrollView {
+                now
                 LazyVGrid(
                     columns: [GridItem(.adaptive(minimum: 108, maximum: 160), spacing: 16, alignment: .top)],
                     spacing: 20
@@ -96,13 +102,26 @@ struct LibraryView: View {
                 .padding(.vertical, 12)
             }
         } else {
-            List(rows) { row in
-                NavigationLink(value: row.id) { LibraryListRow(row: row) }
+            List {
+                now
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
-                    .contextMenu { addToListButton(row) }
+                ForEach(rows) { row in
+                    NavigationLink(value: row.id) { LibraryListRow(row: row) }
+                        .listRowBackground(Color.clear)
+                        .contextMenu { addToListButton(row) }
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+        }
+    }
+
+    /// Hidden while a status other than in progress is chosen: Now is the in-progress shelf.
+    @ViewBuilder private var now: some View {
+        if filter.status == nil || filter.status == .inProgress {
+            NowSection(library: library, api: api, kind: filter.kind) { nowProblem = $0 }
         }
     }
 
