@@ -36,6 +36,17 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-21
 
+- **Seasons on Discover (DISC-002) and music as a fifth kind (MUS-001…003) are built before the
+  P2 gate**, by the owner's call, with 0 strangers (flagged; the owner chose). Discover gets a
+  Seasons view: one season at a time, its name as the headline, kinds Anime · New shows ·
+  Returning · Movies. A season is a calendar quarter for every kind (winter Jan–Mar … fall
+  Oct–Dec): anime by broadcast season, shows by premiere or by an episode airing, films by
+  first release. Music follows in order: albums as a tracked kind (MusicBrainz + Cover Art
+  Archive), New albums / Coming soon rows (ListenBrainz fresh releases), then concerts
+  (Ticketmaster Discovery) near a saved city or a one-off approximate location, and for artists
+  in the user's library. Every surface ships on web and on iPhone/Mac, in Aaru's design system
+  on the web and Apple's HIG on Apple; the owner picked the look (season as an object, square
+  album covers, a date-led concert list, skeletons that do not shimmer).
 - **Netflix viewing history and a browser-extension scrobbler, both now (owner, 2026-10-21).**
   Netflix's per-profile *Viewing activity* download is an official export: imported like any file
   (IMP-018). Netflix, Disney+ and Prime Video have no API, so live plays in a browser come through
@@ -350,6 +361,7 @@ account or a stranger that has not happened yet.
 | APP-008 | Partial | sidebarAdaptable + ⌘F in RootView/LibraryView | No ⌘N add shortcut |
 | APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
+| DISC-002 | Built | #84; DiscoverSeasonTests, season model tests | Not deployed; not run on a device |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -1236,6 +1248,22 @@ full empty state. Not personalised, ever (decision 2026-10-20).
 **Done when:** a brand-new account opens Home on iPhone, Mac and web and sees the rows, adds a
 title from a card in one tap, and that card turns into a link to the item; a provider being
 down drops only its row.
+
+### DISC-002 · Seasons on Discover · M · pulled forward 2026-10-21
+**Needs:** DISC-001.
+`GET /v1/discover/season?kind=&season=&year=&page=`: one page of one season, the same for
+everyone. Anime from AniList (`season`/`seasonYear`, popularity, 50 a page); new shows, returning
+shows and films from TMDB `discover/tv` (`first_air_date`, or `air_date` with an earlier
+premiere) and `discover/movie` (`primary_release_date`), popularity first, a vote floor only on
+seasons that have ended. Years 1970 to next year, pages 1–20, else 422. A bounded in-memory page
+cache (200 pages; 6 h for the current and coming seasons, 7 days for past ones; stale served on
+failure). A provider down with nothing cached reads `unavailable`, not an empty season. Web:
+`/app/discover?view=seasons` (`SeasonBrowser`); iPhone and Mac: the Discover tab's Today |
+Seasons control (`SeasonBrowser.swift`). The Today row "Fall 2026 anime" links to it.
+
+**Done when:** on iPhone, Mac and web, flipping Fall 2026 → Winter 2027 → Summer 2025 shows each
+kind's titles, a title adds in one tap and turns into a link to the item, and AniList being down
+says so on the Anime tab only.
 
 ### APP-010 · Week grid · L
 **Needs:** APP-001, CAL-001.

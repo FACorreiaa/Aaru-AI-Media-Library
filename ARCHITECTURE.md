@@ -383,6 +383,16 @@ matters). After the cache read, one `LibraryStore.itemIDs` query (type + tmdb/an
 Library id) sets `libraryItemId` on hits the caller already has. Nothing is personalised and
 nothing is stored.
 
+**Seasons (DISC-002).** `GET /v1/discover/season` lists one season of one kind a page at a time.
+`SeasonKey` (`Catalog/DiscoverSeasons.swift`) is a calendar quarter in UTC, the same for every
+kind. Adapters conforming to `SeasonBrowsing` serve it: AniList `Page(page:, perPage: 50)` by
+`season`/`seasonYear` with GraphQL variables; TMDB `discover/tv` by `first_air_date` (new) or
+`air_date` with `first_air_date` before the season (returning), and `discover/movie` by
+`primary_release_date`. A `SeasonCache` actor holds pages by kind, season and page (LRU, 200
+entries; 6 h, or 7 days for a season that has ended), coalesces fetches and serves stale on
+failure; nothing cached and the provider down returns `unavailable: true`. Marking against the
+library is the same `DiscoverService.mark` the rows use.
+
 ### MediaRef
 
 ```swift

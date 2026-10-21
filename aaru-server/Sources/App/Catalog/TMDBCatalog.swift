@@ -183,22 +183,65 @@ extension TMDBCatalog: DiscoverListing {
         default: throw ProviderError(provider: "tmdb", kind: .notFound)
         }
         let page = try await get(SearchPage.self, path, query)
-        return page.results.compactMap { entry -> CatalogHit? in
+        return Self.rowHits(page, type: type)
+    }
+
+    /// A page as row cards. Anime rows come from AniList, the anime catalog, so TV rows drop
+    /// anime, and news, soap and talk shows.
+    private static func rowHits(_ page: SearchPage, type: MediaType) -> [CatalogHit] {
+        page.results.compactMap { entry -> CatalogHit? in
             guard let hit = entry.hit(type: type) else { return nil }
             guard type == .show else { return hit }
-            // Anime rows come from AniList, the anime catalog.
             let genres = Set(entry.genreIds ?? [])
             return hit.isAnime || !genres.isDisjoint(with: Self.offRowGenres) ? nil : hit
         }
     }
 
     private static func day(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        SeasonKey.day(date)
+    }
+}
+
+// MARK: - Seasons (DISC-002)
+
+extension TMDBCatalog: SeasonBrowsing {
+    /// TMDB serves at most this many discover pages.
+    static let maxDiscoverPage = 500
+
+    var seasonKinds: Set<SeasonKind> {
+        [.showsNew, .showsReturning, .movies]
+    }
+
+    func season(_ key: SeasonKey, kind: SeasonKind, page: Int, now: Date) async throws -> SeasonPage {
+        let (first, last) = key.days
+        var query = ["include_adult": "false", "sort_by": "popularity.desc", "page": String(page)]
+        let type: MediaType
+        let path: String
+        switch kind {
+        case .showsNew:
+            (type, path) = (.show, "discover/tv")
+            query["first_air_date.gte"] = first
+            query["first_air_date.lte"] = last
+        case .showsReturning:
+            (type, path) = (.show, "discover/tv")
+            query["air_date.gte"] = first
+            query["air_date.lte"] = last
+            query["first_air_date.lte"] = Self.day(key.range.start.addingTimeInterval(-24 * 60 * 60))
+        case .movies:
+            (type, path) = (.movie, "discover/movie")
+            query["primary_release_date.gte"] = first
+            query["primary_release_date.lte"] = last
+        case .anime:
+            throw ProviderError(provider: "tmdb", kind: .notFound)
+        }
+        // An ended season has votes; without a floor its popular end fills with unrated titles.
+        // A current or coming season has none yet, so it gets no floor.
+        if key.range.end <= now {
+            query["vote_count.gte"] = "10"
+        }
+        let body = try await get(SearchPage.self, path, query)
+        let lastPage = min(body.totalPages ?? page, Self.maxDiscoverPage)
+        return SeasonPage(hits: Self.rowHits(body, type: type), hasMore: page < lastPage, total: body.totalResults)
     }
 }
 
@@ -206,6 +249,9 @@ extension TMDBCatalog: DiscoverListing {
 
 private struct SearchPage: Decodable {
     let results: [Detail]
+    /// Discover pages only.
+    var totalPages: Int?
+    var totalResults: Int?
 }
 
 private struct ExternalIDsBody: Decodable {

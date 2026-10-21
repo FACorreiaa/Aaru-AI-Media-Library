@@ -99,15 +99,15 @@ struct DiscoverTests {
     @Test(
         "The anime season follows the calendar quarter in UTC",
         arguments: [
-            ("2026-01-01T00:00:00Z", AnimeSeason.winter), ("2026-03-31T23:59:59Z", .winter),
+            ("2026-01-01T00:00:00Z", SeasonOfYear.winter), ("2026-03-31T23:59:59Z", .winter),
             ("2026-04-01T00:00:00Z", .spring), ("2026-07-01T00:00:00Z", .summer),
             ("2026-09-30T23:59:59Z", .summer), ("2026-10-01T00:00:00Z", .fall), ("2026-12-31T23:59:59Z", .fall),
         ]
     )
-    func season(_ instant: String, _ expected: AnimeSeason) throws {
+    func season(_ instant: String, _ expected: SeasonOfYear) throws {
         let date = try #require(ISO8601DateFormatter().date(from: instant))
-        #expect(AnimeSeason.current(date)?.season == expected)
-        #expect(AnimeSeason.current(date)?.year == 2026)
+        #expect(SeasonOfYear.current(date)?.season == expected)
+        #expect(SeasonOfYear.current(date)?.year == 2026)
     }
 
     @Test("The season row is titled for the season")
