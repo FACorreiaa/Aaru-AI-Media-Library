@@ -1,8 +1,9 @@
-import { For, Show, createResource, createSignal } from 'solid-js'
+import { For, Show, createMemo, createResource, createSignal } from 'solid-js'
 import { AGENT_KINDS, accessLabel, kindLabel } from '../lib/agents/model'
 import type { AgentKind } from '../lib/agents/model'
 import { lastUsedLabel } from '../lib/stremio/model'
 import { cn } from '../lib/cn'
+import { AlertDialog } from './ui/alert-dialog'
 import { Button } from './ui/button'
 import { cardClass } from './ui/card'
 import {
@@ -28,7 +29,10 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
   const [busy, setBusy] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
   const [fresh, setFresh] = createSignal<AgentConnection | null>(null)
-  const [confirming, setConfirming] = createSignal<string | null>(null)
+  const [pending, setPending] = createSignal<AgentToken | null>(null)
+  const [revoking, setRevoking] = createSignal(false)
+  // The last token asked about, so the dialog keeps its title while it fades out.
+  const asked = createMemo<AgentToken | null>((last) => pending() ?? last, null)
   const [preview] = createResource(kind, (k) => getSetup({ data: { kind: k } }))
 
   const fail = (error: unknown, fallback: string) =>
@@ -59,13 +63,16 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
 
   async function revoke(token: AgentToken) {
     setProblem(null)
+    setRevoking(true)
     try {
       await revokeConnection({ data: { id: token.id } })
       if (fresh()?.token.id === token.id) setFresh(null)
-      setConfirming(null)
       setConnections(connections().filter((c) => c.id !== token.id))
     } catch (error) {
       fail(error, 'That connection was not revoked.')
+    } finally {
+      setRevoking(false)
+      setPending(null)
     }
   }
 
@@ -206,37 +213,31 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                     {lastUsedLabel(token)}
                   </span>
                 </span>
-                <Show
-                  when={confirming() === token.id}
-                  fallback={
-                    <Button
-                      variant="danger-outline"
-                      size="sm"
-                      class="shrink-0"
-                      onClick={() => setConfirming(token.id)}
-                    >
-                      Revoke
-                    </Button>
-                  }
+                <Button
+                  variant="danger-outline"
+                  size="sm"
+                  class="shrink-0"
+                  onClick={() => setPending(token)}
                 >
-                  <span class="flex shrink-0 gap-2">
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => void revoke(token)}
-                    >
-                      Revoke now
-                    </Button>
-                    <Button size="sm" onClick={() => setConfirming(null)}>
-                      Keep
-                    </Button>
-                  </span>
-                </Show>
+                  Revoke
+                </Button>
               </li>
             )}
           </For>
         </ul>
       </Show>
+      <AlertDialog
+        open={pending() !== null}
+        title={`Revoke ${asked()?.name ?? ''}?`}
+        description="Anything using it stops working at once."
+        confirmLabel="Revoke"
+        busy={revoking()}
+        onConfirm={() => {
+          const token = pending()
+          if (token) void revoke(token)
+        }}
+        onCancel={() => setPending(null)}
+      />
     </section>
   )
 }
