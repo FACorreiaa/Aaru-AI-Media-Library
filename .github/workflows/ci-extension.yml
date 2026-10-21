@@ -1,0 +1,41 @@
+# CI for aaru-extension, the browser extension (SCR-007). Store submission is by hand.
+name: Extension CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "aaru-extension/**"
+      - ".github/workflows/ci-extension.yml"
+  pull_request:
+    paths:
+      - "aaru-extension/**"
+      - ".github/workflows/ci-extension.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-extension-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  extension:
+    name: check, lint, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aaru-extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: aaru-extension/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Firefox add-on lint (what AMO checks)
+        run: npx web-ext lint -s .output/firefox-mv3 --self-hosted=false

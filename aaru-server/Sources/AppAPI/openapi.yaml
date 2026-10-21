@@ -858,9 +858,10 @@ paths:
         - name: for
           in: query
           description: >-
-            Which surface's tokens: the Stremio addon or MCP clients. Defaults to `stremio`, so
-            Apple builds that only know the Stremio kind never see an MCP token.
-          schema: {type: string, enum: [stremio, mcp], default: stremio}
+            Which surface's tokens: the Stremio addon, MCP clients, or the browser extension
+            (`scrobble`). Defaults to `stremio`, so Apple builds that only know the Stremio kind
+            never see another kind.
+          schema: {type: string, enum: [stremio, mcp, scrobble], default: stremio}
       responses:
         '200':
           description: Live tokens.
@@ -1971,8 +1972,8 @@ components:
       type: string
       description: >-
         Which outside caller a token is for. The MCP kinds differ only in the setup shown; they
-        reach the same tools.
-      enum: [stremio, claude_code, codex, hermes, gemini, other, claude]
+        reach the same tools. `browser` is Aaru's browser extension: it can only scrobble.
+      enum: [stremio, claude_code, codex, hermes, gemini, other, claude, browser]
     AgentMCPKind:
       type: string
       enum: [claude, claude_code, codex, hermes, gemini, other]

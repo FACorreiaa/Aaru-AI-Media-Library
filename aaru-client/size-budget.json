@@ -1,12 +1,12 @@
 {
-  "totalJs": 222862,
+  "totalJs": 232414,
   "css": 12455,
   "shared": 72695,
   "routes": {
     "/": 81648,
     "/about": 76061,
     "/app": 92235,
-    "/app_/discover": 86366,
+    "/app_/discover": 90432,
     "/app_/groups": 85948,
     "/app_/groups/": 74759,
     "/app_/groups/$groupId": 76711,
@@ -23,6 +23,7 @@
     "/app_/title/$id": 85729,
     "/app_/week": 89650,
     "/auth/verify": 73874,
+    "/connect/extension": 74780,
     "/oauth/consent": 74707,
     "/privacy": 78116,
     "/sign-in": 77203

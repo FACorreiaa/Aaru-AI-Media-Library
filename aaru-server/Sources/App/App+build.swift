@@ -255,6 +255,7 @@ func buildRouter(stores: Stores, services: Services) throws -> Router<AppRequest
         tokens: services.agentTokens
     ).register(on: router)
     MCPRoutes(tools: AgentTools(services: services, stores: stores), tokens: services.agentTokens).register(on: router)
+    ScrobbleRoutes(scrobble: services.scrobble, tokens: services.agentTokens).register(on: router)
     OAuthRoutes(service: services.oauth).register(on: router)
     return router
 }

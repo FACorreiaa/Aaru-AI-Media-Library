@@ -410,13 +410,13 @@ account or a stranger that has not happened yet.
 | LAND-002 | Open | no waitlist code | |
 | LAND-003 | Done | #27; docs/privacy.md, /privacy | Names all six third parties |
 | WEB-001 | Done | #9 da50ed5 + later; ARCHITECTURE.md lists it | |
-| SCR-001 | Partial | #36; ScrobbleService.swift, ScrobbleTests | No `/v1/scrobble/*` routes; service only |
+| SCR-001 | Built | #36; ScrobbleService.swift, ScrobbleRoutes.swift, ScrobbleTests, ScrobbleRouteTests | `/v1/scrobble/*` for scrobble tokens only (SCR-007); no live player yet |
 | SCR-002 | Open | no Plex/Jellyfin code | |
 | SCR-003 | Done | #36 e8bdebb; Sources/App/Stremio; deployed | Verified in Stremio Web on local server; playback events not tried |
 | SCR-004 | Open | none | |
 | SCR-005 | Open | none | |
 | SCR-006 | Open | none | |
-| SCR-007 | Open | none | Owner exception to "no scraping" 2026-10-21 |
+| SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
 | SOC-001 | Open | none on main (PR #44 open) | |
 | SOC-002 | Open | none on main (PR #44 open) | |
 | SOC-003 | Open | none | |
@@ -1900,6 +1900,16 @@ duration, or a second `stop` within 10 minutes writes nothing. A title not in th
 added (in progress / finished) and then ticked: two journal rows, not one. Unknown ids are kept
 as unmatched rows with no library write. The 403 condition lives in the Stremio adapter.
 
+**Progress 2026-10-21 (HTTP):** `POST /v1/scrobble/start|pause|stop` (`Scrobble/ScrobbleRoutes.swift`),
+hand-written like MCP: only a scrobble token (`kind = browser`, `aaru_scr_…`, `scrobble:write`
+only) gets in; a session, MCP token or Stremio link is 401. Trakt's body (`movie`, or `show` +
+`episode` with `season`/`number`/`title`; `progress` in percent; `ids` as numbers or strings) plus
+`source` (`netflix`, `disney_plus`, `prime_video`), `ref` (the player's id for one film or
+episode) and optional `durationMs`. No ids → matched by title + year, else by name alone
+(2026-10-21 decision); no number → episode by name. The answer names the outcome (`recorded`,
+`watched`, `stopped`, `unmatched`) and the matched title. A title not in the library is added and
+ticked: two journal rows.
+
 ### SCR-002 · Plex and Jellyfin webhooks · M
 **Needs:** SCR-001.
 `POST /v1/scrobble/hooks/plex/{token}` (multipart JSON; `media.play`, `media.pause`,
@@ -1995,6 +2005,13 @@ resolves names through `TitleResolver`; a play it cannot match is kept as an unm
 event and the extension says "Not matched". Settings on the web and the Apple app list and
 revoke browser tokens; the web connect page hands a new token to the extension. Store
 submission (Chrome Web Store, AMO) waits for the owner.
+
+**Progress 2026-10-21:** built. `aaru-extension/` (WXT 0.21, Chrome + Firefox MV3, `web-ext lint`
+clean): content scripts report what they see on a port, `Session` turns it into scrobbles, the
+background sends them (stops retried for a day) and sets the badge; the popup shows now, recent
+and the connection in Aaru's tokens. Connections on web, iPhone and Mac list and revoke browser
+tokens; `/connect/extension` hands over the token. Readers were written from the players' known
+markup with fixtures; **check them on the live sites** before a store submission.
 
 **Done when:** an episode played past 80% on each site ticks that episode once, journaled as
 the browser extension; a film nobody can tell apart from a remake stays unmatched; a revoked

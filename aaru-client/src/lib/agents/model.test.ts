@@ -39,5 +39,8 @@ describe('agents model', () => {
     expect(
       accessLabel(token({ scopes: ['library:read', 'imports:write'] })),
     ).toBe('Read only · can send imports')
+    expect(
+      accessLabel(token({ kind: 'browser', scopes: ['scrobble:write'] })),
+    ).toBe('Marks what you watch')
   })
 })
