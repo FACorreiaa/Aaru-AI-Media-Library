@@ -322,6 +322,12 @@ response adds `span` (`month` | `year` | `all`), `byKind` (`movie` | `show` | `a
 episodes, minutes, finished) and `ratings.distribution`: ten bins, index `ceil(rating) - 1`,
 so a 7.5 counts as an 8. No new query and no table.
 
+The last 7 and 30 days (GAM-006d) are `span=last7|last30`: the local days ending today in `tz`,
+one bucket per day, `from`/`until` inclusive. The service reads the window and the equal-length
+window before it in one `activity` call, splits the rows at the window's first day, and digests
+each; the earlier one returns only as `prior` totals, for the clients' deltas. Same rows, same
+rule on imported ticks, no new query and no table.
+
 ### Calendar and Up Next
 
 Both are derived reads over the user's library. Neither has its own table.

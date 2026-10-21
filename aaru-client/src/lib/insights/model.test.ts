@@ -9,6 +9,8 @@ import {
   shift,
   statsQuery,
   toSearch,
+  totals,
+  windowLabel,
   withSpan,
 } from './model'
 import type { Stats } from '../recap/model'
@@ -167,5 +169,100 @@ describe('insights figures', () => {
     expect(bars).toHaveLength(10)
     expect(bars[7]).toEqual({ label: '8', count: 4, height: 1 })
     expect(bars[0].height).toBe(0)
+  })
+})
+
+describe('last 7 and 30 days (GAM-006d)', () => {
+  const week = (overrides: Partial<Stats> = {}) =>
+    stats({
+      span: 'last7',
+      from: '2026-10-14',
+      until: '2026-10-20',
+      // Wed 14 Oct … Tue 20 Oct: a film night on Friday, two episodes on Monday.
+      buckets: [0, 0, 120, 0, 0, 90, 0].map((minutes, i) => ({
+        start: `2026-10-${14 + i}`,
+        episodes: i === 5 ? 2 : 0,
+        minutes,
+        finished: 0,
+      })),
+      busiest: { start: '2026-10-16', episodes: 0, minutes: 120, finished: 1 },
+      ...overrides,
+    })
+
+  it('reads the URL, never steps, and has no Recap', () => {
+    expect(periodFromSearch({ span: 'last7' }, now)).toEqual({ span: 'last7' })
+    expect(periodFromSearch({ span: 'last30', year: 2025 }, now)).toEqual({
+      span: 'last30',
+    })
+    expect(toSearch({ span: 'last30' })).toEqual({ span: 'last30' })
+    expect(shift({ span: 'last7' }, -1, now)).toBeNull()
+    expect(recapPeriod({ span: 'last7' })).toBeNull()
+    expect(insightsLabel({ span: 'last30' })).toBe('Last 30 days')
+    expect(statsQuery({ span: 'last7' }, 'UTC')).toEqual({
+      span: 'last7',
+      tz: 'UTC',
+    })
+  })
+
+  it('switches between rolling and calendar spans', () => {
+    expect(withSpan({ span: 'last7' }, 'month', now)).toEqual({
+      span: 'month',
+      year: 2026,
+      month: 10,
+    })
+    expect(withSpan({ span: 'last7' }, 'year', now)).toEqual({
+      span: 'year',
+      year: 2026,
+    })
+    expect(withSpan({ span: 'year', year: 2024 }, 'last30', now)).toEqual({
+      span: 'last30',
+    })
+  })
+
+  it('draws time per day with weekday initials and the busiest day marked', () => {
+    const chart = chartBars(week())
+    expect(chart.map((b) => b.label)).toEqual([
+      'W',
+      'T',
+      'F',
+      'S',
+      'S',
+      'M',
+      'T',
+    ])
+    expect(chart.map((b) => b.height)).toEqual([0, 0, 1, 0, 0, 0.75, 0])
+    expect(chart.map((b) => b.busiest)).toEqual([
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+    ])
+    expect(chartBars(week({ span: 'last30' }))[0].label).toBe('14')
+    expect(windowLabel(week())).toBe('Oct 14 – Oct 20')
+    expect(windowLabel(stats())).toBeNull()
+  })
+
+  it('shows absolute deltas against the window before, never at zero', () => {
+    const t = stats().totals
+    const tiles = totals(
+      week({
+        prior: {
+          ...t,
+          episodesWatched: 27,
+          minutesWatched: 1350,
+          activeDays: 11,
+        },
+      }),
+    )
+    expect(tiles.map((tile) => tile.delta)).toEqual([
+      { text: '+3', up: true },
+      undefined,
+      undefined,
+      { text: '−2', up: false },
+    ])
+    expect(totals(stats()).every((tile) => tile.delta === undefined)).toBe(true)
   })
 })

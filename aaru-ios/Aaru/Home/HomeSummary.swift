@@ -1,4 +1,5 @@
 import AaruAPI
+import Charts
 import SwiftUI
 
 extension LibraryCounts {
@@ -16,14 +17,22 @@ extension LibraryCounts {
     }
 }
 
-/// This month at a glance: episodes · hours · finished · active days. Opens Insights.
-struct StatsStrip: View {
-    let totals: Components.Schemas.StatsTotals
+/// GAM-006d: the last 7 days at a glance, a bar per day by time, then episodes · hours ·
+/// finished · active days. Shown at zero too. Opens Insights on the same window.
+struct WeekStrip: View {
+    let stats: Stats
+
+    private var totals: Components.Schemas.StatsTotals {
+        stats.totals
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("This month")
+            HStack(spacing: 10) {
+                WeekBars(buckets: stats.buckets)
+                    .frame(width: 64, height: 24)
+                    .accessibilityHidden(true)
+                Text("Last 7 days")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -57,6 +66,26 @@ struct StatsStrip: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Seven bars, one per day, scaled to the busiest by time. An empty day keeps a thin track.
+private struct WeekBars: View {
+    let buckets: [Components.Schemas.StatsBucket]
+
+    var body: some View {
+        let tallest = Double(max(1, buckets.map(\.minutes).max() ?? 0))
+        Chart(buckets, id: \.start) { bucket in
+            BarMark(
+                x: .value("Day", bucket.start),
+                y: .value("Time", bucket.minutes == 0 ? 0.06 : max(0.15, Double(bucket.minutes) / tallest))
+            )
+            .foregroundStyle(bucket.minutes == 0 ? Color(.muted).opacity(0.3) : Color(.accent))
+            .cornerRadius(2)
+        }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartYScale(domain: 0 ... 1)
     }
 }
 

@@ -51,10 +51,19 @@ struct LocalDay: Sendable, Hashable, Comparable, CustomStringConvertible {
     }
 }
 
-/// One calendar year, one month of it, or all time, in one time zone.
+/// One calendar year, one month of it, all time, or the last 7 or 30 days, in one time zone.
 struct StatsPeriod: Sendable, Equatable {
     enum Span: String, Sendable {
-        case month, year, all
+        case month, year, all, last7, last30
+
+        /// GAM-006d: the length of a rolling span in days; nil for calendar spans.
+        var days: Int? {
+            switch self {
+            case .last7: 7
+            case .last30: 30
+            case .month, .year, .all: nil
+            }
+        }
     }
 
     /// The earliest day any period reaches (`StatsService.years`' lower bound).
@@ -94,14 +103,41 @@ struct StatsPeriod: Sendable, Equatable {
         firstYear = today.year
     }
 
-    /// Months of the year, days of the month, or years from `firstYear`, in order.
+    /// GAM-006d: the `days` days ending with `today`, one bucket per day. `year` is today's.
+    init(lastDays span: Span, today: LocalDay, timeZone: TimeZone) {
+        let days = span.days ?? 7
+        self.init(span: span, from: today.adding(days: 1 - days), until: today.adding(days: 1), timeZone: timeZone)
+    }
+
+    private init(span: Span, from: LocalDay, until: LocalDay, timeZone: TimeZone) {
+        self.span = span
+        year = until.adding(days: -1).year
+        month = nil
+        self.timeZone = timeZone
+        start = from
+        end = until
+        firstYear = year
+    }
+
+    /// A rolling span's equal-length window just before it; nil for calendar spans.
+    var previous: StatsPeriod? {
+        guard let days = span.days else { return nil }
+        return StatsPeriod(span: span, from: start.adding(days: -days), until: start, timeZone: timeZone)
+    }
+
+    /// The period's last day, inclusive.
+    var lastDay: LocalDay {
+        end.adding(days: -1)
+    }
+
+    /// Months of the year, days of the month or rolling span, or years from `firstYear`, in order.
     var bucketStarts: [LocalDay] {
         switch span {
         case .all:
             return (min(firstYear, year) ... year).map { LocalDay(year: $0, month: 1, day: 1) }
         case .year:
             return (0 ..< 12).map { start.adding(months: $0) }
-        case .month:
+        case .month, .last7, .last30:
             return Array(sequence(first: start) { $0.adding(days: 1) }.prefix { $0 < end })
         }
     }
@@ -111,7 +147,7 @@ struct StatsPeriod: Sendable, Equatable {
         switch span {
         case .all: LocalDay(year: day.year, month: 1, day: 1)
         case .year: LocalDay(year: day.year, month: day.month, day: 1)
-        case .month: day
+        case .month, .last7, .last30: day
         }
     }
 }
@@ -202,6 +238,8 @@ struct PeriodStats: Sendable, Equatable {
     var period: StatsPeriod
     var isPartial: Bool
     var totals: Totals
+    /// GAM-006d: the previous equal-length window's totals; rolling spans only.
+    var prior: Totals?
     /// Movie, show, anime, book, always all four; they sum to `totals`.
     var byKind: [KindTotals]
     var buckets: [Bucket]

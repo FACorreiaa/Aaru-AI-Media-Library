@@ -22,7 +22,7 @@ final class HomeModel {
     private(set) var upcoming: [CalendarEntry] = []
     private(set) var unfinished: [UnfinishedEntry] = []
     private(set) var counts: LibraryCounts?
-    private(set) var monthStats: Stats?
+    private(set) var weekStats: Stats?
     /// Trending and this-season rows, the same for everyone. Below the user's own rows, and
     /// all a new account sees.
     private(set) var discover: [DiscoverRow] = []
@@ -110,7 +110,7 @@ final class HomeModel {
             reloadQueued = false
             loadedRevision = library?.revision ?? 0
             async let discoverRows = Self.fetchDiscover(api)
-            async let stats: Void = loadMonthStats(api)
+            async let stats: Void = loadWeekStats(api)
             let coreLoaded = await loadCore(api)
             await stats
             if let rows = await discoverRows {
@@ -153,7 +153,7 @@ final class HomeModel {
                 upNext: upNextResponse.body.json,
                 airing: airingResponse.body.json.items
             )
-            next.monthStats = snapshot?.monthStats
+            next.weekStats = snapshot?.weekStats
             snapshot = next
             apply(next)
             hasLoaded = true
@@ -167,18 +167,15 @@ final class HomeModel {
         }
     }
 
-    /// This month's numbers. A failure leaves the strip as it was and says nothing: the strip is
-    /// a summary, not something the user asked for.
-    private func loadMonthStats(_ api: Client) async {
-        let parts = calendar.dateComponents([.year, .month], from: now())
-        let query = Operations.GetStats.Input.Query(
-            year: parts.year, month: parts.month, tz: calendar.timeZone.identifier
-        )
+    /// The last 7 days' numbers (GAM-006d). A failure leaves the strip as it was and says
+    /// nothing: the strip is a summary, not something the user asked for.
+    private func loadWeekStats(_ api: Client) async {
+        let query = Operations.GetStats.Input.Query(span: .last7, tz: calendar.timeZone.identifier)
         guard case let .ok(response) = try? await api.getStats(query: query),
               let stats = try? response.body.json
         else { return }
-        monthStats = stats
-        snapshot?.monthStats = stats
+        weekStats = stats
+        snapshot?.weekStats = stats
     }
 
     private func apply(_ snapshot: HomeCache.Snapshot) {
@@ -186,7 +183,7 @@ final class HomeModel {
         startWatching = snapshot.upNext.startWatching
         unfinished = snapshot.upNext.unfinished ?? []
         counts = snapshot.upNext.counts
-        monthStats = snapshot.monthStats
+        weekStats = snapshot.weekStats
         let today = CalendarDay(calendar.dateComponents([.year, .month, .day], from: now()))
         upcoming = snapshot.airing
             .filter { !$0.watched && $0.day(in: calendar) >= today }

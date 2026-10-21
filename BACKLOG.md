@@ -34,6 +34,19 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-21
+
+- **Last 7 and 30 days on Home, a fuller Year in Review, and stored genres are built before the
+  P2 gate**, by the owner's call, with 0 strangers. Modelled on north's recap: Home gets a
+  compact "Last 7 days" strip (a bar per day plus the week's figures) that opens Insights on a
+  7 days / 30 days toggle. Items: GAM-006d, then CAT-018, then GAM-006e (Year in Review v2:
+  genres, biggest day, the year's arc, kinds, a persona from the user's own numbers).
+- **Rolling windows compare with the window just before, in absolute numbers** (`+3`, `−2 h`).
+  No percentages: a change from zero has none. A change of zero is not shown. The strip shows
+  at zero too, as APP-013 asked.
+- **Rolling windows read the same activity as the Recap**: imported and restored ticks still
+  never count. A rolling window has no Recap story; the story stays a month or a year.
+
 ## Decisions recorded 2026-10-20
 
 - **Discover rows on Home (DISC-001), by the owner's call:** a new account opened to an empty
@@ -320,9 +333,10 @@ account or a stranger that has not happened yet.
 | CAT-020 | Dropped | superseded by DISC-001 | |
 | UPN-002 | Done | #43; ScheduleTests UPN-002 | |
 | GAM-006c | Done | #43; StatsTests "all time equals the years summed" | |
+| GAM-006d | Done | `feat/rolling-stats`; StatsTests GAM-006d, insights/home model tests | iOS not run on a device |
 | APP-011 | Done | #43; SearchPanel.tsx, SearchView.swift | Not seen on a device |
 | APP-012 | Done | #43; DiscoverScreen.swift, app_.discover.tsx | |
-| APP-013 | Done | #43; HomeSummary.swift, HomeRows.tsx | |
+| APP-013 | Done | #43; HomeSummary.swift, app.tsx | The strip hid at zero until GAM-006d |
 | APP-014 | Done | #43; LibraryRow.swift, library/model.ts labels | |
 | APP-015 | Done | #43; RootView `lists` tab | |
 | LAND-001 | Partial | #5, #9; routes/index.tsx, demo/ gone | No prerender config found; Lighthouse never run |
@@ -1597,6 +1611,19 @@ all time; totals, buckets, by kind, top titles, ratings, longest run. Static, no
 **Done when:** all-time totals equal the yearly stats summed, and imported ticks are still left
 out.
 
+### GAM-006d · Last 7 and 30 days · M · pulled forward 2026-10-21
+**Needs:** GAM-006c.
+`/v1/me/stats?span=last7|last30&tz=`: the 7 or 30 local days ending today, one bucket per day,
+with `from`/`until` and `prior` (the totals of the equal-length window just before, read in the
+same query). Insights opens with 7 days / 30 days ahead of Month, Year, All time; each tile shows
+its absolute change against `prior`, the chart is time per day with a track under empty days.
+Home's "This month" strip becomes "Last 7 days": a bar per day by time and the week's figures,
+shown at zero, opening Insights on 7 days.
+
+**Done when:** a week's totals equal the same seven days read as a month, `prior` equals the week
+before read on its own, imported ticks never count, and a new account's Home shows the strip at
+zero.
+
 ### APP-011 · Search defaults to All; Home refreshes after an add · S
 **Needs:** CAT-019.
 Search opens on All on every client, each row labelled with its kind. An add from search shows
@@ -1616,7 +1643,7 @@ list. TMDB, AniList and Open Library credits in the footer.
 
 ### APP-013 · Home stats, counts, Unfinished business, lists · M
 **Needs:** UPN-002, GAM-006c, DISC-001.
-Home adds a this-month stats strip (opens Insights), status count chips, an Unfinished business
+Home adds a stats strip (opens Insights; the last 7 days since GAM-006d), status count chips, an Unfinished business
 row and list chips. Discover on Home is DISC-001's rows under the user's rows; there is no
 separate teaser.
 

@@ -209,7 +209,8 @@ struct HomeScreen: View {
         }
     }
 
-    /// This month's strip (to Insights) and the shelf's counts (to Library). Each hides at zero.
+    /// The last 7 days (to Insights, shown at zero too) and the shelf's counts (to Library,
+    /// hidden at zero).
     /// A failure leaves the requests on the server; the next appearance shows them.
     private func loadPlans() async {
         guard let api, case let .ok(response)? = try? await api.listPlans(query: .init(status: .pending)) else {
@@ -219,11 +220,11 @@ struct HomeScreen: View {
     }
 
     @ViewBuilder private var summary: some View {
-        if let totals = model.monthStats?.totals, !totals.isZero {
+        if let stats = model.weekStats {
             NavigationLink {
-                InsightsView(api: api)
+                InsightsView(api: api, model: InsightsModel(api: api, span: .last7))
             } label: {
-                StatsStrip(totals: totals)
+                WeekStrip(stats: stats)
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 20)

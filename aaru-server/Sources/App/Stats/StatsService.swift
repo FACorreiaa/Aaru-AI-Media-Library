@@ -10,33 +10,51 @@ struct StatsService: Sendable {
     let stores: Stores
     var now: @Sendable () -> Date = { Date() }
 
-    /// `allTime` takes no year or month; otherwise a year is required.
-    func stats(userID: UserID, allTime: Bool = false, year: Int?, month: Int?, timeZone: String?) async throws
-        -> PeriodStats
+    /// `span` (all time or a rolling window) takes no year or month; otherwise a year is required.
+    func stats(userID: UserID, span: StatsPeriod.Span? = nil, year: Int?, month: Int?, timeZone: String?)
+        async throws -> PeriodStats
     {
-        var period = try Self.period(allTime: allTime, year: year, month: month, timeZone: timeZone, now: now())
+        var period = try Self.period(span: span, year: year, month: month, timeZone: timeZone, now: now())
+        let today = LocalDay(now(), in: period.timeZone)
+        // A rolling window reads its previous window in the same query, for the deltas.
+        let previous = period.previous
         let rows = try await stores.stats.activity(
-            userID: userID, from: period.start, until: period.end, timeZone: period.timeZone
+            userID: userID, from: previous?.start ?? period.start, until: period.end, timeZone: period.timeZone
         )
         if period.span == .all, let first = rows.map(\.day.year).min() {
             period.firstYear = min(first, period.year)
         }
-        let digest = StatsDigest(rows, period: period, today: LocalDay(now(), in: period.timeZone))
+        let current = rows.filter { $0.day >= period.start }
+        let digest = StatsDigest(current, period: period, today: today)
         let titles = try await stores.titles.titles(ids: digest.titleIDs)
-        return digest.stats(titles: Dictionary(titles.map { ($0.id, $0) }) { first, _ in first })
+        var stats = digest.stats(titles: Dictionary(titles.map { ($0.id, $0) }) { first, _ in first })
+        if let previous {
+            stats.prior = StatsDigest(rows.filter { $0.day < period.start }, period: previous, today: today).totals
+        }
+        return stats
     }
 
-    /// GAM-006c: a year, a month of it, or all time up to today in the user's time zone.
-    static func period(allTime: Bool, year: Int?, month: Int?, timeZone: String?, now: Date) throws -> StatsPeriod {
-        if allTime {
+    /// GAM-006c/d: a year, a month of it, all time up to today, or the last 7 or 30 days ending
+    /// today, in the user's time zone.
+    static func period(span: StatsPeriod.Span?, year: Int?, month: Int?, timeZone: String?, now: Date) throws
+        -> StatsPeriod
+    {
+        if let span {
+            guard span == .all || span.days != nil else {
+                throw invalid(["span": "Use all, last7 or last30."])
+            }
             guard year == nil, month == nil else {
-                throw invalid(["span": "All time takes no year or month."])
+                throw invalid(["span": span == .all ? "All time takes no year or month." :
+                        "A rolling span takes no year or month."])
             }
             let zone = try zone(timeZone)
-            return StatsPeriod(allTimeUntil: LocalDay(now, in: zone), timeZone: zone)
+            let today = LocalDay(now, in: zone)
+            return span == .all
+                ? StatsPeriod(allTimeUntil: today, timeZone: zone)
+                : StatsPeriod(lastDays: span, today: today, timeZone: zone)
         }
         guard let year else {
-            throw invalid(["year": "Send a year, or span=all."])
+            throw invalid(["year": "Send a year, or a span."])
         }
         return try period(year: year, month: month, timeZone: timeZone)
     }

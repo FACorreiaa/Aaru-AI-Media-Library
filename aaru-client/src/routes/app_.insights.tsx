@@ -19,6 +19,7 @@ import {
 import {
   SPANS,
   insightsLabel,
+  isRolling,
   periodFromSearch,
   shift,
   statsQuery,
@@ -31,14 +32,24 @@ import type { Stats } from '../lib/recap/model'
 import { getStats } from '../lib/recap/server'
 import { getSession } from '../lib/session/session'
 
-// Insights on the web: a month, a year, or all time in numbers, the browsable twin of the
+// Insights on the web: the last 7 or 30 days, a month, a year, or all time in numbers, the browsable twin of the
 // Recap story. Stats load in the browser, which knows the viewer's time zone and "this month".
 export const Route = createFileRoute('/app_/insights')({
   head: () => ({ meta: [{ title: 'Insights · Aaru' }] }),
   validateSearch: (
     search,
-  ): { span?: 'month' | 'year' | 'all'; year?: number; month?: number } => ({
-    span: optionalEnum(search.span, ['month', 'year', 'all']),
+  ): {
+    span?: 'last7' | 'last30' | 'month' | 'year' | 'all'
+    year?: number
+    month?: number
+  } => ({
+    span: optionalEnum(search.span, [
+      'last7',
+      'last30',
+      'month',
+      'year',
+      'all',
+    ]),
     year: optionalInt(search.year, 1900, 2200),
     month: optionalInt(search.month, 1, 12),
   }),
@@ -146,7 +157,7 @@ function Insights() {
           <Show when={period()}>
             {(p) => (
               <div class="flex items-center gap-2">
-                <Show when={p().span !== 'all'}>
+                <Show when={p().span !== 'all' && !isRolling(p().span)}>
                   <button
                     type="button"
                     class={arrow}
@@ -160,7 +171,7 @@ function Insights() {
                 <span class="min-w-[8.5rem] text-center font-medium">
                   {insightsLabel(p())}
                 </span>
-                <Show when={p().span !== 'all'}>
+                <Show when={p().span !== 'all' && !isRolling(p().span)}>
                   <button
                     type="button"
                     class={arrow}
@@ -188,7 +199,11 @@ function Insights() {
                   <p class="mt-10 text-muted">
                     {period()?.span === 'all'
                       ? 'Nothing tracked yet.'
-                      : `Nothing tracked in ${insightsLabel(period() ?? { span: 'all' })} yet.`}{' '}
+                      : period()?.span === 'last7'
+                        ? 'Nothing tracked in the last 7 days.'
+                        : period()?.span === 'last30'
+                          ? 'Nothing tracked in the last 30 days.'
+                          : `Nothing tracked in ${insightsLabel(period() ?? { span: 'all' })} yet.`}{' '}
                     Tick an episode or finish a title, and it will show up here.
                   </p>
                 }

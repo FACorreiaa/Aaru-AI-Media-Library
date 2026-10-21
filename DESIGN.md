@@ -244,8 +244,10 @@ rows of wide cards, one job per row.
 
 **Added 2026-10-20 (APP-013),** so Home is never blank:
 
-- **This month** — a quiet stats strip (episodes · hours · finished · active days). Tapping it
-  opens Insights. Hidden while the month is all zeros.
+- **Last 7 days** (GAM-006d, 2026-10-21; was "This month") — a quiet stats strip: seven small
+  bars, one per day by time, with a muted track under empty days, then episodes · hours ·
+  finished · active days. Tapping it opens Insights on 7 days. Shown at zero too ("Nothing
+  tracked yet"), so a new account sees where its week will land.
 - **Status counts** — one chip per status with its per-kind label and count; a tap opens
   Library filtered to it.
 - **Unfinished business** (`UnfinishedRow`) — the §1 artifact made real: every dropped item and
@@ -273,11 +275,17 @@ the web.
 
 ## 13b. Insights (pulled forward 2026-10-20)
 
-The Recap's numbers, browsable instead of played. `StatsPanel`: a month / year / all time
-switch, totals, bars per bucket, by kind (films, shows, anime, books), the top titles, a
+The Recap's numbers, browsable instead of played. `StatsPanel`: a 7 days / 30 days / month /
+year / all time switch, totals, bars per bucket, by kind (films, shows, anime, books), the top titles, a
 ratings histogram, and the longest run. Opened from Home's stats strip and next to Recap
 (Library's More menu on Apple, Settings on the web); "Play as story" hands a month or year to
 the Recap. Not a tab.
+
+The rolling windows (GAM-006d) add a line "Oct 15 – Oct 21 · Private to you", and each tile
+shows its change against the window just before as an arrow and an absolute number (`↗ +3`,
+`↘ −2 h`): accent when up, muted when down, never colour alone, hidden when nothing changed,
+never a percentage. Their chart is time per day (so a film night shows), with a track under
+empty days. They have no "Play as story" and no stepper.
 
 Static: bars are drawn at their final height, nothing counts up. The Recap motion rules (§17)
 still apply to anything that ever moves here.
