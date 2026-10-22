@@ -276,6 +276,31 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/groups/{groupId}/channels/{channelId}/messages/{messageId}`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/delete(deleteMessage)`.
     func deleteMessage(_ input: Operations.DeleteMessage.Input) async throws -> Operations.DeleteMessage.Output
+    /// The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10.
+    ///
+    /// - Remark: HTTP `GET /v1/board`.
+    /// - Remark: Generated from `#/paths//v1/board/get(listBoard)`.
+    func listBoard(_ input: Operations.ListBoard.Input) async throws -> Operations.ListBoard.Output
+    /// Post to the Board. Needs a handle.
+    ///
+    /// - Remark: HTTP `POST /v1/board/posts`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/post(createBoardPost)`.
+    func createBoardPost(_ input: Operations.CreateBoardPost.Input) async throws -> Operations.CreateBoardPost.Output
+    /// One post. 404 unless it is yours or a friend's.
+    ///
+    /// - Remark: HTTP `GET /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/get(getBoardPost)`.
+    func getBoardPost(_ input: Operations.GetBoardPost.Input) async throws -> Operations.GetBoardPost.Output
+    /// Edit your own post.
+    ///
+    /// - Remark: HTTP `PATCH /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/patch(editBoardPost)`.
+    func editBoardPost(_ input: Operations.EditBoardPost.Input) async throws -> Operations.EditBoardPost.Output
+    /// Delete your own post.
+    ///
+    /// - Remark: HTTP `DELETE /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/delete(deleteBoardPost)`.
+    func deleteBoardPost(_ input: Operations.DeleteBoardPost.Input) async throws -> Operations.DeleteBoardPost.Output
     /// Mark the channel read up to a message. The read point never moves back.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/read`.
@@ -1344,6 +1369,73 @@ extension APIProtocol {
         headers: Operations.DeleteMessage.Input.Headers = .init()
     ) async throws -> Operations.DeleteMessage.Output {
         try await deleteMessage(Operations.DeleteMessage.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10.
+    ///
+    /// - Remark: HTTP `GET /v1/board`.
+    /// - Remark: Generated from `#/paths//v1/board/get(listBoard)`.
+    public func listBoard(
+        query: Operations.ListBoard.Input.Query = .init(),
+        headers: Operations.ListBoard.Input.Headers = .init()
+    ) async throws -> Operations.ListBoard.Output {
+        try await listBoard(Operations.ListBoard.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Post to the Board. Needs a handle.
+    ///
+    /// - Remark: HTTP `POST /v1/board/posts`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/post(createBoardPost)`.
+    public func createBoardPost(
+        headers: Operations.CreateBoardPost.Input.Headers = .init(),
+        body: Operations.CreateBoardPost.Input.Body
+    ) async throws -> Operations.CreateBoardPost.Output {
+        try await createBoardPost(Operations.CreateBoardPost.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// One post. 404 unless it is yours or a friend's.
+    ///
+    /// - Remark: HTTP `GET /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/get(getBoardPost)`.
+    public func getBoardPost(
+        path: Operations.GetBoardPost.Input.Path,
+        headers: Operations.GetBoardPost.Input.Headers = .init()
+    ) async throws -> Operations.GetBoardPost.Output {
+        try await getBoardPost(Operations.GetBoardPost.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Edit your own post.
+    ///
+    /// - Remark: HTTP `PATCH /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/patch(editBoardPost)`.
+    public func editBoardPost(
+        path: Operations.EditBoardPost.Input.Path,
+        headers: Operations.EditBoardPost.Input.Headers = .init(),
+        body: Operations.EditBoardPost.Input.Body
+    ) async throws -> Operations.EditBoardPost.Output {
+        try await editBoardPost(Operations.EditBoardPost.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete your own post.
+    ///
+    /// - Remark: HTTP `DELETE /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/delete(deleteBoardPost)`.
+    public func deleteBoardPost(
+        path: Operations.DeleteBoardPost.Input.Path,
+        headers: Operations.DeleteBoardPost.Input.Headers = .init()
+    ) async throws -> Operations.DeleteBoardPost.Output {
+        try await deleteBoardPost(Operations.DeleteBoardPost.Input(
             path: path,
             headers: headers
         ))
@@ -5693,6 +5785,178 @@ public enum Components {
                 case clientNonce
                 case spoiler
                 case spoilerFree
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BoardPost`.
+        public struct BoardPost: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BoardPost/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BoardPost/author`.
+            public var author: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/BoardPost/title`.
+            public var title: Components.Schemas.TitleSummary?
+            /// Needs a title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BoardPost/rating`.
+            public var rating: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/BoardPost/body`.
+            public var body: Swift.String
+            /// Only on your own posts: it says where you are in the title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BoardPost/spoiler`.
+            public var spoiler: Components.Schemas.SpoilerStamp?
+            /// - Remark: Generated from `#/components/schemas/BoardPost/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/BoardPost/editedAt`.
+            public var editedAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/BoardPost/upvotes`.
+            public var upvotes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/BoardPost/upvotedByMe`.
+            public var upvotedByMe: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/BoardPost/commentCount`.
+            public var commentCount: Swift.Int
+            /// It may spoil what you have not watched yet: show it veiled until you tap.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BoardPost/veiled`.
+            public var veiled: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/BoardPost/mine`.
+            public var mine: Swift.Bool
+            /// Creates a new `BoardPost`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - author:
+            ///   - title:
+            ///   - rating: Needs a title.
+            ///   - body:
+            ///   - spoiler: Only on your own posts: it says where you are in the title.
+            ///   - createdAt:
+            ///   - editedAt:
+            ///   - upvotes:
+            ///   - upvotedByMe:
+            ///   - commentCount:
+            ///   - veiled: It may spoil what you have not watched yet: show it veiled until you tap.
+            ///   - mine:
+            public init(
+                id: Swift.String,
+                author: Components.Schemas.SocialUser,
+                title: Components.Schemas.TitleSummary? = nil,
+                rating: Swift.Double? = nil,
+                body: Swift.String,
+                spoiler: Components.Schemas.SpoilerStamp? = nil,
+                createdAt: Foundation.Date,
+                editedAt: Foundation.Date? = nil,
+                upvotes: Swift.Int,
+                upvotedByMe: Swift.Bool,
+                commentCount: Swift.Int,
+                veiled: Swift.Bool,
+                mine: Swift.Bool
+            ) {
+                self.id = id
+                self.author = author
+                self.title = title
+                self.rating = rating
+                self.body = body
+                self.spoiler = spoiler
+                self.createdAt = createdAt
+                self.editedAt = editedAt
+                self.upvotes = upvotes
+                self.upvotedByMe = upvotedByMe
+                self.commentCount = commentCount
+                self.veiled = veiled
+                self.mine = mine
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case author
+                case title
+                case rating
+                case body
+                case spoiler
+                case createdAt
+                case editedAt
+                case upvotes
+                case upvotedByMe
+                case commentCount
+                case veiled
+                case mine
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BoardPostPage`.
+        public struct BoardPostPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BoardPostPage/items`.
+            public var items: [Components.Schemas.BoardPost]
+            /// Creates a new `BoardPostPage`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.BoardPost]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BoardPostCreate`.
+        public struct BoardPostCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BoardPostCreate/body`.
+            public var body: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BoardPostCreate/title`.
+            public var title: Components.Schemas.MediaRef?
+            /// Needs a title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BoardPostCreate/rating`.
+            public var rating: Swift.Double?
+            /// With a title: stamp by hand. Absent: stamped from your progress.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BoardPostCreate/spoiler`.
+            public var spoiler: Components.Schemas.SpoilerStamp?
+            /// With a title: no stamp at all.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BoardPostCreate/spoilerFree`.
+            public var spoilerFree: Swift.Bool?
+            /// Creates a new `BoardPostCreate`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            ///   - title:
+            ///   - rating: Needs a title.
+            ///   - spoiler: With a title: stamp by hand. Absent: stamped from your progress.
+            ///   - spoilerFree: With a title: no stamp at all.
+            public init(
+                body: Swift.String,
+                title: Components.Schemas.MediaRef? = nil,
+                rating: Swift.Double? = nil,
+                spoiler: Components.Schemas.SpoilerStamp? = nil,
+                spoilerFree: Swift.Bool? = nil
+            ) {
+                self.body = body
+                self.title = title
+                self.rating = rating
+                self.spoiler = spoiler
+                self.spoilerFree = spoilerFree
+            }
+            public enum CodingKeys: String, CodingKey {
+                case body
+                case title
+                case rating
+                case spoiler
+                case spoilerFree
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BoardPostEdit`.
+        public struct BoardPostEdit: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BoardPostEdit/body`.
+            public var body: Swift.String
+            /// Creates a new `BoardPostEdit`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            public init(body: Swift.String) {
+                self.body = body
+            }
+            public enum CodingKeys: String, CodingKey {
+                case body
             }
         }
         /// - Remark: Generated from `#/components/schemas/MessageUpdate`.
@@ -17303,6 +17567,748 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/messages/{messageId}/delete(deleteMessage)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10.
+    ///
+    /// - Remark: HTTP `GET /v1/board`.
+    /// - Remark: Generated from `#/paths//v1/board/get(listBoard)`.
+    public enum ListBoard {
+        public static let id: Swift.String = "listBoard"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/board/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/GET/query/sort`.
+                @frozen public enum SortPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case recent = "recent"
+                    case top = "top"
+                }
+                /// - Remark: Generated from `#/paths/v1/board/GET/query/sort`.
+                public var sort: Operations.ListBoard.Input.Query.SortPayload?
+                /// Posts older than this one. Ignored by `top`.
+                ///
+                /// - Remark: Generated from `#/paths/v1/board/GET/query/before`.
+                public var before: Swift.String?
+                /// 1–50, default 20.
+                ///
+                /// - Remark: Generated from `#/paths/v1/board/GET/query/limit`.
+                public var limit: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - sort:
+                ///   - before: Posts older than this one. Ignored by `top`.
+                ///   - limit: 1–50, default 20.
+                public init(
+                    sort: Operations.ListBoard.Input.Query.SortPayload? = nil,
+                    before: Swift.String? = nil,
+                    limit: Swift.Int? = nil
+                ) {
+                    self.sort = sort
+                    self.before = before
+                    self.limit = limit
+                }
+            }
+            public var query: Operations.ListBoard.Input.Query
+            /// - Remark: Generated from `#/paths/v1/board/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListBoard.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListBoard.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListBoard.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListBoard.Input.Query = .init(),
+                headers: Operations.ListBoard.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/board/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.BoardPostPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.BoardPostPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListBoard.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListBoard.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/get(listBoard)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListBoard.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListBoard.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/get(listBoard)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Post to the Board. Needs a handle.
+    ///
+    /// - Remark: HTTP `POST /v1/board/posts`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/post(createBoardPost)`.
+    public enum CreateBoardPost {
+        public static let id: Swift.String = "createBoardPost"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/board/posts/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateBoardPost.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateBoardPost.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateBoardPost.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/board/posts/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/posts/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.BoardPostCreate)
+            }
+            public var body: Operations.CreateBoardPost.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateBoardPost.Input.Headers = .init(),
+                body: Operations.CreateBoardPost.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Created: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/posts/POST/responses/201/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/board/posts/POST/responses/201/content/application\/json`.
+                    case json(Components.Schemas.BoardPost)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.BoardPost {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateBoardPost.Output.Created.Body
+                /// Creates a new `Created`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateBoardPost.Output.Created.Body) {
+                    self.body = body
+                }
+            }
+            /// The post.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/post(createBoardPost)/responses/201`.
+            ///
+            /// HTTP response code: `201 created`.
+            case created(Operations.CreateBoardPost.Output.Created)
+            /// The associated value of the enum case if `self` is `.created`.
+            ///
+            /// - Throws: An error if `self` is not `.created`.
+            /// - SeeAlso: `.created`.
+            public var created: Operations.CreateBoardPost.Output.Created {
+                get throws {
+                    switch self {
+                    case let .created(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "created",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/post(createBoardPost)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// One post. 404 unless it is yours or a friend's.
+    ///
+    /// - Remark: HTTP `GET /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/get(getBoardPost)`.
+    public enum GetBoardPost {
+        public static let id: Swift.String = "getBoardPost"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/GET/path/postId`.
+                public var postId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - postId:
+                public init(postId: Swift.String) {
+                    self.postId = postId
+                }
+            }
+            public var path: Operations.GetBoardPost.Input.Path
+            /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetBoardPost.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetBoardPost.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetBoardPost.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetBoardPost.Input.Path,
+                headers: Operations.GetBoardPost.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.BoardPost)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.BoardPost {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetBoardPost.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetBoardPost.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The post.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/get(getBoardPost)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetBoardPost.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetBoardPost.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/get(getBoardPost)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Edit your own post.
+    ///
+    /// - Remark: HTTP `PATCH /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/patch(editBoardPost)`.
+    public enum EditBoardPost {
+        public static let id: Swift.String = "editBoardPost"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/PATCH/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/PATCH/path/postId`.
+                public var postId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - postId:
+                public init(postId: Swift.String) {
+                    self.postId = postId
+                }
+            }
+            public var path: Operations.EditBoardPost.Input.Path
+            /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/PATCH/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EditBoardPost.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EditBoardPost.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.EditBoardPost.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/PATCH/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/PATCH/requestBody/content/application\/json`.
+                case json(Components.Schemas.BoardPostEdit)
+            }
+            public var body: Operations.EditBoardPost.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.EditBoardPost.Input.Path,
+                headers: Operations.EditBoardPost.Input.Headers = .init(),
+                body: Operations.EditBoardPost.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/PATCH/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/PATCH/responses/200/content/application\/json`.
+                    case json(Components.Schemas.BoardPost)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.BoardPost {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.EditBoardPost.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.EditBoardPost.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The post.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/patch(editBoardPost)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.EditBoardPost.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.EditBoardPost.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/patch(editBoardPost)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Delete your own post.
+    ///
+    /// - Remark: HTTP `DELETE /v1/board/posts/{postId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/delete(deleteBoardPost)`.
+    public enum DeleteBoardPost {
+        public static let id: Swift.String = "deleteBoardPost"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/DELETE/path/postId`.
+                public var postId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - postId:
+                public init(postId: Swift.String) {
+                    self.postId = postId
+                }
+            }
+            public var path: Operations.DeleteBoardPost.Input.Path
+            /// - Remark: Generated from `#/paths/v1/board/posts/{postId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteBoardPost.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteBoardPost.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteBoardPost.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeleteBoardPost.Input.Path,
+                headers: Operations.DeleteBoardPost.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Deleted.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/delete(deleteBoardPost)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteBoardPost.Output.NoContent)
+            /// Deleted.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/delete(deleteBoardPost)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteBoardPost.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/delete(deleteBoardPost)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

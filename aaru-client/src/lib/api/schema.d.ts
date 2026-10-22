@@ -750,6 +750,61 @@ export interface paths {
     patch: operations['editMessage']
     trace?: never
   }
+  '/v1/board': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10. */
+    get: operations['listBoard']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Post to the Board. Needs a handle. */
+    post: operations['createBoardPost']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts/{postId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    /** One post. 404 unless it is yours or a friend's. */
+    get: operations['getBoardPost']
+    put?: never
+    post?: never
+    /** Delete your own post. */
+    delete: operations['deleteBoardPost']
+    options?: never
+    head?: never
+    /** Edit your own post. */
+    patch: operations['editBoardPost']
+    trace?: never
+  }
   '/v1/groups/{groupId}/channels/{channelId}/read': {
     parameters: {
       query?: never
@@ -2009,7 +2064,10 @@ export interface components {
       name: string
       kind: components['schemas']['AgentTokenKind']
       scopes: (
-        'library:read' | 'library:write' | 'scrobble:write' | 'imports:write'
+        | 'library:read'
+        | 'library:write'
+        | 'scrobble:write'
+        | 'imports:write'
       )[]
       /** Format: date-time */
       createdAt: string
@@ -2092,10 +2150,19 @@ export interface components {
       | 'music'
     /** @enum {string} */
     AgentMCPKind:
-      'claude' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
+      | 'claude'
+      | 'claude_code'
+      | 'codex'
+      | 'hermes'
+      | 'gemini'
+      | 'other'
     /** @enum {string} */
     MusicScrobbler:
-      'web_scrobbler' | 'pano_scrobbler' | 'navidrome' | 'jellyfin' | 'other'
+      | 'web_scrobbler'
+      | 'pano_scrobbler'
+      | 'navidrome'
+      | 'jellyfin'
+      | 'other'
     /** @description How to point one scrobbler at Aaru (MUS-007): numbered steps, some with a link to open and values to copy. The token appears in full only here, right after minting. */
     MusicSetup: {
       scrobbler: components['schemas']['MusicScrobbler']
@@ -2240,7 +2307,12 @@ export interface components {
        * @enum {string}
        */
       state:
-        'queued' | 'running' | 'planned' | 'succeeded' | 'failed' | 'partial'
+        | 'queued'
+        | 'running'
+        | 'planned'
+        | 'succeeded'
+        | 'failed'
+        | 'partial'
       stats: components['schemas']['ImportStats']
       errorSummary?: string
       /** @description The uploaded file's name, or the AniList username for an `anilist` import. */
@@ -2760,6 +2832,43 @@ export interface components {
       spoiler?: components['schemas']['SpoilerStamp']
       /** @description Title channels: no stamp at all. */
       spoilerFree?: boolean
+    }
+    BoardPost: {
+      /** Format: uuid */
+      id: string
+      author: components['schemas']['SocialUser']
+      title?: components['schemas']['TitleSummary']
+      /** @description Needs a title. */
+      rating?: number
+      body: string
+      /** @description Only on your own posts: it says where you are in the title. */
+      spoiler?: components['schemas']['SpoilerStamp']
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      editedAt?: string
+      upvotes: number
+      upvotedByMe: boolean
+      commentCount: number
+      /** @description It may spoil what you have not watched yet: show it veiled until you tap. */
+      veiled: boolean
+      mine: boolean
+    }
+    BoardPostPage: {
+      items: components['schemas']['BoardPost'][]
+    }
+    BoardPostCreate: {
+      body: string
+      title?: components['schemas']['MediaRef']
+      /** @description Needs a title. */
+      rating?: number
+      /** @description With a title: stamp by hand. Absent: stamped from your progress. */
+      spoiler?: components['schemas']['SpoilerStamp']
+      /** @description With a title: no stamp at all. */
+      spoilerFree?: boolean
+    }
+    BoardPostEdit: {
+      body: string
     }
     MessageUpdate: {
       body: string
@@ -4913,6 +5022,129 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['GroupMessage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listBoard: {
+    parameters: {
+      query?: {
+        sort?: 'recent' | 'top'
+        /** @description Posts older than this one. Ignored by `top`. */
+        before?: string
+        /** @description 1–50, default 20. */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPostPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BoardPostCreate']
+      }
+    }
+    responses: {
+      /** @description The post. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPost']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The post. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPost']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  editBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BoardPostEdit']
+      }
+    }
+    responses: {
+      /** @description The post. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPost']
         }
       }
       default: components['responses']['Error']

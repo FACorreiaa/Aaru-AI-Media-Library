@@ -783,6 +783,85 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/board:
+    get:
+      operationId: listBoard
+      summary: The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10.
+      parameters:
+        - name: sort
+          in: query
+          schema: {type: string, enum: [recent, top], default: recent}
+        - name: before
+          in: query
+          description: Posts older than this one. Ignored by `top`.
+          schema: {type: string, format: uuid}
+        - name: limit
+          in: query
+          description: 1–50, default 20.
+          schema: {type: integer}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPostPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts:
+    post:
+      operationId: createBoardPost
+      summary: Post to the Board. Needs a handle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BoardPostCreate'}
+      responses:
+        '201':
+          description: The post.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPost'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getBoardPost
+      summary: One post. 404 unless it is yours or a friend's.
+      responses:
+        '200':
+          description: The post.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPost'}
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: editBoardPost
+      summary: Edit your own post.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BoardPostEdit'}
+      responses:
+        '200':
+          description: The post.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPost'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteBoardPost
+      summary: Delete your own post.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/groups/{groupId}/channels/{channelId}/read:
     post:
       operationId: markChannelRead
@@ -3258,6 +3337,44 @@ components:
         clientNonce: {type: string, maxLength: 64, description: Makes a retry safe.}
         spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: "Title channels: stamp by hand. Absent: stamped from your progress."}
         spoilerFree: {type: boolean, description: 'Title channels: no stamp at all.'}
+    BoardPost:
+      type: object
+      required: [id, author, body, createdAt, upvotes, upvotedByMe, commentCount, veiled, mine]
+      properties:
+        id: {type: string, format: uuid}
+        author: {$ref: '#/components/schemas/SocialUser'}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        rating: {type: number, description: Needs a title.}
+        body: {type: string}
+        spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: 'Only on your own posts: it says where you are in the title.'}
+        createdAt: {type: string, format: date-time}
+        editedAt: {type: string, format: date-time}
+        upvotes: {type: integer}
+        upvotedByMe: {type: boolean}
+        commentCount: {type: integer}
+        veiled: {type: boolean, description: "It may spoil what you have not watched yet: show it veiled until you tap."}
+        mine: {type: boolean}
+    BoardPostPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/BoardPost'}
+    BoardPostCreate:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
+        title: {$ref: '#/components/schemas/MediaRef'}
+        rating: {type: number, description: Needs a title.}
+        spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: "With a title: stamp by hand. Absent: stamped from your progress."}
+        spoilerFree: {type: boolean, description: 'With a title: no stamp at all.'}
+    BoardPostEdit:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
     MessageUpdate:
       type: object
       required: [body]
