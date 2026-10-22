@@ -36,7 +36,8 @@ extension Stores {
             groups: PostgresGroupStore(database: database),
             groupKinds: PostgresGroupStore(database: database),
             agent: PostgresAgentStore(sql: sql),
-            concerts: PostgresConcertStore(database: database)
+            concerts: PostgresConcertStore(database: database),
+            boards: PostgresBoardStore(database: database)
         )
     }
 }
