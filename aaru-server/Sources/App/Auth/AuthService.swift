@@ -184,7 +184,9 @@ struct AuthService: Sendable {
             return existing
         }
         do {
-            return try await stores.users.createUser(with: identity, displayName: displayName?.nilIfBlank)
+            let userID = try await stores.users.createUser(with: identity, displayName: displayName?.nilIfBlank)
+            ProductEvents.capture(.accountCreated, userID: userID, ["provider": identity.provider.rawValue])
+            return userID
         } catch is StoreConflict {
             // A concurrent sign-in created it first.
             guard let existing = try await stores.users.user(for: identity.provider, subject: identity.subject) else {

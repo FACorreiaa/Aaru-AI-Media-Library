@@ -26,3 +26,24 @@ npm run cf:types       # after changing vars in wrangler.jsonc
 Deploys (REL-006): every merge to `main` builds with `CLOUDFLARE_ENV=staging` and deploys the
 beta Worker; the production Worker deploys only on manual dispatch of "Web Deploy". Both use
 the production API.
+
+## Error reporting (Sentry)
+
+Errors and crashes only, as `docs/privacy.md` says: no tracing, session replay, profiling,
+feedback widget, session pings or console capture. URLs lose their query string and fragment;
+cookies, headers, request bodies and the user are never sent (`src/lib/observability/scrub.ts`).
+
+| Name                           | Where                                                                    | What                                                                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SENTRY_DSN`                   | `wrangler.jsonc` `vars`, top level (production) and `env.staging` (beta) | The `aaru-web` project's DSN. Public, not a secret. Empty turns reporting off: the Worker is not wrapped and the browser never downloads the SDK |
+| `SENTRY_RELEASE`               | build env (CI sets the commit SHA; falls back to `GITHUB_SHA`)           | The release on every event, browser and Worker                                                                                                   |
+| `SENTRY_AUTH_TOKEN`            | GitHub secret, read by `web-deploy.yml`                                  | Uploads source maps to Sentry (EU, `de.sentry.io`) and deletes the `.map` files from `dist/`. Unset, the build skips it                          |
+| `SENTRY_ORG`, `SENTRY_PROJECT` | GitHub variables (`fernando-lda`, `aaru-web`)                            | Where the source maps go                                                                                                                         |
+
+- The Worker entry is `src/server.ts`: Start's handler, wrapped with `withSentry` when
+  `SENTRY_DSN` is set. `src/lib/observability/middleware.ts` reports what pages and server
+  functions throw before Start turns it into a response.
+- In the browser, `src/lib/observability/browser.ts` loads `sdk.ts` with `import()` after
+  hydration, so the SDK is an async chunk outside every route's budget. The build reads the
+  DSN and `CHANNEL` (the Sentry environment) from `wrangler.jsonc` for `CLOUDFLARE_ENV`.
+- After changing a var, run `npm run cf:types`.

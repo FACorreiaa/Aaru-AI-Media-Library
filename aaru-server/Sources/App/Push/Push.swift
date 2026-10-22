@@ -102,7 +102,9 @@ struct UserPush: Sendable {
         var sent = 0
         if let sender {
             for device in try await stores.push.devices(userID: userID) {
-                switch try? await sender.send(message, to: device) {
+                let outcome = try? await sender.send(message, to: device)
+                Metrics.shared.push("apns", outcome)
+                switch outcome {
                 case .sent?: sent += 1
                 case .deadToken?: try await stores.push.forget(token: device.token)
                 case nil: continue
@@ -111,7 +113,9 @@ struct UserPush: Sendable {
         }
         if let webPush {
             for subscription in try await stores.push.webPushSubscriptions(userID: userID) {
-                switch try? await webPush.send(message, to: subscription) {
+                let outcome = try? await webPush.send(message, to: subscription)
+                Metrics.shared.push("web", outcome)
+                switch outcome {
                 case .sent?: sent += 1
                 case .deadToken?: try await stores.push.forgetWebPush(endpoint: subscription.endpoint)
                 case nil: continue
@@ -119,6 +123,18 @@ struct UserPush: Sendable {
             }
         }
         return sent
+    }
+}
+
+extension Metrics {
+    /// One send in `aaru_push_total`: `sent`, `dead_token` (the token is then forgotten) or `error`.
+    func push(_ channel: String, _ outcome: PushOutcome?) {
+        let result = switch outcome {
+        case .sent?: "sent"
+        case .deadToken?: "dead_token"
+        case nil: "error"
+        }
+        increment(.push, ["channel": channel, "result": result])
     }
 }
 

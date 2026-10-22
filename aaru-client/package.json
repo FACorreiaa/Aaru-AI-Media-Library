@@ -27,6 +27,8 @@
     "@corvu/otp-field": "0.1.4",
     "@corvu/resizable": "0.2.5",
     "@kobalte/core": "0.13.14",
+    "@sentry/browser": "11.8.0",
+    "@sentry/cloudflare": "11.8.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/solid-query": "5.104.2",
     "@tanstack/solid-router": "1.170.41",
@@ -49,6 +51,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@sentry/vite-plugin": "11.8.0",
     "@tanstack/devtools-vite": "0.8.5",
     "@tanstack/eslint-config": "0.4.0",
     "@tanstack/router-cli": "^1.133.21",

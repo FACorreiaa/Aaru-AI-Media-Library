@@ -9,8 +9,11 @@ import OpenAPIRuntime
 ///
 /// Sits outside the OpenAPI handlers so unknown routes, framework errors, and
 /// handler errors all leave the server in one shape. Unknown errors become an
-/// opaque 500 and are logged; their text never reaches the client.
+/// opaque 500 and are logged; their text never reaches the client. A 5xx also goes to Sentry
+/// when it is configured.
 struct ErrorMiddleware<Context: RequestContext>: RouterMiddleware {
+    var sentry: SentryReporter?
+
     func handle(
         _ request: Request,
         context: Context,
@@ -21,7 +24,17 @@ struct ErrorMiddleware<Context: RequestContext>: RouterMiddleware {
         } catch {
             let appError = Self.appError(for: error)
             if appError.status.code >= 500 {
-                context.logger.error("Request failed", metadata: Self.logMetadata(for: error, appError: appError))
+                let metadata = Self.logMetadata(for: error, appError: appError)
+                context.logger.error("Request failed", metadata: metadata)
+                sentry?.report(
+                    Self.failure(
+                        metadata,
+                        appError: appError,
+                        method: request.method.rawValue,
+                        route: context.endpointPath
+                    ),
+                    logger: context.logger
+                )
             }
             return Self.response(for: appError)
         }
@@ -72,6 +85,21 @@ struct ErrorMiddleware<Context: RequestContext>: RouterMiddleware {
             metadata["providerFailure"] = "\(provider.kind)"
         }
         return metadata
+    }
+
+    /// The Sentry event: the logged metadata plus the route template, nothing from the request.
+    static func failure(
+        _ metadata: Logger.Metadata, appError: AppError, method: String, route: String?
+    ) -> SentryReporter.Failure {
+        SentryReporter.Failure(
+            errorType: metadata["errorType"].map { "\($0)" } ?? "Error",
+            code: appError.code,
+            status: appError.status.code,
+            method: method,
+            route: route.flatMap { $0 == "NotFound" ? nil : $0 } ?? "unmatched",
+            operation: metadata["operation"].map { "\($0)" },
+            provider: metadata["provider"].map { "\($0)" }
+        )
     }
 
     static func response(for error: AppError) -> Response {

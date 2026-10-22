@@ -1,5 +1,5 @@
 {
-  "totalJs": 399544,
+  "totalJs": 431827,
   "css": 27137,
   "shared": 86432,
   "routes": {
@@ -10,7 +10,7 @@
     "/_shell/app_/discover": 130553,
     "/_shell/app_/friends/": 105484,
     "/_shell/app_/friends/$handle": 100555,
-    "/_shell/app_/groups": 131435,
+    "/_shell/app_/groups": 135401,
     "/_shell/app_/groups/": 88507,
     "/_shell/app_/groups/$groupId": 104013,
     "/_shell/app_/groups/$groupId/": 86766,
@@ -19,7 +19,7 @@
     "/_shell/app_/insights": 101664,
     "/_shell/app_/library": 123720,
     "/_shell/app_/lists/": 94619,
-    "/_shell/app_/lists/$id": 117259,
+    "/_shell/app_/lists/$id": 120891,
     "/_shell/app_/music": 95973,
     "/_shell/app_/plans/$id": 89185,
     "/_shell/app_/recap": 98013,

@@ -1,6 +1,7 @@
 import { browser, defineContentScript } from '#imports'
 import type { Browser } from '#imports'
 import { PLAYER_PORT } from '../lib/protocol'
+import { contentReporter } from '../lib/reporting/content'
 import type { Observation, Playing } from '../lib/types'
 import { mainVideo } from '../sites/dom'
 import { SITE_MATCHES, readerFor } from '../sites/index'
@@ -16,6 +17,10 @@ export default defineContentScript({
   matches: SITE_MATCHES,
   runAt: 'document_idle',
   main(ctx) {
+    // An error here goes to the background, which reports it with the site's origin only
+    // (the path names what plays). Nothing is installed on the page: what can fail runs
+    // inside `reporter.guard`.
+    const reporter = contentReporter()
     const read = readerFor(location.hostname)
     if (!read) return
     // The overlay hides between mouse moves: what was read stays known for that page.
@@ -41,7 +46,7 @@ export default defineContentScript({
       }
     }
 
-    const report = (force = false) => {
+    const report = reporter.guard((force: boolean = false) => {
       const seen = look()
       const signature = JSON.stringify([
         seen.playing?.ref,
@@ -59,7 +64,7 @@ export default defineContentScript({
       } catch {
         port = null
       }
-    }
+    })
 
     const connect = () => {
       const opened = browser.runtime.connect({ name: PLAYER_PORT })

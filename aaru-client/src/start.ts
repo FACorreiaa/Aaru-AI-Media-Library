@@ -5,12 +5,16 @@ import {
 } from '@tanstack/solid-start'
 import { browserQueryClient } from './integrations/tanstack-query/provider'
 import { SESSION_KEY } from './lib/session/query'
+import {
+  reportFunctionErrors,
+  reportRequestErrors,
+} from './lib/observability/middleware'
 
 const CANONICAL_HOST = 'aaruapp.com'
 
 /**
  * Response headers for every page and server function. No script CSP yet: the sign-in page
- * loads Apple's and Google's SDKs and Sentry, and a policy that misses one silently breaks
+ * loads Apple's and Google's SDKs and Sentry (when a DSN is set), and a policy that misses one silently breaks
  * sign-in. frame-ancestors is safe to pin now.
  */
 const SECURITY_HEADERS: Record<string, string> = {
@@ -71,7 +75,12 @@ const sameOriginServerFns = createCsrfMiddleware({
 })
 
 export const startInstance = createStart(() => ({
-  // Headers first, so a refused request still carries them.
-  requestMiddleware: [securityHeaders, sameOriginServerFns],
-  functionMiddleware: [staleAfterWrite],
+  // Headers first, so a refused request still carries them. Error reporting next, so it
+  // sees what the page or server function throws before Start turns it into a response.
+  requestMiddleware: [
+    securityHeaders,
+    reportRequestErrors,
+    sameOriginServerFns,
+  ],
+  functionMiddleware: [reportFunctionErrors, staleAfterWrite],
 }))

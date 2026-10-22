@@ -55,6 +55,7 @@ struct ListService: Sendable {
         try await stores.library.apply(
             .insertList(snapshot), userID: userID, actor: .user, kind: "list", summary: "Created list \(snapshot.name)"
         )
+        ProductEvents.capture(.listCreated, userID: userID)
         return try await detail(snapshot.id, userID: userID)
     }
 

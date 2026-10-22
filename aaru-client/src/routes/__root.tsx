@@ -6,10 +6,11 @@ import {
 } from '@tanstack/solid-router'
 import { HydrationScript } from 'solid-js/web'
 import type { QueryClient } from '@tanstack/solid-query'
-import { Suspense } from 'solid-js'
+import { Suspense, onMount } from 'solid-js'
 import styleCss from '../styles.css?url'
 import { DAYPART_SCRIPT, themeColorMeta } from '../lib/appearance'
 import { readAppearance } from '../lib/appearance-read'
+import { startBrowserErrorReporting } from '../lib/observability/browser'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
@@ -49,6 +50,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
   const data = Route.useLoaderData()
+  // After hydration, so the reporting chunk never delays the first paint. No DSN, no chunk.
+  onMount(() => void startBrowserErrorReporting())
   const theme = () => {
     const appearance = data().appearance
     return appearance === 'system' ? undefined : appearance

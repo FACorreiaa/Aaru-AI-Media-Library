@@ -60,6 +60,7 @@ struct PlanService: Sendable {
         }
         switch decision {
         case let .applied(plan, action):
+            ProductEvents.capture(.agentPlanDecided, userID: userID, ["decision": "approved"])
             // Episodes for added shows, as a tap's add fetches them. Best effort.
             for change in plan.changes where change.type == .show && change.libraryItemID == nil {
                 _ = try? await library.catalog.detail(change.titleID)
@@ -80,6 +81,7 @@ struct PlanService: Sendable {
     func deny(_ id: UUID, userID: UserID) async throws -> AgentPlan {
         switch try await stores.plans.deny(id: id, userID: userID, now: now()) {
         case let .denied(plan)?:
+            ProductEvents.capture(.agentPlanDecided, userID: userID, ["decision": "denied"])
             return plan
         case nil:
             throw AppError.notFound("No such plan.")

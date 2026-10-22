@@ -1,6 +1,7 @@
 import { useRouter } from '@tanstack/solid-router'
-import { Show } from 'solid-js'
+import { Show, onMount } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
+import { reportBrowserError } from '../lib/observability/browser'
 import { Wordmark } from './Brand'
 
 // These two are the router's defaults, so they load with every page. They spell out the
@@ -12,6 +13,8 @@ const primary =
 /** The branded fallback when a page cannot load: the message, and a way to try again. */
 export function RouteError(props: { error: unknown }) {
   const router = useRouter()
+  // The router's boundary catches this before the page's error handler can, so report it here.
+  onMount(() => reportBrowserError(props.error))
   const message = () =>
     props.error instanceof Error && props.error.message
       ? props.error.message

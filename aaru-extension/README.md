@@ -31,3 +31,29 @@ Against a local stack, set `WXT_API_BASE=http://localhost:8080` and
   shows, and sets the badge: ✓ matched, ? not matched, ! connect again.
 - `src/sites/*` — one reader per site. **These depend on each site's markup**; when one stops
   matching, update its selectors and the fixture in `src/sites/sites.test.ts` from the live page.
+
+## Error reporting (Sentry)
+
+Errors only, to the `aaru-extension` project (EU), as `docs/privacy.md` says. Off unless the
+build has a DSN:
+
+```bash
+WXT_SENTRY_DSN=https://…@….ingest.de.sentry.io/… \
+WXT_SENTRY_RELEASE=$(git rev-parse HEAD) \
+npm run zip
+```
+
+`WXT_SENTRY_ENVIRONMENT` defaults to `production` (`development` under `npm run dev`); the
+release defaults to `aaru-extension@<version>`. A DSN is public, not a secret.
+
+- `src/lib/reporting/reporter.ts` — the background's Sentry client, the only one: a
+  `BrowserClient` on its own `Scope`, never `Sentry.init`, with no integration that wraps
+  timers, listeners, `fetch`, `console` or `history`. No breadcrumbs, no tracing, no user.
+- `src/lib/reporting/content.ts` — the content scripts load no Sentry code and install
+  nothing on the page. What can fail runs in `reporter.guard`; an error goes to the
+  background as name, message and stack, and is reported with the site's **origin** only.
+  The path names what the user watches, so it never leaves (`src/lib/reporting/scrub.ts`).
+- `src/lib/reporting/deliver.ts` — posts from the background without cookies or a referrer.
+  In Firefox only after the user allowed "technical and interaction data", which the manifest
+  declares as optional (Mozilla does not let that category be required). Firefox shows it at
+  install and in about:addons.
