@@ -1,7 +1,8 @@
 import Foundation
 
 /// A ListenBrainz `submit-listens` body, checked: `single` and `import` carry listens with the
-/// time they started; `playing_now` carries one track and no time, and stores nothing.
+/// time they started; `playing_now` carries one track and no time, and is no listen: it says what
+/// plays now (SCR-009).
 struct ListenSubmission {
     struct Invalid: Error {
         let message: String
@@ -21,6 +22,8 @@ struct ListenSubmission {
 
     let kind: Kind
     let listens: [NewListen]
+    /// The track a `playing_now` names; nil for any other kind.
+    let playingNow: NewListen?
 
     init(json: Data, now: Date) throws {
         let decoder = JSONDecoder()
@@ -44,6 +47,7 @@ struct ListenSubmission {
         self.kind = kind
         let parsed = try body.payload.map { try Self.listen($0, kind: kind, now: now) }
         listens = kind == .playingNow ? [] : parsed
+        playingNow = kind == .playingNow ? parsed.first : nil
     }
 
     private static func listen(_ payload: SubmissionBody.Payload, kind: Kind, now: Date) throws -> NewListen {

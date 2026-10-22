@@ -272,8 +272,8 @@ function ExtensionSteps() {
     <div class="flex flex-col gap-3">
       <p class="max-w-prose text-sm">
         Finish an episode or a film on Netflix, Disney+ or Prime Video in your
-        browser and it is marked watched here. The extension can’t read your
-        library.
+        browser and it is marked watched here. A YouTube video shows in Now
+        playing while it plays. The extension can’t read your library.
       </p>
       <ol class="flex list-decimal flex-col gap-1 pl-5 text-sm">
         <li>Install Aaru for Chrome or Firefox.</li>

@@ -1,11 +1,12 @@
 import AaruCore
 import Foundation
+import Logging
 import Testing
 @testable import aaru
 
-/// SCR-008: what plays now, the next episode closing the last, and the Live Activity pushes,
-/// against a fake APNs. No real key, no network.
-@Suite("Now playing (SCR-008)", .serialized)
+/// SCR-008, SCR-009: what plays now, the next episode closing the last, and the Live Activity
+/// pushes, against a fake APNs. No real key, no network.
+@Suite("Now playing (SCR-008, SCR-009)", .serialized)
 struct NowPlayingTests {
     /// Records what would have gone to Apple; some tokens are "dead".
     final class FakeLiveActivity: LiveActivityPushing, @unchecked Sendable {
@@ -53,7 +54,7 @@ struct NowPlayingTests {
             ).create(userID: env.userID, kind: .stremio, name: nil, allowLibraryWrites: false)
             let apns = FakeLiveActivity(dead: dead)
             var scrobble = ScrobbleService(stores: env.stores, library: library, resolver: resolver)
-            scrobble.liveActivity = NowPlayingNotifier(stores: env.stores, sender: apns)
+            scrobble.liveActivity = LiveSetNotifier(stores: env.stores, sender: apns)
             try await body(Env(
                 harness: env, scrobble: scrobble, caller: AgentCaller(userID: env.userID, token: minted.token),
                 apns: apns
@@ -87,14 +88,18 @@ struct NowPlayingTests {
         )
     }
 
-    func token(_ env: Env, kind: String, watchEventId: String? = nil, token: String = PushTests.token()) async throws
-        -> LibraryHarness.Reply
-    {
-        var body: [String: Any] = [
+    func token(_ env: Env, kind: String, token: String = PushTests.token()) async throws -> LibraryHarness.Reply {
+        try await env.harness.send(.put, "/v1/devices/live-activity", json: [
             "token": token, "kind": kind, "environment": "production", "bundleId": "com.fernandocorreia.aaru.beta",
-        ]
-        body["watchEventId"] = watchEventId
-        return try await env.harness.send(.put, "/v1/devices/live-activity", json: body)
+        ])
+    }
+
+    /// The notifier's sweep at `now`, as the background service runs it.
+    func sweep(_ env: Env, at now: Date) async throws {
+        let notifier = try #require(env.scrobble.liveActivity)
+        try await LiveActivitySweepService(
+            notifier: notifier, stores: env.harness.stores, logger: Logger(label: "test"), now: { now }
+        ).sweep(notifier)
     }
 
     @Test("A playing session lasts to its end plus grace, a paused one 30 minutes, an unknown one 3 hours")
@@ -195,7 +200,7 @@ struct NowPlayingTests {
         }
     }
 
-    @Test("Live Activity: pushed to start once, updated on pause, ended as watched on the stop")
+    @Test("Live Activity: pushed to start once, updated on pause, watched lingers, then the sweep ends it")
     func liveActivity() async throws {
         try await withScrobble(dead: ["dead".padding(toLength: 64, withPad: "0", startingAt: 0)]) { env in
             let tmdb = env.harness.stubShow("Pluribus", status: .returning)
@@ -210,52 +215,54 @@ struct NowPlayingTests {
             #expect(started.count == 1)
             let (push, sentTo) = try #require(started.first)
             #expect(sentTo.token == start)
-            guard case let .start(attributes, alertTitle, alertBody) = push.event else {
-                Issue.record("expected a start push, got \(push.event)")
-                return
-            }
-            #expect(alertTitle == "Now playing")
-            #expect(alertBody == "Pluribus · S1 · E2 · S1E2")
-            #expect(attributes.runtimeMinutes == 50)
-            #expect(push.content.endsAt.timeIntervalSince(push.content.startedAt) == 3000)
+            #expect(push.event == .start(alertTitle: "Now playing", alertBody: "Pluribus · S1 · E2 · S1E2"))
+            #expect(push.priority == .immediate)
+            let item = try #require(push.content.items.first)
+            #expect(push.content.items.count == 1)
+            #expect(item.kind == .episode)
+            #expect(item.service == "Stremio")
+            #expect(try #require(item.endsAt).timeIntervalSince(item.startedAt) == 3000)
             #expect(
                 try await env.harness.stores.watchEvents.liveActivityStartTokens(userID: env.caller.userID)
                     .map(\.token) == [start],
                 "the dead token is forgotten"
             )
 
-            // A resume before the activity's token arrived starts nothing new.
-            _ = try await env.scrobble.report(episode(tmdb, 2, .start, at: 120_000), from: env.caller)
+            // The player reporting on, with nothing new to show, pushes nothing.
+            _ = try await env.scrobble.report(episode(tmdb, 2, .start, at: 90000), from: env.caller)
             #expect(env.apns.pushes.count == 1)
 
-            let eventID = try #require(attributes.watchEventId)
             let running = PushTests.token()
-            #expect(try await token(env, kind: "update", watchEventId: eventID.uuidString, token: running).status
-                == .noContent)
+            #expect(try await token(env, kind: "update", token: running).status == .noContent)
             _ = try await env.scrobble.report(episode(tmdb, 2, .pause, at: 900_000), from: env.caller)
             let paused = try #require(env.apns.pushes.last)
             #expect(paused.0.event == .update)
-            #expect(paused.0.content.pausedAt != nil)
+            #expect(paused.0.priority == .considerate)
+            #expect(paused.0.content.items.first?.pausedAt != nil)
             #expect(paused.1.token == running)
 
             _ = try await env.scrobble.report(episode(tmdb, 2, .stop, at: 2_950_000), from: env.caller)
+            let watched = try #require(env.apns.pushes.last)
+            #expect(watched.0.event == .update)
+            #expect(watched.0.content.items.map(\.watched) == [true], "the ticked row lingers as Watched")
+            #expect(env.apns.pushes.count == 3)
+
+            try await sweep(env, at: Date().addingTimeInterval(LiveSetNotifier.watchedLinger + 1))
             let ended = try #require(env.apns.pushes.last)
             guard case .end = ended.0.event else {
                 Issue.record("expected an end push, got \(ended.0.event)")
                 return
             }
-            #expect(ended.0.content.watched)
-            #expect(env.apns.pushes.count == 3)
+            #expect(env.apns.pushes.count == 4)
+            #expect(try await env.harness.stores.watchEvents.liveActivityUpdateTokens(userID: env.caller.userID)
+                .isEmpty)
         }
     }
 
-    @Test("Live Activity tokens: `update` needs the user's own watch event; bad input is refused")
+    @Test("Live Activity tokens: bad input is refused; a watch event id is no longer needed")
     func registration() async throws {
         try await withScrobble { env in
-            #expect(try await token(env, kind: "update").status == .unprocessableContent)
-            #expect(try await token(env, kind: "start", watchEventId: UUID().uuidString).status
-                == .unprocessableContent)
-            #expect(try await token(env, kind: "update", watchEventId: UUID().uuidString).status == .notFound)
+            #expect(try await token(env, kind: "update").status == .noContent)
             #expect(try await token(env, kind: "start", token: "not-hex").status == .unprocessableContent)
             let foreign = try await env.harness.send(.put, "/v1/devices/live-activity", json: [
                 "token": PushTests.token(), "kind": "start", "environment": "sandbox", "bundleId": "com.example.other",

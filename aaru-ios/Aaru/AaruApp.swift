@@ -55,8 +55,11 @@ struct AaruApp: App {
                     if phase == .background {
                         WidgetRefresh.schedule()
                     } else if phase == .active {
-                        // A "Now watching" activity never outlives its episode by more than the grace.
-                        Task { await NowWatching.endStale() }
+                        // An activity never outlives what it shows by more than the grace.
+                        Task {
+                            await NowWatching.endStale()
+                            await NowPlayingActivity.endStale()
+                        }
                     }
                 }
                 .backgroundTask(.appRefresh(WidgetRefresh.taskID)) {

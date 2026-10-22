@@ -5,8 +5,13 @@ import OpenAPIRuntime
 
 extension APIImplementation {
     func getNowPlaying(_: Operations.GetNowPlaying.Input) async throws -> Operations.GetNowPlaying.Output {
-        let playing = try await services.scrobble.nowPlaying(userID: currentUser())
-        return .ok(.init(body: .json(.init(nowPlaying: playing.map(Components.Schemas.NowPlaying.init)))))
+        let userID = try currentUser()
+        let playing = try await services.scrobble.nowPlaying(userID: userID)
+        let items = try await services.scrobble.playingNow(userID: userID)
+        return .ok(.init(body: .json(.init(
+            nowPlaying: playing.map(Components.Schemas.NowPlaying.init),
+            items: items.map(Components.Schemas.NowPlayingItem.init)
+        ))))
     }
 
     func registerLiveActivityToken(_ input: Operations.RegisterLiveActivityToken.Input) async throws
@@ -20,21 +25,14 @@ extension APIImplementation {
         guard PushTopics.allowed.contains(body.bundleId) else {
             throw Self.invalid("bundleId", "Not an Aaru app.")
         }
+        // `watchEventId` is ignored since SCR-009: one activity shows everything that plays.
         let kind: LiveActivityToken.Kind = body.kind == .update ? .update : .start
-        let watchEventID = try body.watchEventId.map { raw in
-            guard let id = UUID(uuidString: raw) else { throw Self.invalid("watchEventId", "A watch event id.") }
-            return id
-        }
-        guard (kind == .update) == (watchEventID != nil) else {
-            throw Self.invalid("watchEventId", "Sent with `update` only, and always with it.")
-        }
         let registration = LiveActivityToken(
             token: token, kind: kind, environment: body.environment == .production ? .production : .sandbox,
-            topic: body.bundleId, watchEventID: watchEventID
+            topic: body.bundleId
         )
         let userID = try currentUser()
-        guard try await stores.watchEvents.registerLiveActivity(registration, userID: userID, now: Date())
-        else { throw AppError.notFound() }
+        try await stores.watchEvents.registerLiveActivity(registration, userID: userID, now: Date())
         if kind == .update {
             await services.scrobble.liveActivity?.caughtUp(registration, userID: userID, now: Date())
         }
@@ -64,5 +62,35 @@ extension Components.Schemas.NowPlaying {
             durationMs: session.knownDurationMs,
             updatedAt: session.updatedAt
         )
+    }
+}
+
+extension Components.Schemas.NowPlayingItem {
+    init(_ entry: LiveEntry) {
+        switch entry {
+        case let .session(session, title):
+            let item = entry.activityItem
+            self.init(
+                id: item.id, kind: title.type == .movie ? .movie : .episode, name: title.title,
+                subtitle: item.subtitle, service: item.service,
+                source: .init(rawValue: session.source.rawValue) ?? .stremio,
+                state: session.state == .paused ? .paused : .playing, positionMs: session.positionMs,
+                durationMs: session.knownDurationMs, updatedAt: session.updatedAt, artworkUrl: item.artworkURL,
+                libraryItemId: session.libraryItemID?.description, title: .init(title),
+                episode: session.episode.map { .init(season: $0.season, number: $0.episode) }
+            )
+        case let .play(play):
+            self.init(
+                id: play.id.uuidString.lowercased(), kind: play.kind == .track ? .track : .video, name: play.title,
+                subtitle: play.subtitle, service: play.service,
+                source: play.source == .youtube ? .youtube : .listenbrainz,
+                state: play.state == .paused ? .paused : .playing,
+                // A track's scrobbler says only when it began.
+                positionMs: play.kind == .track
+                    ? Int64(max(0, play.updatedAt.timeIntervalSince(play.startedAt)) * 1000) : play.positionMs,
+                durationMs: play.durationMs, updatedAt: play.updatedAt, artworkUrl: play.artworkURL,
+                originUrl: play.originURL
+            )
+        }
     }
 }

@@ -1020,9 +1020,9 @@ paths:
     put:
       operationId: registerLiveActivityToken
       summary: >-
-        Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`),
-        or a running "Now watching" activity's own token (`update`) with the watch event it
-        follows. The server then starts, updates and ends the activity from scrobbles.
+        Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token
+        for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own
+        token (`update`). The server then starts, updates and ends the activity from what plays.
       requestBody:
         required: true
         content:
@@ -1365,10 +1365,10 @@ paths:
     get:
       operationId: getNowPlaying
       summary: >-
-        What a player (Stremio, or a streaming site through the browser extension) is playing for
-        you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where
-        it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent
-        when nothing plays, or the last report is too old to believe.
+        What players are playing for you now: Stremio and streaming sites through the browser
+        extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009).
+        `positionMs` is where a player was at `updatedAt`; a client adds the time since while
+        `state` is `playing`. A report too old to believe no longer counts.
       responses:
         '200':
           description: What plays, if anything.
@@ -2710,15 +2710,26 @@ components:
         watchEventId:
           type: string
           format: uuid
-          description: Required for `update`; the activity's `watchEventId` attribute.
+          deprecated: true
+          description: Ignored since SCR-009, when one activity shows everything playing.
         environment:
           type: string
           enum: [sandbox, production]
         bundleId: {type: string}
     NowPlayingReply:
       type: object
+      required: [items]
       properties:
-        nowPlaying: {$ref: '#/components/schemas/NowPlaying'}
+        nowPlaying:
+          $ref: '#/components/schemas/NowPlaying'
+          description: The newest library episode or movie playing; kept for clients older than `items`.
+        items:
+          type: array
+          maxItems: 3
+          description: >-
+            Everything playing now (SCR-009), in the Live Activity's order: library episodes,
+            movies and videos first, newest first, then tracks. Empty when nothing plays.
+          items: {$ref: '#/components/schemas/NowPlayingItem'}
     NowPlaying:
       type: object
       required: [watchEventId, title, source, state, positionMs, durationMs, updatedAt]
@@ -2747,6 +2758,45 @@ components:
           format: int64
           description: The player's duration, else the catalog runtime; 0 when neither is known.
         updatedAt: {type: string, format: date-time}
+    NowPlayingItem:
+      type: object
+      required: [id, kind, name, source, state, positionMs, durationMs, updatedAt]
+      properties:
+        id:
+          type: string
+          description: The watch event or the play; a new id means the next thing plays.
+        kind:
+          type: string
+          enum: [episode, movie, track, video]
+        name: {type: string, description: 'The show, film, track or video name.'}
+        subtitle: {type: string, description: '"S1 · E8 · Lanterns", the artist, or the channel.'}
+        service: {type: string, description: 'Where it plays, as a person reads it: "Stremio", "YouTube Music".'}
+        source:
+          type: string
+          enum: [stremio, netflix, disney_plus, prime_video, listenbrainz, youtube]
+        state:
+          type: string
+          enum: [playing, paused]
+        positionMs:
+          type: integer
+          format: int64
+          description: Where the player was at `updatedAt`; a client adds the time since while `playing`.
+        durationMs:
+          type: integer
+          format: int64
+          description: 0 when unknown.
+        updatedAt: {type: string, format: date-time}
+        artworkUrl: {type: string, description: 'Poster, cover or video thumbnail.'}
+        originUrl: {type: string, description: 'Tracks and videos: where it plays, when the player said.'}
+        libraryItemId:
+          type: string
+          format: uuid
+          description: Episodes and movies, always in the library.
+        title:
+          $ref: '#/components/schemas/TitleSummary'
+          description: Episodes and movies only.
+        episode:
+          $ref: '#/components/schemas/EpisodeRef'
     WebPushKey:
       type: object
       required: [publicKey]

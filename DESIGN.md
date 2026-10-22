@@ -460,6 +460,18 @@ stop: "Watched" for 8 s when it ticked), and the app starts it itself when it op
 session it has no activity for. A push-started activity has no poster until the app opens.
 Nothing animates.
 
+**Several at once, 2026-10-22 (SCR-009):** the card and the Live Activity hold up to three
+things playing together: library episodes and movies, a YouTube video, then a track. The first
+leads in full as above (a video with its 16:9 thumbnail, a track with its square cover whole on
+the accent ground); the others follow as compact rows: art in its own shape (2:3 poster, 16:9
+thumbnail, square cover, or the kind's glyph), the name, "subtitle · service", a thin bar and
+time left when the length is known, "Paused". Episode and movie rows open the library item and
+carry Mark watched; a video or track with a link opens it in a new tab. The Lock Screen stacks
+the rows with their art aligned and the times in one column; the Dynamic Island shows the first
+item's art on the left and the second's glyph on the right (its countdown when it plays alone),
+and the expanded island the first in full over two rows. A track's time is a plain countdown;
+it never flips to an end time.
+
 **Settings groups, 2026-10-21** (owner): five groups (Account, Imports & export, Connected apps,
 Insights & recaps, About). Superseded the same day by the eight pages of §18.
 
@@ -526,7 +538,9 @@ ships.
   "mark watched" button (App Intent, same write path as a tap).
 - **Airing countdown** + Lock Screen accessories — next airing of a tracked show or anime.
 - **Week** (L / XL) — the week grid in miniature, CAT style.
-- **Now watching** Live Activity — Lock Screen and Dynamic Island, progress plus "Ends at".
+- **Now playing** Live Activity (SCR-009) — Lock Screen and Dynamic Island, up to three rows
+  (episodes, movies, a YouTube video, a track), progress plus "Ends at". "Now watching" (one
+  episode) remains for a check-in started by hand.
 - **Listening** (S / M, MUS-001) — square covers of albums in progress; a tap opens the album.
 - **Streak** (Phase 5) — current streak and this week's ticks.
 - **macOS** — the same widgets on the desktop and in Notification Center. Almost no tracker

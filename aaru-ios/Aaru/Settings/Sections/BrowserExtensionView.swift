@@ -11,7 +11,8 @@ struct BrowserExtensionView: View {
                 Section {
                     Text(
                         "Finish an episode or a film on Netflix, Disney+ or Prime Video in your browser and it is "
-                            + "marked watched here. The extension can’t read your library."
+                            + "marked watched here. A YouTube video shows in Now playing while it plays. "
+                            + "The extension can’t read your library."
                     )
                 }
                 Section("On your computer") {

@@ -986,7 +986,7 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles. */
+    /** Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own token (`update`). The server then starts, updates and ends the activity from what plays. */
     put: operations['registerLiveActivityToken']
     post?: never
     delete?: never
@@ -1256,7 +1256,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe. */
+    /** What players are playing for you now: Stremio and streaming sites through the browser extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009). `positionMs` is where a player was at `updatedAt`; a client adds the time since while `state` is `playing`. A report too old to believe no longer counts. */
     get: operations['getNowPlaying']
     put?: never
     post?: never
@@ -2303,7 +2303,8 @@ export interface components {
       kind: 'start' | 'update'
       /**
        * Format: uuid
-       * @description Required for `update`; the activity's `watchEventId` attribute.
+       * @deprecated
+       * @description Ignored since SCR-009, when one activity shows everything playing.
        */
       watchEventId?: string
       /** @enum {string} */
@@ -2311,7 +2312,10 @@ export interface components {
       bundleId: string
     }
     NowPlayingReply: {
+      /** @description The newest library episode or movie playing; kept for clients older than `items`. */
       nowPlaying?: components['schemas']['NowPlaying']
+      /** @description Everything playing now (SCR-009), in the Live Activity's order: library episodes, movies and videos first, newest first, then tracks. Empty when nothing plays. */
+      items: components['schemas']['NowPlayingItem'][]
     }
     NowPlaying: {
       /** Format: uuid */
@@ -2340,6 +2344,52 @@ export interface components {
       durationMs: number
       /** Format: date-time */
       updatedAt: string
+    }
+    NowPlayingItem: {
+      /** @description The watch event or the play; a new id means the next thing plays. */
+      id: string
+      /** @enum {string} */
+      kind: 'episode' | 'movie' | 'track' | 'video'
+      /** @description The show, film, track or video name. */
+      name: string
+      /** @description "S1 · E8 · Lanterns", the artist, or the channel. */
+      subtitle?: string
+      /** @description Where it plays, as a person reads it: "Stremio", "YouTube Music". */
+      service?: string
+      /** @enum {string} */
+      source:
+        | 'stremio'
+        | 'netflix'
+        | 'disney_plus'
+        | 'prime_video'
+        | 'listenbrainz'
+        | 'youtube'
+      /** @enum {string} */
+      state: 'playing' | 'paused'
+      /**
+       * Format: int64
+       * @description Where the player was at `updatedAt`; a client adds the time since while `playing`.
+       */
+      positionMs: number
+      /**
+       * Format: int64
+       * @description 0 when unknown.
+       */
+      durationMs: number
+      /** Format: date-time */
+      updatedAt: string
+      /** @description Poster, cover or video thumbnail. */
+      artworkUrl?: string
+      /** @description Tracks and videos: where it plays, when the player said. */
+      originUrl?: string
+      /**
+       * Format: uuid
+       * @description Episodes and movies, always in the library.
+       */
+      libraryItemId?: string
+      /** @description Episodes and movies only. */
+      title?: components['schemas']['TitleSummary']
+      episode?: components['schemas']['EpisodeRef']
     }
     WebPushKey: {
       /** @description VAPID public key, base64url: the browser's applicationServerKey. */

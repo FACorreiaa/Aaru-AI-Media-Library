@@ -25,7 +25,7 @@ This file is the working contract for anyone — human or agent — changing the
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
 | Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI from shadcn-solid on Kobalte, every component as source in `src/components/ui` behind the `~/components/ui` barrel, themed on Aaru's tokens; animation through `motion/mini` via `src/lib/motion.ts` (DESIGN.md §17). No DB access, no business logic |
-| Browser extension | `aaru-extension/` — WXT, one Manifest V3 source for Chrome and Firefox (SCR-007). Reads the player on Netflix, Disney+ and Prime Video and calls `/v1/scrobble/*` with a scrobble-only token. A client like the others: no rules of its own |
+| Browser extension | `aaru-extension/` — WXT, one Manifest V3 source for Chrome and Firefox (SCR-007). Reads the player on Netflix, Disney+ and Prime Video, and YouTube videos for Now playing (SCR-009), and calls `/v1/scrobble/*` with a scrobble-only token. A client like the others: no rules of its own |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
@@ -180,6 +180,9 @@ Use these words in code, APIs, and UI:
   caller approves its own plan
 - **Watch event** — one scrobble (start/pause/stop with progress) from a player. It may tick
   progress; it is never library truth on its own
+- **Play** — a track (a scrobbler's `playing_now`) or a YouTube video a player reports that is
+  not a Title (SCR-009). It lives only while it plays, is never a listen or a watch event, and
+  never ticks anything. It exists for Now playing
 - **Listen** — one play of a track a music scrobbler sent (MUS-005). Append-only and never a
   library write; the same play sent twice is kept once
 - **Friend** — a mutual, accepted connection. There is no one-way follow
@@ -253,9 +256,10 @@ show marked watched (PROG-005), 2026-10-22).
 - Serializd / SIMKL integrations
 - Manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`
   decisions 2026-10-15). Music albums were pulled forward by the owner (MUS-001…003, 2026-10-21)
-- Scraping Pogdesign, IMDb pages, AniDB, or any site without an official export/API. The one owner
-  exception (2026-10-21) is SCR-007's browser extension reading the player page the user is
-  watching, in their own browser; Aaru's server fetches nothing from those sites
+- Scraping Pogdesign, IMDb pages, AniDB, or any site without an official export/API. The owner
+  exceptions are SCR-007's browser extension reading the player page the user is watching, in
+  their own browser (2026-10-21), and the same extension reading `youtube.com/watch` for Now
+  playing (SCR-009, 2026-10-22); Aaru's server fetches nothing from those sites
 - Any Stremio `stream` resource or stream source
 
 ## Import order (product + matching code)
