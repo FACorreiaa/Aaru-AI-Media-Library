@@ -13,8 +13,10 @@ what Aaru does, this page changes first.
   friend request; friends see your handle and name, nothing else.
 - **Group chats are not end-to-end encrypted.** Messages in a group are stored readable on
   Aaru's server so the group works across your devices; the apps say so in every group.
-- **No ads, no tracking, no analytics.** Aaru does not sell or rent data, and has no
-  advertising or analytics code in the apps or on the website.
+- **No ads, no tracking.** Aaru does not sell or rent data, has no advertising code, and does
+  not follow you across other apps or sites. When something breaks, an error report without your
+  name, email or library goes to Sentry; Aaru's server counts a few product events (below) under
+  a random account id.
 - You can **delete your account** in Settings. That removes your library and account at once.
 
 ## What Aaru stores
@@ -92,6 +94,20 @@ asks your device for an approximate position once; it is rounded the same way, u
 one search, and never stored or logged. To find concerts by your artists, Aaru looks up the
 artists of the albums in your library; that list is catalog data, not about you.
 
+**Error reports.** When the app, the website, the browser extension or Aaru's server hits an
+error or crashes, it sends a report to Sentry: what failed, where in Aaru's code, the device or
+browser type and app version, and the page address without anything after the `?`. It never
+includes your name, email, what is in your library or what you wrote. On Netflix, Disney+ and
+Prime Video the extension reports only the site, never the page you were on.
+
+**Product counts.** Aaru's server notes a few events so the developer can see which parts of Aaru
+are used: an account was created and how (Apple, Google or email), an import finished and from
+where, a title was added or changed and by whom (you, an agent, an import or a player), a list or
+group was created, a friend was added, an agent's request was approved or declined. Each event
+carries only those words and your account's random id, never a title, a name, an email, text or
+your IP address, and no profile is built from them. They go to PostHog. The apps and the website
+send nothing of this kind themselves.
+
 **Catalog data** (titles, posters, episode lists) is shared by everyone and is not about you.
 
 ## Who else is involved
@@ -118,13 +134,16 @@ Aaru only uses these services, and only for the purpose listed:
   never who you are. Tickets are bought on Ticketmaster's site, under its own terms.
 - **Open-Meteo** turns the city you type for "Concerts near" into a place. It receives that
   text only.
+- **Sentry** (Germany) receives the error reports described above.
+- **PostHog** (European Union) receives the product counts described above, from Aaru's server
+  only.
 
 ## How long it is kept
 
 Everything stays until you delete it or delete your account. Deleting your account removes
 it from the live database immediately. Encrypted backups are kept for 30 days, and one
 backup a month is kept for 12 months, so a deleted account is fully gone from backups
-within a year.
+within a year. Error reports are deleted within 90 days and product counts within a year.
 
 ## Your choices
 
