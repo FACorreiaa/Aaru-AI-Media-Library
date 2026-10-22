@@ -862,6 +862,39 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}/upvote:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+    put:
+      operationId: upvoteBoardPost
+      summary: Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's.
+      responses:
+        '204':
+          description: Upvoted.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: removeBoardPostUpvote
+      summary: Take your upvote back. Fine if you never gave one.
+      responses:
+        '204':
+          description: Removed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}/upvotes:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listBoardPostUpvoters
+      summary: Who upvoted a post, minus anyone blocked either way with you.
+      responses:
+        '200':
+          description: The upvoters.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserList'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/groups/{groupId}/channels/{channelId}/read:
     post:
       operationId: markChannelRead

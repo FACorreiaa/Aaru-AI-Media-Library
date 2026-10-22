@@ -4553,6 +4553,203 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's.
+    ///
+    /// - Remark: HTTP `PUT /v1/board/posts/{postId}/upvote`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/upvote/put(upvoteBoardPost)`.
+    public func upvoteBoardPost(_ input: Operations.UpvoteBoardPost.Input) async throws -> Operations.UpvoteBoardPost.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.UpvoteBoardPost.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/board/posts/{}/upvote",
+                    parameters: [
+                        input.path.postId
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .put
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Take your upvote back. Fine if you never gave one.
+    ///
+    /// - Remark: HTTP `DELETE /v1/board/posts/{postId}/upvote`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/upvote/delete(removeBoardPostUpvote)`.
+    public func removeBoardPostUpvote(_ input: Operations.RemoveBoardPostUpvote.Input) async throws -> Operations.RemoveBoardPostUpvote.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.RemoveBoardPostUpvote.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/board/posts/{}/upvote",
+                    parameters: [
+                        input.path.postId
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Who upvoted a post, minus anyone blocked either way with you.
+    ///
+    /// - Remark: HTTP `GET /v1/board/posts/{postId}/upvotes`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/upvotes/get(listBoardPostUpvoters)`.
+    public func listBoardPostUpvoters(_ input: Operations.ListBoardPostUpvoters.Input) async throws -> Operations.ListBoardPostUpvoters.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ListBoardPostUpvoters.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/board/posts/{}/upvotes",
+                    parameters: [
+                        input.path.postId
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ListBoardPostUpvoters.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.SocialUserList.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Mark the channel read up to a message. The read point never moves back.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/read`.

@@ -121,6 +121,21 @@ struct BoardService: Sendable {
         try await stores.boards.deletePost(id, now: now())
     }
 
+    func upvote(_ id: UUID, on: Bool, viewer: UserID) async throws { // swiftlint:disable:this identifier_name
+        _ = try await requireVisible(id, viewer: viewer)
+        try await stores.boards.setUpvote(post: id, user: viewer, on: on)
+    }
+
+    /// Who upvoted, minus anyone blocked in either direction with the viewer.
+    func upvoters(_ id: UUID, viewer: UserID) async throws -> [SocialUser] {
+        _ = try await requireVisible(id, viewer: viewer)
+        let blocked = try await Set(stores.social.blocked(by: viewer).map(\.id))
+        let blockers = try await stores.social.blockers(of: viewer)
+        return try await stores.boards.upvoters(post: id).filter {
+            !blocked.contains($0.id) && !blockers.contains($0.id)
+        }
+    }
+
     /// The viewer and their friends, minus anyone blocked in either direction.
     func audience(_ viewer: UserID) async throws -> [UserID] {
         let friends = try await stores.social.friends(viewer).map(\.id)

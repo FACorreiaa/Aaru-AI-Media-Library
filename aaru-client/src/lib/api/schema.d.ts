@@ -805,6 +805,45 @@ export interface paths {
     patch: operations['editBoardPost']
     trace?: never
   }
+  '/v1/board/posts/{postId}/upvote': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's. */
+    put: operations['upvoteBoardPost']
+    post?: never
+    /** Take your upvote back. Fine if you never gave one. */
+    delete: operations['removeBoardPostUpvote']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts/{postId}/upvotes': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    /** Who upvoted a post, minus anyone blocked either way with you. */
+    get: operations['listBoardPostUpvoters']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/groups/{groupId}/channels/{channelId}/read': {
     parameters: {
       query?: never
@@ -5128,6 +5167,71 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['BoardPost']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  upvoteBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Upvoted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  removeBoardPostUpvote: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listBoardPostUpvoters: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The upvoters. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialUserList']
         }
       }
       default: components['responses']['Error']

@@ -49,6 +49,27 @@ extension APIImplementation {
         return .noContent(.init())
     }
 
+    func upvoteBoardPost(_ input: Operations.UpvoteBoardPost.Input) async throws
+        -> Operations.UpvoteBoardPost.Output
+    {
+        try await services.board.upvote(postID(input.path.postId), on: true, viewer: currentUser())
+        return .noContent(.init())
+    }
+
+    func removeBoardPostUpvote(_ input: Operations.RemoveBoardPostUpvote.Input) async throws
+        -> Operations.RemoveBoardPostUpvote.Output
+    {
+        try await services.board.upvote(postID(input.path.postId), on: false, viewer: currentUser())
+        return .noContent(.init())
+    }
+
+    func listBoardPostUpvoters(_ input: Operations.ListBoardPostUpvoters.Input) async throws
+        -> Operations.ListBoardPostUpvoters.Output
+    {
+        let users = try await services.board.upvoters(postID(input.path.postId), viewer: currentUser())
+        return .ok(.init(body: .json(.init(items: users.map { .init($0) }))))
+    }
+
     /// A malformed id reads as a post that does not exist.
     private func postID(_ raw: String) throws -> UUID {
         guard let id = UUID(uuidString: raw) else { throw BoardService.noSuchPost }
