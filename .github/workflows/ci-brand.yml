@@ -2,26 +2,12 @@
 # design/tokens.json and pass contrast, and no client writes its own colours or display face.
 name: Brand
 
+# Runs on every PR, not on a path filter: main's ruleset requires this check, and a required check
+# that never reports would block a PR that touches no client.
 on:
   push:
     branches: [main]
-    paths:
-      - "aaru-client/**"
-      - "aaru-ios/**"
-      - "aaru-extension/**"
-      - "design/**"
-      - "scripts/generate-tokens.mjs"
-      - "scripts/brand-guard.sh"
-      - ".github/workflows/ci-brand.yml"
   pull_request:
-    paths:
-      - "aaru-client/**"
-      - "aaru-ios/**"
-      - "aaru-extension/**"
-      - "design/**"
-      - "scripts/generate-tokens.mjs"
-      - "scripts/brand-guard.sh"
-      - ".github/workflows/ci-brand.yml"
   workflow_dispatch:
 
 concurrency:
