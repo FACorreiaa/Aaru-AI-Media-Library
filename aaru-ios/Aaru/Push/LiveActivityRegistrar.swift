@@ -3,6 +3,7 @@
     import AaruCore
     import ActivityKit
     import Foundation
+    import UIKit
 
     /// Hands ActivityKit's push tokens to the API (SCR-008) so the server can start "Now watching"
     /// when a scrobble starts, and update and end it as the player pauses, resumes and stops: the
@@ -57,12 +58,18 @@
             }
         }
 
-        /// One scrobble activity: a new one ends any other (one runs at a time) and gets its
-        /// poster, since a push cannot carry one; then its token goes up each time it changes.
+        /// One scrobble activity: its token goes up first, then a new one ends any other (one runs
+        /// at a time) and gets its poster, since a push cannot carry one; then the token goes up
+        /// each time it changes. Token first: a push-started activity wakes the app for seconds
+        /// only, and until the server has the token it can neither pause nor end the activity.
         private func follow(activityID: String, isNew: Bool) async {
             guard let activity = Activity<NowWatchingAttributes>.activities.first(where: { $0.id == activityID }),
                   let watchEventId = activity.attributes.watchEventId
             else { return }
+            let sent = activity.pushToken
+            if let sent {
+                await upload(sent, kind: .update, watchEventId: watchEventId)
+            }
             if isNew {
                 for other in Activity<NowWatchingAttributes>.activities where other.id != activity.id {
                     await other.end(nil, dismissalPolicy: .immediate)
@@ -71,7 +78,7 @@
                     await NowWatching.storeArtwork(for: activity.attributes)
                 }
             }
-            for await token in activity.pushTokenUpdates {
+            for await token in activity.pushTokenUpdates where token != sent {
                 await upload(token, kind: .update, watchEventId: watchEventId)
             }
         }
@@ -92,7 +99,25 @@
                 token: hex, kind: kind, watchEventId: watchEventId?.uuidString.lowercased(),
                 environment: environment, bundleId: Bundle.main.bundleIdentifier ?? ""
             )
+            // A background wake can end mid-request: ask for the time to finish this one.
+            let time = await BackgroundTime(named: "Live Activity token")
             _ = try? await api.registerLiveActivityToken(body: .json(registration))
+            await time.end()
+        }
+    }
+
+    /// Extra background time from iOS while one upload finishes; ended early when iOS asks.
+    @MainActor private final class BackgroundTime {
+        private var id = UIBackgroundTaskIdentifier.invalid
+
+        init(named name: String) {
+            id = UIApplication.shared.beginBackgroundTask(withName: name) { [weak self] in self?.end() }
+        }
+
+        func end() {
+            guard id != .invalid else { return }
+            UIApplication.shared.endBackgroundTask(id)
+            id = .invalid
         }
     }
 #endif
