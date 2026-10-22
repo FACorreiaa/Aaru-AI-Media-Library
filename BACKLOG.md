@@ -2225,7 +2225,11 @@ APNs: push-to-start on a session's first `start`, update on pause and resume, en
 from tokens the app registers at `PUT /v1/devices/live-activity`; the app also starts it when it
 opens on a session. The app follows its tokens from launch, so a background launch (iOS waking it
 for a push-started activity) uploads the activity's token, and a token that arrives after a pause
-or stop hears the session as it stands: update, or end (2026-10-22). A `start` for the next episode closes the last one, ticking it only when it
+or stop hears the session as it stands: update, or end (2026-10-22). The activity's token goes
+up before its poster is fetched, under a background-task assertion: in the first live test
+(Bleach, 2026-10-22) the poster download used up the wake, so pause and stop missed the Lock
+Screen until the app was opened. Stremio reports a new episode only once it has played a while
+(E12's first `start` came 2:41 in), so the activity appears that late. A `start` for the next episode closes the last one, ticking it only when it
 was last reported at ≥ 80%. With it, the web's last-7-days block became a wide strip under
 Tonight (owner, same day). This closes WID-005's "scrobble start is P3" and SCR-001's "may start
 the WID-005 Live Activity via push".
