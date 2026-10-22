@@ -7,8 +7,8 @@ import Foundation
 struct PostgresScheduleStore: ScheduleStore {
     let sql: any SQLDatabase
 
-    /// Title columns every query here selects, decoded by `TitleColumns`.
-    private static let titleColumns: SQLQueryString = """
+    /// Title columns every query here (and Tonight's) selects, decoded by `TitleColumns`.
+    static let titleColumns: SQLQueryString = """
     t.id AS title_id, t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.backdrop_url,
     t.network, t.is_anime,
     t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn, t.open_library, t.anilist, t.mal, t.anidb
@@ -174,7 +174,7 @@ struct PostgresScheduleStore: ScheduleStore {
 }
 
 /// The title columns `PostgresScheduleStore.titleColumns` selects, decoded from the same row.
-private struct TitleColumns: Decodable {
+struct TitleColumns: Decodable {
     let titleId: UUID
     let type: String
     let title: String

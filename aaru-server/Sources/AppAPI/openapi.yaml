@@ -2402,6 +2402,48 @@ paths:
               schema: {$ref: '#/components/schemas/UpNext'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/tonight:
+    get:
+      operationId: getTonight
+      summary: >-
+        One to three things to start tonight (AG-005), ranked from the user's own library: the next
+        episode of shows in progress, today's airings, books in progress, wishlist films. Reasons
+        are templates; no model is called.
+      parameters:
+        - name: tz
+          in: query
+          description: IANA time zone for "today" and air times. Absent means UTC.
+          schema: {type: string}
+      responses:
+        '200':
+          description: The strip for the local day.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Tonight'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/tonight/{id}/feedback:
+    post:
+      operationId: sendTonightFeedback
+      summary: >-
+        "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against
+        it for 14 days.
+      parameters:
+        - {name: id, in: path, required: true, description: The library item., schema: {type: string, format: uuid}}
+        - name: tz
+          in: query
+          description: IANA time zone for the local day. Absent means UTC.
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TonightFeedback'}
+      responses:
+        '204':
+          description: Recorded.
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -4304,6 +4346,41 @@ components:
         libraryItemId: {type: string, format: uuid}
         title: {$ref: '#/components/schemas/TitleSummary'}
         runtimeMinutes: {type: integer}
+    TonightPick:
+      type: object
+      required: [libraryItemId, title, kind, reason, airTimeKnown]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        kind:
+          type: string
+          enum: [continue, airing, reading, start]
+          description: >-
+            continue: the next aired episode of a show in progress. airing: an episode airing
+            today. reading: a book in progress. start: a wishlist film.
+        episode: {$ref: '#/components/schemas/EpisodeRef'}
+        episodeName: {type: string}
+        minutes: {type: integer}
+        airsAt: {type: string, format: date-time}
+        airTimeKnown: {type: boolean}
+        reason:
+          type: string
+          description: Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min".
+    Tonight:
+      type: object
+      required: [day, picks]
+      properties:
+        day: {type: string, format: date, description: The local day the strip is for.}
+        picks:
+          type: array
+          items: {$ref: '#/components/schemas/TonightPick'}
+    TonightFeedback:
+      type: object
+      required: [verdict]
+      properties:
+        verdict:
+          type: string
+          enum: [rejected, not_tonight]
     UpNext:
       type: object
       required: [continueWatching, startWatching]

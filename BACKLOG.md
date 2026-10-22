@@ -36,6 +36,18 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-22
 
+- **Tonight, capture and Plus: the agent as the paid product, built before the P2 gate**, by the
+  owner's call (owner, 2026-10-22). Items: AG-005 composed on the server (`GET /v1/tonight`),
+  with reject and "not tonight" kept as the user's own data (this closes AG-005's OPEN: persist,
+  not local), still derived only from the user's own library; AG-004's composer on The Field;
+  AG-006 capture from text and image; the slice of AG-007 that meters model spend per month; and
+  Plus on StoreKit 2 with a server-side entitlement (BIL items). Free accounts get the Tonight
+  strip and 3 captures a month; Plus lifts the capture quota (this replaces MARKETING §5.2's "the
+  first run is free"). **URL capture fetches nothing**: a Letterboxd or IMDb link is answered
+  with the CSV importer, and TMDB, AniList and Open Library links resolve by id through their
+  APIs. No new scraping exception. A capture is an import job (`source = capture`), so its plan
+  is the job's plan: unmatched rows use IMP-011's "Find it", and apply is one undoable action.
+  Tonight's reasons are templates, never a model call, so Home needs no model.
 - **Rebrand to the owl poster (owner, 2026-10-22).** The poster "Aaru Owl: Your stories. Your
   world." is the standard from now on (DESIGN.md "Brand"). The name stays Aaru; the teal bird,
   reeds, heron and teal → gold go. The owner chose: dark-first with a derived light mode, both
@@ -572,7 +584,7 @@ account or a stranger that has not happened yet.
 | AG-002 | Open | none | |
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
-| AG-005 | Open | none | |
+| AG-005 | Partial | Tonight/TonightService.swift, `/v1/tonight` | Server built; clients still compose on device |
 | AG-006 | Open | none | |
 | AG-007 | Open | no ModelProviding | |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
@@ -2993,8 +3005,15 @@ are recorded as signal.
 **Done when:** the strip is derived only from the user's own library — no cross-user data,
 no recommendation service — and a reject never re-suggests the same item that night.
 
-**OPEN:** does reject signal persist as user data or stay local? Recommendation: local first,
-since it is preference noise, not library truth.
+**Decided (owner, 2026-10-22):** reject and "not tonight" persist as the user's own data
+(`tonight_feedback`), so they shape the next day on every device.
+
+**Built 2026-10-22 (server):** `GET /v1/tonight?tz=` ranks the next episode of shows in
+progress, today's airings, books in progress and wishlist films by a fixed score (momentum,
+nearness to the end, time on the list, minus rejections in the last 14 days). "Not tonight"
+hides an item for the local day; reasons are templates. `POST /v1/tonight/{id}/feedback`.
+`tonight_picks` records what was shown, for the `tonight_accepted` count (progress on a pick
+within 6 h). Clients still compose Tonight on the device until they read this route.
 
 ### AG-006 · Capture as an import source · L
 **Needs:** AG-003, IMP-005, IMP-011, JOB-001.

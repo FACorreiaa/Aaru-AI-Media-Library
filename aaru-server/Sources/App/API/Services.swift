@@ -9,6 +9,7 @@ struct Services: Sendable {
     var lists: ListService
     var shelves: ShelfService
     var schedule: ScheduleService
+    var tonight: TonightService
     var stats: StatsService
     var imports: ImportService
     var traktConnect: TraktConnectService
@@ -53,16 +54,12 @@ struct Services: Sendable {
         return Services(
             auth: auth,
             catalog: catalog,
-            discover: DiscoverService(
-                stores: stores,
-                providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
-                    + [catalogs.releases].compactMap(\.self),
-                animeFallback: catalogs.tmdb as? any DiscoverListing
-            ),
+            discover: discover(stores, catalogs),
             library: library,
             lists: ListService(stores: stores, resolver: resolver, catalog: catalog),
             shelves: ShelfService(stores: stores, library: library),
             schedule: ScheduleService(stores: stores, catalog: catalog),
+            tonight: TonightService(stores: stores),
             stats: StatsService(stores: stores),
             imports: ImportService(
                 stores: stores, resolver: resolver,
@@ -92,6 +89,15 @@ struct Services: Sendable {
                     stores: stores, groups: groups, catalog: catalog, resolver: resolver, library: library, model: $0
                 )
             }
+        )
+    }
+
+    private static func discover(_ stores: Stores, _ catalogs: CatalogProviders) -> DiscoverService {
+        DiscoverService(
+            stores: stores,
+            providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
+                + [catalogs.releases].compactMap(\.self),
+            animeFallback: catalogs.tmdb as? any DiscoverListing
         )
     }
 

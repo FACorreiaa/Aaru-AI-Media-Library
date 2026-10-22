@@ -30,6 +30,10 @@ HttpOnly cookie. Email sign-in codes are stored hashed and expire after 15 minut
 episode progress, your lists and saved shelves, and a short history of your changes so they
 can be undone.
 
+**Tonight.** Aaru keeps which picks the Tonight strip showed you each day and whether you started
+one, and your "not tonight" and "not for me" answers, so tomorrow's strip leaves them out or
+weighs them down. They are built from your own library only and nobody else sees them.
+
 **Imports.** When you import a file (IMDb, Letterboxd, Goodreads, and others), Aaru reads it and
 keeps the rows it found with that import so you can review the plan before anything changes.
 The uploaded file itself is not kept. If you connect Trakt, Aaru stores Trakt's access tokens
@@ -127,7 +131,9 @@ Prime Video the extension reports only the site, never the page you were on.
 **Product counts.** Aaru's server notes a few events so the developer can see which parts of Aaru
 are used: an account was created and how (Apple, Google or email), an import finished and from
 where, a title was added or changed and by whom (you, an agent, an import or a player), a list or
-group was created, a friend was added, an agent's request was approved or declined. Each event
+group was created, a friend was added, an agent's request was approved or declined, the Tonight
+strip showed something today, one of its picks was started within six hours, or you answered a
+pick with "not tonight" or "not for me". Each event
 carries only those words and your account's random id, never a title, a name, an email, text or
 your IP address, and no profile is built from them. They go to PostHog. The apps and the website
 send nothing of this kind themselves.

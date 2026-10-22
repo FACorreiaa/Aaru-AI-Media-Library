@@ -714,6 +714,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/up-next`.
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
     func getUpNext(_ input: Operations.GetUpNext.Input) async throws -> Operations.GetUpNext.Output
+    /// One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called.
+    ///
+    /// - Remark: HTTP `GET /v1/tonight`.
+    /// - Remark: Generated from `#/paths//v1/tonight/get(getTonight)`.
+    func getTonight(_ input: Operations.GetTonight.Input) async throws -> Operations.GetTonight.Output
+    /// "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days.
+    ///
+    /// - Remark: HTTP `POST /v1/tonight/{id}/feedback`.
+    /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/post(sendTonightFeedback)`.
+    func sendTonightFeedback(_ input: Operations.SendTonightFeedback.Input) async throws -> Operations.SendTonightFeedback.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -2482,6 +2492,36 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)`.
     public func getUpNext(headers: Operations.GetUpNext.Input.Headers = .init()) async throws -> Operations.GetUpNext.Output {
         try await getUpNext(Operations.GetUpNext.Input(headers: headers))
+    }
+    /// One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called.
+    ///
+    /// - Remark: HTTP `GET /v1/tonight`.
+    /// - Remark: Generated from `#/paths//v1/tonight/get(getTonight)`.
+    public func getTonight(
+        query: Operations.GetTonight.Input.Query = .init(),
+        headers: Operations.GetTonight.Input.Headers = .init()
+    ) async throws -> Operations.GetTonight.Output {
+        try await getTonight(Operations.GetTonight.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days.
+    ///
+    /// - Remark: HTTP `POST /v1/tonight/{id}/feedback`.
+    /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/post(sendTonightFeedback)`.
+    public func sendTonightFeedback(
+        path: Operations.SendTonightFeedback.Input.Path,
+        query: Operations.SendTonightFeedback.Input.Query = .init(),
+        headers: Operations.SendTonightFeedback.Input.Headers = .init(),
+        body: Operations.SendTonightFeedback.Input.Body
+    ) async throws -> Operations.SendTonightFeedback.Output {
+        try await sendTonightFeedback(Operations.SendTonightFeedback.Input(
+            path: path,
+            query: query,
+            headers: headers,
+            body: body
+        ))
     }
 }
 
@@ -9178,6 +9218,129 @@ public enum Components {
                 case libraryItemId
                 case title
                 case runtimeMinutes
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TonightPick`.
+        public struct TonightPick: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TonightPick/libraryItemId`.
+            public var libraryItemId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/TonightPick/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// continue: the next aired episode of a show in progress. airing: an episode airing today. reading: a book in progress. start: a wishlist film.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TonightPick/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case _continue = "continue"
+                case airing = "airing"
+                case reading = "reading"
+                case start = "start"
+            }
+            /// continue: the next aired episode of a show in progress. airing: an episode airing today. reading: a book in progress. start: a wishlist film.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TonightPick/kind`.
+            public var kind: Components.Schemas.TonightPick.KindPayload
+            /// - Remark: Generated from `#/components/schemas/TonightPick/episode`.
+            public var episode: Components.Schemas.EpisodeRef?
+            /// - Remark: Generated from `#/components/schemas/TonightPick/episodeName`.
+            public var episodeName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TonightPick/minutes`.
+            public var minutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/TonightPick/airsAt`.
+            public var airsAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/TonightPick/airTimeKnown`.
+            public var airTimeKnown: Swift.Bool
+            /// Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min".
+            ///
+            /// - Remark: Generated from `#/components/schemas/TonightPick/reason`.
+            public var reason: Swift.String
+            /// Creates a new `TonightPick`.
+            ///
+            /// - Parameters:
+            ///   - libraryItemId:
+            ///   - title:
+            ///   - kind: continue: the next aired episode of a show in progress. airing: an episode airing today. reading: a book in progress. start: a wishlist film.
+            ///   - episode:
+            ///   - episodeName:
+            ///   - minutes:
+            ///   - airsAt:
+            ///   - airTimeKnown:
+            ///   - reason: Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min".
+            public init(
+                libraryItemId: Swift.String,
+                title: Components.Schemas.TitleSummary,
+                kind: Components.Schemas.TonightPick.KindPayload,
+                episode: Components.Schemas.EpisodeRef? = nil,
+                episodeName: Swift.String? = nil,
+                minutes: Swift.Int? = nil,
+                airsAt: Foundation.Date? = nil,
+                airTimeKnown: Swift.Bool,
+                reason: Swift.String
+            ) {
+                self.libraryItemId = libraryItemId
+                self.title = title
+                self.kind = kind
+                self.episode = episode
+                self.episodeName = episodeName
+                self.minutes = minutes
+                self.airsAt = airsAt
+                self.airTimeKnown = airTimeKnown
+                self.reason = reason
+            }
+            public enum CodingKeys: String, CodingKey {
+                case libraryItemId
+                case title
+                case kind
+                case episode
+                case episodeName
+                case minutes
+                case airsAt
+                case airTimeKnown
+                case reason
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Tonight`.
+        public struct Tonight: Codable, Hashable, Sendable {
+            /// The local day the strip is for.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Tonight/day`.
+            public var day: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Tonight/picks`.
+            public var picks: [Components.Schemas.TonightPick]
+            /// Creates a new `Tonight`.
+            ///
+            /// - Parameters:
+            ///   - day: The local day the strip is for.
+            ///   - picks:
+            public init(
+                day: Swift.String,
+                picks: [Components.Schemas.TonightPick]
+            ) {
+                self.day = day
+                self.picks = picks
+            }
+            public enum CodingKeys: String, CodingKey {
+                case day
+                case picks
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TonightFeedback`.
+        public struct TonightFeedback: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TonightFeedback/verdict`.
+            @frozen public enum VerdictPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case rejected = "rejected"
+                case notTonight = "not_tonight"
+            }
+            /// - Remark: Generated from `#/components/schemas/TonightFeedback/verdict`.
+            public var verdict: Components.Schemas.TonightFeedback.VerdictPayload
+            /// Creates a new `TonightFeedback`.
+            ///
+            /// - Parameters:
+            ///   - verdict:
+            public init(verdict: Components.Schemas.TonightFeedback.VerdictPayload) {
+                self.verdict = verdict
+            }
+            public enum CodingKeys: String, CodingKey {
+                case verdict
             }
         }
         /// - Remark: Generated from `#/components/schemas/UpNext`.
@@ -31886,6 +32049,315 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/up-next/get(getUpNext)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called.
+    ///
+    /// - Remark: HTTP `GET /v1/tonight`.
+    /// - Remark: Generated from `#/paths//v1/tonight/get(getTonight)`.
+    public enum GetTonight {
+        public static let id: Swift.String = "getTonight"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/tonight/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// IANA time zone for "today" and air times. Absent means UTC.
+                ///
+                /// - Remark: Generated from `#/paths/v1/tonight/GET/query/tz`.
+                public var tz: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - tz: IANA time zone for "today" and air times. Absent means UTC.
+                public init(tz: Swift.String? = nil) {
+                    self.tz = tz
+                }
+            }
+            public var query: Operations.GetTonight.Input.Query
+            /// - Remark: Generated from `#/paths/v1/tonight/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTonight.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTonight.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTonight.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetTonight.Input.Query = .init(),
+                headers: Operations.GetTonight.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/tonight/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/tonight/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Tonight)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Tonight {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTonight.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTonight.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The strip for the local day.
+            ///
+            /// - Remark: Generated from `#/paths//v1/tonight/get(getTonight)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTonight.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTonight.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/tonight/get(getTonight)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days.
+    ///
+    /// - Remark: HTTP `POST /v1/tonight/{id}/feedback`.
+    /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/post(sendTonightFeedback)`.
+    public enum SendTonightFeedback {
+        public static let id: Swift.String = "sendTonightFeedback"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// The library item.
+                ///
+                /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id: The library item.
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.SendTonightFeedback.Input.Path
+            /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/POST/query`.
+            public struct Query: Sendable, Hashable {
+                /// IANA time zone for the local day. Absent means UTC.
+                ///
+                /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/POST/query/tz`.
+                public var tz: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - tz: IANA time zone for the local day. Absent means UTC.
+                public init(tz: Swift.String? = nil) {
+                    self.tz = tz
+                }
+            }
+            public var query: Operations.SendTonightFeedback.Input.Query
+            /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SendTonightFeedback.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SendTonightFeedback.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SendTonightFeedback.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.TonightFeedback)
+            }
+            public var body: Operations.SendTonightFeedback.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.SendTonightFeedback.Input.Path,
+                query: Operations.SendTonightFeedback.Input.Query = .init(),
+                headers: Operations.SendTonightFeedback.Input.Headers = .init(),
+                body: Operations.SendTonightFeedback.Input.Body
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Recorded.
+            ///
+            /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/post(sendTonightFeedback)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.SendTonightFeedback.Output.NoContent)
+            /// Recorded.
+            ///
+            /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/post(sendTonightFeedback)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.SendTonightFeedback.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/post(sendTonightFeedback)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

@@ -37,7 +37,7 @@ struct PostgresLibraryStore: LibraryStore {
                 return action
             }
             // After the commit, so a rolled-back write is never counted.
-            ProductEvents.capture(.libraryAction, userID: userID, ["kind": kind, "actor": caller.actor.rawValue])
+            await countWrite(op.itemIDs, kind: kind, actor: caller.actor, userID: userID)
             return action
         } catch let error as any DatabaseError where error.isConstraintFailure {
             throw StoreConflict(message: "This title is already in the library.")
