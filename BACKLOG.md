@@ -36,6 +36,29 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-22
 
+- **Achievements now: the whole of P5's core (owner, 2026-10-22).** Pulled forward before the
+  P2 gate, with 0 strangers: the points ledger (GAM-001), levels (GAM-002), streaks (GAM-003),
+  badges (GAM-004), the friends leaderboard (GAM-005) and the streak widget (WID-007). The
+  design is `docs/superpowers/specs/2026-10-22-achievements-design.md`; its badge catalog
+  (61 badges) is for the owner to review.
+- **Friends stay mutual.** The owner asked for friends that "work as followers"; that feel comes
+  from profiles, activity and achievements on a profile. There is still no one-way follow.
+- **Imports count for milestones, not for activity.** Milestone badges ("100 films") read the
+  library, so imported history counts. Points, streaks, the weekly board and activity badges
+  ("10 episodes in a day", Night Owl) count only live writes. An import awards its badges
+  quietly, as one summary.
+- **Badges come from two sources.** Milestones from library facts, activity from the points
+  ledger and streak days. This replaces GAM-004's "awarded from ledger events only".
+- **Friends see badges and level by default**, behind their own "Show my badges and level to
+  friends" switch (`show_achievements_to_friends`, on). The weekly board is a separate opt-in
+  (`leaderboard_opt_in`, off). Blocks apply both ways; there is never a global board.
+- **The unlock moment is quiet**: a medallion toast (a haptic on Apple); a badge's top tier gets
+  a one-time full card. No push for unlocks or for a streak about to break.
+- **About 15% of badges are hidden** until earned; the rest show progress ("62 / 100").
+- **Names are plain, with a little wit** (Century, Night Owl, Completionist). Tiers are 1–4 in
+  code and bronze, silver, gold and platinum in the UI, drawn without gold fills (DESIGN.md).
+- **Listens alone do not keep a streak**, and friend and first-import points stay off the weekly
+  board (calls made in the design; the owner can reverse them).
 - **Everything playing, in one Live Activity (owner, 2026-10-22, SCR-009).** When a show and a
   song, or a show and a YouTube video, play at once, the iPhone shows them together: one
   combined "Now playing" activity, not one activity per thing (owner chose the combined layout
@@ -514,12 +537,12 @@ account or a stranger that has not happened yet.
 | SOC-006 | Built, unverified | `social_recommendations`, `/v1/social/recommendations`, `/v1/me/recommendations*`; InteractionTests; web Recommend (title page, profile) and inbox, iOS RecommendSheet and inbox | No push to the recipient yet (needs a notification category) |
 | SOC-007 | Built, unverified | `social_reactions`, `PUT/DELETE /v1/activity/{id}/reaction`, reactions on `ActivityItem`; InteractionTests; web and iOS Lately rows | |
 | SHR-001 | Open | none | |
-| GAM-001 | Open | none | |
-| GAM-002 | Open | none | |
-| GAM-003 | Open | none | |
-| WID-007 | Open | none | |
-| GAM-004 | Open | none | |
-| GAM-005 | Open | none | |
+| GAM-001 | Built, unverified | `points_events`, `PointsRules`, award/revoke in the library transaction, friend/room/listen/import hooks; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
+| GAM-002 | Built, unverified | `Levels`, `GET /v1/me/progress`, `GET /v1/me/points`; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
+| GAM-003 | Built, unverified | AaruCore `Streak` (travel grace), `check_ins`, `X-Timezone` (server + AaruAPI), milestone bonuses; StreakTests, GamificationTests; web + iOS streak strip | owner judges design; TestFlight |
+| WID-007 | Built, unverified | `AaruWidgets/StreakWidget.swift` (small + accessory), timeline at the next two local midnights via AaruCore `Streak` | flip at midnight on TestFlight |
+| GAM-004 | Built, unverified | `BadgeCatalog` (62, 9 hidden), facts query, `user_badges`, `GamificationWorker` backfill, undo takes a tier back, `/v1/me/badges`; BadgeRuleTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
+| GAM-005 | Built, unverified | two `social_settings` switches (partial PUT), `FriendProfile.achievements`, `GET /v1/social/leaderboard`; LeaderboardTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
 | GAM-006e | Done | #67; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
 | GAM-006b | Partial | #43 Insights; ShowWatchedTests "GAM-006b" | Profile pulled forward 2026-10-22; badges wait for GAM-001 |
@@ -2631,7 +2654,8 @@ alerts through web push and open `/app/groups/{g}/{c}`. Mac push stays off.
 
 # P5 — Gamification
 
-Start only after the P2 gate. Points are a **ledger**, never a counter — copied from Norviq
+Start only after the P2 gate, except GAM-001…005 and WID-007, pulled forward by the owner
+on 2026-10-22 (see that day's decisions). Points are a **ledger**, never a counter — copied from Norviq
 (`StockPlanBackend/Gamification/XPService.swift`) and Loci (`0113_gamification.up.sql`).
 
 ## P5 · Points, streaks, badges
@@ -2677,7 +2701,10 @@ closed.
 **Needs:** GAM-001.
 `user_badges` (`userId`, `badgeType`, `tier`, `awardedAt`); definitions in code. Discovery
 badges (first import, first list, first friend, first room) and milestone badges (100 episodes,
-first finished anime, 10 books, a full season in a day). Awarded from ledger events only.
+first finished anime, 10 books, a full season in a day). Since 2026-10-22: milestone badges
+read library facts (imports count) and activity badges read the ledger and streak days; the
+catalog is in `docs/superpowers/specs/2026-10-22-achievements-design.md`. Undoing the action
+that earned a tier takes the tier back when its rule no longer holds.
 
 **Done when:** every badge has a unit test for its rule, and re-running the evaluator awards
 nothing new.
@@ -2685,7 +2712,7 @@ nothing new.
 ### GAM-005 · Friends leaderboard · S
 **Needs:** GAM-001, SOC-002.
 Weekly, friends only, opt-in (`leaderboard_opt_in`); blocks applied both ways. No global
-board.
+board. Weeks run on each person's own local dates; friend and first-import points are left out.
 
 **Done when:** a user who has not opted in never appears on anyone's board, including their
 friends'.

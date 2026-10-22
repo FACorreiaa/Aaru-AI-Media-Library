@@ -28,6 +28,8 @@ struct HomeScreen: View {
     /// phone's single column, since the 340pt side column would squeeze the rows.
     @State private var width: CGFloat = 0
     @Environment(AppRouter.self) var router
+    /// Level and streak for the strip (GAM-002/003); nil in previews.
+    @Environment(ProgressModel.self) var achievements: ProgressModel?
     @Environment(\.dynamicTypeSize) private var dynamicType
     @Environment(\.scenePhase) private var scenePhase
 

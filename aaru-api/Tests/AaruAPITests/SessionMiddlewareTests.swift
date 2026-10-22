@@ -71,6 +71,19 @@ struct SessionMiddlewareTests {
         #expect(transport.sent.first?.path == "/v1/health")
     }
 
+    @Test("GAM-003: every request carries the device's time zone")
+    func sendsTimeZone() async throws {
+        let transport = StubTransport(status: .ok, body: #"{"status":"ok"}"#)
+        let client = Client.aaru(
+            baseURL: baseURL,
+            session: SessionMiddleware(token: { nil }, onUnauthorized: {}),
+            timeZone: TimeZoneMiddleware { TimeZone(identifier: "Asia/Tokyo") ?? .gmt },
+            transport: transport
+        )
+        _ = try await client.getHealth()
+        #expect(transport.sent.first?.headerFields[.xTimezone] == "Asia/Tokyo")
+    }
+
     @Test("Signed out, no Authorization header is sent")
     func noTokenNoHeader() async throws {
         let transport = StubTransport(status: .ok, body: #"{"status":"ok"}"#)

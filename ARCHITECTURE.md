@@ -162,7 +162,7 @@ phase:
 | --- | --- |
 | 3 | `watch_events`, `outbound_connections` (Trakt / MAL / AniList tokens, encrypted) |
 | 4 | `social_friend_requests`, `social_friendships`, `social_blocks`, `social_reports`, `social_invites`, `social_settings`, `apns_devices` |
-| 5 | `points_events`, `user_progress`, `check_ins`, `user_badges` |
+| 5 | `points_events`, `user_progress`, `check_ins`, `user_badges` (pulled forward 2026-10-22) |
 | 6 | `devices`, `signal_identity_keys`, `signal_signed_prekeys`, `signal_onetime_prekeys`, `conversations`, `conversation_members`, `message_envelopes` |
 
 Groups (pulled forward 2026-10-20) bring `profiles`, `social_friend_requests`,
@@ -1028,7 +1028,7 @@ Modelled on Norviq's `social_*` design (`norviq-backend/.../Social`, `CreateSoci
 | `social_invites` | code (12 random base62), inviter, optional title, expiry (14 days), redeemed_by, revoked_at |
 | `social_reactions` | user, owner, title, UTC day, one of six emoji; one per user and row (SOC-007) |
 | `social_recommendations` | from, to, title, note (140), created, added_at, dismissed_at; one waiting per pair and title (SOC-006) |
-| `social_settings` | `share_library_with_friends` (default on, 2026-10-21); P5 adds `show_points`, `show_streaks`, `leaderboard_opt_in` |
+| `social_settings` | `share_library_with_friends` (default on, 2026-10-21); `show_achievements_to_friends` (default on) and `leaderboard_opt_in` (default off), 2026-10-22 |
 
 Rules:
 
@@ -1107,27 +1107,45 @@ Rules:
   call.
 - **Push** for mentions and invites carries no message text, only who, where and a deep link.
 
-## Gamification (Phase 5)
+## Gamification (Phase 5, pulled forward 2026-10-22)
 
-Modelled on Norviq `gamification_xp_events` and Loci `points_events`.
+Modelled on Norviq `gamification_xp_events` and Loci `points_events`. Code lives in
+`aaru-server/Sources/App/Gamification`; the design and the badge catalog are in
+`docs/superpowers/specs/2026-10-22-achievements-design.md`.
 
-- **Ledger, not counter:** `points_events(user_id, kind, points, dedupe_key, created_at)`,
-  unique on `(user_id, dedupe_key)`.
-  - Every award goes through one idempotent `award` that inserts and ignores duplicates. A
-    re-ticked episode or a replayed scrobble earns nothing twice.
-  - `user_progress` (total, level, current and longest streak) is a cache rebuilt from the
-    ledger, never the source.
-- **Kinds:** episode watched, movie or book finished, scrobbled stream, friend added, room
-  joined, import completed.
-  - Daily caps per kind.
-  - Un-checking does not earn points; it writes a negative event with the same dedupe root.
-- **Friend added** counts only when the friendship is mutual. It is reversed if the friendship
-  ends within N days.
-- **Levels:** `50·L·(L−1)` XP to reach level L.
-- **Streaks:** daily `check_ins(user_id, local_date, time_zone)`, with the time zone from the
-  client's `X-Timezone` header.
-- **Badges:** `user_badges(user_id, badge, tier)`. Definitions live in code, not the DB.
-- **Leaderboards** are friends-only, weekly, and opt-in.
+- **Ledger, not counter:** `points_events(user_id, kind, points, dedupe_root, seq, dedupe_key,
+  reverses, title_id, season, episode, action_id, local_date, time_zone, created_at)`, unique on
+  `(user_id, dedupe_key)` where the key is `root#seq`.
+  - One idempotent path (X-010): `award` inserts only when the root's last event is not an
+    award; `revoke` inserts the negative of the active award. A re-ticked episode, a replayed
+    scrobble or a title removed and re-added earns nothing twice; undo then redo nets one.
+  - Roots are keyed by title, not library item: `ep:{title}:{s}:{e}`, `finish:{title}`,
+    `season:{title}:{s}`, `friend:{low}:{high}`, `room:{session}`, `streak:{runStart}:{n}`.
+  - `user_progress` (total, level, streak, time zone, a dirty flag with a lease) is a cache
+    rebuilt from the ledger, never the source.
+- **Where points are written:** inside the library transaction, from the op and its stored
+  inverse (`PostgresLibraryStore.apply` / `undo`), for the journal kinds `add`, `update`,
+  `remove`, `episode`, `season` and `undo` only. Imports, approved plans and list edits write
+  no points. Friend creation (accept, crossing requests, invite redeem), watch parties and
+  live listens award after their own writes. Values and daily caps live in
+  `Gamification/PointsRules.swift`.
+- **Friend added** counts only when the friendship is mutual and is reversed for both people if
+  it ends within 7 days. Re-friending earns nothing.
+- **Levels:** `50·L·(L−1)` points to reach level L; level is a pure function of the total.
+- **Streaks:** `check_ins(user_id, local_date, time_zone, first_at)` — called streak days
+  everywhere but the table — written only by live progress (episodes, finishes, book pages).
+  The local date comes from the client's `X-Timezone` header, else the stored zone, else UTC.
+  Past days are never recomputed. The rule lives in AaruCore (`Streak`) so the widget agrees.
+- **Badges:** `user_badges(user_id, badge, tier, awarded_at, origin, action_id, seen_at)`.
+  Definitions live in code. Milestone badges read library facts (so imported history counts);
+  activity badges read the ledger and streak days (live only). Undoing the action that earned a
+  tier takes it back if the rule no longer holds; nothing else removes a badge. Live writes are
+  evaluated right after commit; imports, plans and the first-run backfill are evaluated by
+  `GamificationWorker`, which claims dirty users with a lease.
+- **Leaderboards** are friends-only, weekly (each person's local dates), and opt-in
+  (`leaderboard_opt_in`), with blocks applied both ways. Friend and first-import points are
+  left out. Never global.
+- **What friends see:** level and non-private badges, behind `show_achievements_to_friends`.
 
 ## Realtime, messaging, and watch together (Phase 6)
 

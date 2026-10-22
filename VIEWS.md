@@ -50,8 +50,9 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Friend profile | none — shelf first: header with counts, Watching, You both (both want, both finished, they loved), Recently finished; only a name when they hide their library | `GET /v1/social/friends/{userId}/profile` | 4 · SOC-001/003 (2026-10-21) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
-| Profile and stats | `ProfilePanel`; `BadgeShelf` in 5. From the medallion on Home (iOS sheet, web `/app/profile`) | `GET /v1/me/profile/stats`; badges routes in 5 | 2 · GAM-006b (pulled forward 2026-10-22); 5 · GAM-004 |
-| Leaderboard | `Shelf`-like ranked list, friends only | leaderboard route | 5 · GAM-005 |
+| Profile and stats | `ProfilePanel`. From the medallion on Home (iOS sheet, web `/app/profile`) | `GET /v1/me/profile/stats` | 2 · GAM-006b (pulled forward 2026-10-22); 5 · GAM-004 |
+| Achievements (web `/app/achievements`; pushed on Apple from Home, Friends and Insights) | `StreakBar`, `BadgeShelf` — level, streak, badges by family with progress, hidden ones as "???", the points ledger | `GET /v1/me/progress`, `GET /v1/me/badges`, `POST /v1/me/badges/seen`, `GET /v1/me/points` | 5 · GAM-001…004 (owner pulled forward 2026-10-22) |
+| Leaderboard (on Friends, "This week") | `Shelf`-like ranked list, friends only, opt-in | `GET /v1/social/leaderboard` | 5 · GAM-005 (2026-10-22) |
 | Groups | `GroupRail`, `ChannelList`, `MessageList`, `MemberList`, `SpoilerVeil` (a `shelf` channel reads "List" and a Room "Watch party" in the UI); agent replies inside `MessageList` carry `TitleCard`, `CalendarRow`, `Shelf` | `/v1/groups/*`, `/v1/group-invites/*`, `/v1/realtime/ticket`, `/v1/ws` | 4 · GRP-001…GRP-012 (pulled forward 2026-10-20) |
 | Watch channel | `WatchPanel` above the channel's `MessageList` | `/v1/groups/{id}/channels/{cid}/session` + `/v1/ws` | 4 · GRP-009 (absorbs ROOM-001) |
 | Conversations | `ConversationView` | ciphertext message routes + `/v1/ws` | 6 · DM-* |
@@ -92,9 +93,9 @@ refuses and substitutes the nearest catalog piece.
 | `SeasonBrowser` | One season of public catalog titles on Discover (DISC-002) | season + year with steps either side, kind (anime, new shows, returning, movies), `CatalogHit` grid with `libraryItemId`, "Show more"; `DiscoverCard` per hit |
 | `NowPlayingCard` | What plays now | Up to three `NowPlayingItem`s: kind (episode / movie / track / video), name, subtitle, service, art, progress, started at, ends at, `libraryItemId` for library titles. Rendered on iOS as the "Now playing" Live Activity (`NowPlayingActivityAttributes`, SCR-009); a check-in by hand still uses "Now watching" (`NowWatchingAttributes`, WID-005) |
 | `UnfinishedRow` | Dropped or stalled items | ordered `libraryItemId`, reason (`dropped` / `stalled`), since, next `EpisodeKey` for shows |
-| `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
+| `StreakBar` | Streak and week ticks | current streak, longest, last 7 days (date, active), today done; level and points to next level beside it on Home |
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
-| `BadgeShelf` | Earned badges | badge ids, tier, earned at |
+| `BadgeShelf` | Badges, earned and in progress | badge ids, tier and max tier, earned at, hidden, progress (current / target); on a friend's profile earned only, never private ones |
 | `ProfilePanel` | Profile | all-time time in days and hours, episodes, pages read, tiles per kind, time by kind, top eight genres, three most watched, networks, mean score and ratings histogram; undated ticks included; static (GAM-006b) |
 | `CardMenu` | Library, Home cards (web) | ⋯, right-click or long press: "Mark show watched" / "Mark watched", Open. iOS uses the card's context menu (PROG-005) |
 | `UndoToast` | Anywhere a bulk tap writes | "Marked N episodes · Undo", about six seconds, through `/v1/actions/{id}/undo` (PROG-005) |
@@ -126,7 +127,9 @@ The eleven new components add product, not agent reach, and each has a reason:
   without the agent; these are Trakt's proven shapes.
 - `NowPlayingCard` (Phase 2) — the same data drives the Live Activity; one renderer for both.
 - `FriendStories` (Phase 4) — the only social read surface on Home.
-- `StreakBar`, `BadgeShelf`, `StatsPanel` (Phase 5) — gamification has no home in the nine.
+- `StreakBar`, `BadgeShelf`, `StatsPanel` (Phase 5; the first two pulled forward 2026-10-22) —
+  gamification has no home in the nine. The unlock toast and the top-tier card are chrome, not
+  catalog components: the agent never emits them.
 - `RoomPanel`, `ConversationView` (Phase 6) — realtime and E2E messaging are new objects.
   `RoomPanel` became `WatchPanel` on 2026-10-20, when rooms moved into groups.
 - `RecapStory` (GAM-006a, the twenty-first, added 2026-10-16) — the Recap is a full-screen,

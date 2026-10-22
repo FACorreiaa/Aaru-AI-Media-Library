@@ -102,6 +102,31 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/social-settings`.
     /// - Remark: Generated from `#/paths//v1/me/social-settings/put(updateSocialSettings)`.
     func updateSocialSettings(_ input: Operations.UpdateSocialSettings.Input) async throws -> Operations.UpdateSocialSettings.Output
+    /// Your points, level, streak and the badges you have not seen yet (GAM-001…004). Days are counted in the zone from `X-Timezone`, else the zone you last sent, else UTC. Clients read this after a write to show what was earned: one toast for a live unlock, one summary when `unseen.origin` is `batch` (an import or approved plan) or `backfill` (the first run).
+    ///
+    /// - Remark: HTTP `GET /v1/me/progress`.
+    /// - Remark: Generated from `#/paths//v1/me/progress/get(getProgress)`.
+    func getProgress(_ input: Operations.GetProgress.Input) async throws -> Operations.GetProgress.Output
+    /// Every badge in the catalog with what you have of it. A hidden badge you have not earned comes back with only its id, family and `hidden`: no name, rule or progress.
+    ///
+    /// - Remark: HTTP `GET /v1/me/badges`.
+    /// - Remark: Generated from `#/paths//v1/me/badges/get(listBadges)`.
+    func listBadges(_ input: Operations.ListBadges.Input) async throws -> Operations.ListBadges.Output
+    /// Marks earned badges (by award id) as seen, so they leave `unseen`.
+    ///
+    /// - Remark: HTTP `POST /v1/me/badges/seen`.
+    /// - Remark: Generated from `#/paths//v1/me/badges/seen/post(markBadgesSeen)`.
+    func markBadgesSeen(_ input: Operations.MarkBadgesSeen.Input) async throws -> Operations.MarkBadgesSeen.Output
+    /// The points ledger, newest first, a page at a time ("How you earned it").
+    ///
+    /// - Remark: HTTP `GET /v1/me/points`.
+    /// - Remark: Generated from `#/paths//v1/me/points/get(listPoints)`.
+    func listPoints(_ input: Operations.ListPoints.Input) async throws -> Operations.ListPoints.Output
+    /// The weekly friends board (GAM-005): you and friends who joined it, by points earned that week on each person's own local dates. Making friends and a first import do not count. Until you join (`leaderboardOptIn`), `optedIn` is false and nobody is listed. Never global.
+    ///
+    /// - Remark: HTTP `GET /v1/social/leaderboard`.
+    /// - Remark: Generated from `#/paths//v1/social/leaderboard/get(getLeaderboard)`.
+    func getLeaderboard(_ input: Operations.GetLeaderboard.Input) async throws -> Operations.GetLeaderboard.Output
     /// A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false).
     ///
     /// - Remark: HTTP `GET /v1/social/friends/{userId}/profile`.
@@ -892,6 +917,59 @@ extension APIProtocol {
         try await updateSocialSettings(Operations.UpdateSocialSettings.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Your points, level, streak and the badges you have not seen yet (GAM-001…004). Days are counted in the zone from `X-Timezone`, else the zone you last sent, else UTC. Clients read this after a write to show what was earned: one toast for a live unlock, one summary when `unseen.origin` is `batch` (an import or approved plan) or `backfill` (the first run).
+    ///
+    /// - Remark: HTTP `GET /v1/me/progress`.
+    /// - Remark: Generated from `#/paths//v1/me/progress/get(getProgress)`.
+    public func getProgress(headers: Operations.GetProgress.Input.Headers = .init()) async throws -> Operations.GetProgress.Output {
+        try await getProgress(Operations.GetProgress.Input(headers: headers))
+    }
+    /// Every badge in the catalog with what you have of it. A hidden badge you have not earned comes back with only its id, family and `hidden`: no name, rule or progress.
+    ///
+    /// - Remark: HTTP `GET /v1/me/badges`.
+    /// - Remark: Generated from `#/paths//v1/me/badges/get(listBadges)`.
+    public func listBadges(headers: Operations.ListBadges.Input.Headers = .init()) async throws -> Operations.ListBadges.Output {
+        try await listBadges(Operations.ListBadges.Input(headers: headers))
+    }
+    /// Marks earned badges (by award id) as seen, so they leave `unseen`.
+    ///
+    /// - Remark: HTTP `POST /v1/me/badges/seen`.
+    /// - Remark: Generated from `#/paths//v1/me/badges/seen/post(markBadgesSeen)`.
+    public func markBadgesSeen(
+        headers: Operations.MarkBadgesSeen.Input.Headers = .init(),
+        body: Operations.MarkBadgesSeen.Input.Body
+    ) async throws -> Operations.MarkBadgesSeen.Output {
+        try await markBadgesSeen(Operations.MarkBadgesSeen.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// The points ledger, newest first, a page at a time ("How you earned it").
+    ///
+    /// - Remark: HTTP `GET /v1/me/points`.
+    /// - Remark: Generated from `#/paths//v1/me/points/get(listPoints)`.
+    public func listPoints(
+        query: Operations.ListPoints.Input.Query = .init(),
+        headers: Operations.ListPoints.Input.Headers = .init()
+    ) async throws -> Operations.ListPoints.Output {
+        try await listPoints(Operations.ListPoints.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// The weekly friends board (GAM-005): you and friends who joined it, by points earned that week on each person's own local dates. Making friends and a first import do not count. Until you join (`leaderboardOptIn`), `optedIn` is false and nobody is listed. Never global.
+    ///
+    /// - Remark: HTTP `GET /v1/social/leaderboard`.
+    /// - Remark: Generated from `#/paths//v1/social/leaderboard/get(getLeaderboard)`.
+    public func getLeaderboard(
+        query: Operations.GetLeaderboard.Input.Query = .init(),
+        headers: Operations.GetLeaderboard.Input.Headers = .init()
+    ) async throws -> Operations.GetLeaderboard.Output {
+        try await getLeaderboard(Operations.GetLeaderboard.Input(
+            query: query,
+            headers: headers
         ))
     }
     /// A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false).
@@ -4339,21 +4417,41 @@ public enum Components {
                 case items
             }
         }
+        /// On PUT, a field left out keeps its saved value (older apps send only `shareLibraryWithFriends`). Responses always carry every field.
+        ///
         /// - Remark: Generated from `#/components/schemas/SocialSettings`.
         public struct SocialSettings: Codable, Hashable, Sendable {
             /// Friends see your shelves, activity and what you share. On by default.
             ///
             /// - Remark: Generated from `#/components/schemas/SocialSettings/shareLibraryWithFriends`.
             public var shareLibraryWithFriends: Swift.Bool
+            /// Friends see your level and badges (never ones about notes or owned items). On by default.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SocialSettings/showAchievementsToFriends`.
+            public var showAchievementsToFriends: Swift.Bool?
+            /// You join the weekly friends board, and see it. Off by default.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SocialSettings/leaderboardOptIn`.
+            public var leaderboardOptIn: Swift.Bool?
             /// Creates a new `SocialSettings`.
             ///
             /// - Parameters:
             ///   - shareLibraryWithFriends: Friends see your shelves, activity and what you share. On by default.
-            public init(shareLibraryWithFriends: Swift.Bool) {
+            ///   - showAchievementsToFriends: Friends see your level and badges (never ones about notes or owned items). On by default.
+            ///   - leaderboardOptIn: You join the weekly friends board, and see it. Off by default.
+            public init(
+                shareLibraryWithFriends: Swift.Bool,
+                showAchievementsToFriends: Swift.Bool? = nil,
+                leaderboardOptIn: Swift.Bool? = nil
+            ) {
                 self.shareLibraryWithFriends = shareLibraryWithFriends
+                self.showAchievementsToFriends = showAchievementsToFriends
+                self.leaderboardOptIn = leaderboardOptIn
             }
             public enum CodingKeys: String, CodingKey {
                 case shareLibraryWithFriends
+                case showAchievementsToFriends
+                case leaderboardOptIn
             }
         }
         /// One title on a friend's shelf. Never their notes.
@@ -4511,6 +4609,8 @@ public enum Components {
             public var recentlyFinished: [Components.Schemas.FriendItem]?
             /// - Remark: Generated from `#/components/schemas/FriendProfile/compare`.
             public var compare: Components.Schemas.FriendCompare?
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/achievements`.
+            public var achievements: Components.Schemas.FriendAchievements?
             /// Creates a new `FriendProfile`.
             ///
             /// - Parameters:
@@ -4521,6 +4621,7 @@ public enum Components {
             ///   - watching:
             ///   - recentlyFinished:
             ///   - compare:
+            ///   - achievements:
             public init(
                 user: Components.Schemas.SocialUser,
                 friendsSince: Foundation.Date,
@@ -4528,7 +4629,8 @@ public enum Components {
                 counts: Components.Schemas.KindCounts? = nil,
                 watching: [Components.Schemas.FriendItem]? = nil,
                 recentlyFinished: [Components.Schemas.FriendItem]? = nil,
-                compare: Components.Schemas.FriendCompare? = nil
+                compare: Components.Schemas.FriendCompare? = nil,
+                achievements: Components.Schemas.FriendAchievements? = nil
             ) {
                 self.user = user
                 self.friendsSince = friendsSince
@@ -4537,6 +4639,7 @@ public enum Components {
                 self.watching = watching
                 self.recentlyFinished = recentlyFinished
                 self.compare = compare
+                self.achievements = achievements
             }
             public enum CodingKeys: String, CodingKey {
                 case user
@@ -4546,6 +4649,601 @@ public enum Components {
                 case watching
                 case recentlyFinished
                 case compare
+                case achievements
+            }
+        }
+        /// Absent when the friend turned off showing their badges and level.
+        ///
+        /// - Remark: Generated from `#/components/schemas/FriendAchievements`.
+        public struct FriendAchievements: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendAchievements/level`.
+            public var level: Swift.Int
+            /// Their highest tier of each earned badge, newest first. Never private badges.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendAchievements/badges`.
+            public var badges: [Components.Schemas.BadgeAward]
+            /// Creates a new `FriendAchievements`.
+            ///
+            /// - Parameters:
+            ///   - level:
+            ///   - badges: Their highest tier of each earned badge, newest first. Never private badges.
+            public init(
+                level: Swift.Int,
+                badges: [Components.Schemas.BadgeAward]
+            ) {
+                self.level = level
+                self.badges = badges
+            }
+            public enum CodingKeys: String, CodingKey {
+                case level
+                case badges
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BadgeFamily`.
+        @frozen public enum BadgeFamily: String, Codable, Hashable, Sendable, CaseIterable {
+            case films = "films"
+            case shows = "shows"
+            case anime = "anime"
+            case books = "books"
+            case music = "music"
+            case ratings = "ratings"
+            case lists = "lists"
+            case imports = "imports"
+            case discovery = "discovery"
+            case streaks = "streaks"
+            case social = "social"
+        }
+        /// A live write (toast), an import or approved plan (one summary), or the first run.
+        ///
+        /// - Remark: Generated from `#/components/schemas/BadgeOrigin`.
+        @frozen public enum BadgeOrigin: String, Codable, Hashable, Sendable, CaseIterable {
+            case live = "live"
+            case batch = "batch"
+            case backfill = "backfill"
+        }
+        /// - Remark: Generated from `#/components/schemas/BadgeAward`.
+        public struct BadgeAward: Codable, Hashable, Sendable {
+            /// The award; send it to /v1/me/badges/seen.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/id`.
+            public var id: Swift.String
+            /// The badge id, such as `films`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/badge`.
+            public var badge: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/family`.
+            public var family: Components.Schemas.BadgeFamily
+            /// 1–4. Bronze
+            ///
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/tier`.
+            public var tier: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/maxTier`.
+            public var maxTier: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/awardedAt`.
+            public var awardedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/origin`.
+            public var origin: Components.Schemas.BadgeOrigin
+            /// A live award of a tiered badge's top tier, or of a hidden badge. Show the full card once.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BadgeAward/reveal`.
+            public var reveal: Swift.Bool
+            /// Creates a new `BadgeAward`.
+            ///
+            /// - Parameters:
+            ///   - id: The award; send it to /v1/me/badges/seen.
+            ///   - badge: The badge id, such as `films`.
+            ///   - name:
+            ///   - family:
+            ///   - tier: 1–4. Bronze
+            ///   - maxTier:
+            ///   - awardedAt:
+            ///   - origin:
+            ///   - reveal: A live award of a tiered badge's top tier, or of a hidden badge. Show the full card once.
+            public init(
+                id: Swift.String,
+                badge: Swift.String,
+                name: Swift.String,
+                family: Components.Schemas.BadgeFamily,
+                tier: Swift.Int,
+                maxTier: Swift.Int,
+                awardedAt: Foundation.Date,
+                origin: Components.Schemas.BadgeOrigin,
+                reveal: Swift.Bool
+            ) {
+                self.id = id
+                self.badge = badge
+                self.name = name
+                self.family = family
+                self.tier = tier
+                self.maxTier = maxTier
+                self.awardedAt = awardedAt
+                self.origin = origin
+                self.reveal = reveal
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case badge
+                case name
+                case family
+                case tier
+                case maxTier
+                case awardedAt
+                case origin
+                case reveal
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BadgeTier`.
+        public struct BadgeTier: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BadgeTier/tier`.
+            public var tier: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/BadgeTier/threshold`.
+            public var threshold: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/BadgeTier/description`.
+            public var description: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BadgeTier/awardedAt`.
+            public var awardedAt: Foundation.Date?
+            /// Creates a new `BadgeTier`.
+            ///
+            /// - Parameters:
+            ///   - tier:
+            ///   - threshold:
+            ///   - description:
+            ///   - awardedAt:
+            public init(
+                tier: Swift.Int,
+                threshold: Swift.Int,
+                description: Swift.String,
+                awardedAt: Foundation.Date? = nil
+            ) {
+                self.tier = tier
+                self.threshold = threshold
+                self.description = description
+                self.awardedAt = awardedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case tier
+                case threshold
+                case description
+                case awardedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Badge`.
+        public struct Badge: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Badge/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Badge/family`.
+            public var family: Components.Schemas.BadgeFamily
+            /// - Remark: Generated from `#/components/schemas/Badge/hidden`.
+            public var hidden: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Badge/earned`.
+            public var earned: Swift.Bool
+            /// The highest tier earned; 0 for none.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Badge/tier`.
+            public var tier: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Badge/maxTier`.
+            public var maxTier: Swift.Int
+            /// Never shown to friends.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Badge/private`.
+            public var _private: Swift.Bool?
+            /// Absent for a hidden badge not yet earned.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Badge/name`.
+            public var name: Swift.String?
+            /// What the next tier asks
+            ///
+            /// - Remark: Generated from `#/components/schemas/Badge/description`.
+            public var description: Swift.String?
+            /// Toward the next tier. Absent once every tier is earned, and for hidden badges.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Badge/progress`.
+            public struct ProgressPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/Badge/progress/current`.
+                public var current: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/Badge/progress/target`.
+                public var target: Swift.Int
+                /// Creates a new `ProgressPayload`.
+                ///
+                /// - Parameters:
+                ///   - current:
+                ///   - target:
+                public init(
+                    current: Swift.Int,
+                    target: Swift.Int
+                ) {
+                    self.current = current
+                    self.target = target
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case current
+                    case target
+                }
+            }
+            /// Toward the next tier. Absent once every tier is earned, and for hidden badges.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Badge/progress`.
+            public var progress: Components.Schemas.Badge.ProgressPayload?
+            /// - Remark: Generated from `#/components/schemas/Badge/tiers`.
+            public var tiers: [Components.Schemas.BadgeTier]?
+            /// Creates a new `Badge`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - family:
+            ///   - hidden:
+            ///   - earned:
+            ///   - tier: The highest tier earned; 0 for none.
+            ///   - maxTier:
+            ///   - _private: Never shown to friends.
+            ///   - name: Absent for a hidden badge not yet earned.
+            ///   - description: What the next tier asks
+            ///   - progress: Toward the next tier. Absent once every tier is earned, and for hidden badges.
+            ///   - tiers:
+            public init(
+                id: Swift.String,
+                family: Components.Schemas.BadgeFamily,
+                hidden: Swift.Bool,
+                earned: Swift.Bool,
+                tier: Swift.Int,
+                maxTier: Swift.Int,
+                _private: Swift.Bool? = nil,
+                name: Swift.String? = nil,
+                description: Swift.String? = nil,
+                progress: Components.Schemas.Badge.ProgressPayload? = nil,
+                tiers: [Components.Schemas.BadgeTier]? = nil
+            ) {
+                self.id = id
+                self.family = family
+                self.hidden = hidden
+                self.earned = earned
+                self.tier = tier
+                self.maxTier = maxTier
+                self._private = _private
+                self.name = name
+                self.description = description
+                self.progress = progress
+                self.tiers = tiers
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case family
+                case hidden
+                case earned
+                case tier
+                case maxTier
+                case _private = "private"
+                case name
+                case description
+                case progress
+                case tiers
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BadgeList`.
+        public struct BadgeList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BadgeList/items`.
+            public var items: [Components.Schemas.Badge]
+            /// Creates a new `BadgeList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.Badge]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StreakDayState`.
+        public struct StreakDayState: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StreakDayState/date`.
+            public var date: Swift.String
+            /// - Remark: Generated from `#/components/schemas/StreakDayState/active`.
+            public var active: Swift.Bool
+            /// Creates a new `StreakDayState`.
+            ///
+            /// - Parameters:
+            ///   - date:
+            ///   - active:
+            public init(
+                date: Swift.String,
+                active: Swift.Bool
+            ) {
+                self.date = date
+                self.active = active
+            }
+            public enum CodingKeys: String, CodingKey {
+                case date
+                case active
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StreakState`.
+        public struct StreakState: Codable, Hashable, Sendable {
+            /// Days in the streak still alive; 0 when broken.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StreakState/current`.
+            public var current: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/StreakState/longest`.
+            public var longest: Swift.Int
+            /// Today already counts.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StreakState/today`.
+            public var today: Swift.Bool
+            /// The last seven local dates, oldest first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StreakState/days`.
+            public var days: [Components.Schemas.StreakDayState]
+            /// Creates a new `StreakState`.
+            ///
+            /// - Parameters:
+            ///   - current: Days in the streak still alive; 0 when broken.
+            ///   - longest:
+            ///   - today: Today already counts.
+            ///   - days: The last seven local dates, oldest first.
+            public init(
+                current: Swift.Int,
+                longest: Swift.Int,
+                today: Swift.Bool,
+                days: [Components.Schemas.StreakDayState]
+            ) {
+                self.current = current
+                self.longest = longest
+                self.today = today
+                self.days = days
+            }
+            public enum CodingKeys: String, CodingKey {
+                case current
+                case longest
+                case today
+                case days
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Progress`.
+        public struct Progress: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Progress/total`.
+            public var total: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Progress/level`.
+            public var level: Swift.Int
+            /// Points where this level began.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Progress/levelStart`.
+            public var levelStart: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Progress/nextLevelAt`.
+            public var nextLevelAt: Swift.Int
+            /// This ISO week's points as the board counts them.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Progress/weekPoints`.
+            public var weekPoints: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Progress/streak`.
+            public var streak: Components.Schemas.StreakState
+            /// - Remark: Generated from `#/components/schemas/Progress/unseen`.
+            public struct UnseenPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/Progress/unseen/count`.
+                public var count: Swift.Int
+                /// - Remark: Generated from `#/components/schemas/Progress/unseen/origin`.
+                public var origin: Components.Schemas.BadgeOrigin
+                /// The newest five.
+                ///
+                /// - Remark: Generated from `#/components/schemas/Progress/unseen/items`.
+                public var items: [Components.Schemas.BadgeAward]
+                /// Creates a new `UnseenPayload`.
+                ///
+                /// - Parameters:
+                ///   - count:
+                ///   - origin:
+                ///   - items: The newest five.
+                public init(
+                    count: Swift.Int,
+                    origin: Components.Schemas.BadgeOrigin,
+                    items: [Components.Schemas.BadgeAward]
+                ) {
+                    self.count = count
+                    self.origin = origin
+                    self.items = items
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case count
+                    case origin
+                    case items
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/Progress/unseen`.
+            public var unseen: Components.Schemas.Progress.UnseenPayload
+            /// Creates a new `Progress`.
+            ///
+            /// - Parameters:
+            ///   - total:
+            ///   - level:
+            ///   - levelStart: Points where this level began.
+            ///   - nextLevelAt:
+            ///   - weekPoints: This ISO week's points as the board counts them.
+            ///   - streak:
+            ///   - unseen:
+            public init(
+                total: Swift.Int,
+                level: Swift.Int,
+                levelStart: Swift.Int,
+                nextLevelAt: Swift.Int,
+                weekPoints: Swift.Int,
+                streak: Components.Schemas.StreakState,
+                unseen: Components.Schemas.Progress.UnseenPayload
+            ) {
+                self.total = total
+                self.level = level
+                self.levelStart = levelStart
+                self.nextLevelAt = nextLevelAt
+                self.weekPoints = weekPoints
+                self.streak = streak
+                self.unseen = unseen
+            }
+            public enum CodingKeys: String, CodingKey {
+                case total
+                case level
+                case levelStart
+                case nextLevelAt
+                case weekPoints
+                case streak
+                case unseen
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/PointsEventItem`.
+        public struct PointsEventItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PointsEventItem/id`.
+            public var id: Swift.String
+            /// episode, movie_finished, book_finished, album_finished, season_bonus, scrobble_bonus, book_progress, listen, room_attended, friend_added, import_first, streak_milestone
+            ///
+            /// - Remark: Generated from `#/components/schemas/PointsEventItem/kind`.
+            public var kind: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PointsEventItem/points`.
+            public var points: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/PointsEventItem/title`.
+            public var title: Components.Schemas.TitleSummary?
+            /// - Remark: Generated from `#/components/schemas/PointsEventItem/day`.
+            public var day: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PointsEventItem/at`.
+            public var at: Foundation.Date
+            /// Points taken back by an undo or a short friendship.
+            ///
+            /// - Remark: Generated from `#/components/schemas/PointsEventItem/revocation`.
+            public var revocation: Swift.Bool
+            /// Creates a new `PointsEventItem`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind: episode, movie_finished, book_finished, album_finished, season_bonus, scrobble_bonus, book_progress, listen, room_attended, friend_added, import_first, streak_milestone
+            ///   - points:
+            ///   - title:
+            ///   - day:
+            ///   - at:
+            ///   - revocation: Points taken back by an undo or a short friendship.
+            public init(
+                id: Swift.String,
+                kind: Swift.String,
+                points: Swift.Int,
+                title: Components.Schemas.TitleSummary? = nil,
+                day: Swift.String,
+                at: Foundation.Date,
+                revocation: Swift.Bool
+            ) {
+                self.id = id
+                self.kind = kind
+                self.points = points
+                self.title = title
+                self.day = day
+                self.at = at
+                self.revocation = revocation
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case points
+                case title
+                case day
+                case at
+                case revocation
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/PointsPage`.
+        public struct PointsPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PointsPage/items`.
+            public var items: [Components.Schemas.PointsEventItem]
+            /// - Remark: Generated from `#/components/schemas/PointsPage/nextBefore`.
+            public var nextBefore: Foundation.Date?
+            /// Creates a new `PointsPage`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - nextBefore:
+            public init(
+                items: [Components.Schemas.PointsEventItem],
+                nextBefore: Foundation.Date? = nil
+            ) {
+                self.items = items
+                self.nextBefore = nextBefore
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case nextBefore
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/LeaderboardEntry`.
+        public struct LeaderboardEntry: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/LeaderboardEntry/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/LeaderboardEntry/points`.
+            public var points: Swift.Int
+            /// Equal points share a rank.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LeaderboardEntry/rank`.
+            public var rank: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LeaderboardEntry/you`.
+            public var you: Swift.Bool
+            /// Creates a new `LeaderboardEntry`.
+            ///
+            /// - Parameters:
+            ///   - user:
+            ///   - points:
+            ///   - rank: Equal points share a rank.
+            ///   - you:
+            public init(
+                user: Components.Schemas.SocialUser,
+                points: Swift.Int,
+                rank: Swift.Int,
+                you: Swift.Bool
+            ) {
+                self.user = user
+                self.points = points
+                self.rank = rank
+                self.you = you
+            }
+            public enum CodingKeys: String, CodingKey {
+                case user
+                case points
+                case rank
+                case you
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Leaderboard`.
+        public struct Leaderboard: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Leaderboard/week`.
+            public var week: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Leaderboard/from`.
+            public var from: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Leaderboard/until`.
+            public var until: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Leaderboard/optedIn`.
+            public var optedIn: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Leaderboard/entries`.
+            public var entries: [Components.Schemas.LeaderboardEntry]
+            /// Creates a new `Leaderboard`.
+            ///
+            /// - Parameters:
+            ///   - week:
+            ///   - from:
+            ///   - until:
+            ///   - optedIn:
+            ///   - entries:
+            public init(
+                week: Swift.String,
+                from: Swift.String,
+                until: Swift.String,
+                optedIn: Swift.Bool,
+                entries: [Components.Schemas.LeaderboardEntry]
+            ) {
+                self.week = week
+                self.from = from
+                self.until = until
+                self.optedIn = optedIn
+                self.entries = entries
+            }
+            public enum CodingKeys: String, CodingKey {
+                case week
+                case from
+                case until
+                case optedIn
+                case entries
             }
         }
         /// - Remark: Generated from `#/components/schemas/ActivityItem`.
@@ -12211,6 +12909,708 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/social-settings/put(updateSocialSettings)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your points, level, streak and the badges you have not seen yet (GAM-001…004). Days are counted in the zone from `X-Timezone`, else the zone you last sent, else UTC. Clients read this after a write to show what was earned: one toast for a live unlock, one summary when `unseen.origin` is `batch` (an import or approved plan) or `backfill` (the first run).
+    ///
+    /// - Remark: HTTP `GET /v1/me/progress`.
+    /// - Remark: Generated from `#/paths//v1/me/progress/get(getProgress)`.
+    public enum GetProgress {
+        public static let id: Swift.String = "getProgress"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/progress/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetProgress.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetProgress.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetProgress.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetProgress.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/progress/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/progress/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Progress)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Progress {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetProgress.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetProgress.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Your progress.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/progress/get(getProgress)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetProgress.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetProgress.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/progress/get(getProgress)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Every badge in the catalog with what you have of it. A hidden badge you have not earned comes back with only its id, family and `hidden`: no name, rule or progress.
+    ///
+    /// - Remark: HTTP `GET /v1/me/badges`.
+    /// - Remark: Generated from `#/paths//v1/me/badges/get(listBadges)`.
+    public enum ListBadges {
+        public static let id: Swift.String = "listBadges"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/badges/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListBadges.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListBadges.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListBadges.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListBadges.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/badges/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/badges/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.BadgeList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.BadgeList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListBadges.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListBadges.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The catalog.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/badges/get(listBadges)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListBadges.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListBadges.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/badges/get(listBadges)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Marks earned badges (by award id) as seen, so they leave `unseen`.
+    ///
+    /// - Remark: HTTP `POST /v1/me/badges/seen`.
+    /// - Remark: Generated from `#/paths//v1/me/badges/seen/post(markBadgesSeen)`.
+    public enum MarkBadgesSeen {
+        public static let id: Swift.String = "markBadgesSeen"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/badges/seen/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkBadgesSeen.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkBadgesSeen.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.MarkBadgesSeen.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/badges/seen/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/badges/seen/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/me/badges/seen/POST/requestBody/json/ids`.
+                    public var ids: [Swift.String]
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - ids:
+                    public init(ids: [Swift.String]) {
+                        self.ids = ids
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case ids
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/me/badges/seen/POST/requestBody/content/application\/json`.
+                case json(Operations.MarkBadgesSeen.Input.Body.JsonPayload)
+            }
+            public var body: Operations.MarkBadgesSeen.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.MarkBadgesSeen.Input.Headers = .init(),
+                body: Operations.MarkBadgesSeen.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Seen.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/badges/seen/post(markBadgesSeen)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.MarkBadgesSeen.Output.NoContent)
+            /// Seen.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/badges/seen/post(markBadgesSeen)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.MarkBadgesSeen.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/badges/seen/post(markBadgesSeen)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The points ledger, newest first, a page at a time ("How you earned it").
+    ///
+    /// - Remark: HTTP `GET /v1/me/points`.
+    /// - Remark: Generated from `#/paths//v1/me/points/get(listPoints)`.
+    public enum ListPoints {
+        public static let id: Swift.String = "listPoints"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/points/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/points/GET/query/before`.
+                public var before: Foundation.Date?
+                /// 1–100, 50 unless asked.
+                ///
+                /// - Remark: Generated from `#/paths/v1/me/points/GET/query/limit`.
+                public var limit: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - before:
+                ///   - limit: 1–100, 50 unless asked.
+                public init(
+                    before: Foundation.Date? = nil,
+                    limit: Swift.Int? = nil
+                ) {
+                    self.before = before
+                    self.limit = limit
+                }
+            }
+            public var query: Operations.ListPoints.Input.Query
+            /// - Remark: Generated from `#/paths/v1/me/points/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListPoints.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListPoints.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListPoints.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListPoints.Input.Query = .init(),
+                headers: Operations.ListPoints.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/points/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/points/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.PointsPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.PointsPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListPoints.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListPoints.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// A page of the ledger.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/points/get(listPoints)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListPoints.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListPoints.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/points/get(listPoints)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The weekly friends board (GAM-005): you and friends who joined it, by points earned that week on each person's own local dates. Making friends and a first import do not count. Until you join (`leaderboardOptIn`), `optedIn` is false and nobody is listed. Never global.
+    ///
+    /// - Remark: HTTP `GET /v1/social/leaderboard`.
+    /// - Remark: Generated from `#/paths//v1/social/leaderboard/get(getLeaderboard)`.
+    public enum GetLeaderboard {
+        public static let id: Swift.String = "getLeaderboard"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/leaderboard/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// An ISO week such as `2026-W43`. Absent means this week in your zone.
+                ///
+                /// - Remark: Generated from `#/paths/v1/social/leaderboard/GET/query/week`.
+                public var week: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - week: An ISO week such as `2026-W43`. Absent means this week in your zone.
+                public init(week: Swift.String? = nil) {
+                    self.week = week
+                }
+            }
+            public var query: Operations.GetLeaderboard.Input.Query
+            /// - Remark: Generated from `#/paths/v1/social/leaderboard/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetLeaderboard.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetLeaderboard.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetLeaderboard.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetLeaderboard.Input.Query = .init(),
+                headers: Operations.GetLeaderboard.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/leaderboard/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/leaderboard/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Leaderboard)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Leaderboard {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetLeaderboard.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetLeaderboard.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The board.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/leaderboard/get(getLeaderboard)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetLeaderboard.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetLeaderboard.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/leaderboard/get(getLeaderboard)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

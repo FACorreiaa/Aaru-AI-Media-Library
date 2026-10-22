@@ -21,10 +21,7 @@ function Friends() {
         title="Friends & privacy"
         description="Nobody can search or browse for you, and your library stays private unless you show it to friends."
       />
-      <FriendsCard
-        handle={loaded().handle}
-        shareLibraryWithFriends={loaded().sharing.shareLibraryWithFriends}
-      />
+      <FriendsCard handle={loaded().handle} settings={loaded().sharing} />
       <Show when={loaded().concerts?.available ? loaded().concerts : null}>
         {(setting) => <ConcertPlaceSection setting={setting()} />}
       </Show>

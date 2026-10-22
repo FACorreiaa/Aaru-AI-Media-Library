@@ -36,7 +36,8 @@ extension Stores {
             groups: PostgresGroupStore(database: database),
             groupKinds: PostgresGroupStore(database: database),
             agent: PostgresAgentStore(sql: sql),
-            concerts: PostgresConcertStore(database: database)
+            concerts: PostgresConcertStore(database: database),
+            gamification: PostgresGamificationStore(sql: sql)
         )
     }
 }
@@ -88,6 +89,10 @@ struct PostgresUserStore: UserStore {
                         SQLBind(identity.email)
                     )
                     .run()
+                // A new account has no history to backfill: its first badge is a live unlock.
+                try await sql.raw("""
+                INSERT INTO user_progress (user_id, evaluated_at) VALUES (\(bind: userID.rawValue), now())
+                """).run()
             }
         }
         return userID

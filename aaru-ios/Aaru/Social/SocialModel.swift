@@ -28,6 +28,9 @@ final class SocialModel {
     private(set) var recommendations: [RecommendationItem] = []
     /// Friends see your library (SOC-001). On unless you turn it off.
     private(set) var shareLibrary = true
+    /// GAM-005: friends see your level and badges (on by default); the weekly board (off).
+    var showAchievements = true
+    var leaderboardOptIn = false
     private(set) var hasLoaded = false
     /// Why the first load failed; Friends shows Try again instead of an empty page (UX-063).
     private(set) var loadProblem: String?
@@ -97,7 +100,10 @@ final class SocialModel {
                 activityNext = page.nextBefore
             }
             if case let .ok(response) = try await settingsCall {
-                shareLibrary = try response.body.json.shareLibraryWithFriends
+                let settings = try response.body.json
+                shareLibrary = settings.shareLibraryWithFriends
+                showAchievements = settings.showAchievementsToFriends ?? true
+                leaderboardOptIn = settings.leaderboardOptIn ?? false
             }
             if case let .ok(response) = try await recommendationsCall {
                 recommendations = try response.body.json.items
@@ -217,6 +223,8 @@ final class SocialModel {
         activityNext = nil
         recommendations = []
         shareLibrary = true
+        showAchievements = true
+        leaderboardOptIn = false
         hasLoaded = false
         loadProblem = nil
         problem = nil

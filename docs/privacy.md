@@ -60,6 +60,14 @@ you finished and when, your ratings, the last episode you ticked, and which titl
 They never see your notes. Episodes you imported or restored don't show up as activity. Turn off
 "Show my library to friends" in Settings and they see only your name and handle.
 
+**Points, streaks and badges.** Aaru keeps a record of the points you earn (what earned them,
+which title, and the day in your time zone), the days you kept a streak, and the badges you
+earned. To count days in your time zone, your apps send it with each request and Aaru stores it
+with those records. Your friends see your level and badges unless you turn off "Show my badges
+and level to friends"; badges about your notes and the things you own are never shown to them.
+The weekly friends board is off until you join it, and only friends who joined see you there.
+Deleting your account removes all of it.
+
 **Reactions and recommendations.** When you react to a friend's activity, Aaru stores which
 emoji, on which of their titles and which day. When you recommend a title, Aaru stores it with
 your note until your friend adds or dismisses it. Only the two of you see a recommendation;

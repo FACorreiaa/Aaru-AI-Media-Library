@@ -7,6 +7,7 @@ import {
   createMemo,
   createSignal,
   lazy,
+  onCleanup,
   onMount,
 } from 'solid-js'
 import { DiscoverRows } from '../components/DiscoverRows'
@@ -23,6 +24,9 @@ import {
 } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { WeekStripCard } from '../components/WeekStripCard'
+import { ProgressStrip } from '../components/achievements/ProgressStrip'
+import { PROGRESS_KEY } from '../lib/achievements/keys'
+import type { Progress } from '../lib/achievements/model'
 import {
   AiringCard,
   ContinueCard,
@@ -81,6 +85,7 @@ import {
   libraryQuery,
   listsQuery,
   pendingPlansQuery,
+  progressQuery,
   upNextQuery,
 } from '../lib/queries'
 import type { QueryClient } from '@tanstack/solid-query'
@@ -138,6 +143,7 @@ function startReads(queryClient: QueryClient, current: Date) {
   void queryClient.query(pendingPlansQuery).catch(ignore)
   void queryClient.query(importsQuery).catch(ignore)
   void queryClient.query(libraryQuery).catch(ignore)
+  void queryClient.query(progressQuery).catch(ignore)
   void queryClient
     .query(myStatsQuery({ span: 'last7', tz: viewerTimeZone() }))
     .catch(ignore)
@@ -175,6 +181,7 @@ function Home() {
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
   const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
+  const [progress, setProgress] = createSignal<Progress | null>(null)
   const [playing, setPlaying] = createSignal<NowPlayingItem[]>([])
   const [playingAt, setPlayingAt] = createSignal(new Date())
   /** Sessions marked watched here: the player may still report them for a while. */
@@ -329,6 +336,16 @@ function Home() {
     }
   }
 
+  /** Level and streak (GAM-002/003). The unlock watcher refreshes the cache after a write; the
+   * strip follows it. A failure just leaves the strip out. */
+  async function loadProgress() {
+    try {
+      setProgress(await queryClient.query(progressQuery))
+    } catch {
+      setProgress(null)
+    }
+  }
+
   async function loadLists() {
     try {
       setLists(await queryClient.query(listsQuery))
@@ -347,6 +364,16 @@ function Home() {
     void loadLists()
     void loadLastImport()
     void loadNowPlaying()
+    void loadProgress()
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (
+        event.type === 'updated' &&
+        event.action.type === 'success' &&
+        event.query.queryKey[0] === PROGRESS_KEY[0]
+      )
+        setProgress(event.query.state.data as Progress)
+    })
+    onCleanup(unsubscribe)
     loadLibrary()
     try {
       setAirings(await queryClient.query(calendarQuery(airingWindow(today))))
@@ -569,6 +596,9 @@ function Home() {
               </section>
             </Show>
             <div class="order-4 mt-10 flex flex-col gap-4 lg:mt-0">
+              <Show when={progress()}>
+                {(current) => <ProgressStrip progress={current()} />}
+              </Show>
               <Show when={lastImport()}>
                 {(job) => <LastImportCard job={job()} />}
               </Show>

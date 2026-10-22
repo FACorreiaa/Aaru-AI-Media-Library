@@ -47,6 +47,20 @@ struct FriendsPage: View {
                         })
                     )
                     .tint(Color(.accent))
+                    Toggle(
+                        "Show my badges and level to friends",
+                        isOn: Binding(get: { social.showAchievements }, set: { show in
+                            Task { await social.setShowAchievements(show) }
+                        })
+                    )
+                    .tint(Color(.accent))
+                    Toggle(
+                        "Join the weekly friends board",
+                        isOn: Binding(get: { social.leaderboardOptIn }, set: { join in
+                            Task { await social.setLeaderboardOptIn(join) }
+                        })
+                    )
+                    .tint(Color(.accent))
                 }
             } header: {
                 Text("Friends")
@@ -123,6 +137,9 @@ struct ProfileEditor: View {
 /// except a request, which they see.
 struct FriendsView: View {
     let model: SocialModel
+    /// The "You" card and the weekly board (GAM-005); nil in previews.
+    @Environment(ProgressModel.self) private var achievements: ProgressModel?
+    @State private var joining = false
     @State private var friendHandle = ""
     @State private var blocking: SocialUser?
     @State private var sending = false
@@ -135,6 +152,16 @@ struct FriendsView: View {
 
     var body: some View {
         List {
+            if let achievements, let progress = achievements.progress {
+                Section {
+                    NavigationLink {
+                        AchievementsView(model: achievements)
+                    } label: {
+                        YouCard(progress: progress, handle: model.handle)
+                    }
+                }
+            }
+            LeaderboardSection(board: achievements?.board, joining: joining, onJoin: join)
             if !model.recommendations.isEmpty {
                 Section("For you from friends") {
                     ForEach(model.recommendations, id: \.id) { item in
@@ -265,7 +292,13 @@ struct FriendsView: View {
         .scrollContentBackground(.hidden)
         .background(Color(.paper))
         .navigationTitle("Friends")
-        .refreshable { await model.load() }
+        .refreshable {
+            await model.load()
+            await achievements?.loadBoard()
+        }
+        .task { await achievements?.loadBoard() }
+        // The switch in Friends & privacy changes who is on the board.
+        .onChange(of: model.leaderboardOptIn) { Task { await achievements?.loadBoard() } }
         .sheet(
             isPresented: $choosingTitle,
             onDismiss: {
@@ -295,6 +328,14 @@ struct FriendsView: View {
         }
     }
 
+    private func join() {
+        Task {
+            joining = true
+            await model.setLeaderboardOptIn(true)
+            joining = false
+        }
+    }
+
     private func makeInvite() {
         Task {
             inviting = true
@@ -312,6 +353,27 @@ struct FriendsView: View {
             }
             sending = false
         }
+    }
+}
+
+/// The top of Friends: your level, streak and badges, opening Achievements.
+private struct YouCard: View {
+    let progress: AchievementProgress
+    let handle: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("You").eyebrow()
+            Text("Level \(progress.level) · \(StreakWords.headline(progress.streak.current))")
+                .font(.aaruDisplay(.title3))
+            Text("\(progress.weekPoints.formatted()) points this week" + (handle.map { " · @\($0)" } ?? ""))
+                .font(.subheadline)
+                .monospacedDigit()
+                .foregroundStyle(Color(.muted))
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens Achievements")
     }
 }
 

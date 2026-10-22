@@ -52,6 +52,7 @@ let allMigrations: [any Migration] = [
     AddSocialSettings(),
     AddSocialInteractions(),
     AddLivePlays(),
+    AddGamification(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

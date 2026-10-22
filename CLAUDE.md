@@ -194,8 +194,12 @@ Use these words in code, APIs, and UI:
 - **Reaction** — one of six emoji a friend leaves on an activity row (a person's title on one day)
 - **Points event** — one row in the append-only points ledger, idempotent by dedupe key.
   Never a counter
-- **Streak** — consecutive local days with at least one progress write
-- **Badge** — an award derived from points events, defined in code
+- **Streak** — consecutive local days with at least one live progress write. A day is a
+  *streak day* in UI and code; "check-in" stays the Live Activity's word
+- **Level** — a pure function of total points (`50·L·(L−1)` to reach L). Never stored as truth
+- **Badge** — an award defined in code, tiered 1–4. Milestone badges read library facts (imports
+  count); activity badges read points events and streak days (live only). About 15% are hidden
+  until earned
 - **Recap** — a read-only summary of one month or year (`/v1/me/stats`), played as a story.
   Derived only from the user's own library; imported or restored ticks are not activity
 - **Group** — a friends-only space a user creates and invites friends into. It holds channels
@@ -243,8 +247,10 @@ scrobble service and addon 2026-10-19; Discover rows (DISC-001), the Discover ta
 and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remote approval
 2026-10-20; groups, with minimal friends, the groups gateway and a minimal model provider,
 2026-10-20; Seasons on Discover (DISC-002) and music as a fifth kind with new albums and
-concerts (MUS-001…003), 2026-10-21; profile stats without badges (GAM-006b) and the whole
-show marked watched (PROG-005), 2026-10-22).
+concerts (MUS-001…003), 2026-10-21; friend invite links, profiles and basic social, 2026-10-21;
+profile stats without badges (GAM-006b) and the whole show marked watched (PROG-005), 2026-10-22;
+the points ledger, levels, streaks, badges, the friends leaderboard and the streak widget
+(GAM-001…005, WID-007), 2026-10-22).
 
 ## Out of scope (do not add unless asked)
 

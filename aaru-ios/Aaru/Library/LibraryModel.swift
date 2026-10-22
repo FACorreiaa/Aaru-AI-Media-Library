@@ -20,6 +20,9 @@ final class LibraryModel {
     /// The title just removed from the library (UX-061): Library says so and points to History,
     /// where the removal undoes. Cleared when dismissed.
     var lastRemoval: String?
+    /// Called after a write here or a sync that brought changes, so progress (points, streak,
+    /// badges) is read again (GAM-001).
+    @ObservationIgnored var onWrite: (@MainActor () -> Void)?
 
     /// Nothing has loaded yet and the first sync failed: show the error, never "empty" (UX-062).
     var firstSyncProblem: String? {
@@ -91,6 +94,7 @@ final class LibraryModel {
                 persist()
                 if !changes.items.isEmpty || !changes.deleted.isEmpty {
                     revision += 1
+                    onWrite?()
                 }
             case let .default(_, error):
                 syncProblem = (try? error.body.json.message) ?? "The library could not be updated."
@@ -141,6 +145,7 @@ final class LibraryModel {
                 publish()
                 persist()
                 revision += 1
+                onWrite?()
                 lastRemoval = name
                 return nil
             case let .default(_, error):
@@ -157,6 +162,7 @@ final class LibraryModel {
         publish()
         persist()
         revision += 1
+        onWrite?()
     }
 
     func reset() {

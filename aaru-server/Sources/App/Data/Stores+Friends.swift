@@ -8,6 +8,10 @@ import Foundation
 struct SocialSettings: Sendable, Equatable {
     /// Friends see your shelves, activity and compare. Strangers never do.
     var shareLibraryWithFriends = true
+    /// Friends see your level and badges (GAM-004, owner 2026-10-22). Private badges never.
+    var showAchievementsToFriends = true
+    /// You appear on friends' weekly board, and see it (GAM-005). Off until you join.
+    var leaderboardOptIn = false
 }
 
 /// One title on a friend's shelf, without anything private to them (notes, owned).

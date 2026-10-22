@@ -542,7 +542,9 @@ ships.
   (episodes, movies, a YouTube video, a track), progress plus "Ends at". "Now watching" (one
   episode) remains for a check-in started by hand.
 - **Listening** (S / M, MUS-001) — square covers of albums in progress; a tap opens the album.
-- **Streak** (Phase 5) — current streak and this week's ticks.
+- **Streak** (WID-007, pulled forward 2026-10-22) — small and Lock Screen accessory: a flame,
+  the day count and the last seven days as bars. It flips at local midnight from the snapshot
+  with the app closed, using AaruCore's `Streak` rule.
 - **macOS** — the same widgets on the desktop and in Notification Center. Almost no tracker
   ships Mac widgets.
 
@@ -564,9 +566,10 @@ ship before the Phase 2 gate.
   anime, films, one stacked bar); the top eight genres; the three titles with the most time;
   networks; mean score and the ratings histogram; then Insights and Recap. It counts the library
   as it is, undated ticks included, and says so ("Includes episodes without a watch date").
-  Static, like §13b. Badges (`BadgeShelf`) stay in Phase 5.
-- **Badges** (`BadgeShelf`, Phase 5) — discovery badges and milestone badges, tiered.
-- **Leaderboard** (Phase 5) — friends only, weekly, opt-in. Never global.
+  Static, like §13b. Badges (`BadgeShelf`) live on Achievements (below).
+- **Badges** (`BadgeShelf`, pulled forward 2026-10-22) — discovery badges and milestone badges,
+  tiered. See "Achievements" below.
+- **Leaderboard** (pulled forward 2026-10-22) — friends only, weekly, opt-in. Never global.
 - **Watch channel** (`WatchPanel`, with groups since 2026-10-20; was the Phase 6 Room) — watch
   together inside a group: countdown to "press play", who is in, reactions, drift from
   scrobbles ("Ana is 2 min ahead"), and "Mark watched for me" at the end.
@@ -610,6 +613,37 @@ only friends see it. A spent, expired or revoked link says so plainly, with no d
 The sender invites from Friends: "Invite a friend", or "Invite to watch something together"
 through the title picker. The link opens the share sheet (copied to the clipboard on desktop
 web), and open invites list what they say, the days left, and Revoke.
+
+### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
+
+Achievements are a shelf of medallions you fill by living with your library, not a game layered
+over it. Calm first: nothing shouts, nothing counts down at you.
+
+- **Where it lives.** Achievements is not a destination (like Recap and Listens). It opens from
+  the Home strip (`StreakBar` with the level), the "You" card at the top of Friends, and
+  Insights. Web: `/app/achievements`. Apple: pushed from those three.
+- **The page.** Level and points to the next level on top, then `StreakBar`, then the badges by
+  family (Films, Shows, Anime, Books, Music, Ratings, Lists, Imports, Discovery, Streaks,
+  Social). Earned medallions first in each family, then the rest with "62 / 100" under them.
+  A hidden badge not yet earned is a blank medallion reading "???" with no hint. "How you
+  earned it" opens the points ledger, newest first.
+- **Medallions.** A round mark with the badge's glyph. Tier 1 a Stone ring, tier 2 an Ink ring,
+  tier 3 a gold hairline, tier 4 a double gold hairline (the Mindspace gold rule: gold is edge
+  light and never fills). Names in the serif; tier as "Bronze · Silver · Gold · Platinum" in a
+  small eyebrow. Unearned medallions are Stone at reduced contrast that still passes AA for
+  their text.
+- **The unlock.** A quiet toast at the bottom (web) or top (Apple): the medallion, "Night Owl ·
+  earned", tap to open the shelf. A success haptic on iPhone. Reaching a badge's top tier gets
+  one full card, once, with the medallion settling into place (`motion/mini` on the web, a
+  spring on Apple; a cross-fade under Reduce Motion). Several at once collapse into one toast
+  ("3 badges earned"); an import or the first-run backfill is always one summary ("Your history
+  earned you 14 badges"). No push.
+- **On a friend's profile.** Under the header: level and a single row of their most recent
+  badges, "See all" for the rest (`BadgeShelf`). Hidden when they turned the switch off; badges
+  about notes and owned items are never shown.
+- **The board.** On Friends, "This week": you and friends who joined, ranked by this week's
+  points, your row marked. Before you join, one card explains it and offers "Join the board".
+  No global board, no all-time board.
 
 ### Groups (GRP-004/005, pulled forward 2026-10-20)
 
@@ -767,7 +801,7 @@ new import source or connected app joins its page; it never gets a page of its o
 | # | Page | Web slug | Sections, in order |
 | --- | --- | --- | --- |
 | 1 | Account | `account` | Name and handle (one editor) · Signed in with, Link Google · On this device: Appearance (System / Light / Dark) · Sign out |
-| 2 | Friends & privacy | `friends` | Add a friend · Asking you · Waiting on · Friends · Blocked · Location: Concerts near, Remove (only while concerts are on). Footer: "Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private." |
+| 2 | Friends & privacy | `friends` | Add a friend · Asking you · Waiting on · Friends · Blocked · Show my badges and level to friends · Join the weekly friends board (2026-10-22) · Location: Concerts near, Remove (only while concerts are on). Footer: "Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private." |
 | 3 | Notifications | `notifications` | New episodes · Mentions in groups · Group invites · this browser's alerts (web). Footer: "Requests from your connected agents always alert you." The switches are per account, so the Mac shows them too: "Alerts go to your iPhone and your browsers." |
 | 4 | Import | `import` | Trakt · Bring your history, in `CLAUDE.md`'s import order: Stremio history, IMDb, Letterboxd, Goodreads, Pogdesign CAT, Netflix, MyAnimeList, AniList, Any other CSV · Imports (the jobs; "No imports yet." when none) |
 | 5 | Connections | `connections` | Agents: the picker (Claude, Claude Code, Codex, Hermes, Gemini CLI, other MCP client, Browser extension) and live connections · Stremio: the addon, with "Import your Stremio history" linking to Import · Music: scrobblers, the last listen → Listens. One verb: Disconnect |

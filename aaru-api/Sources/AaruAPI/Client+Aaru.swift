@@ -7,8 +7,9 @@ public extension Client {
     static func aaru(
         baseURL: URL,
         session: SessionMiddleware,
+        timeZone: TimeZoneMiddleware = TimeZoneMiddleware(),
         transport: any ClientTransport = URLSessionTransport()
     ) -> Client {
-        Client(serverURL: baseURL, transport: transport, middlewares: [session])
+        Client(serverURL: baseURL, transport: transport, middlewares: [session, timeZone])
     }
 }
