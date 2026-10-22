@@ -2084,6 +2084,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/tonight': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called. */
+    get: operations['getTonight']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/tonight/{id}/feedback': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days. */
+    post: operations['sendTonightFeedback']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -3586,6 +3620,36 @@ export interface components {
       libraryItemId: string
       title: components['schemas']['TitleSummary']
       runtimeMinutes?: number
+    }
+    TonightPick: {
+      /** Format: uuid */
+      libraryItemId: string
+      title: components['schemas']['TitleSummary']
+      /**
+       * @description continue: the next aired episode of a show in progress. airing: an episode airing today. reading: a book in progress. start: a wishlist film.
+       * @enum {string}
+       */
+      kind: 'continue' | 'airing' | 'reading' | 'start'
+      episode?: components['schemas']['EpisodeRef']
+      episodeName?: string
+      minutes?: number
+      /** Format: date-time */
+      airsAt?: string
+      airTimeKnown: boolean
+      /** @description Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min". */
+      reason: string
+    }
+    Tonight: {
+      /**
+       * Format: date
+       * @description The local day the strip is for.
+       */
+      day: string
+      picks: components['schemas']['TonightPick'][]
+    }
+    TonightFeedback: {
+      /** @enum {string} */
+      verdict: 'rejected' | 'not_tonight'
     }
     UpNext: {
       continueWatching: components['schemas']['ContinueEntry'][]
@@ -7441,6 +7505,59 @@ export interface operations {
         content: {
           'application/json': components['schemas']['UpNext']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTonight: {
+    parameters: {
+      query?: {
+        /** @description IANA time zone for "today" and air times. Absent means UTC. */
+        tz?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The strip for the local day. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Tonight']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  sendTonightFeedback: {
+    parameters: {
+      query?: {
+        /** @description IANA time zone for the local day. Absent means UTC. */
+        tz?: string
+      }
+      header?: never
+      path: {
+        /** @description The library item. */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TonightFeedback']
+      }
+    }
+    responses: {
+      /** @description Recorded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

@@ -37,7 +37,8 @@ extension Stores {
             groupKinds: PostgresGroupStore(database: database),
             agent: PostgresAgentStore(sql: sql),
             concerts: PostgresConcertStore(database: database),
-            gamification: PostgresGamificationStore(sql: sql)
+            gamification: PostgresGamificationStore(sql: sql),
+            tonight: PostgresTonightStore(sql: sql)
         )
     }
 }
