@@ -9,3 +9,6 @@ export const CONNECTED = 'aaru-extension:connected'
 
 /** The port a streaming page's content script reports on. */
 export const PLAYER_PORT = 'aaru-player'
+
+/** A content script's error report, handed to the background to send (src/lib/reporting). */
+export const REPORT = 'aaru-extension:report'

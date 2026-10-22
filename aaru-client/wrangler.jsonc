@@ -6,7 +6,8 @@
   "name": "aaru-client",
   "compatibility_date": "2026-09-27",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/solid-start/server-entry",
+  // Start's handler, wrapped for error reporting when SENTRY_DSN is set.
+  "main": "src/server.ts",
   // Served only on aaruapp.com hosts: no second *.workers.dev origin to keep in Google's
   // origin list or to split sessions across. Custom domains get their DNS record and an edge
   // certificate from Cloudflare on deploy (the deploy token needs Workers Routes and DNS edit
@@ -22,6 +23,10 @@
     // Sign in with Google: the web OAuth client id (public). Its origin list must hold this
     // Worker's origin. Empty hides the button.
     "GOOGLE_CLIENT_ID": "1021071971791-bi4c3f06bokufcrd612t4m1homqd8l2k.apps.googleusercontent.com",
+    // Error reporting (Sentry project aaru-web, EU). A DSN is public, not a secret. The Worker
+    // reads it at runtime; the build bakes the same value into the browser chunk
+    // (vite.config.ts). Empty turns reporting off in both.
+    "SENTRY_DSN": "",
   },
   // www answers with a permanent redirect to the apex (src/start.ts).
   "routes": [
@@ -36,6 +41,7 @@
         "CHANNEL": "beta",
         "APPLE_SERVICES_ID": "",
         "GOOGLE_CLIENT_ID": "1021071971791-bi4c3f06bokufcrd612t4m1homqd8l2k.apps.googleusercontent.com",
+        "SENTRY_DSN": "",
       },
       "routes": [{ "pattern": "beta.aaruapp.com", "custom_domain": true }],
     },

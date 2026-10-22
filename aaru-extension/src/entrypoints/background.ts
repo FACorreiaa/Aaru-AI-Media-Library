@@ -1,7 +1,10 @@
 import { browser, defineBackground } from '#imports'
 import type { Browser } from '#imports'
 import { send } from '../lib/api'
-import { PLAYER_PORT, TOKEN } from '../lib/protocol'
+import { PLAYER_PORT, REPORT, TOKEN } from '../lib/protocol'
+import { makeDeliver } from '../lib/reporting/deliver'
+import { createReporter } from '../lib/reporting/reporter'
+import { parseContentError } from '../lib/reporting/config'
 import { Session } from '../lib/session'
 import {
   API_BASE,
@@ -22,26 +25,51 @@ const RETRY_ALARM = 'aaru-retry'
 // cannot be sent are kept and retried for a day. The toolbar badge is the only signal: ✓ matched,
 // ? not matched, ! connect again.
 export default defineBackground(() => {
+  // Error reports (errors only, no URLs of what plays): the background's own, and the content
+  // scripts', which arrive as REPORT messages. Off when the build has no DSN.
+  const sendReport = makeDeliver()
+  const reporter = createReporter({
+    send: sendReport,
+    version: browser.runtime.getManifest().version,
+  })
+  globalThis.addEventListener('error', (event) =>
+    reporter.capture(event.error ?? event.message),
+  )
+  globalThis.addEventListener('unhandledrejection', (event) =>
+    reporter.capture(event.reason),
+  )
+
   browser.runtime.onConnect.addListener((port) => {
     if (port.name !== PLAYER_PORT) return
     const session = new Session()
-    // One tab's calls go out in order: a stop never overtakes its start.
+    // One tab's calls go out in order: a stop never overtakes its start. A call that throws
+    // is reported and does not hold up the ones after it.
     let queue = Promise.resolve()
     const run = (calls: Call[]) => {
-      for (const call of calls) queue = queue.then(() => deliver(call))
+      for (const call of calls)
+        queue = queue.then(() => deliver(call)).catch(reporter.capture)
     }
-    port.onMessage.addListener((message: Observation) => {
-      run(session.observe(message, Date.now()))
-    })
-    port.onDisconnect.addListener(() => run(session.end()))
+    port.onMessage.addListener(
+      reporter.guard((message: Observation) => {
+        run(session.observe(message, Date.now()))
+      }),
+    )
+    port.onDisconnect.addListener(reporter.guard(() => run(session.end())))
   })
 
   browser.runtime.onMessage.addListener(
     (
-      message: { type?: string; secret?: unknown },
+      message: { type?: string; secret?: unknown; error?: unknown },
       sender: Browser.runtime.MessageSender,
     ) => {
-      if (message.type !== TOKEN || sender.id !== browser.runtime.id) return
+      if (sender.id !== browser.runtime.id) return
+      if (message.type === REPORT) {
+        const error = parseContentError(message.error)
+        // The page's address comes from the browser, and only its origin is kept.
+        if (error) reporter.captureContent(error, sender.url ?? sender.tab?.url)
+        return
+      }
+      if (message.type !== TOKEN) return
       if (
         typeof message.secret !== 'string' ||
         !message.secret.startsWith('aaru_scr_')
@@ -56,9 +84,9 @@ export default defineBackground(() => {
 
   void browser.alarms.create(RETRY_ALARM, { periodInMinutes: 15 })
   browser.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === RETRY_ALARM) void retryPending()
+    if (alarm.name === RETRY_ALARM) retryPending().catch(reporter.capture)
   })
-  void retryPending()
+  retryPending().catch(reporter.capture)
 })
 
 async function deliver(call: Call): Promise<void> {

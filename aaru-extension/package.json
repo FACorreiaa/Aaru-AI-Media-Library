@@ -23,5 +23,8 @@
     "typescript": "^6.0.2",
     "vitest": "^5.0.4",
     "wxt": "0.21.4"
+  },
+  "dependencies": {
+    "@sentry/browser": "11.8.0"
   }
 }
