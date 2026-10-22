@@ -895,6 +895,51 @@ paths:
               schema: {$ref: '#/components/schemas/SocialUserList'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}/comments:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listBoardComments
+      summary: Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit.
+      parameters:
+        - {name: after, in: query, required: false, description: The id of the last comment seen., schema: {type: string, format: uuid}}
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      responses:
+        '200':
+          description: The comments.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardCommentPage'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createBoardComment
+      summary: Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BoardCommentCreate'}
+      responses:
+        '201':
+          description: The comment.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardComment'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}/comments/{commentId}:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: commentId, in: path, required: true, schema: {type: string, format: uuid}}
+    delete:
+      operationId: deleteBoardComment
+      summary: Delete a comment. Its author or the post's author can.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/groups/{groupId}/channels/{channelId}/read:
     post:
       operationId: markChannelRead
@@ -3370,6 +3415,37 @@ components:
         clientNonce: {type: string, maxLength: 64, description: Makes a retry safe.}
         spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: "Title channels: stamp by hand. Absent: stamped from your progress."}
         spoilerFree: {type: boolean, description: 'Title channels: no stamp at all.'}
+    BoardComment:
+      type: object
+      required: [id, postId, body, mentions, mentionsAgent, deleted, createdAt, fromAgent]
+      properties:
+        id: {type: string, format: uuid}
+        postId: {type: string, format: uuid}
+        author: {$ref: '#/components/schemas/SocialUser', description: Absent once the author deleted their account.}
+        body: {type: string, description: Empty when deleted.}
+        mentions:
+          type: array
+          description: Friends the comment tags.
+          items: {type: string, format: uuid}
+        mentionsAgent: {type: boolean, description: The comment tags @aaru. Recorded only; Aaru does not answer on the Board yet.}
+        deleted: {type: boolean}
+        createdAt: {type: string, format: date-time}
+        fromAgent: {type: boolean, description: Written by @aaru. It has no author.}
+        replyTo: {type: string, format: uuid, description: The top-level comment this one answers. Never a reply itself.}
+        mine: {type: boolean}
+    BoardCommentCreate:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
+        replyTo: {type: string, format: uuid}
+    BoardCommentPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/BoardComment'}
     BoardPost:
       type: object
       required: [id, author, body, createdAt, upvotes, upvotedByMe, commentCount, veiled, mine]

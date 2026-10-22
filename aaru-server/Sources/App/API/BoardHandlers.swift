@@ -70,6 +70,44 @@ extension APIImplementation {
         return .ok(.init(body: .json(.init(items: users.map { .init($0) }))))
     }
 
+    func listBoardComments(_ input: Operations.ListBoardComments.Input) async throws
+        -> Operations.ListBoardComments.Output
+    {
+        let viewer = try currentUser()
+        let comments = try await services.board.comments(
+            postID(input.path.postId), after: input.query.after.flatMap(UUID.init(uuidString:)),
+            limit: input.query.limit, viewer: viewer
+        )
+        return .ok(.init(body: .json(.init(items: comments.map { .init($0, viewer: viewer) }))))
+    }
+
+    func createBoardComment(_ input: Operations.CreateBoardComment.Input) async throws
+        -> Operations.CreateBoardComment.Output
+    {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let viewer = try currentUser()
+        let replyTo = try body.replyTo.map { raw -> UUID in
+            guard let id = UUID(uuidString: raw) else {
+                throw GroupService.invalid("replyTo", "That comment isn't here.")
+            }
+            return id
+        }
+        let comment = try await services.board.comment(
+            postID(input.path.postId), body: body.body, replyTo: replyTo, viewer: viewer
+        )
+        return .created(.init(body: .json(.init(comment, viewer: viewer))))
+    }
+
+    func deleteBoardComment(_ input: Operations.DeleteBoardComment.Input) async throws
+        -> Operations.DeleteBoardComment.Output
+    {
+        guard let comment = UUID(uuidString: input.path.commentId) else {
+            throw AppError.notFound("That comment isn't here.")
+        }
+        try await services.board.deleteComment(postID(input.path.postId), comment: comment, viewer: currentUser())
+        return .noContent(.init())
+    }
+
     /// A malformed id reads as a post that does not exist.
     private func postID(_ raw: String) throws -> UUID {
         guard let id = UUID(uuidString: raw) else { throw BoardService.noSuchPost }
@@ -105,6 +143,18 @@ extension Components.Schemas.BoardPost {
             createdAt: post.createdAt, editedAt: post.editedAt, upvotes: post.upvotes,
             upvotedByMe: post.upvotedByViewer, commentCount: post.commentCount, veiled: veiled,
             mine: post.author.id == viewer
+        )
+    }
+}
+
+extension Components.Schemas.BoardComment {
+    init(_ comment: BoardComment, viewer: UserID) {
+        self.init(
+            id: comment.id.uuidString, postId: comment.postID.uuidString, author: comment.author.map { .init($0) },
+            body: comment.deletedAt == nil ? comment.body : "", mentions: comment.mentions.map(\.description),
+            mentionsAgent: comment.mentionsAgent, deleted: comment.deletedAt != nil, createdAt: comment.createdAt,
+            fromAgent: comment.fromAgent, replyTo: comment.replyTo?.uuidString,
+            mine: comment.author?.id == viewer
         )
     }
 }

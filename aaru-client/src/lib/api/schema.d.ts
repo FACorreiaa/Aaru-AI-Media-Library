@@ -844,6 +844,46 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/board/posts/{postId}/comments': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    /** Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit. */
+    get: operations['listBoardComments']
+    put?: never
+    /** Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's. */
+    post: operations['createBoardComment']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts/{postId}/comments/{commentId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+        commentId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Delete a comment. Its author or the post's author can. */
+    delete: operations['deleteBoardComment']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/groups/{groupId}/channels/{channelId}/read': {
     parameters: {
       query?: never
@@ -2854,6 +2894,39 @@ export interface components {
       spoiler?: components['schemas']['SpoilerStamp']
       /** @description Title channels: no stamp at all. */
       spoilerFree?: boolean
+    }
+    BoardComment: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      postId: string
+      /** @description Absent once the author deleted their account. */
+      author?: components['schemas']['SocialUser']
+      /** @description Empty when deleted. */
+      body: string
+      /** @description Friends the comment tags. */
+      mentions: string[]
+      /** @description The comment tags @aaru. Recorded only; Aaru does not answer on the Board yet. */
+      mentionsAgent: boolean
+      deleted: boolean
+      /** Format: date-time */
+      createdAt: string
+      /** @description Written by @aaru. It has no author. */
+      fromAgent: boolean
+      /**
+       * Format: uuid
+       * @description The top-level comment this one answers. Never a reply itself.
+       */
+      replyTo?: string
+      mine?: boolean
+    }
+    BoardCommentCreate: {
+      body: string
+      /** Format: uuid */
+      replyTo?: string
+    }
+    BoardCommentPage: {
+      items: components['schemas']['BoardComment'][]
     }
     BoardPost: {
       /** Format: uuid */
@@ -5233,6 +5306,82 @@ export interface operations {
         content: {
           'application/json': components['schemas']['SocialUserList']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listBoardComments: {
+    parameters: {
+      query?: {
+        /** @description The id of the last comment seen. */
+        after?: string
+        limit?: number
+      }
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The comments. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardCommentPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createBoardComment: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BoardCommentCreate']
+      }
+    }
+    responses: {
+      /** @description The comment. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardComment']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteBoardComment: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+        commentId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

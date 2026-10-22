@@ -28,7 +28,7 @@ struct BoardService: Sendable {
         var veiled: Set<UUID>
     }
 
-    private var social: SocialService {
+    var social: SocialService {
         SocialService(stores: stores)
     }
 
@@ -129,19 +129,22 @@ struct BoardService: Sendable {
     /// Who upvoted, minus anyone blocked in either direction with the viewer.
     func upvoters(_ id: UUID, viewer: UserID) async throws -> [SocialUser] {
         _ = try await requireVisible(id, viewer: viewer)
-        let blocked = try await Set(stores.social.blocked(by: viewer).map(\.id))
-        let blockers = try await stores.social.blockers(of: viewer)
-        return try await stores.boards.upvoters(post: id).filter {
-            !blocked.contains($0.id) && !blockers.contains($0.id)
-        }
+        let hidden = try await blockedEitherWay(viewer)
+        return try await stores.boards.upvoters(post: id).filter { !hidden.contains($0.id) }
     }
 
     /// The viewer and their friends, minus anyone blocked in either direction.
     func audience(_ viewer: UserID) async throws -> [UserID] {
         let friends = try await stores.social.friends(viewer).map(\.id)
-        let blocked = try await Set(stores.social.blocked(by: viewer).map(\.id))
+        let hidden = try await blockedEitherWay(viewer)
+        return [viewer] + friends.filter { !hidden.contains($0) }
+    }
+
+    /// Everyone the viewer blocked plus everyone who blocked the viewer.
+    func blockedEitherWay(_ viewer: UserID) async throws -> Set<UserID> {
+        let blocked = try await stores.social.blocked(by: viewer).map(\.id)
         let blockers = try await stores.social.blockers(of: viewer)
-        return [viewer] + friends.filter { !blocked.contains($0) && !blockers.contains($0) }
+        return Set(blocked).union(blockers)
     }
 
     func requireVisible(_ id: UUID, viewer: UserID) async throws -> BoardPost {

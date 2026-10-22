@@ -4750,6 +4750,247 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit.
+    ///
+    /// - Remark: HTTP `GET /v1/board/posts/{postId}/comments`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/comments/get(listBoardComments)`.
+    public func listBoardComments(_ input: Operations.ListBoardComments.Input) async throws -> Operations.ListBoardComments.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ListBoardComments.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/board/posts/{}/comments",
+                    parameters: [
+                        input.path.postId
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "after",
+                    value: input.query.after
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "limit",
+                    value: input.query.limit
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ListBoardComments.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.BoardCommentPage.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's.
+    ///
+    /// - Remark: HTTP `POST /v1/board/posts/{postId}/comments`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/comments/post(createBoardComment)`.
+    public func createBoardComment(_ input: Operations.CreateBoardComment.Input) async throws -> Operations.CreateBoardComment.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.CreateBoardComment.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/board/posts/{}/comments",
+                    parameters: [
+                        input.path.postId
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 201:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.CreateBoardComment.Output.Created.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.BoardComment.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .created(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Delete a comment. Its author or the post's author can.
+    ///
+    /// - Remark: HTTP `DELETE /v1/board/posts/{postId}/comments/{commentId}`.
+    /// - Remark: Generated from `#/paths//v1/board/posts/{postId}/comments/{commentId}/delete(deleteBoardComment)`.
+    public func deleteBoardComment(_ input: Operations.DeleteBoardComment.Input) async throws -> Operations.DeleteBoardComment.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.DeleteBoardComment.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/board/posts/{}/comments/{}",
+                    parameters: [
+                        input.path.postId,
+                        input.path.commentId
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Mark the channel read up to a message. The read point never moves back.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/read`.
