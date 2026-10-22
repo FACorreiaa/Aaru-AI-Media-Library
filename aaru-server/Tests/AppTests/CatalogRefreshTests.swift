@@ -131,4 +131,24 @@ struct CatalogRefreshTests {
             #expect(due.contains(airing))
         }
     }
+
+    @Test("Saving episodes upserts by number, keeps the last copy of a repeat, and never deletes")
+    func saveEpisodesUpserts() async throws {
+        try await LibraryHarness.run { env in
+            let title = Title(type: .show, title: "Repeat", ids: ExternalIDs(tmdb: uniqueID("tmdb")))
+            try await env.stores.titles.insert(title, status: .returning, runtimeMinutes: 30)
+            let now = wholeSecondNow()
+            try await env.stores.titles.saveEpisodes(title.id, CatalogEpisodes(status: .returning, episodes: [
+                CatalogEpisode(season: 1, episode: 1, name: "Pilot"),
+                CatalogEpisode(season: 1, episode: 2, name: "Old"),
+                CatalogEpisode(season: 1, episode: 2, name: "New"),
+            ]), hydratedAt: now)
+            try await env.stores.titles.saveEpisodes(title.id, CatalogEpisodes(status: .ended, episodes: [
+                CatalogEpisode(season: 1, episode: 1, name: "Pilot (renamed)"),
+            ]), hydratedAt: now)
+            let saved = try await env.stores.titles.episodes(title.id)
+            #expect(saved.map(\.name) == ["Pilot (renamed)", "New"])
+            #expect(try await env.stores.titles.catalogState(title.id)?.status == .ended)
+        }
+    }
 }

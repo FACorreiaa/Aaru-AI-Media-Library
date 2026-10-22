@@ -147,7 +147,8 @@ PostgreSQL. Suggested tables:
 - `import_jobs`, `import_job_events` (optional log lines)
 - `actions` (action journal: one row per mutating library write, with its inverse)
 - `match_aliases` (match ledger: aggregate crosswalk from a source row key to an external id)
-- `watch_events` (one playback session per user, source and player id: state, position, longest known duration, `title_id` null when unmatched; built 2026-10-20 for Stremio)
+- `watch_events` (one playback session per user, source and player id: state, position, longest known duration, `title_id` null when unmatched; built 2026-10-20 for Stremio; `live_activity_started_at` since SCR-008)
+- `live_activity_tokens` (ActivityKit push tokens: a device's push-to-start token, or a running activity's own, tied to its watch event; SCR-008)
 - `agent_plans` (an outside agent's change waiting for approval: the op, its basis, status, the token)
 - `agent_tokens` (per-user agent access: `kind` (`stremio`, or an MCP client: `claude_code`, `codex`, `hermes`, `gemini`, `other`), hashed secret, scopes, `lastUsedAt`, revocation)
 - `agent_usage` (model spend per user per day: tokens in and out, cost in cents)
@@ -848,7 +849,11 @@ The widget extension lives in the same `aaru-ios` project and serves iOS and mac
   `PUT …/episodes/{s}/{e}` a tap does, through the shared API client, then refreshes the
   snapshot. This follows Khepri's `LogWaterIntent`. It is journaled in `actions` like any tap.
 - **Live Activity:** "now watching" shows the episode, progress, and an Ends-at / time-left
-  toggle. The app starts it on check-in; scrobbles (Phase 3) can update it.
+  toggle. The app starts it on check-in, or when it opens on a scrobble it has no activity
+  for. Scrobbles start, update and end it by APNs push (SCR-008): the app hands over its
+  push-to-start token and each running activity's token (`PUT /v1/devices/live-activity`),
+  kept in `live_activity_tokens`. Its payload types (`NowWatchingAttributes`,
+  `NowWatchingContent`) live in `AaruCore`, so the server's pushes and the app decode one type.
 - **macOS widgets** come from the same extension and the same snapshot. No second widget
   codebase.
 
@@ -862,6 +867,11 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
 
 - Session: the token lives in an HttpOnly, Secure, SameSite=Lax cookie. Server functions send
   `/v1` calls with it; page scripts never see the token. A 401 clears the cookie once.
+- Reads go through TanStack Query (`src/lib/queries.ts`, 30 s fresh): loaders read the cache, so
+  hovering a link preloads the page and Back is served from memory; the SSR integration hands
+  the server's reads to the browser. Any POST server function marks the cache old
+  (`src/start.ts`). The signed-in check runs once per tab (`src/lib/session/query.ts`), not per
+  navigation; signing out or reaching sign-in signed out empties the cache.
 - API types come from the same `openapi.yaml` as the Apple apps' `AaruAPI` (`openapi-typescript`,
   committed, checked fresh in CI).
 
@@ -892,6 +902,18 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   so it lands in `actions` and is undoable. 80% is Aaru's own documented threshold.
 - `start` and `pause` feed the "now watching" Live Activity and, later, room drift
   (ROOM-004). They never change progress.
+- **Now playing (SCR-008):** `GET /v1/me/now-playing` reads the newest open, matched session
+  back. Players send no heartbeat, so nothing is swept: a playing session counts until its end
+  plus 10 minutes (3 hours with no duration known), a paused one for 30 minutes.
+- **Next episode:** a `start` for a different item from the same source closes the user's other
+  open sessions from it (Stremio's next episode may never send the last one's `stop`). A closed
+  session ticks only when the player last *reported* it at ≥ 80%, never on an extrapolated
+  position.
+- **Live Activity pushes:** `NowPlayingNotifier` runs after each report when APNs is configured.
+  A session's first `start` push-starts the activity on each device (claimed once in
+  `watch_events.live_activity_started_at`); later reports update the activities that follow it;
+  its close ends them. Best effort: a push failure never fails a scrobble; dead tokens are
+  forgotten.
 - Auth is a scoped per-user token on the `agent_tokens` model with a `scrobble:write` scope. A
   scrobbler gets no more than that scope.
 - **Webhooks:** `POST /v1/webhooks/plex` (`media.play`, `media.stop`, `media.scrobble`) and

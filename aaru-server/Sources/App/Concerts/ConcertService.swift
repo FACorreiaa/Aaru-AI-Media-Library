@@ -137,14 +137,17 @@ actor ConcertCache {
         // Unstructured on purpose: one caller disconnecting must not cancel everyone's fetch.
         let task = inFlight[key] ?? Task { try await fetch() }
         inFlight[key] = task
+        // Only the first waiter to see its own task settle the cache (actor reentrancy).
         do {
             let value = try await task.value
+            guard inFlight[key] == task else { return value }
             inFlight[key] = nil
             failedAt[key] = nil
             entries[key] = Entry(value: value, fetchedAt: now)
             trim(now: now)
             return value
         } catch {
+            guard inFlight[key] == task else { return entries[key]?.value ?? cached?.value }
             inFlight[key] = nil
             failedAt[key] = now
             // The key holds a location cell; the log names only the kind of query.

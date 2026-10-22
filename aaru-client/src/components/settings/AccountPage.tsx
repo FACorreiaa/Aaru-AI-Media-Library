@@ -4,6 +4,7 @@ import { GoogleSignInButton } from '../GoogleSignInButton'
 import { AppearanceSection } from '../AppearanceSection'
 import { Alert, AlertDescription, Button } from '~/components/ui'
 import { linkGoogle, signOut } from '../../lib/session/session'
+import { forgetAccount, forgetSession } from '../../lib/session/query'
 import type { AccountPageData } from '../../lib/settings/account'
 import { ProfileEditor } from './ProfileEditor'
 import { SettingsPageTitle } from './SettingsNav'
@@ -34,6 +35,7 @@ export function AccountPage(props: { data: AccountPageData }) {
 
   async function leave() {
     await signOut()
+    forgetAccount(router.options.context.queryClient)
     await router.invalidate()
     await navigate({ to: '/' })
   }
@@ -58,7 +60,8 @@ export function AccountPage(props: { data: AccountPageData }) {
             handle: user.handle,
             displayName: user.displayName,
           })
-          // The sidebar's account row reads the session.
+          // The sidebar's account row reads the session, which the tab keeps cached.
+          forgetSession(router.options.context.queryClient)
           void router.invalidate()
         }}
       />

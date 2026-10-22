@@ -20,9 +20,10 @@ import type { CatalogHit, LibraryStatus } from '../lib/library/model'
 import { addToLibrary } from '../lib/library/server'
 import { toListRow } from '../lib/lists/model'
 import type { ListRow } from '../lib/lists/model'
-import { getList, removeFromList, reorderList } from '../lib/lists/server'
+import { removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
+import { listQuery } from '../lib/queries'
 
 // APP-006 on the web: one list, in order, with remove and move up/down. LST-003: rows carry
 // library status and progress, show status and the next airing; "Add titles" searches into it.
@@ -32,7 +33,8 @@ const SearchPanel = lazy(() =>
 )
 
 export const Route = createFileRoute('/_shell/app_/lists/$id')({
-  loader: ({ params }) => getList({ data: { id: params.id } }),
+  loader: ({ params, context: { queryClient } }) =>
+    queryClient.query(listQuery(params.id)),
   // UX-013: the tab names the list.
   head: ({ loaderData }) => ({
     meta: [{ title: `${loaderData?.name ?? 'List'} · Lists · Aaru` }],

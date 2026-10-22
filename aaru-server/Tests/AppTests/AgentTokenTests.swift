@@ -121,4 +121,12 @@ struct AgentTokenTests {
         #expect(Log.redacted("/v1/imports/trakt/callback", query: "code=abc&state=def") == "/v1/imports/trakt/callback")
         #expect(Log.redacted("/v1/calendar", query: "from=a") == "/v1/calendar?from=a")
     }
+
+    @Test("Response logs give the time in whole milliseconds")
+    func responseMilliseconds() {
+        typealias Log = RedactedLogRequestsMiddleware<AppRequestContext>
+        #expect(Log.milliseconds(.milliseconds(1234)) == 1234)
+        #expect(Log.milliseconds(.microseconds(999)) == 0)
+        #expect(Log.milliseconds(.seconds(2) + .microseconds(5500)) == 2005)
+    }
 }

@@ -51,8 +51,8 @@ import { lastShown } from '../lib/presence'
 import { cn } from '~/lib/utils'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
+import { titlePageQuery } from '../lib/queries'
 import {
-  getTitlePage,
   markSeason,
   removeItem,
   setEpisode,
@@ -76,7 +76,8 @@ import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
 // (MUS-001) is a big square cover, its artist and genres, then the usual controls and its
 // tracklist: no progress, no episodes.
 export const Route = createFileRoute('/_shell/app_/title/$id')({
-  loader: ({ params }) => getTitlePage({ data: { id: params.id } }),
+  loader: ({ params, context: { queryClient } }) =>
+    queryClient.query(titlePageQuery(params.id)),
   // UX-013: the tab names the title.
   head: ({ loaderData }) => ({
     meta: [{ title: `${loaderData?.entry.title.title ?? 'Title'} · Aaru` }],

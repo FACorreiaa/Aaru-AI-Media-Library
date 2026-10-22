@@ -141,15 +141,24 @@ export function hoursLabel(minutes: number): string {
 export interface WeekStrip {
   /** Episodes · hours · finished · active days, each left out at zero. */
   parts: string[]
+  /** The same four, always all four, as number over word for the wide strip. */
+  figures: { value: string; label: string }[]
   /** Seven heights, 0…1 of the busiest day by time, oldest first. */
   days: number[]
+  /** Each day's initial ("M", "T"…), under its bar. */
+  dayLabels: string[]
+}
+
+/** "45m" under an hour, then whole hours: "43h". */
+function shortHours(minutes: number): string {
+  return minutes < 60 ? `${minutes}m` : `${Math.round(minutes / 60)}h`
 }
 
 /**
  * GAM-006d: Home's "last 7 days" strip from `span=last7`. Shown at zero too, so a new account
  * sees where its week will land; `parts` is empty then.
  */
-export function weekStrip(stats: Stats): WeekStrip {
+export function weekStrip(stats: Stats, locale?: string): WeekStrip {
   const t = stats.totals
   const finished =
     t.moviesFinished +
@@ -162,8 +171,31 @@ export function weekStrip(stats: Stats): WeekStrip {
   if (t.minutesWatched > 0) parts.push(hoursLabel(t.minutesWatched))
   if (finished > 0) parts.push(`${finished} finished`)
   if (t.activeDays > 0) parts.push(plural(t.activeDays, 'active day'))
+  const figures = [
+    {
+      value: String(t.episodesWatched),
+      label: t.episodesWatched === 1 ? 'episode' : 'episodes',
+    },
+    { value: shortHours(t.minutesWatched), label: 'watched' },
+    { value: String(finished), label: 'finished' },
+    {
+      value: String(t.activeDays),
+      label: t.activeDays === 1 ? 'active day' : 'active days',
+    },
+  ]
   const tallest = Math.max(1, ...stats.buckets.map((b) => b.minutes))
-  return { parts, days: stats.buckets.map((b) => b.minutes / tallest) }
+  const weekday = new Intl.DateTimeFormat(locale, {
+    timeZone: 'UTC',
+    weekday: 'narrow',
+  })
+  return {
+    parts,
+    figures,
+    days: stats.buckets.map((b) => b.minutes / tallest),
+    dayLabels: stats.buckets.map((b) =>
+      weekday.format(new Date(`${b.start}T12:00:00Z`)),
+    ),
+  }
 }
 
 export interface CountChip {

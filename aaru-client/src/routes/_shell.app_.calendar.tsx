@@ -42,7 +42,7 @@ import type {
   KindFilter,
   OnlyFilter,
 } from '../lib/calendar/filters'
-import { getCalendar } from '../lib/calendar/server'
+import { calendarQuery } from '../lib/queries'
 import { setEpisode } from '../lib/title/server'
 import { cn } from '~/lib/utils'
 import { slideIn } from '../lib/motion'
@@ -108,6 +108,7 @@ const wide = () =>
 function Calendar() {
   const shell = useAppShell()
   const search = Route.useSearch()
+  const { queryClient } = Route.useRouteContext()()
   const navigate = useNavigate({ from: Route.fullPath })
   const [view, setView] = createSignal<CalendarView>(search().view ?? 'week')
   const [today, setToday] = createSignal<string | null>(null)
@@ -262,8 +263,8 @@ function Calendar() {
     try {
       // A six-row month is more than one request may cover.
       const pages = await Promise.all(
-        fetchWindows(first, last).map((window) =>
-          getCalendar({ data: window }),
+        fetchWindows(first, last).map((range) =>
+          queryClient.query(calendarQuery(range)),
         ),
       )
       if (mine !== request) return

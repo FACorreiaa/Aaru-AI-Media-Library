@@ -224,10 +224,30 @@ describe('last 7 days strip', () => {
     expect(
       weekStrip(weekStats({ booksFinished: 1, activeDays: 1 })).parts,
     ).toEqual(['1 finished', '1 active day'])
-    expect(weekStrip(weekStats())).toEqual({
-      parts: [],
-      days: [0, 0, 0, 0, 0, 0, 0],
-    })
+    const quiet = weekStrip(weekStats())
+    expect(quiet.parts).toEqual([])
+    expect(quiet.days).toEqual([0, 0, 0, 0, 0, 0, 0])
+  })
+
+  it('always gives all four figures, and a letter per day', () => {
+    const week = weekStrip(
+      weekStats(
+        { episodesWatched: 61, minutesWatched: 2580, activeDays: 2 },
+        [0, 0, 0, 0, 0, 0, 0],
+      ),
+      'en',
+    )
+    expect(week.figures).toEqual([
+      { value: '61', label: 'episodes' },
+      { value: '43h', label: 'watched' },
+      { value: '0', label: 'finished' },
+      { value: '2', label: 'active days' },
+    ])
+    // 2026-10-15 is a Thursday.
+    expect(week.dayLabels).toEqual(['T', 'F', 'S', 'S', 'M', 'T', 'W'])
+    expect(weekStrip(weekStats({ minutesWatched: 45 })).figures[1].value).toBe(
+      '45m',
+    )
   })
 
   it('scales each day to the busiest by time', () => {

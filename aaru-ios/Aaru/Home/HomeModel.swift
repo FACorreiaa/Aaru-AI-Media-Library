@@ -1,4 +1,5 @@
 import AaruAPI
+import AaruCore
 import Foundation
 import Observation
 
@@ -11,7 +12,8 @@ typealias DiscoverRow = Components.Schemas.DiscoverRow
 /// Home (APP-009, APP-013): Continue watching, Start watching, Unfinished and the status counts
 /// from `/v1/up-next`; the albums being listened to from the shelf (MUS-001); the next two weeks of airings from
 /// `/v1/calendar`; this month's numbers
-/// from `/v1/me/stats`; then Discover's public rows from `/v1/discover` (DISC-001). Each part
+/// from `/v1/me/stats`; then Discover's public rows from `/v1/discover` (DISC-001); and what a
+/// player is playing now from `/v1/me/now-playing` (SCR-008), polled while Home is open. Each part
 /// loads on its own, so one failing keeps the rest. The last good load is cached so Home opens
 /// offline.
 @MainActor
@@ -27,6 +29,8 @@ final class HomeModel {
     /// Trending and this-season rows, the same for everyone. Below the user's own rows, and
     /// all a new account sees.
     private(set) var discover: [DiscoverRow] = []
+    /// What a player reports playing now (SCR-008), above Tonight. Nil when nothing plays.
+    private(set) var nowPlaying: NowPlaying?
     /// Discover hits being added right now, by hit id.
     private(set) var adding: Set<String> = []
     private(set) var isLoading = false
@@ -77,11 +81,13 @@ final class HomeModel {
         preview snapshot: HomeCache.Snapshot,
         discover: [DiscoverRow] = [],
         listening: [LibraryRow] = [],
+        nowPlaying: NowPlaying? = nil,
         now: Date = .now
     ) {
         self.init(api: nil, library: nil, cache: nil, now: { now })
         apply(snapshot)
         self.discover = discover
+        self.nowPlaying = nowPlaying
         previewListening = listening
         hasLoaded = true
     }
@@ -147,6 +153,19 @@ final class HomeModel {
                 }
             }
         } while reloadQueued
+    }
+
+    /// What is playing now. A failure keeps the last answer: the card's clock runs on from it.
+    func loadNowPlaying() async {
+        guard let api, case let .ok(response) = try? await api.getNowPlaying(),
+              let reply = try? response.body.json
+        else { return }
+        nowPlaying = reply.nowPlaying
+        #if os(iOS)
+            if let playing = reply.nowPlaying {
+                await NowWatchingStart.follow(playing, now: now())
+            }
+        #endif
     }
 
     private nonisolated static func fetchDiscover(_ api: Client) async -> [DiscoverRow]? {

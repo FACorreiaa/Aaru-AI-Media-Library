@@ -16,15 +16,11 @@ import {
 } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { ConfirmDialog } from '../components/ConfirmDialog'
-import {
-  createList,
-  deleteList,
-  getLists,
-  renameList,
-} from '../lib/lists/server'
+import { createList, deleteList, renameList } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
 import { optionalEnum } from '../lib/search-params'
+import { listsQuery } from '../lib/queries'
 
 // APP-006 on the web: every list, with create, rename and delete.
 export const Route = createFileRoute('/_shell/app_/lists/')({
@@ -33,7 +29,7 @@ export const Route = createFileRoute('/_shell/app_/lists/')({
   validateSearch: (search): { new?: '1' } => ({
     new: optionalEnum(String(search.new ?? ''), ['1']),
   }),
-  loader: () => getLists(),
+  loader: ({ context: { queryClient } }) => queryClient.query(listsQuery),
   component: Lists,
 })
 

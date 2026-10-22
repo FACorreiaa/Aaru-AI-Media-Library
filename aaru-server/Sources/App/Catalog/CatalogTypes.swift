@@ -126,7 +126,13 @@ extension Date {
         components.year = parts[0]
         components.month = parts[1]
         components.day = parts[2]
-        return components.date
+        // Calendar rolls "2025-02-30" over to March 2nd and "2025-13-01" into 2026; a day that
+        // does not exist is no date.
+        guard let date = components.date,
+              let back = components.calendar?.dateComponents(in: components.timeZone ?? .gmt, from: date),
+              back.year == parts[0], back.month == parts[1], back.day == parts[2]
+        else { return nil }
+        return date
     }
 }
 

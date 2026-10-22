@@ -57,7 +57,12 @@ struct PostgresHealth: DatabaseHealth {
     let sql: any SQLDatabase
 
     func isReachable() async -> Bool {
-        (try? await sql.raw("SELECT 1").run()) != nil
+        (try? await ping()) != nil
+    }
+
+    /// One round trip, throwing what Postgres (or the network) said: boot's wait for the database.
+    func ping() async throws {
+        try await sql.raw("SELECT 1").run()
     }
 }
 

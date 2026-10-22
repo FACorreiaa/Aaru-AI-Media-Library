@@ -76,6 +76,8 @@ actor AppleJWKSCache {
     private var keys: JWTKeyCollection?
     private var kids: Set<String> = []
     private var fetchedAt: Date?
+    /// The fetch every concurrent sign-in waits on, so a cold or expired cache asks once.
+    private var inFlight: Task<Void, any Error>?
 
     init(
         transport: any HTTPTransport,
@@ -92,7 +94,11 @@ actor AppleJWKSCache {
     /// Keys that hold `kid`, refreshing once if it is unknown. Nil means fail closed.
     func keys(for kid: String, now: Date = .now) async throws -> JWTKeyCollection? {
         if keys == nil || fetchedAt.map({ now.timeIntervalSince($0) >= ttl }) ?? true {
-            try await fetch(now: now)
+            do {
+                try await fetch(now: now)
+            } catch where keys != nil {
+                // The provider is down at the TTL: keep verifying with the keys we hold.
+            }
         }
         if kids.contains(kid) {
             return keys
@@ -106,7 +112,19 @@ actor AppleJWKSCache {
         return kids.contains(kid) ? keys : nil
     }
 
+    /// Joins the fetch already running, if any (actor reentrancy: every waiter suspended on the
+    /// first `await` would otherwise start its own).
     private func fetch(now: Date) async throws {
+        if let inFlight {
+            return try await inFlight.value
+        }
+        let task = Task { try await load(now: now) }
+        inFlight = task
+        defer { inFlight = nil }
+        try await task.value
+    }
+
+    private func load(now: Date) async throws {
         let response = try await transport.send(OutboundRequest(url: url))
         guard response.status == 200 else {
             throw AppError(

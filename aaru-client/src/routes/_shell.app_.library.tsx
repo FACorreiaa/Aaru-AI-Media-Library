@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui'
-import { getLibrary } from '../lib/library/server'
 import { NowSection } from '../components/library/NowSection'
 import { lastShown } from '../lib/presence'
 import {
@@ -30,6 +29,7 @@ import type {
   LibraryStatus,
   MediaKind,
 } from '../lib/library/model'
+import { libraryQuery } from '../lib/queries'
 
 // APP-003 on the web: the library, at parity with the Apple apps' `LibraryView`. `?search=true`
 // opens Search on arrival; `?status=` and `?kind=` open it filtered (Home's count chips link
@@ -52,7 +52,7 @@ export const Route = createFileRoute('/_shell/app_/library')({
     status: optionalEnum(search.status, STATUSES),
     kind: optionalEnum(search.kind, KIND_VALUES),
   }),
-  loader: () => getLibrary(),
+  loader: ({ context: { queryClient } }) => queryClient.query(libraryQuery),
   component: Library,
 })
 

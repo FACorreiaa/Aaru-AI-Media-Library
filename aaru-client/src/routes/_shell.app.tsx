@@ -3,6 +3,7 @@ import { useAppShell, useSearchHost } from '../components/shell/context'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { LastImportCard } from '../components/LastImportCard'
+import { NowPlayingCard } from '../components/NowPlayingCard'
 import { PlanCard } from '../components/PlanCard'
 import { TonightStrip } from '../components/TonightStrip'
 import {
@@ -13,6 +14,7 @@ import {
   cardClass,
 } from '~/components/ui'
 import { cn } from '~/lib/utils'
+import { WeekStripCard } from '../components/WeekStripCard'
 import {
   AiringCard,
   ContinueCard,
@@ -28,7 +30,6 @@ import {
   withWatched,
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
-import { getCalendar } from '../lib/calendar/server'
 import {
   AIRING_DAYS,
   advance,
@@ -45,22 +46,32 @@ import type {
   UpNext,
   WeekStrip,
 } from '../lib/home/model'
-import { getDiscover, getUpNext } from '../lib/home/server'
 import { airingToday, composeTonight, fieldLine } from '../lib/home/tonight'
 import { daypartHeading } from '../lib/appearance'
-import { listImports } from '../lib/imports/server'
 import type { ImportJob } from '../lib/imports/server'
 import { upsert } from '../lib/library/model'
 import type { LibraryEntry } from '../lib/library/model'
-import { getLibrary } from '../lib/library/server'
-import { getLists } from '../lib/lists/server'
+import { NOW_PLAYING_POLL_MS } from '../lib/nowplaying/model'
+import type { NowPlaying } from '../lib/nowplaying/model'
+import { getNowPlaying } from '../lib/nowplaying/server'
+import { useVisiblePoll } from '../lib/visible-poll'
 import type { ListSummary } from '../lib/lists/server'
-import { getStats } from '../lib/recap/server'
 import { offeredRecap, periodLabel } from '../lib/recap/model'
-import { listPendingPlans } from '../lib/plans/server'
+
 import type { AgentPlan } from '../lib/plans/server'
 import { flip, leave } from '../lib/motion'
 import { setEpisode } from '../lib/title/server'
+import {
+  calendarQuery,
+  discoverQuery,
+  importsQuery,
+  myStatsQuery,
+  libraryQuery,
+  listsQuery,
+  pendingPlansQuery,
+  upNextQuery,
+} from '../lib/queries'
+import type { QueryClient } from '@tanstack/solid-query'
 
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
 // watching come with the page; the calendar row loads in the browser, which knows the
@@ -74,15 +85,49 @@ import { setEpisode } from '../lib/title/server'
 // beside them on a wide screen sits the work happening in the room: requests waiting for the
 // user, the last import, the week in numbers, lists. A phone stacks the same pieces, with
 // requests right under Tonight.
+//
+// Now playing (SCR-008, DESIGN.md §15): what Stremio or the browser extension plays crosses the
+// top of the Field, asked again every half minute while the tab is in view. Tonight and
+// Continue watching leave that show out meanwhile, so it is never on the page twice.
 
 export const Route = createFileRoute('/_shell/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
-  loader: () => getUpNext(),
+  loader: ({ context: { queryClient } }) => {
+    // In the browser (a click, or a hover that preloads) the rest of the page starts with
+    // Up next instead of after it mounts. On the first load the server cannot know the
+    // viewer's day, so the page starts them when it mounts.
+    if (typeof window !== 'undefined') startReads(queryClient, new Date())
+    return queryClient.query(upNextQuery)
+  },
   component: Home,
 })
 
+const viewerTimeZone = () =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+
+const airingWindow = (today: string) =>
+  fetchWindow(today, addDays(today, AIRING_DAYS - 1))
+
+/** Every read Home shows besides Up next, all at once. Each row handles its own failure. */
+function startReads(queryClient: QueryClient, current: Date) {
+  const ignore = () => undefined
+  const today = localDayKey(current)
+  void queryClient.query(discoverQuery).catch(ignore)
+  void queryClient.query(listsQuery).catch(ignore)
+  void queryClient.query(pendingPlansQuery).catch(ignore)
+  void queryClient.query(importsQuery).catch(ignore)
+  void queryClient.query(libraryQuery).catch(ignore)
+  void queryClient
+    .query(myStatsQuery({ span: 'last7', tz: viewerTimeZone() }))
+    .catch(ignore)
+  void queryClient.query(calendarQuery(airingWindow(today))).catch(ignore)
+}
+
 function Home() {
   const loaded = Route.useLoaderData()
+  const { queryClient } = Route.useRouteContext()()
+  /** Up next again, past the cache: after a write the rows must show it. */
+  const freshUpNext = () => queryClient.query({ ...upNextQuery, staleTime: 0 })
   const [continuing, setContinuing] = createSignal(loaded().continueWatching)
   // UX-052: albums stay out of Start watching; in progress they have Listening.
   const withoutAlbums = <T extends { title: { type: string } }>(rows: T[]) =>
@@ -104,6 +149,10 @@ function Home() {
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
   const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
+  const [playing, setPlaying] = createSignal<NowPlaying | null>(null)
+  const [playingAt, setPlayingAt] = createSignal(new Date())
+  /** Sessions marked watched here: the player may still report them for a while. */
+  const [setAside, setSetAside] = createSignal<ReadonlySet<string>>(new Set())
   let libraryRequested = false
 
   // UX-007: the shell's one Search, lent this page's library for its marks.
@@ -120,7 +169,8 @@ function Home() {
   function loadLibrary() {
     if (libraryRequested) return
     libraryRequested = true
-    getLibrary()
+    queryClient
+      .query(libraryQuery)
       .then((library) => {
         // Anything added while it loaded is already on the server's answer, or kept here.
         setEntries((recent) => recent.reduce(upsert, library))
@@ -144,7 +194,7 @@ function Home() {
     setEntries((current) => upsert(current, entry))
     setDiscover((rows) => markOnShelf(rows, entry))
     try {
-      showUpNext(await getUpNext())
+      showUpNext(await freshUpNext())
     } catch {
       // The add landed; the rows catch up on the next visit.
     }
@@ -154,12 +204,9 @@ function Home() {
    * out. */
   async function loadStrip() {
     try {
-      const stats = await getStats({
-        data: {
-          span: 'last7',
-          tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-        },
-      })
+      const stats = await queryClient.query(
+        myStatsQuery({ span: 'last7', tz: viewerTimeZone() }),
+      )
       setStrip(weekStrip(stats))
     } catch {
       setStrip(null)
@@ -169,7 +216,7 @@ function Home() {
   /** Agent requests waiting for the user (OUT-004), pinned above everything else. */
   async function loadPlans() {
     try {
-      setPlans(await listPendingPlans())
+      setPlans(await queryClient.query(pendingPlansQuery))
     } catch {
       // The requests stay on the server; the next visit shows them.
     }
@@ -178,7 +225,7 @@ function Home() {
   /** The newest import, collapsed beside the rows. A failure just leaves it out. */
   async function loadLastImport() {
     try {
-      const jobs = await listImports()
+      const jobs = await queryClient.query(importsQuery)
       const newest = jobs.reduce<ImportJob | null>(
         (best, job) => (!best || job.createdAt > best.createdAt ? job : best),
         null,
@@ -189,9 +236,61 @@ function Home() {
     }
   }
 
+  /** What a player is playing now. When a session ends (its stop may have ticked the
+   * episode), the rows are fetched again so Continue watching moves on. */
+  async function loadNowPlaying() {
+    const before = playing()
+    let fresh: NowPlaying | null
+    try {
+      fresh = await getNowPlaying()
+    } catch {
+      return
+    }
+    setPlaying(fresh)
+    setPlayingAt(new Date())
+    if (before && before.watchEventId !== fresh?.watchEventId)
+      void freshUpNext().then(showUpNext, () => {})
+  }
+
+  useVisiblePoll(loadNowPlaying, NOW_PLAYING_POLL_MS)
+
+  /** The card shown: none once the user marked its episode watched here. */
+  const nowPlaying = createMemo(() => {
+    const current = playing()
+    return current && !setAside().has(current.watchEventId) ? current : null
+  })
+  const playingItem = () => nowPlaying()?.libraryItemId ?? null
+
+  /** Mark watched on the Now playing card: the same write as a tick anywhere else. */
+  async function markPlayingWatched(current: NowPlaying) {
+    const id = current.libraryItemId
+    const episode = current.episode
+    if (!id || !episode || busy().has(id)) return
+    setBusyFor(id, true)
+    setProblem(null)
+    try {
+      await setEpisode({
+        data: {
+          id,
+          season: episode.season,
+          episode: episode.number,
+          watched: true,
+        },
+      })
+      setSetAside((ids) => new Set(ids).add(current.watchEventId))
+      showUpNext(await freshUpNext())
+    } catch (err) {
+      setProblem(
+        err instanceof Error ? err.message : 'The episode was not marked.',
+      )
+    } finally {
+      setBusyFor(id, false)
+    }
+  }
+
   async function loadDiscover() {
     try {
-      setDiscover(await getDiscover())
+      setDiscover(await queryClient.query(discoverQuery))
     } catch {
       // Discover is extra: the user's own rows stand without it.
     } finally {
@@ -201,7 +300,7 @@ function Home() {
 
   async function loadLists() {
     try {
-      setLists(await getLists())
+      setLists(await queryClient.query(listsQuery))
     } catch {
       setLists(null)
     }
@@ -216,13 +315,10 @@ function Home() {
     void loadPlans()
     void loadLists()
     void loadLastImport()
+    void loadNowPlaying()
     loadLibrary()
     try {
-      setAirings(
-        await getCalendar({
-          data: fetchWindow(today, addDays(today, AIRING_DAYS - 1)),
-        }),
-      )
+      setAirings(await queryClient.query(calendarQuery(airingWindow(today))))
     } catch (err) {
       setProblem(
         err instanceof Error
@@ -251,16 +347,24 @@ function Home() {
 
   // Continue watching alone needs no clock, so the server draws Tonight's lead too; today's
   // airings join in the browser.
-  const tonight = createMemo(() =>
-    composeTonight(continuing(), airings(), now() ?? new Date()),
-  )
+  const tonight = createMemo(() => {
+    const away = playingItem()
+    return composeTonight(
+      continuing().filter((e) => e.libraryItemId !== away),
+      airings().filter((a) => a.libraryItemId !== away),
+      now() ?? new Date(),
+    )
+  })
   /** The show Tonight leads with leaves Continue watching, so no card shows twice. */
   const tonightItem = () => {
     const pick = tonight()?.primary
     return pick?.kind === 'continue' ? pick.entry.libraryItemId : null
   }
   const continuingRow = createMemo(() =>
-    continuing().filter((e) => e.libraryItemId !== tonightItem()),
+    continuing().filter(
+      (e) =>
+        e.libraryItemId !== tonightItem() && e.libraryItemId !== playingItem(),
+    ),
   )
   const subline = createMemo(() => {
     const current = now()
@@ -338,7 +442,7 @@ function Home() {
     )
     if (match) setAirings((rows) => withWatched(rows, match, true))
     try {
-      showUpNext(await getUpNext())
+      showUpNext(await freshUpNext())
     } catch {
       // The write landed; the optimistic card stands until the next visit.
     } finally {
@@ -364,6 +468,17 @@ function Home() {
           )}
         </Show>
 
+        <Show when={nowPlaying()}>
+          {(current) => (
+            <NowPlayingCard
+              playing={current()}
+              now={playingAt()}
+              busy={busy().has(current().libraryItemId ?? '')}
+              onWatched={() => void markPlayingWatched(current())}
+            />
+          )}
+        </Show>
+
         <div class="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr] lg:gap-x-10">
           <div class="order-1 lg:col-start-1 lg:row-start-1">
             <Show when={tonight()}>
@@ -377,6 +492,9 @@ function Home() {
                   onWatched={(entry) => void markWatched(entry)}
                 />
               )}
+            </Show>
+            <Show when={strip()}>
+              {(week) => <WeekStripCard week={week()} />}
             </Show>
           </div>
 
@@ -398,7 +516,7 @@ function Home() {
                         plan={plan}
                         onDecided={(decided) => {
                           if (decided.status === 'applied')
-                            void getUpNext().then(showUpNext, () => {})
+                            void freshUpNext().then(showUpNext, () => {})
                         }}
                       />
                     )}
@@ -410,64 +528,6 @@ function Home() {
               <Show when={lastImport()}>
                 {(job) => <LastImportCard job={job()} />}
               </Show>
-              <Show when={strip()}>
-                {(week) => (
-                  <Link
-                    to="/app/insights"
-                    search={{ span: 'last7' }}
-                    class={cn(
-                      cardClass,
-                      'flex items-center gap-4 px-5 py-4 hover:text-accent',
-                    )}
-                  >
-                    <span
-                      class="flex h-8 w-20 shrink-0 items-end gap-[3px] text-accent"
-                      aria-hidden="true"
-                    >
-                      <For each={week().days}>
-                        {(height) => (
-                          <span
-                            class="flex-1 rounded-[2px]"
-                            classList={{
-                              'bg-current': height > 0,
-                              'bg-line': height === 0,
-                            }}
-                            style={{
-                              height:
-                                height > 0
-                                  ? `${Math.max(height * 100, 15)}%`
-                                  : '3px',
-                            }}
-                          />
-                        )}
-                      </For>
-                    </span>
-                    <span class="min-w-0 flex-1">
-                      <span class="block text-sm text-muted">Last 7 days</span>
-                      {/* Each figure keeps its words together; lines break only between them. */}
-                      <span class="font-medium tabular-nums">
-                        <Show
-                          when={week().parts.length > 0}
-                          fallback="Nothing tracked yet"
-                        >
-                          <For each={week().parts}>
-                            {(part, i) => (
-                              <>
-                                {i() > 0 && ' · '}
-                                <span class="whitespace-nowrap">{part}</span>
-                              </>
-                            )}
-                          </For>
-                        </Show>
-                      </span>
-                    </span>
-                    <span class="shrink-0 text-sm font-semibold text-accent">
-                      Insights
-                    </span>
-                  </Link>
-                )}
-              </Show>
-
               <Show when={chips().length > 0}>
                 <nav
                   aria-label="Your library by status"

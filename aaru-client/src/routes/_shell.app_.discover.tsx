@@ -17,13 +17,12 @@ import { localDayKey } from '../lib/calendar/model'
 import type { ConcertPlaceSetting } from '../lib/concerts/model'
 import { parseView, shownView } from '../lib/concerts/view'
 import type { DiscoverView } from '../lib/concerts/view'
-import { getConcertPlace } from '../lib/concerts/server'
 import type { DiscoverRow } from '../lib/home/model'
-import { getDiscover } from '../lib/home/server'
 import { seasonOf } from '../lib/discover/season'
 import type { SeasonKey, SeasonKind } from '../lib/discover/season'
 import { optionalEnum, optionalInt } from '../lib/search-params'
 import { Segmented } from '../components/Segmented'
+import { concertPlaceQuery, discoverQuery } from '../lib/queries'
 
 // The Seasons and Concerts views load on their own, the first time someone opens them.
 const SeasonBrowser = lazy(() =>
@@ -62,9 +61,9 @@ export const Route = createFileRoute('/_shell/app_/discover')({
     season: optionalEnum(search.season, ['winter', 'spring', 'summer', 'fall']),
     year: optionalInt(search.year, 1970, 2200),
   }),
-  loader: async () => {
+  loader: async ({ context: { queryClient } }) => {
     const [discover, concerts] = await Promise.all([
-      getDiscover().then(
+      queryClient.query(discoverQuery).then(
         (rows) => ({ rows, problem: null }),
         (err: unknown) => ({
           rows: [] as DiscoverRow[],
@@ -75,7 +74,9 @@ export const Route = createFileRoute('/_shell/app_/discover')({
         }),
       ),
       // Concerts are an extra: without an answer the Concerts view stays hidden.
-      getConcertPlace().catch((): ConcertPlaceSetting | null => null),
+      queryClient
+        .query(concertPlaceQuery)
+        .catch((): ConcertPlaceSetting | null => null),
     ])
     return { ...discover, concerts }
   },

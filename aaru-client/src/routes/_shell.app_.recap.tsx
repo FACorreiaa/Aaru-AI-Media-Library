@@ -8,9 +8,9 @@ import { cards } from '../lib/recap/deck'
 import type { RecapCard } from '../lib/recap/deck'
 import { periodLabel } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
-import { getStats } from '../lib/recap/server'
 import { useAppShell } from '../components/shell/context'
 import { prefersReducedMotion } from '../lib/reduced-motion'
+import { myStatsQuery } from '../lib/queries'
 
 // GAM-006a on the web: the Recap story for `?year=` and optional `?month=`, the twin of the
 // Apple apps' `RecapView`. Stats load in the browser, which knows the viewer's time zone.
@@ -27,6 +27,7 @@ export const Route = createFileRoute('/_shell/app_/recap')({
 
 function Recap() {
   const search = Route.useSearch()
+  const { queryClient } = Route.useRouteContext()()
   const navigate = useNavigate()
   const [state, setState] = createSignal<
     | { kind: 'loading' }
@@ -47,13 +48,13 @@ function Recap() {
         setState({ kind: 'loading' })
         setOpen(true)
         try {
-          const stats = await getStats({
-            data: {
+          const stats = await queryClient.query(
+            myStatsQuery({
               year,
               month,
               tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-            },
-          })
+            }),
+          )
           if (mine === request)
             setState({ kind: 'ready', stats, deck: cards(stats) })
         } catch (err) {

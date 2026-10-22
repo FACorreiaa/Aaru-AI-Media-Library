@@ -76,11 +76,13 @@ extension PostgresLibraryStore {
 
     fileprivate static func writeMembers(_ members: [TitleID], list: ListID, sql: any SQLDatabase) async throws {
         try await sql.raw("DELETE FROM list_items WHERE list_id = \(bind: list.rawValue)").run()
-        for (position, titleID) in members.enumerated() {
-            try await sql.raw("""
-            INSERT INTO list_items (id, list_id, title_id, position)
-            VALUES (\(bind: UUID()), \(bind: list.rawValue), \(bind: titleID.rawValue), \(bind: position))
-            """).run()
-        }
+        guard !members.isEmpty else { return }
+        // One statement for the whole list; `ordinality` is the position, from 0 as before.
+        try await sql.raw("""
+        INSERT INTO list_items (id, list_id, title_id, position)
+        SELECT m.id, \(bind: list.rawValue), m.title_id, (m.position - 1)::int
+        FROM unnest(\(bind: members.map { _ in UUID() })::uuid[], \(bind: members.map(\.rawValue))::uuid[])
+            WITH ORDINALITY AS m(id, title_id, position)
+        """).run()
     }
 }

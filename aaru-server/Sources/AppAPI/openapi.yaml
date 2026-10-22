@@ -815,6 +815,23 @@ paths:
           description: Forgotten.
         default:
           $ref: '#/components/responses/Error'
+  /v1/devices/live-activity:
+    put:
+      operationId: registerLiveActivityToken
+      summary: >-
+        Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`),
+        or a running "Now watching" activity's own token (`update`) with the watch event it
+        follows. The server then starts, updates and ends the activity from scrobbles.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LiveActivityRegistration'}
+      responses:
+        '204':
+          description: Registered.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/web-push/key:
     get:
       operationId: getWebPushKey
@@ -1126,6 +1143,22 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Stats'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/now-playing:
+    get:
+      operationId: getNowPlaying
+      summary: >-
+        What a player (Stremio, or a streaming site through the browser extension) is playing for
+        you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where
+        it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent
+        when nothing plays, or the last report is too old to believe.
+      responses:
+        '200':
+          description: What plays, if anything.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NowPlayingReply'}
         default:
           $ref: '#/components/responses/Error'
   /v1/me/listens:
@@ -2395,6 +2428,55 @@ components:
           enum: [sandbox, production]
           description: "`sandbox` for Xcode builds; `production` for TestFlight and the App Store."
         bundleId: {type: string}
+    LiveActivityRegistration:
+      type: object
+      required: [token, kind, environment, bundleId]
+      properties:
+        token: {type: string, description: The ActivityKit push token, hex.}
+        kind:
+          type: string
+          enum: [start, update]
+          description: "`start` is the device's push-to-start token; `update` one activity's own."
+        watchEventId:
+          type: string
+          format: uuid
+          description: Required for `update`; the activity's `watchEventId` attribute.
+        environment:
+          type: string
+          enum: [sandbox, production]
+        bundleId: {type: string}
+    NowPlayingReply:
+      type: object
+      properties:
+        nowPlaying: {$ref: '#/components/schemas/NowPlaying'}
+    NowPlaying:
+      type: object
+      required: [watchEventId, title, source, state, positionMs, durationMs, updatedAt]
+      properties:
+        watchEventId: {type: string, format: uuid}
+        libraryItemId:
+          type: string
+          format: uuid
+          description: Absent when the title is not in the library yet.
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        episode:
+          $ref: '#/components/schemas/EpisodeRef'
+        episodeName: {type: string}
+        source:
+          type: string
+          enum: [stremio, netflix, disney_plus, prime_video]
+        state:
+          type: string
+          enum: [playing, paused]
+        positionMs:
+          type: integer
+          format: int64
+          description: Where the player was at `updatedAt`.
+        durationMs:
+          type: integer
+          format: int64
+          description: The player's duration, else the catalog runtime; 0 when neither is known.
+        updatedAt: {type: string, format: date-time}
     WebPushKey:
       type: object
       required: [publicKey]

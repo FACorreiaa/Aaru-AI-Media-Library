@@ -49,6 +49,8 @@ struct CatalogRefresher: Sendable {
         for title in due {
             try Task.checkCancellation()
             let genres = (try? await resolver.genres(of: title)) ?? nil
+            // A shutdown mid-call is not "no genres": leave the title unstamped for the next pass.
+            try Task.checkCancellation()
             try await stores.titles.fillGenres(title.id, genres ?? [], attemptedAt: now)
         }
         return due.count
@@ -64,6 +66,7 @@ struct CatalogRefresher: Sendable {
         for book in due {
             try Task.checkCancellation()
             let found = try? await catalog.catalogs.openLibrary.hydrate(ids: book.ids, type: .book)
+            try Task.checkCancellation()
             try await stores.titles.fillPageCount(book.id, found?.hit.pageCount, attemptedAt: now)
         }
         return due.count

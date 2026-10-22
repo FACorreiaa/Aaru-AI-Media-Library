@@ -28,6 +28,7 @@ import {
   signInWithCode,
   signInWithGoogle,
 } from '../lib/session/session'
+import { forgetAccount } from '../lib/session/query'
 
 // The web twin of the Apple apps' welcome screen and email sheet (DESIGN.md §0).
 export const Route = createFileRoute('/sign-in')({
@@ -36,9 +37,11 @@ export const Route = createFileRoute('/sign-in')({
   validateSearch: (search): { next?: string } => ({
     next: optionalString(search.next),
   }),
-  beforeLoad: async ({ search }) => {
+  beforeLoad: async ({ search, context }) => {
     const session = await getSession()
     if (session.signedIn) throw redirect({ href: safeNext(search.next) })
+    // Signed out (or the session just ended): the last account's pages leave this tab.
+    forgetAccount(context.queryClient)
   },
   loader: () => getSignInConfig(),
   component: SignIn,

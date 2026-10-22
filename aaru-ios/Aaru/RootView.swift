@@ -64,6 +64,10 @@ struct RootView: View {
                         realtime.start()
                     }
                 }
+                #if os(iOS)
+                // Live Activity tokens go up while signed in; signing out cancels it.
+                .task { await LiveActivityRegistrar.current?.follow() }
+                #endif
                 .sheet(item: $linkedTitle) { link in
                     NavigationStack {
                         LibraryEntryDestination(id: link.id, api: api, library: library, lists: lists)
@@ -116,6 +120,9 @@ struct RootView: View {
                 HomeCache().clear()
                 WidgetSnapshotStore.clear()
                 WidgetCenter.shared.reloadAllTimelines()
+                #if os(iOS)
+                    Task { await NowWatching.endAll() }
+                #endif
                 tab = .home
                 libraryFilter = LibraryFilter()
                 linkedTitle = nil
