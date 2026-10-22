@@ -47,6 +47,9 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
+    services.sentry = makeSentryReporter(config.sentry, transport: transport, logger: logger)
+    let productEvents = makePostHogClient(config.posthog, transport: transport, logger: logger)
+    ProductEvents.install(productEvents)
     let router = try buildRouter(stores: stores, services: services, metricsSecret: config.metricsSecret)
     return Application(
         router: router,
@@ -62,7 +65,8 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             fluent: fluent, stores: stores, services: services,
             airing: AiringNotifier(stores: stores, sender: pushSender, webPush: webPush),
             logger: logger
-        ) + [webPush?.manager].compactMap(\.self) + metricsServices(port: config.metricsPort, logger: logger),
+        ) + ([webPush?.manager, productEvents] as [(any Service)?]).compactMap(\.self)
+            + metricsServices(port: config.metricsPort, logger: logger),
         logger: logger
     )
 }
@@ -242,7 +246,7 @@ func buildRouter(stores: Stores, services: Services, metricsSecret: String = "")
     router.addMiddleware {
         RedactedLogRequestsMiddleware(.info)
         HTTPMetricsMiddleware()
-        ErrorMiddleware()
+        ErrorMiddleware(sentry: services.sentry)
         AuthMiddleware(sessions: stores.sessions)
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()

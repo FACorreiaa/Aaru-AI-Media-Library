@@ -81,6 +81,7 @@ struct SocialService: Sendable {
         guard let sender = try await stores.social.acceptRequest(id: requestID, recipient: viewer, now: now()),
               let friend = try await stores.social.socialUser(sender)
         else { throw AppError.notFound("No such request.") }
+        ProductEvents.capture(.friendAdded, userID: viewer)
         return friend
     }
 

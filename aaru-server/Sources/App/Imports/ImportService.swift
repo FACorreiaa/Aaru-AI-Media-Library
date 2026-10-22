@@ -131,10 +131,14 @@ struct ImportService: Sendable {
         return true
     }
 
-    /// One finished job in `aaru_imports_total`: planned, or failed for good. A retry is neither.
+    /// One finished job, in `aaru_imports_total` and as a product event: planned, or failed for good.
+    /// A retry is neither.
     static func count(_ job: ImportJob) {
         guard job.state == .planned || job.state == .failed else { return }
         Metrics.shared.increment(.imports, ["source": job.source.rawValue, "result": job.state.rawValue])
+        ProductEvents.capture(
+            .importCompleted, userID: job.userID, ["source": job.source.rawValue, "result": job.state.rawValue]
+        )
     }
 
     /// Goodreads custom shelves become lists: one per shelf name, reusing a list of that name.

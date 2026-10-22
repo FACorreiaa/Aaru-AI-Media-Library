@@ -77,6 +77,10 @@ COPY --from=build --chown=hummingbird:hummingbird /staging /app
 # Provide configuration needed by the built-in crash reporter and some sensible default behaviors.
 ENV SWIFT_BACKTRACE=enable=yes,sanitize=yes,threads=all,images=all,interactive=no,swift-backtrace=./swift-backtrace-static
 
+# The commit this image was built from, as the release on Sentry error reports.
+ARG AARU_RELEASE=""
+ENV AARU_RELEASE=$AARU_RELEASE
+
 # Ensure all further commands run as the hummingbird user
 USER hummingbird:hummingbird
 

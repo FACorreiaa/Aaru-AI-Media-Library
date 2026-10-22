@@ -17,7 +17,7 @@ struct PostgresLibraryStore: LibraryStore {
         summary: String
     ) async throws -> ActionRecord {
         do {
-            return try await database.transaction { database in
+            let action = try await database.transaction { database in
                 let sql = try sqlDatabase(database)
                 let inverse = try await Self.run(op, userID: userID, sql: sql)
                 if kind == "import" {
@@ -29,6 +29,9 @@ struct PostgresLibraryStore: LibraryStore {
                 )
                 return try await Self.journal(entry, userID: userID, sql: sql)
             }
+            // After the commit, so a rolled-back write is never counted.
+            ProductEvents.capture(.libraryAction, userID: userID, ["kind": kind, "actor": caller.actor.rawValue])
+            return action
         } catch let error as any DatabaseError where error.isConstraintFailure {
             throw StoreConflict(message: "This title is already in the library.")
         }
@@ -42,7 +45,7 @@ struct PostgresLibraryStore: LibraryStore {
             let undoneAt: Date?
         }
         do {
-            return try await database.transaction { database in
+            let undo = try await database.transaction { database in
                 let sql = try sqlDatabase(database)
                 guard let action = try await sql.raw("""
                 SELECT summary, inverse, item_ids, undone_at FROM actions
@@ -63,6 +66,8 @@ struct PostgresLibraryStore: LibraryStore {
                 )
                 return try await Self.journal(entry, userID: userID, sql: sql)
             }
+            ProductEvents.capture(.libraryAction, userID: userID, ["kind": "undo", "actor": Actor.user.rawValue])
+            return undo
         } catch let error as any DatabaseError where error.isConstraintFailure {
             throw ActionConflict(message: "The library changed since; that action can no longer be undone.")
         }

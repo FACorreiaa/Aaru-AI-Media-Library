@@ -74,6 +74,11 @@ docker build -f aaru-server/Dockerfile -t aaru-server .
 | `open.library.user.agent` | `OPEN_LIBRARY_USER_AGENT` | `Aaru/0.1 (media library; contact: signin@aaruapp.com)` |
 | `metrics.secret` | `METRICS_SECRET` | empty → `GET /internal/metrics` answers 404. The bearer facorreia.com/apps sends for the user count |
 | `metrics.port` | `METRICS_PORT` | 9090. `GET /metrics` (Prometheus text) on its own listener, for the cluster's Alloy only: not in the Service or the Ingress. 0 turns it off |
+| `sentry.dsn` | `SENTRY_DSN` | empty → server errors are only logged. Set: each 5xx goes to Sentry with its route template, status and error type; never the path, query, headers, body or user |
+| `sentry.environment` | `SENTRY_ENVIRONMENT` | `production` |
+| `aaru.release` | `AARU_RELEASE` | the image's commit (Docker build arg, set by `server-deploy.yml`) |
+| `posthog.project.token` | `POSTHOG_PROJECT_TOKEN` | empty → no product events. Set: the events in `ProductEvent`, by account id, with no person profiles |
+| `posthog.host` | `POSTHOG_HOST` | `https://eu.i.posthog.com` |
 | `log.level` | `LOG_LEVEL` | `info` |
 | `http.serverName` | — | `aaru-server` |
 | `db.migrate` | `DB_MIGRATE` (`--db-migrate`) | unset |
