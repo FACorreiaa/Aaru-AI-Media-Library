@@ -515,12 +515,12 @@ account or a stranger that has not happened yet.
 | SOC-006 | Built, unverified | `social_recommendations`, `/v1/social/recommendations`, `/v1/me/recommendations*`; InteractionTests; web Recommend (title page, profile) and inbox, iOS RecommendSheet and inbox | No push to the recipient yet (needs a notification category) |
 | SOC-007 | Built, unverified | `social_reactions`, `PUT/DELETE /v1/activity/{id}/reaction`, reactions on `ActivityItem`; InteractionTests; web and iOS Lately rows | |
 | SHR-001 | Open | none | |
-| GAM-001 | Open | none | |
-| GAM-002 | Open | none | |
-| GAM-003 | Open | none | |
+| GAM-001 | In progress | server: `points_events`, `PointsRules`, award/revoke in the library transaction, friend/room/listen/import hooks; GamificationTests | web, iOS |
+| GAM-002 | In progress | server: `Levels`, `GET /v1/me/progress`, `GET /v1/me/points`; GamificationTests | web, iOS |
+| GAM-003 | In progress | AaruCore `Streak` (travel grace), `check_ins`, `X-Timezone` (server + AaruAPI), milestone bonuses; StreakTests, GamificationTests | web, iOS |
 | WID-007 | Open | none | |
-| GAM-004 | Open | none | |
-| GAM-005 | Open | none | |
+| GAM-004 | In progress | server: `BadgeCatalog` (62, 9 hidden), facts query, `user_badges`, `GamificationWorker` backfill, undo takes a tier back, `/v1/me/badges`; BadgeRuleTests | web, iOS |
+| GAM-005 | In progress | server: two `social_settings` switches (partial PUT), `FriendProfile.achievements`, `GET /v1/social/leaderboard`; LeaderboardTests | web, iOS |
 | GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
 | GAM-006e | Done | #67; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
 | GAM-006b | Partial | #43 Insights covers all-time/by-kind | No genres, profile placement, badges |

@@ -65,6 +65,9 @@ struct PlanService: Sendable {
             for change in plan.changes where change.type == .show && change.libraryItemID == nil {
                 _ = try? await library.catalog.detail(change.titleID)
             }
+            await GamificationService(stores: stores, now: now).batchApplied(
+                userID, actionID: action.id, firstImport: false
+            )
             return (plan, action)
         case let .stale(plan):
             throw AppError(

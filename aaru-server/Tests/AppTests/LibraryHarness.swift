@@ -77,9 +77,11 @@ struct LibraryHarness {
         _ method: HTTPRequest.Method,
         _ uri: String,
         json: Any? = nil,
-        token: String? = nil
+        token: String? = nil,
+        headers extra: HTTPFields = [:]
     ) async throws -> Reply {
         var headers: HTTPFields = [.authorization: "Bearer \(token ?? self.token)"]
+        headers.append(contentsOf: extra)
         var buffer: ByteBuffer?
         if let json {
             headers[.contentType] = "application/json"

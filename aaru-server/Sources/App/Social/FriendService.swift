@@ -10,6 +10,8 @@ struct FriendProfile: Sendable {
     var shelf: FriendShelf?
     /// Every title the shelf names, by id.
     var titles: [TitleID: Title]
+    /// Level and badges; nil when the friend hides them (independent of `sharing`).
+    var achievements: (level: Int, badges: [EarnedBadge])?
 }
 
 /// One activity row with the people and titles it names.
@@ -46,13 +48,17 @@ struct FriendService: Sendable {
               let since = try await stores.friendViews.friendsSince(viewer, friend),
               let user = try await stores.social.socialUser(friend)
         else { throw SocialService.noSuchUser }
+        let achievements = try await GamificationService(stores: stores, now: now).friendAchievements(friend)
         guard try await stores.friendViews.socialSettings(friend).shareLibraryWithFriends else {
-            return FriendProfile(user: user, friendsSince: since, sharing: false, shelf: nil, titles: [:])
+            return FriendProfile(
+                user: user, friendsSince: since, sharing: false, shelf: nil, titles: [:], achievements: achievements
+            )
         }
         let shelf = try await stores.friendViews.shelf(of: friend, viewer: viewer, limit: Self.shelfLimit)
         let ids = shelf.watching.map(\.titleID) + shelf.finished.map(\.titleID) + shelf.bothWant + shelf.theyLoved
         return try await FriendProfile(
-            user: user, friendsSince: since, sharing: true, shelf: shelf, titles: titles(ids)
+            user: user, friendsSince: since, sharing: true, shelf: shelf, titles: titles(ids),
+            achievements: achievements
         )
     }
 

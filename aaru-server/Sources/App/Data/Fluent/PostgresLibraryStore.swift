@@ -16,6 +16,7 @@ struct PostgresLibraryStore: LibraryStore {
         kind: String,
         summary: String
     ) async throws -> ActionRecord {
+        let zone = ClientTimeZone.current
         do {
             let action = try await database.transaction { database in
                 let sql = try sqlDatabase(database)
@@ -27,7 +28,13 @@ struct PostgresLibraryStore: LibraryStore {
                     inverse: inverse, itemIDs: op.itemIDs, actor: caller.actor, kind: kind, summary: summary,
                     undoOf: nil, agentTokenID: caller.agentTokenID
                 )
-                return try await Self.journal(entry, userID: userID, sql: sql)
+                let action = try await Self.journal(entry, userID: userID, sql: sql)
+                // Points and the streak day commit with the write or not at all (GAM-001).
+                try await PostgresGamificationStore.recordLibraryWrite(
+                    op: op, inverse: inverse, kind: kind, caller: caller, actionID: action.id, userID: userID,
+                    requestedZone: zone, sql: sql
+                )
+                return action
             }
             // After the commit, so a rolled-back write is never counted.
             ProductEvents.capture(.libraryAction, userID: userID, ["kind": kind, "actor": caller.actor.rawValue])
@@ -44,6 +51,7 @@ struct PostgresLibraryStore: LibraryStore {
             let itemIds: [UUID]
             let undoneAt: Date?
         }
+        let zone = ClientTimeZone.current
         do {
             let undo = try await database.transaction { database in
                 let sql = try sqlDatabase(database)
@@ -64,7 +72,13 @@ struct PostgresLibraryStore: LibraryStore {
                     inverse: redo, itemIDs: action.itemIds.map(LibraryItemID.init), actor: .user,
                     kind: "undo", summary: "Undid: \(action.summary)", undoOf: actionID
                 )
-                return try await Self.journal(entry, userID: userID, sql: sql)
+                let undo = try await Self.journal(entry, userID: userID, sql: sql)
+                // Undone ticks and finishes take their points back; a redo earns them again.
+                try await PostgresGamificationStore.recordLibraryWrite(
+                    op: action.inverse, inverse: redo, kind: "undo", caller: .user, actionID: undo.id,
+                    userID: userID, requestedZone: zone, sql: sql
+                )
+                return undo
             }
             ProductEvents.capture(.libraryAction, userID: userID, ["kind": "undo", "actor": Actor.user.rawValue])
             return undo

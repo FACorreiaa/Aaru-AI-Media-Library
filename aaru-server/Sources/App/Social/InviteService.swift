@@ -143,6 +143,7 @@ struct InviteService: Sendable {
             guard try await stores.social.redeemInvite(code: code, redeemer: viewer, now: now()) != nil else {
                 throw Self.noSuchInvite
             }
+            await social.gamification.friendAdded(viewer, inviter.id)
         }
         var titleAdded = false
         if addTitle, let titleID = invite.titleID, let title = try await stores.titles.title(id: titleID) {

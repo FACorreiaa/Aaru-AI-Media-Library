@@ -52,10 +52,11 @@ struct ListService: Sendable {
             members: []
         )
         try AaruList(userID: userID, name: snapshot.name).validate()
-        try await stores.library.apply(
+        let action = try await stores.library.apply(
             .insertList(snapshot), userID: userID, actor: .user, kind: "list", summary: "Created list \(snapshot.name)"
         )
         ProductEvents.capture(.listCreated, userID: userID)
+        await GamificationService(stores: stores, now: now).afterWrite(userID: userID, actionID: action.id)
         return try await detail(snapshot.id, userID: userID)
     }
 
@@ -152,6 +153,7 @@ struct ShelfService: Sendable {
             createdAt: now()
         )
         try await stores.shelves.save(shelf, userID: userID)
+        await GamificationService(stores: stores, now: now).afterWrite(userID: userID, actionID: nil)
         return shelf
     }
 

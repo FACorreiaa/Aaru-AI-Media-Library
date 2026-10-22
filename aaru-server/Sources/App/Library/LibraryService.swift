@@ -209,7 +209,11 @@ struct LibraryService: Sendable {
     }
 
     func undo(_ actionID: UUID, userID: UserID) async throws -> ActionRecord {
-        try await stores.library.undo(actionID: actionID, userID: userID)
+        let undo = try await stores.library.undo(actionID: actionID, userID: userID)
+        await GamificationService(stores: stores, now: now).afterUndo(
+            userID: userID, undone: actionID, undoAction: undo.id
+        )
+        return undo
     }
 }
 

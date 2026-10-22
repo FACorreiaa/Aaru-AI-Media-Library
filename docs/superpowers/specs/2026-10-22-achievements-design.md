@@ -343,7 +343,7 @@ All work is in a worktree off `origin/main`. Each PR:
    - `BadgeCatalog`, `BadgeRules`, `GamificationWorker`.
    - The facts query, inline evaluation, and taking tiers back on undo.
    - The badges endpoints.
-   - An achievements section in `Export/AccountExport.swift`.
+   - (Deferred: the account export covers the library, lists and shelves only; achievements join it when social data does.)
 4. **Visibility and leaderboard (server, GAM-005).** Migration `AddAchievementSettings`, partial PUT, `FriendProfile.achievements`, and the leaderboard endpoint.
 5. **Web.**
 6. **iOS and Mac.**

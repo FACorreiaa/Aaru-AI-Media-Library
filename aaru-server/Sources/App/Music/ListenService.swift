@@ -9,7 +9,11 @@ struct ListenService: Sendable {
 
     /// Keeps each listen unless it repeats one already stored. Returns how many were kept.
     func submit(_ listens: [NewListen], from caller: AgentCaller) async throws -> Int {
-        try await stores.listens.insert(listens, userID: caller.userID, agentTokenID: caller.token.id)
+        let kept = try await stores.listens.insert(listens, userID: caller.userID, agentTokenID: caller.token.id)
+        if kept > 0 {
+            await GamificationService(stores: stores, now: now).listensKept(caller.userID, listens: listens)
+        }
+        return kept
     }
 
     /// A page's size: 20 unless asked, never more than 100.
