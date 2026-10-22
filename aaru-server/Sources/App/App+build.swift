@@ -16,11 +16,7 @@ import ServiceLifecycle
 /// needs only Postgres settings. Serving loads the full `AppConfig` and fails fast,
 /// naming the key, when a required value is missing.
 func buildApplication(reader: ConfigReader) async throws -> some ApplicationProtocol {
-    let logger = {
-        var logger = Logger(label: "aaru-server")
-        logger.logLevel = reader.string(forKey: "log.level", as: Logger.Level.self, default: .info)
-        return logger
-    }()
+    let logger = makeLogger(reader)
 
     try await runOneShotModes(reader: reader, logger: logger)
 
@@ -48,6 +44,9 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
+    services.sentry = makeSentryReporter(config.sentry, transport: transport, logger: logger)
+    let productEvents = makePostHogClient(config.posthog, transport: transport, logger: logger)
+    ProductEvents.install(productEvents)
     let router = try buildRouter(stores: stores, services: services, metricsSecret: config.metricsSecret)
     return Application(
         router: router,
@@ -58,15 +57,24 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             )
         ),
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        // The web push manager finishes in-flight sends on shutdown. Services stop in reverse
-        // order, so the HTTP client, first here, closes after every worker that calls out.
+        // The web push manager finishes in-flight sends on shutdown; `/metrics` listens on its own port.
+        // Services stop in reverse order, so the HTTP client, first here, closes after every worker
+        // that calls out (PostHog's final flush among them).
         services: [HTTPClientService(client: httpClient)] + backgroundServices(
             fluent: fluent, stores: stores, services: services,
             airing: AiringNotifier(stores: stores, sender: pushSender, webPush: webPush),
             workers: config.workers, logger: logger
-        ) + [webPush?.manager].compactMap(\.self),
+        ) + ([webPush?.manager, productEvents] as [(any Service)?]).compactMap(\.self)
+            + metricsServices(port: config.metricsPort, logger: logger),
         logger: logger
     )
+}
+
+/// `LOG_LEVEL`, `info` unless set.
+func makeLogger(_ reader: ConfigReader) -> Logger {
+    var logger = Logger(label: "aaru-server")
+    logger.logLevel = reader.string(forKey: "log.level", as: Logger.Level.self, default: .info)
+    return logger
 }
 
 /// Everything that runs beside the HTTP server: the database, and the workers.
@@ -232,12 +240,13 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
     return fluent
 }
 
-/// Builds the router: logging, the shared error shape, auth, then the generated `/v1` handlers.
+/// Builds the router: logging, metrics, the shared error shape, auth, then the generated `/v1` handlers.
 func buildRouter(stores: Stores, services: Services, metricsSecret: String = "") throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
         RedactedLogRequestsMiddleware(.info)
-        ErrorMiddleware()
+        HTTPMetricsMiddleware()
+        ErrorMiddleware(sentry: services.sentry)
         AuthMiddleware(sessions: stores.sessions)
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()

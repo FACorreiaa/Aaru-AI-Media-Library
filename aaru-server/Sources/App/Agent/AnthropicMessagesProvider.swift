@@ -22,6 +22,22 @@ struct AnthropicMessagesProvider: ModelProviding {
     static let apiVersion = "2023-06-01"
 
     func complete(_ request: ModelRequest) async throws -> ModelResponse {
+        do {
+            let response = try await call(request)
+            Metrics.shared.increment(.llmCalls, ["provider": "anthropic", "result": "ok"])
+            return response
+        } catch {
+            let result = switch error as? ModelProviderError {
+            case let error? where error.outOfCredit: "out_of_credit"
+            case .some: "http_error"
+            case nil: "error"
+            }
+            Metrics.shared.increment(.llmCalls, ["provider": "anthropic", "result": result])
+            throw error
+        }
+    }
+
+    private func call(_ request: ModelRequest) async throws -> ModelResponse {
         let body = try JSONEncoder().encode(Self.body(request, model: model, effort: effort))
         var headers = [
             ("content-type", "application/json"),

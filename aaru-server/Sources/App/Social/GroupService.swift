@@ -77,6 +77,7 @@ struct GroupService: Sendable {
             id: UUID(), groupID: id, name: "general", topic: nil, position: 0, isDefault: true, createdAt: now()
         )
         try await stores.groups.createGroup(id: id, name: name, owner: viewer, general: general, now: now())
+        ProductEvents.capture(.groupCreated, userID: viewer)
         return try await detail(id, viewer: viewer)
     }
 

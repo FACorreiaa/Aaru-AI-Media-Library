@@ -27,6 +27,8 @@ struct Services: Sendable {
     var agentReplies: AgentReplyService?
     /// Nil when `VAPID_CONFIG` is unset; the key route then answers 503.
     var webPush: (any WebPushSending)?
+    /// Server errors (5xx) to Sentry; nil when `SENTRY_DSN` is unset.
+    var sentry: SentryReporter?
 
     /// `trakt` is nil when Trakt is not configured; connect then answers 503.
     static func make(

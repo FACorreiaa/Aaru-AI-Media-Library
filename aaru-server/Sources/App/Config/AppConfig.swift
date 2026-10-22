@@ -103,6 +103,13 @@ struct AppConfig: Sendable {
     /// `METRICS_SECRET`: the bearer facorreia.com/apps sends to `/internal/metrics`. Empty turns
     /// the route off.
     var metricsSecret: String
+    /// `METRICS_PORT`: where `GET /metrics` (Prometheus) listens, apart from the API port so the
+    /// Ingress never routes to it. 0 turns it off.
+    var metricsPort: Int
+    /// Nil when `SENTRY_DSN` is unset: server errors are logged only.
+    var sentry: SentrySettings?
+    /// Nil when `POSTHOG_PROJECT_TOKEN` is unset: no product events are sent.
+    var posthog: PostHogSettings?
     /// Jobs per queue at once (`IMPORTS_WORKERS`, `AGENT_REPLY_WORKERS`).
     var workers: WorkerSettings
 
@@ -137,8 +144,28 @@ struct AppConfig: Sendable {
             anthropic: anthropicSettings(from: reader),
             concertsAPIKey: reader.string(forKey: "ticketmaster.api.key").flatMap(\.nilIfBlank),
             metricsSecret: reader.string(forKey: "metrics.secret", default: ""),
+            metricsPort: reader.int(forKey: "metrics.port", default: 9090),
+            sentry: reader.string(forKey: "sentry.dsn").flatMap(\.nilIfBlank).map {
+                SentrySettings(
+                    dsn: $0,
+                    environment: reader.string(forKey: "sentry.environment", default: "production"),
+                    release: reader.string(forKey: "aaru.release").flatMap(\.nilIfBlank)
+                )
+            },
+            posthog: postHogSettings(from: reader),
             workers: WorkerSettings.load(from: reader)
         )
+    }
+
+    /// `POSTHOG_PROJECT_TOKEN` (public: it can only write events) and `POSTHOG_HOST`, PostHog's EU
+    /// cloud unless set.
+    static func postHogSettings(from reader: ConfigReader) throws -> PostHogSettings? {
+        guard let token = reader.string(forKey: "posthog.project.token")?.nilIfBlank else { return nil }
+        let host = reader.string(forKey: "posthog.host", default: "https://eu.i.posthog.com")
+        guard let url = URL(string: host), url.scheme == "https" || url.scheme == "http" else {
+            throw MissingConfigError(environmentName: "POSTHOG_HOST", key: "posthog.host")
+        }
+        return PostHogSettings(projectToken: token, host: url)
     }
 
     /// The trial's env contract (`platform/infra/docs/llm-haiku-trial.md`): `ANTHROPIC_API_KEY`,
@@ -220,6 +247,19 @@ private func required(_ key: String, env: String, in reader: ConfigReader) throw
         throw MissingConfigError(environmentName: env, key: key)
     }
     return value
+}
+
+struct SentrySettings: Sendable {
+    var dsn: String
+    /// `SENTRY_ENVIRONMENT`, `production` unless set.
+    var environment: String
+    /// `AARU_RELEASE`: the commit the image was built from (a Docker build arg).
+    var release: String?
+}
+
+struct PostHogSettings: Sendable {
+    var projectToken: String
+    var host: URL
 }
 
 struct AnthropicSettings: Sendable {

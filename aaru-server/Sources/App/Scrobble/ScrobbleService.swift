@@ -41,6 +41,7 @@ struct ScrobbleService: Sendable {
         _ report: PlaybackReport,
         from caller: AgentCaller
     ) async throws -> (outcome: ScrobbleOutcome, title: Title?) {
+        Metrics.shared.increment(.scrobbles, ["source": report.source.rawValue, "action": report.action.rawValue])
         let now = now()
         let userID = caller.userID
         if report.action == .stop, try await stores.watchEvents.stoppedRecently(
