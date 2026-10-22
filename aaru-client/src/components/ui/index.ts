@@ -11,7 +11,10 @@ export * from './button'
 export * from './calendar'
 export * from './card'
 export * from './carousel'
-export * from './chart'
+// `./chart` is not exported: @unovis/solid runs client-only Solid code when its module loads,
+// so under `npm run dev` (no tree-shaking) every server-rendered page that imports this barrel
+// fails with "Client-only API called on the server side". Nothing draws a chart yet; export it
+// again behind `clientOnly` when one lands.
 export * from './checkbox'
 export * from './collapsible'
 export * from './combobox'
