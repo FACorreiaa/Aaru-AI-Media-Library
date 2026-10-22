@@ -76,13 +76,21 @@ struct MessageRow: View {
     @ViewBuilder
     private var content: some View {
         if message.deleted {
-            Text("Message deleted").italic().foregroundStyle(Color(.muted))
+            Text("Deleted").italic().foregroundStyle(Color(.muted))
         } else if message.fromBlocked, !revealed {
-            HStack(spacing: 8) {
-                Text("Message from someone you blocked").foregroundStyle(Color(.muted))
-                Button("Show") { revealed = true }
-                    .buttonStyle(.borderless)
-                    .font(.callout)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    Text("Hidden: from someone you blocked").foregroundStyle(Color(.muted))
+                    Button("Show") { revealed = true }
+                        .buttonStyle(.borderless)
+                        .font(.callout)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Hidden: from someone you blocked").foregroundStyle(Color(.muted))
+                    Button("Show") { revealed = true }
+                        .buttonStyle(.borderless)
+                        .font(.callout)
+                }
             }
         } else if message.veiled, !spoilerShown {
             SpoilerVeil { spoilerShown = true }
@@ -123,7 +131,7 @@ struct OutgoingRow: View {
                 if outgoing.failed {
                     HStack(spacing: 12) {
                         Label("Not sent", systemImage: "exclamationmark.circle")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color(.danger))
                         Button("Retry", action: onRetry)
                         Button("Discard", role: .destructive, action: onDiscard)
                     }
@@ -149,7 +157,8 @@ private struct MessageScaffold<Content: View>: View {
             if let monogram {
                 Monogram(text: monogram, size: 36)
             } else {
-                Color.clear.frame(width: 36, height: 1)
+                // The monogram's gutter, as wide as the monogram at this text size.
+                Monogram(text: "", size: 36).hidden().frame(height: 1)
             }
             VStack(alignment: .leading, spacing: 2) {
                 if let name {
@@ -209,19 +218,25 @@ struct NewDivider: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        .accessibilityLabel("New messages")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("New")
     }
 }
 
-/// A generated monogram on the medallion tint. Aaru has no avatar uploads.
+/// A generated monogram on the medallion tint. Aaru has no avatar uploads. Decorative: the name
+/// beside it is what VoiceOver reads. It grows with Dynamic Type, to a point, so the letters stay
+/// inside the circle.
 struct Monogram: View {
     let text: String
     var size: CGFloat = 36
+    @ScaledMetric(relativeTo: .subheadline) private var scale: CGFloat = 1
 
     var body: some View {
+        let side = size * min(scale, 1.6)
         Text(text)
             .font(size > 40 ? .headline : .subheadline.weight(.medium))
-            .frame(width: size, height: size)
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .frame(width: side, height: side)
             .background(Color(.medallion).opacity(0.2), in: .circle)
             .accessibilityHidden(true)
     }

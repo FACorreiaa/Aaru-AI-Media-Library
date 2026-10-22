@@ -63,7 +63,7 @@ struct NowPlayingCard: View {
                     .font(.subheadline)
                     .monospacedDigit()
                     .foregroundStyle(Color(.muted))
-                    .lineLimit(1)
+                    .lineLimit(2)
             }
         }
     }
@@ -80,7 +80,7 @@ struct NowPlayingCard: View {
                     .font(.footnote.weight(.semibold))
                     .monospacedDigit()
                     .foregroundStyle(Color(.accent))
-                    .frame(minHeight: 32)
+                    .frame(minHeight: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

@@ -53,7 +53,7 @@ extension ImportJob {
                 state: checking ? .done : matching ? .current : .todo,
                 progress: matching ? Double(rowsMatched) / Double(rowsTotal) : nil
             ),
-            ImportStep(label: "Check against your shelf", state: checking ? .current : .todo),
+            ImportStep(label: "Check against your library", state: checking ? .current : .todo),
             ImportStep(label: "Ready for you to review", detail: "Nothing is added until you approve.", state: .todo),
         ]
     }

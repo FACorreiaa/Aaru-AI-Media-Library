@@ -92,11 +92,11 @@ struct MemberList: View {
                         }
                         Spacer(minLength: 8)
                         if hasActions(for: member) {
-                            Menu {
+                            Menu("Actions for \(member.user.label)", systemImage: "ellipsis.circle") {
                                 actions(for: member)
-                            } label: {
-                                Image(systemName: "ellipsis.circle").accessibilityLabel("Actions")
                             }
+                            .labelStyle(.iconOnly)
+                            .frame(minWidth: 44, minHeight: 44)
                             .menuStyle(.button)
                             .buttonStyle(.borderless)
                             .fixedSize()

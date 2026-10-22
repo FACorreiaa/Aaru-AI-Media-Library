@@ -2,8 +2,8 @@ import AaruAPI
 import SwiftUI
 
 /// Discover (APP-012, DISC-001): catalog rows to add from without typing, with the same cards as
-/// Home's Discover rows. Renders the cache first, then refreshes. Credits TMDB and AniList, whose
-/// lists these are. A segmented control switches Today's rows for the Seasons view (DISC-002)
+/// Home's Discover rows. Renders the cache first, then refreshes. Credits the providers whose rows
+/// are on screen (UX-048). A segmented control switches Today's rows for the Seasons view (DISC-002)
 /// and, when the server has concerts on, the Concerts view (MUS-003).
 struct DiscoverScreen: View {
     enum Section: String, CaseIterable, Identifiable {
@@ -30,8 +30,9 @@ struct DiscoverScreen: View {
     @State private var seasons: SeasonModel
     @State private var concerts: ConcertsModel
     @State private var section: Section = .today
-    @State private var showsSearch = false
     @State private var listTarget: CatalogHit?
+    @Environment(AppRouter.self) private var router
+    @Environment(\.dynamicTypeSize) private var dynamicType
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -76,7 +77,7 @@ struct DiscoverScreen: View {
                         ToolbarItem(placement: .principal) { sectionPicker.fixedSize() }
                     #endif
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Search", systemImage: "magnifyingglass") { showsSearch = true }
+                        Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                     }
                 }
                 .task { await model.loadIfNeeded() }
@@ -86,12 +87,11 @@ struct DiscoverScreen: View {
                         section = .today
                     }
                 }
-                .refreshable { await model.load() }
+                // View → Refresh (⌘R) reloads the section on screen.
+                .refreshesOnCommand(.discover) { await reload() }
+                .refreshable { await reload() }
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
-                }
-                .sheet(isPresented: $showsSearch) {
-                    SearchView(api: api, library: library, lists: lists)
                 }
                 .sheet(item: $listTarget) { hit in
                     ListPickerSheet(
@@ -108,6 +108,14 @@ struct DiscoverScreen: View {
                     }
                 }
                 .background(Color(.paper))
+        }
+    }
+
+    private func reload() async {
+        switch section {
+        case .today: await model.load()
+        case .seasons: await seasons.reload()
+        case .concerts: await concerts.reload()
         }
     }
 
@@ -135,15 +143,20 @@ struct DiscoverScreen: View {
         let rows = model.visibleRows
         if rows.isEmpty, model.isLoading || !model.hasLoaded, model.problem == nil {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if rows.isEmpty, model.problem != nil {
+            // A failed first load is an error, not an empty catalog (UX-063).
+            LoadFailedView(
+                title: "Couldn't load Discover",
+                message: "The catalog rows didn't load. Search still works."
+            ) { await model.load() }
         } else if rows.isEmpty {
             ContentUnavailableView {
                 Label("Nothing to discover right now", systemImage: "binoculars")
             } description: {
-                Text("The catalog lists could not be loaded. Search still works.")
+                Text("The catalog rows are empty for now. Search still works.")
             } actions: {
-                Button("Try again") { Task { await model.load() } }
+                Button("Search") { router.showsSearch = true }
                     .buttonStyle(.borderedProminent)
-                Button("Search") { showsSearch = true }
             }
         } else {
             ScrollView {
@@ -159,7 +172,7 @@ struct DiscoverScreen: View {
                                     hit: hit,
                                     libraryItemID: model.libraryItemID(hit),
                                     badge: DiscoverCard.releaseBadge(hit.releaseDate, row: row.id),
-                                    width: HomeCardSize.poster.width(compact: compact),
+                                    width: HomeCardSize.poster.width(compact: compact, dynamicType: dynamicType),
                                     isAdding: model.adding.contains(hit.id)
                                 ) { status in
                                     Task { await model.add(hit, status: status) }
@@ -169,7 +182,7 @@ struct DiscoverScreen: View {
                             }
                         }
                     }
-                    DiscoverCredits()
+                    DiscoverCredits(providers: DiscoverCredits.providers(for: rows))
                 }
                 .padding(.vertical, 16)
             }
@@ -177,18 +190,36 @@ struct DiscoverScreen: View {
     }
 }
 
-/// The providers' credit, linking to About for the full notices.
-private struct DiscoverCredits: View {
+/// The providers' credit, linking to About for the full notices: "Rows from TMDB, AniList and
+/// Open Library", naming only the providers whose rows are on screen (UX-048).
+struct DiscoverCredits: View {
+    let providers: [String]
+
+    /// Each kind's source, in a fixed order: films and shows from TMDB, anime from AniList, books
+    /// from Open Library, albums from ListenBrainz.
+    static func providers(for rows: [DiscoverRow]) -> [String] {
+        let kinds = Set(rows.flatMap(\.items).map { MediaKind(type: $0._type, isAnime: $0.isAnime) })
+        return [
+            ("TMDB", kinds.contains(.film) || kinds.contains(.show)),
+            ("AniList", kinds.contains(.anime)),
+            ("Open Library", kinds.contains(.book)),
+            ("ListenBrainz", kinds.contains(.music)),
+        ].filter(\.1).map(\.0)
+    }
+
     var body: some View {
-        NavigationLink {
-            AboutView()
-        } label: {
-            Label("Lists from TMDB and AniList", systemImage: "info.circle")
-                .font(.footnote)
-                .foregroundStyle(Color(.muted))
+        if !providers.isEmpty {
+            NavigationLink {
+                AboutView()
+            } label: {
+                Label("Rows from \(providers.formatted(.list(type: .and)))", systemImage: "info.circle")
+                    .font(.footnote)
+                    .foregroundStyle(Color(.muted))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+            .accessibilityHint("Shows the providers' notices in About")
         }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 20)
     }
 }
 
@@ -199,4 +230,5 @@ private struct DiscoverCredits: View {
         api: nil, library: LibraryModel(), lists: ListsModel(api: nil),
         model: DiscoverModel(preview: HomeModel.newAccount.discover)
     )
+    .environment(AppRouter())
 }

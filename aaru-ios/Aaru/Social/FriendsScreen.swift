@@ -1,45 +1,50 @@
 import AaruAPI
 import SwiftUI
 
-/// The Friends tab (SOC-002 / SOC-003): friends' last two weeks, then invites, requests and
-/// friends. A friend opens their profile. Without a handle there is nothing social yet, so the
-/// tab asks for one first.
+/// Friends (SOC-002 / SOC-003): friends' last two weeks, then invites, requests and friends. A
+/// friend opens their profile. A sidebar destination on iPad and Mac; on iPhone, Groups pushes
+/// `FriendsContent` (the five tabs are full, §18). Shares Settings' `SocialModel`, so the handle
+/// and the sharing switch read the same everywhere.
 struct FriendsScreen: View {
-    @State private var model: SocialModel
-
-    init(api: Client?) {
-        _model = State(initialValue: SocialModel(api: api))
-    }
+    let social: SocialModel
 
     var body: some View {
         NavigationStack {
-            Group {
-                if model.hasLoaded, model.handle == nil {
-                    ContentUnavailableView {
-                        Label("Choose a handle", systemImage: "at")
-                    } description: {
-                        Text("Friends see who you are by your handle. Nobody can search or browse for you.")
-                    } actions: {
-                        NavigationLink("Choose a handle") { ProfileEditor(model: model) }
-                            .buttonStyle(.borderedProminent)
-                    }
-                    .background(Color(.paper))
-                    .navigationTitle("Friends")
-                } else {
-                    FriendsView(model: model)
-                }
-            }
-            .navigationDestination(for: SocialUser.self) { friend in
-                FriendProfileView(api: model.api, friend: friend)
-            }
+            FriendsContent(model: social)
         }
-        .task { await model.load() }
     }
 }
 
-extension SocialUser: @retroactive Hashable {
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(userId)
+/// Friends without a stack of its own, for a sidebar's stack or Groups' on iPhone. Without a
+/// handle there is nothing social yet, so it asks for one first.
+struct FriendsContent: View {
+    let model: SocialModel
+
+    var body: some View {
+        Group {
+            if let problem = model.loadProblem, !model.hasLoaded {
+                LoadFailedView(title: "Friends didn't load", message: problem) { await model.load() }
+                    .navigationTitle("Friends")
+            } else if !model.hasLoaded {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .navigationTitle("Friends")
+            } else if model.handle == nil {
+                ContentUnavailableView {
+                    Label("Choose a handle", systemImage: "at")
+                } description: {
+                    Text("Friends see who you are by your handle. Nobody can search or browse for you.")
+                } actions: {
+                    NavigationLink("Choose a handle") { ProfileEditor(model: model) }
+                        .buttonStyle(.borderedProminent)
+                }
+                .navigationTitle("Friends")
+            } else {
+                FriendsView(model: model)
+            }
+        }
+        .background(Color(.paper))
+        .task { await model.load() }
     }
 }
 
@@ -49,12 +54,13 @@ struct ActivityRow: View {
     /// Your own row shows what friends left but takes no reaction.
     var own = false
     var onReact: (String) -> Void = { _ in }
+    @ScaledMetric(relativeTo: .body) private var side: CGFloat = 36
 
     var body: some View {
         HStack(spacing: 12) {
             Text(item.user.monogram)
                 .font(.subheadline.weight(.medium))
-                .frame(width: 36, height: 36)
+                .frame(width: side, height: side)
                 .background(Color(.medallion).opacity(0.2), in: .circle)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
@@ -91,7 +97,7 @@ enum ActivityWords {
     static func verb(_ item: ActivityItem) -> String {
         var watched: String?
         if let season = item.lastSeason, let episode = item.lastEpisode {
-            let last = "S\(season) · E\(episode)"
+            let last = EpisodeCode.short(season: season, number: episode)
             watched = item.episodes > 1 ? "watched \(item.episodes) episodes, up to \(last)" : "watched \(last)"
         }
         if item.finished {
@@ -145,6 +151,8 @@ private struct ReactionStrip: View {
                                 Capsule().strokeBorder(Color(.accent))
                             }
                         }
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(own)
@@ -162,6 +170,8 @@ private struct ReactionStrip: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(Color(.surface), in: .capsule)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .menuStyle(.button)
                 .buttonStyle(.plain)

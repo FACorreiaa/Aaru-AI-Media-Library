@@ -61,7 +61,7 @@ struct SeasonKey: Hashable {
     }
 }
 
-extension SeasonKind: Identifiable {
+extension SeasonKind: @retroactive Identifiable {
     public var id: String {
         rawValue
     }

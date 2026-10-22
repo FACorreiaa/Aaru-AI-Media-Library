@@ -89,7 +89,7 @@ struct InviteSheet: View {
                 .frame(maxWidth: .infinity)
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(preview.inviter.inviteName) invited you to Aaru.")
-                    .font(.system(.largeTitle, design: .serif, weight: .medium))
+                    .font(.aaruDisplay(.largeTitle))
                     .fixedSize(horizontal: false, vertical: true)
                 if preview.inviter.displayName != nil {
                     Text("@\(preview.inviter.handle)").foregroundStyle(Color(.muted))
@@ -112,7 +112,7 @@ struct InviteSheet: View {
                 .controlSize(.large)
                 .disabled(accepting)
                 if let problem {
-                    Text(problem).font(.footnote).foregroundStyle(.red)
+                    Text(problem).font(.footnote).foregroundStyle(Color(.danger))
                 }
                 Text("Your library stays private: only friends see it.")
                     .font(.footnote)
@@ -196,7 +196,7 @@ private struct InviteTitleOffer: View {
                 .frame(width: 80)
             VStack(alignment: .leading, spacing: 12) {
                 Text("“\(InviteWords.plea(title.title, kind: kind))”")
-                    .font(.system(.title3, design: .serif))
+                    .font(.aaruDisplay(.title3, weight: .regular))
                     .italic()
                     .fixedSize(horizontal: false, vertical: true)
                 Toggle("Add to my \(LibraryStatus.wishlist.label(for: kind))", isOn: $addTitle)

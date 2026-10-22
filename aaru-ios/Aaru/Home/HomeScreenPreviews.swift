@@ -4,6 +4,7 @@ import SwiftUI
 
 #Preview("Home") {
     HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .sample)
+        .environment(AppRouter())
 }
 
 #Preview("Home, now playing") {
@@ -12,15 +13,18 @@ import SwiftUI
 
 #Preview("Home, new account") {
     HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .newAccount)
+        .environment(AppRouter())
 }
 
 #Preview("Home · dark") {
     HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .sample)
         .preferredColorScheme(.dark)
+        .environment(AppRouter())
 }
 
 #Preview("Mac", traits: .fixedLayout(width: 1280, height: 800)) {
     HomeScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), model: .sample)
+        .environment(AppRouter())
 }
 
 #Preview("Wide, side column filled", traits: .fixedLayout(width: 1180, height: 820)) {
@@ -29,6 +33,7 @@ import SwiftUI
         imports: ImportsModel(preview: [.sampleWorking, .sampleDone]), model: .sample
     )
     .environment(\.horizontalSizeClass, .regular)
+    .environment(AppRouter())
 }
 
 #Preview("Empty") {
@@ -36,4 +41,5 @@ import SwiftUI
         api: nil, library: LibraryModel(), lists: ListsModel(api: nil),
         model: HomeModel(preview: .init(upNext: .init(continueWatching: [], startWatching: []), airing: []))
     )
+    .environment(AppRouter())
 }

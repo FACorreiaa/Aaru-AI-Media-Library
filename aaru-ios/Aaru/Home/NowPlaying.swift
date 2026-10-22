@@ -46,7 +46,8 @@ extension NowPlaying {
     /// "S2 · E7 · Episode name"; nil for a film.
     var episodeLine: String? {
         episode.map { episode in
-            ["S\(episode.season) · E\(episode.number)", episodeName].compactMap(\.self).joined(separator: " · ")
+            [EpisodeCode.short(season: episode.season, number: episode.number), episodeName].compactMap(\.self)
+                .joined(separator: " · ")
         }
     }
 

@@ -153,7 +153,7 @@ struct TopListenList: View {
                 AlbumLink(titleID: row.albumRef?.titleId, library: library) {
                     HStack(spacing: 12) {
                         Text("\(index + 1)")
-                            .font(.system(.title3, design: .serif, weight: .semibold))
+                            .font(.aaruDisplay(.title3, weight: .semibold))
                             .monospacedDigit()
                             .frame(width: 24)
                             .foregroundStyle(Color(.muted))

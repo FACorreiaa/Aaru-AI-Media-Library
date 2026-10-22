@@ -80,8 +80,18 @@ final class MonthModel {
         }
     }
 
+    /// This month's grid has loaded (not just some other window's).
+    var isLoaded: Bool {
+        window.map(feed.covers) ?? false
+    }
+
+    /// This month has not loaded and its load failed.
+    var loadProblem: String? {
+        window.flatMap(feed.loadProblem(for:))
+    }
+
     var isEmptyMonth: Bool {
-        feed.hasLoaded && gridDays.filter(isInMonth).allSatisfy { entries(on: $0).isEmpty }
+        isLoaded && gridDays.filter(isInMonth).allSatisfy { entries(on: $0).isEmpty }
     }
 
     /// "October", or "October 2027" outside the current year. `offset` names a neighbour.

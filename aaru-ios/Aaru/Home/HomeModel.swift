@@ -35,7 +35,15 @@ final class HomeModel {
     private(set) var adding: Set<String> = []
     private(set) var isLoading = false
     private(set) var hasLoaded = false
+    /// The first load failed and nothing is on screen: Home shows the error state, not a spinner
+    /// (UX-063). Cleared by the next load that lands.
+    private(set) var loadFailed = false
     private(set) var pending: Set<String> = []
+    /// Agent requests waiting for the user (OUT-004), pinned above the rows.
+    private(set) var plans: [AgentPlan] = []
+    /// The airings behind "Airing soon", for the episode sheet a card opens (UX-092). Fetched once,
+    /// for the same window the widgets use.
+    let airingFeed: CalendarFeed
     /// The last load or check that failed. Shown until the next action.
     var problem: String?
 
@@ -69,6 +77,7 @@ final class HomeModel {
         self.cache = cache
         self.calendar = calendar
         self.now = now
+        airingFeed = CalendarFeed(api: api, library: library, calendar: calendar)
         if let snapshot = cache?.load() {
             self.snapshot = snapshot
             apply(snapshot)
@@ -90,6 +99,11 @@ final class HomeModel {
         self.nowPlaying = nowPlaying
         previewListening = listening
         hasLoaded = true
+    }
+
+    /// What Start watching shows: albums have their own row, Listening (UX-052).
+    var startable: [StartEntry] {
+        startWatching.filter { $0.title.mediaKind != .music }
     }
 
     /// Nothing of the user's own: no rows from the library. Discover's rows may still be there.
@@ -183,7 +197,11 @@ final class HomeModel {
             async let calendarOutput = api.getCalendar(query: .init(from: window.lowerBound, to: window.upperBound))
             let (upNext, airing) = try await (upNextOutput, calendarOutput)
             guard case let .ok(upNextResponse) = upNext, case let .ok(airingResponse) = airing else {
-                problem = "Home could not be loaded."
+                if hasLoaded || !isEmpty {
+                    problem = "Home could not be refreshed."
+                } else {
+                    loadFailed = true
+                }
                 return false
             }
             var next = try HomeCache.Snapshot(
@@ -194,12 +212,16 @@ final class HomeModel {
             snapshot = next
             apply(next)
             hasLoaded = true
+            loadFailed = false
             problem = nil
             return true
         } catch {
-            problem = hasLoaded || !isEmpty
-                ? "Offline. Showing Home from the last load."
-                : "Aaru could not reach the server."
+            if hasLoaded || !isEmpty {
+                problem = "Offline. Showing Home from the last load."
+            } else {
+                // Nothing to show: the error state says it, not a banner under a spinner.
+                loadFailed = true
+            }
             return false
         }
     }
@@ -236,24 +258,6 @@ final class HomeModel {
             }
             .prefix(Self.upcomingLimit)
             .map(\.self)
-    }
-
-    // MARK: Discover
-
-    /// The library item a Discover hit opens: the server's mark, else a match on the shelf
-    /// (it may have been added since the rows loaded).
-    func libraryItemID(_ hit: CatalogHit) -> String? {
-        hit.libraryItemId ?? library?.entry(matching: hit)?.id
-    }
-
-    /// Adds a Discover hit with a status, as search does. The card turns into a link to it (the
-    /// shelf now has it), and the revision bump reloads Home once.
-    func add(_ hit: CatalogHit, status: LibraryStatus) async {
-        guard let api, let library, !adding.contains(hit.id) else { return }
-        problem = nil
-        adding.insert(hit.id)
-        defer { adding.remove(hit.id) }
-        problem = await library.add(hit, status: status, api: api)
     }
 
     // MARK: Checking
@@ -324,65 +328,61 @@ final class HomeModel {
     }
 
     private static func notSaved(_ entry: ContinueEntry) -> String {
-        "\(entry.title.title) S\(entry.next.season) E\(entry.next.number) was not saved."
+        "\(entry.title.title) \(EpisodeCode.short(season: entry.next.season, number: entry.next.number)) was not saved."
     }
 }
 
-// MARK: Labels
+// MARK: Requests and airings
 
 extension HomeModel {
-    /// "Dropped", or "Paused 6 weeks" for a show left alone since `since`.
-    func unfinishedLabel(_ entry: UnfinishedEntry) -> String {
-        switch entry.reason {
-        case .dropped: return "Dropped"
-        case .stalled:
-            let days = calendar.dateComponents([.day], from: entry.since, to: now()).day ?? 0
-            let weeks = max(1, days / 7)
-            return weeks == 1 ? "Paused 1 week" : "Paused \(weeks) weeks"
+    /// Requests waiting for an answer. A failure leaves the list as it was; the next load tries again.
+    func loadPlans() async {
+        guard let api, case let .ok(response)? = try? await api.listPlans(query: .init(status: .pending)) else {
+            return
+        }
+        plans = (try? response.body.json.items) ?? plans
+    }
+
+    /// A request was answered here or in a sheet (UX-082). Its card stays, now saying what
+    /// happened (with History for an applied one), until the next load leaves it out; an applied
+    /// one changed the library, so the rows load again.
+    func planDecided(_ plan: AgentPlan) async {
+        guard let index = plans.firstIndex(where: { $0.id == plan.id }) else { return }
+        plans[index] = plan
+        if plan.status == .applied {
+            await load()
         }
     }
 
-    /// "Today · New", "In 3 hours", "Tomorrow", "In 2 days". Hours only for exact air times.
-    func airingLabel(_ entry: CalendarEntry) -> String {
-        Self.airingLabel(airsAt: entry.airsAt, airTimeKnown: entry.airTimeKnown, now: now(), calendar: calendar)
-    }
-
-    /// The same words for any airing, such as a list row's next episode (LST-003).
-    nonisolated static func airingLabel(airsAt: Date, airTimeKnown: Bool, now current: Date, calendar: Calendar)
-        -> String
-    {
-        if airTimeKnown, airsAt > current {
-            let minutes = Int(airsAt.timeIntervalSince(current) / 60)
-            if minutes < 60 {
-                return "In \(max(1, minutes)) min"
-            }
-            if minutes < 12 * 60 {
-                let hours = minutes / 60
-                return hours == 1 ? "In 1 hour" : "In \(hours) hours"
-            }
+    /// Opens an "Airing soon" card's episode sheet, fetching the window first if it is not here.
+    /// False when the calendar does not have the airing (offline, or outside the window): the
+    /// card then opens the show instead.
+    func openAiring(_ entry: CalendarEntry) async -> Bool {
+        if !airingFeed.entries.contains(where: { $0.cellID == entry.cellID }) {
+            await airingFeed.fetch(WidgetSync.window(now: now(), calendar: calendar))
         }
-        let today = calendar.startOfDay(for: current)
-        // A date-only air date is midnight UTC of that date, so it is read in UTC.
-        let reader = airTimeKnown ? calendar : CalendarFeed.utcCalendar
-        let day = reader.dateComponents([.year, .month, .day], from: airsAt)
-        guard let airDate = calendar.date(from: DateComponents(year: day.year, month: day.month, day: day.day))
-        else { return "" }
-        let days = calendar.dateComponents([.day], from: today, to: airDate).day ?? 0
-        switch days {
-        case ..<1: return "Today · New"
-        case 1: return "Tomorrow"
-        default: return "In \(days) days"
-        }
+        guard airingFeed.entries.contains(where: { $0.cellID == entry.cellID }) else { return false }
+        airingFeed.open(entry)
+        return true
     }
 }
 
-/// "57m", "1h", "8h 40m".
-func durationLabel(minutes: Int) -> String {
-    let hours = minutes / 60
-    let rest = minutes % 60
-    switch (hours, rest) {
-    case (0, _): return "\(rest)m"
-    case (_, 0): return "\(hours)h"
-    default: return "\(hours)h \(rest)m"
+// MARK: Discover
+
+extension HomeModel {
+    /// The library item a Discover hit opens: the server's mark, else a match on the shelf
+    /// (it may have been added since the rows loaded).
+    func libraryItemID(_ hit: CatalogHit) -> String? {
+        hit.libraryItemId ?? library?.entry(matching: hit)?.id
+    }
+
+    /// Adds a Discover hit with a status, as search does. The card turns into a link to it (the
+    /// shelf now has it), and the revision bump reloads Home once.
+    func add(_ hit: CatalogHit, status: LibraryStatus) async {
+        guard let api, let library, !adding.contains(hit.id) else { return }
+        problem = nil
+        adding.insert(hit.id)
+        defer { adding.remove(hit.id) }
+        problem = await library.add(hit, status: status, api: api)
     }
 }

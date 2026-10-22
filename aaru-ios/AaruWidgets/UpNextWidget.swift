@@ -108,7 +108,7 @@ struct WatchedCheck: View {
                 .foregroundStyle(Palette.brand)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Mark \(row.title) S\(row.season) E\(row.number) watched")
+        .accessibilityLabel("Mark \(row.title) S\(row.season) · E\(row.number) watched")
     }
 }
 

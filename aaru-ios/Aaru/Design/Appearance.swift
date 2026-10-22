@@ -31,17 +31,15 @@ enum Appearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// The Settings row: a menu picker, as in the system's own Settings.
+/// Settings → Account → On this device: a menu picker, as in the system's own Settings.
 struct AppearancePicker: View {
     @AppStorage(Appearance.storageKey) private var appearance: Appearance = .system
 
     var body: some View {
-        Picker(selection: $appearance) {
+        Picker("Appearance", selection: $appearance) {
             ForEach(Appearance.allCases) { option in
                 Text(option.label).tag(option)
             }
-        } label: {
-            SettingsRowLabel("Appearance", systemImage: "circle.lefthalf.filled", tint: .indigo)
         }
     }
 }

@@ -61,6 +61,9 @@ final class CalendarFeed {
     var filter = CalendarFilter()
     /// The episode whose sheet is open, by `cellID`; the sheet reads it live, so a tick shows.
     var openedID: String?
+    /// iPhone: a Month day is open as a sheet, so the episode sheet opens from inside it, not
+    /// from the screen under it (UX-068).
+    var isDaySheetOpen = false
 
     @ObservationIgnored private let api: Client?
     @ObservationIgnored private let library: LibraryModel?
@@ -88,6 +91,7 @@ final class CalendarFeed {
         self.init(api: nil, library: nil, calendar: calendar)
         self.entries = entries
         hasLoaded = true
+        loaded = .distantPast ..< .distantFuture
     }
 
     /// The episodes of one day: date-only ones first (they have no time), then by time.
@@ -119,6 +123,18 @@ final class CalendarFeed {
     }
 
     // MARK: Loading
+
+    /// Whether the last successful load covers `needed`. Views say "nothing airs" only when it
+    /// does: entries left from another window are not this window's answer (UX-062).
+    func covers(_ needed: Range<Date>) -> Bool {
+        guard let loaded else { return false }
+        return loaded.lowerBound <= needed.lowerBound && loaded.upperBound >= needed.upperBound
+    }
+
+    /// `needed` is not loaded and the last load failed: the view's error state, with Try again.
+    func loadProblem(for needed: Range<Date>) -> String? {
+        covers(needed) || isLoading ? nil : problem
+    }
 
     /// Fetches `window` unless `needed` is already loaded.
     func ensure(_ needed: Range<Date>, fetching window: Range<Date>) async {
@@ -208,6 +224,6 @@ final class CalendarFeed {
     }
 
     private static func notSaved(_ entry: CalendarEntry) -> String {
-        "\(entry.title.title) S\(entry.season) E\(entry.number) was not saved."
+        "\(entry.title.title) \(EpisodeCode.short(season: entry.season, number: entry.number)) was not saved."
     }
 }
