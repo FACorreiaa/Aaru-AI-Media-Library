@@ -34,6 +34,32 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-22
+
+- **Achievements now: the whole of P5's core (owner, 2026-10-22).** Pulled forward before the
+  P2 gate, with 0 strangers: the points ledger (GAM-001), levels (GAM-002), streaks (GAM-003),
+  badges (GAM-004), the friends leaderboard (GAM-005) and the streak widget (WID-007). The
+  design is `docs/superpowers/specs/2026-10-22-achievements-design.md`; its badge catalog
+  (61 badges) is for the owner to review.
+- **Friends stay mutual.** The owner asked for friends that "work as followers"; that feel comes
+  from profiles, activity and achievements on a profile. There is still no one-way follow.
+- **Imports count for milestones, not for activity.** Milestone badges ("100 films") read the
+  library, so imported history counts. Points, streaks, the weekly board and activity badges
+  ("10 episodes in a day", Night Owl) count only live writes. An import awards its badges
+  quietly, as one summary.
+- **Badges come from two sources.** Milestones from library facts, activity from the points
+  ledger and streak days. This replaces GAM-004's "awarded from ledger events only".
+- **Friends see badges and level by default**, behind their own "Show my badges and level to
+  friends" switch (`show_achievements_to_friends`, on). The weekly board is a separate opt-in
+  (`leaderboard_opt_in`, off). Blocks apply both ways; there is never a global board.
+- **The unlock moment is quiet**: a medallion toast (a haptic on Apple); a badge's top tier gets
+  a one-time full card. No push for unlocks or for a streak about to break.
+- **About 15% of badges are hidden** until earned; the rest show progress ("62 / 100").
+- **Names are plain, with a little wit** (Century, Night Owl, Completionist). Tiers are 1–4 in
+  code and bronze, silver, gold and platinum in the UI, drawn without gold fills (DESIGN.md).
+- **Listens alone do not keep a streak**, and friend and first-import points stay off the weekly
+  board (calls made in the design; the owner can reverse them).
+
 ## Decisions recorded 2026-10-21
 
 - **Friend invite links, profiles and basic social now (owner, 2026-10-21).** Pulled forward
@@ -2562,7 +2588,8 @@ alerts through web push and open `/app/groups/{g}/{c}`. Mac push stays off.
 
 # P5 — Gamification
 
-Start only after the P2 gate. Points are a **ledger**, never a counter — copied from Norviq
+Start only after the P2 gate, except GAM-001…005 and WID-007, pulled forward by the owner
+on 2026-10-22 (see that day's decisions). Points are a **ledger**, never a counter — copied from Norviq
 (`StockPlanBackend/Gamification/XPService.swift`) and Loci (`0113_gamification.up.sql`).
 
 ## P5 · Points, streaks, badges
@@ -2608,7 +2635,10 @@ closed.
 **Needs:** GAM-001.
 `user_badges` (`userId`, `badgeType`, `tier`, `awardedAt`); definitions in code. Discovery
 badges (first import, first list, first friend, first room) and milestone badges (100 episodes,
-first finished anime, 10 books, a full season in a day). Awarded from ledger events only.
+first finished anime, 10 books, a full season in a day). Since 2026-10-22: milestone badges
+read library facts (imports count) and activity badges read the ledger and streak days; the
+catalog is in `docs/superpowers/specs/2026-10-22-achievements-design.md`. Undoing the action
+that earned a tier takes the tier back when its rule no longer holds.
 
 **Done when:** every badge has a unit test for its rule, and re-running the evaluator awards
 nothing new.
@@ -2616,7 +2646,7 @@ nothing new.
 ### GAM-005 · Friends leaderboard · S
 **Needs:** GAM-001, SOC-002.
 Weekly, friends only, opt-in (`leaderboard_opt_in`); blocks applied both ways. No global
-board.
+board. Weeks run on each person's own local dates; friend and first-import points are left out.
 
 **Done when:** a user who has not opted in never appears on anyone's board, including their
 friends'.
