@@ -59,7 +59,34 @@ missing state, a dead end, an accessibility failure; **low** drift and polish.
 | One `PosterThumb`, shared `ProblemBanner`, views over ~300 lines split | done | APL-026, 027, 118, 217, 225, 235, 247, 336 |
 | Swift 6 strict concurrency clean | done: both builds with no warnings in app code | Measured |
 | `Color(.x)` assets and the serif display face kept | done; three system-serif spots moved to `aaruDisplay` | APL-242 |
-| Screenshots | see below | `docs/audit/apple-shots/` |
+| Screenshots | iPhone and iPad portrait done; iPad landscape and split view, and the Mac main window, deferred (see Screenshots) | `docs/audit/apple-shots/` |
+
+## Screenshots
+
+Taken on the simulators (iPhone 17 Pro and iPad Pro 13-inch (M5), iOS 26.2) against a local
+server with seeded data (14 titles, 2 lists, 5 journal actions); seeded titles have no artwork,
+so their cards are blank. The JPEGs in `docs/audit/apple-shots/` are committed; the full-size
+PNGs are gitignored.
+
+| Shot | Shows |
+| --- | --- |
+| `iphone-home.jpg` | The five-tab bar (APL-039), the account button beside Search |
+| `iphone-library.jpg` | The Lists row and toolbar button, the kind's status words |
+| `iphone-calendar.jpg` | The view switch under the bar, Today and the week arrows (APL-040), the empty state |
+| `iphone-settings.jpg`, `iphone-settings-data.jpg` | Settings as a sheet with Done, the eight pages; Your data with recaps, History and export |
+| `ipad-portrait-home.jpg` | Two columns, Discover rows |
+| `ipad-portrait-lists.jpg` | The Lists split view and its placeholder |
+| `ipad-portrait-calendar.jpg` | The week stepper over the grid (APL-041) |
+| `ipad-portrait-settings.jpg` | Settings as a sidebar destination |
+| `mac-settings-account.jpg` | The Mac Settings scene's panes, Account first |
+
+Not taken:
+
+- **iPad landscape and Split View.** The Simulator would not rotate from a script and has no
+  Split View control. Widths are covered in code (APL-131, APL-211).
+- **The Mac main window at small and large sizes.** This session has no Screen Recording
+  permission, and the window's own snapshot draws the Settings scene but not the main window's
+  sidebar and content. The window's size limits are set in code (APL-004).
 
 ## Findings
 

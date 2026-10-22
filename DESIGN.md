@@ -787,7 +787,7 @@ Where each existing piece goes:
 
 **Apple, as built (audit, 2026-10-21, `docs/audit/apple.md`).**
 
-- **Shell.** iPhone: the five tabs, an account button (`person.crop.circle`, top trailing on
+- **Shell.** iPhone: the five tabs and nothing else in the tab bar (no More), an account button (`person.crop.circle`, top trailing on
   Home and Library) that presents Settings as a sheet with Done. iPad and Mac:
   `.sidebarAdaptable` with every destination, Insights (and Settings on iPad) in a bottom
   section. One catalog search sheet at the root, opened by each screen's Search button and ⌘F.
@@ -810,8 +810,10 @@ Where each existing piece goes:
   (tap: Plan to …, hold: pick a status). The picker is titled "Add “X” to a list" and marks the
   lists that already hold it.
 - **Calendar.** `CalendarEmptyState` on every view, with Clear filters when filters hide
-  airings. The episode sheet has Done. iPhone's Week toolbar shows Today and the week arrows;
-  wide adds day arrows. Keys: ⌥⌘←/→ week, ⌘←/→ day or month, ⌘T today.
+  airings. The episode sheet has Done. On iPhone the Week / Month / Missed switch sits under
+  the bar, which holds Today and the week arrows. On iPad, where the bar is shared with the
+  tab bar, a row over the grid steps by week and day. The Mac's toolbar holds all five. Keys:
+  ⌥⌘←/→ week, ⌘←/→ day or month, ⌘T today.
 - **Home.** One empty headline, "Add something to see what's next", with Search, Browse
   Discover and "Bring your history". Airing soon opens the episode sheet, with "Open show".
   One column below 760pt. The Live Activity item reads "Watching now…" here and in the title
