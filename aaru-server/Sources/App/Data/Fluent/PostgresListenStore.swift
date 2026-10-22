@@ -124,10 +124,12 @@ struct PostgresListenStore: ListenStore {
         let sql = try sqlDatabase(database)
         let zone = period.timeZone.identifier
         let artistKey = "split_part(track_key, chr(31), 1)"
+        // The period's local midnights as instants, so `listens_user_time` bounds the scan; the
+        // same days as comparing each listen's local date, without computing it per row.
         let inPeriod: SQLQueryString = """
         user_id = \(bind: userID.rawValue)
-          AND (listened_at AT TIME ZONE \(bind: zone))::date >= \(bind: period.start.description)::date
-          AND (listened_at AT TIME ZONE \(bind: zone))::date < \(bind: period.end.description)::date
+          AND listened_at >= (\(bind: period.start.description)::date)::timestamp AT TIME ZONE \(bind: zone)
+          AND listened_at < (\(bind: period.end.description)::date)::timestamp AT TIME ZONE \(bind: zone)
           AND (\(bind: artist.map(Listen.fold))::text IS NULL
                OR \(unsafeRaw: artistKey) = \(bind: artist.map(Listen.fold)))
         """

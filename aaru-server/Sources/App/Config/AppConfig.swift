@@ -20,6 +20,12 @@ struct PostgresSettings: Sendable {
     var user: String
     var password: String
     var database: String
+    /// `POSTGRES_POOL_SIZE`: connections this process may open. Every store shares the pool of one
+    /// event loop (`Stores.postgres(fluent.db())`), so this is the process total, not per loop.
+    /// Fluent's default of one made every request and worker queue on a single connection.
+    var poolSize: Int = 10
+    /// `POSTGRES_POOL_TIMEOUT`: seconds a query waits for a free connection before it fails.
+    var poolTimeoutSeconds: Int = 10
 
     static func load(from reader: ConfigReader) throws -> PostgresSettings {
         try PostgresSettings(
@@ -27,7 +33,25 @@ struct PostgresSettings: Sendable {
             port: reader.int(forKey: "postgres.port", default: 5432),
             user: required("postgres.user", env: "POSTGRES_USER", in: reader),
             password: required("postgres.password", env: "POSTGRES_PASSWORD", in: reader),
-            database: required("postgres.database", env: "POSTGRES_DATABASE", in: reader)
+            database: required("postgres.database", env: "POSTGRES_DATABASE", in: reader),
+            poolSize: max(1, reader.int(forKey: "postgres.pool.size", default: 10)),
+            poolTimeoutSeconds: max(1, reader.int(forKey: "postgres.pool.timeout", default: 10))
+        )
+    }
+}
+
+/// How many jobs each queue runs at once in this process. Both queues lease with `SKIP LOCKED`,
+/// so workers (and replicas) never take the same job.
+struct WorkerSettings: Sendable {
+    /// `IMPORTS_WORKERS`: imports matched at once. Each holds a few connections while it matches.
+    var imports: Int = 1
+    /// `AGENT_REPLY_WORKERS`: `@aaru` mentions answered at once.
+    var agentReplies: Int = 1
+
+    static func load(from reader: ConfigReader) -> WorkerSettings {
+        WorkerSettings(
+            imports: min(8, max(1, reader.int(forKey: "imports.workers", default: 1))),
+            agentReplies: min(8, max(1, reader.int(forKey: "agent.reply.workers", default: 1)))
         )
     }
 }
@@ -79,6 +103,8 @@ struct AppConfig: Sendable {
     /// `METRICS_SECRET`: the bearer facorreia.com/apps sends to `/internal/metrics`. Empty turns
     /// the route off.
     var metricsSecret: String
+    /// Jobs per queue at once (`IMPORTS_WORKERS`, `AGENT_REPLY_WORKERS`).
+    var workers: WorkerSettings
 
     static let defaultRealtimeOrigins = "https://aaruapp.com,https://www.aaruapp.com,https://beta.aaruapp.com"
 
@@ -110,7 +136,8 @@ struct AppConfig: Sendable {
             ),
             anthropic: anthropicSettings(from: reader),
             concertsAPIKey: reader.string(forKey: "ticketmaster.api.key").flatMap(\.nilIfBlank),
-            metricsSecret: reader.string(forKey: "metrics.secret", default: "")
+            metricsSecret: reader.string(forKey: "metrics.secret", default: ""),
+            workers: WorkerSettings.load(from: reader)
         )
     }
 

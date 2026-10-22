@@ -144,6 +144,8 @@ protocol AnimeMappingStore: Sendable {
     func mapping(mal: String) async throws -> AnimeMapping?
     /// The mappings known for any of these AniList ids, in one query.
     func mappings(anilist: [String]) async throws -> [AnimeMapping]
+    /// `mapping(mal:)` for many MAL ids in one query, keyed by MAL id.
+    func mappings(mal: [String]) async throws -> [String: AnimeMapping]
     func upsert(_ mapping: AnimeMapping) async throws
     /// Upserts in batches inside one transaction; re-running with the same rows changes nothing.
     func upsertMany(_ mappings: [AnimeMapping]) async throws
@@ -181,6 +183,11 @@ protocol LibraryStore: Sendable {
     func undo(actionID: UUID, userID: UserID) async throws -> ActionRecord
     /// The user's items among titles carrying these provider ids: Discover's "in library" mark.
     func itemIDs(userID: UserID, matching keys: Set<CatalogKey>) async throws -> [CatalogKey: LibraryItemID]
+    /// Episode ticks of many items at once (the account export), keyed by item.
+    func watched(itemIDs: [LibraryItemID]) async throws -> [LibraryItemID: Set<EpisodeKey>]
+    /// What an import decides against for each of these titles the user has: the item's fields,
+    /// whether its status was set by hand, and its ticks. A plan asks once, not per title.
+    func importStates(userID: UserID, titleIDs: [TitleID]) async throws -> [TitleID: ImportItemState]
 }
 
 /// One provider id on a title of one type. TMDB reuses numbers across movies and shows, so
@@ -225,44 +232,6 @@ protocol ShelfStore: Sendable {
     func shelf(id: UUID, userID: UserID) async throws -> Shelf?
     func save(_ shelf: Shelf, userID: UserID) async throws
     func delete(id: UUID, userID: UserID) async throws -> Bool
-}
-
-/// A job the worker leased, and how many times it has been tried (this attempt included).
-struct ClaimedImportJob: Sendable {
-    var job: ImportJob
-    var attempts: Int
-}
-
-protocol ImportJobStore: Sendable {
-    func insert(_ job: ImportJob) async throws
-    /// A new job with its parsed rows, in one transaction.
-    func insert(_ job: ImportJob, rows: [ImportRow]) async throws
-    /// Rows fetched by the worker (Trakt), for a job created without any.
-    func appendRows(_ rows: [ImportRow], jobID: ImportJobID) async throws
-    func update(_ job: ImportJob) async throws
-    func job(id: ImportJobID, userID: UserID) async throws -> ImportJob?
-    /// Newest first.
-    func jobs(userID: UserID, limit: Int) async throws -> [ImportJob]
-    /// Leases the oldest runnable job (JOB-001): queued and due, or `running` with an expired
-    /// lease because its worker died. Two workers never lease the same job.
-    /// `userID` keeps the claim to one user's jobs (tests running in parallel use it).
-    func claimNext(now: Date, lease: TimeInterval, userID: UserID?) async throws -> ClaimedImportJob?
-    /// Puts a failed attempt back in the queue, not before `notBefore`.
-    func retry(_ id: ImportJobID, error: String, notBefore: Date, now: Date) async throws
-    /// The worker's heartbeat while matching: rows matched so far, and a lease pushed forward so a
-    /// long import is never taken for a dead one.
-    func progress(_ id: ImportJobID, matched: Int, lockedUntil: Date) async throws
-    func rows(jobID: ImportJobID) async throws -> [PlannedRow]
-    /// Stores each row's outcome and the job's new state and stats, and releases the lease.
-    func savePlan(_ job: ImportJob, rows: [PlannedRow]) async throws
-    /// Removes a job and its rows. Library items it created stay; undo is the journal's job.
-    func delete(id: ImportJobID, userID: UserID) async throws -> Bool
-    /// A Stremio link code the user is approving (IMP-016). Expired ones are swept here.
-    func createStremioLink(code: String, userID: UserID, expiresAt: Date, now: Date) async throws
-    /// When the user's code stops being valid; nil when it is not theirs or is gone.
-    func stremioLinkExpiry(code: String, userID: UserID) async throws -> Date?
-    /// Single use: true when this call removed the code, so two polls never import twice.
-    func consumeStremioLink(code: String, userID: UserID) async throws -> Bool
 }
 
 /// A user's Trakt connection, tokens still sealed.

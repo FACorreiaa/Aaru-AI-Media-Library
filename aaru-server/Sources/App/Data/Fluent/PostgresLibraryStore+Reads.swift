@@ -90,6 +90,71 @@ extension PostgresLibraryStore {
         try await Self.watchedKeys(itemID, sql: sqlDatabase(database))
     }
 
+    func watched(itemIDs: [LibraryItemID]) async throws -> [LibraryItemID: Set<EpisodeKey>] {
+        guard !itemIDs.isEmpty else { return [:] }
+        return try await Self.watchedKeys(itemIDs, sql: sqlDatabase(database))
+    }
+
+    /// Ticks for many items in one query (no N+1 over a library's shows).
+    static func watchedKeys(
+        _ ids: [LibraryItemID],
+        sql: any SQLDatabase
+    ) async throws -> [LibraryItemID: Set<EpisodeKey>] {
+        struct Row: Decodable {
+            let libraryItemId: UUID
+            let season: Int
+            let episode: Int
+        }
+        let rows = try await sql.raw("""
+        SELECT library_item_id, season, episode FROM episode_progress
+        WHERE library_item_id = ANY(\(bind: ids.map(\.rawValue)))
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
+        var result: [LibraryItemID: Set<EpisodeKey>] = [:]
+        for row in rows {
+            guard let key = try? EpisodeKey(season: row.season, episode: row.episode) else { continue }
+            result[LibraryItemID(row.libraryItemId), default: []].insert(key)
+        }
+        return result
+    }
+
+    func importStates(userID: UserID, titleIDs: [TitleID]) async throws -> [TitleID: ImportItemState] {
+        guard !titleIDs.isEmpty else { return [:] }
+        struct Row: Decodable {
+            let id: UUID
+            let titleId: UUID
+            let status: String
+            let rating: Double?
+            let notes: String?
+            let isOwned: Bool
+            let finishedAt: Date?
+            let bookPage: Int?
+            let bookPercent: Double?
+            let statusByHand: Bool
+        }
+        let sql = try sqlDatabase(database)
+        let rows = try await sql.raw("""
+        SELECT id, title_id, status, rating, notes, is_owned, finished_at, book_page, book_percent, status_by_hand
+        FROM library_items
+        WHERE user_id = \(bind: userID.rawValue) AND title_id = ANY(\(bind: titleIDs.map(\.rawValue)))
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
+        let watched = try await Self.watchedKeys(rows.map { LibraryItemID($0.id) }, sql: sql)
+        var result: [TitleID: ImportItemState] = [:]
+        for row in rows {
+            guard let status = LibraryStatus(rawValue: row.status) else { continue }
+            let id = LibraryItemID(row.id)
+            result[TitleID(row.titleId)] = ImportItemState(
+                itemID: id,
+                fields: ItemFields(
+                    status: status, rating: row.rating, notes: row.notes, isOwned: row.isOwned,
+                    finishedAt: row.finishedAt, bookPage: row.bookPage, bookPercent: row.bookPercent
+                ),
+                statusByHand: row.statusByHand,
+                watched: watched[id] ?? []
+            )
+        }
+        return result
+    }
+
     func statusSetByHand(itemID: LibraryItemID) async throws -> Bool {
         struct Row: Decodable {
             let statusByHand: Bool

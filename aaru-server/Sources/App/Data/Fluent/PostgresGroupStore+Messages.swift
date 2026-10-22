@@ -189,9 +189,12 @@ extension PostgresGroupStore {
         if let inserted {
             id = inserted.id
         } else {
-            // A retry: answer with the message the first attempt stored.
+            // A retry: answer with the message the first attempt stored. The nonce is unique per
+            // author, not per channel: one reused in another channel is a conflict, never that
+            // other channel's message answered (and published) here.
             guard let first = try await sql.raw("""
             SELECT id FROM group_messages WHERE author_id = \(bind: author) AND client_nonce = \(bind: nonce)
+              AND channel_id = \(bind: message.channelID)
             """).first(decoding: Row.self) else { throw StoreConflict(message: "That message was not saved.") }
             id = first.id
         }
