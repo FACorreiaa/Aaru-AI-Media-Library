@@ -84,6 +84,39 @@ export const getGroup = createServerFn({ method: 'GET' })
     ),
   )
 
+/** Gone (404/403: deleted, or you are not in it) apart from "could not load" (UX-064). */
+const gone = (status: number) => status === 404 || status === 403
+
+/** A group for its page: `null` when it is gone; any other failure throws, for Try again. */
+export const openGroup = createServerFn({ method: 'GET' })
+  .validator(groupRef)
+  .handler(async ({ data }): Promise<GroupDetail | null> => {
+    const result = await api(sessionToken()).GET('/v1/groups/{groupId}', {
+      params: { path: data },
+    })
+    if (gone(result.response.status)) return null
+    return check(result, 'That group could not be loaded.')
+  })
+
+/** A channel's latest group messages: `null` when the channel is gone; other failures throw. */
+export const openChannel = createServerFn({ method: 'GET' })
+  .validator(
+    channelRef.extend({ limit: z.number().int().min(1).max(100).optional() }),
+  )
+  .handler(async ({ data }): Promise<GroupMessage[] | null> => {
+    const result = await api(sessionToken()).GET(
+      '/v1/groups/{groupId}/channels/{channelId}/messages',
+      {
+        params: {
+          path: { groupId: data.groupId, channelId: data.channelId },
+          query: { limit: data.limit },
+        },
+      },
+    )
+    if (gone(result.response.status)) return null
+    return check(result, 'This channel could not be loaded.').items
+  })
+
 export const updateGroup = createServerFn({ method: 'POST' })
   .validator(z.object({ groupId: uuid, name: z.string() }))
   .handler(async ({ data }): Promise<GroupDetail> =>
@@ -294,7 +327,7 @@ export const listMessages = createServerFn({ method: 'GET' })
             },
           },
         ),
-        'Messages could not be loaded.',
+        'Group messages could not be loaded.',
       ).items,
   )
 
@@ -330,7 +363,7 @@ export const postMessage = createServerFn({ method: 'POST' })
           },
         },
       ),
-      'The message was not sent.',
+      'That was not sent.',
     ),
   )
 
@@ -351,7 +384,7 @@ export const editMessage = createServerFn({ method: 'POST' })
           body: { body: data.body },
         },
       ),
-      'The message was not edited.',
+      'That change was not saved.',
     ),
   )
 
@@ -363,7 +396,7 @@ export const deleteMessage = createServerFn({ method: 'POST' })
         '/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}',
         { params: { path: data } },
       ),
-      'The message was not deleted.',
+      'That was not deleted.',
     ),
   )
 

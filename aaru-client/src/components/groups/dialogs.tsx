@@ -1,5 +1,22 @@
-import { For, Show, createSignal, onMount } from 'solid-js'
+import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import type { JSX } from 'solid-js'
+import { Link } from '@tanstack/solid-router'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogPortal,
+  DialogTitle,
+  RadioGroup,
+  RadioGroupItem,
+  RadioGroupItemInput,
+  RadioGroupItemLabel,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
+import { ConfirmDialog as AskDialog } from '../ConfirmDialog'
 import { loadSocial } from '../../lib/social/server'
 import type { SocialUser } from '../../lib/social/server'
 import { monogram, personLabel } from '../../lib/social/model'
@@ -7,40 +24,77 @@ import { inviteToGroup } from '../../lib/groups/server'
 import type { Channel, GroupDetail } from '../../lib/groups/server'
 import { KIND_OPTIONS, hitRef, kindGlyph } from '../../lib/groups/kinds'
 import type { ChannelKind, MediaRef } from '../../lib/groups/kinds'
+import { prefersReducedMotion } from '../../lib/reduced-motion'
 import { Monogram } from './shell'
 import { TitlePicker } from './TitlePicker'
 
 // The groups dialogs: name a group, make or edit a channel, invite friends, confirm. Each is
-// mounted when needed and opens as a modal on mount, like the episode sheet.
+// mounted when needed and opens on mount (WEB-002: shadcn-solid's Dialog, a bottom sheet on a
+// phone). Closing plays Kobalte's exit first and then tells the owner, which unmounts it
+// (WEB-011).
 
-const dialogClass =
-  'm-auto w-[min(28rem,calc(100vw-2rem))] rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40'
-const inputClass =
-  'mt-1 min-h-11 w-full rounded-xl border-0 bg-surface px-4 text-base focus:ring-2 focus:ring-accent'
+const inputClass = 'mt-1 w-full border-0 bg-surface px-4'
 
 function message(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
 }
 
+/** Open from mount; `close` lets the exit play, then calls `onClose`. */
+export function useClosable(onClose: () => void) {
+  const [open, setOpen] = createSignal(true)
+  let timer: number | undefined
+  onCleanup(() => window.clearTimeout(timer))
+  const close = () => {
+    if (!open()) return
+    setOpen(false)
+    // DialogContent's exit is 200ms; nothing moves under reduced motion.
+    timer = window.setTimeout(() => onClose(), prefersReducedMotion() ? 0 : 200)
+  }
+  return { open, close }
+}
+
 function Frame(props: {
-  label: string
+  open: boolean
   title: string
+  description?: JSX.Element
   onClose: () => void
-  ref: (dialog: HTMLDialogElement) => void
   children: JSX.Element
 }) {
   return (
-    <dialog
-      ref={props.ref}
-      aria-label={props.label}
-      class={dialogClass}
-      onClose={() => props.onClose()}
+    <Dialog
+      open={props.open}
+      onOpenChange={(open) => {
+        if (!open) props.onClose()
+      }}
     >
-      <div class="px-5 pt-5 pb-5">
-        <h2 class="font-display text-2xl font-medium">{props.title}</h2>
-        {props.children}
-      </div>
-    </dialog>
+      <DialogPortal>
+        <DialogContent
+          placement="sheet"
+          showCloseButton={false}
+          class="block w-[min(28rem,calc(100vw-2rem))] gap-0 p-5 sm:max-w-none"
+        >
+          <DialogTitle class="text-2xl">{props.title}</DialogTitle>
+          <Show when={props.description}>
+            <DialogDescription class="mt-2">
+              {props.description}
+            </DialogDescription>
+          </Show>
+          {props.children}
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
+  )
+}
+
+function Problem(props: { text: string | null }) {
+  return (
+    <Show when={props.text}>
+      {(text) => (
+        <p role="alert" class="mt-3 text-sm text-danger">
+          {text()}
+        </p>
+      )}
+    </Show>
   )
 }
 
@@ -56,20 +110,17 @@ function Actions(props: {
     <div class="mt-6 flex items-center justify-between gap-3">
       <div>{props.extra}</div>
       <div class="flex gap-2">
-        <button
-          type="button"
-          onClick={() => props.onCancel()}
-          class="rounded-full px-4 py-2 text-sm font-medium text-muted hover:text-ink"
-        >
+        <Button variant="ghost" size="sm" onClick={() => props.onCancel()}>
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
+          size="sm"
+          variant={props.danger ? 'destructive' : 'default'}
           disabled={props.busy || props.disabled}
-          class={`rounded-full px-5 py-2 text-sm font-semibold disabled:opacity-40 ${props.danger ? 'bg-danger text-paper' : 'bg-accent text-on-accent'}`}
         >
           {props.submit}
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -85,18 +136,17 @@ export function NameDialog(props: {
   onSubmit: (name: string) => Promise<void>
   onClose: () => void
 }) {
-  let dialog: HTMLDialogElement | undefined
+  const dialog = useClosable(() => props.onClose())
   const [name, setName] = createSignal(props.initial ?? '')
   const [busy, setBusy] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
-  onMount(() => dialog?.showModal())
 
   return (
     <Frame
-      ref={(d) => (dialog = d)}
-      label={props.title}
+      open={dialog.open()}
       title={props.title}
-      onClose={props.onClose}
+      description={props.hint}
+      onClose={dialog.close}
     >
       <form
         onSubmit={async (e) => {
@@ -105,7 +155,7 @@ export function NameDialog(props: {
           setProblem(null)
           try {
             await props.onSubmit(name())
-            dialog?.close()
+            dialog.close()
           } catch (error) {
             setProblem(message(error, 'That was not saved.'))
           } finally {
@@ -113,31 +163,16 @@ export function NameDialog(props: {
           }
         }}
       >
-        <Show when={props.hint}>
-          <p class="mt-2 text-sm text-muted">{props.hint}</p>
-        </Show>
-        <label class="mt-4 block text-sm font-medium">
-          {props.label}
-          <input
-            value={name()}
-            maxLength={50}
-            autofocus
-            onInput={(e) => setName(e.currentTarget.value)}
-            class={inputClass}
-          />
-        </label>
-        <Show when={problem()}>
-          {(text) => (
-            <p role="alert" class="mt-3 text-sm text-danger">
-              {text()}
-            </p>
-          )}
-        </Show>
+        <TextField value={name()} onChange={setName} class="mt-4 gap-0">
+          <TextFieldLabel>{props.label}</TextFieldLabel>
+          <TextFieldInput maxLength={50} autofocus class={inputClass} />
+        </TextField>
+        <Problem text={problem()} />
         <Actions
           busy={busy()}
           submit={props.submit}
           disabled={!name().trim()}
-          onCancel={() => dialog?.close()}
+          onCancel={dialog.close}
         />
       </form>
     </Frame>
@@ -153,7 +188,7 @@ export type ChannelInput = {
 }
 
 /**
- * Make a channel (text, title, watch party or shelf), or rename one and set its topic. A title
+ * Make a channel (text, title, watch party or list), or rename one and set its topic. A title
  * channel is named after its title unless named by hand.
  */
 export function ChannelDialog(props: {
@@ -162,7 +197,7 @@ export function ChannelDialog(props: {
   onDelete?: () => Promise<void>
   onClose: () => void
 }) {
-  let dialog: HTMLDialogElement | undefined
+  const dialog = useClosable(() => props.onClose())
   const [kind, setKind] = createSignal<ChannelKind>(
     props.channel?.kind ?? 'text',
   )
@@ -172,7 +207,6 @@ export function ChannelDialog(props: {
   const [busy, setBusy] = createSignal(false)
   const [confirming, setConfirming] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
-  onMount(() => dialog?.showModal())
 
   const slug = (text: string) =>
     text
@@ -190,7 +224,7 @@ export function ChannelDialog(props: {
     setProblem(null)
     try {
       await action()
-      dialog?.close()
+      dialog.close()
     } catch (error) {
       setProblem(message(error, 'That was not saved.'))
     } finally {
@@ -200,14 +234,13 @@ export function ChannelDialog(props: {
 
   return (
     <Frame
-      ref={(d) => (dialog = d)}
-      label={props.channel ? 'Edit channel' : 'New channel'}
+      open={dialog.open()}
       title={
         props.channel
           ? `${kindGlyph(kind())} ${props.channel.name}`
           : 'New channel'
       }
-      onClose={props.onClose}
+      onClose={dialog.close}
     >
       <form
         onSubmit={(e) => {
@@ -223,41 +256,41 @@ export function ChannelDialog(props: {
         }}
       >
         <Show when={!props.channel}>
-          <fieldset class="mt-4">
-            <legend class="text-sm font-medium">Kind</legend>
+          <RadioGroup
+            aria-label="Kind"
+            class="mt-4 block"
+            value={kind()}
+            onChange={(next) => setKind(next as ChannelKind)}
+          >
+            <p class="text-sm font-medium" aria-hidden="true">
+              Kind
+            </p>
             <div class="mt-1 grid gap-1.5">
               <For each={KIND_OPTIONS}>
                 {(option) => (
-                  <label
-                    class={`flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2 ${kind() === option.kind ? 'bg-accent/10 ring-1 ring-accent' : 'bg-surface hover:bg-surface/70'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="channel-kind"
-                      value={option.kind}
-                      checked={kind() === option.kind}
-                      onChange={() => setKind(option.kind)}
-                      class="sr-only"
-                    />
-                    <span
-                      aria-hidden="true"
-                      class="mt-0.5 w-4 text-center text-muted"
-                    >
-                      {kindGlyph(option.kind)}
-                    </span>
-                    <span class="min-w-0">
-                      <span class="block text-sm font-semibold">
-                        {option.label}
+                  <RadioGroupItem value={option.kind} class="block">
+                    <RadioGroupItemInput />
+                    <RadioGroupItemLabel class="flex cursor-pointer items-start gap-3 rounded-xl bg-surface px-3 py-2 font-normal peer-focus-visible/radio-group:outline-2 peer-focus-visible/radio-group:outline-offset-2 peer-focus-visible/radio-group:outline-accent hover:bg-surface/70 data-[checked]:bg-accent/10 data-[checked]:ring-1 data-[checked]:ring-accent">
+                      <span
+                        aria-hidden="true"
+                        class="mt-0.5 w-4 text-center text-muted"
+                      >
+                        {kindGlyph(option.kind)}
                       </span>
-                      <span class="block text-xs text-muted">
-                        {option.hint}
+                      <span class="min-w-0">
+                        <span class="block text-sm font-semibold">
+                          {option.label}
+                        </span>
+                        <span class="block text-xs text-muted">
+                          {option.hint}
+                        </span>
                       </span>
-                    </span>
-                  </label>
+                    </RadioGroupItemLabel>
+                  </RadioGroupItem>
                 )}
               </For>
             </div>
-          </fieldset>
+          </RadioGroup>
           <Show when={kind() === 'title'}>
             <div class="mt-4">
               <Show
@@ -280,13 +313,14 @@ export function ChannelDialog(props: {
                     <span class="min-w-0 truncate font-semibold">
                       {picked().name}
                     </span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
+                      size="bare"
                       onClick={() => setTitle(undefined)}
-                      class="shrink-0 font-medium text-accent"
+                      class="shrink-0 text-accent"
                     >
                       Change
-                    </button>
+                    </Button>
                   </p>
                 )}
               </Show>
@@ -294,11 +328,13 @@ export function ChannelDialog(props: {
           </Show>
         </Show>
         <Show when={!needsTitle()}>
-          <label class="mt-4 block text-sm font-medium">
-            Name
-            <Show when={kind() === 'title' && !props.channel}>
-              <span class="font-normal text-muted"> (optional)</span>
-            </Show>
+          <TextField value={name()} onChange={setName} class="mt-4 gap-0">
+            <TextFieldLabel>
+              Name
+              <Show when={kind() === 'title' && !props.channel}>
+                <span class="font-normal text-muted"> (optional)</span>
+              </Show>
+            </TextFieldLabel>
             <div class="relative">
               <span
                 aria-hidden="true"
@@ -306,66 +342,60 @@ export function ChannelDialog(props: {
               >
                 {kindGlyph(kind())}
               </span>
-              <input
-                value={name()}
+              <TextFieldInput
                 maxLength={40}
                 placeholder={
                   title() ? slug(title()?.name ?? '') : 'movie-night'
                 }
-                onInput={(e) => setName(e.currentTarget.value)}
                 class={`${inputClass} pl-8`}
               />
             </div>
-          </label>
+          </TextField>
           <Show when={preview() && preview() !== name().trim()}>
             <p class="mt-1 text-xs text-muted">Saved as {preview()}</p>
           </Show>
-          <label class="mt-4 block text-sm font-medium">
-            Topic <span class="font-normal text-muted">(optional)</span>
-            <input
-              value={topic()}
+          <TextField value={topic()} onChange={setTopic} class="mt-4 gap-0">
+            <TextFieldLabel>
+              Topic <span class="font-normal text-muted">(optional)</span>
+            </TextFieldLabel>
+            <TextFieldInput
               maxLength={200}
               placeholder="What this channel is for"
-              onInput={(e) => setTopic(e.currentTarget.value)}
               class={inputClass}
             />
-          </label>
+          </TextField>
         </Show>
-        <Show when={problem()}>
-          {(text) => (
-            <p role="alert" class="mt-3 text-sm text-danger">
-              {text()}
-            </p>
-          )}
-        </Show>
+        <Problem text={problem()} />
         <Actions
           busy={busy()}
           submit={props.channel ? 'Save' : 'Create'}
           disabled={!preview() || needsTitle()}
-          onCancel={() => dialog?.close()}
+          onCancel={dialog.close}
           extra={
             <Show when={props.onDelete}>
               {(remove) => (
                 <Show
                   when={confirming()}
                   fallback={
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="bare"
                       onClick={() => setConfirming(true)}
-                      class="text-sm font-medium text-danger"
+                      class="text-sm text-danger hover:text-danger"
                     >
                       Delete channel
-                    </button>
+                    </Button>
                   }
                 >
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="bare"
                     disabled={busy()}
                     onClick={() => void attempt(remove())}
-                    class="text-sm font-semibold text-danger underline"
+                    class="text-sm font-semibold text-danger underline hover:text-danger"
                   >
                     Delete it and everything in it
-                  </button>
+                  </Button>
                 </Show>
               )}
             </Show>
@@ -382,13 +412,12 @@ export function InviteDialog(props: {
   onInvited: () => Promise<void>
   onClose: () => void
 }) {
-  let dialog: HTMLDialogElement | undefined
+  const dialog = useClosable(() => props.onClose())
   const [friends, setFriends] = createSignal<SocialUser[] | null>(null)
   const [sent, setSent] = createSignal<Set<string>>(new Set())
   const [busy, setBusy] = createSignal<string | null>(null)
   const [problem, setProblem] = createSignal<string | null>(null)
   onMount(async () => {
-    dialog?.showModal()
     try {
       setFriends((await loadSocial()).friends)
     } catch (error) {
@@ -419,22 +448,12 @@ export function InviteDialog(props: {
 
   return (
     <Frame
-      ref={(d) => (dialog = d)}
-      label="Invite friends"
+      open={dialog.open()}
       title="Invite friends"
-      onClose={props.onClose}
+      description={`Only friends can join ${props.detail.group.name}. They see an invite next time they open Groups.`}
+      onClose={dialog.close}
     >
-      <p class="mt-2 text-sm text-muted">
-        Only friends can join {props.detail.group.name}. They see an invite next
-        time they open Groups.
-      </p>
-      <Show when={problem()}>
-        {(text) => (
-          <p role="alert" class="mt-3 text-sm text-danger">
-            {text()}
-          </p>
-        )}
-      </Show>
+      <Problem text={problem()} />
       <Show
         when={friends()}
         fallback={<p class="mt-6 text-sm text-muted">Loading friends…</p>}
@@ -443,16 +462,18 @@ export function InviteDialog(props: {
           <Show
             when={list().length > 0}
             fallback={
-              <p class="mt-6 text-sm text-muted">
-                No friends yet. Add friends by handle in{' '}
-                <a
-                  href="/app/settings/account#profile"
-                  class="text-accent underline"
+              <div class="mt-6 rounded-card bg-surface p-4">
+                <p class="text-sm text-muted">
+                  No friends yet. Friends find each other by exact handle.
+                </p>
+                {/* UX-074: a button to the fix, not a sentence. */}
+                <Link
+                  to="/app/settings/friends"
+                  class="mt-3 inline-flex min-h-9 items-center rounded-full bg-ink px-4 text-sm font-semibold text-paper"
                 >
-                  Settings
-                </a>
-                .
-              </p>
+                  Add friends
+                </Link>
+              </div>
             }
           >
             <ul class="mt-4 max-h-80 divide-y divide-line overflow-y-auto">
@@ -477,14 +498,14 @@ export function InviteDialog(props: {
                           <span class="text-xs text-muted">Invited</span>
                         }
                       >
-                        <button
-                          type="button"
+                        <Button
+                          size="xs"
                           disabled={busy() !== null}
                           onClick={() => void invite(friend)}
-                          class="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-on-accent disabled:opacity-40"
+                          aria-label={`Invite ${personLabel(friend)}`}
                         >
                           Invite
-                        </button>
+                        </Button>
                       </Show>
                     </Show>
                   </li>
@@ -495,19 +516,49 @@ export function InviteDialog(props: {
         )}
       </Show>
       <div class="mt-6 flex justify-end">
-        <button
-          type="button"
-          onClick={() => dialog?.close()}
-          class="rounded-full bg-surface px-5 py-2 text-sm font-semibold"
-        >
+        <Button variant="secondary" size="sm" onClick={dialog.close}>
           Done
-        </button>
+        </Button>
       </div>
     </Frame>
   )
 }
 
-/** A yes-or-no for something that cannot be undone. */
+/** Why something cannot happen yet, with the one way forward. */
+export function NoticeDialog(props: {
+  title: string
+  body: string
+  action: string
+  onAction: () => void
+  onClose: () => void
+}) {
+  const dialog = useClosable(() => props.onClose())
+  return (
+    <Frame
+      open={dialog.open()}
+      title={props.title}
+      description={props.body}
+      onClose={dialog.close}
+    >
+      <div class="mt-6 flex justify-end gap-2">
+        <Button variant="ghost" size="sm" onClick={dialog.close}>
+          Not now
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => {
+            dialog.close()
+            props.onAction()
+          }}
+        >
+          {props.action}
+        </Button>
+      </div>
+    </Frame>
+  )
+}
+
+/** A yes-or-no for something that cannot be undone, on the shared AlertDialog. */
 export function ConfirmDialog(props: {
   title: string
   body: string
@@ -516,47 +567,40 @@ export function ConfirmDialog(props: {
   onConfirm: () => Promise<void>
   onClose: () => void
 }) {
-  let dialog: HTMLDialogElement | undefined
+  const dialog = useClosable(() => props.onClose())
   const [busy, setBusy] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
-  onMount(() => dialog?.showModal())
   return (
-    <Frame
-      ref={(d) => (dialog = d)}
-      label={props.title}
+    <AskDialog
+      open={dialog.open()}
       title={props.title}
-      onClose={props.onClose}
-    >
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault()
-          setBusy(true)
-          setProblem(null)
-          try {
-            await props.onConfirm()
-            dialog?.close()
-          } catch (error) {
-            setProblem(message(error, 'That did not work.'))
-          } finally {
-            setBusy(false)
-          }
-        }}
-      >
-        <p class="mt-2 text-sm text-muted">{props.body}</p>
-        <Show when={problem()}>
-          {(text) => (
-            <p role="alert" class="mt-3 text-sm text-danger">
-              {text()}
-            </p>
-          )}
-        </Show>
-        <Actions
-          busy={busy()}
-          submit={props.confirm}
-          danger={props.danger}
-          onCancel={() => dialog?.close()}
-        />
-      </form>
-    </Frame>
+      description={
+        <>
+          {props.body}
+          <Show when={problem()}>
+            {(text) => (
+              <span role="alert" class="mt-3 block text-sm text-danger">
+                {text()}
+              </span>
+            )}
+          </Show>
+        </>
+      }
+      confirmLabel={props.confirm}
+      busy={busy()}
+      onCancel={dialog.close}
+      onConfirm={async () => {
+        setBusy(true)
+        setProblem(null)
+        try {
+          await props.onConfirm()
+          dialog.close()
+        } catch (error) {
+          setProblem(message(error, 'That did not work.'))
+        } finally {
+          setBusy(false)
+        }
+      }}
+    />
   )
 }

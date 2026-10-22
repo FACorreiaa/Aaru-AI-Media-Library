@@ -88,9 +88,9 @@ export function replySnippet(
     : target.author
       ? `@${target.author.handle}`
       : 'a deleted account'
-  if (target.deleted) return { who, text: 'a deleted message' }
-  if (target.fromBlocked) return { who, text: 'a message you hid' }
-  if (target.veiled) return { who, text: 'a message that may spoil' }
+  if (target.deleted) return { who, text: 'something deleted' }
+  if (target.fromBlocked) return { who, text: 'something you hid' }
+  if (target.veiled) return { who, text: 'something that may spoil' }
   const flat = target.body.replace(/\s+/g, ' ').trim()
   const text =
     flat.length > REPLY_SNIPPET_LENGTH

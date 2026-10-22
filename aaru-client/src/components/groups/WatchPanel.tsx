@@ -9,6 +9,13 @@ import {
   onMount,
 } from 'solid-js'
 import {
+  Button,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
+import { Segmented } from '../Segmented'
+import {
   COUNTDOWN_DEFAULT,
   REACTIONS,
   canHost,
@@ -39,6 +46,13 @@ import { TitlePicker } from './TitlePicker'
 import { useGroup, useShell } from './shell'
 
 type Floating = { id: number; emoji: string }
+
+const COUNTDOWNS = ['5', '10', '30'].map((value) => ({
+  value,
+  label: `${value} s`,
+}))
+
+const numberClass = 'mt-0.5 min-h-9 w-16 rounded-lg border-0 px-2 text-sm'
 
 /**
  * WatchPanel (GRP-009): a watch channel's party above its chat. Lobby with who is ready, a
@@ -99,7 +113,7 @@ export function WatchPanel(props: { channel: Channel }) {
       await take(() => getWatchParty({ data: ref() }))
     } catch (error) {
       setProblem(
-        error instanceof Error ? error.message : 'The party did not load.',
+        error instanceof Error ? error.message : "The watch party didn't load.",
       )
     }
   }
@@ -188,9 +202,6 @@ export function WatchPanel(props: { channel: Channel }) {
       : null
   }
 
-  const button =
-    'rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-40'
-
   return (
     <section
       aria-label="Watch party"
@@ -203,16 +214,17 @@ export function WatchPanel(props: { channel: Channel }) {
               <h2 class="font-display text-lg font-medium">
                 Start a watch party
               </h2>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="bare"
                 onClick={() => {
                   setPicking(false)
                   setPicked(null)
                 }}
-                class="text-sm text-muted hover:text-ink"
+                class="font-normal"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
             <Show
               when={picked()}
@@ -229,50 +241,58 @@ export function WatchPanel(props: { channel: Channel }) {
                 <div class="mt-3 flex flex-wrap items-end gap-3">
                   <p class="min-w-0 flex-1 truncate font-semibold">
                     {hit().title}
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
+                      size="bare"
                       onClick={() => setPicked(null)}
-                      class="ml-2 text-sm font-medium text-accent"
+                      class="ml-2 text-accent"
                     >
                       Change
-                    </button>
+                    </Button>
                   </p>
                   <Show when={hit().type === 'show'}>
-                    <label class="text-xs font-medium">
-                      Season
-                      <input
+                    <TextField
+                      value={season()}
+                      onChange={setSeason}
+                      class="w-auto gap-0"
+                    >
+                      <TextFieldLabel class="text-xs font-medium">
+                        Season
+                      </TextFieldLabel>
+                      <TextFieldInput
                         type="number"
                         min="0"
                         inputmode="numeric"
-                        value={season()}
-                        onInput={(e) => setSeason(e.currentTarget.value)}
-                        class="mt-0.5 block w-16 rounded-lg border-0 bg-paper px-2 py-1.5 text-sm"
+                        class={numberClass}
                       />
-                    </label>
-                    <label class="text-xs font-medium">
-                      Episode
-                      <input
+                    </TextField>
+                    <TextField
+                      value={episode()}
+                      onChange={setEpisode}
+                      class="w-auto gap-0"
+                    >
+                      <TextFieldLabel class="text-xs font-medium">
+                        Episode
+                      </TextFieldLabel>
+                      <TextFieldInput
                         type="number"
                         min="1"
                         inputmode="numeric"
-                        value={episode()}
-                        onInput={(e) => setEpisode(e.currentTarget.value)}
-                        class="mt-0.5 block w-16 rounded-lg border-0 bg-paper px-2 py-1.5 text-sm"
+                        class={numberClass}
                       />
-                    </label>
+                    </TextField>
                   </Show>
-                  <button
-                    type="button"
+                  <Button
+                    size="sm"
                     disabled={
                       busy() ||
                       (hit().type === 'show' &&
                         !validEpisode(Number(season()), Number(episode())))
                     }
                     onClick={open}
-                    class={`${button} bg-accent text-on-accent`}
                   >
                     Open the lobby
-                  </button>
+                  </Button>
                 </div>
               )}
             </Show>
@@ -327,8 +347,9 @@ export function WatchPanel(props: { channel: Channel }) {
                 </Match>
                 <Match when={phase() === 'lobby'}>
                   <div class="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant={ready() ? 'soft' : 'outline'}
+                      size="sm"
                       aria-pressed={ready()}
                       disabled={busy()}
                       onClick={() =>
@@ -338,28 +359,20 @@ export function WatchPanel(props: { channel: Channel }) {
                           }),
                         )
                       }
-                      class={`${button} ${ready() ? 'bg-accent/15 text-accent' : 'border border-ink/25'}`}
+                      class={ready() ? 'bg-accent/15 text-accent' : ''}
                     >
                       {ready() ? "I'm ready ✓" : "I'm ready"}
-                    </button>
+                    </Button>
                     <Show when={hosting()}>
-                      <label class="sr-only" for="countdown-seconds">
-                        Countdown
-                      </label>
-                      <select
-                        id="countdown-seconds"
-                        value={countdown()}
-                        onChange={(e) =>
-                          setCountdown(Number(e.currentTarget.value))
-                        }
-                        class="rounded-full border-0 bg-paper py-2 pr-8 pl-3 text-sm"
-                      >
-                        <For each={[5, 10, 30]}>
-                          {(s) => <option value={s}>{s} s</option>}
-                        </For>
-                      </select>
-                      <button
-                        type="button"
+                      <Segmented
+                        label="Countdown"
+                        options={COUNTDOWNS}
+                        value={String(countdown())}
+                        onChange={(value) => setCountdown(Number(value))}
+                        itemClass="min-h-8 px-3 text-sm"
+                      />
+                      <Button
+                        size="sm"
                         disabled={busy()}
                         onClick={() =>
                           void act(() =>
@@ -368,10 +381,9 @@ export function WatchPanel(props: { channel: Channel }) {
                             }),
                           )
                         }
-                        class={`${button} bg-accent text-on-accent`}
                       >
                         Start countdown
-                      </button>
+                      </Button>
                     </Show>
                   </div>
                 </Match>
@@ -383,14 +395,15 @@ export function WatchPanel(props: { channel: Channel }) {
                   >
                     <For each={REACTIONS}>
                       {(emoji) => (
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="bare"
                           onClick={() => react(emoji)}
                           aria-label={`React ${emoji}`}
-                          class="grid size-9 place-items-center rounded-full text-xl hover:bg-paper"
+                          class="size-9 text-xl font-normal hover:bg-paper"
                         >
                           {emoji}
-                        </button>
+                        </Button>
                       )}
                     </For>
                   </div>
@@ -405,16 +418,17 @@ export function WatchPanel(props: { channel: Channel }) {
                   />
                 </Show>
                 <Show when={hosting()}>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     disabled={busy()}
                     onClick={() =>
                       void act(() => endWatchParty({ data: ref() }))
                     }
-                    class="rounded-full px-3 py-2 text-sm font-medium text-muted hover:text-ink"
+                    class="px-3"
                   >
-                    End party
-                  </button>
+                    End watch party
+                  </Button>
                 </Show>
               </div>
             </div>
@@ -433,7 +447,7 @@ export function WatchPanel(props: { channel: Channel }) {
             >
               {(p) => (
                 <p class="min-w-0 flex-1 truncate text-sm text-muted">
-                  Last party:{' '}
+                  Last watch party:{' '}
                   <span class="font-medium text-ink">{p().title.title}</span>
                   <Show when={episodeLine()}> {episodeLine()}</Show>
                 </p>
@@ -448,13 +462,9 @@ export function WatchPanel(props: { channel: Channel }) {
                 />
               )}
             </Show>
-            <button
-              type="button"
-              onClick={() => setPicking(true)}
-              class={`${button} bg-accent text-on-accent`}
-            >
+            <Button size="sm" onClick={() => setPicking(true)}>
               Start a watch party
-            </button>
+            </Button>
           </div>
         </Match>
       </Switch>
@@ -497,15 +507,15 @@ function MarkWatched(props: {
         </span>
       }
     >
-      <button
-        type="button"
+      <Button
+        variant="outline"
+        size="sm"
         disabled={props.busy}
         onClick={() => props.onMark()}
         title="Ticks it in your own library only"
-        class="rounded-full border border-ink/25 px-4 py-2 text-sm font-semibold hover:bg-surface disabled:opacity-40"
       >
         Mark watched for me
-      </button>
+      </Button>
     </Show>
   )
 }

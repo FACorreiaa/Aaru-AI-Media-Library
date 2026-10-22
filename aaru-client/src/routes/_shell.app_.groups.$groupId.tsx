@@ -1,13 +1,16 @@
 import {
   Outlet,
   createFileRoute,
-  isRedirect,
   redirect,
   useNavigate,
   useParams,
 } from '@tanstack/solid-router'
 import { Show, createEffect, createSignal, on } from 'solid-js'
+import { Drawer, DrawerContent, DrawerLabel } from '~/components/ui'
 import { ChannelList } from '../components/groups/ChannelList'
+import { GroupRail } from '../components/groups/GroupRail'
+import { LoadError } from '../components/groups/LoadError'
+import { MemberSheet } from '../components/groups/MemberList'
 import { InviteDialog } from '../components/groups/dialogs'
 import {
   GroupContext,
@@ -16,22 +19,35 @@ import {
   useVisiblePoll,
 } from '../components/groups/shell'
 import type { GroupScope } from '../components/groups/shell'
-import { getGroup } from '../lib/groups/server'
+import { getGroup, openGroup } from '../lib/groups/server'
 import { connectionState, useRealtime } from '../lib/realtime/socket'
 
 // GRP-004 on the web: one group, its channel list beside whatever channel is open. A group you
-// are not in (or that is gone) sends you back to groups home, like a 404.
+// are not in (or that is gone) sends you back to all groups, like a 404; one that did not load
+// says so, with Try again (UX-064).
 export const Route = createFileRoute('/_shell/app_/groups/$groupId')({
   loader: async ({ params }) => {
-    try {
-      return await getGroup({ data: { groupId: params.groupId } })
-    } catch (error) {
-      if (isRedirect(error)) throw error
-      throw redirect({ to: '/app/groups' })
-    }
+    const detail = await openGroup({ data: { groupId: params.groupId } })
+    if (!detail) throw redirect({ to: '/app/groups' })
+    return detail
   },
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData
+          ? `${loaderData.group.name} · Groups · Aaru`
+          : 'Groups · Aaru',
+      },
+    ],
+  }),
+  errorComponent: (props) => (
+    <LoadError what="This group" error={props.error} reset={props.reset} />
+  ),
   component: GroupLayout,
 })
+
+/** The member column fits beside the app sidebar, the rail, the channels and the chat. */
+const membersFit = () => window.matchMedia('(min-width: 1536px)').matches
 
 function GroupLayout() {
   const loaded = Route.useLoaderData()
@@ -40,6 +56,7 @@ function GroupLayout() {
   const [detail, setDetail] = createSignal(loaded())
   const [inviting, setInviting] = createSignal(false)
   const [membersOpen, setMembersOpen] = createSignal(true)
+  const [membersSheet, setMembersSheet] = createSignal(false)
   let leavingNow = false
   const channelOpen = () =>
     Boolean((params() as { channelId?: string }).channelId)
@@ -55,6 +72,14 @@ function GroupLayout() {
     openInvite: () => setInviting(true),
     membersOpen,
     setMembersOpen,
+    openMembers: () => {
+      if (membersFit()) setMembersOpen(true)
+      else setMembersSheet(true)
+    },
+    toggleMembers: () => {
+      if (membersFit()) setMembersOpen(!membersOpen())
+      else setMembersSheet(true)
+    },
     leaving: async (action) => {
       leavingNow = true
       try {
@@ -120,19 +145,29 @@ function GroupLayout() {
     () => connectionState() !== 'open',
   )
 
-  // Phone: the channel list is the page until a channel opens. Tablet: it lives in the drawer.
-  const listClass = () => {
-    const phone = channelOpen() ? 'max-md:hidden' : 'max-md:flex'
-    const tablet = shell.drawer()
-      ? 'md:max-lg:fixed md:max-lg:inset-y-0 md:max-lg:left-[72px] md:max-lg:z-40 md:max-lg:flex md:max-lg:bg-surface group-drawer'
-      : 'md:max-lg:hidden'
-    return `${phone} ${tablet} lg:flex`
-  }
+  // Phone: the channel list is the page until a channel opens. Tablet: rail and channels live in
+  // the Drawer (WEB-004). From 1024px they sit beside the channel.
+  const listClass = () =>
+    `${channelOpen() ? 'max-md:hidden' : 'max-md:flex'} md:max-lg:hidden lg:flex`
 
   return (
     <GroupContext.Provider value={scope}>
       <ChannelList class={listClass()} />
       <Outlet />
+      <Drawer
+        side="left"
+        open={shell.drawer()}
+        onOpenChange={(open) => shell.setDrawer(open)}
+      >
+        <DrawerContent class="w-auto max-w-[calc(100vw-3rem)] flex-row border-line bg-surface p-0 sm:max-w-none">
+          <DrawerLabel class="sr-only">Groups and channels</DrawerLabel>
+          <GroupRail class="flex" />
+          <ChannelList class="flex w-64" />
+        </DrawerContent>
+      </Drawer>
+      <Show when={membersSheet()}>
+        <MemberSheet onClose={() => setMembersSheet(false)} />
+      </Show>
       <Show when={inviting()}>
         <InviteDialog
           detail={detail()}

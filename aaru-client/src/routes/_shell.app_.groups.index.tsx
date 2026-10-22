@@ -1,13 +1,14 @@
 import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
+import { Button, buttonVariants } from '~/components/ui'
 import { MentionPill, Monogram, useShell } from '../components/groups/shell'
 import { groupMonogram } from '../lib/groups/model'
 import { acceptGroupInvite, declineGroupInvite } from '../lib/groups/server'
 import type { GroupInvite } from '../lib/groups/server'
 import { personLabel } from '../lib/social/model'
 
-// GRP-004 on the web: groups home. On a phone and tablet it lists your groups; everywhere it
-// holds waiting invites and the way to make a group.
+// GRP-004 on the web: all groups. On a phone and tablet it lists your groups; everywhere it
+// holds waiting invites and the way to make a group. The app shell owns <main>.
 export const Route = createFileRoute('/_shell/app_/groups/')({
   component: GroupsHome,
 })
@@ -44,20 +45,16 @@ function GroupsHome() {
   }
 
   return (
-    <main class="min-w-0 flex-1 overflow-y-auto">
-      <div class="mx-auto max-w-2xl px-5 py-8 md:px-8 md:py-12">
+    <div class="min-w-0 flex-1 overflow-y-auto">
+      <div class="px-4 py-8 md:px-8 md:py-12">
         <div class="flex items-end justify-between gap-4">
           <h1 class="font-display text-4xl font-medium tracking-tight">
             Groups
           </h1>
           <Show when={hasHandle() && shell.groups().length > 0}>
-            <button
-              type="button"
-              onClick={() => shell.openCreate()}
-              class="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-on-accent"
-            >
+            <Button size="sm" onClick={() => shell.openCreate()}>
               New group
-            </button>
+            </Button>
           </Show>
         </div>
 
@@ -93,22 +90,22 @@ function GroupsHome() {
                       </span>
                     </span>
                     <span class="flex gap-2">
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         disabled={busy() !== null}
                         onClick={() => void answer(invite, false)}
-                        class="rounded-full px-3 py-1.5 text-sm font-medium text-muted hover:text-ink disabled:opacity-40"
+                        class="px-3"
                       >
                         Decline
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        size="sm"
                         disabled={busy() !== null || !hasHandle()}
                         onClick={() => void answer(invite, true)}
-                        class="rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-on-accent disabled:opacity-40"
                       >
                         Join
-                      </button>
+                      </Button>
                     </span>
                   </li>
                 )}
@@ -124,13 +121,12 @@ function GroupsHome() {
               <p class="font-display text-2xl">
                 Make a place to talk with friends.
               </p>
-              <p class="mx-auto mt-2 max-w-sm text-muted">
+              <p class="mt-2 text-balance text-muted">
                 Choose a handle first, so friends can see who is talking.
               </p>
               <Link
                 to="/app/settings/account"
-                hash="profile"
-                class="mt-6 inline-block rounded-full bg-accent px-5 py-2.5 font-semibold text-on-accent"
+                class={`${buttonVariants()} mt-6`}
               >
                 Choose a handle
               </Link>
@@ -144,17 +140,21 @@ function GroupsHome() {
                 <p class="font-display text-2xl">
                   Make a place to talk with friends.
                 </p>
-                <p class="mx-auto mt-2 max-w-sm text-muted">
+                <p class="mt-2 text-balance text-muted">
                   A group starts with #general. Only friends you invite can
                   join, and nobody can find it otherwise.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => shell.openCreate()}
-                  class="mt-6 rounded-full bg-accent px-5 py-2.5 font-semibold text-on-accent"
-                >
-                  Create a group
-                </button>
+                <div class="mt-6 flex flex-wrap justify-center gap-3">
+                  <Button onClick={() => shell.openCreate()}>
+                    Create a group
+                  </Button>
+                  <Link
+                    to="/app/settings/friends"
+                    class={buttonVariants({ variant: 'outline' })}
+                  >
+                    Add friends
+                  </Link>
+                </div>
               </div>
             }
           >
@@ -193,6 +193,6 @@ function GroupsHome() {
           </Show>
         </Show>
       </div>
-    </main>
+    </div>
   )
 }

@@ -1,12 +1,19 @@
 import { For, Show, createEffect, createSignal, onCleanup } from 'solid-js'
+import {
+  Button,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
 import { KINDS, kindOf } from '../../lib/library/model'
 import type { CatalogHit, MediaKind } from '../../lib/library/model'
 import { searchCatalog } from '../../lib/library/server'
 import { Poster } from '../Poster'
+import { Segmented } from '../Segmented'
 
 /**
  * Search the catalog and pick one title: the same search as Add, scoped by kind. Used to make a
- * title channel, add to a shared shelf, and start a watch party.
+ * title channel, add to a List channel, and start a watch party.
  */
 export function TitlePicker(props: {
   onPick: (hit: CatalogHit) => void
@@ -54,32 +61,23 @@ export function TitlePicker(props: {
 
   return (
     <div>
-      <div role="tablist" aria-label="Kind" class="flex flex-wrap gap-1.5">
-        <For each={kinds()}>
-          {(k) => (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={kind() === k.kind}
-              onClick={() => setKind(k.kind)}
-              class={`rounded-full px-3 py-1 text-sm ${kind() === k.kind ? 'bg-ink text-paper' : 'bg-surface text-muted hover:text-ink'}`}
-            >
-              {k.label}
-            </button>
-          )}
-        </For>
-      </div>
-      <label class="mt-3 block">
-        <span class="sr-only">Search titles</span>
-        <input
+      <Segmented
+        label="Kind"
+        variant="chip"
+        options={kinds().map((k) => ({ value: k.kind, label: k.label }))}
+        value={kind()}
+        onChange={setKind}
+        itemClass="min-h-8 px-3 text-sm"
+      />
+      <TextField value={query()} onChange={setQuery} class="mt-3">
+        <TextFieldLabel class="sr-only">Search titles</TextFieldLabel>
+        <TextFieldInput
           type="search"
-          value={query()}
           autofocus
           placeholder="Search by title"
-          onInput={(e) => setQuery(e.currentTarget.value)}
-          class="min-h-11 w-full rounded-xl border-0 bg-surface px-4 text-base focus:ring-2 focus:ring-accent"
+          class="w-full rounded-xl border-0 bg-surface px-4 text-base md:text-base"
         />
-      </label>
+      </TextField>
       <Show when={problem()}>
         {(text) => (
           <p role="alert" class="mt-2 text-sm text-danger">
@@ -91,11 +89,12 @@ export function TitlePicker(props: {
         <For each={hits()}>
           {(hit) => (
             <li>
-              <button
-                type="button"
+              <Button
+                variant="soft"
+                size="bare"
                 disabled={props.busy}
                 onClick={() => props.onPick(hit)}
-                class="flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-surface disabled:opacity-50"
+                class="flex w-full justify-start gap-3 rounded-xl px-2 py-1.5 text-left font-normal"
               >
                 <Poster
                   url={hit.posterUrl}
@@ -113,7 +112,7 @@ export function TitlePicker(props: {
                       .join(' · ')}
                   </span>
                 </span>
-              </button>
+              </Button>
             </li>
           )}
         </For>

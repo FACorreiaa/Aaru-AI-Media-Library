@@ -104,11 +104,11 @@ describe('Aaru replies', () => {
 
   it('keep hidden messages hidden, and say nothing when the question is not loaded', () => {
     expect(replySnippet('m1', [message('m1', { veiled: true })])?.text).toBe(
-      'a message that may spoil',
+      'something that may spoil',
     )
     expect(
       replySnippet('m1', [message('m1', { deleted: true, body: '' })])?.text,
-    ).toBe('a deleted message')
+    ).toBe('something deleted')
     expect(replySnippet('gone', [message('m1')])).toBeNull()
     expect(replySnippet(undefined, [message('m1')])).toBeNull()
   })

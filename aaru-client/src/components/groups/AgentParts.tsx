@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
+import { Button } from '~/components/ui'
 import type { MessageComponent } from '../../lib/groups/agent'
 import { addTitleToLibrary } from '../../lib/groups/kinds-server'
 import { kindName, kindOf, statusLabel } from '../../lib/library/model'
@@ -118,16 +119,17 @@ export function AgentCards(props: { cards: MessageComponent[] }) {
                   <Show
                     when={added()[card.title.id]}
                     fallback={
-                      <button
-                        type="button"
+                      <Button
+                        variant="outline"
+                        size="xs"
                         disabled={busy() === card.title.id}
                         onClick={() => void add(card)}
-                        class="rounded-full border border-ink/25 px-2.5 py-0.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
+                        class="px-2.5 py-0.5"
                       >
                         {failed() === card.title.id
                           ? 'Not added · Retry'
                           : 'Add to my library'}
-                      </button>
+                      </Button>
                     }
                   >
                     {(status) => (

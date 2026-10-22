@@ -65,7 +65,7 @@ export const listChannelItems = createServerFn({ method: 'GET' })
           '/v1/groups/{groupId}/channels/{channelId}/items',
           path(data),
         ),
-        'The shelf could not be loaded.',
+        'The list could not be loaded.',
       ).items,
   )
 
@@ -94,7 +94,7 @@ export const removeChannelItem = createServerFn({ method: 'POST' })
     ),
   )
 
-/** "Add to my library" from a shelf: the same journaled add as anywhere else. */
+/** "Add to my library" from a List channel: the same journaled add as anywhere else. */
 export const addTitleToLibrary = createServerFn({ method: 'POST' })
   .validator(z.object({ titleId: uuid, type: z.enum(MEDIA_TYPES) }))
   .handler(async ({ data }): Promise<LibraryEntry> =>

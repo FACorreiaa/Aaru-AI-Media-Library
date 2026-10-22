@@ -1,4 +1,12 @@
 import { Show, createContext, onCleanup, onMount, useContext } from 'solid-js'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/components/ui'
 import type { Accessor, JSX, Setter } from 'solid-js'
 import { badgeText } from '../../lib/groups/model'
 import type {
@@ -41,9 +49,13 @@ export type GroupScope = {
   /** Refetches the group's channels, members and invites. */
   refresh: () => Promise<void>
   openInvite: () => void
-  /** Whether the member column is shown on desktop. */
+  /** Whether the member column is shown where it fits (1536px and up). */
   membersOpen: Accessor<boolean>
   setMembersOpen: Setter<boolean>
+  /** Shows the members: the column where it fits, else the members sheet. */
+  openMembers: () => void
+  /** The members button: toggles the column where it fits, else opens the sheet. */
+  toggleMembers: () => void
   /** Runs a leave or delete you started, so its own "removed" event is not announced to you. */
   leaving: (action: () => Promise<void>) => Promise<void>
 }
@@ -138,39 +150,37 @@ export function MentionPill(props: { count: number; label?: string }) {
   )
 }
 
-/** A small floating menu that closes on outside click or Escape. */
+/**
+ * A small menu behind a trigger (WEB-003): shadcn-solid's DropdownMenu, so focus, arrow keys,
+ * Escape and outside clicks behave like every other menu. Picking an item closes it.
+ */
 export function Menu(props: {
-  open: boolean
-  onClose: () => void
+  /** The trigger's accessible name when its content is not text. */
+  label?: string
+  title?: string
+  trigger: JSX.Element
+  triggerClass: string
+  placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end'
   class?: string
   children: JSX.Element
 }) {
-  let panel: HTMLDivElement | undefined
-  onMount(() => {
-    const onDown = (event: PointerEvent) => {
-      if (props.open && panel && !panel.contains(event.target as Node))
-        props.onClose()
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (props.open && event.key === 'Escape') props.onClose()
-    }
-    document.addEventListener('pointerdown', onDown, true)
-    document.addEventListener('keydown', onKey)
-    onCleanup(() => {
-      document.removeEventListener('pointerdown', onDown, true)
-      document.removeEventListener('keydown', onKey)
-    })
-  })
   return (
-    <Show when={props.open}>
-      <div
-        ref={panel}
-        role="menu"
-        class={`group-pop absolute z-50 min-w-48 overflow-hidden rounded-2xl border border-line bg-paper py-1 text-sm shadow-xl ${props.class ?? ''}`}
+    <DropdownMenu placement={props.placement ?? 'bottom-end'}>
+      <DropdownMenuTrigger
+        aria-label={props.label}
+        title={props.title}
+        class={`group/menu-trigger ${props.triggerClass}`}
       >
-        {props.children}
-      </div>
-    </Show>
+        {props.trigger}
+      </DropdownMenuTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuContent
+          class={`min-w-48 rounded-2xl border-line bg-paper py-1 text-sm text-ink shadow-xl ${props.class ?? ''}`}
+        >
+          {props.children}
+        </DropdownMenuContent>
+      </DropdownMenuPortal>
+    </DropdownMenu>
   )
 }
 
@@ -180,13 +190,16 @@ export function MenuItem(props: {
   children: JSX.Element
 }) {
   return (
-    <button
-      type="button"
-      role="menuitem"
-      onClick={() => props.onSelect()}
-      class={`block w-full px-4 py-2 text-left hover:bg-surface ${props.danger ? 'text-danger' : ''}`}
+    <DropdownMenuItem
+      onSelect={() => props.onSelect()}
+      variant={props.danger ? 'destructive' : 'default'}
+      class="block cursor-pointer rounded-none px-4 py-2 data-[highlighted]:bg-surface data-[highlighted]:text-ink data-[variant=destructive]:data-[highlighted]:bg-danger/10"
     >
       {props.children}
-    </button>
+    </DropdownMenuItem>
   )
+}
+
+export function MenuSeparator() {
+  return <DropdownMenuSeparator class="mx-0 bg-line" />
 }

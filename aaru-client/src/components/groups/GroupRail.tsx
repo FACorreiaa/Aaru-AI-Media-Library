@@ -1,11 +1,13 @@
 import { Link, useParams } from '@tanstack/solid-router'
 import { For, Show } from 'solid-js'
 import { badgeText, groupMonogram } from '../../lib/groups/model'
+import { Button } from '~/components/ui'
 import { useShell } from './shell'
 
 /**
  * GroupRail (GRP-004): the groups you are in as monogram circles, an unread dot, a mention
- * count, and `+` to create. Home sits on top with your waiting invites.
+ * count, and `+` to create. "All groups" sits on top with your waiting invites (UX-086: not
+ * "Home", which is the app's Home).
  */
 export function GroupRail(props: { class?: string }) {
   const shell = useShell()
@@ -25,10 +27,10 @@ export function GroupRail(props: { class?: string }) {
         activeOptions={{ exact: true }}
         aria-label={
           shell.invites().length > 0
-            ? `Groups home, ${shell.invites().length} invites`
-            : 'Groups home'
+            ? `All groups, ${shell.invites().length} invites`
+            : 'All groups'
         }
-        title="Home"
+        title="All groups"
         class="relative"
         onClick={() => shell.setDrawer(false)}
       >
@@ -45,7 +47,10 @@ export function GroupRail(props: { class?: string }) {
                 stroke-width="1.8"
                 aria-hidden="true"
               >
-                <path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" />
+                <rect x="4.5" y="4.5" width="6" height="6" rx="1.5" />
+                <rect x="13.5" y="4.5" width="6" height="6" rx="1.5" />
+                <rect x="4.5" y="13.5" width="6" height="6" rx="1.5" />
+                <rect x="13.5" y="13.5" width="6" height="6" rx="1.5" />
               </svg>
             </span>
             <Show when={shell.invites().length > 0}>
@@ -87,17 +92,18 @@ export function GroupRail(props: { class?: string }) {
           )
         }}
       </For>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="bare"
         onClick={() => shell.openCreate()}
         title="Create a group"
         aria-label="Create a group"
-        class={`${circle} rounded-full border border-dashed border-line text-accent hover:rounded-2xl hover:bg-paper`}
+        class={`${circle} rounded-full border border-dashed border-line text-accent hover:rounded-2xl hover:bg-paper hover:text-accent`}
       >
         <span aria-hidden="true" class="text-2xl leading-none">
           +
         </span>
-      </button>
+      </Button>
     </nav>
   )
 }

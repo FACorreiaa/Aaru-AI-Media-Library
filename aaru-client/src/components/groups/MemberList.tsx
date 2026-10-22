@@ -1,4 +1,12 @@
-import { For, Match, Show, Switch, createSignal, onMount } from 'solid-js'
+import { For, Match, Show, Switch, createSignal } from 'solid-js'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogPortal,
+  DialogTitle,
+  buttonVariants,
+} from '~/components/ui'
 import { membersByRole } from '../../lib/groups/model'
 import {
   removeGroupMember,
@@ -8,7 +16,7 @@ import {
 import type { GroupMember } from '../../lib/groups/server'
 import { monogram } from '../../lib/social/model'
 import { AaruAvatar } from './AgentParts'
-import { ConfirmDialog } from './dialogs'
+import { ConfirmDialog, useClosable } from './dialogs'
 import { Menu, MenuItem, Monogram, useGroup, useShell } from './shell'
 
 type Pending =
@@ -22,7 +30,6 @@ type Pending =
 export function MemberList(props: { class?: string }) {
   const shell = useShell()
   const scope = useGroup()
-  const [open, setOpen] = createSignal<string | null>(null)
   const [pending, setPending] = createSignal<Pending | null>(null)
   const [problem, setProblem] = createSignal<string | null>(null)
 
@@ -42,7 +49,6 @@ export function MemberList(props: { class?: string }) {
     (role() === 'owner' || (role() === 'admin' && member.role === 'member'))
 
   async function setRole(member: GroupMember, next: 'admin' | 'member') {
-    setOpen(null)
     setProblem(null)
     try {
       await updateGroupMember({
@@ -72,7 +78,7 @@ export function MemberList(props: { class?: string }) {
           </h3>
           <details class="group/aaru rounded-lg px-2 py-1.5 hover:bg-surface open:bg-surface">
             <summary
-              title="Aaru reads this channel's recent messages, and your own library when it helps. It can't change anything."
+              title="Aaru reads this channel's recent group messages, and your own library when it helps. It can't change anything."
               class="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden"
             >
               <AaruAvatar size="sm" />
@@ -85,7 +91,7 @@ export function MemberList(props: { class?: string }) {
             </summary>
             <p class="mt-2 pb-1 text-xs leading-relaxed text-muted">
               Tag @aaru to ask about films, shows, anime and books. It reads
-              this channel's recent messages, and your own library when it
+              this channel's recent group messages, and your own library when it
               helps, never anyone else's. It can't change anything.
             </p>
           </details>
@@ -118,25 +124,10 @@ export function MemberList(props: { class?: string }) {
                       </Show>
                     </span>
                     <Show when={canAct(member)}>
-                      <button
-                        type="button"
-                        aria-label={`Actions for @${member.user.handle}`}
-                        aria-haspopup="menu"
-                        onClick={() =>
-                          setOpen(
-                            open() === member.user.userId
-                              ? null
-                              : member.user.userId,
-                          )
-                        }
-                        class="grid size-7 place-items-center rounded-md text-muted opacity-0 group-hover/member:opacity-100 hover:text-ink focus-visible:opacity-100 max-lg:opacity-100"
-                      >
-                        <span aria-hidden="true">⋯</span>
-                      </button>
                       <Menu
-                        open={open() === member.user.userId}
-                        onClose={() => setOpen(null)}
-                        class="top-full right-2 mt-1"
+                        label={`Actions for @${member.user.handle}`}
+                        trigger={<span aria-hidden="true">⋯</span>}
+                        triggerClass={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} rounded-md text-muted opacity-0 group-hover/member:opacity-100 hover:text-ink focus-visible:opacity-100 data-[expanded]:opacity-100 max-lg:opacity-100`}
                       >
                         <Show when={role() === 'owner'}>
                           <Show
@@ -156,20 +147,18 @@ export function MemberList(props: { class?: string }) {
                             </MenuItem>
                           </Show>
                           <MenuItem
-                            onSelect={() => {
-                              setOpen(null)
+                            onSelect={() =>
                               setPending({ kind: 'transfer', member })
-                            }}
+                            }
                           >
                             Make owner
                           </MenuItem>
                         </Show>
                         <MenuItem
                           danger
-                          onSelect={() => {
-                            setOpen(null)
+                          onSelect={() =>
                             setPending({ kind: 'remove', member })
-                          }}
+                          }
                         >
                           Remove from group
                         </MenuItem>
@@ -200,13 +189,14 @@ export function MemberList(props: { class?: string }) {
         </section>
       </Show>
       <div class="px-4 pt-4 pb-6">
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => scope.openInvite()}
-          class="w-full rounded-full border border-line px-4 py-2 text-sm font-medium text-accent hover:bg-surface"
+          class="w-full border-line font-medium text-accent"
         >
           Invite friends
-        </button>
+        </Button>
       </div>
 
       <Switch>
@@ -219,7 +209,7 @@ export function MemberList(props: { class?: string }) {
           {(p) => (
             <ConfirmDialog
               title={`Remove @${p().member.user.handle}?`}
-              body="They stop seeing this group. Their messages stay. They are not told why."
+              body="They stop seeing this group. What they wrote stays. They are not told why."
               confirm="Remove"
               danger
               onConfirm={async () => {
@@ -259,31 +249,35 @@ export function MemberList(props: { class?: string }) {
   )
 }
 
-/** The member list as a sheet, for tablets and phones. */
+/** The member list as a sheet, for tablets and phones (WEB-002: a Dialog, a bottom sheet on a
+ * phone). */
 export function MemberSheet(props: { onClose: () => void }) {
-  let dialog: HTMLDialogElement | undefined
-  onMount(() => dialog?.showModal())
+  const dialog = useClosable(() => props.onClose())
   const scope = useGroup()
   return (
-    <dialog
-      ref={dialog}
-      aria-label="Members"
-      onClose={() => props.onClose()}
-      class="group-sheet mt-auto mb-0 max-h-[85dvh] w-full max-w-none overflow-y-auto rounded-t-[24px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40 md:m-auto md:w-[min(26rem,calc(100vw-2rem))] md:rounded-[20px]"
+    <Dialog
+      open={dialog.open()}
+      onOpenChange={(open) => {
+        if (!open) dialog.close()
+      }}
     >
-      <div class="sticky top-0 flex items-center justify-between border-b border-line bg-paper px-5 py-4">
-        <h2 class="font-display text-xl font-medium">
-          Members · {scope.detail().members.length}
-        </h2>
-        <button
-          type="button"
-          onClick={() => dialog?.close()}
-          class="text-sm font-medium text-muted hover:text-ink"
+      <DialogPortal>
+        <DialogContent
+          placement="sheet"
+          showCloseButton={false}
+          class="block w-[min(26rem,calc(100vw-2rem))] gap-0 p-0 sm:max-w-none"
         >
-          Done
-        </button>
-      </div>
-      <MemberList />
-    </dialog>
+          <div class="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-paper px-5 py-4">
+            <DialogTitle class="text-xl">
+              Members · {scope.detail().members.length}
+            </DialogTitle>
+            <Button variant="ghost" size="sm" onClick={dialog.close}>
+              Done
+            </Button>
+          </div>
+          <MemberList />
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   )
 }

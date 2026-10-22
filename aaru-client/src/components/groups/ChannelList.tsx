@@ -10,14 +10,28 @@ import {
   updateGroup,
 } from '../../lib/groups/server'
 import type { Channel } from '../../lib/groups/server'
-import { ChannelDialog, ConfirmDialog, NameDialog } from './dialogs'
+import { Button } from '~/components/ui'
+import {
+  ChannelDialog,
+  ConfirmDialog,
+  NameDialog,
+  NoticeDialog,
+} from './dialogs'
 import { ChannelGlyph } from './ChannelGlyph'
-import { Menu, MenuItem, MentionPill, useGroup, useShell } from './shell'
+import {
+  Menu,
+  MenuItem,
+  MenuSeparator,
+  MentionPill,
+  useGroup,
+  useShell,
+} from './shell'
 
 type Dialog =
   | { kind: 'rename' }
   | { kind: 'leave' }
   | { kind: 'delete' }
+  | { kind: 'owner-leave' }
   | { kind: 'channel'; channel?: Channel }
 
 /**
@@ -30,14 +44,12 @@ export function ChannelList(props: { class?: string }) {
   const navigate = useNavigate()
   const params = useParams({ strict: false })
   const selected = () => (params() as { channelId?: string }).channelId
-  const [menu, setMenu] = createSignal(false)
   const [dialog, setDialog] = createSignal<Dialog | null>(null)
 
   const group = () => scope.detail().group
   const manages = () => group().role !== 'member'
 
   async function toggleMuted() {
-    setMenu(false)
     try {
       const summary = await setGroupMuted({
         data: { groupId: group().id, muted: !group().muted },
@@ -65,82 +77,70 @@ export function ChannelList(props: { class?: string }) {
       aria-label={`${group().name} channels`}
       class={`w-full shrink-0 flex-col bg-surface/60 md:w-60 md:border-r md:border-line ${props.class ?? ''}`}
     >
-      <div class="relative border-b border-line">
-        <button
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={menu()}
-          onClick={() => setMenu(!menu())}
-          class="flex h-14 w-full items-center justify-between gap-2 px-4 text-left hover:bg-surface"
+      <div class="flex items-center border-b border-line">
+        {/* UX-086: a phone's way back to the group list. */}
+        <Link
+          to="/app/groups"
+          aria-label="All groups"
+          class="ml-2 grid size-9 shrink-0 place-items-center rounded-full text-muted hover:bg-surface hover:text-ink md:hidden"
         >
-          <span class="truncate font-display text-lg font-medium">
-            {group().name}
-          </span>
           <svg
             viewBox="0 0 20 20"
-            class={`size-4 shrink-0 text-muted transition-transform ${menu() ? 'rotate-180' : ''}`}
+            class="size-5"
             fill="currentColor"
             aria-hidden="true"
           >
-            <path d="M5.2 7.5a.75.75 0 0 1 1.06 0L10 11.2l3.74-3.7a.75.75 0 1 1 1.06 1.06l-4.27 4.24a.75.75 0 0 1-1.06 0L5.2 8.56a.75.75 0 0 1 0-1.06Z" />
+            <path d="M12.5 4.2a.75.75 0 0 1 0 1.06L7.8 10l4.7 4.74a.75.75 0 1 1-1.06 1.06l-5.24-5.27a.75.75 0 0 1 0-1.06l5.24-5.27a.75.75 0 0 1 1.06 0Z" />
           </svg>
-        </button>
+        </Link>
         <Menu
-          open={menu()}
-          onClose={() => setMenu(false)}
-          class="top-full right-2 left-2 mt-1"
+          placement="bottom-start"
+          trigger={
+            <>
+              <span class="truncate font-display text-lg font-medium">
+                {group().name}
+              </span>
+              <svg
+                viewBox="0 0 20 20"
+                class="size-4 shrink-0 text-muted transition-transform group-data-[expanded]/menu-trigger:rotate-180"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M5.2 7.5a.75.75 0 0 1 1.06 0L10 11.2l3.74-3.7a.75.75 0 1 1 1.06 1.06l-4.27 4.24a.75.75 0 0 1-1.06 0L5.2 8.56a.75.75 0 0 1 0-1.06Z" />
+              </svg>
+            </>
+          }
+          triggerClass="flex h-14 min-w-0 flex-1 items-center justify-between gap-2 px-4 text-left outline-none hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+          class="w-56"
         >
-          <MenuItem
-            onSelect={() => {
-              setMenu(false)
-              scope.openInvite()
-            }}
-          >
+          <MenuItem onSelect={() => scope.openInvite()}>
             Invite friends
           </MenuItem>
           <Show when={manages()}>
-            <MenuItem
-              onSelect={() => {
-                setMenu(false)
-                setDialog({ kind: 'channel' })
-              }}
-            >
+            <MenuItem onSelect={() => setDialog({ kind: 'channel' })}>
               New channel
             </MenuItem>
-            <MenuItem
-              onSelect={() => {
-                setMenu(false)
-                setDialog({ kind: 'rename' })
-              }}
-            >
+            <MenuItem onSelect={() => setDialog({ kind: 'rename' })}>
               Rename group
             </MenuItem>
           </Show>
           <MenuItem onSelect={() => void toggleMuted()}>
             {group().muted ? 'Unmute mentions' : 'Mute mentions'}
           </MenuItem>
-          <div class="my-1 h-px bg-line" />
+          <MenuSeparator />
           <Show
             when={group().role === 'owner'}
             fallback={
-              <MenuItem
-                danger
-                onSelect={() => {
-                  setMenu(false)
-                  setDialog({ kind: 'leave' })
-                }}
-              >
+              <MenuItem danger onSelect={() => setDialog({ kind: 'leave' })}>
                 Leave group
               </MenuItem>
             }
           >
-            <MenuItem
-              danger
-              onSelect={() => {
-                setMenu(false)
-                setDialog({ kind: 'delete' })
-              }}
-            >
+            {/* UX-084: an owner sees why Leave waits, and the way to it. */}
+            <MenuItem onSelect={() => setDialog({ kind: 'owner-leave' })}>
+              Leave group…
+            </MenuItem>
+            <MenuItem danger onSelect={() => setDialog({ kind: 'delete' })}>
               Delete group
             </MenuItem>
           </Show>
@@ -153,15 +153,16 @@ export function ChannelList(props: { class?: string }) {
             Channels
           </h3>
           <Show when={manages()}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="bare"
               aria-label="New channel"
               title="New channel"
               onClick={() => setDialog({ kind: 'channel' })}
-              class="grid size-6 place-items-center rounded-md text-lg leading-none text-muted hover:bg-surface hover:text-ink"
+              class="size-6 rounded-md text-lg leading-none"
             >
               +
-            </button>
+            </Button>
           </Show>
         </div>
         <ul class="space-y-0.5">
@@ -188,12 +189,13 @@ export function ChannelList(props: { class?: string }) {
                     </Show>
                   </Link>
                   <Show when={manages()}>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="bare"
                       aria-label={`Edit #${channel.name}`}
                       title="Edit channel"
                       onClick={() => setDialog({ kind: 'channel', channel })}
-                      class="absolute top-1/2 right-1.5 grid size-6 -translate-y-1/2 place-items-center rounded-md text-muted opacity-0 group-hover/row:opacity-100 hover:text-ink focus-visible:opacity-100"
+                      class="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 rounded-md opacity-0 group-hover/row:opacity-100 hover:bg-transparent focus-visible:opacity-100 max-lg:opacity-100"
                     >
                       <svg
                         viewBox="0 0 20 20"
@@ -203,7 +205,7 @@ export function ChannelList(props: { class?: string }) {
                       >
                         <path d="M11.3 2.6a1.5 1.5 0 0 1 2.1 0l1 1a1.5 1.5 0 0 1 0 2.1l-1.4 1.4-3.1-3.1zM8.9 5l3.1 3.1-6.6 6.6a1 1 0 0 1-.5.27l-2.6.6a.5.5 0 0 1-.6-.6l.6-2.6a1 1 0 0 1 .27-.5z" />
                       </svg>
-                    </button>
+                    </Button>
                   </Show>
                 </li>
               )
@@ -245,10 +247,19 @@ export function ChannelList(props: { class?: string }) {
             onClose={() => setDialog(null)}
           />
         </Match>
+        <Match when={dialog()?.kind === 'owner-leave'}>
+          <NoticeDialog
+            title={`Leave ${group().name}?`}
+            body="Make someone else owner first. Open Members, choose a member and pick Make owner; then you can leave."
+            action="Open members"
+            onAction={() => scope.openMembers()}
+            onClose={() => setDialog(null)}
+          />
+        </Match>
         <Match when={dialog()?.kind === 'delete'}>
           <ConfirmDialog
             title={`Delete ${group().name}?`}
-            body="Every channel and message goes, for everyone. This cannot be undone. To keep the group without you, make someone else the owner from the member list."
+            body="Every channel and group message goes, for everyone. This cannot be undone. To keep the group without you, make someone else the owner from the member list."
             confirm="Delete group"
             danger
             onConfirm={() =>

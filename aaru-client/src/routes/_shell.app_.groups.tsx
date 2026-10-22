@@ -4,7 +4,9 @@ import {
   useNavigate,
   useParams,
 } from '@tanstack/solid-router'
-import { Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
+import { Show, createEffect, createSignal, on } from 'solid-js'
+import { toast } from '~/components/ui'
+import { useAppShell } from '../components/shell/context'
 import { GroupRail } from '../components/groups/GroupRail'
 import { NameDialog } from '../components/groups/dialogs'
 import {
@@ -21,9 +23,9 @@ import {
 } from '../lib/groups/server'
 import { connectionState, useRealtime } from '../lib/realtime/socket'
 
-// GRP-004 on the web: the groups shell. Desktop shows four columns (rail, channels, the
-// channel, members); a tablet folds the rail and channels into a drawer; a phone stacks
-// groups → channels → chat.
+// GRP-004 on the web: the groups shell, inside the app shell. From 1024px (the app sidebar
+// beside it) the rail, the channels and the channel; the member column joins at 1536px. A
+// tablet folds the rail and channels into a Drawer; a phone stacks groups → channels → chat.
 export const Route = createFileRoute('/_shell/app_/groups')({
   head: () => ({ meta: [{ title: 'Groups · Aaru' }] }),
   loader: () => loadGroups(),
@@ -37,11 +39,13 @@ function GroupsShell() {
   const [invites, setInvites] = createSignal(loaded().invites)
   const [drawer, setDrawer] = createSignal(false)
   const [creating, setCreating] = createSignal(false)
-  const [notice, setNotice] = createSignal<string | null>(null)
   const params = useParams({ strict: false })
   const open = () => params() as { groupId?: string; channelId?: string }
-  let noticeTimer: number | undefined
-  onCleanup(() => window.clearTimeout(noticeTimer))
+  // The app sidebar's Groups badge follows the live mention total.
+  const appShell = useAppShell()
+  createEffect(() =>
+    appShell.setMentions(groups().reduce((sum, g) => sum + g.mentions, 0)),
+  )
 
   createEffect(
     on(
@@ -72,9 +76,7 @@ function GroupsShell() {
     setDrawer,
     openCreate: () => setCreating(true),
     notify: (text) => {
-      setNotice(text)
-      window.clearTimeout(noticeTimer)
-      noticeTimer = window.setTimeout(() => setNotice(null), 6000)
+      toast(text, { duration: 6000 })
     },
   }
 
@@ -129,36 +131,11 @@ function GroupsShell() {
   return (
     <ShellContext.Provider value={shell}>
       <div class="flex h-[calc(100dvh-3.5rem)] flex-col lg:h-[100dvh]">
-        <div class="relative flex min-h-0 flex-1 border-t border-line">
-          <Show when={drawer()}>
-            <button
-              type="button"
-              aria-label="Close"
-              tabIndex={-1}
-              onClick={() => setDrawer(false)}
-              class="fixed inset-0 z-30 hidden bg-black/30 md:max-lg:block"
-            />
-          </Show>
-          <GroupRail
-            class={
-              drawer()
-                ? 'hidden md:max-lg:fixed md:max-lg:inset-y-0 md:max-lg:left-0 md:max-lg:z-40 md:max-lg:flex group-drawer lg:flex'
-                : 'hidden lg:flex'
-            }
-          />
+        <div class="relative flex min-h-0 flex-1">
+          <GroupRail class="hidden lg:flex" />
           <Outlet />
         </div>
       </div>
-      <Show when={notice()}>
-        {(text) => (
-          <p
-            role="status"
-            class="group-pop fixed bottom-6 left-1/2 z-50 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-sm text-paper shadow-lg"
-          >
-            {text()}
-          </p>
-        )}
-      </Show>
       <Show when={creating()}>
         <NameDialog
           title="New group"

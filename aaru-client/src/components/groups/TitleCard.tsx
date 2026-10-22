@@ -1,5 +1,14 @@
 import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal, onMount } from 'solid-js'
+import {
+  Switch,
+  SwitchControl,
+  SwitchDescription,
+  SwitchErrorMessage,
+  SwitchInput,
+  SwitchLabel,
+  SwitchThumb,
+} from '~/components/ui'
 import { progressLabel } from '../../lib/groups/kinds'
 import {
   getChannelProgress,
@@ -124,40 +133,32 @@ export function TitleCard(props: { channel: Channel }) {
               </ul>
             </Show>
           </div>
-          <label class="flex shrink-0 cursor-pointer flex-col items-end gap-1 text-right">
-            <span class="flex items-center gap-2 text-xs font-medium">
-              <span class="hidden sm:inline">Share my progress</span>
-              <span class="sm:hidden">Share</span>
-              <input
-                type="checkbox"
-                role="switch"
-                checked={sharing()}
-                disabled={busy()}
-                onChange={() => void toggle()}
-                class="peer sr-only"
-              />
-              <span
-                aria-hidden="true"
-                class={`relative h-5 w-9 rounded-full transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent ${sharing() ? 'bg-accent' : 'bg-line'}`}
-              >
-                <span
-                  class={`absolute top-0.5 size-4 rounded-full bg-paper shadow transition-[left] ${sharing() ? 'left-[18px]' : 'left-0.5'}`}
-                />
-              </span>
+          <Switch
+            checked={sharing()}
+            disabled={busy()}
+            onChange={() => void toggle()}
+            validationState={problem() ? 'invalid' : 'valid'}
+            class="flex shrink-0 flex-col items-end gap-1 text-right"
+          >
+            <span class="flex items-center gap-2">
+              <SwitchInput />
+              <SwitchLabel class="cursor-pointer text-xs font-medium">
+                <span class="hidden sm:inline">Share my progress</span>
+                <span class="sm:hidden">Share</span>
+              </SwitchLabel>
+              <SwitchControl>
+                <SwitchThumb />
+              </SwitchControl>
             </span>
-            <span class="hidden max-w-44 text-[11px] leading-tight text-muted md:block">
+            <SwitchDescription class="hidden max-w-44 text-[11px] leading-tight text-muted md:block">
               {sharing()
                 ? 'Members here see how far you are.'
                 : 'Off: nobody here sees how far you are.'}
-            </span>
-            <Show when={problem()}>
-              {(text) => (
-                <span role="alert" class="text-[11px] text-danger">
-                  {text()}
-                </span>
-              )}
-            </Show>
-          </label>
+            </SwitchDescription>
+            <SwitchErrorMessage class="text-[11px] text-danger">
+              {problem()}
+            </SwitchErrorMessage>
+          </Switch>
         </section>
       )}
     </Show>
