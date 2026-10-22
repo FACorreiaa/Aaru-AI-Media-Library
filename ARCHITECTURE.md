@@ -893,8 +893,9 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   page (files `_shell.app.tsx` and `_shell.app_.*.tsx`; URLs unchanged). Its `beforeLoad` is the
   one sign-in check (`requireSession`, through the query cache, with `next`), and its component
   is `components/shell/AppShell.tsx`: the shadcn-solid Sidebar from 1024px, the same sidebar as
-  a sheet below, the one Search dialog (⌘K) that pages lend their library to
-  (`useSearchHost`), and the Toaster. Back links name the page you came from (`BackLink`).
+  a sheet below (loaded lazily, only on a narrow screen), the one Search dialog (⌘K) that pages
+  lend their library to (`useSearchHost`), and the Toaster, which loads on the first `toast()`.
+  Back links name the page you came from (`BackLink`).
 - Settings are eight child routes of `_shell.app_.settings.tsx` (`account`, `friends`,
   `notifications`, `import`, `connections`, `data`, `about`, `delete`) with a rail from 768px
   and a list below; the old slugs (`connected`, `imports`, `recaps`) and hashes redirect.

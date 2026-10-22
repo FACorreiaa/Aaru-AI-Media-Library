@@ -103,65 +103,83 @@ command/cmdk, drawer, sidebar…) stay out of every route.
 ## Step 2 bundle
 
 `npm run build && npm run size`, gzip -9. Left: `origin/main` at `4b1bb01`, built clean. Right:
-this branch. `size-budget.json` re-seeded with `npm run size -- --update`.
+this branch, after the three shell cuts below. `size-budget.json` was re-seeded once in step 2;
+after the cuts only the keys `npm run size` reported OVER were raised.
 
 | Measure | `origin/main` (KB gz) | This branch (KB gz) | Δ |
 | --- | ---: | ---: | ---: |
-| total JS | 251.6 | 364.7 | +113.1 |
+| total JS | 251.6 | 362.7 | +111.1 |
 | CSS | 14.0 | 25.7 | +11.7 |
 | shared (every page) | 77.4 | 79.1 | +1.7 |
 | `/` | 86.0 | 88.7 | +2.7 |
-| `/about` | 80.8 | 83.9 | +3.1 |
-| `/app` → `/_shell/app` | 99.1 | 116.1 | +17.0 |
-| `/app_/discover` → `/_shell/app_/discover` | 91.3 | 114.8 | +23.5 |
-| `/app_/groups` → `/_shell/app_/groups` | 89.9 | 115.6 | +25.7 |
-| `/app_/groups/` → `/_shell/app_/groups/` | 79.4 | 81.1 | +1.7 |
-| `/app_/groups/$groupId` → `/_shell/app_/groups/$groupId` | 81.3 | 88.0 | +6.7 |
+| `/about` | 80.8 | 83.8 | +3.0 |
+| `/app` → `/_shell/app` | 99.1 | 125.2 | +26.1 |
+| `/app_/discover` → `/_shell/app_/discover` | 91.3 | 123.8 | +32.5 |
+| `/app_/groups` → `/_shell/app_/groups` | 89.9 | 124.6 | +34.7 |
+| `/app_/groups/` → `/_shell/app_/groups/` | 79.4 | 81.0 | +1.6 |
+| `/app_/groups/$groupId` → `/_shell/app_/groups/$groupId` | 81.3 | 95.7 | +14.4 |
 | `/app_/groups/$groupId/` → `/_shell/app_/groups/$groupId/` | 77.8 | 79.4 | +1.6 |
-| `/app_/groups/$groupId/$channelId` → `/_shell/app_/groups/$groupId/$channelId` | 95.0 | 97.7 | +2.7 |
+| `/app_/groups/$groupId/$channelId` → `/_shell/app_/groups/$groupId/$channelId` | 95.0 | 97.6 | +2.6 |
 | `/app_/imports/$id` → `/_shell/app_/imports/$id` | 81.6 | 82.9 | +1.3 |
-| `/app_/insights` → `/_shell/app_/insights` | 88.3 | 93.6 | +5.3 |
-| `/app_/library` → `/_shell/app_/library` | 88.9 | 108.3 | +19.4 |
-| `/app_/lists/` → `/_shell/app_/lists/` | 82.2 | 86.9 | +4.7 |
-| `/app_/lists/$id` → `/_shell/app_/lists/$id` | 83.1 | 102.2 | +19.1 |
-| `/app_/music` → `/_shell/app_/music` | 83.1 | 88.2 | +5.1 |
+| `/app_/insights` → `/_shell/app_/insights` | 88.3 | 93.5 | +5.2 |
+| `/app_/library` → `/_shell/app_/library` | 88.9 | 117.3 | +28.4 |
+| `/app_/lists/` → `/_shell/app_/lists/` | 82.2 | 86.8 | +4.6 |
+| `/app_/lists/$id` → `/_shell/app_/lists/$id` | 83.1 | 111.2 | +28.1 |
+| `/app_/music` → `/_shell/app_/music` | 83.1 | 88.1 | +5.0 |
 | `/app_/plans/$id` → `/_shell/app_/plans/$id` | 80.2 | 81.7 | +1.5 |
 | `/app_/recap` → `/_shell/app_/recap` | 87.9 | 90.1 | +2.2 |
 | `/app_/settings` → `/_shell/app_/settings` | 80.9 | 81.0 | +0.1 |
-| `/app_/settings/` → `/_shell/app_/settings/` | 87.2 | 79.5 | -7.7 |
+| `/app_/settings/` → `/_shell/app_/settings/` | 87.2 | 79.4 | -7.8 |
 | `/app_/settings/about` → `/_shell/app_/settings/about` | 80.6 | 82.9 | +2.3 |
 | `/app_/settings/account` → `/_shell/app_/settings/account` | 87.2 | 92.2 | +5.0 |
 | `/app_/settings/connected` → `/_shell/app_/settings/connections` | 86.9 | 98.6 | +11.7 |
-| `/app_/settings/imports` → `/_shell/app_/settings/import` | 84.8 | 93.7 | +8.9 |
+| `/app_/settings/imports` → `/_shell/app_/settings/import` | 84.8 | 93.6 | +8.8 |
 | `/app_/settings/recaps` → `/_shell/app_/settings/data` | 78.4 | 83.0 | +4.6 |
-| `/app_/title/$id` → `/_shell/app_/title/$id` | 93.0 | 120.9 | +27.9 |
-| `/app_/week` → `/_shell/app_/calendar` | 92.2 | 108.1 | +15.9 |
-| `/auth/verify` | 78.4 | 93.8 | +15.4 |
+| `/app_/title/$id` → `/_shell/app_/title/$id` | 93.0 | 129.9 | +36.9 |
+| `/app_/week` → `/_shell/app_/calendar` | 92.2 | 108.6 | +16.4 |
+| `/auth/verify` | 78.4 | 93.7 | +15.3 |
 | `/connect/extension` | 79.2 | 94.3 | +15.1 |
-| `/oauth/consent` | 79.2 | 101.4 | +22.2 |
-| `/privacy` | 82.7 | 85.6 | +2.9 |
-| `/sign-in` | 81.5 | 101.9 | +20.4 |
-| `/_shell` (new) | — | 138.7 | — |
+| `/oauth/consent` | 79.2 | 101.3 | +22.1 |
+| `/privacy` | 82.7 | 85.5 | +2.8 |
+| `/sign-in` | 81.5 | 101.8 | +20.3 |
+| `/_shell` (new) | — | 110.6 | — |
 | `/_shell/app_/settings/delete` (new) | — | 82.8 | — |
 | `/_shell/app_/settings/friends` (new) | — | 88.7 | — |
-| `/_shell/app_/settings/notifications` (new) | — | 85.9 | — |
+| `/_shell/app_/settings/notifications` (new) | — | 85.8 | — |
 
 Reading the table:
 
 - `size-budget.mjs` measures the root's chunks plus the route's own preloads, so a child of
-  `/_shell` leaves out the layout's own chunks. `/_shell` itself is 138.7 KB: shared (79.1) plus
-  the shell's ~60 KB (tailwind-merge 8.4, floating-ui for the collapsed sidebar's tooltips 8.8,
-  corvu's drawer for the phone sheet ~12, somoto's Toaster 8.5, the Search dialog, Kobalte's
-  primitives). A signed-in page's real first load is the union: Home 99.1 → 175.7 KB, Calendar
-  92.2 → 167.7, Title 93.0 → 180.5, Library 88.9 → 167.9, Settings → Account 90.6 → 153.7, a
-  group channel 111.3 → 202.6. Most of it is step 1's Kobalte cost (accepted) now paid once in
-  the shell rather than per page, and it is cached across navigations.
+  `/_shell` leaves out the layout's own chunks. `/_shell` itself is 110.6 KB: shared (79.1) plus
+  the shell's ~31 KB (tailwind-merge, the Search dialog, Kobalte's primitives). A signed-in
+  page's real first load is the union of the two:
+
+  | First load (KB gz) | `origin/main` | Before the cuts | This branch |
+  | --- | ---: | ---: | ---: |
+  | Home | 99.1 | 175.7 | 156.7 |
+  | Calendar | 92.2 | 167.7 | 140.1 |
+  | Title | 93.0 | 180.5 | 161.4 |
+  | Library | 88.9 | 167.9 | 148.8 |
+  | Settings → Account | 90.6 | 153.7 | 125.6 |
+  | A group channel | 111.3 | 202.6 | 191.3 |
+
+  Most of what is left is step 1's Kobalte cost (accepted), paid once in the shell and cached
+  across navigations. Some child rows grew after the cuts (Home, Title, Library, Discover):
+  floating-ui and corvu used to ride in the shell and now ship with the pages that use a
+  Popover, Select or Drawer, which is where they belong.
+- **Shell cuts (owner, 2026-10-22):**
+  - The collapsed sidebar's hint is a native `title`, not Kobalte's `Tooltip`. Each item keeps
+    its accessible name, from its text or its `aria-label`. This drops floating-ui from the shell.
+  - The phone sheet (`ui/sidebar-sheet.tsx`, corvu's drawer) is `lazy` and loads only when the
+    viewport is below 1024px, inside its own `Suspense`. A wide screen never loads it.
+  - somoto loads on the first `toast()`. The barrel's `toast` keeps somoto's shape and returns
+    its id synchronously, so `toast.dismiss(id)` still works. Toasts wait for the Toaster to
+    mount, because somoto drops anything published before it subscribes
+    (`ui/toast-bridge.ts`, tested).
+  - Each toast is still its own live region, and somoto's reduced-motion handling is unchanged.
 - Public pages: shared +1.7, landing +2.7 (it now asks for the session to say "Open Aaru"),
-  About/Privacy +3. Sign-in +20.4, consent +22.2, the magic-link page +15.4 and the extension
+  About/Privacy +3. Sign-in +20.3, consent +22.1, the magic-link page +15.3 and the extension
   page +15.1 are `TextField`, `Checkbox` and `Button` from the barrel (WEB-015), i.e. Kobalte.
-- Cheap follow-ups if the shell needs to shrink: `title` instead of `Tooltip` on the collapsed
-  sidebar (−8.8), lazy-load the phone `Drawer` below 1024px (~−12), mount the Toaster on the
-  first toast (−8.5). Not done here: each changes a vendored component's behaviour.
 
 ## Web items in `docs/audit/ux.md`
 
@@ -219,7 +237,7 @@ Reading the table:
 | WEB-011 | low | Mount-only dialogs (`AddToListDialog`, `CityPicker`, `EpisodeSheet`, `calendar/DaySheet`, `calendar/CalendarEpisodeSheet`, `calendar/FiltersDialog`, `recap/RecapStory`) | The parent unmounts them on close, so Kobalte's exit animation never plays (the native dialog faded out). | Keep them mounted with an `open` signal and unmount after `onOpenChange(false)` settles, or accept no exit. | fixed: `AddToListDialog`, `CityPicker`, `EpisodeSheet`, `DaySheet`, `CalendarEpisodeSheet`, `FiltersDialog`, `RecapStory` and the group dialogs take `open` and stay mounted through `lastShown` (`lib/presence.ts`) |
 | WEB-012 | low | `routes/app_.title.$id.tsx:476` | Rating stars are raw buttons in a row, no group semantics. | `ToggleGroup`/`RadioGroup` of stars with a label ("Rating, 4 of 5"). | fixed: a `RadioGroup` of stars (arrow keys), with Clear |
 | WEB-013 | low | `components/ui/sidebar.tsx`, `hooks/use-mobile.ts` | `useIsMobile` switches at 767 px; §18 wants the persistent sidebar from 1024 px with the Sheet below. | Breakpoint for the shell (a param or Aaru's own constant) when step 2 builds it. | fixed: the Sidebar has its own `SIDEBAR_SHEET_MAX = 1023`; `useIsMobile` keeps 767 and starts false (hydration-safe) |
-| WEB-014 | low | `package.json` (`somoto@0.0.2`) | Sonner's Solid port is a 2024 0.0.x release; it tree-shakes and respects reduced motion, but it is the least maintained dependency. | Watch; swap for `solid-sonner` if it breaks. | deferred (kept by the owner): somoto 0.0.2 is the least maintained dependency (8.5 KB gz in the shell). If it breaks, swap for `solid-sonner` behind the same `toast()` barrel export |
+| WEB-014 | low | `package.json` (`somoto@0.0.2`) | Sonner's Solid port is a 2024 0.0.x release; it tree-shakes and respects reduced motion, but it is the least maintained dependency. | Watch; swap for `solid-sonner` if it breaks. | deferred (kept by the owner): somoto 0.0.2 is the least maintained dependency (8.5 KB gz, now loaded on the first toast). If it breaks, swap for `solid-sonner` behind the same `toast()` barrel export |
 | WEB-015 | low | `components/SearchPanel.tsx:197`, `CityPicker.tsx:106`, `AddToListDialog.tsx:116`, `sign-in.tsx:170,213` | Search and sign-in fields are raw inputs with sr-only labels and their own focus rings. | `TextField` (`TextFieldLabel`, `TextFieldInput`) or `Search`; one focus ring. | fixed: Search, City picker, Add to list and sign-in fields are `TextField`/`TextFieldInput`; one focus ring |
 
 ### Raw elements (WEB-005), by file

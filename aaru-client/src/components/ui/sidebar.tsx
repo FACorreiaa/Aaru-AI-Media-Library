@@ -13,9 +13,11 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  lazy,
   mergeProps,
   onCleanup,
   splitProps,
+  Suspense,
   useContext,
 } from 'solid-js'
 import type { ElementOf } from '@kobalte/core'
@@ -29,15 +31,8 @@ import { combineStyle } from '~/lib/combine-style'
 import { cva, cx } from '~/lib/cva'
 
 import { Button } from './button'
-import { Drawer, DrawerContent } from './drawer'
 import { Separator } from './separator'
 import { Skeleton } from './skeleton'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipPortal,
-  TooltipTrigger,
-} from './tooltip'
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -259,27 +254,24 @@ export const Sidebar = (props: SidebarProps) => {
         </div>
       </Match>
       <Match when={isMobile()}>
-        <Drawer
-          open={openMobile()}
-          onOpenChange={setOpenMobile}
-          side={merge.side}
-        >
-          <DrawerContent
-            data-sidebar="sidebar"
-            data-slot="sidebar"
-            data-mobile="true"
-            class="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-            style={{
-              '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
-            }}
+        {/* Its own boundary, so loading the sheet never suspends the page around it. */}
+        <Suspense>
+          <SidebarSheet
+            open={openMobile()}
+            onOpenChange={setOpenMobile}
+            side={merge.side}
+            width={SIDEBAR_WIDTH_MOBILE}
           >
-            <div class="flex h-full w-full flex-col">{merge.children}</div>
-          </DrawerContent>
-        </Drawer>
+            {merge.children}
+          </SidebarSheet>
+        </Suspense>
       </Match>
     </Switch>
   )
 }
+
+// Aaru: below 1024px only (WEB-013); see sidebar-sheet.tsx.
+const SidebarSheet = lazy(() => import('./sidebar-sheet'))
 
 export type SidebarTriggerProps<T extends ValidComponent = 'button'> =
   ComponentProps<typeof Button<T>>
@@ -620,7 +612,12 @@ export type SidebarMenuButtonOptions = VariantProps<
   typeof SidebarMenuButtonVariants
 > & {
   isActive?: boolean
-  tooltip?: string | ComponentProps<typeof TooltipContent>
+  /**
+   * Aaru: the collapsed rail's hint is the native `title`, not Kobalte's Tooltip, which kept
+   * floating-ui (~9 KB gz) in every signed-in page's first load. The item's accessible name
+   * stays its own text or `aria-label`; `title` is only the pointer hint.
+   */
+  tooltip?: string
 }
 
 export interface SidebarMenuButtonCommonProps<
@@ -653,48 +650,20 @@ export const SidebarMenuButton = <T extends ValidComponent = 'button'>(
   const { isMobile, state } = useSidebar()
 
   return (
-    <Show
-      when={!merge.tooltip && state() === 'collapsed'}
-      fallback={
-        <Tooltip placement="right">
-          <TooltipTrigger
-            as={merge.as}
-            data-slot="sidebar-menu-button"
-            data-sidebar="menu-button"
-            data-size={merge.size}
-            data-active={merge.isActive}
-            class={SidebarMenuButtonVariants({
-              size: merge.size,
-              variant: merge.variant,
-              class: merge.class,
-            })}
-            {...rest}
-          />
-          <TooltipPortal>
-            <TooltipContent
-              hidden={state() === 'expanded' || isMobile()}
-              {...(typeof merge.tooltip === 'string'
-                ? { children: merge.tooltip }
-                : merge.tooltip)}
-            />
-          </TooltipPortal>
-        </Tooltip>
-      }
-    >
-      <Polymorphic
-        as={merge.as}
-        data-slot="sidebar-menu-button"
-        data-sidebar="menu-button"
-        data-size={merge.size}
-        data-active={merge.isActive}
-        class={SidebarMenuButtonVariants({
-          size: merge.size,
-          variant: merge.variant,
-          class: merge.class,
-        })}
-        {...rest}
-      />
-    </Show>
+    <Polymorphic
+      as={merge.as}
+      data-slot="sidebar-menu-button"
+      data-sidebar="menu-button"
+      data-size={merge.size}
+      data-active={merge.isActive}
+      title={state() === 'collapsed' && !isMobile() ? merge.tooltip : undefined}
+      class={SidebarMenuButtonVariants({
+        size: merge.size,
+        variant: merge.variant,
+        class: merge.class,
+      })}
+      {...rest}
+    />
   )
 }
 
