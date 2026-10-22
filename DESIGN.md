@@ -244,6 +244,17 @@ Menu bar: "log last episode", "what's on tonight", paste a list.
 
 The Mac is where imports and shelves get built. iPhone is The Field + Tonight + check-offs.
 
+What the Mac app does today (Apple audit, 2026-10-21, `docs/audit/apple.md`):
+
+- **Window.** One `WindowGroup`, 1180 × 780 by default, `windowResizability(.contentMinSize)`
+  over a 760 × 520 minimum. Settings is the Settings scene, sized to its content.
+- **Menu bar.** File → New List (⌘N). Edit → Search Titles (⌘F, the catalog search sheet over
+  any destination). View → Refresh (⌘R, the selected destination reloads), the standard sidebar
+  and toolbar commands. Go → the seven sidebar rows (⌘1…⌘7). ⌘, opens Settings. A hardware
+  keyboard on iPad gets the same shortcuts, with Settings in Go.
+- **Settings scene.** Seven panes (§18), each the same page view iPhone and iPad push, each with
+  its own stack for an import job or History.
+
 ## 11. Capture (paste anything, get a plan)
 
 Recommendations arrive as mess. A text thread. A screenshot of somebody's list. A photo of a
