@@ -1,12 +1,23 @@
-import { Link } from '@tanstack/solid-router'
+import { createLink } from '@tanstack/solid-router'
+import { splitProps } from 'solid-js'
+import type { JSX } from 'solid-js'
 import wordmark from '../assets/brand/wordmark.webp'
 import mascot from '../assets/brand/mascot.webp'
 import mascot2x from '../assets/brand/mascot@2x.webp'
 
+/** A router link that never claims to be the current page: on /app the wordmark is a way home,
+ * and only the Home row of the nav carries `aria-current`. */
+const HomeLink = createLink(
+  (props: JSX.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+    const [, rest] = splitProps(props, ['aria-current'])
+    return <a {...rest} />
+  },
+)
+
 /** Links home: the landing page by default, `/app` on signed-in pages. */
 export function Wordmark(props: { class?: string; to?: '/' | '/app' }) {
   return (
-    <Link to={props.to ?? '/'} class="block" aria-label="Aaru">
+    <HomeLink to={props.to ?? '/'} class="block" aria-label="Aaru">
       <img
         src={wordmark}
         alt="Aaru"
@@ -14,7 +25,7 @@ export function Wordmark(props: { class?: string; to?: '/' | '/app' }) {
         height="263"
         class={props.class ?? 'h-8 w-auto md:h-9'}
       />
-    </Link>
+    </HomeLink>
   )
 }
 

@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal } from 'solid-js'
 import { nowSections } from '../../lib/library/now'
-import type { NowItem } from '../../lib/library/now'
+import type { NowGroup, NowItem } from '../../lib/library/now'
 import type { LibraryEntry, MediaKind } from '../../lib/library/model'
 import { setEpisode, updateItem } from '../../lib/title/server'
 import { pop } from '../../lib/motion'
@@ -22,6 +22,12 @@ import { cn } from '~/lib/utils'
 // progress bar and the one next step — tick the next episode, move a book's page, finish. Each
 // write is optimistic about nothing: the card waits for the server's entry and the shelf below
 // takes the same entry, so both always agree.
+//
+// Each group shows its newest NOW_CAP cards; "Show all" opens the rest in place. A library with
+// 150 shows in progress would otherwise push the shelf a page of cards down.
+
+/** Fills two rows of the wide grid (three columns) and three of the medium one. */
+export const NOW_CAP = 6
 
 export function NowSection(props: {
   entries: LibraryEntry[]
@@ -31,6 +37,15 @@ export function NowSection(props: {
   const sections = createMemo(() => nowSections(props.entries, props.kind))
   const [pending, setPending] = createSignal<ReadonlySet<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
+  // The groups opened past NOW_CAP.
+  const [expanded, setExpanded] = createSignal<ReadonlySet<NowGroup>>(new Set())
+  function toggle(group: NowGroup) {
+    setExpanded((set) => {
+      const next = new Set(set)
+      if (!next.delete(group)) next.add(group)
+      return next
+    })
+  }
 
   async function run(id: string, write: () => Promise<LibraryEntry>) {
     if (pending().has(id)) return
@@ -62,61 +77,90 @@ export function NowSection(props: {
           )}
         </Show>
         <For each={sections()}>
-          {(section) => (
-            <section aria-labelledby={`now-${section.group}`}>
-              <div class="flex items-baseline justify-between gap-4">
-                <h2
-                  id={`now-${section.group}`}
-                  class="font-display text-2xl font-medium tracking-tight"
+          {(section) => {
+            const open = () => expanded().has(section.group)
+            const shown = () =>
+              open() ? section.items : section.items.slice(0, NOW_CAP)
+            const listId = `now-${section.group}-items`
+            return (
+              <section aria-labelledby={`now-${section.group}`}>
+                <div class="flex items-baseline justify-between gap-4">
+                  <h2
+                    id={`now-${section.group}`}
+                    class="font-display text-2xl font-medium tracking-tight"
+                  >
+                    {section.title}
+                  </h2>
+                  <Show
+                    when={section.items.length > NOW_CAP}
+                    fallback={
+                      <span class="text-sm text-muted">
+                        {section.items.length}
+                      </span>
+                    }
+                  >
+                    <Button
+                      variant="link"
+                      size="bare"
+                      class="text-sm font-medium"
+                      aria-expanded={open()}
+                      aria-controls={listId}
+                      onClick={() => toggle(section.group)}
+                    >
+                      {open()
+                        ? 'Show fewer'
+                        : `Show all ${section.items.length}`}
+                    </Button>
+                  </Show>
+                </div>
+                <ul
+                  id={listId}
+                  class="-mx-5 mt-3 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3"
                 >
-                  {section.title}
-                </h2>
-                <span class="text-sm text-muted">{section.items.length}</span>
-              </div>
-              <ul class="-mx-5 mt-3 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3">
-                <For each={section.items}>
-                  {(item) => (
-                    <NowCard
-                      item={item}
-                      pending={pending().has(item.entry.id)}
-                      onTickNext={(next) =>
-                        run(item.entry.id, () =>
-                          setEpisode({
-                            data: {
-                              id: item.entry.id,
-                              season: next.season,
-                              episode: next.number,
-                              watched: true,
-                            },
-                          }),
-                        )
-                      }
-                      onPage={(page) =>
-                        run(item.entry.id, () =>
-                          updateItem({
-                            data: {
-                              id: item.entry.id,
-                              patch: { bookPage: page },
-                            },
-                          }),
-                        )
-                      }
-                      onFinish={() =>
-                        run(item.entry.id, () =>
-                          updateItem({
-                            data: {
-                              id: item.entry.id,
-                              patch: { status: 'finished' },
-                            },
-                          }),
-                        )
-                      }
-                    />
-                  )}
-                </For>
-              </ul>
-            </section>
-          )}
+                  <For each={shown()}>
+                    {(item) => (
+                      <NowCard
+                        item={item}
+                        pending={pending().has(item.entry.id)}
+                        onTickNext={(next) =>
+                          run(item.entry.id, () =>
+                            setEpisode({
+                              data: {
+                                id: item.entry.id,
+                                season: next.season,
+                                episode: next.number,
+                                watched: true,
+                              },
+                            }),
+                          )
+                        }
+                        onPage={(page) =>
+                          run(item.entry.id, () =>
+                            updateItem({
+                              data: {
+                                id: item.entry.id,
+                                patch: { bookPage: page },
+                              },
+                            }),
+                          )
+                        }
+                        onFinish={() =>
+                          run(item.entry.id, () =>
+                            updateItem({
+                              data: {
+                                id: item.entry.id,
+                                patch: { status: 'finished' },
+                              },
+                            }),
+                          )
+                        }
+                      />
+                    )}
+                  </For>
+                </ul>
+              </section>
+            )
+          }}
         </For>
       </div>
     </Show>

@@ -23,10 +23,10 @@ export function SettingsSection(props: {
   class?: string
   children?: JSX.Element
 }) {
-  // Each JSX prop is resolved once, here. Reading `props.children` both in a `when` and in
-  // the body builds the children twice, and the server and the browser then number their
-  // hydration keys differently: the page re-creates its DOM, and a Kobalte Button (a
-  // `Dynamic`) inside it throws "t is not a function" on hydration.
+  // Each slot is resolved once. Reading `props.children` in a Show's `when` and again in its
+  // body creates the content twice: on a hard load the first copy claims the server's nodes
+  // and the second, through Kobalte's Dynamic, finds nothing to hydrate ("template is not a
+  // function"). `children()` creates it once and hands back the same nodes.
   const description = children(() => props.description)
   const content = children(() => props.children)
   const footer = children(() => props.footer)
