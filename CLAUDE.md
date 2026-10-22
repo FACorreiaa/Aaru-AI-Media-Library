@@ -36,7 +36,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Concerts | Ticketmaster Discovery API v2 (`TICKETMASTER_API_KEY`, free, 5,000 calls/day; Aaru stops at 4,500), behind `ConcertListing`; off without the key. Tickets link out (MUS-003) |
 | Geocoding | Open-Meteo geocoding (no key, non-commercial) for the "Concerts near" city only (MUS-003) |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
-| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export, MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
+| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export (its CSVs one at a time: Export my data or the GDPR export), MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble — music | ListenBrainz's submit protocol at `/listenbrainz/1/` with music tokens only (MUS-005, owner 2026-10-21): Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin's plugin. No Spotify OAuth, no native Apple Music path |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped, scrobble tokens only), the browser extension for Netflix / Disney+ / Prime Video (SCR-007, owner exception 2026-10-21), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | Realtime | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
@@ -224,7 +224,7 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 6. Manual lists.
 7. iOS + Mac clients on the JSON API: home rows, week grid, widgets, Live Activity.
 8. Web client (`aaru-client`) on the same API.
-9. Trakt OAuth import; Stremio history by link code; CSV import for IMDb, Letterboxd, Goodreads; CAT list + ICS; TV Time, MAL, AniList.
+9. Trakt OAuth import; Stremio history by link code; CSV import for IMDb, Letterboxd, Goodreads; CAT list + ICS; TV Time export CSVs, MAL, AniList.
 
 ## Later phases (after the P2 gate, see `BACKLOG.md`)
 

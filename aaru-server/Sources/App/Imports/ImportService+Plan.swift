@@ -124,7 +124,7 @@ extension ImportService {
                     named: row.row.title, type: row.row.type, airing: row.row.airing, notAfter: row.row.notAfter
                 )
             } else {
-                try await resolver.resolve(row.row.mediaRef, searchHint: row.row.author)
+                try await resolveByIDs(row.row, with: resolver)
             }
             row.titleID = title.id
             if let names = row.row.namedEpisodes {
@@ -150,6 +150,16 @@ extension ImportService {
                 + "Import the file again later to add it."
         }
         return row
+    }
+
+    /// Ids first. A row that also allows its name (TV Time's old TVDB ids, which TMDB may not
+    /// know) falls back to the exact-name match when the ids find nothing.
+    private func resolveByIDs(_ row: ImportRow, with resolver: TitleResolver) async throws -> Title {
+        do {
+            return try await resolver.resolve(row.mediaRef, searchHint: row.author)
+        } catch ResolutionError.notFound where row.nameOnly == true && !row.ids.isEmpty && row.year == nil {
+            return try await resolver.resolve(named: row.title, type: row.type, notAfter: row.notAfter)
+        }
     }
 
     // MARK: Approval

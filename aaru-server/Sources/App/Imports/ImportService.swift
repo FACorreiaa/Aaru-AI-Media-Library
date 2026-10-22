@@ -189,18 +189,7 @@ extension ImportService {
     }
 
     static func sourceName(_ source: ImportSource) -> String {
-        switch source {
-        case .imdbCSV: "IMDb"
-        case .letterboxdCSV: "Letterboxd"
-        case .goodreadsCSV: "Goodreads"
-        case .trakt: "Trakt"
-        case .stremio: "Stremio"
-        case .catList, .catICS: "Pogdesign CAT"
-        case .netflixCSV: "Netflix"
-        case .malXML: "MyAnimeList"
-        case .anilist: "AniList"
-        case .genericCSV: "CSV"
-        }
+        source.displayName
     }
 
     private static func summary(of error: any Error) -> String {
@@ -259,4 +248,23 @@ extension ImportService {
 struct TraktImport: Sendable {
     var connect: TraktConnectService
     var importer: TraktImporter
+}
+
+extension ImportSource {
+    /// The site an import came from, as the journal's summary names it.
+    var displayName: String {
+        switch self {
+        case .imdbCSV: "IMDb"
+        case .letterboxdCSV: "Letterboxd"
+        case .goodreadsCSV: "Goodreads"
+        case .trakt: "Trakt"
+        case .stremio: "Stremio"
+        case .catList, .catICS: "Pogdesign CAT"
+        case .netflixCSV: "Netflix"
+        case .tvTimeCSV: "TV Time"
+        case .malXML: "MyAnimeList"
+        case .anilist: "AniList"
+        case .genericCSV: "CSV"
+        }
+    }
 }

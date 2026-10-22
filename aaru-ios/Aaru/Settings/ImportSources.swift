@@ -14,6 +14,7 @@ extension ImportFileSource: @retroactive Identifiable {
         case .imdb: "IMDb"
         case .letterboxd: "Letterboxd"
         case .netflix: "Netflix"
+        case .tvtime: "TV Time"
         case .goodreads: "Goodreads"
         case .mal: "MyAnimeList"
         }
@@ -26,6 +27,10 @@ extension ImportFileSource: @retroactive Identifiable {
         case .imdb: "Your ratings or watchlist export (CSV)."
         case .letterboxd: "diary.csv, ratings.csv, watched.csv or watchlist.csv from your export."
         case .netflix: "Account → Profile → Viewing activity → Download all. One profile per file."
+        case .tvtime:
+            "Unzip your TV Time export, then upload one CSV at a time: tvtime-series-episodes.csv, "
+                + "tvtime-series.csv and tvtime-movies.csv, or from a GDPR export tracking-prod-records-v2.csv "
+                + "and tracking-prod-records.csv."
         case .goodreads: "goodreads_library_export.csv. Custom shelves become lists."
         case .mal: "On MyAnimeList: Profile → Export → Anime list. The .xml or .xml.gz file."
         }
@@ -42,6 +47,7 @@ extension ImportJob {
         case .stremio: "Stremio"
         case .catList, .catIcs: "Pogdesign CAT"
         case .netflixCsv: "Netflix"
+        case .tvtimeCsv: "TV Time"
         case .malXml: "MyAnimeList"
         case .anilist: "AniList"
         case .csv: "CSV"
@@ -76,8 +82,8 @@ enum HistorySource: Hashable, Identifiable {
     case aniList
 
     static let ordered: [HistorySource] = [
-        .stremio, .file(.imdb), .file(.letterboxd), .file(.goodreads), .cat, .file(.netflix), .file(.mal),
-        .aniList, .file(.auto),
+        .stremio, .file(.imdb), .file(.letterboxd), .file(.goodreads), .cat, .file(.netflix), .file(.tvtime),
+        .file(.mal), .aniList, .file(.auto),
     ]
 
     var id: String {
