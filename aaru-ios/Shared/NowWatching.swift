@@ -2,16 +2,29 @@
     import AaruCore
     import ActivityKit
     import Foundation
-    import ImageIO
-    import UniformTypeIdentifiers
 
-    /// The "Now watching" Live Activity (WID-005, SCR-008): one episode on the Lock Screen and in
-    /// the Dynamic Island, with progress, "Ends at" / "left", and Mark watched. The user starts it
-    /// by hand, the app starts it when it sees a scrobble, or the server starts it by push. The
-    /// types live in AaruCore so the server encodes the same keys; ActivityKit matches a
-    /// push-to-start on the type's name, so it stays `NowWatchingAttributes`.
+    /// The "Now watching" Live Activity (WID-005): one episode the user started by hand, on the
+    /// Lock Screen and in the Dynamic Island, with progress, "Ends at" / "left", and Mark watched.
+    /// Local only, with no push: what players report goes to the combined "Now playing"
+    /// activity (SCR-009), and starting either ends the other. It draws with the same renderer,
+    /// as a one-row `NowPlayingActivityState`.
     extension NowWatchingAttributes: @retroactive ActivityAttributes {
         public typealias ContentState = NowWatchingContent
+    }
+
+    extension NowWatchingAttributes {
+        /// The episode as the one row the Now playing renderer draws.
+        func activityState(_ content: NowWatchingContent) -> NowPlayingActivityState {
+            NowPlayingActivityState(
+                items: [NowPlayingActivityItem(
+                    id: libraryItemId, kind: .episode, title: title, subtitle: episodeLine,
+                    startedAt: content.startedAt, endsAt: content.endsAt, pausedAt: content.pausedAt,
+                    watched: content.watched, libraryItemId: libraryItemId, season: season, episode: episode,
+                    artworkURL: posterURL
+                )],
+                showsEndTime: content.showsEndTime
+            )
+        }
     }
 
     /// Starting, flipping and ending the activity. Only one runs at a time.
@@ -24,16 +37,15 @@
             Activity<NowWatchingAttributes>.activities.first
         }
 
-        /// The activity following one scrobble session, if one runs.
-        static func activity(watchEventId: UUID) -> Activity<NowWatchingAttributes>? {
-            Activity<NowWatchingAttributes>.activities.first { $0.attributes.watchEventId == watchEventId }
-        }
-
-        /// Starts watching an episode, ending any other. The poster is fetched and downsampled
-        /// into the App Group first: the Lock Screen view cannot load from the network.
+        /// Starts watching an episode, ending any other activity, "Now playing" too. The poster
+        /// is fetched and downsampled into the App Group first: the Lock Screen view cannot load
+        /// from the network.
         static func start(_ attributes: NowWatchingAttributes, now: Date = .now) async throws {
             await endAll(dismissal: .immediate)
-            await storeArtwork(for: attributes)
+            await NowPlayingActivity.endAll(dismissal: .immediate)
+            if let posterURL = attributes.posterURL {
+                await NowPlayingArtwork.store([posterURL])
+            }
             let endsAt = now.addingTimeInterval(TimeInterval(attributes.runtimeMinutes) * 60)
             let state = NowWatchingContent(startedAt: now, endsAt: endsAt, showsEndTime: true, watched: false)
             _ = try Activity.request(
@@ -41,29 +53,6 @@
                 content: ActivityContent(state: state, staleDate: aliveUntil(state)),
                 pushType: nil
             )
-        }
-
-        /// Starts the activity for a scrobble the app saw before the server's push did (SCR-008).
-        /// It asks for a push token, which the registrar hands to the server so pause, resume and
-        /// stop reach it.
-        static func startFromScrobble(_ attributes: NowWatchingAttributes, content: NowWatchingContent) async throws {
-            await endAll(dismissal: .immediate)
-            await storeArtwork(for: attributes)
-            _ = try Activity.request(
-                attributes: attributes,
-                content: ActivityContent(state: content, staleDate: aliveUntil(content)),
-                pushType: .token
-            )
-        }
-
-        /// The poster for the Lock Screen, or none. An activity the server started by push has none
-        /// until the app sees it.
-        static func storeArtwork(for attributes: NowWatchingAttributes) async {
-            if let url = attributes.posterURL.flatMap(URL.init(string:)) {
-                await NowWatchingArtwork.store(from: url)
-            } else {
-                NowWatchingArtwork.clear()
-            }
         }
 
         static func toggleEndTime() async {
@@ -74,7 +63,7 @@
         }
 
         /// Called after an episode is ticked anywhere: the matching activity shows "Watched" for a
-        /// moment, then goes.
+        /// moment, then goes, and the episode's row in "Now playing" reads "Watched".
         static func episodeWatched(libraryItemId: String, season: Int, episode: Int) async {
             for activity in Activity<NowWatchingAttributes>.activities
                 where activity.attributes.matches(libraryItemId: libraryItemId, season: season, episode: episode)
@@ -86,6 +75,9 @@
                     dismissalPolicy: .after(.now.addingTimeInterval(8))
                 )
             }
+            await NowPlayingActivity.watched(libraryItemId: libraryItemId) {
+                $0.season == season && $0.episode == episode
+            }
         }
 
         /// A whole season ticked: any activity for an episode of it ends.
@@ -95,6 +87,7 @@
             {
                 await episodeWatched(libraryItemId: libraryItemId, season: season, episode: activity.attributes.episode)
             }
+            await NowPlayingActivity.watched(libraryItemId: libraryItemId) { $0.season == season }
         }
 
         /// Activities never outlive runtime + grace: run when the app comes forward and in the
@@ -117,73 +110,6 @@
             for activity in Activity<NowWatchingAttributes>.activities {
                 await activity.end(nil, dismissalPolicy: dismissal)
             }
-            NowWatchingArtwork.clear()
-        }
-    }
-
-    /// The running activity's poster, downsampled into the App Group for the extension to draw.
-    /// The poster's URL is kept beside it, so an activity the server started never draws the
-    /// poster of the one before.
-    enum NowWatchingArtwork {
-        static var fileURL: URL? {
-            FileManager.default
-                .containerURL(forSecurityApplicationGroupIdentifier: AppGroup.identifier)?
-                .appending(path: "now-watching-poster.jpg")
-        }
-
-        private static var sourceURL: URL? {
-            fileURL?.deletingLastPathComponent().appending(path: "now-watching-poster.url")
-        }
-
-        static func store(from url: URL) async {
-            guard let fileURL else { return }
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 6
-            guard let (data, _) = try? await URLSession.shared.data(for: request),
-                  let small = downsample(data, maxPixel: 160)
-            else {
-                clear()
-                return
-            }
-            try? small.write(to: fileURL, options: .atomic)
-            if let sourceURL {
-                try? Data(url.absoluteString.utf8).write(to: sourceURL, options: .atomic)
-            }
-        }
-
-        /// The stored poster, if it is the one at `posterURL`.
-        static func load(for posterURL: String?) -> Data? {
-            guard let posterURL, let fileURL, let sourceURL,
-                  let source = try? Data(contentsOf: sourceURL),
-                  URL(string: posterURL)?.absoluteString == String(bytes: source, encoding: .utf8)
-            else { return nil }
-            return try? Data(contentsOf: fileURL)
-        }
-
-        static func clear() {
-            for url in [fileURL, sourceURL].compactMap(\.self) {
-                try? FileManager.default.removeItem(at: url)
-            }
-        }
-
-        private static func downsample(_ data: Data, maxPixel: Int) -> Data? {
-            guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-                  let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                      kCGImageSourceCreateThumbnailFromImageAlways: true,
-                      kCGImageSourceThumbnailMaxPixelSize: maxPixel,
-                      kCGImageSourceCreateThumbnailWithTransform: true,
-                  ] as CFDictionary)
-            else { return nil }
-            let output = NSMutableData()
-            guard let destination = CGImageDestinationCreateWithData(
-                output, UTType.jpeg.identifier as CFString, 1, nil
-            ) else { return nil }
-            CGImageDestinationAddImage(
-                destination,
-                image,
-                [kCGImageDestinationLossyCompressionQuality: 0.8] as CFDictionary
-            )
-            return CGImageDestinationFinalize(destination) ? output as Data : nil
         }
     }
 #endif

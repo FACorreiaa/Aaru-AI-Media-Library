@@ -3,12 +3,15 @@ import AaruCore
 import Foundation
 
 typealias NowPlaying = Components.Schemas.NowPlaying
+typealias NowPlayingItem = Components.Schemas.NowPlayingItem
+typealias NowPlayingReply = Components.Schemas.NowPlayingReply
 
-/// What a player is playing now (SCR-008, DESIGN.md §15), from `/v1/me/now-playing`. Players
-/// report only when the state changes, so the position runs on from `updatedAt` while playing
-/// and stands still while paused.
-extension NowPlaying {
-    /// The episode's length, nil when the player did not say.
+/// What is playing now (SCR-008, SCR-009, DESIGN.md §15), from `/v1/me/now-playing`: library
+/// episodes and movies, tracks and videos, in the Live Activity's order. Players report only
+/// when the state changes, so the position runs on from `updatedAt` while playing and stands
+/// still while paused.
+extension NowPlayingItem {
+    /// The length, nil when the player did not say.
     var duration: TimeInterval? {
         durationMs > 0 ? TimeInterval(durationMs) / 1000 : nil
     }
@@ -29,45 +32,82 @@ extension NowPlaying {
         duration.map { max(0, $0 - position(at: date)) }
     }
 
-    /// "Now playing · Stremio", "Paused · Disney+".
+    /// "Now playing · Stremio", "Paused · Disney+", "Listening · Spotify".
     var eyebrow: String {
-        "\(state == .paused ? "Paused" : "Now playing") · \(sourceName)"
+        let verb = state == .paused ? "Paused" : kind == .track ? "Listening" : "Now playing"
+        return "\(verb) · \(serviceName)"
     }
 
-    var sourceName: String {
-        switch source {
+    /// The player as a person reads it; the source when the player gave no name.
+    var serviceName: String {
+        if let service, !service.isEmpty {
+            return service
+        }
+        return switch source {
         case .stremio: "Stremio"
         case .netflix: "Netflix"
         case .disneyPlus: "Disney+"
         case .primeVideo: "Prime Video"
+        case .listenbrainz: "ListenBrainz"
+        case .youtube: "YouTube"
         }
     }
 
-    /// "S2 · E7 · Episode name"; nil for a film.
-    var episodeLine: String? {
-        episode.map { episode in
-            ["S\(episode.season) · E\(episode.number)", episodeName].compactMap(\.self).joined(separator: " · ")
-        }
+    /// The poster, cover or thumbnail.
+    var artURL: String? {
+        artworkUrl ?? title?.posterUrl
     }
 
-    /// The "Now watching" Live Activity for this session, when it is an episode on the shelf: the
-    /// same attributes the server's push-to-start sends, and a content state that puts the
-    /// activity's clock where the player is.
-    func liveActivity(now: Date, fallbackMinutes: Int) -> (NowWatchingAttributes, NowWatchingContent)? {
-        guard let libraryItemId, let episode, let watchEventId = UUID(uuidString: watchEventId) else { return nil }
-        let runtimeMinutes = duration.map { Int(($0 / 60).rounded(.up)) } ?? fallbackMinutes
-        let position = position(at: now)
-        let startedAt = now.addingTimeInterval(-position)
-        let length = max(duration ?? TimeInterval(runtimeMinutes * 60), position)
-        let attributes = NowWatchingAttributes(
-            libraryItemId: libraryItemId, title: title.title, season: episode.season, episode: episode.number,
-            episodeName: episodeName, posterURL: title.posterUrl, runtimeMinutes: runtimeMinutes,
-            watchEventId: watchEventId
+    /// The Live Activity's row for this item, the same one the server pushes: its clock starts
+    /// where the player would have started without a break, and a pause stands it still.
+    var activityItem: NowPlayingActivityItem {
+        let startedAt = updatedAt.addingTimeInterval(-TimeInterval(positionMs) / 1000)
+        return NowPlayingActivityItem(
+            id: id, kind: NowPlayingActivityItem.Kind(rawValue: kind.rawValue) ?? .video, title: name,
+            subtitle: subtitle, service: serviceName, startedAt: startedAt,
+            endsAt: duration.map { startedAt.addingTimeInterval($0) },
+            pausedAt: state == .paused ? updatedAt : nil,
+            libraryItemId: libraryItemId, season: episode?.season, episode: episode?.number, artworkURL: artURL
         )
-        let content = NowWatchingContent(
-            startedAt: startedAt, endsAt: startedAt.addingTimeInterval(length), showsEndTime: true, watched: false,
-            pausedAt: state == .paused ? now : nil
+    }
+}
+
+extension NowPlayingReply {
+    /// `items`, or the one legacy `nowPlaying` from a server older than SCR-009.
+    var playing: [NowPlayingItem] {
+        if items.isEmpty, let nowPlaying {
+            return [NowPlayingItem(nowPlaying)]
+        }
+        return items
+    }
+}
+
+extension NowPlayingItem {
+    /// A pre-SCR-009 session as an item: always a library episode or movie.
+    init(_ playing: NowPlaying) {
+        let source: SourcePayload = switch playing.source {
+        case .stremio: .stremio
+        case .netflix: .netflix
+        case .disneyPlus: .disneyPlus
+        case .primeVideo: .primeVideo
+        }
+        self.init(
+            id: playing.watchEventId,
+            kind: playing.episode == nil ? .movie : .episode,
+            name: playing.title.title,
+            subtitle: playing.episode.map { episode in
+                ["S\(episode.season) · E\(episode.number)", playing.episodeName].compactMap(\.self)
+                    .joined(separator: " · ")
+            },
+            source: source,
+            state: playing.state == .paused ? .paused : .playing,
+            positionMs: playing.positionMs,
+            durationMs: playing.durationMs,
+            updatedAt: playing.updatedAt,
+            artworkUrl: playing.title.posterUrl,
+            libraryItemId: playing.libraryItemId,
+            title: playing.title,
+            episode: playing.episode
         )
-        return (attributes, content)
     }
 }

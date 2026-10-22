@@ -349,7 +349,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/devices/{token}`.
     /// - Remark: Generated from `#/paths//v1/devices/{token}/delete(unregisterDevice)`.
     func unregisterDevice(_ input: Operations.UnregisterDevice.Input) async throws -> Operations.UnregisterDevice.Output
-    /// Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles.
+    /// Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own token (`update`). The server then starts, updates and ends the activity from what plays.
     ///
     /// - Remark: HTTP `PUT /v1/devices/live-activity`.
     /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)`.
@@ -431,7 +431,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/me/stats`.
     /// - Remark: Generated from `#/paths//v1/me/stats/get(getStats)`.
     func getStats(_ input: Operations.GetStats.Input) async throws -> Operations.GetStats.Output
-    /// What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe.
+    /// What players are playing for you now: Stremio and streaming sites through the browser extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009). `positionMs` is where a player was at `updatedAt`; a client adds the time since while `state` is `playing`. A report too old to believe no longer counts.
     ///
     /// - Remark: HTTP `GET /v1/me/now-playing`.
     /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)`.
@@ -1537,7 +1537,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles.
+    /// Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own token (`update`). The server then starts, updates and ends the activity from what plays.
     ///
     /// - Remark: HTTP `PUT /v1/devices/live-activity`.
     /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)`.
@@ -1755,7 +1755,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe.
+    /// What players are playing for you now: Stremio and streaming sites through the browser extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009). `positionMs` is where a player was at `updatedAt`; a client adds the time since while `state` is `playing`. A report too old to believe no longer counts.
     ///
     /// - Remark: HTTP `GET /v1/me/now-playing`.
     /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)`.
@@ -3675,9 +3675,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/kind`.
             public var kind: Components.Schemas.LiveActivityRegistration.KindPayload
-            /// Required for `update`; the activity's `watchEventId` attribute.
+            /// Ignored since SCR-009, when one activity shows everything playing.
             ///
             /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/watchEventId`.
+            @available(*, deprecated)
             public var watchEventId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LiveActivityRegistration/environment`.
             @frozen public enum EnvironmentPayload: String, Codable, Hashable, Sendable, CaseIterable {
@@ -3693,7 +3694,7 @@ public enum Components {
             /// - Parameters:
             ///   - token: The ActivityKit push token
             ///   - kind: `start` is the device's push-to-start token; `update` one activity's own.
-            ///   - watchEventId: Required for `update`; the activity's `watchEventId` attribute.
+            ///   - watchEventId: Ignored since SCR-009, when one activity shows everything playing.
             ///   - environment:
             ///   - bundleId:
             public init(
@@ -3719,17 +3720,29 @@ public enum Components {
         }
         /// - Remark: Generated from `#/components/schemas/NowPlayingReply`.
         public struct NowPlayingReply: Codable, Hashable, Sendable {
+            /// The newest library episode or movie playing; kept for clients older than `items`.
+            ///
             /// - Remark: Generated from `#/components/schemas/NowPlayingReply/nowPlaying`.
             public var nowPlaying: Components.Schemas.NowPlaying?
+            /// Everything playing now (SCR-009), in the Live Activity's order: library episodes, movies and videos first, newest first, then tracks. Empty when nothing plays.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingReply/items`.
+            public var items: [Components.Schemas.NowPlayingItem]
             /// Creates a new `NowPlayingReply`.
             ///
             /// - Parameters:
-            ///   - nowPlaying:
-            public init(nowPlaying: Components.Schemas.NowPlaying? = nil) {
+            ///   - nowPlaying: The newest library episode or movie playing; kept for clients older than `items`.
+            ///   - items: Everything playing now (SCR-009), in the Live Activity's order: library episodes, movies and videos first, newest first, then tracks. Empty when nothing plays.
+            public init(
+                nowPlaying: Components.Schemas.NowPlaying? = nil,
+                items: [Components.Schemas.NowPlayingItem]
+            ) {
                 self.nowPlaying = nowPlaying
+                self.items = items
             }
             public enum CodingKeys: String, CodingKey {
                 case nowPlaying
+                case items
             }
         }
         /// - Remark: Generated from `#/components/schemas/NowPlaying`.
@@ -3819,6 +3832,148 @@ public enum Components {
                 case positionMs
                 case durationMs
                 case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/NowPlayingItem`.
+        public struct NowPlayingItem: Codable, Hashable, Sendable {
+            /// The watch event or the play; a new id means the next thing plays.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case episode = "episode"
+                case movie = "movie"
+                case track = "track"
+                case video = "video"
+            }
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/kind`.
+            public var kind: Components.Schemas.NowPlayingItem.KindPayload
+            /// The show, film, track or video name.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/name`.
+            public var name: Swift.String
+            /// "S1 · E8 · Lanterns", the artist, or the channel.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/subtitle`.
+            public var subtitle: Swift.String?
+            /// Where it plays, as a person reads it: "Stremio", "YouTube Music".
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/service`.
+            public var service: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/source`.
+            @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case stremio = "stremio"
+                case netflix = "netflix"
+                case disneyPlus = "disney_plus"
+                case primeVideo = "prime_video"
+                case listenbrainz = "listenbrainz"
+                case youtube = "youtube"
+            }
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/source`.
+            public var source: Components.Schemas.NowPlayingItem.SourcePayload
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case playing = "playing"
+                case paused = "paused"
+            }
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/state`.
+            public var state: Components.Schemas.NowPlayingItem.StatePayload
+            /// Where the player was at `updatedAt`; a client adds the time since while `playing`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/positionMs`.
+            public var positionMs: Swift.Int64
+            /// 0 when unknown.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/durationMs`.
+            public var durationMs: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Poster, cover or video thumbnail.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/artworkUrl`.
+            public var artworkUrl: Swift.String?
+            /// Tracks and videos: where it plays, when the player said.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/originUrl`.
+            public var originUrl: Swift.String?
+            /// Episodes and movies, always in the library.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// Episodes and movies only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/title`.
+            public var title: Components.Schemas.TitleSummary?
+            /// - Remark: Generated from `#/components/schemas/NowPlayingItem/episode`.
+            public var episode: Components.Schemas.EpisodeRef?
+            /// Creates a new `NowPlayingItem`.
+            ///
+            /// - Parameters:
+            ///   - id: The watch event or the play; a new id means the next thing plays.
+            ///   - kind:
+            ///   - name: The show, film, track or video name.
+            ///   - subtitle: "S1 · E8 · Lanterns", the artist, or the channel.
+            ///   - service: Where it plays, as a person reads it: "Stremio", "YouTube Music".
+            ///   - source:
+            ///   - state:
+            ///   - positionMs: Where the player was at `updatedAt`; a client adds the time since while `playing`.
+            ///   - durationMs: 0 when unknown.
+            ///   - updatedAt:
+            ///   - artworkUrl: Poster, cover or video thumbnail.
+            ///   - originUrl: Tracks and videos: where it plays, when the player said.
+            ///   - libraryItemId: Episodes and movies, always in the library.
+            ///   - title: Episodes and movies only.
+            ///   - episode:
+            public init(
+                id: Swift.String,
+                kind: Components.Schemas.NowPlayingItem.KindPayload,
+                name: Swift.String,
+                subtitle: Swift.String? = nil,
+                service: Swift.String? = nil,
+                source: Components.Schemas.NowPlayingItem.SourcePayload,
+                state: Components.Schemas.NowPlayingItem.StatePayload,
+                positionMs: Swift.Int64,
+                durationMs: Swift.Int64,
+                updatedAt: Foundation.Date,
+                artworkUrl: Swift.String? = nil,
+                originUrl: Swift.String? = nil,
+                libraryItemId: Swift.String? = nil,
+                title: Components.Schemas.TitleSummary? = nil,
+                episode: Components.Schemas.EpisodeRef? = nil
+            ) {
+                self.id = id
+                self.kind = kind
+                self.name = name
+                self.subtitle = subtitle
+                self.service = service
+                self.source = source
+                self.state = state
+                self.positionMs = positionMs
+                self.durationMs = durationMs
+                self.updatedAt = updatedAt
+                self.artworkUrl = artworkUrl
+                self.originUrl = originUrl
+                self.libraryItemId = libraryItemId
+                self.title = title
+                self.episode = episode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case name
+                case subtitle
+                case service
+                case source
+                case state
+                case positionMs
+                case durationMs
+                case updatedAt
+                case artworkUrl
+                case originUrl
+                case libraryItemId
+                case title
+                case episode
             }
         }
         /// - Remark: Generated from `#/components/schemas/WebPushKey`.
@@ -19258,7 +19413,7 @@ public enum Operations {
             }
         }
     }
-    /// Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles.
+    /// Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own token (`update`). The server then starts, updates and ends the activity from what plays.
     ///
     /// - Remark: HTTP `PUT /v1/devices/live-activity`.
     /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)`.
@@ -21930,7 +22085,7 @@ public enum Operations {
             }
         }
     }
-    /// What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe.
+    /// What players are playing for you now: Stremio and streaming sites through the browser extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009). `positionMs` is where a player was at `updatedAt`; a client adds the time since while `state` is `playing`. A report too old to believe no longer counts.
     ///
     /// - Remark: HTTP `GET /v1/me/now-playing`.
     /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)`.

@@ -1,9 +1,16 @@
 import { Link, createFileRoute } from '@tanstack/solid-router'
 import { useAppShell, useSearchHost } from '../components/shell/context'
-import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import {
+  For,
+  Show,
+  Suspense,
+  createMemo,
+  createSignal,
+  lazy,
+  onMount,
+} from 'solid-js'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { LastImportCard } from '../components/LastImportCard'
-import { NowPlayingCard } from '../components/NowPlayingCard'
 import { PlanCard } from '../components/PlanCard'
 import { TonightStrip } from '../components/TonightStrip'
 import {
@@ -51,8 +58,12 @@ import { daypartHeading } from '../lib/appearance'
 import type { ImportJob } from '../lib/imports/server'
 import { upsert } from '../lib/library/model'
 import type { LibraryEntry } from '../lib/library/model'
-import { NOW_PLAYING_POLL_MS } from '../lib/nowplaying/model'
-import type { NowPlaying } from '../lib/nowplaying/model'
+import {
+  NOW_PLAYING_POLL_MS,
+  libraryPlayEnded,
+  playingLibraryItems,
+} from '../lib/nowplaying/model'
+import type { NowPlayingItem } from '../lib/nowplaying/model'
 import { getNowPlaying } from '../lib/nowplaying/server'
 import { useVisiblePoll } from '../lib/visible-poll'
 import type { ListSummary } from '../lib/lists/server'
@@ -73,6 +84,14 @@ import {
 } from '../lib/queries'
 import type { QueryClient } from '@tanstack/solid-query'
 
+// The Now playing card loads on its own the first time something plays. It is never in the
+// first paint: Home asks what plays only once it has mounted.
+const NowPlayingCard = lazy(() =>
+  import('../components/NowPlayingCard').then((m) => ({
+    default: m.NowPlayingCard,
+  })),
+)
+
 // APP-009 on the web: Home, the twin of the Apple apps' first tab. Continue watching and Start
 // watching come with the page; the calendar row loads in the browser, which knows the
 // viewer's "today", as do this month's stats, Discover's public rows (DISC-001) and the list
@@ -86,9 +105,10 @@ import type { QueryClient } from '@tanstack/solid-query'
 // user, the last import, the week in numbers, lists. A phone stacks the same pieces, with
 // requests right under Tonight.
 //
-// Now playing (SCR-008, DESIGN.md §15): what Stremio or the browser extension plays crosses the
-// top of the Field, asked again every half minute while the tab is in view. Tonight and
-// Continue watching leave that show out meanwhile, so it is never on the page twice.
+// Now playing (SCR-008, SCR-009, DESIGN.md §15): everything Stremio, the browser extension,
+// YouTube or a music scrobbler plays crosses the top of the Field, asked again every half minute
+// while the tab is in view. Tonight and Continue watching leave every playing show out
+// meanwhile, so none is on the page twice.
 
 export const Route = createFileRoute('/_shell/app')({
   head: () => ({ meta: [{ title: 'Home · Aaru' }] }),
@@ -149,7 +169,7 @@ function Home() {
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
   const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
-  const [playing, setPlaying] = createSignal<NowPlaying | null>(null)
+  const [playing, setPlaying] = createSignal<NowPlayingItem[]>([])
   const [playingAt, setPlayingAt] = createSignal(new Date())
   /** Sessions marked watched here: the player may still report them for a while. */
   const [setAside, setSetAside] = createSignal<ReadonlySet<string>>(new Set())
@@ -236,11 +256,11 @@ function Home() {
     }
   }
 
-  /** What a player is playing now. When a session ends (its stop may have ticked the
-   * episode), the rows are fetched again so Continue watching moves on. */
+  /** What players are playing now. When a library session ends (its stop may have ticked
+   * the episode), the rows are fetched again so Continue watching moves on. */
   async function loadNowPlaying() {
     const before = playing()
-    let fresh: NowPlaying | null
+    let fresh: NowPlayingItem[]
     try {
       fresh = await getNowPlaying()
     } catch {
@@ -248,21 +268,20 @@ function Home() {
     }
     setPlaying(fresh)
     setPlayingAt(new Date())
-    if (before && before.watchEventId !== fresh?.watchEventId)
+    if (libraryPlayEnded(before, fresh))
       void freshUpNext().then(showUpNext, () => {})
   }
 
   useVisiblePoll(loadNowPlaying, NOW_PLAYING_POLL_MS)
 
-  /** The card shown: none once the user marked its episode watched here. */
-  const nowPlaying = createMemo(() => {
-    const current = playing()
-    return current && !setAside().has(current.watchEventId) ? current : null
-  })
-  const playingItem = () => nowPlaying()?.libraryItemId ?? null
+  /** What the card shows: less any episode the user marked watched here. */
+  const nowPlaying = createMemo(() =>
+    playing().filter((item) => !setAside().has(item.id)),
+  )
+  const playingItems = createMemo(() => playingLibraryItems(nowPlaying()))
 
   /** Mark watched on the Now playing card: the same write as a tick anywhere else. */
-  async function markPlayingWatched(current: NowPlaying) {
+  async function markPlayingWatched(current: NowPlayingItem) {
     const id = current.libraryItemId
     const episode = current.episode
     if (!id || !episode || busy().has(id)) return
@@ -277,7 +296,7 @@ function Home() {
           watched: true,
         },
       })
-      setSetAside((ids) => new Set(ids).add(current.watchEventId))
+      setSetAside((ids) => new Set(ids).add(current.id))
       showUpNext(await freshUpNext())
     } catch (err) {
       setProblem(
@@ -348,10 +367,10 @@ function Home() {
   // Continue watching alone needs no clock, so the server draws Tonight's lead too; today's
   // airings join in the browser.
   const tonight = createMemo(() => {
-    const away = playingItem()
+    const away = playingItems()
     return composeTonight(
-      continuing().filter((e) => e.libraryItemId !== away),
-      airings().filter((a) => a.libraryItemId !== away),
+      continuing().filter((e) => !away.has(e.libraryItemId)),
+      airings().filter((a) => !away.has(a.libraryItemId)),
       now() ?? new Date(),
     )
   })
@@ -363,7 +382,8 @@ function Home() {
   const continuingRow = createMemo(() =>
     continuing().filter(
       (e) =>
-        e.libraryItemId !== tonightItem() && e.libraryItemId !== playingItem(),
+        e.libraryItemId !== tonightItem() &&
+        !playingItems().has(e.libraryItemId),
     ),
   )
   const subline = createMemo(() => {
@@ -468,14 +488,16 @@ function Home() {
           )}
         </Show>
 
-        <Show when={nowPlaying()}>
-          {(current) => (
-            <NowPlayingCard
-              playing={current()}
-              now={playingAt()}
-              busy={busy().has(current().libraryItemId ?? '')}
-              onWatched={() => void markPlayingWatched(current())}
-            />
+        <Show when={nowPlaying()[0]}>
+          {(lead) => (
+            <Suspense>
+              <NowPlayingCard
+                items={nowPlaying()}
+                now={playingAt()}
+                busy={busy().has(lead().libraryItemId ?? '')}
+                onWatched={() => void markPlayingWatched(lead())}
+              />
+            </Suspense>
           )}
         </Show>
 

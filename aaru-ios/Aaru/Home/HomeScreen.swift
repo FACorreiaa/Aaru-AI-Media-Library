@@ -127,7 +127,7 @@ struct HomeScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil, model.hasLoaded {
+        if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty, model.hasLoaded {
             ContentUnavailableView {
                 Label("Add a show to see what's next", systemImage: "sparkles.tv")
             } description: {
@@ -138,7 +138,7 @@ struct HomeScreen: View {
                 Button("Search") { showsSearch = true }
                     .buttonStyle(.bordered)
             }
-        } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil {
+        } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -221,8 +221,8 @@ extension HomeScreen {
 
     /// Full width under the heading, above the split, so it leads on every screen size.
     @ViewBuilder private var nowPlayingSection: some View {
-        if let playing = model.nowPlaying {
-            NowPlayingCard(playing: playing, wide: !compact)
+        if !model.nowPlaying.isEmpty {
+            NowPlayingCard(items: model.nowPlaying, wide: !compact)
                 .padding(.horizontal, 20)
         }
     }
@@ -266,9 +266,12 @@ extension HomeScreen {
         }
     }
 
-    /// The user's own rows. Continue watching leaves out the show Tonight already leads with.
+    /// The user's own rows. Continue watching leaves out the show Tonight already leads with,
+    /// and whatever is playing now.
     @ViewBuilder private var ownRows: some View {
+        let playing = model.playingItemIds
         let continuing = model.continueWatching.filter { entry in
+            guard !playing.contains(entry.libraryItemId) else { return false }
             guard case let .continuing(lead)? = model.tonight?.primary else { return true }
             return entry.libraryItemId != lead.libraryItemId
         }

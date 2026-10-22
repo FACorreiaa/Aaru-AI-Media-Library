@@ -60,9 +60,11 @@ struct Tonight {
     /// The show at the top of Continue watching, else the first airing today; then one more
     /// from the other source, never the same show twice. What is playing now is never in it:
     /// Now playing already shows it. Nil when there is nothing.
-    static func compose(continuing: [ContinueEntry], today: [CalendarEntry], playing: String? = nil) -> Tonight? {
-        let continuing = continuing.filter { $0.libraryItemId != playing }
-        let today = today.filter { $0.libraryItemId != playing }
+    static func compose(
+        continuing: [ContinueEntry], today: [CalendarEntry], playing: Set<String> = []
+    ) -> Tonight? {
+        let continuing = continuing.filter { !playing.contains($0.libraryItemId) }
+        let today = today.filter { !playing.contains($0.libraryItemId) }
         let candidates: [TonightPick] = continuing.prefix(1).map(TonightPick.continuing)
             + today.map(TonightPick.airing)
             + continuing.dropFirst().map(TonightPick.continuing)
@@ -80,7 +82,7 @@ extension HomeModel {
     }
 
     var tonight: Tonight? {
-        Tonight.compose(continuing: continueWatching, today: airingToday, playing: nowPlaying?.libraryItemId)
+        Tonight.compose(continuing: continueWatching, today: airingToday, playing: playingItemIds)
     }
 
     /// The Field's line under its heading: "Tuesday evening · 3 in progress · 2 airing today".

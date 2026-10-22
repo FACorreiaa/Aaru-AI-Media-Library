@@ -34,6 +34,21 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-22
+
+- **Everything playing, in one Live Activity (owner, 2026-10-22, SCR-009).** When a show and a
+  song, or a show and a YouTube video, play at once, the iPhone shows them together: one
+  combined "Now playing" activity, not one activity per thing (owner chose the combined layout
+  over stacked activities). It covers library episodes and movies (movies were left out
+  before), a music scrobbler's `playing_now`, and YouTube videos. Titles not in the library
+  still show nothing.
+- **YouTube's watch page is a second exception to the no-scraping rule (owner, 2026-10-22).**
+  The browser extension reads `youtube.com/watch` in the user's own browser, as it reads the
+  three streaming players (SCR-007). Aaru's server fetches nothing from YouTube; the thumbnail
+  is a URL built from the video id. A video is a *play*, never a title: it is never matched,
+  stored past its playing, or ticked. Shorts, live streams and `music.youtube.com` (YouTube
+  Music reaches Aaru through Web Scrobbler) are not read.
+
 ## Decisions recorded 2026-10-21
 
 - **Friend invite links, profiles and basic social now (owner, 2026-10-21).** Pulled forward
@@ -476,7 +491,8 @@ account or a stranger that has not happened yet.
 | SCR-005 | Open | none | |
 | SCR-006 | Open | none | |
 | SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
-| SCR-008 | Built, unverified | NowPlaying.swift, NowPlayingNotifier.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device |
+| SCR-008 | Built, unverified | NowPlaying.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device; the activity became SCR-009's |
+| SCR-009 | Built, unverified | LivePlays.swift, LiveSetNotifier.swift, LiveActivitySweepService.swift, `live_plays`, `live_activity_states`; NowPlayingTests(+Plays); `NowPlayingActivityAttributes`, NowPlayingLiveActivity; `aaru-extension/src/sites/youtube.ts` | Not seen on a device; YouTube selectors not checked on the live site |
 | SOC-001 | Built, unverified | `profiles`, `PUT /v1/me/profile`, `social_settings` (`share_library_with_friends`), `/v1/me/social-settings`, `/v1/social/friends/{userId}/profile`; SocialTests, FriendTests | Points, streaks and leaderboard settings wait for P5 |
 | SOC-002 | Built, unverified | requests, friends, blocks, reports; invite links (`social_invites`, `/v1/social/invites`, `/v1/invites/{code}`, web `/i/{code}`, AASA); SocialTests, InviteTests | Seed signing ran on the branch 2026-10-21; universal links not tried on a device; contact email hash not built |
 | SOC-003 | Partial | `GET /v1/activity` (dated ticks and finishes, 14 days); FriendTests; web `/app/friends`, iOS Friends tab | No `FriendStories` on Home, no scrobbles, no save-to-wishlist yet |
@@ -2244,6 +2260,36 @@ the WID-005 Live Activity via push".
 the Live Activity appears on a locked phone without opening Aaru (after one launch), reads
 "Paused" on a pause, and ends with "Watched" when the episode ticks; episode after episode each
 ticks once, also when Stremio skips the `stop`.
+
+### SCR-009 · Everything playing in one Live Activity · L · 2026-10-22
+**Needs:** SCR-007, SCR-008, MUS-005. Owner, 2026-10-22: with scrobbling on, the iPhone should
+show what plays, and several things at once (a show and a song, a show and a YouTube video).
+One combined "Now playing" activity (`NowPlayingActivityAttributes`, up to three rows) replaces
+SCR-008's per-episode one; "Now watching" stays only for a check-in started by hand.
+
+- **What counts:** open sessions on library episodes and movies, as SCR-008 judged them; a
+  ListenBrainz `playing_now` (stored as a *play* in `live_plays`, never a listen), counting to
+  the track's end plus 2 minutes, 10 with no length, replaced by the same scrobbler's next
+  track; a YouTube video from the extension (`/v1/scrobble/*`, `source: youtube` with `video`),
+  counting 2 minutes past its next expected report, 30 paused, gone on its `stop`. Episodes,
+  movies and videos come first, newest first, then tracks; a track Web Scrobbler heard on a
+  video already shown is dropped.
+- **Pushes:** `LiveSetNotifier` recomputes the set on every report and pushes only a visible
+  change, saved by compare-and-swap in `live_activity_states`: start (priority 10) where nothing
+  played, update (priority 5) on a row added, gone, paused, resumed or ticked, end when nothing
+  is left. Position never pushes. A ticked row reads "Watched" for 8 s. A sweep every 15 s
+  handles what ends with no report (a song over, a tab closed).
+- **Clients:** `GET /v1/me/now-playing` gains `items`; Home shows them in the `NowPlayingCard`
+  on web, iPhone and Mac (first full, the rest as rows). Widgets cannot fetch, so the app saves
+  each row's art into the App Group when it runs; until then a row shows its kind's glyph.
+- **Tokens:** activity tokens now belong to the user; the old per-episode tokens were dropped,
+  so the app must open once after the update to hand over its new push-to-start token.
+
+**Done when:** on a locked phone, a Stremio episode, a YouTube Music track (Web Scrobbler) and a
+YouTube video show as one activity with three rows, and the Dynamic Island shows two; pausing
+the episode reads "Paused"; a song that ends with nothing after it leaves within about 30 s;
+finishing the episode reads "Watched", then the row goes while the others stay; stopping
+everything ends the activity; web Home matches each step within 30 s.
 
 ---
 

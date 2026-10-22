@@ -26,8 +26,8 @@ struct ScrobbleService: Sendable {
     let stores: Stores
     let library: LibraryService
     let resolver: TitleResolver
-    /// Nil when no APNs key is configured: no Live Activity pushes (SCR-008).
-    var liveActivity: NowPlayingNotifier?
+    /// Nil when no APNs key is configured: no Live Activity pushes (SCR-008, SCR-009).
+    var liveActivity: LiveSetNotifier?
     var logger = Logger(label: "aaru-scrobble")
     var now: @Sendable () -> Date = { Date() }
 
@@ -51,30 +51,25 @@ struct ScrobbleService: Sendable {
             return (.stoppedWithoutChange, nil)
         }
         let title = try await resolve(report)
-        let open = try await stores.watchEvents.openSessions(userID: userID, source: report.source, limit: 10)
+        var ticked: [UUID] = []
         if report.action == .start {
+            let open = try await stores.watchEvents.openSessions(userID: userID, source: report.source, limit: 10)
             for previous in open where previous.externalRef != report.externalRef {
-                try await moveOn(from: previous, caller: caller, now: now)
+                if try await moveOn(from: previous, caller: caller, now: now) {
+                    ticked.append(previous.id)
+                }
             }
         }
         let session = try await stores.watchEvents.record(
             report, titleID: title?.id, userID: userID, agentTokenID: caller.token.id, now: now
         )
         guard report.action == .stop else {
-            if let title, let liveActivity, let current = try await stores.watchEvents
-                .openSessions(userID: userID, source: report.source, limit: 10).first(where: { $0.id == session.id })
-            {
-                await liveActivity.changed(current, title: title, userID: userID, now: now)
-            }
+            await liveActivity?.sync(userID: userID, now: now, ticked: ticked)
             return (title == nil ? .unmatched : .recorded, title)
         }
         try await stores.watchEvents.close(session.id, at: now)
         let outcome = try await stop(session, title: title, report: report, caller: caller)
-        if let liveActivity, var ended = open.first(where: { $0.id == session.id }) {
-            ended.positionMs = session.positionMs
-            ended.durationMs = session.durationMs
-            await liveActivity.ended(ended, now: now, watched: outcome == .watched)
-        }
+        await liveActivity?.sync(userID: userID, now: now, ticked: outcome == .watched ? [session.id] : [])
         return (outcome, title)
     }
 
@@ -97,16 +92,13 @@ struct ScrobbleService: Sendable {
 
     /// The player started something else without stopping `previous` (Stremio's next episode):
     /// it closes, and ticks when the player last reported it at 80% or more. Only the reported
-    /// position counts, so a player closed mid-episode never fakes a watch.
-    private func moveOn(from previous: OpenSession, caller: AgentCaller, now: Date) async throws {
+    /// position counts, so a player closed mid-episode never fakes a watch. Returns whether it ticked.
+    private func moveOn(from previous: OpenSession, caller: AgentCaller, now: Date) async throws -> Bool {
         try await stores.watchEvents.close(previous.id, at: now)
-        var watched = false
-        if let progress = previous.reportedProgress, progress >= Self.watchedThreshold,
-           let title = try await stores.titles.title(id: previous.titleID)
-        {
-            watched = try await markWatched(title, episodes: previous.episode.map { [$0] } ?? [], caller: caller)
-        }
-        await liveActivity?.ended(previous, now: now, watched: watched)
+        guard let progress = previous.reportedProgress, progress >= Self.watchedThreshold,
+              let title = try await stores.titles.title(id: previous.titleID)
+        else { return false }
+        return try await markWatched(title, episodes: previous.episode.map { [$0] } ?? [], caller: caller)
     }
 
     /// What a player is playing for the user now (SCR-008), or nil.

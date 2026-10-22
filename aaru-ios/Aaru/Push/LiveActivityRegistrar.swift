@@ -5,11 +5,12 @@
     import Foundation
     import UIKit
 
-    /// Hands ActivityKit's push tokens to the API (SCR-008) so the server can start "Now watching"
-    /// when a scrobble starts, and update and end it as the player pauses, resumes and stops: the
-    /// device's push-to-start token, and each scrobble activity's own token with the watch event
-    /// it follows. Runs from launch, so a background launch for a pushed-in activity still sends
-    /// its token; best effort, so a failed upload (signed out, offline) waits for the next token.
+    /// Hands ActivityKit's push tokens to the API (SCR-008, SCR-009) so the server can start the
+    /// combined "Now playing" activity when the first thing starts playing, and update and end it
+    /// as rows come, pause, tick and go: the device's push-to-start token, and the running
+    /// activity's own token. Runs from launch, so a background launch for a pushed-in activity
+    /// still sends its token; best effort, so a failed upload (signed out, offline) waits for the
+    /// next token. The by-hand "Now watching" activity has no push and is not followed.
     final class LiveActivityRegistrar: Sendable {
         /// Set once at launch, like `PushRegistrar.current`.
         @MainActor static var current: LiveActivityRegistrar?
@@ -39,8 +40,8 @@
         }
 
         private func followPushToStart() async {
-            for await token in Activity<NowWatchingAttributes>.pushToStartTokenUpdates {
-                await upload(token, kind: .start, watchEventId: nil)
+            for await token in Activity<NowPlayingActivityAttributes>.pushToStartTokenUpdates {
+                await upload(token, kind: .start)
             }
         }
 
@@ -48,45 +49,61 @@
         /// Each is followed in its own task by id: an `Activity` does not cross tasks.
         private func followActivities() async {
             await withTaskGroup(of: Void.self) { group in
-                for id in Activity<NowWatchingAttributes>.activities.map(\.id) {
+                for id in Activity<NowPlayingActivityAttributes>.activities.map(\.id) {
                     group.addTask { await self.follow(activityID: id, isNew: false) }
                 }
-                for await activity in Activity<NowWatchingAttributes>.activityUpdates {
+                for await activity in Activity<NowPlayingActivityAttributes>.activityUpdates {
                     let id = activity.id
                     group.addTask { await self.follow(activityID: id, isNew: true) }
                 }
             }
         }
 
-        /// One scrobble activity: its token goes up first, then a new one ends any other (one runs
-        /// at a time) and gets its poster, since a push cannot carry one; then the token goes up
-        /// each time it changes. Token first: a push-started activity wakes the app for seconds
-        /// only, and until the server has the token it can neither pause nor end the activity.
+        /// One activity: its token goes up first, then a new one ends every other Aaru activity
+        /// (one shows at a time; the newest stays, so two arriving together never end each other)
+        /// and gets its art, since a push carries URLs only; then the token goes up each time it
+        /// changes, and the art is fetched for each state that arrives while the app runs. Token
+        /// first: a push-started activity wakes the app for seconds only, and until the server has
+        /// the token it can neither update nor end the activity.
         private func follow(activityID: String, isNew: Bool) async {
-            guard let activity = Activity<NowWatchingAttributes>.activities.first(where: { $0.id == activityID }),
-                  let watchEventId = activity.attributes.watchEventId
-            else { return }
+            guard let activity = Self.activity(activityID) else { return }
             let sent = activity.pushToken
             if let sent {
-                await upload(sent, kind: .update, watchEventId: watchEventId)
+                await upload(sent, kind: .update)
             }
             if isNew {
-                for other in Activity<NowWatchingAttributes>.activities where other.id != activity.id {
-                    await other.end(nil, dismissalPolicy: .immediate)
+                let running = Activity<NowPlayingActivityAttributes>.activities
+                if running.last?.id == activity.id {
+                    for other in running where other.id != activity.id {
+                        await other.end(nil, dismissalPolicy: .immediate)
+                    }
                 }
-                if NowWatchingArtwork.load(for: activity.attributes.posterURL) == nil {
-                    await NowWatching.storeArtwork(for: activity.attributes)
+                await NowWatching.endAll(dismissal: .immediate)
+            }
+            await NowPlayingArtwork.store(for: activity.content.state)
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    guard let activity = Self.activity(activityID) else { return }
+                    for await token in activity.pushTokenUpdates where token != sent {
+                        await self.upload(token, kind: .update)
+                    }
+                }
+                group.addTask {
+                    guard let activity = Self.activity(activityID) else { return }
+                    for await content in activity.contentUpdates {
+                        await NowPlayingArtwork.store(for: content.state)
+                    }
                 }
             }
-            for await token in activity.pushTokenUpdates where token != sent {
-                await upload(token, kind: .update, watchEventId: watchEventId)
-            }
+        }
+
+        private static func activity(_ id: String) -> Activity<NowPlayingActivityAttributes>? {
+            Activity<NowPlayingActivityAttributes>.activities.first { $0.id == id }
         }
 
         private func upload(
             _ token: Data,
-            kind: Components.Schemas.LiveActivityRegistration.KindPayload,
-            watchEventId: UUID?
+            kind: Components.Schemas.LiveActivityRegistration.KindPayload
         ) async {
             guard let api else { return }
             let hex = token.map { String(format: "%02x", $0) }.joined()
@@ -96,8 +113,7 @@
                 let environment = Components.Schemas.LiveActivityRegistration.EnvironmentPayload.production
             #endif
             let registration = Components.Schemas.LiveActivityRegistration(
-                token: hex, kind: kind, watchEventId: watchEventId?.uuidString.lowercased(),
-                environment: environment, bundleId: Bundle.main.bundleIdentifier ?? ""
+                token: hex, kind: kind, environment: environment, bundleId: Bundle.main.bundleIdentifier ?? ""
             )
             // A background wake can end mid-request: ask for the time to finish this one.
             let time = await BackgroundTime(named: "Live Activity token")

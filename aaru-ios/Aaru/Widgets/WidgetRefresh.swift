@@ -4,7 +4,8 @@
 
     /// Keeps the widgets' snapshot fresh while the app is closed (WID-001): an app-refresh task,
     /// asked for about once an hour (iOS decides when it really runs), that reloads up next and the
-    /// calendar window and republishes. The identifier is listed in Info.plist.
+    /// calendar window and republishes, and saves the art of a running "Now playing" (SCR-009),
+    /// whose pushes do not wake the app. The identifier is listed in Info.plist.
     enum WidgetRefresh {
         static let taskID = SessionKeychain.appService + ".widget-refresh"
 
@@ -19,6 +20,8 @@
         static func run() async {
             schedule()
             await NowWatching.endStale()
+            await NowPlayingActivity.endStale()
+            await NowPlayingActivity.storeArtwork()
             guard let api = SharedAPI.client() else { return }
             try? await WidgetSync.refresh(api: api)
         }

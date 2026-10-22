@@ -5299,7 +5299,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Hand over an ActivityKit push token (SCR-008): the device's push-to-start token (`start`), or a running "Now watching" activity's own token (`update`) with the watch event it follows. The server then starts, updates and ends the activity from scrobbles.
+    /// Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own token (`update`). The server then starts, updates and ends the activity from what plays.
     ///
     /// - Remark: HTTP `PUT /v1/devices/live-activity`.
     /// - Remark: Generated from `#/paths//v1/devices/live-activity/put(registerLiveActivityToken)`.
@@ -6716,7 +6716,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// What a player (Stremio, or a streaming site through the browser extension) is playing for you now (SCR-008). Players report only on start, pause and stop, so `positionMs` is where it was at `updatedAt`; a client adds the time since while `state` is `playing`. Absent when nothing plays, or the last report is too old to believe.
+    /// What players are playing for you now: Stremio and streaming sites through the browser extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009). `positionMs` is where a player was at `updatedAt`; a client adds the time since while `state` is `playing`. A report too old to believe no longer counts.
     ///
     /// - Remark: HTTP `GET /v1/me/now-playing`.
     /// - Remark: Generated from `#/paths//v1/me/now-playing/get(getNowPlaying)`.

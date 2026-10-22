@@ -13,6 +13,7 @@ struct AaruWidgetsBundle: WidgetBundle {
         WeekWidget()
         ListeningWidget()
         #if os(iOS)
+            NowPlayingLiveActivity()
             NowWatchingLiveActivity()
         #endif
     }

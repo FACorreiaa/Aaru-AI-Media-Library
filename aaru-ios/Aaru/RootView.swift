@@ -132,7 +132,11 @@ struct RootView: View {
                 WidgetSnapshotStore.clear()
                 WidgetCenter.shared.reloadAllTimelines()
                 #if os(iOS)
-                    Task { await NowWatching.endAll() }
+                    Task {
+                        await NowWatching.endAll()
+                        await NowPlayingActivity.endAll()
+                        NowPlayingArtwork.clear()
+                    }
                 #endif
                 tab = .home
                 libraryFilter = LibraryFilter()

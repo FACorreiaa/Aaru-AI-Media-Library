@@ -3,8 +3,9 @@ import { WEB_BASE, nowItem, recentItem, tokenItem } from '../../lib/store'
 import type { NowPlaying, RecentPlay } from '../../lib/store'
 import { SOURCE_LABELS, label } from '../../lib/types'
 
-// SCR-007's popup: what plays now and what Aaru matched it to, the last few plays, and the
-// connection. It reads the background's storage and redraws when it changes.
+// SCR-007's popup: what plays now and what Aaru matched it to (a YouTube video only shows as
+// playing), the last few plays, and the connection. It reads the background's storage and
+// redraws when it changes.
 const app = document.querySelector<HTMLElement>('#app')!
 
 const RESULTS: Record<RecentPlay['result'], string> = {
@@ -64,7 +65,7 @@ function nowSection(now: NowPlaying | null): Node {
       element('p', { class: 'eyebrow', text: 'Now' }),
       element('p', {
         class: 'muted',
-        text: 'Nothing playing. Play something on Netflix, Disney+ or Prime Video.',
+        text: 'Nothing playing. Play something on Netflix, Disney+, Prime Video or YouTube.',
       }),
     )
   const { playing } = now
@@ -77,7 +78,11 @@ function nowSection(now: NowPlaying | null): Node {
           .filter(Boolean)
           .join(' · ') +
         (playing.episodeTitle ? `  ${playing.episodeTitle}` : '')
-      : 'Film'
+      : playing.type === 'video'
+        ? (playing.channel ?? 'Video')
+        : 'Film'
+  // A YouTube video is never matched to a title (SCR-009): Aaru shows it as playing.
+  const matched = playing.type === 'video' || now.matched !== null
   return element(
     'section',
     {},
@@ -94,10 +99,13 @@ function nowSection(now: NowPlaying | null): Node {
     ),
     element('p', {
       class: 'match',
-      data: { matched: String(now.matched !== null) },
-      text: now.matched
-        ? `✓ Matched: ${now.matched}`
-        : '? Not matched. Add it in Aaru by hand.',
+      data: { matched: String(matched) },
+      text:
+        playing.type === 'video'
+          ? '✓ Playing in Aaru'
+          : now.matched
+            ? `✓ Matched: ${now.matched}`
+            : '? Not matched. Add it in Aaru by hand.',
     }),
   )
 }

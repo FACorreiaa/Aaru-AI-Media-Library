@@ -3,8 +3,9 @@
 Aaru's browser extension (SCR-007). One Manifest V3 source for Chrome and Firefox, built with
 [WXT](https://wxt.dev). It reads what plays on Netflix, Disney+ and Prime Video from the
 player's title overlay and URL, follows the page's main `<video>`, and scrobbles to
-`POST /v1/scrobble/start|pause|stop` with a token that can only scrobble. It draws nothing on
-those sites, never controls the player, and reads nothing else.
+`POST /v1/scrobble/start|pause|stop` with a token that can only scrobble. It also reads YouTube's
+watch page (SCR-009) so the video shows in Aaru's Now playing; a video is never matched to a
+title. It draws nothing on those sites, never controls the player, and reads nothing else.
 
 ```bash
 npm install
@@ -23,7 +24,7 @@ Against a local stack, set `WXT_API_BASE=http://localhost:8080` and
 - `src/entrypoints/connect.content.ts` — on `aaruapp.com/connect/extension`, answers the page and
   takes the token it hands over (`src/lib/protocol.ts`, mirrored in
   `aaru-client/src/lib/agents/extension.ts`).
-- `src/entrypoints/streaming.content.ts` — on the three sites, reports what it sees to the
+- `src/entrypoints/streaming.content.ts` — on the three sites and YouTube, reports what it sees to the
   background on a port, every few seconds and on video events.
 - `src/lib/session.ts` — turns those reports into `start` (also every 5 minutes), `pause` and
   `stop` (end of video, next episode, tab gone). Aaru decides from the stop's progress.

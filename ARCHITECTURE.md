@@ -147,8 +147,10 @@ PostgreSQL. Suggested tables:
 - `import_jobs`, `import_job_events` (optional log lines)
 - `actions` (action journal: one row per mutating library write, with its inverse)
 - `match_aliases` (match ledger: aggregate crosswalk from a source row key to an external id)
-- `watch_events` (one playback session per user, source and player id: state, position, longest known duration, `title_id` null when unmatched; built 2026-10-20 for Stremio; `live_activity_started_at` since SCR-008)
-- `live_activity_tokens` (ActivityKit push tokens: a device's push-to-start token, or a running activity's own, tied to its watch event; SCR-008)
+- `watch_events` (one playback session per user, source and player id: state, position, longest known duration, `title_id` null when unmatched; built 2026-10-20 for Stremio)
+- `live_activity_tokens` (ActivityKit push tokens: a device's push-to-start token, or its running activity's own; SCR-008, per user since SCR-009)
+- `live_plays` (SCR-009: what plays that is not a Title, a `playing_now` track or a YouTube video; one row per connection and kind, replaced by the next report, deleted once `expires_at` passes)
+- `live_activity_states` (SCR-009: per user, what the "Now playing" activity last showed, the "Watched" rows lingering, a `version` for compare-and-swap, and `next_check_at` for the sweep)
 - `agent_plans` (an outside agent's change waiting for approval: the op, its basis, status, the token)
 - `agent_tokens` (per-user agent access: `kind` (`stremio`, or an MCP client: `claude_code`, `codex`, `hermes`, `gemini`, `other`), hashed secret, scopes, `lastUsedAt`, revocation)
 - `agent_usage` (model spend per user per day: tokens in and out, cost in cents)
@@ -849,12 +851,17 @@ The widget extension lives in the same `aaru-ios` project and serves iOS and mac
 - **Interactive:** "mark watched" on the Up Next widget is an App Intent that performs the same
   `PUT …/episodes/{s}/{e}` a tap does, through the shared API client, then refreshes the
   snapshot. This follows Khepri's `LogWaterIntent`. It is journaled in `actions` like any tap.
-- **Live Activity:** "now watching" shows the episode, progress, and an Ends-at / time-left
-  toggle. The app starts it on check-in, or when it opens on a scrobble it has no activity
-  for. Scrobbles start, update and end it by APNs push (SCR-008): the app hands over its
-  push-to-start token and each running activity's token (`PUT /v1/devices/live-activity`),
-  kept in `live_activity_tokens`. Its payload types (`NowWatchingAttributes`,
-  `NowWatchingContent`) live in `AaruCore`, so the server's pushes and the app decode one type.
+- **Live Activity:** "Now playing" (SCR-009) is one activity per device listing everything that
+  plays, up to three rows: library episodes, movies and YouTube videos first, then a track.
+  Each row has art, progress and an Ends-at / time-left toggle; episode and movie rows have
+  Mark watched. The server starts, updates and ends it by APNs push: the app hands over its
+  push-to-start token and its running activity's token (`PUT /v1/devices/live-activity`), kept
+  in `live_activity_tokens`. The app also starts it when it opens on something playing that it
+  has no activity for. The payload types (`NowPlayingActivityAttributes`,
+  `NowPlayingActivityState`) live in `AaruCore`, so the server's pushes and the app decode one
+  type. Widgets cannot fetch, so the app saves each row's art into the App Group when it runs; a
+  row shows its kind's glyph until then. "Now watching" (`NowWatchingAttributes`, one episode)
+  remains only for a check-in started by hand, and either activity ends the other.
 - **macOS widgets** come from the same extension and the same snapshot. No second widget
   codebase.
 
@@ -915,20 +922,33 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
 - Each call writes a `watch_events` row (user, title, episode, progress, source, timestamp).
   A `stop` at **≥ 80%** marks the episode or movie watched through the same data layer as a tap,
   so it lands in `actions` and is undoable. 80% is Aaru's own documented threshold.
-- `start` and `pause` feed the "now watching" Live Activity and, later, room drift
+- `start` and `pause` feed the "Now playing" Live Activity and, later, room drift
   (ROOM-004). They never change progress.
-- **Now playing (SCR-008):** `GET /v1/me/now-playing` reads the newest open, matched session
-  back. Players send no heartbeat, so nothing is swept: a playing session counts until its end
-  plus 10 minutes (3 hours with no duration known), a paused one for 30 minutes.
+- **Now playing (SCR-008, SCR-009):** `GET /v1/me/now-playing` returns `items`, the live set:
+  open sessions on library titles (a playing one counts until its end plus 10 minutes, 3 hours
+  with no duration known, a paused one for 30 minutes) and unexpired `live_plays`. A track
+  counts to its end plus 2 minutes (10 with no length); a video to its next expected report
+  (at most 5 minutes) plus 2, or 30 minutes paused, and its `stop` deletes it. Order: episodes,
+  movies and videos newest first, then tracks, three at most; a track whose `origin_url` is a
+  video already shown is dropped. `nowPlaying` (the newest session) stays for older clients.
+- **Plays (SCR-009):** a ListenBrainz `playing_now` and a `/v1/scrobble/*` body with
+  `source: youtube` + `video {id, title, channel}` become `live_plays` rows, never listens or
+  watch events. The video thumbnail is built from the id (`i.ytimg.com`); the server fetches
+  nothing from YouTube.
 - **Next episode:** a `start` for a different item from the same source closes the user's other
   open sessions from it (Stremio's next episode may never send the last one's `stop`). A closed
   session ticks only when the player last *reported* it at ≥ 80%, never on an extrapolated
   position.
-- **Live Activity pushes:** `NowPlayingNotifier` runs after each report when APNs is configured.
-  A session's first `start` push-starts the activity on each device (claimed once in
-  `watch_events.live_activity_started_at`); later reports update the activities that follow it;
-  its close ends them. Best effort: a push failure never fails a scrobble; dead tokens are
-  forgotten.
+- **Live Activity pushes:** `LiveSetNotifier.sync` runs after each report and play when APNs is
+  configured. It recomputes the live set, compares it with `live_activity_states.pushed`, and
+  saves by compare-and-swap before pushing. Something playing where nothing did push-starts the
+  activity on each device (priority 10); a row added, gone, paused, resumed, ticked, or an end
+  time moved by over a minute updates the running activities (priority 5); nothing left ends
+  them. Position alone never pushes, so the extension's 2-second reports cost nothing. A ticked
+  episode or movie stays 8 seconds as "Watched". `LiveActivitySweepService` runs every 15
+  seconds and syncs users whose `next_check_at` (the earliest expiry) has passed, claimed with
+  `FOR UPDATE SKIP LOCKED` so replicas never push twice. Best effort: a push failure never
+  fails a scrobble; dead tokens are forgotten.
 - Auth is a scoped per-user token on the `agent_tokens` model with a `scrobble:write` scope. A
   scrobbler gets no more than that scope.
 - **Webhooks:** `POST /v1/webhooks/plex` (`media.play`, `media.stop`, `media.scrobble`) and

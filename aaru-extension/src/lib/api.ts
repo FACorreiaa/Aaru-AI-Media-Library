@@ -13,15 +13,28 @@ export type SendResult =
   /** Offline, a server error, or an answer Aaru could not read: worth trying again later. */
   | { kind: 'failed'; retry: boolean }
 
-/** Trakt's scrobble body, named by title: these sites have no ids Aaru knows. */
+/** Trakt's scrobble body, named by title: these sites have no ids Aaru knows. A YouTube video
+ * goes as `video` instead (SCR-009): Aaru shows it as playing and never matches it. */
 export function body(call: Call) {
   const { playing } = call
-  const item = { title: playing.title, year: playing.year }
-  return {
+  const common = {
     source: playing.source,
     ref: playing.ref,
     progress: call.progress,
     durationMs: call.durationMs > 0 ? call.durationMs : undefined,
+  }
+  if (playing.type === 'video')
+    return {
+      ...common,
+      video: {
+        id: playing.ref,
+        title: playing.title,
+        channel: playing.channel,
+      },
+    }
+  const item = { title: playing.title, year: playing.year }
+  return {
+    ...common,
     ...(playing.type === 'movie'
       ? { movie: item }
       : {

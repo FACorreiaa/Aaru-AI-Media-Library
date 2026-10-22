@@ -50,10 +50,13 @@ struct ScrobbleRoutes: Sendable {
             let report: PlaybackReport
             do {
                 let scrobble = try JSONDecoder().decode(ScrobbleBody.self, from: Data(buffer: body))
+                if scrobble.video != nil {
+                    return try await play(scrobble, action: action, from: caller)
+                }
                 report = try scrobble.report(action)
             } catch let error as ScrobbleBody.Invalid {
                 return Self.error(.unprocessableContent, "validation_failed", error.message)
-            } catch {
+            } catch is DecodingError {
                 return Self.error(.unprocessableContent, "validation_failed", "The body is not a scrobble.")
             }
             let (outcome, title) = try await scrobble.record(report, from: caller)
@@ -62,6 +65,19 @@ struct ScrobbleRoutes: Sendable {
             logger.error("Scrobble failed", metadata: ["error": "\(error)"])
             return Self.error(.internalServerError, "internal", "Something went wrong.")
         }
+    }
+
+    /// A YouTube video (SCR-009): a play, never a watch event, so it matches and ticks nothing.
+    private func play(_ body: ScrobbleBody, action: PlaybackAction, from caller: AgentCaller) async throws
+        -> Response
+    {
+        guard action != .stop else {
+            _ = try body.video(action, now: scrobble.now())
+            try await scrobble.stopPlay(.video, from: caller)
+            return try Self.json(ScrobbleAnswer(outcome: .stoppedWithoutChange, title: nil))
+        }
+        try await scrobble.play(body.video(action, now: scrobble.now()), from: caller)
+        return try Self.json(ScrobbleAnswer(outcome: .recorded, title: nil))
     }
 
     private static func json(_ value: some Encodable) throws -> Response {
@@ -87,8 +103,15 @@ struct ScrobbleRoutes: Sendable {
 
 /// Trakt's scrobble body: `movie`, or `show` + `episode`, and `progress` in percent. Aaru adds
 /// `source` (the streaming site) and `ref` (the player's own id for what plays: one film or one
-/// episode). `durationMs` is optional; without it progress is all Aaru keeps.
+/// episode). `durationMs` is optional; without it progress is all Aaru keeps. A YouTube video
+/// (SCR-009) comes as `source: youtube` with `video` instead of `movie` or `show`.
 struct ScrobbleBody: Decodable {
+    struct Video: Decodable {
+        var id: String
+        var title: String
+        var channel: String?
+    }
+
     struct Item: Decodable {
         var title: String?
         var year: Int?
@@ -110,6 +133,7 @@ struct ScrobbleBody: Decodable {
     var movie: Item?
     var show: Item?
     var episode: Episode?
+    var video: Video?
     var progress: Double
     var durationMs: Int64?
 
@@ -134,6 +158,29 @@ struct ScrobbleBody: Decodable {
             title: name, year: item.year, episodeName: episodeName, action: action,
             positionMs: Int64((progress / 100 * Double(duration)).rounded()), durationMs: duration
         )
+    }
+
+    /// The video play this scrobble reports: YouTube's 11-character id, its name, and a duration.
+    func video(_ action: PlaybackAction, now: Date) throws -> LivePlay {
+        guard source == "youtube", let video, movie == nil, show == nil else {
+            throw Invalid(message: "A video comes with source youtube and nothing else.")
+        }
+        guard video.id.count == 11,
+              video.id.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || "-_".contains($0)) }),
+              ref == video.id
+        else { throw Invalid(message: "video.id is YouTube's 11-character id, and ref is the same.") }
+        let title = video.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 300 else {
+            throw Invalid(message: "video.title must be 1–300 characters.")
+        }
+        guard (0 ... 100).contains(progress) else { throw Invalid(message: "progress is a percentage, 0–100.") }
+        guard let duration = durationMs, duration > 0 else { throw Invalid(message: "A video needs durationMs.") }
+        let channel = video.channel?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(300)
+        return LivePlay.video(LivePlay.VideoReport(
+            id: video.id, title: title, channel: channel.flatMap { $0.isEmpty ? nil : String($0) },
+            state: action == .pause ? .paused : .playing,
+            positionMs: Int64((progress / 100 * Double(duration)).rounded()), durationMs: duration
+        ), now: now)
     }
 
     /// The film, or the show, this scrobble is about.

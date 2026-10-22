@@ -1,3 +1,4 @@
+import AaruCore
 import AppIntents
 import Foundation
 import WidgetKit
@@ -75,32 +76,64 @@ enum EpisodeWatching {
 }
 
 #if os(iOS)
-    /// The Live Activity's "Mark watched" (WID-005). Runs in the app's process; on failure the
-    /// activity stays as it was.
-    struct MarkNowWatchingIntent: LiveActivityIntent {
-        static let title: LocalizedStringResource = "Mark Now Watching Episode Watched"
+    /// The Live Activities' "Mark watched" (WID-005, SCR-009), on episode and movie rows. An
+    /// episode takes the same tick as the Up Next check; a movie the same `finished` the status
+    /// menu sets. Runs in the app's process; the row reads "Watched" once the server has it, and
+    /// on failure the activity stays as it was.
+    struct MarkNowPlayingWatchedIntent: LiveActivityIntent {
+        static let title: LocalizedStringResource = "Mark Now Playing Watched"
         static let isDiscoverable = false
 
         @Parameter(title: "Library item")
         var libraryItemId: String
 
         @Parameter(title: "Season")
-        var season: Int
+        var season: Int?
 
         @Parameter(title: "Episode")
-        var episode: Int
+        var episode: Int?
 
         init() {}
 
-        init(libraryItemId: String, season: Int, episode: Int) {
+        init(libraryItemId: String, season: Int?, episode: Int?) {
             self.libraryItemId = libraryItemId
             self.season = season
             self.episode = episode
         }
 
         func perform() async throws -> some IntentResult {
-            try await EpisodeWatching.markWatched(libraryItemId: libraryItemId, season: season, episode: episode)
+            if let season, let episode {
+                try await EpisodeWatching.markWatched(libraryItemId: libraryItemId, season: season, episode: episode)
+            } else {
+                try await MovieWatching.markFinished(libraryItemId: libraryItemId)
+            }
             return .result()
+        }
+    }
+
+    /// A movie from the Live Activity: `PATCH /v1/library/items/{id}` with `finished`, journaled
+    /// like the status menu's.
+    enum MovieWatching {
+        static func markFinished(libraryItemId: String) async throws {
+            guard let api = SharedAPI.client() else { throw EpisodeWatching.SignedOut() }
+            do {
+                let output = try await api.updateLibraryItem(
+                    path: .init(id: libraryItemId),
+                    body: .json(.init(status: .finished))
+                )
+                guard case .ok = output else { throw NotSaved() }
+            } catch {
+                throw NotSaved()
+            }
+            await NowPlayingActivity.watched(libraryItemId: libraryItemId) { $0.kind == .movie }
+            try? await WidgetSync.refresh(api: api)
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+
+        struct NotSaved: LocalizedError {
+            var errorDescription: String? {
+                "The movie was not saved. Try again in Aaru."
+            }
         }
     }
 
@@ -110,6 +143,7 @@ enum EpisodeWatching {
         static let isDiscoverable = false
 
         func perform() async throws -> some IntentResult {
+            await NowPlayingActivity.toggleEndTime()
             await NowWatching.toggleEndTime()
             return .result()
         }

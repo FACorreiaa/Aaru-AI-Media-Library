@@ -70,23 +70,40 @@ protocol WatchEventStore: Sendable {
     func stoppedRecently(userID: UserID, source: WatchSource, externalRef: String, since: Date) async throws -> Bool
     /// The user's open, matched sessions, newest report first; only `source`'s when given.
     func openSessions(userID: UserID, source: WatchSource?, limit: Int) async throws -> [OpenSession]
-    /// Claims the push that starts this session's Live Activity. False when it was already sent.
-    func claimLiveActivityStart(_ id: UUID, at date: Date) async throws -> Bool
-    /// A token belongs to one user: registering it again moves it. An `update` token whose watch
-    /// event is not the user's is refused (false).
-    func registerLiveActivity(_ token: LiveActivityToken, userID: UserID, now: Date) async throws -> Bool
+    /// A token belongs to one user: registering it again moves it.
+    func registerLiveActivity(_ token: LiveActivityToken, userID: UserID, now: Date) async throws
+    /// Whether the user has any Live Activity token: a user with none has no activity to keep.
+    func hasLiveActivityTokens(userID: UserID) async throws -> Bool
     /// The user's push-to-start tokens, one per device.
     func liveActivityStartTokens(userID: UserID) async throws -> [LiveActivityToken]
-    /// The tokens of the activities following this watch event.
-    func liveActivityUpdateTokens(watchEventID: UUID) async throws -> [LiveActivityToken]
+    /// The tokens of the user's running activities, one per device.
+    func liveActivityUpdateTokens(userID: UserID) async throws -> [LiveActivityToken]
     /// Apple said the token is dead (activity ended, app removed).
     func forgetLiveActivity(token: String) async throws
+    /// The activities ended: their tokens will not answer again.
+    func forgetLiveActivityUpdates(userID: UserID) async throws
+
+    /// Saves what a connection plays now (SCR-009), replacing its last play of that kind. The
+    /// same `ref` again keeps the row's id and start, so the activity hears no change.
+    func savePlay(_ play: LivePlay, userID: UserID, agentTokenID: UUID) async throws
+    /// The connection stopped playing that kind of thing.
+    func removePlay(_ kind: LivePlay.Kind, userID: UserID, agentTokenID: UUID) async throws
+    /// The user's plays that have not expired, newest report first. Expired ones are deleted.
+    func livePlays(userID: UserID, now: Date) async throws -> [LivePlay]
+    /// What the user's activity last showed; a fresh state when there is none yet.
+    func liveActivityState(userID: UserID) async throws -> LiveActivityState
+    /// Saves `state` if no one saved since it was read (its `version`). False when someone did.
+    func saveLiveActivityState(_ state: LiveActivityState, userID: UserID) async throws -> Bool
+    /// The sweep looks at the user again at `date`, unless it already will sooner.
+    func scheduleLiveActivityCheck(userID: UserID, at date: Date) async throws
+    /// Claims the users whose check is due, so one sweep alone looks at each.
+    func claimDueLiveActivityChecks(now: Date, limit: Int) async throws -> [UserID]
 }
 
 /// An ActivityKit push token the app handed over (SCR-008).
 struct LiveActivityToken: Sendable, Equatable {
     enum Kind: String, Sendable {
-        /// Push-to-start: lets the server start a "Now watching" activity on this device.
+        /// Push-to-start: lets the server start the "Now playing" activity on this device.
         case start
         /// One running activity's own token, for updates and the end.
         case update
@@ -97,8 +114,6 @@ struct LiveActivityToken: Sendable, Equatable {
     var environment: PushEnvironment
     /// The app's bundle id; APNs gets `<topic>.push-type.liveactivity`.
     var topic: String
-    /// Set for `update`: the watch event the activity follows.
-    var watchEventID: UUID?
 }
 
 /// A matched session no `stop` has closed yet, with what Home and the Live Activity show (SCR-008).

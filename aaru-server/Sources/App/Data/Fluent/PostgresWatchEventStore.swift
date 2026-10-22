@@ -99,28 +99,20 @@ struct PostgresWatchEventStore: WatchEventStore {
         }
     }
 
-    func claimLiveActivityStart(_ id: UUID, at date: Date) async throws -> Bool {
-        struct Found: Decodable { let id: UUID }
-        return try await sql.raw("""
-        UPDATE watch_events SET live_activity_started_at = \(bind: date)
-        WHERE id = \(bind: id) AND live_activity_started_at IS NULL
-        RETURNING id
-        """).first(decoding: Found.self) != nil
+    func registerLiveActivity(_ token: LiveActivityToken, userID: UserID, now: Date) async throws {
+        try await sql.raw("""
+        INSERT INTO live_activity_tokens (token, user_id, kind, environment, topic, updated_at)
+        VALUES (\(bind: token.token), \(bind: userID.rawValue), \(bind: token.kind.rawValue),
+            \(bind: token.environment.rawValue), \(bind: token.topic), \(bind: now))
+        ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, kind = EXCLUDED.kind,
+            environment = EXCLUDED.environment, topic = EXCLUDED.topic, updated_at = EXCLUDED.updated_at
+        """).run()
     }
 
-    func registerLiveActivity(_ token: LiveActivityToken, userID: UserID, now: Date) async throws -> Bool {
+    func hasLiveActivityTokens(userID: UserID) async throws -> Bool {
         struct Found: Decodable { let token: String }
         return try await sql.raw("""
-        INSERT INTO live_activity_tokens (token, user_id, kind, environment, topic, watch_event_id, updated_at)
-        SELECT \(bind: token.token), \(bind: userID.rawValue), \(bind: token.kind.rawValue),
-            \(bind: token.environment.rawValue), \(bind: token.topic), \(bind: token.watchEventID), \(bind: now)
-        WHERE \(bind: token.watchEventID)::uuid IS NULL OR EXISTS (
-            SELECT 1 FROM watch_events WHERE id = \(bind: token.watchEventID) AND user_id = \(bind: userID.rawValue)
-        )
-        ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, kind = EXCLUDED.kind,
-            environment = EXCLUDED.environment, topic = EXCLUDED.topic,
-            watch_event_id = EXCLUDED.watch_event_id, updated_at = EXCLUDED.updated_at
-        RETURNING token
+        SELECT token FROM live_activity_tokens WHERE user_id = \(bind: userID.rawValue) LIMIT 1
         """).first(decoding: Found.self) != nil
     }
 
@@ -128,12 +120,140 @@ struct PostgresWatchEventStore: WatchEventStore {
         try await tokens(where: "user_id = \(bind: userID.rawValue) AND kind = 'start'")
     }
 
-    func liveActivityUpdateTokens(watchEventID: UUID) async throws -> [LiveActivityToken] {
-        try await tokens(where: "watch_event_id = \(bind: watchEventID) AND kind = 'update'")
+    func liveActivityUpdateTokens(userID: UserID) async throws -> [LiveActivityToken] {
+        try await tokens(where: "user_id = \(bind: userID.rawValue) AND kind = 'update'")
     }
 
     func forgetLiveActivity(token: String) async throws {
         try await sql.raw("DELETE FROM live_activity_tokens WHERE token = \(bind: token)").run()
+    }
+
+    func forgetLiveActivityUpdates(userID: UserID) async throws {
+        try await sql.raw("""
+        DELETE FROM live_activity_tokens WHERE user_id = \(bind: userID.rawValue) AND kind = 'update'
+        """).run()
+    }
+
+    func savePlay(_ play: LivePlay, userID: UserID, agentTokenID: UUID) async throws {
+        try await sql.raw("""
+        INSERT INTO live_plays
+            (user_id, agent_token_id, kind, id, source, ref, title, subtitle, service, artwork_url, origin_url,
+             state, position_ms, duration_ms, started_at, updated_at, expires_at)
+        VALUES (\(bind: userID.rawValue), \(bind: agentTokenID), \(bind: play.kind.rawValue), \(bind: play.id),
+                \(bind: play.source.rawValue), \(bind: play.ref), \(bind: play.title), \(bind: play.subtitle),
+                \(bind: play.service), \(bind: play.artworkURL), \(bind: play.originURL), \(bind: play.state.rawValue),
+                \(bind: play.positionMs), \(bind: play.durationMs), \(bind: play.startedAt), \(bind: play.updatedAt),
+                \(bind: play.expiresAt))
+        ON CONFLICT (user_id, kind, agent_token_id) DO UPDATE SET
+            id = CASE WHEN live_plays.ref = EXCLUDED.ref THEN live_plays.id ELSE EXCLUDED.id END,
+            started_at = CASE WHEN live_plays.ref = EXCLUDED.ref THEN live_plays.started_at
+                ELSE EXCLUDED.started_at END,
+            source = EXCLUDED.source, ref = EXCLUDED.ref, title = EXCLUDED.title, subtitle = EXCLUDED.subtitle,
+            service = EXCLUDED.service, artwork_url = EXCLUDED.artwork_url, origin_url = EXCLUDED.origin_url,
+            state = EXCLUDED.state, position_ms = EXCLUDED.position_ms, duration_ms = EXCLUDED.duration_ms,
+            updated_at = EXCLUDED.updated_at, expires_at = EXCLUDED.expires_at
+        """).run()
+    }
+
+    func removePlay(_ kind: LivePlay.Kind, userID: UserID, agentTokenID: UUID) async throws {
+        try await sql.raw("""
+        DELETE FROM live_plays WHERE user_id = \(bind: userID.rawValue) AND kind = \(bind: kind.rawValue)
+            AND agent_token_id = \(bind: agentTokenID)
+        """).run()
+    }
+
+    func livePlays(userID: UserID, now: Date) async throws -> [LivePlay] {
+        struct PlayRow: Decodable {
+            let id: UUID
+            let kind: String
+            let source: String
+            let ref: String
+            let title: String
+            let subtitle: String?
+            let service: String?
+            let artworkUrl: String?
+            let originUrl: String?
+            let state: String
+            let positionMs: Int64
+            let durationMs: Int64
+            let startedAt: Date
+            let updatedAt: Date
+            let expiresAt: Date
+        }
+        try await sql.raw("""
+        DELETE FROM live_plays WHERE user_id = \(bind: userID.rawValue) AND expires_at <= \(bind: now)
+        """).run()
+        return try await sql.raw("""
+        SELECT id, kind, source, ref, title, subtitle, service, artwork_url, origin_url, state, position_ms,
+            duration_ms, started_at, updated_at, expires_at
+        FROM live_plays WHERE user_id = \(bind: userID.rawValue)
+        ORDER BY updated_at DESC
+        """).all(decoding: PlayRow.self, keyDecodingStrategy: .convertFromSnakeCase).compactMap { row in
+            guard let kind = LivePlay.Kind(rawValue: row.kind), let source = LivePlay.Source(rawValue: row.source),
+                  let state = OpenSession.State(rawValue: row.state)
+            else { return nil }
+            return LivePlay(
+                id: row.id, kind: kind, source: source, ref: row.ref, title: row.title, subtitle: row.subtitle,
+                service: row.service, artworkURL: row.artworkUrl, originURL: row.originUrl, state: state,
+                positionMs: row.positionMs, durationMs: row.durationMs, startedAt: row.startedAt,
+                updatedAt: row.updatedAt, expiresAt: row.expiresAt
+            )
+        }
+    }
+
+    func liveActivityState(userID: UserID) async throws -> LiveActivityState {
+        struct StateRow: Decodable {
+            let pushed: String?
+            let lingering: String
+            let version: Int
+            let nextCheckAt: Date?
+        }
+        try await sql.raw("""
+        INSERT INTO live_activity_states (user_id) VALUES (\(bind: userID.rawValue)) ON CONFLICT DO NOTHING
+        """).run()
+        guard let row = try await sql.raw("""
+        SELECT pushed::text AS pushed, lingering::text AS lingering, version, next_check_at
+        FROM live_activity_states WHERE user_id = \(bind: userID.rawValue)
+        """).first(decoding: StateRow.self, keyDecodingStrategy: .convertFromSnakeCase)
+        else { return .fresh }
+        let decoder = JSONDecoder()
+        return try LiveActivityState(
+            pushed: row.pushed.map { try decoder.decode(NowPlayingActivityState.self, from: Data($0.utf8)) },
+            lingering: decoder.decode([LiveActivityState.Lingering].self, from: Data(row.lingering.utf8)),
+            version: row.version, nextCheckAt: row.nextCheckAt
+        )
+    }
+
+    func saveLiveActivityState(_ state: LiveActivityState, userID: UserID) async throws -> Bool {
+        struct Found: Decodable { let version: Int }
+        let encoder = JSONEncoder()
+        let pushed = try state.pushed.flatMap { try String(bytes: encoder.encode($0), encoding: .utf8) }
+        let lingering = try String(bytes: encoder.encode(state.lingering), encoding: .utf8) ?? "[]"
+        return try await sql.raw("""
+        UPDATE live_activity_states SET pushed = \(bind: pushed)::jsonb, lingering = \(bind: lingering)::jsonb,
+            version = version + 1, next_check_at = \(bind: state.nextCheckAt)
+        WHERE user_id = \(bind: userID.rawValue) AND version = \(bind: state.version)
+        RETURNING version
+        """).first(decoding: Found.self) != nil
+    }
+
+    func scheduleLiveActivityCheck(userID: UserID, at date: Date) async throws {
+        try await sql.raw("""
+        UPDATE live_activity_states SET next_check_at = \(bind: date)
+        WHERE user_id = \(bind: userID.rawValue) AND (next_check_at IS NULL OR next_check_at > \(bind: date))
+        """).run()
+    }
+
+    func claimDueLiveActivityChecks(now: Date, limit: Int) async throws -> [UserID] {
+        struct Due: Decodable { let userId: UUID }
+        return try await sql.raw("""
+        UPDATE live_activity_states SET next_check_at = NULL
+        WHERE user_id IN (
+            SELECT user_id FROM live_activity_states WHERE next_check_at <= \(bind: now)
+            ORDER BY next_check_at LIMIT \(literal: limit) FOR UPDATE SKIP LOCKED
+        )
+        RETURNING user_id
+        """).all(decoding: Due.self, keyDecodingStrategy: .convertFromSnakeCase).map { UserID($0.userId) }
     }
 
     private func tokens(where filter: SQLQueryString) async throws -> [LiveActivityToken] {
@@ -142,18 +262,14 @@ struct PostgresWatchEventStore: WatchEventStore {
             let kind: String
             let environment: String
             let topic: String
-            let watchEventId: UUID?
         }
         return try await sql.raw("""
-        SELECT token, kind, environment, topic, watch_event_id FROM live_activity_tokens WHERE \(filter)
+        SELECT token, kind, environment, topic FROM live_activity_tokens WHERE \(filter)
         """).all(decoding: TokenRow.self, keyDecodingStrategy: .convertFromSnakeCase).compactMap { row in
             guard let kind = LiveActivityToken.Kind(rawValue: row.kind),
                   let environment = PushEnvironment(rawValue: row.environment)
             else { return nil }
-            return LiveActivityToken(
-                token: row.token, kind: kind, environment: environment, topic: row.topic,
-                watchEventID: row.watchEventId
-            )
+            return LiveActivityToken(token: row.token, kind: kind, environment: environment, topic: row.topic)
         }
     }
 }

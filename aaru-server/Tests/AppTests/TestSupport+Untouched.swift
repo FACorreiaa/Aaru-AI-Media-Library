@@ -24,11 +24,11 @@ extension UntouchedStore: AgentTokenStore, WatchEventStore {
         throw Touched()
     }
 
-    func claimLiveActivityStart(_: UUID, at _: Date) async throws -> Bool {
+    func registerLiveActivity(_: LiveActivityToken, userID _: UserID, now _: Date) async throws {
         throw Touched()
     }
 
-    func registerLiveActivity(_: LiveActivityToken, userID _: UserID, now _: Date) async throws -> Bool {
+    func hasLiveActivityTokens(userID _: UserID) async throws -> Bool {
         throw Touched()
     }
 
@@ -36,7 +36,7 @@ extension UntouchedStore: AgentTokenStore, WatchEventStore {
         throw Touched()
     }
 
-    func liveActivityUpdateTokens(watchEventID _: UUID) async throws -> [LiveActivityToken] {
+    func liveActivityUpdateTokens(userID _: UserID) async throws -> [LiveActivityToken] {
         throw Touched()
     }
 
