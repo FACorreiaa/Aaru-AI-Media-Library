@@ -78,12 +78,12 @@ def beta_band(icon):
     img = icon.copy().convert("RGBA")
     band = Image.new("RGBA", img.size, (0, 0, 0, 0))
     d = ImageDraw.Draw(band)
-    d.rectangle([0, 812, 1024, 1024], fill=(13, 52, 60, 236))
+    d.rectangle([0, 812, 1024, 1024], fill=(14, 20, 30, 236))
     font = ImageFont.truetype("/System/Library/Fonts/SFNS.ttf", 150)
     font.set_variation_by_axes([700])
     text = "BETA"
     tw = d.textlength(text, font=font)
-    d.text(((1024 - tw) / 2, 818), text, font=font, fill=(240, 205, 140, 255))
+    d.text(((1024 - tw) / 2, 818), text, font=font, fill=(242, 166, 90, 255))
     return Image.alpha_composite(img, band).convert("RGB")
 
 
