@@ -125,7 +125,8 @@ function ConnectExtension() {
           <h1 class="font-display text-3xl font-medium">Connected</h1>
           <p class="mt-3 text-muted">
             What you finish on Netflix, Disney+ and Prime Video in this browser
-            is now marked watched in Aaru. You can close this tab.
+            is now marked watched in Aaru, and a YouTube video shows in Now
+            playing while it plays. You can close this tab.
           </p>
           <Link
             to="/app/settings/connections"
@@ -156,7 +157,8 @@ function ConnectExtension() {
           </h1>
           <p class="mt-3 text-muted">
             It will mark episodes and films you finish on Netflix, Disney+ and
-            Prime Video. It can’t read your library. Disconnect it any time in
+            Prime Video, and show the YouTube video you are watching in Now
+            playing. It can’t read your library. Disconnect it any time in
             Settings → Connections.
           </p>
           <div class="mt-6 flex flex-wrap gap-2">

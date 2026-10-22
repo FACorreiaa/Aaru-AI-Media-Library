@@ -40,7 +40,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
     services.plans.push = push
     services.groups.push = push
-    services.scrobble.liveActivity = pushSender.map { NowPlayingNotifier(stores: stores, sender: $0) }
+    services.scrobble.liveActivity = pushSender.map { LiveSetNotifier(stores: stores, sender: $0) }
     if config.email == nil {
         logger.notice("Email sign-in disabled: RESEND_API_KEY is not set")
     }
@@ -87,6 +87,7 @@ func backgroundServices(
         ImportWorker(imports: services.imports, logger: logger, workers: workers.imports),
         GamificationWorker(gamification: GamificationService(stores: stores), logger: logger),
         AiringNotifierService(notifier: airing, logger: logger),
+        LiveActivitySweepService(notifier: services.scrobble.liveActivity, stores: stores, logger: logger),
         CatalogRefreshService(
             refresher: CatalogRefresher(stores: stores, catalog: services.catalog),
             logger: logger
@@ -278,7 +279,8 @@ func buildRouter(stores: Stores, services: Services, metricsSecret: String = "")
     ).register(on: router)
     MCPRoutes(tools: AgentTools(services: services, stores: stores), tokens: services.agentTokens).register(on: router)
     ScrobbleRoutes(scrobble: services.scrobble, tokens: services.agentTokens).register(on: router)
-    ListenBrainzRoutes(listens: services.listens, tokens: services.agentTokens).register(on: router)
+    ListenBrainzRoutes(listens: services.listens, scrobble: services.scrobble, tokens: services.agentTokens)
+        .register(on: router)
     OAuthRoutes(service: services.oauth).register(on: router)
     InternalMetricsRoutes(users: stores.users, secret: metricsSecret).register(on: router)
     return router

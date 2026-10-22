@@ -15,6 +15,8 @@ struct ListenBrainzRoutes: Sendable {
     static let maxListens = 1000
 
     let listens: ListenService
+    /// Hears `playing_now`, for the "Now playing" activity (SCR-009).
+    let scrobble: ScrobbleService
     let tokens: AgentTokenService
     var now: @Sendable () -> Date = { Date() }
     var logger = Logger(label: "aaru-listenbrainz")
@@ -61,6 +63,9 @@ struct ListenBrainzRoutes: Sendable {
             }
             if !submission.listens.isEmpty {
                 _ = try await listens.submit(submission.listens, from: caller)
+            }
+            if let track = submission.playingNow {
+                try await scrobble.play(.track(track, now: now()), from: caller)
             }
             return Self.json(.ok, ["status": "ok"])
         } catch {

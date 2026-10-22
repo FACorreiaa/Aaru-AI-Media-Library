@@ -150,12 +150,12 @@ struct HomeScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if model.loadFailed, model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil {
+        if model.loadFailed, model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty {
             LoadFailedView(
                 title: "Couldn't load Home",
                 message: "Aaru could not reach the server. Check your connection and try again."
             ) { await reload() }
-        } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil, model.hasLoaded {
+        } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty, model.hasLoaded {
             ContentUnavailableView {
                 Label(HomeEmptyCopy.headline, systemImage: "sparkles.tv")
             } description: {
@@ -170,7 +170,7 @@ struct HomeScreen: View {
             }
         } else {
             ScrollView {
-                if model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil {
+                if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty {
                     // The first load, inside the scroll view so pull to refresh works already.
                     ProgressView()
                         .frame(maxWidth: .infinity)
@@ -215,8 +215,8 @@ struct HomeScreen: View {
 
     /// Full width under the heading, above the split, so it leads on every screen size.
     @ViewBuilder private var nowPlayingSection: some View {
-        if let playing = model.nowPlaying {
-            NowPlayingCard(playing: playing, wide: !compact)
+        if !model.nowPlaying.isEmpty {
+            NowPlayingCard(items: model.nowPlaying, wide: !compact)
                 .padding(.horizontal, 20)
         }
     }

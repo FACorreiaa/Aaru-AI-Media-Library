@@ -14,37 +14,27 @@ struct NowPlaying: Sendable, Equatable {
     /// A paused session lasts this long from the pause.
     static let pausedLimit: TimeInterval = 30 * 60
 
-    /// Whether `session` still counts at `now`. Stremio sends no heartbeat, so a playing session
-    /// is assumed to keep playing from its last report.
-    static func isLive(_ session: OpenSession, now: Date) -> Bool {
-        let elapsed = now.timeIntervalSince(session.updatedAt)
+    /// When `session` stops counting. Stremio sends no heartbeat, so a playing session is assumed
+    /// to keep playing from its last report.
+    static func liveUntil(_ session: OpenSession) -> Date {
         switch session.state {
         case .paused:
-            return elapsed <= pausedLimit
+            return session.updatedAt.addingTimeInterval(pausedLimit)
         case .playing:
             let duration = session.knownDurationMs
-            guard duration > 0 else { return elapsed <= unknownDurationLimit }
+            guard duration > 0 else { return session.updatedAt.addingTimeInterval(unknownDurationLimit) }
             let left = TimeInterval(max(0, duration - session.positionMs)) / 1000
-            return elapsed <= left + playingGrace
+            return session.updatedAt.addingTimeInterval(left + playingGrace)
         }
+    }
+
+    /// Whether `session` still counts at `now`.
+    static func isLive(_ session: OpenSession, now: Date) -> Bool {
+        now <= liveUntil(session)
     }
 
     /// The first live session of `sessions` (newest first).
     static func pick(_ sessions: [OpenSession], now: Date) -> OpenSession? {
         sessions.first { isLive($0, now: now) }
     }
-
-    /// The Live Activity's moving part for this session at `now`.
-    static func content(_ session: OpenSession, now: Date, watched: Bool = false) -> NowWatchingContent {
-        let duration = TimeInterval(session.knownDurationMs > 0
-            ? session.knownDurationMs : Int64(NowPlaying.fallbackRuntimeMinutes) * 60000) / 1000
-        let startedAt = now.addingTimeInterval(-TimeInterval(session.positionMs) / 1000)
-        return NowWatchingContent(
-            startedAt: startedAt, endsAt: startedAt.addingTimeInterval(duration), showsEndTime: false,
-            watched: watched, pausedAt: session.state == .paused ? now : nil
-        )
-    }
-
-    /// The app's own fallback (`NowWatching.fallbackRuntime`), for a title with no runtime.
-    static let fallbackRuntimeMinutes = 45
 }

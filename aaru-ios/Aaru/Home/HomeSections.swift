@@ -60,9 +60,12 @@ extension HomeScreen {
         }
     }
 
-    /// The user's own rows. Continue watching leaves out the show Tonight already leads with.
+    /// The user's own rows. Continue watching leaves out the show Tonight already leads with,
+    /// and whatever is playing now.
     @ViewBuilder var ownRows: some View {
+        let playing = model.playingItemIds
         let continuing = model.continueWatching.filter { entry in
+            guard !playing.contains(entry.libraryItemId) else { return false }
             guard case let .continuing(lead)? = model.tonight?.primary else { return true }
             return entry.libraryItemId != lead.libraryItemId
         }

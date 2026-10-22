@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { seasonEpisode } from './dom'
-import { readerFor } from './index'
+import { mainVideo, seasonEpisode } from './dom'
+import { readerFor, remembers } from './index'
 import { readDisneyPlus } from './disneyplus'
 import { readNetflix } from './netflix'
 import { readPrimeVideo } from './primevideo'
+import { readYouTube } from './youtube'
 
 // Fixtures are the parts of each player these readers look at, as of 2026-10. Check them against
 // the live sites when a reader stops matching.
@@ -106,11 +107,72 @@ describe('Prime Video', () => {
   })
 })
 
+describe('YouTube', () => {
+  const url = new URL('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s')
+  // jsdom loads no media: the main video's duration and position are set by hand.
+  const watch = ({
+    id = 'dQw4w9WgXcQ',
+    player = 'html5-video-player',
+    duration = 213,
+  } = {}) => {
+    const doc = page(
+      `<ytd-watch-flexy video-id="${id}"><div id="movie_player" class="${player}"><video class="html5-main-video"></video></div><ytd-watch-metadata><h1><yt-formatted-string>Never Gonna Give You Up</yt-formatted-string></h1><ytd-video-owner-renderer><ytd-channel-name><a href="/@RickAstleyYT">Rick Astley</a></ytd-channel-name></ytd-video-owner-renderer></ytd-watch-metadata></ytd-watch-flexy>`,
+    )
+    const video = doc.querySelector('video')!
+    Object.defineProperty(video, 'duration', { value: duration })
+    Object.defineProperty(video, 'currentTime', { value: 42 })
+    return doc
+  }
+
+  it('reads the video on a watch page, and its main video', () => {
+    const doc = watch()
+    expect(readYouTube(doc, url)).toEqual({
+      source: 'youtube',
+      ref: 'dQw4w9WgXcQ',
+      type: 'video',
+      title: 'Never Gonna Give You Up',
+      channel: 'Rick Astley',
+    })
+    expect(mainVideo(doc)).toMatchObject({ duration: 213, currentTime: 42 })
+  })
+
+  it('reads nothing off a watch page, or before the page shows the URL’s video', () => {
+    const doc = watch()
+    expect(
+      readYouTube(doc, new URL('https://www.youtube.com/shorts/dQw4w9WgXcQ')),
+    ).toBeNull()
+    expect(
+      readYouTube(
+        doc,
+        new URL('https://music.youtube.com/watch?v=dQw4w9WgXcQ'),
+      ),
+    ).toBeNull()
+    expect(
+      readYouTube(doc, new URL('https://www.youtube.com/watch?v=short')),
+    ).toBeNull()
+    expect(readYouTube(watch({ id: 'oHg5SJYRHA0' }), url)).toBeNull()
+  })
+
+  it('reads nothing while an ad plays, or on a live stream', () => {
+    const ad = watch({ player: 'html5-video-player ad-showing' })
+    expect(readYouTube(ad, url)).toBeNull()
+    const live = watch({ player: 'html5-video-player ytp-live' })
+    expect(readYouTube(live, url)).toBeNull()
+    expect(readYouTube(watch({ duration: Infinity }), url)).toBeNull()
+  })
+})
+
 describe('sites', () => {
   it('picks a reader by host', () => {
     expect(readerFor('www.netflix.com')).toBe(readNetflix)
     expect(readerFor('www.amazon.de')).toBe(readPrimeVideo)
-    expect(readerFor('www.youtube.com')).toBeNull()
+    expect(readerFor('www.youtube.com')).toBe(readYouTube)
+    expect(readerFor('music.youtube.com')).toBeNull()
+  })
+
+  it('remembers what an overlay showed, but not on YouTube', () => {
+    expect(remembers(readNetflix)).toBe(true)
+    expect(remembers(readYouTube)).toBe(false)
   })
 
   it('reads the season-and-episode shapes the sites use', () => {

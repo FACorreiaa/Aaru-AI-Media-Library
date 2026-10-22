@@ -63,15 +63,19 @@ extension HomeModel {
         )
     }
 
-    /// The sample Home while Stremio plays an episode of the first Continue watching show
-    /// (SCR-008): Now playing leads, and Tonight moves on to the next thing.
+    /// The sample Home while Stremio plays an episode of the first Continue watching show and a
+    /// track plays beside it (SCR-008, SCR-009): Now playing leads, and Tonight moves on to the
+    /// next thing.
     static var samplePlaying: HomeModel {
         let home = sample
         guard let lead = home.continueWatching.first else { return home }
-        var playing = NowPlaying.sample(libraryItemId: lead.libraryItemId)
-        playing.title = lead.title
-        playing.episode = lead.next
-        playing.episodeName = lead.nextName
+        var episode = NowPlayingItem.sample(libraryItemId: lead.libraryItemId)
+        episode.name = lead.title.title
+        episode.title = lead.title
+        episode.episode = lead.next
+        episode.subtitle = ["S\(lead.next.season) · E\(lead.next.number)", lead.nextName].compactMap(\.self)
+            .joined(separator: " · ")
+        episode.artworkUrl = lead.title.posterUrl
         return HomeModel(
             preview: .init(
                 upNext: .init(
@@ -83,7 +87,7 @@ extension HomeModel {
             ),
             discover: home.discover,
             listening: sampleListening,
-            nowPlaying: playing
+            nowPlaying: [episode, .sampleTrack]
         )
     }
 

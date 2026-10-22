@@ -42,6 +42,12 @@ start, pause and stop playing something, and Aaru keeps that playback session (t
 episode, position and length) so it can tick off what you finished. Your changes from Stremio
 appear in your history like any other. Revoking the link in Settings stops all of it.
 
+**Now playing.** While something plays, Aaru keeps what your players report so it can show it on
+Home and on your iPhone's Lock Screen: the episode or film, or the track a music scrobbler says
+is playing, or the YouTube video the browser extension sees (its id, name and channel). A track
+or video is kept only while it plays and deleted minutes after it stops; it is never added to
+your listens or your library.
+
 **Profile and friends.** If you choose a handle, Aaru stores it. Anyone who types your exact
 handle can see it with your name and send you a friend request; nobody can search or browse for
 you. Aaru stores pending requests, who your friends are, who you blocked, and any report you

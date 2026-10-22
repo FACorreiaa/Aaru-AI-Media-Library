@@ -4,7 +4,7 @@ import { PLAYER_PORT } from '../lib/protocol'
 import { contentReporter } from '../lib/reporting/content'
 import type { Observation, Playing } from '../lib/types'
 import { mainVideo } from '../sites/dom'
-import { SITE_MATCHES, readerFor } from '../sites/index'
+import { SITE_MATCHES, readerFor, remembers } from '../sites/index'
 
 /** A playing page reports at least this often; the background decides what to send. */
 const REPORT_MS = 15_000
@@ -25,6 +25,7 @@ export default defineContentScript({
     if (!read) return
     // The overlay hides between mouse moves: what was read stays known for that page.
     const known = new Map<string, Playing>()
+    const remember = remembers(read)
     let port: Browser.runtime.Port | null = null
     let last = ''
     let lastAt = 0
@@ -32,7 +33,7 @@ export default defineContentScript({
     const look = (): Observation => {
       const fresh = read(document, new URL(location.href))
       const key = location.pathname + location.search
-      if (fresh) known.set(key, fresh)
+      if (fresh && remember) known.set(key, fresh)
       const video = mainVideo(document)
       return {
         playing: fresh ?? known.get(key) ?? null,

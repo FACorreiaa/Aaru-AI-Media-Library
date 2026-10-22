@@ -1,13 +1,14 @@
 import { defineConfig } from 'wxt'
 
 // SCR-007: Aaru's browser extension, one Manifest V3 source for Chrome and Firefox. It reads the
-// player page on three streaming sites and scrobbles to Aaru; it asks for nothing else.
+// player page on three streaming sites and YouTube's watch page (SCR-009), and scrobbles to Aaru;
+// it asks for nothing else. The sites' match list is the content script's (src/sites/index.ts).
 export default defineConfig({
   srcDir: 'src',
   manifest: ({ browser, mode }) => ({
     name: 'Aaru',
     description:
-      'Marks what you finish on Netflix, Disney+ and Prime Video as watched in your Aaru library.',
+      'Marks what you finish on Netflix, Disney+ and Prime Video as watched in Aaru, and shows your YouTube video as playing.',
     permissions: ['storage', 'alarms'],
     host_permissions: [
       'https://api.aaruapp.com/*',
