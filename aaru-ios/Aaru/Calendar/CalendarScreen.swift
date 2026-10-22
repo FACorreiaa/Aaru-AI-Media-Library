@@ -34,6 +34,19 @@ struct CalendarScreen: View {
     @State private var week: WeekModel
     @State private var month: MonthModel
     @Environment(AppRouter.self) private var router
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
+
+    /// A phone's bar has no room for the switch beside Week's arrows and the filter menu, so it
+    /// sits under the bar there; wider windows keep it in the bar's centre.
+    private var switchUnderBar: Bool {
+        #if os(iOS)
+            sizeClass == .compact
+        #else
+            false
+        #endif
+    }
 
     init(api: Client?, library: LibraryModel, lists: ListsModel, feed: CalendarFeed? = nil, today: Date = .now) {
         self.api = api
@@ -64,14 +77,17 @@ struct CalendarScreen: View {
                 .navigationBarTitleDisplayMode(.inline)
             #endif
                 .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        Picker("View", selection: $mode) {
-                            ForEach(Mode.allCases) { Text($0.label).tag($0) }
-                        }
-                        .pickerStyle(.segmented)
-                        .fixedSize()
+                    if !switchUnderBar {
+                        ToolbarItem(placement: .principal) { modePicker.fixedSize() }
                     }
                     ToolbarItem(placement: .secondaryAction) { filterMenu }
+                }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if switchUnderBar {
+                        modePicker
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                    }
                 }
                 // A Month day sheet presents its own episode sheet (UX-068).
                 .sheet(isPresented: Binding(
@@ -95,6 +111,13 @@ struct CalendarScreen: View {
                 }
                 .background(Color(.paper))
         }
+    }
+
+    private var modePicker: some View {
+        Picker("View", selection: $mode) {
+            ForEach(Mode.allCases) { Text($0.label).tag($0) }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var currentFilter: CalendarFilter {

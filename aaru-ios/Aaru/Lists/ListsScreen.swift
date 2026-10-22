@@ -37,6 +37,8 @@ struct ListsScreen: View {
                             systemImage: "list.bullet.rectangle",
                             description: Text("Pick one from the lists, or make a new one.")
                         )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(.paper))
                     }
                 }
             }

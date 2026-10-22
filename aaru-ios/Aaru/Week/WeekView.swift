@@ -32,6 +32,13 @@ struct WeekView: View {
     var body: some View {
         content
             .toolbar { toolbar }
+        #if os(iOS)
+            // iPad's bar shares its width with the tab bar and would fold the arrows into its
+            // More menu, so a wide window steps from a row over the grid instead.
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if isWide { stepperRow }
+            }
+        #endif
     }
 
     @ViewBuilder private var content: some View {
@@ -55,23 +62,67 @@ struct WeekView: View {
     /// Wide: a day or a week at a time. Compact: Today and the week arrows; days by swipe
     /// (UX-091). Arrows carry ⌘ so they never take a plain arrow key from a list or a field.
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction) {
-            Button("Previous week", systemImage: "chevron.left.2") { step(-7) }
-                .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
-            if isWide {
-                Button("Previous day", systemImage: "chevron.left") { step(-1) }
-                    .keyboardShortcut(.leftArrow, modifiers: .command)
+        #if os(iOS)
+            if !isWide {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    previousWeek
+                    today
+                    nextWeek
+                }
             }
-            Button("Today") { goToToday() }
-                .keyboardShortcut("t", modifiers: .command)
-                .disabled(model.containsToday && (isWide || model.calendar.isDateInToday(selection)))
-            if isWide {
-                Button("Next day", systemImage: "chevron.right") { step(1) }
-                    .keyboardShortcut(.rightArrow, modifiers: .command)
+        #else
+            ToolbarItemGroup(placement: .primaryAction) {
+                previousWeek
+                previousDay
+                today
+                nextDay
+                nextWeek
             }
-            Button("Next week", systemImage: "chevron.right.2") { step(7) }
-                .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
+        #endif
+    }
+
+    #if os(iOS)
+        private var stepperRow: some View {
+            HStack(spacing: 4) {
+                previousWeek
+                previousDay
+                today
+                nextDay
+                nextWeek
+            }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
         }
+    #endif
+
+    private var previousWeek: some View {
+        Button("Previous week", systemImage: "chevron.left.2") { step(-7) }
+            .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
+    }
+
+    private var nextWeek: some View {
+        Button("Next week", systemImage: "chevron.right.2") { step(7) }
+            .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
+    }
+
+    private var today: some View {
+        Button("Today") { goToToday() }
+            .keyboardShortcut("t", modifiers: .command)
+            .disabled(model.containsToday && (isWide || model.calendar.isDateInToday(selection)))
+    }
+
+    private var previousDay: some View {
+        Button("Previous day", systemImage: "chevron.left") { step(-1) }
+            .keyboardShortcut(.leftArrow, modifiers: .command)
+    }
+
+    private var nextDay: some View {
+        Button("Next day", systemImage: "chevron.right") { step(1) }
+            .keyboardShortcut(.rightArrow, modifiers: .command)
     }
 
     private var stepAnimation: Animation? {
