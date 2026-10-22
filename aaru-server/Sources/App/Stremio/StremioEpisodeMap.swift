@@ -26,12 +26,34 @@ struct StremioEpisodeMap: Sendable {
     func episode(
         _ key: EpisodeKey, imdb: String, title: Title, episodes: [CatalogEpisode]
     ) async -> EpisodeKey? {
-        let sameSeries = title.ids.imdb == nil || title.ids.imdb == imdb
-        if sameSeries, episodes.contains(where: { $0.season == key.season && $0.episode == key.episode }) {
+        if Self.trusted(key, imdb: imdb, title: title, episodes: episodes) {
             return key
         }
-        guard let listed = await cache.series(imdb, fetch: series)?.videos else { return sameSeries ? key : nil }
-        return Self.match(key, listed: listed, episodes: episodes) ?? (sameSeries ? key : nil)
+        let listed = await cache.series(imdb, fetch: series)?.videos
+        return Self.place(key, imdb: imdb, title: title, episodes: episodes, listed: listed)
+    }
+
+    /// True when Stremio's number is the show's own: the show is that IMDb series (or its IMDb id
+    /// is unknown) and has the episode.
+    static func trusted(_ key: EpisodeKey, imdb: String, title: Title, episodes: [CatalogEpisode]) -> Bool {
+        sameSeries(imdb, title) && episodes.contains { $0.season == key.season && $0.episode == key.episode }
+    }
+
+    /// `episode` without the fetch, for a caller that has Cinemeta's list (`listed`, nil when
+    /// Cinemeta failed): the history import (IMP-016) and the addon share one rule.
+    static func place(
+        _ key: EpisodeKey, imdb: String, title: Title, episodes: [CatalogEpisode], listed: [StremioWatched.Video]?
+    ) -> EpisodeKey? {
+        if trusted(key, imdb: imdb, title: title, episodes: episodes) {
+            return key
+        }
+        let fallback = sameSeries(imdb, title) ? key : nil
+        guard let listed else { return fallback }
+        return match(key, listed: listed, episodes: episodes) ?? fallback
+    }
+
+    private static func sameSeries(_ imdb: String, _ title: Title) -> Bool {
+        title.ids.imdb == nil || title.ids.imdb == imdb
     }
 
     /// The TMDB episode that aired when Cinemeta's `key` did. Two episodes out the same day pair up

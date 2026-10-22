@@ -75,6 +75,11 @@ extension ImportService {
 
     /// The worker's step before matching: lays each show's watched bitfield over its Cinemeta
     /// episode list. A show Cinemeta does not know keeps its status and gets no ticks.
+    ///
+    /// The show is found by Cinemeta's TVDB id first, as the addon's events are: TMDB answers
+    /// some IMDb series with a near-empty entry of their own (Bleach: Thousand-Year Blood War,
+    /// `tt14986406`), while TVDB's id is the show Aaru tracks. Ticks of another IMDb series are
+    /// put on that show's episodes by release day; one that cannot be placed is left out.
     func expandStremioWatched(_ rows: [PlannedRow]) async throws -> [PlannedRow] {
         guard let stremio else { return rows }
         var expanded = rows
@@ -82,12 +87,29 @@ extension ImportService {
             guard let field = expanded[index].row.stremioWatched, let imdb = expanded[index].row.ids.imdb else {
                 continue
             }
-            let videos = try await stremio.videos(imdb: imdb)
-            let ticks = StremioWatched.episodes(field, videos: videos)
-            expanded[index].row.watched = ticks.isEmpty ? nil : ticks
+            let series = try await stremio.series(imdb: imdb)
+            var ticks = StremioWatched.episodes(field, videos: series.videos)
+            if let title = await show(tvdb: series.tvdb) {
+                expanded[index].row.ids = title.ids
+                if title.ids.imdb != imdb, !ticks.isEmpty {
+                    let episodes = try await resolver.catalogs.tmdb.episodes(ids: title.ids)?.episodes ?? []
+                    ticks = ticks.compactMap { key in
+                        StremioEpisodeMap.place(
+                            key, imdb: imdb, title: title, episodes: episodes, listed: series.videos
+                        )
+                    }
+                }
+            }
+            expanded[index].row.watched = ticks.isEmpty ? nil : Array(Set(ticks)).sorted()
             expanded[index].row.stremioWatched = nil
         }
         return expanded
+    }
+
+    /// The show TVDB's id names, when there is one and the catalog knows it.
+    private func show(tvdb: String?) async -> Title? {
+        guard let tvdb else { return nil }
+        return try? await resolver.resolve(MediaRef(type: .show, ids: ExternalIDs(tvdb: tvdb)))
     }
 
     private func stremioAccount() throws -> StremioAccount {

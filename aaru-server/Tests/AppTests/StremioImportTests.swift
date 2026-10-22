@@ -12,6 +12,8 @@ final class FakeStremio: @unchecked Sendable {
     let transport: StubTransport
     var library: [[String: Any]] = []
     var videos: [String: [[String: Any]]] = [:]
+    /// Cinemeta's `tvdb_id` per IMDb id.
+    var tvdb: [String: Int] = [:]
 
     init() {
         transport = StubTransport { _ in OutboundResponse(status: 500, body: Data()) }
@@ -34,7 +36,9 @@ final class FakeStremio: @unchecked Sendable {
             (try? JSONSerialization.data(withJSONObject: object)) ?? Data()
         }
         let library = encoded(["result": library])
-        let videos = videos.mapValues { list in encoded(["meta": ["videos": list]]) }
+        let videos = Dictionary(uniqueKeysWithValues: videos.map { imdb, list in
+            (imdb, encoded(["meta": ["videos": list, "tvdb_id": tvdb[imdb].map { $0 as Any } ?? NSNull()]]))
+        })
         transport.respond { [self] request in
             let path = request.url.path()
             func json(_ object: Any) -> OutboundResponse {
