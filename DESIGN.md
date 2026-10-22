@@ -98,7 +98,9 @@ Each step is a row you can tap:
 5. Apply ratings
 
 Partial failure stays visible. "14 unmatched" opens a queue the agent and you finish
-together. GitHub's canvas lesson: durable state, human gates.
+together. GitHub's canvas lesson: durable state, human gates. Built for one row at a time (IMP-011): each unmatched row has "Find it", the
+catalog search started on the row's own title and kind; the pick brings the file's status,
+rating and episodes with it, into the plan before approval or as its own undoable action after.
 
 Built for file and account imports (IMP-017, web + Apple): Read your file (or library) · Wait for
 a free slot · Match each title to the catalog ("840 of 2,001" with a bar) · Check against your

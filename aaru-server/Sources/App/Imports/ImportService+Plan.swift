@@ -31,12 +31,19 @@ extension ImportService {
             Array(rows[start ..< min(start + Self.chunkSize, rows.count)])
         }
         var matched = 0
-        var planned = try await Self.boundedMap(chunks, limit: Self.chunksInFlight) { chunk in
+        let planned = try await Self.boundedMap(chunks, limit: Self.chunksInFlight) { chunk in
             try await matchChunk(chunk, withoutAniListIfDown: withoutAniListIfDown)
         } finished: { chunk in
             matched += chunk.count
             try await progress(matched)
         }.flatMap(\.self)
+        return try await decided(planned, userID: userID)
+    }
+
+    /// Decides every matched title against the library as it is now. Rows for one title merge into
+    /// the first; the rest are skipped.
+    func decided(_ rows: [PlannedRow], userID: UserID) async throws -> [PlannedRow] {
+        var planned = rows
         let context = try await mergeContext(planned, userID: userID)
         for (titleID, indices) in Self.groups(planned) {
             let merged = Self.merged(Self.seasonRows(indices.map { planned[$0] }, context: context))
@@ -188,7 +195,7 @@ extension ImportService {
     }
 
     /// Decides one title again (the library may have changed since the plan) and returns its writes.
-    private func writes(
+    func writes(
         for row: inout PlannedRow,
         merged: ImportRow,
         titleID: TitleID,

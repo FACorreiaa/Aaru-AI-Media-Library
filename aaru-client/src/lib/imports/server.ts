@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/solid-start'
 import { deleteCookie } from '@tanstack/solid-start/server'
 import { z } from 'zod'
 import { api } from '../api/client'
+import { MEDIA_TYPES } from '../media'
 import { errorMessage } from '../api/errors'
 import { SESSION_COOKIE } from '../session/cookie'
 import { sessionRejected, sessionToken } from '../session/guard'
@@ -11,6 +12,7 @@ import type { components } from '../api/schema'
 
 export type ImportJob = components['schemas']['ImportJob']
 export type ImportDetail = components['schemas']['ImportDetail']
+export type ImportRow = ImportDetail['rows'][number]
 export type Account = components['schemas']['Me']
 
 const MAX_BYTES = 5 * 1024 * 1024
@@ -254,3 +256,32 @@ export const discardImport = createServerFn({ method: 'POST' })
       )
     }
   })
+
+/** IMP-011: one unmatched row, matched by hand to the title the person picked. */
+export const resolveImportRow = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      id,
+      index: z.number().int().min(0),
+      type: z.enum(MEDIA_TYPES),
+      ids: z.record(z.string(), z.string()),
+      title: z.string(),
+      year: z.number().int().optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ job: ImportJob; row: ImportRow }> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/{id}/rows/{index}/resolve', {
+        params: { path: { id: data.id, index: data.index } },
+        body: {
+          mediaRef: {
+            type: data.type,
+            ids: data.ids,
+            title: data.title,
+            year: data.year,
+          },
+        },
+      }),
+      `${data.title} could not be matched.`,
+    ),
+  )

@@ -170,7 +170,11 @@ extension ImportService {
     }
 
     static func summary(_ source: ImportSource, stats: ImportStats) -> String {
-        let name = switch source {
+        "Imported \(stats.created) new and updated \(stats.updated) from \(sourceName(source))"
+    }
+
+    static func sourceName(_ source: ImportSource) -> String {
+        switch source {
         case .imdbCSV: "IMDb"
         case .letterboxdCSV: "Letterboxd"
         case .goodreadsCSV: "Goodreads"
@@ -182,7 +186,6 @@ extension ImportService {
         case .anilist: "AniList"
         case .genericCSV: "CSV"
         }
-        return "Imported \(stats.created) new and updated \(stats.updated) from \(name)"
     }
 
     private static func summary(of error: any Error) -> String {

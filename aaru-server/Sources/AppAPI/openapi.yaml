@@ -1950,6 +1950,39 @@ paths:
               schema: {$ref: '#/components/schemas/ImportJob'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/imports/{id}/rows/{index}/resolve:
+    post:
+      operationId: resolveImportRow
+      summary: >-
+        Match one unmatched row by hand (IMP-011), with a title the person picked from a search.
+        Before the plan is approved the pick joins the plan; after it, the row is written at once
+        as its own undoable action. The source's status, rating and ticks come with it, merged
+        like any import row.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: index, in: path, required: true, schema: {type: integer}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaRef]
+              properties:
+                mediaRef: {$ref: '#/components/schemas/MediaRef'}
+      responses:
+        '200':
+          description: Matched. The job's counts and the row as it now stands.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [job, row]
+                properties:
+                  job: {$ref: '#/components/schemas/ImportJob'}
+                  row: {$ref: '#/components/schemas/ImportRow'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/shelves:
     get:
       operationId: listShelves
