@@ -581,8 +581,11 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - A show's `state.watched` is a bitfield over its Cinemeta episode list
   (`{anchorId}:{anchorLength}:{base64 zlib}`, LSB first, list sorted by season, episode, release).
   The worker fetches `v3-cinemeta.strem.io/meta/series/{tt}.json` once per show, lines the bits up
-  by the anchor (stremio-core's rules), and ticks the episodes. Specials are left out; Cinemeta's
-  numbering that disagrees with TMDB stays unticked rather than guessed.
+  by the anchor (stremio-core's rules), and ticks the episodes. Specials are left out. The show is
+  found by Cinemeta's `tvdb_id` before its IMDb id (TMDB answers some IMDb series, such as Bleach:
+  Thousand-Year Blood War, with a near-empty entry of their own), and ticks of an IMDb series that
+  is not the show's own are placed by release day (`StremioEpisodeMap`, shared with the addon's
+  events); one that cannot be placed stays unticked rather than guessed.
 - Second in the merge order, after Trakt. Then the normal plan → approve flow.
 
 ### CSV importers
