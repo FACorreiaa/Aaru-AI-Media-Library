@@ -67,3 +67,46 @@ struct CreateSocial: SQLMigration {
         "DROP TABLE profiles",
     ]
 }
+
+/// SOC-002 · friend invite links. One link per invite: whoever opens it first while it is live
+/// becomes the inviter's friend, and it is spent. A link may carry one title the inviter wants
+/// to watch with them ("Watch Severance with me"); the invitee chooses whether to add it.
+struct AddFriendInvites: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE social_invites (
+            id uuid PRIMARY KEY,
+            code text NOT NULL UNIQUE,
+            inviter_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title_id uuid REFERENCES titles(id) ON DELETE RESTRICT,
+            created_at timestamptz NOT NULL,
+            expires_at timestamptz NOT NULL,
+            redeemed_by uuid REFERENCES users(id) ON DELETE SET NULL,
+            redeemed_at timestamptz,
+            revoked_at timestamptz,
+            CHECK (redeemed_by IS NULL OR redeemed_by <> inviter_id)
+        )
+        """,
+        "CREATE INDEX social_invites_inviter ON social_invites (inviter_id, created_at DESC)",
+    ]
+    let backward = [
+        "DROP TABLE social_invites",
+    ]
+}
+
+/// SOC-001 · social settings. A missing row means the defaults: friends see your library. Strangers
+/// never see anything, whatever is stored here.
+struct AddSocialSettings: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE social_settings (
+            user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            share_library_with_friends boolean NOT NULL DEFAULT true,
+            updated_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+    ]
+    let backward = [
+        "DROP TABLE social_settings",
+    ]
+}

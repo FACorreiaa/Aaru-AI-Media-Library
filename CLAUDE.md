@@ -44,6 +44,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
 | Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20); group mention and invite alerts with groups (GRP-012); the "Now watching" Live Activity pushed from scrobbles (push-to-start, update, end; SCR-008) |
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
+| Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
 | User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
 | Agent model | Pluggable `ModelProviding` in `aaru-server` (`Sources/App/Agent`). Anthropic default, user key supported, spend metered daily |
 | Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`, with an OAuth front door (`Sources/App/OAuth`) so Claude can add Aaru as a custom connector. Not a second backend |
@@ -182,6 +183,9 @@ Use these words in code, APIs, and UI:
 - **Listen** — one play of a track a music scrobbler sent (MUS-005). Append-only and never a
   library write; the same play sent twice is kept once
 - **Friend** — a mutual, accepted connection. There is no one-way follow
+- **Invite** — a one-use link (`aaruapp.com/i/{code}`, 14 days) that makes whoever opens it the
+  sender's friend, optionally carrying one title to watch together. Friend invites only: groups
+  have no invite links
 - **Points event** — one row in the append-only points ledger, idempotent by dedupe key.
   Never a counter
 - **Streak** — consecutive local days with at least one progress write

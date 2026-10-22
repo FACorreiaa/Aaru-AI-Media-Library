@@ -58,6 +58,14 @@ export const ListsIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const FriendsIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <circle cx="10" cy="8.5" r="3.5" />
+    <path d="M3.5 19.5c.7-3.4 3.3-5.25 6.5-5.25 1.4 0 2.7.35 3.75 1" />
+    <path d="M18 20.25s-3.25-1.9-3.25-4.1a1.6 1.6 0 0 1 3.25-.55 1.6 1.6 0 0 1 3.25.55c0 2.2-3.25 4.1-3.25 4.1Z" />
+  </Icon>
+)
+
 export const GroupsIcon = (p: IconProps) => (
   <Icon class={p.class}>
     <circle cx="9" cy="9" r="3.25" />

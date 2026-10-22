@@ -13,18 +13,26 @@ import { Segmented } from '../Segmented'
 
 /**
  * Search the catalog and pick one title: the same search as Add, scoped by kind. Used to make a
- * title channel, add to a List channel, and start a watch party.
+ * title channel, add to a List channel, start a watch party, and match an import row by hand.
  */
 export function TitlePicker(props: {
   onPick: (hit: CatalogHit) => void
   /** Kinds to offer; a watch party has no books. */
   kinds?: MediaKind[]
   busy?: boolean
+  /** Where the search starts: an import row's own title and kind. */
+  initialQuery?: string
+  initialKind?: MediaKind
 }) {
   const kinds = () =>
     KINDS.filter((k) => !props.kinds || props.kinds.includes(k.kind))
-  const [kind, setKind] = createSignal<MediaKind>(kinds()[0]?.kind ?? 'film')
-  const [query, setQuery] = createSignal('')
+  const offered = kinds().some((k) => k.kind === props.initialKind)
+  const [kind, setKind] = createSignal<MediaKind>(
+    props.initialKind && offered
+      ? props.initialKind
+      : (kinds()[0]?.kind ?? 'film'),
+  )
+  const [query, setQuery] = createSignal(props.initialQuery ?? '')
   const [hits, setHits] = createSignal<CatalogHit[]>([])
   const [searching, setSearching] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)

@@ -81,7 +81,8 @@ command/cmdk, drawer, sidebar…) stay out of every route.
   (files `_shell.app*.tsx`, URLs unchanged). Its `beforeLoad` is the one sign-in check, through
   `main`'s query cache (`requireSession`), and now carries `next` (UX-011). The shadcn-solid
   Sidebar is persistent and collapsible to icons from 1024px and a sheet below, with a top bar
-  (wordmark, Search, menu); Home · Discover · Library · Calendar · Lists · Groups, then Insights
+  (wordmark, Search, menu); Home · Discover · Library · Calendar · Lists · Friends · Groups (Friends
+  from `main`'s SOC-003), then Insights
   and Settings, then the account row. Groups carries the mention badge. One Search dialog with
   ⌘K opens in place on every page; Home and Library lend it their library (`useSearchHost`).
   Back links name the page you came from (`BackLink`). Skip link, one Toaster.
@@ -162,6 +163,11 @@ Reading the table:
   | Library | 88.9 | 167.9 | 148.8 |
   | Settings → Account | 90.6 | 153.7 | 125.6 |
   | A group channel | 111.3 | 202.6 | 191.3 |
+
+  After the second merge of `main` (friends, invites, IMP-011; `main` itself grew the shared
+  chunk by ~2.8 KB): `/_shell` 112.8, Home 158.8, Title 163.6, a group channel 193.8, Friends
+  123.8. The public invite letter `/i/$code` is 105.5 (barrel `TextField`, `Checkbox`, `Button`,
+  like sign-in).
 
   Most of what is left is step 1's Kobalte cost (accepted), paid once in the shell and cached
   across navigations. Some child rows grew after the cuts (Home, Title, Library, Discover):

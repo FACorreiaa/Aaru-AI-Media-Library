@@ -78,6 +78,16 @@ extension APIImplementation {
         return .ok(.init(body: .json(.init(job))))
     }
 
+    func resolveImportRow(_ input: Operations.ResolveImportRow.Input) async throws
+        -> Operations.ResolveImportRow.Output
+    {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let resolved = try await services.imports.resolveRow(
+            importID(input.path.id), index: input.path.index, to: MediaRef(body.mediaRef), userID: currentUser()
+        )
+        return .ok(.init(body: .json(.init(job: .init(resolved.job), row: .init(resolved.row)))))
+    }
+
     func createAniListImport(_ input: Operations.CreateAniListImport.Input) async throws
         -> Operations.CreateAniListImport.Output
     {

@@ -44,6 +44,7 @@ import type { AppShellContext, Previous, SearchHost } from './context'
 import {
   CalendarIcon,
   DiscoverIcon,
+  FriendsIcon,
   GroupsIcon,
   HomeIcon,
   InsightsIcon,
@@ -65,6 +66,7 @@ type Destination = {
     | '/app/library'
     | '/app/calendar'
     | '/app/lists'
+    | '/app/friends'
     | '/app/groups'
     | '/app/insights'
     | '/app/settings'
@@ -86,6 +88,8 @@ const DESTINATIONS: Destination[] = [
   },
   { to: '/app/calendar', label: 'Calendar', icon: CalendarIcon },
   { to: '/app/lists', label: 'Lists', icon: ListsIcon },
+  // SOC-003 (owner, 2026-10-21): Friends is its own page, between Lists and Groups.
+  { to: '/app/friends', label: 'Friends', icon: FriendsIcon },
   { to: '/app/groups', label: 'Groups', icon: GroupsIcon },
 ]
 

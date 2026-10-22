@@ -1,30 +1,40 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { rememberNext, takeNext } from './pending-next'
 
-const store = new Map<string, string>()
-beforeEach(() => {
-  store.clear()
-  globalThis.localStorage = {
-    getItem: (k: string) => store.get(k) ?? null,
-    setItem: (k: string, v: string) => void store.set(k, v),
-    removeItem: (k: string) => void store.delete(k),
-  } as Storage
-})
+// Tests run in Node: a minimal in-memory Storage.
+class MemoryStorage {
+  private items = new Map<string, string>()
+  getItem(key: string) {
+    return this.items.get(key) ?? null
+  }
+  setItem(key: string, value: string) {
+    this.items.set(key, value)
+  }
+  removeItem(key: string) {
+    this.items.delete(key)
+  }
+}
 
-describe('pending sign-in destination', () => {
-  it('returns it once', () => {
-    rememberNext('/app/plans/abc', 1000)
-    expect(takeNext(2000)).toBe('/app/plans/abc')
+describe('pending next', () => {
+  beforeEach(() => {
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: new MemoryStorage(),
+      configurable: true,
+    })
+  })
+
+  it('returns a remembered invite once', () => {
+    rememberNext('/i/k7Q2xPa9Lm3Z', 1000)
+    expect(takeNext(2000)).toBe('/i/k7Q2xPa9Lm3Z')
     expect(takeNext(3000)).toBe('/app')
   })
 
-  it('expires with the link', () => {
-    rememberNext('/app/plans/abc', 0)
+  it('forgets stale and unsafe destinations', () => {
+    rememberNext('/i/k7Q2xPa9Lm3Z', 0)
     expect(takeNext(16 * 60 * 1000)).toBe('/app')
-  })
-
-  it('never keeps a destination outside Aaru', () => {
-    rememberNext('https://evil.example', 0)
+    rememberNext('//evil.example', 0)
+    expect(takeNext(1)).toBe('/app')
+    localStorage.setItem('aaru.next', JSON.stringify({ next: '//evil', at: 0 }))
     expect(takeNext(1)).toBe('/app')
   })
 })

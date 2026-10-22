@@ -1,14 +1,15 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { Show } from 'solid-js'
 import { ConcertPlaceSection } from '../components/ConcertPlaceSection'
-import { FriendsSection } from '../components/settings/FriendsSection'
+import { FriendsCard } from '../components/FriendsCard'
 import { SettingsPageTitle } from '../components/settings/SettingsNav'
-import { loadFriendsPage } from '../lib/settings/account'
+import { loadPrivacyPage } from '../lib/settings/account'
 
-// Settings → Friends & privacy (DESIGN.md §18).
+// Settings → Friends & privacy (DESIGN.md §18): who sees your library, and the concerts city.
+// Friends themselves (invites, requests, profiles) are their own page, /app/friends.
 export const Route = createFileRoute('/_shell/app_/settings/friends')({
   head: () => ({ meta: [{ title: 'Friends & privacy · Settings · Aaru' }] }),
-  loader: () => loadFriendsPage(),
+  loader: () => loadPrivacyPage(),
   component: Friends,
 })
 
@@ -18,9 +19,12 @@ function Friends() {
     <>
       <SettingsPageTitle
         title="Friends & privacy"
-        description="Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private."
+        description="Nobody can search or browse for you, and your library stays private unless you show it to friends."
       />
-      <FriendsSection handle={loaded().handle} state={loaded().social} />
+      <FriendsCard
+        handle={loaded().handle}
+        shareLibraryWithFriends={loaded().sharing.shareLibraryWithFriends}
+      />
       <Show when={loaded().concerts?.available ? loaded().concerts : null}>
         {(setting) => <ConcertPlaceSection setting={setting()} />}
       </Show>

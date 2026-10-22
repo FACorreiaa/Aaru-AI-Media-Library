@@ -14,10 +14,12 @@ import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as ShellAppRouteImport } from './routes/_shell.app'
 import { Route as AppExportRouteImport } from './routes/app_.export'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
+import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as ShellAppCalendarRouteImport } from './routes/_shell.app_.calendar'
 import { Route as ShellAppDiscoverRouteImport } from './routes/_shell.app_.discover'
@@ -28,6 +30,8 @@ import { Route as ShellAppMusicRouteImport } from './routes/_shell.app_.music'
 import { Route as ShellAppRecapRouteImport } from './routes/_shell.app_.recap'
 import { Route as ShellAppSettingsRouteImport } from './routes/_shell.app_.settings'
 import { Route as ShellAppWeekRouteImport } from './routes/_shell.app_.week'
+import { Route as ShellAppFriendsIndexRouteImport } from './routes/_shell.app_.friends.index'
+import { Route as ShellAppFriendsHandleRouteImport } from './routes/_shell.app_.friends.$handle'
 import { Route as ShellAppGroupsIndexRouteImport } from './routes/_shell.app_.groups.index'
 import { Route as ShellAppGroupsGroupIdRouteImport } from './routes/_shell.app_.groups.$groupId'
 import { Route as ShellAppImportsIdRouteImport } from './routes/_shell.app_.imports.$id'
@@ -74,6 +78,12 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownAppleAppSiteAssociationRoute =
+  DotwellKnownAppleAppSiteAssociationRouteImport.update({
+    id: '/.well-known/apple-app-site-association',
+    path: '/.well-known/apple-app-site-association',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ShellAppRoute = ShellAppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -92,6 +102,11 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
 const ConnectExtensionRoute = ConnectExtensionRouteImport.update({
   id: '/connect/extension',
   path: '/connect/extension',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ICodeRoute = ICodeRouteImport.update({
+  id: '/i/$code',
+  path: '/i/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
@@ -142,6 +157,16 @@ const ShellAppSettingsRoute = ShellAppSettingsRouteImport.update({
 const ShellAppWeekRoute = ShellAppWeekRouteImport.update({
   id: '/app_/week',
   path: '/app/week',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppFriendsIndexRoute = ShellAppFriendsIndexRouteImport.update({
+  id: '/app_/friends/',
+  path: '/app/friends/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppFriendsHandleRoute = ShellAppFriendsHandleRouteImport.update({
+  id: '/app_/friends/$handle',
+  path: '/app/friends/$handle',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellAppGroupsIndexRoute = ShellAppGroupsIndexRouteImport.update({
@@ -260,10 +285,12 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
   '/app/export': typeof AppExportRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
+  '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/calendar': typeof ShellAppCalendarRoute
   '/app/discover': typeof ShellAppDiscoverRoute
@@ -274,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/app/recap': typeof ShellAppRecapRoute
   '/app/settings': typeof ShellAppSettingsRouteWithChildren
   '/app/week': typeof ShellAppWeekRoute
+  '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
   '/app/imports/$id': typeof ShellAppImportsIdRoute
   '/app/lists/$id': typeof ShellAppListsIdRoute
@@ -290,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/app/settings/notifications': typeof ShellAppSettingsNotificationsRoute
   '/app/settings/recaps': typeof ShellAppSettingsRecapsRoute
   '/app/title/$id': typeof ShellAppTitleIdRoute
+  '/app/friends/': typeof ShellAppFriendsIndexRoute
   '/app/groups/': typeof ShellAppGroupsIndexRoute
   '/app/lists/': typeof ShellAppListsIndexRoute
   '/app/settings/': typeof ShellAppSettingsIndexRoute
@@ -301,10 +330,12 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
   '/app/export': typeof AppExportRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
+  '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/calendar': typeof ShellAppCalendarRoute
   '/app/discover': typeof ShellAppDiscoverRoute
@@ -313,6 +344,7 @@ export interface FileRoutesByTo {
   '/app/music': typeof ShellAppMusicRoute
   '/app/recap': typeof ShellAppRecapRoute
   '/app/week': typeof ShellAppWeekRoute
+  '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/imports/$id': typeof ShellAppImportsIdRoute
   '/app/lists/$id': typeof ShellAppListsIdRoute
   '/app/plans/$id': typeof ShellAppPlansIdRoute
@@ -328,6 +360,7 @@ export interface FileRoutesByTo {
   '/app/settings/notifications': typeof ShellAppSettingsNotificationsRoute
   '/app/settings/recaps': typeof ShellAppSettingsRecapsRoute
   '/app/title/$id': typeof ShellAppTitleIdRoute
+  '/app/friends': typeof ShellAppFriendsIndexRoute
   '/app/groups': typeof ShellAppGroupsIndexRoute
   '/app/lists': typeof ShellAppListsIndexRoute
   '/app/settings': typeof ShellAppSettingsIndexRoute
@@ -341,10 +374,12 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/_shell/app': typeof ShellAppRoute
   '/app_/export': typeof AppExportRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
+  '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/_shell/app_/calendar': typeof ShellAppCalendarRoute
   '/_shell/app_/discover': typeof ShellAppDiscoverRoute
@@ -355,6 +390,7 @@ export interface FileRoutesById {
   '/_shell/app_/recap': typeof ShellAppRecapRoute
   '/_shell/app_/settings': typeof ShellAppSettingsRouteWithChildren
   '/_shell/app_/week': typeof ShellAppWeekRoute
+  '/_shell/app_/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/_shell/app_/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
   '/_shell/app_/imports/$id': typeof ShellAppImportsIdRoute
   '/_shell/app_/lists/$id': typeof ShellAppListsIdRoute
@@ -371,6 +407,7 @@ export interface FileRoutesById {
   '/_shell/app_/settings/notifications': typeof ShellAppSettingsNotificationsRoute
   '/_shell/app_/settings/recaps': typeof ShellAppSettingsRecapsRoute
   '/_shell/app_/title/$id': typeof ShellAppTitleIdRoute
+  '/_shell/app_/friends/': typeof ShellAppFriendsIndexRoute
   '/_shell/app_/groups/': typeof ShellAppGroupsIndexRoute
   '/_shell/app_/lists/': typeof ShellAppListsIndexRoute
   '/_shell/app_/settings/': typeof ShellAppSettingsIndexRoute
@@ -384,10 +421,12 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/app'
     | '/app/export'
     | '/auth/verify'
     | '/connect/extension'
+    | '/i/$code'
     | '/oauth/consent'
     | '/app/calendar'
     | '/app/discover'
@@ -398,6 +437,7 @@ export interface FileRouteTypes {
     | '/app/recap'
     | '/app/settings'
     | '/app/week'
+    | '/app/friends/$handle'
     | '/app/groups/$groupId'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -414,6 +454,7 @@ export interface FileRouteTypes {
     | '/app/settings/notifications'
     | '/app/settings/recaps'
     | '/app/title/$id'
+    | '/app/friends/'
     | '/app/groups/'
     | '/app/lists/'
     | '/app/settings/'
@@ -425,10 +466,12 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/app'
     | '/app/export'
     | '/auth/verify'
     | '/connect/extension'
+    | '/i/$code'
     | '/oauth/consent'
     | '/app/calendar'
     | '/app/discover'
@@ -437,6 +480,7 @@ export interface FileRouteTypes {
     | '/app/music'
     | '/app/recap'
     | '/app/week'
+    | '/app/friends/$handle'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/plans/$id'
@@ -452,6 +496,7 @@ export interface FileRouteTypes {
     | '/app/settings/notifications'
     | '/app/settings/recaps'
     | '/app/title/$id'
+    | '/app/friends'
     | '/app/groups'
     | '/app/lists'
     | '/app/settings'
@@ -464,10 +509,12 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/_shell/app'
     | '/app_/export'
     | '/auth/verify'
     | '/connect/extension'
+    | '/i/$code'
     | '/oauth/consent'
     | '/_shell/app_/calendar'
     | '/_shell/app_/discover'
@@ -478,6 +525,7 @@ export interface FileRouteTypes {
     | '/_shell/app_/recap'
     | '/_shell/app_/settings'
     | '/_shell/app_/week'
+    | '/_shell/app_/friends/$handle'
     | '/_shell/app_/groups/$groupId'
     | '/_shell/app_/imports/$id'
     | '/_shell/app_/lists/$id'
@@ -494,6 +542,7 @@ export interface FileRouteTypes {
     | '/_shell/app_/settings/notifications'
     | '/_shell/app_/settings/recaps'
     | '/_shell/app_/title/$id'
+    | '/_shell/app_/friends/'
     | '/_shell/app_/groups/'
     | '/_shell/app_/lists/'
     | '/_shell/app_/settings/'
@@ -507,9 +556,11 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
+  DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   AppExportRoute: typeof AppExportRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
   ConnectExtensionRoute: typeof ConnectExtensionRoute
+  ICodeRoute: typeof ICodeRoute
   OauthConsentRoute: typeof OauthConsentRoute
 }
 
@@ -550,6 +601,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/apple-app-site-association': {
+      id: '/.well-known/apple-app-site-association'
+      path: '/.well-known/apple-app-site-association'
+      fullPath: '/.well-known/apple-app-site-association'
+      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_shell/app': {
       id: '/_shell/app'
       path: '/app'
@@ -576,6 +634,13 @@ declare module '@tanstack/solid-router' {
       path: '/connect/extension'
       fullPath: '/connect/extension'
       preLoaderRoute: typeof ConnectExtensionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/i/$code': {
+      id: '/i/$code'
+      path: '/i/$code'
+      fullPath: '/i/$code'
+      preLoaderRoute: typeof ICodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oauth/consent': {
@@ -646,6 +711,20 @@ declare module '@tanstack/solid-router' {
       path: '/app/week'
       fullPath: '/app/week'
       preLoaderRoute: typeof ShellAppWeekRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/friends/': {
+      id: '/_shell/app_/friends/'
+      path: '/app/friends'
+      fullPath: '/app/friends/'
+      preLoaderRoute: typeof ShellAppFriendsIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/friends/$handle': {
+      id: '/_shell/app_/friends/$handle'
+      path: '/app/friends/$handle'
+      fullPath: '/app/friends/$handle'
+      preLoaderRoute: typeof ShellAppFriendsHandleRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/app_/groups/': {
@@ -871,10 +950,12 @@ interface ShellRouteChildren {
   ShellAppRecapRoute: typeof ShellAppRecapRoute
   ShellAppSettingsRoute: typeof ShellAppSettingsRouteWithChildren
   ShellAppWeekRoute: typeof ShellAppWeekRoute
+  ShellAppFriendsHandleRoute: typeof ShellAppFriendsHandleRoute
   ShellAppImportsIdRoute: typeof ShellAppImportsIdRoute
   ShellAppListsIdRoute: typeof ShellAppListsIdRoute
   ShellAppPlansIdRoute: typeof ShellAppPlansIdRoute
   ShellAppTitleIdRoute: typeof ShellAppTitleIdRoute
+  ShellAppFriendsIndexRoute: typeof ShellAppFriendsIndexRoute
   ShellAppListsIndexRoute: typeof ShellAppListsIndexRoute
 }
 
@@ -889,10 +970,12 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAppRecapRoute: ShellAppRecapRoute,
   ShellAppSettingsRoute: ShellAppSettingsRouteWithChildren,
   ShellAppWeekRoute: ShellAppWeekRoute,
+  ShellAppFriendsHandleRoute: ShellAppFriendsHandleRoute,
   ShellAppImportsIdRoute: ShellAppImportsIdRoute,
   ShellAppListsIdRoute: ShellAppListsIdRoute,
   ShellAppPlansIdRoute: ShellAppPlansIdRoute,
   ShellAppTitleIdRoute: ShellAppTitleIdRoute,
+  ShellAppFriendsIndexRoute: ShellAppFriendsIndexRoute,
   ShellAppListsIndexRoute: ShellAppListsIndexRoute,
 }
 
@@ -904,9 +987,12 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
+  DotwellKnownAppleAppSiteAssociationRoute:
+    DotwellKnownAppleAppSiteAssociationRoute,
   AppExportRoute: AppExportRoute,
   AuthVerifyRoute: AuthVerifyRoute,
   ConnectExtensionRoute: ConnectExtensionRoute,
+  ICodeRoute: ICodeRoute,
   OauthConsentRoute: OauthConsentRoute,
 }
 export const routeTree = rootRouteImport

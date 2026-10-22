@@ -1,7 +1,8 @@
 import AaruAPI
 import SwiftUI
 
-/// One import: progress while it is matched, then the plan to approve, then what happened.
+/// One import: progress while it is matched, then the plan to approve, then what happened. An
+/// unmatched row can be found by hand (IMP-011), before or after the plan is approved.
 struct ImportDetailView: View {
     let id: String
     let imports: ImportsModel
@@ -11,6 +12,8 @@ struct ImportDetailView: View {
 
     @State private var detail: ImportDetail?
     @State private var applying = false
+    /// The unmatched row being found in search.
+    @State private var finding: ImportRow?
     @Environment(\.dismiss) private var dismiss
 
     private var job: ImportJob? {
@@ -84,23 +87,87 @@ struct ImportDetailView: View {
         .safeAreaInset(edge: .bottom) { ProblemBanner(message: imports.problem) { imports.problem = nil } }
         .navigationTitle(job?.filename ?? job?.sourceLabel ?? "Import")
         .task(id: id) { await poll() }
+        .sheet(item: $finding) { row in
+            SearchView(api: api, library: library, lists: lists, pick: pick(for: row))
+        }
+    }
+
+    /// Rows can be found by hand once matching is over: into the plan, or straight onto the shelf.
+    private var canFind: Bool {
+        guard let job else { return false }
+        return !job.isWorking && job.state != .failed
     }
 
     @ViewBuilder
     private func rows(_ outcome: Components.Schemas.ImportRow.OutcomePayload, title: String) -> some View {
         let matching = detail?.rows.filter { $0.outcome == outcome } ?? []
+        let findable = outcome == .unmatched && canFind
         if !matching.isEmpty {
-            Section("\(title) (\(matching.count))") {
+            Section {
                 ForEach(matching.prefix(200), id: \.index) { row in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text([row.title, row.year.map { "(\($0))" }].compactMap(\.self).joined(separator: " "))
-                        if let reason = row.reason {
-                            Text(reason).font(.caption).foregroundStyle(Color(.muted))
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(row.label)
+                            if let reason = row.reason {
+                                Text(reason).font(.caption).foregroundStyle(Color(.muted))
+                            }
+                        }
+                        if findable {
+                            Spacer(minLength: 8)
+                            Button("Find it") { finding = row }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("Find \(row.title)")
                         }
                     }
                 }
+            } header: {
+                Text("\(title) (\(matching.count))")
+            } footer: {
+                if findable {
+                    Text(
+                        job?.state == .planned
+                            ? "Find it searches the catalog. The title you choose joins the plan."
+                            : "Find it searches the catalog. The title you choose goes on your shelf at once, "
+                            + "and can be undone from History."
+                    )
+                }
             }
         }
+    }
+
+    /// The search for one unmatched row: its name, in its kind. MAL and AniList rows are anime.
+    private func pick(for row: ImportRow) -> SearchPick {
+        let isAnime = job?.source == .malXml || job?.source == .anilist
+            || row.ids?.anilist != nil || row.ids?.mal != nil
+        let kind = MediaKind(type: row._type, isAnime: isAnime)
+        return SearchPick(
+            query: row.title,
+            scope: SearchScope(rawValue: kind.rawValue) ?? .all,
+            year: row.year,
+            navigationTitle: "Find a title",
+            note: "\u{201C}\(row.label)\u{201D} in your import. Choose the title it means.",
+            choose: { hit in await resolve(row, with: hit) }
+        )
+    }
+
+    /// Saves the pick and updates the row and the counts in place. After approval it was written
+    /// to the shelf, so the library catches up behind the closing sheet.
+    private func resolve(_ row: ImportRow, with hit: CatalogHit) async -> String? {
+        guard let resolved = await imports.resolve(id, row: row.index, with: hit) else {
+            defer { imports.problem = nil }
+            return imports.problem ?? "\(hit.title) could not be matched to that row."
+        }
+        detail?.job = resolved.job
+        if let position = detail?.rows.firstIndex(where: { $0.index == resolved.row.index }) {
+            detail?.rows[position] = resolved.row
+        }
+        if resolved.job.state != .planned {
+            Task {
+                await library.sync(api: api)
+                await lists.load()
+            }
+        }
+        return nil
     }
 
     /// Polls every two seconds while the server is still matching. The job list carries the
@@ -126,5 +193,12 @@ struct ImportDetailView: View {
             await library.sync(api: api)
             await lists.load()
         }
+    }
+}
+
+private extension ImportRow {
+    /// "Dune (2021)": the name as the import file had it.
+    var label: String {
+        [title, year.map { "(\($0))" }].compactMap(\.self).joined(separator: " ")
     }
 }

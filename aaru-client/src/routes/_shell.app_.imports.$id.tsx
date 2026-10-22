@@ -2,6 +2,8 @@ import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import { BackLink } from '../components/shell/BackLink'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { Button } from '~/components/ui'
+import { ResolveRowDialog } from '../components/ResolveRowDialog'
+import { lastShown } from '../lib/presence'
 import {
   importSteps,
   isWorking,
@@ -15,10 +17,10 @@ import {
   getImport,
   listImports,
 } from '../lib/imports/server'
-import type { ImportDetail } from '../lib/imports/server'
+import type { ImportDetail, ImportRow } from '../lib/imports/server'
 
 // APP-007 on the web: one import. A ledger of steps while it is matched (IMP-017), then the
-// plan to approve.
+// plan to approve. An unmatched row can be matched by hand, before or after approval (IMP-011).
 export const Route = createFileRoute('/_shell/app_/imports/$id')({
   loader: ({ params }) => getImport({ data: { id: params.id } }),
   // UX-013: the tab names the import.
@@ -46,8 +48,12 @@ function ImportPage() {
   const [detail, setDetail] = createSignal<ImportDetail>(loaded())
   const [applying, setApplying] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [finding, setFinding] = createSignal<ImportRow | null>(null)
+  const shownRow = lastShown(finding)
   const job = () => detail().job
   const planned = () => job().state === 'planned'
+  const resolvable = () =>
+    planned() || job().state === 'partial' || job().state === 'succeeded'
 
   // Polls every two seconds while the server is still matching. The job list carries the
   // progress without the rows (a 2,000-entry export is a big payload); the rows are read once,
@@ -94,6 +100,21 @@ function ImportPage() {
           : 'The import was not discarded.',
       )
     }
+  }
+
+  function resolved(next: { job: ImportDetail['job']; row: ImportRow }) {
+    if (next.job.state === 'planned') {
+      // Before approval the plan is decided again as a whole: rows for the same title merge.
+      void getImport({ data: { id: next.job.id } }).then(setDetail, () =>
+        setDetail({ ...detail(), job: next.job }),
+      )
+    }
+    setDetail({
+      job: next.job,
+      rows: detail().rows.map((r) =>
+        r.index === next.row.index ? next.row : r,
+      ),
+    })
   }
 
   const rows = (outcome: Outcome) =>
@@ -216,13 +237,25 @@ function ImportPage() {
                 <ul class="mt-3 max-w-[56rem] divide-y divide-line">
                   <For each={rows(outcome).slice(0, SHOWN)}>
                     {(row) => (
-                      <li class="py-2.5">
-                        <p class="font-medium">
-                          {row.title}
-                          {row.year ? ` (${row.year})` : ''}
-                        </p>
-                        <Show when={row.reason}>
-                          <p class="text-sm text-muted">{row.reason}</p>
+                      <li class="flex items-start justify-between gap-4 py-2.5">
+                        <div class="min-w-0">
+                          <p class="font-medium">
+                            {row.title}
+                            {row.year ? ` (${row.year})` : ''}
+                          </p>
+                          <Show when={row.reason}>
+                            <p class="text-sm text-muted">{row.reason}</p>
+                          </Show>
+                        </div>
+                        <Show when={outcome === 'unmatched' && resolvable()}>
+                          <Button
+                            variant="quiet"
+                            size="sm"
+                            class="shrink-0"
+                            onClick={() => setFinding(row)}
+                          >
+                            Find it
+                          </Button>
                         </Show>
                       </li>
                     )}
@@ -238,6 +271,17 @@ function ImportPage() {
             </Show>
           )}
         </For>
+        <Show when={shownRow()}>
+          {(row) => (
+            <ResolveRowDialog
+              open={finding() !== null}
+              jobId={job().id}
+              row={row()}
+              onResolved={resolved}
+              onClose={() => setFinding(null)}
+            />
+          )}
+        </Show>
       </div>
     </div>
   )

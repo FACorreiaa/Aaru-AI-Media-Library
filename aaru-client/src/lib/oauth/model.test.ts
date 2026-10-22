@@ -7,9 +7,10 @@ describe('safeNext', () => {
       '/oauth/consent?request=abc',
     )
     expect(safeNext('/app/settings')).toBe('/app/settings')
-    expect(safeNext('/connect/extension?name=Firefox')).toBe(
-      '/connect/extension?name=Firefox',
+    expect(safeNext('/connect/extension?name=Chrome')).toBe(
+      '/connect/extension?name=Chrome',
     )
+    expect(safeNext('/i/k7Q2xPa9Lm3Z')).toBe('/i/k7Q2xPa9Lm3Z')
   })
 
   it('refuses anything that could leave Aaru', () => {
@@ -19,6 +20,11 @@ describe('safeNext', () => {
       '/\\evil.example',
       'javascript:alert(1)',
       '/privacy',
+      '/i/',
+      '/i/../app',
+      '/i/abc/def',
+      '/i/abc?next=//evil.example',
+      '/connect/extensionx',
       undefined,
       42,
     ])

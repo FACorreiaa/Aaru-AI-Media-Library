@@ -93,13 +93,16 @@
         }
     }
 
-    /// Receives the APNs token and shows alerts that arrive while the app is open.
+    /// Receives the APNs token and shows alerts that arrive while the app is open. At launch it
+    /// starts following Live Activity tokens: a push that starts "Now watching" launches the app
+    /// in the background, where no signed-in view is built to do it.
     final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
         func application(
             _: UIApplication,
             didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil
         ) -> Bool {
             UNUserNotificationCenter.current().delegate = self
+            LiveActivityRegistrar.current?.start()
             return true
         }
 

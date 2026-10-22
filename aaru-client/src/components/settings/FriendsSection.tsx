@@ -28,9 +28,10 @@ import {
   withdrawFriendRequest,
 } from '../../lib/social/server'
 import type { SocialState, SocialUser } from '../../lib/social/server'
+import { InviteFriends } from '../InviteFriends'
 import { SettingsSection } from './SettingsSection'
 
-// SOC-001 / SOC-002 on Friends & privacy: friends by exact handle, requests both ways, and
+// SOC-001 / SOC-002 on the Friends page: invite links, friends by exact handle, requests both ways, and
 // blocks. Nobody can browse or search for anyone; you add a friend by typing their handle.
 export function FriendsSection(props: { handle?: string; state: SocialState }) {
   const [state, setState] = createSignal(props.state)
@@ -87,10 +88,11 @@ export function FriendsSection(props: { handle?: string; state: SocialState }) {
           </SettingsSection>
         }
       >
+        <InviteFriends />
         <SettingsSection
           id="add-friend"
           title="Add a friend"
-          description={`You are @${props.handle}. Ask a friend for theirs.`}
+          description={`You are @${props.handle}. Friends join with your invite link, or find you by your exact handle.`}
         >
           <form class="flex flex-wrap items-end gap-2" onSubmit={ask}>
             <TextField
@@ -218,14 +220,15 @@ export function FriendsSection(props: { handle?: string; state: SocialState }) {
             when={state().friends.length > 0}
             fallback={
               <p class="text-sm text-muted">
-                No friends yet. Ask someone for their handle.
+                No friends yet. Send someone an invite link, or ask for their
+                handle.
               </p>
             }
           >
             <People>
               <For each={state().friends}>
                 {(friend) => (
-                  <Person user={friend}>
+                  <Person user={friend} profile>
                     <Show
                       when={confirmBlock() === friend.userId}
                       fallback={
@@ -334,20 +337,39 @@ function People(props: { children: JSX.Element }) {
   return <ul class="-my-3 divide-y divide-line">{props.children}</ul>
 }
 
-function Person(props: { user: SocialUser; children: JSX.Element }) {
+/** One person in a list; a friend's name opens their profile (SOC-001/003). */
+function Person(props: {
+  user: SocialUser
+  children: JSX.Element
+  profile?: boolean
+}) {
+  const who = (
+    <>
+      <span
+        aria-hidden="true"
+        class="grid size-9 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-sm font-medium"
+      >
+        {monogram(props.user)}
+      </span>
+      <span class="truncate text-sm font-medium">
+        {personLabel(props.user)}
+      </span>
+    </>
+  )
   return (
     <li class="flex flex-wrap items-center justify-between gap-3 py-3">
-      <span class="flex min-w-0 items-center gap-3">
-        <span
-          aria-hidden="true"
-          class="grid size-9 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-sm font-medium"
+      <Show
+        when={props.profile}
+        fallback={<span class="flex min-w-0 items-center gap-3">{who}</span>}
+      >
+        <Link
+          to="/app/friends/$handle"
+          params={{ handle: props.user.handle }}
+          class="flex min-w-0 items-center gap-3 rounded-full hover:text-accent"
         >
-          {monogram(props.user)}
-        </span>
-        <span class="truncate text-sm font-medium">
-          {personLabel(props.user)}
-        </span>
-      </span>
+          {who}
+        </Link>
+      </Show>
       <span class="flex flex-wrap items-center gap-2">{props.children}</span>
     </li>
   )
