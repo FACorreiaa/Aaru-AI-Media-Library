@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Fails when client code steps around Aaru's brand (DESIGN.md "Brand"): a colour written as a
+# literal instead of a token from design/tokens.json, or a display face other than the system
+# sans. Run from the repo root; CI runs it on every client change (.github/workflows/ci-brand.yml).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+status=0
+fail() {
+  echo "::error::$1"
+  echo "$2" | sed 's/^/  /'
+  status=1
+}
+
+# Web and extension: hex colours live in the generated token files only. `#000` stays allowed,
+# because CSS masks use it as "opaque", not as a colour.
+hex=$(git grep -nE '#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})([^0-9a-zA-Z_-]|$)' -- \
+  'aaru-client/src' 'aaru-extension/src' \
+  ':!aaru-client/src/tokens.css' ':!aaru-client/src/lib/tokens.gen.ts' \
+  ':!aaru-extension/src/entrypoints/popup/tokens.css' ':!aaru-extension/src/lib/tokens.gen.ts' \
+  ':!*.test.ts' ':!*.svg' |
+  grep -vE '#000([^0-9a-zA-Z_-]|$)' || true)
+[ -z "$hex" ] || fail "Colour literal outside the tokens. Add or use a token in design/tokens.json." "$hex"
+
+# Apple: colours come from the asset catalog's colour sets, which the same file generates.
+rgb=$(git grep -nE '(Color|UIColor|NSColor)\((red|hue|white):|Color\(hex' -- 'aaru-ios/*.swift' || true)
+[ -z "$rgb" ] || fail "Colour literal in Swift. Use a colour set generated from design/tokens.json." "$rgb"
+
+# Display face: the system sans everywhere. No serif design, no bundled or named faces.
+serif=$(git grep -nE '\.serif([^a-zA-Z]|$)|\.custom\("' -- 'aaru-ios/*.swift' || true)
+[ -z "$serif" ] || fail "Serif or custom font in Swift. Use Font.aaruDisplay (the system sans)." "$serif"
+webserif=$(git grep -niE 'ui-serif|Newsreader|Georgia|@font-face' -- 'aaru-client/src' 'aaru-extension/src' || true)
+[ -z "$webserif" ] || fail "Serif or bundled font on the web. Use var(--font-display) (the system sans)." "$webserif"
+
+exit $status

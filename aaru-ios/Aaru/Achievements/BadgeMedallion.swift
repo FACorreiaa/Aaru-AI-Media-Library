@@ -18,7 +18,7 @@ struct BadgeMedallion: View {
             ring
             if secret {
                 Text("???")
-                    .font(.system(size: size * 0.24, weight: .semibold, design: .serif))
+                    .font(.system(size: size * 0.24, weight: .semibold))
                     .foregroundStyle(Color(.muted))
             } else {
                 Image(systemName: BadgeGlyph.symbol(badge: badge, family: family))

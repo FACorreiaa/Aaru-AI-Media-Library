@@ -25,15 +25,6 @@ export async function drawShareImage(stats: Stats): Promise<Blob> {
   const ink = token('--ink', COLORS.ink.light)
   const accent = token('--accent', COLORS.accent.light)
   const paper = token('--on-accent', COLORS.onAccent.light)
-  const display =
-    "Newsreader, ui-serif, 'New York', 'Iowan Old Style', Georgia, serif"
-  // A canvas draws with whatever face is ready; wait for the display face (both weights the
-  // card uses) so the image is never the fallback serif. A failed load keeps the fallback.
-  await Promise.all(
-    ['500 132px Newsreader', '600 44px Newsreader'].map((font) =>
-      document.fonts.load(font).catch(() => []),
-    ),
-  )
   const sans = 'system-ui, -apple-system, sans-serif'
 
   const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT)
@@ -46,7 +37,7 @@ export async function drawShareImage(stats: Stats): Promise<Blob> {
   ctx.textBaseline = 'alphabetic'
   ctx.font = `500 40px ${sans}`
   ctx.fillText('MY RECAP', 96, 160)
-  ctx.font = `500 132px ${display}`
+  ctx.font = `500 132px ${sans}`
   ctx.fillText(periodLabel({ year: stats.year, month: stats.month }), 96, 320)
 
   let y = 500
@@ -54,12 +45,12 @@ export async function drawShareImage(stats: Stats): Promise<Blob> {
   // A year review can carry seven lines; they step down a size so the footer stays clear.
   const [size, leading, gap] = lines.length > 5 ? [52, 62, 28] : [64, 76, 40]
   for (const line of lines) {
-    ctx.font = `500 ${size}px ${display}`
+    ctx.font = `500 ${size}px ${sans}`
     // Next line: one line's leading, plus a gap between lines.
     y = wrap(ctx, line, 96, y, WIDTH - 192, leading) + leading + gap
   }
 
-  ctx.font = `600 44px ${display}`
+  ctx.font = `600 44px ${sans}`
   ctx.fillText('Aaru', 96, HEIGHT - 96)
   ctx.globalAlpha = 0.75
   ctx.font = `400 32px ${sans}`

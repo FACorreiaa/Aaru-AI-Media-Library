@@ -1,0 +1,43 @@
+# Keeps every client on Aaru's brand (DESIGN.md "Brand"): the generated colour tokens match
+# design/tokens.json and pass contrast, and no client writes its own colours or display face.
+name: Brand
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "aaru-client/**"
+      - "aaru-ios/**"
+      - "aaru-extension/**"
+      - "design/**"
+      - "scripts/generate-tokens.mjs"
+      - "scripts/brand-guard.sh"
+      - ".github/workflows/ci-brand.yml"
+  pull_request:
+    paths:
+      - "aaru-client/**"
+      - "aaru-ios/**"
+      - "aaru-extension/**"
+      - "design/**"
+      - "scripts/generate-tokens.mjs"
+      - "scripts/brand-guard.sh"
+      - ".github/workflows/ci-brand.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-brand-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  brand:
+    name: tokens and brand guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Colour tokens match design/tokens.json (and pass contrast)
+        run: node scripts/generate-tokens.mjs --check
+      - name: No colour literals or other display faces in the clients
+        run: scripts/brand-guard.sh

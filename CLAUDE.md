@@ -137,6 +137,10 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
 - Imports are jobs, not request-path work. An import endpoint enqueues and returns a job id.
 - Image posters are referenced by catalog URLs. Do not download and host TMDB/Open Library artwork in MVP unless a legal/technical need appears.
 - Secrets stay in environment / server config. Never commit API keys.
+- **Brand** (owner, 2026-10-22): the owl poster is the standard (DESIGN.md "Brand"). Colours
+  come only from `design/tokens.json` through the generated tokens (no hex, no `Color(red:)`), and
+  every heading is the system sans (`--font-display`, `Font.aaruDisplay`); no serif or bundled
+  faces. On a conflict with main in a brand file, take main's side. `ci-brand.yml` enforces it.
 - **Web UI rule** (owner, 2026-10-21): all web UI comes from shadcn-solid in
   `aaru-client/src/components/ui`, always imported through the barrel `~/components/ui`. A
   missing component is added from shadcn-solid's manual install into that folder (and the
