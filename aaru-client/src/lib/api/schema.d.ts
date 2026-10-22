@@ -2064,10 +2064,7 @@ export interface components {
       name: string
       kind: components['schemas']['AgentTokenKind']
       scopes: (
-        | 'library:read'
-        | 'library:write'
-        | 'scrobble:write'
-        | 'imports:write'
+        'library:read' | 'library:write' | 'scrobble:write' | 'imports:write'
       )[]
       /** Format: date-time */
       createdAt: string
@@ -2150,19 +2147,10 @@ export interface components {
       | 'music'
     /** @enum {string} */
     AgentMCPKind:
-      | 'claude'
-      | 'claude_code'
-      | 'codex'
-      | 'hermes'
-      | 'gemini'
-      | 'other'
+      'claude' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
     /** @enum {string} */
     MusicScrobbler:
-      | 'web_scrobbler'
-      | 'pano_scrobbler'
-      | 'navidrome'
-      | 'jellyfin'
-      | 'other'
+      'web_scrobbler' | 'pano_scrobbler' | 'navidrome' | 'jellyfin' | 'other'
     /** @description How to point one scrobbler at Aaru (MUS-007): numbered steps, some with a link to open and values to copy. The token appears in full only here, right after minting. */
     MusicSetup: {
       scrobbler: components['schemas']['MusicScrobbler']
@@ -2307,12 +2295,7 @@ export interface components {
        * @enum {string}
        */
       state:
-        | 'queued'
-        | 'running'
-        | 'planned'
-        | 'succeeded'
-        | 'failed'
-        | 'partial'
+        'queued' | 'running' | 'planned' | 'succeeded' | 'failed' | 'partial'
       stats: components['schemas']['ImportStats']
       errorSummary?: string
       /** @description The uploaded file's name, or the AniList username for an `anilist` import. */
