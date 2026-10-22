@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import {
@@ -18,6 +19,7 @@ import {
   withdrawFriendRequest,
 } from '../lib/social/server'
 import type { SocialState, SocialUser } from '../lib/social/server'
+import { InviteFriends } from './InviteFriends'
 
 // SOC-001 / SOC-002: a handle, friends by exact handle, requests both ways, and blocks. Nobody
 // can browse or search for anyone; you add a friend by typing their handle.
@@ -91,8 +93,8 @@ export function SocialSection(props: {
     >
       <h2 class="font-display text-xl font-medium">Profile and friends</h2>
       <p class="mt-2 max-w-[60ch] text-sm text-muted">
-        Friends find you by your exact handle. Nobody can search or browse for
-        you, and your library stays private.
+        Friends join with your invite link or find you by your exact handle.
+        Nobody can search or browse for you, and your library stays private.
       </p>
 
       <Show
@@ -164,6 +166,7 @@ export function SocialSection(props: {
       </Show>
 
       <Show when={handle()}>
+        <InviteFriends />
         <form class="mt-6 flex flex-wrap items-end gap-2" onSubmit={ask}>
           <label class="flex flex-col gap-1 text-sm">
             <span class="font-medium">Add a friend</span>
@@ -269,13 +272,14 @@ export function SocialSection(props: {
             when={state().friends.length > 0}
             fallback={
               <li class="py-3 text-sm text-muted">
-                No friends yet. Ask someone for their handle.
+                No friends yet. Send someone an invite link, or ask for their
+                handle.
               </li>
             }
           >
             <For each={state().friends}>
               {(friend) => (
-                <Person user={friend}>
+                <Person user={friend} profile>
                   <Show
                     when={confirmBlock() === friend.userId}
                     fallback={
@@ -366,20 +370,39 @@ function People(props: { title: string; children: JSX.Element }) {
   )
 }
 
-function Person(props: { user: SocialUser; children: JSX.Element }) {
+/** One person in a list; a friend's name opens their profile. */
+function Person(props: {
+  user: SocialUser
+  children: JSX.Element
+  profile?: boolean
+}) {
+  const who = (
+    <>
+      <span
+        aria-hidden="true"
+        class="grid size-9 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-sm font-medium"
+      >
+        {monogram(props.user)}
+      </span>
+      <span class="truncate text-sm font-medium">
+        {personLabel(props.user)}
+      </span>
+    </>
+  )
   return (
     <li class="flex flex-wrap items-center justify-between gap-3 py-3">
-      <span class="flex min-w-0 items-center gap-3">
-        <span
-          aria-hidden="true"
-          class="grid size-9 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-sm font-medium"
+      <Show
+        when={props.profile}
+        fallback={<span class="flex min-w-0 items-center gap-3">{who}</span>}
+      >
+        <Link
+          to="/app/friends/$handle"
+          params={{ handle: props.user.handle }}
+          class="flex min-w-0 items-center gap-3 rounded-full hover:text-accent"
         >
-          {monogram(props.user)}
-        </span>
-        <span class="truncate text-sm font-medium">
-          {personLabel(props.user)}
-        </span>
-      </span>
+          {who}
+        </Link>
+      </Show>
       <span class="flex items-center gap-2">{props.children}</span>
     </li>
   )

@@ -4,6 +4,9 @@ import Observation
 
 typealias SocialUser = Components.Schemas.SocialUser
 typealias FriendRequest = Components.Schemas.FriendRequest
+typealias FriendInvite = Components.Schemas.FriendInvite
+typealias ActivityItem = Components.Schemas.ActivityItem
+typealias RecommendationItem = Components.Schemas.RecommendationItem
 
 /// SOC-001 / SOC-002: the user's handle, friends, requests both ways, and blocks. Friends are
 /// added by exact handle; nobody can browse or search for anyone.
@@ -16,12 +19,21 @@ final class SocialModel {
     private(set) var incoming: [FriendRequest] = []
     private(set) var outgoing: [FriendRequest] = []
     private(set) var blocked: [SocialUser] = []
+    /// Invite links still waiting to be opened (SOC-002), newest first.
+    private(set) var invites: [FriendInvite] = []
+    /// Friends' last two weeks (SOC-003), newest first, and where the next page starts.
+    private(set) var activity: [ActivityItem] = []
+    private(set) var activityNext: Date?
+    /// Titles friends sent you, waiting (SOC-006).
+    private(set) var recommendations: [RecommendationItem] = []
+    /// Friends see your library (SOC-001). On unless you turn it off.
+    private(set) var shareLibrary = true
     private(set) var hasLoaded = false
     var problem: String?
     /// A one-line result of the last request ("Request sent to @ana.").
     var notice: String?
 
-    @ObservationIgnored private let api: Client?
+    @ObservationIgnored let api: Client?
 
     init(api: Client?) {
         self.api = api
@@ -55,6 +67,10 @@ final class SocialModel {
             async let friendsCall = api.listFriends()
             async let requestsCall = api.listFriendRequests()
             async let blocksCall = api.listBlocks()
+            async let invitesCall = api.listFriendInvites()
+            async let activityCall = api.listFriendActivity()
+            async let settingsCall = api.getSocialSettings()
+            async let recommendationsCall = api.listRecommendations()
             if case let .ok(response) = try await meCall, let account = try? response.body.json {
                 handle = account.handle
                 displayName = account.displayName
@@ -69,6 +85,20 @@ final class SocialModel {
             }
             if case let .ok(response) = try await blocksCall {
                 blocked = try response.body.json.items
+            }
+            if case let .ok(response) = try await invitesCall {
+                invites = try response.body.json.items
+            }
+            if case let .ok(response) = try await activityCall {
+                let page = try response.body.json
+                activity = page.items
+                activityNext = page.nextBefore
+            }
+            if case let .ok(response) = try await settingsCall {
+                shareLibrary = try response.body.json.shareLibraryWithFriends
+            }
+            if case let .ok(response) = try await recommendationsCall {
+                recommendations = try response.body.json.items
             }
             hasLoaded = true
         } catch {
@@ -193,6 +223,153 @@ final class SocialModel {
             problem = "\(fallback) Aaru could not reach the server."
         }
         return false
+    }
+}
+
+/// Activity, sharing, reactions, recommendations and invite links, apart from the graph above.
+extension SocialModel {
+    // MARK: Activity and sharing (SOC-001 / SOC-003)
+
+    func loadEarlierActivity() async {
+        guard let api, let before = activityNext else { return }
+        await run("Earlier activity could not be loaded.") {
+            switch try await api.listFriendActivity(query: .init(before: before)) {
+            case let .ok(response):
+                let page = try response.body.json
+                activity += page.items
+                activityNext = page.nextBefore
+            case let .default(_, error): throw Failure(try? error.body.json.message)
+            }
+        }
+    }
+
+    /// Turns sharing on or off at once, and back if the server says no.
+    func setShareLibrary(_ share: Bool) async {
+        guard let api else { return }
+        let previous = shareLibrary
+        shareLibrary = share
+        let saved = await run("Your sharing setting was not saved.") {
+            switch try await api.updateSocialSettings(body: .json(.init(shareLibraryWithFriends: share))) {
+            case .ok: break
+            case let .default(_, error): throw Failure(try? error.body.json.message)
+            }
+        }
+        if !saved {
+            shareLibrary = previous
+        }
+    }
+
+    // MARK: Reactions and recommendations (SOC-007 / SOC-006)
+
+    static let reactions = ["❤️", "😂", "😮", "😭", "🔥", "👏"]
+
+    /// Sets the viewer's reaction on a friend's row (the same emoji again clears it), at once, and
+    /// puts the row back if the server says no.
+    func react(_ emoji: String, to item: ActivityItem) async {
+        guard let api, let index = activity.firstIndex(where: { $0.id == item.id }) else { return }
+        let chosen = item.myReaction == emoji ? nil : emoji
+        let before = activity[index]
+        activity[index] = Self.reacted(item, chosen)
+        let saved = await run("That reaction was not saved.") {
+            if let chosen, let value = Components.Schemas.ReactionSet.EmojiPayload(rawValue: chosen) {
+                switch try await api.setActivityReaction(path: .init(id: item.id), body: .json(.init(emoji: value))) {
+                case .noContent: break
+                case let .default(_, error): throw Failure(try? error.body.json.message)
+                }
+            } else {
+                switch try await api.clearActivityReaction(path: .init(id: item.id)) {
+                case .noContent: break
+                case let .default(_, error): throw Failure(try? error.body.json.message)
+                }
+            }
+        }
+        if !saved, let index = activity.firstIndex(where: { $0.id == item.id }) {
+            activity[index] = before
+        }
+    }
+
+    /// The row with the viewer's reaction set to `emoji` (or cleared), counts kept in step.
+    static func reacted(_ item: ActivityItem, _ emoji: String?) -> ActivityItem {
+        var counts = Dictionary((item.reactions ?? []).map { ($0.emoji, $0.count) }) { first, _ in first }
+        if let mine = item.myReaction {
+            counts[mine, default: 1] -= 1
+        }
+        if let emoji {
+            counts[emoji, default: 0] += 1
+        }
+        var copy = item
+        let kept = counts.filter { $0.value > 0 }.sorted { $0.value > $1.value }
+        copy.reactions = kept.isEmpty ? nil : kept.map { .init(emoji: $0.key, count: $0.value) }
+        copy.myReaction = emoji
+        return copy
+    }
+
+    /// Adds a recommendation to Plan to watch, or dismisses it. Either way it leaves the list.
+    func answer(_ item: RecommendationItem, add: Bool) async {
+        guard let api else { return }
+        let before = recommendations
+        recommendations.removeAll { $0.id == item.id }
+        let saved = await run("That recommendation is gone.") {
+            if add {
+                switch try await api.addRecommendation(path: .init(id: item.id)) {
+                case .noContent: break
+                case let .default(_, error): throw Failure(try? error.body.json.message)
+                }
+            } else {
+                switch try await api.dismissRecommendation(path: .init(id: item.id)) {
+                case .noContent: break
+                case let .default(_, error): throw Failure(try? error.body.json.message)
+                }
+            }
+        }
+        if !saved {
+            recommendations = before
+        }
+        if add, saved {
+            let kind = MediaKind(type: item.title._type, isAnime: item.title.isAnime)
+            notice = "\(item.title.title) is on your \(LibraryStatus.wishlist.label(for: kind))."
+        }
+    }
+
+    /// Sends a title to friends with an optional note. True when sent.
+    func recommend(_ ref: MediaRef, to friends: [String], note: String) async -> Bool {
+        guard let api else { return false }
+        let note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        let body = Components.Schemas.RecommendationCreate(to: friends, title: ref, note: note.isEmpty ? nil : note)
+        return await run("That recommendation was not sent.") {
+            switch try await api.recommendTitle(body: .json(body)) {
+            case .noContent: break
+            case let .default(_, error): throw Failure(try? error.body.json.message)
+            }
+        }
+    }
+
+    // MARK: Invite links (SOC-002)
+
+    /// Makes a one-use link, optionally carrying a title to watch together. Nil when it failed.
+    func invite(with title: CatalogHit?) async -> FriendInvite? {
+        guard let api else { return nil }
+        let ref = title.map { MediaRef(_type: $0._type, ids: $0.ids, title: $0.title, year: $0.year) }
+        var made: FriendInvite?
+        await run("The invite was not made.") {
+            switch try await api.createFriendInvite(body: .json(.init(title: ref))) {
+            case let .ok(response): made = try response.body.json
+            case let .default(_, error): throw Failure(try? error.body.json.message)
+            }
+            await load()
+        }
+        return made
+    }
+
+    func revoke(_ invite: FriendInvite) async {
+        guard let api else { return }
+        await run("That invite is already gone.") {
+            switch try await api.revokeFriendInvite(path: .init(code: invite.code)) {
+            case .noContent: break
+            case let .default(_, error): throw Failure(try? error.body.json.message)
+            }
+            await load()
+        }
     }
 }
 

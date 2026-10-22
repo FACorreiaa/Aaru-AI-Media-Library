@@ -31,7 +31,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
 | Library · Now | `NowCard` (Library only; the agent does not emit it — `TonightStrip` is its agent counterpart) | the synced shelf; `PUT .../episodes/{s}/{e}`, `PATCH /v1/library/items/{id}` | 2 · APP-017 |
 | Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
-| Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage | 2 · M9 |
+| Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage (`POST /v1/imports/{id}/rows/{index}/resolve`) | 2 · M9 |
 | Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | 7 · M13 |
 | Undo ribbon | `UndoRibbon` | action journal + undo endpoint | 1 · M4 |
 | History (Settings → Your data) | none — journaled actions newest first, by whom (you, an import, a connection), Undo; an applied import or request links here (UX-060) | `GET /v1/actions`, `POST /v1/actions/{id}/undo` | 2 · DESIGN.md §9, §18 (2026-10-21) |
@@ -43,6 +43,11 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Stremio addon (Settings) | none — a section of Settings → Connections: connect, one-time install links, live links with last use, revoke | `GET`/`POST /v1/agent/tokens?for=stremio`, `DELETE /v1/agent/tokens/{id}` | 3 · SCR-003 (owner un-deferred 2026-10-19) |
 | Agents (Settings) | none — a section of Settings → Connections: pick an agent (Claude Code, Codex, Hermes, Gemini CLI, other) or the browser extension, its setup steps, create a token shown once with the steps filled in (the extension connects itself), live connections with last use, revoke | `GET`/`POST /v1/agent/tokens?for=mcp`, `?for=scrobble`, `GET /v1/agent/setup/{kind}`, `DELETE /v1/agent/tokens/{id}` | 7 · OUT-001/004 (owner pulled forward 2026-10-20); SCR-007 (2026-10-21) |
 | Music scrobblers (Settings) | none — a section of Settings → Connections: the last listen, pick a scrobbler (Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin, other), connect, its steps from the server with values to copy and the token shown once, a wait for the first listen, live scrobblers with last use, disconnect | `GET`/`POST /v1/agent/tokens?for=music` (`scrobbler`), `GET /v1/me/listens?limit=1`, `DELETE /v1/agent/tokens/{id}` | 2 · MUS-007 (owner exception 2026-10-21) |
+| Invite (the Friends section) | none — "Invite a friend" (optionally with a title picked from search), the share sheet, open invites with time left and Revoke | `GET`/`POST /v1/social/invites`, `DELETE /v1/social/invites/{code}`, `GET /v1/search` | 4 · SOC-002 (owner pulled forward 2026-10-21) |
+| Invite letter | none — web `/i/{code}`, an `InviteSheet` in the apps: who sent it, the title it carries with an "Add to my Plan to watch" switch, a handle field when the friend has none, Join Aaru (signed out) or Add as a friend | `GET /v1/invites/{code}` (public), `POST /v1/social/invites/{code}/redeem`, `PUT /v1/me/profile` | 4 · SOC-002 (2026-10-21) |
+| Friends (tab on Apple, `/app/friends` on the web) | none — Lately (friends' last two weeks), Invite, requests, friends, blocks | `GET /v1/activity`, `/v1/social/*` | 4 · SOC-003 minimal (owner 2026-10-21) |
+| Recommend | none — a sheet from a title (pick friends) or a friend's profile (find a title), with a note of up to 140 characters; the friend's "For you from friends" at the top of Friends adds it to Plan to watch or dismisses it | `POST /v1/social/recommendations`, `GET /v1/me/recommendations`, `POST …/{id}/add`, `DELETE …/{id}` | 4 · SOC-006 (2026-10-21) |
+| Friend profile | none — shelf first: header with counts, Watching, You both (both want, both finished, they loved), Recently finished; only a name when they hide their library | `GET /v1/social/friends/{userId}/profile` | 4 · SOC-001/003 (2026-10-21) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
 | Profile and stats | `StatsPanel` (already on Insights), `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
@@ -150,7 +155,8 @@ The eleven new components add product, not agent reach, and each has a reason:
 The agent may emit the read-only social components. It posts in a group channel only as a
 reply to an explicit `@aaru` mention, and only with catalog components whose buttons are the
 viewer's own taps. It never starts a thread, never sends a DM, and never sends a friend request,
-a group invite or a room invite: those are user acts with no agent write path. A
+an invite link, a group invite, a room invite, a reaction or a recommendation: those are user
+acts with no agent write path. A
 twenty-ninth component still needs a paragraph here.
 
 ---

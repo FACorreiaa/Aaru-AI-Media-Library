@@ -4,7 +4,7 @@ import { ConcertPlaceSection } from '../ConcertPlaceSection'
 import { GoogleSignInButton } from '../GoogleSignInButton'
 import { AppearanceSection } from '../AppearanceSection'
 import { NotificationsSection } from '../NotificationsSection'
-import { SocialSection } from '../SocialSection'
+import { FriendsCard } from '../FriendsCard'
 import { Alert } from '../ui/alert'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
@@ -87,17 +87,9 @@ export function AccountPage(props: { data: AccountPageData }) {
         </Button>
       </Card>
 
-      <SocialSection
+      <FriendsCard
         handle={account().handle}
-        displayName={account().displayName}
-        state={props.data.social}
-        onProfileSaved={(user) =>
-          setAccount({
-            ...account(),
-            handle: user.handle,
-            displayName: user.displayName,
-          })
-        }
+        shareLibraryWithFriends={props.data.sharing.shareLibraryWithFriends}
       />
 
       <NotificationsSection setup={props.data.push} />

@@ -10,6 +10,10 @@
 	<string>$(APP_GROUP_ID)</string>
 	<key>AaruGoogleClientID</key>
 	<string>$(GOOGLE_CLIENT_ID)</string>
+	<key>AaruSentryDSN</key>
+	<string>$(SENTRY_DSN)</string>
+	<key>AaruSentryEnvironment</key>
+	<string>$(SENTRY_ENVIRONMENT)</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>$(APP_BUNDLE_ID).widget-refresh</string>

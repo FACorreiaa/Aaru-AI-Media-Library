@@ -8,6 +8,7 @@ import { Show, createSignal } from 'solid-js'
 import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
 import { Button } from '../components/ui/button'
+import { takeNext } from '../lib/session/pending-next'
 import { signInWithEmailLink } from '../lib/session/session'
 
 // The link in the sign-in email (MAGIC_LINK_BASE_URL). The token is spent only when the user
@@ -37,7 +38,7 @@ function VerifyLink() {
     try {
       await signInWithEmailLink({ data: { token } })
       await router.invalidate()
-      await navigate({ to: '/app' })
+      await navigate({ href: takeNext() })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {

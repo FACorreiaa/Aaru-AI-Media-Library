@@ -5,6 +5,16 @@ import OpenAPIRuntime
 
 typealias ImportJob = Components.Schemas.ImportJob
 typealias ImportDetail = Components.Schemas.ImportDetail
+typealias ImportRow = Components.Schemas.ImportRow
+/// A row matched by hand (IMP-011): the job's new counts and the row as it now stands.
+typealias ResolvedImportRow = Operations.ResolveImportRow.Output.Ok.Body.JsonPayload
+
+extension ImportRow: @retroactive Identifiable {
+    public var id: Int {
+        index
+    }
+}
+
 typealias ImportFileSource = Operations.CreateCSVImport.Input.Query.SourcePayload
 
 extension ImportFileSource: @retroactive Identifiable {
@@ -269,6 +279,29 @@ final class ImportsModel {
             }
         } catch {
             problem = "The import was not applied. Aaru could not reach the server."
+        }
+        return nil
+    }
+
+    /// IMP-011: matches one unmatched row to a title the user picked in search. Before the plan is
+    /// approved the pick joins it; after, that one title is written at once as its own action.
+    func resolve(_ id: String, row index: Int, with hit: CatalogHit) async -> ResolvedImportRow? {
+        guard let api else { return nil }
+        problem = nil
+        let ref = MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year)
+        do {
+            switch try await api.resolveImportRow(
+                path: .init(id: id, index: index), body: .json(.init(mediaRef: ref))
+            ) {
+            case let .ok(response):
+                let resolved = try response.body.json
+                replace(resolved.job)
+                return resolved
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "\(hit.title) could not be matched to that row."
+            }
+        } catch {
+            problem = "\(hit.title) was not matched. Aaru could not reach the server."
         }
         return nil
     }

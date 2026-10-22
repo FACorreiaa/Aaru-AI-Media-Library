@@ -50,18 +50,34 @@ extension CatalogHit {
     }
 }
 
+/// Pick mode (IMP-011): the search starts from a name the user did not type, and one tap chooses
+/// a hit for something else (an unmatched import row) instead of adding it.
+struct SearchPick {
+    let query: String
+    let scope: SearchScope
+    /// Hits from this year come first: the catalog's search does not read a year.
+    let year: Int?
+    let navigationTitle: String
+    /// Above the results: what is being matched.
+    let note: String
+    /// Answers a problem to show, or nil once the choice is saved and the sheet can close.
+    let choose: @MainActor (CatalogHit) async -> String?
+}
+
 /// APP-004: catalog search, debounced, with add and an initial status. All by default (APP-011).
-/// Given `intoList` (LST-003), each hit adds to that list instead of the library.
+/// Given `intoList` (LST-003), each hit adds to that list instead of the library; given `pick`
+/// (IMP-011), each hit is a choice.
 struct SearchView: View {
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
     var intoList: Binding<ListDetail>?
+    var pick: SearchPick?
 
     @Environment(\.dismiss) private var dismiss
     @State private var listTarget: CatalogHit?
-    @State private var query = ""
-    @State private var scope = SearchScope.all
+    @State private var query: String
+    @State private var scope: SearchScope
     @State private var hits: [CatalogHit] = []
     @State private var incomplete = false
     @State private var notice: String?
@@ -69,6 +85,22 @@ struct SearchView: View {
     @State private var problem: String?
     /// Hits being added right now: a second tap waits instead of adding twice.
     @State private var adding: Set<String> = []
+
+    init(
+        api: Client?,
+        library: LibraryModel,
+        lists: ListsModel,
+        intoList: Binding<ListDetail>? = nil,
+        pick: SearchPick? = nil
+    ) {
+        self.api = api
+        self.library = library
+        self.lists = lists
+        self.intoList = intoList
+        self.pick = pick
+        _query = State(initialValue: pick?.query ?? "")
+        _scope = State(initialValue: pick?.scope ?? .all)
+    }
 
     private struct SearchKey: Equatable {
         let query: String
@@ -89,6 +121,10 @@ struct SearchView: View {
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
 
+                if let pick {
+                    Text(pick.note).font(.footnote).foregroundStyle(Color(.muted))
+                        .listRowBackground(Color.clear)
+                }
                 if let problem {
                     Text(problem).font(.footnote).foregroundStyle(.red)
                         .listRowBackground(Color.clear)
@@ -100,11 +136,24 @@ struct SearchView: View {
                         .listRowBackground(Color.clear)
                 }
                 ForEach(hits, id: \.self) { hit in
-                    if let intoList {
-                        ListHitRow(
+                    if let pick {
+                        TapHitRow(
                             hit: hit,
                             kind: MediaKind(type: hit._type, isAnime: hit.isAnime),
-                            isOnList: intoList.wrappedValue.contains(hit),
+                            action: "Choose",
+                            isDone: false,
+                            isAdding: adding.contains(hit.id)
+                        ) {
+                            Task { await choose(hit, for: pick) }
+                        }
+                        .disabled(!adding.isEmpty)
+                        .listRowBackground(Color.clear)
+                    } else if let intoList {
+                        TapHitRow(
+                            hit: hit,
+                            kind: MediaKind(type: hit._type, isAnime: hit.isAnime),
+                            action: "Add",
+                            isDone: intoList.wrappedValue.contains(hit),
                             isAdding: adding.contains(hit.id)
                         ) {
                             Task { await add(hit, to: intoList) }
@@ -139,7 +188,7 @@ struct SearchView: View {
                     ProgressView()
                 }
             }
-            .navigationTitle(intoList.map { "Add to \($0.wrappedValue.name)" } ?? "Search")
+            .navigationTitle(pick?.navigationTitle ?? intoList.map { "Add to \($0.wrappedValue.name)" } ?? "Search")
             .searchable(text: $query, prompt: scope.prompt)
             .task(id: SearchKey(query: query, scope: scope)) { await search() }
             .sheet(item: $listTarget) { hit in
@@ -150,8 +199,14 @@ struct SearchView: View {
                 )
             }
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                if pick == nil {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                } else {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
+                    }
                 }
             }
         }
@@ -175,6 +230,10 @@ struct SearchView: View {
             case let .ok(response):
                 let results = try response.body.json
                 hits = results.items
+                if let year = pick?.year {
+                    // Stable: the catalog's order holds within each group.
+                    hits = hits.filter { $0.year == year } + hits.filter { $0.year != year }
+                }
                 incomplete = results.incomplete
                 notice = results.notice
                 problem = nil
@@ -201,6 +260,17 @@ struct SearchView: View {
         }
     }
 
+    private func choose(_ hit: CatalogHit, for pick: SearchPick) async {
+        guard adding.isEmpty else { return }
+        adding.insert(hit.id)
+        defer { adding.remove(hit.id) }
+        if let failure = await pick.choose(hit) {
+            problem = failure
+        } else {
+            dismiss()
+        }
+    }
+
     private func add(_ hit: CatalogHit, to list: Binding<ListDetail>) async {
         guard !adding.contains(hit.id) else { return }
         adding.insert(hit.id)
@@ -215,13 +285,16 @@ struct SearchView: View {
     }
 }
 
-/// A hit in list mode: one tap adds it to the list.
-private struct ListHitRow: View {
+/// A hit one tap acts on: adds it to the list (list mode) or chooses it (pick mode).
+private struct TapHitRow: View {
     let hit: CatalogHit
     let kind: MediaKind
-    let isOnList: Bool
+    /// The button's word: "Add", "Choose".
+    let action: String
+    /// Already on the list: a check instead of the button.
+    let isDone: Bool
     let isAdding: Bool
-    let onAdd: () -> Void
+    let onTap: () -> Void
 
     var body: some View {
         HStack(spacing: 14) {
@@ -235,7 +308,7 @@ private struct ListHitRow: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
-            if isOnList {
+            if isDone {
                 Label("On this list", systemImage: "checkmark")
                     .labelStyle(.iconOnly)
                     .foregroundStyle(.tint)
@@ -243,8 +316,8 @@ private struct ListHitRow: View {
             } else if isAdding {
                 ProgressView()
             } else {
-                Button(action: onAdd) {
-                    Text("Add")
+                Button(action: onTap) {
+                    Text(action)
                         .font(.subheadline.weight(.semibold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)

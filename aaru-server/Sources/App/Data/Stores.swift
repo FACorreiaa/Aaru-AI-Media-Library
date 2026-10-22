@@ -358,6 +358,8 @@ struct Stores: Sendable {
     var plans: any PlanStore
     var oauth: any OAuthStore
     var social: any SocialStore
+    var friendViews: any FriendViewStore
+    var interactions: any InteractionStore
     var groups: any GroupStore
     var groupKinds: any GroupKindStore
     var agent: any AgentStore

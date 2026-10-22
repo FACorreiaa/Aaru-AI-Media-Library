@@ -98,7 +98,9 @@ Each step is a row you can tap:
 5. Apply ratings
 
 Partial failure stays visible. "14 unmatched" opens a queue the agent and you finish
-together. GitHub's canvas lesson: durable state, human gates.
+together. GitHub's canvas lesson: durable state, human gates. Built for one row at a time (IMP-011): each unmatched row has "Find it", the
+catalog search started on the row's own title and kind; the pick brings the file's status,
+rating and episodes with it, into the plan before approval or as its own undoable action after.
 
 Built for file and account imports (IMP-017, web + Apple): Read your file (or library) · Wait for
 a free slot · Match each title to the catalog ("840 of 2,001" with a bar) · Check against your
@@ -528,6 +530,39 @@ ship before the Phase 2 gate.
   safety-number check live in the header, not in a settings screen.
 
 The feeling to protect: **social is a room you invite people into, not a feed you are fed.**
+
+### Friends and profiles (SOC-001/003, pulled forward 2026-10-21)
+
+Friends is its own tab on Apple and its own page on the web. It opens on "Lately": one quiet row
+per friend, title and day ("Ana watched 3 episodes, up to S1 · E3 Severance", "Today"), with the
+poster, and Earlier for more. No unread badge and no push: you visit it. Below come Invite,
+requests, friends and blocks.
+
+A friend's profile is shelf first, like visiting someone's shelf. A monogram, their name in the
+serif face, "@ana · Friends since October 2026" and "42 films · 12 shows · 8 books". Then
+Watching (covers with "S2 · E4" or "Page 120"), a "You both" card (titles you both want, how many
+you both finished, what they loved that you haven't), and Recently finished with their stars. A
+friend who hides their library shows only the header and one line saying so.
+
+Interactions stay small (SOC-006/007). A friend's row in Lately takes one of six reactions
+(❤️ 😂 😮 😭 🔥 👏) from a small "+" (a menu on Apple); counts sit under the row, yours ringed in
+accent, and your own rows show what friends left. A title page and a friend's profile offer
+Recommend: pick friends or a title, add a note of up to 140 characters. What friends sent you sits
+at the top of Friends, "For you from friends", with Add to Plan to watch and Dismiss. A profile
+also offers Invite to a group, through the group invites that already exist.
+
+### Invites (SOC-002, pulled forward 2026-10-21)
+
+A friend invite is a letter, not a growth hack. The page or sheet it opens shows the mascot
+medallion, "{Name} invited you to Aaru." in the serif display face, their handle, and, when the
+invite carries a title, its poster with "Watch Arrival with me." and a switch to add it to Plan
+to watch (on by default; the friend's tap is the consent). One ink button: Join Aaru when signed
+out, Add {Name} as a friend when signed in. One line under it: your library stays private,
+only friends see it. A spent, expired or revoked link says so plainly, with no detail about why.
+
+The sender invites from Friends: "Invite a friend", or "Invite to watch something together"
+through the title picker. The link opens the share sheet (copied to the clipboard on desktop
+web), and open invites list what they say, the days left, and Revoke.
 
 ### Groups (GRP-004/005, pulled forward 2026-10-20)
 

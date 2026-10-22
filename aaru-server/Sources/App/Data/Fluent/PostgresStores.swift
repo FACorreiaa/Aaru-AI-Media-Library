@@ -31,6 +31,8 @@ extension Stores {
             plans: PostgresPlanStore(database: database),
             oauth: PostgresOAuthStore(database: database),
             social: PostgresSocialStore(database: database),
+            friendViews: PostgresFriendViewStore(sql: sql),
+            interactions: PostgresInteractionStore(sql: sql),
             groups: PostgresGroupStore(database: database),
             groupKinds: PostgresGroupStore(database: database),
             agent: PostgresAgentStore(sql: sql),

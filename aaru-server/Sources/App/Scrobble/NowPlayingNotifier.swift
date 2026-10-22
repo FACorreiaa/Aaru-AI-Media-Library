@@ -59,6 +59,33 @@ struct NowPlayingNotifier: Sendable {
         }
     }
 
+    /// An activity's token arrived after the player moved on: the app uploads it when iOS next
+    /// runs it, which may be well after a push started the activity in the background. The token
+    /// hears the session as it stands, so a pause or stop it missed still reaches the Lock Screen.
+    func caughtUp(_ token: LiveActivityToken, userID: UserID, now: Date) async {
+        guard let watchEventID = token.watchEventID else { return }
+        do {
+            let open = try await stores.watchEvents.openSessions(userID: userID, source: nil, limit: 10)
+            let push: LiveActivityPush
+            if let session = open.first(where: { $0.id == watchEventID }), NowPlaying.isLive(session, now: now) {
+                // Anchored at the last report: a playing session has moved on since, a paused one has not.
+                let content = NowPlaying.content(session, now: session.updatedAt)
+                let staleDate = session.state == .paused
+                    ? session.updatedAt.addingTimeInterval(Self.staleGrace)
+                    : content.endsAt.addingTimeInterval(Self.staleGrace)
+                push = LiveActivityPush(event: .update, content: content, staleDate: staleDate, timestamp: now)
+            } else {
+                let content = NowWatchingContent(
+                    startedAt: now, endsAt: now, showsEndTime: false, watched: false, pausedAt: nil
+                )
+                push = LiveActivityPush(event: .end(dismissal: now), content: content, staleDate: nil, timestamp: now)
+            }
+            await deliver(push, to: [token])
+        } catch {
+            logger.warning("Live Activity catch-up failed", metadata: ["error": "\(error)"])
+        }
+    }
+
     /// What the activity shows. Nil for a movie (the activity is per episode) or a title not in
     /// the library yet (its link opens the library item).
     static func attributes(_ session: OpenSession, title: Title) -> NowWatchingAttributes? {

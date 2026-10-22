@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		148312EA5709D4B6E4A345E8 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 5A0109ADE2B6A8D6051B8BAB /* Algorithms */; };
 		1679430B770CD4703C9A3B6D /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 05726FC0D059FD69C81C609A /* Algorithms */; };
+		AF94F1C43801824A4CDE92B5 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 8395B4799C38A38D6B9BF014 /* Sentry */; };
 		D1441AE34AB8E59F88832A89 /* AaruCore in Frameworks */ = {isa = PBXBuildFile; productRef = 048087FB864B2ACFF0B1D915 /* AaruCore */; };
 		A11CE0A1A0E5A0A1A2A3A4A5 /* AaruAPI in Frameworks */ = {isa = PBXBuildFile; productRef = A11CE0A3C0E5A0A1A2A3A4A5 /* AaruAPI */; };
 		B22DF1B2B1F6B1B2B3B4B5B6 /* AaruAPI in Frameworks */ = {isa = PBXBuildFile; productRef = B22DF1B4D1F6B1B2B3B4B5B6 /* AaruAPI */; };
@@ -79,6 +80,7 @@
 				D1441AE34AB8E59F88832A89 /* AaruCore in Frameworks */,
 				A11CE0A1A0E5A0A1A2A3A4A5 /* AaruAPI in Frameworks */,
 				1679430B770CD4703C9A3B6D /* Algorithms in Frameworks */,
+				AF94F1C43801824A4CDE92B5 /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -156,6 +158,7 @@
 				048087FB864B2ACFF0B1D915,
 				A11CE0A3C0E5A0A1A2A3A4A5,
 				05726FC0D059FD69C81C609A /* Algorithms */,
+				8395B4799C38A38D6B9BF014 /* Sentry */,
 			);
 			productName = Aaru;
 			productReference = B438239B7918397D234D0DB3;
@@ -218,6 +221,7 @@
 				17FAC586158D07F905E8A2E1 /* XCLocalSwiftPackageReference "../aaru-core" */,
 				A11CE0A2B0E5A0A1A2A3A4A5 /* XCLocalSwiftPackageReference "../aaru-api" */,
 				72A2D1DAA90691A1593DE094 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
+				4EF0D2528ED6F5D940C30107 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FEBEDFD35D7162AB5AB1F949 /* Products */;
@@ -686,6 +690,14 @@
 				minimumVersion = 1.2.0;
 			};
 		};
+		4EF0D2528ED6F5D940C30107 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = exactVersion;
+				version = 9.30.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -698,6 +710,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 72A2D1DAA90691A1593DE094 /* XCRemoteSwiftPackageReference "swift-algorithms" */;
 			productName = Algorithms;
+		};
+		8395B4799C38A38D6B9BF014 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4EF0D2528ED6F5D940C30107 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 		048087FB864B2ACFF0B1D915 /* AaruCore */ = {
 			isa = XCSwiftPackageProductDependency;

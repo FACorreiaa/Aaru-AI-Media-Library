@@ -5,6 +5,10 @@
 	<!-- iOS only: macOS spells push com.apple.developer.aps-environment, and Mac push is not on yet. -->
 	<key>aps-environment</key>
 	<string>$(APS_ENVIRONMENT)</string>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:aaruapp.com</string>
+	</array>
 	<key>com.apple.developer.applesignin</key>
 	<array>
 		<string>Default</string>
