@@ -107,3 +107,22 @@ enum HistorySource: Hashable, Identifiable {
         }
     }
 }
+
+extension ImportsModel {
+    /// CAT's exported iCal file, read as text.
+    func importCATFile(at url: URL) async -> ImportJob? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer {
+            if scoped {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        guard let data = try? Data(contentsOf: url), data.count <= Self.maxUploadBytes,
+              let text = String(bytes: data, encoding: .utf8)
+        else {
+            problem = "That file could not be read, or is larger than 5 MB."
+            return nil
+        }
+        return await importCAT(text)
+    }
+}

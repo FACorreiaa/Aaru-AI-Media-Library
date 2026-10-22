@@ -6,7 +6,11 @@ import SwiftUI
 struct ImportDetailView: View {
     let id: String
     let imports: ImportsModel
-    /// After the plan is applied: the library and lists catch up.
+    /// For "Find it" (IMP-011): the catalog search over this library and these lists.
+    let api: Client?
+    let library: LibraryModel
+    let lists: ListsModel
+    /// After the plan is applied, or a row found by hand after it: the library and lists catch up.
     var onApplied: @MainActor () async -> Void
 
     @State private var detail: ImportDetail?
@@ -21,6 +25,9 @@ struct ImportDetailView: View {
     init(id: String, imports: ImportsModel, library: LibraryModel, lists: ListsModel, api: Client?) {
         self.id = id
         self.imports = imports
+        self.api = api
+        self.library = library
+        self.lists = lists
         onApplied = {
             await library.sync(api: api)
             await lists.load()
@@ -30,6 +37,9 @@ struct ImportDetailView: View {
     init(id: String, context: SettingsContext) {
         self.id = id
         imports = context.imports
+        api = context.api
+        library = context.library
+        lists = context.lists
         onApplied = { await context.refreshLibrary() }
     }
 
@@ -105,7 +115,7 @@ struct ImportDetailView: View {
         }
         .task(id: id) { await poll() }
         .sheet(item: $finding) { row in
-            SearchView(api: context.api, library: context.library, lists: context.lists, pick: pick(for: row))
+            SearchView(api: api, library: library, lists: lists, pick: pick(for: row))
         }
     }
 
@@ -192,7 +202,7 @@ struct ImportDetailView: View {
             detail?.rows[position] = resolved.row
         }
         if resolved.job.state != .planned {
-            Task { await context.refreshLibrary() }
+            Task { await onApplied() }
         }
         return nil
     }

@@ -2,10 +2,11 @@ import Foundation
 import Observation
 
 /// The app's destinations (DESIGN.md §18), in sidebar order. iPhone's tab bar shows the first
-/// four and Groups; Lists, Insights and Settings live in the sidebar (iPad, Mac) and are reached
-/// from Library, Home and the account button on iPhone.
+/// four and Groups; Lists, Friends, Insights and Settings live in the sidebar (iPad, Mac) and are
+/// reached on iPhone from Library (Lists), Groups and Friends & privacy (Friends), and the
+/// account button.
 enum AppTab: String, CaseIterable, Identifiable {
-    case home, discover, library, calendar, lists, groups, insights, settings
+    case home, discover, library, calendar, lists, friends, groups, insights, settings
 
     var id: String {
         rawValue
@@ -18,6 +19,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .library: "Library"
         case .calendar: "Calendar"
         case .lists: "Lists"
+        case .friends: "Friends"
         case .groups: "Groups"
         case .insights: "Insights"
         case .settings: "Settings"
@@ -31,14 +33,16 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .library: "books.vertical"
         case .calendar: "calendar"
         case .lists: "list.bullet.rectangle"
+        case .friends: "person.2"
         case .groups: "bubble.left.and.bubble.right"
         case .insights: "chart.bar"
         case .settings: "gearshape"
         }
     }
 
-    /// The six destinations, above the gap in the sidebar.
-    static let primary: [AppTab] = [.home, .discover, .library, .calendar, .lists, .groups]
+    /// The seven destinations, above the gap in the sidebar. Friends sits between Lists and Groups
+    /// (SOC-003, as on the web).
+    static let primary: [AppTab] = [.home, .discover, .library, .calendar, .lists, .friends, .groups]
 
     /// Set apart at the bottom of the sidebar. The Mac has no Settings row: Settings is its
     /// Settings scene (⌘,).
@@ -50,7 +54,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         #endif
     }
 
-    /// The Mac's Go menu: ⌘1…⌘7 for the seven sidebar rows.
+    /// The Mac's Go menu: ⌘1…⌘8 for the eight sidebar rows.
     static let goMenu: [AppTab] = primary + [.insights]
 
     /// Kept in the compact tab bar. The rest are sidebar-only there (§18, UX-001).
@@ -72,6 +76,8 @@ final class AppRouter {
     var showsSearch = false
     /// iPhone: Library pushes Lists, since Lists has no tab there.
     var showsListsInLibrary = false
+    /// iPhone: Groups pushes Friends, since Friends has no tab there.
+    var showsFriendsInGroups = false
     /// A new list was asked for (⌘N, Home's "New list"); Lists starts one and clears it.
     var pendingNewList = false
 
@@ -131,9 +137,24 @@ final class AppRouter {
         }
     }
 
+    /// Friends (SOC-003): its own destination in a sidebar. On iPhone the five tabs are full, so
+    /// Groups pushes it; from the Settings sheet, the sheet closes first.
+    func showFriends() {
+        #if os(iOS)
+            if isCompact {
+                showsSettingsSheet = false
+                tab = .groups
+                showsFriendsInGroups = true
+                return
+            }
+        #endif
+        tab = .friends
+    }
+
     func select(_ destination: AppTab) {
         switch destination {
         case .lists: showLists()
+        case .friends: showFriends()
         case .settings: openSettings()
         case .insights where isCompact:
             // No Insights tab on iPhone: Library's More menu holds it.
@@ -166,6 +187,7 @@ final class AppRouter {
         libraryFilter = LibraryFilter()
         showsSearch = false
         showsListsInLibrary = false
+        showsFriendsInGroups = false
         pendingNewList = false
         settingsPath = []
         showsSettingsSheet = false

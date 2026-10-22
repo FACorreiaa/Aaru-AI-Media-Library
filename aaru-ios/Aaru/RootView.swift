@@ -17,6 +17,9 @@ struct RootView: View {
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
+    /// A friend invite link (SOC-002). Opened signed out, it waits here through sign-in.
+    @State private var pendingInvite: InviteLink?
+    @State private var openInvite: InviteLink?
 
     private var flow: AuthFlow {
         AuthFlow(api: api, session: session)
@@ -52,8 +55,24 @@ struct RootView: View {
                 }
             }
         }
+        .sheet(item: $openInvite) { link in
+            InviteSheet(api: api, link: link)
+        }
+        // Invites open signed out too; every other link waits for the signed-in app.
+        .onOpenURL { url in
+            guard let invite = InviteLink(url) else { return }
+            if session.isSignedIn {
+                openInvite = invite
+            } else {
+                pendingInvite = invite
+            }
+        }
         // A signed-out device keeps nothing of the last user's library.
         .onChange(of: session.isSignedIn) { _, signedIn in
+            if signedIn, let invite = pendingInvite {
+                pendingInvite = nil
+                openInvite = invite
+            }
             if !signedIn {
                 library.reset()
                 lists.reset()
@@ -216,8 +235,9 @@ private struct MainTabs: View {
                 }
             }
         #if os(iOS)
-            // Live Activity tokens go up while signed in; signing out cancels it.
-            .task { await LiveActivityRegistrar.current?.follow() }
+            // Launch already follows Live Activity tokens; signing in starts it again so the
+            // current tokens go up with the new session.
+            .task { LiveActivityRegistrar.current?.start() }
         #endif
             // A notification tapped before sign-in, or before the app was running, waits in
             // PushInbox; this view only exists signed in, so it reads it on appear too (UX-012).
@@ -240,6 +260,10 @@ private struct MainTabs: View {
     }
 
     private func open(_ url: URL) {
+        // RootView opens friend invites, signed in or out.
+        if InviteLink(url) != nil {
+            return
+        }
         if let id = WidgetLink.libraryItemId(in: url) {
             linkedTitle = LinkedTitle(id: id)
         } else if !router.open(url) {
@@ -275,8 +299,10 @@ private struct MainTabs: View {
             CalendarScreen(api: api, library: library, lists: lists)
         case .lists:
             ListsScreen(lists: lists, library: library, api: api)
+        case .friends:
+            FriendsScreen(social: settings.models.social)
         case .groups:
-            GroupsScreen(groups: groups)
+            GroupsScreen(groups: groups, social: settings.models.social)
         case .insights:
             NavigationStack {
                 InsightsView(api: api, library: library)

@@ -29,6 +29,8 @@ final class SocialModel {
     /// Friends see your library (SOC-001). On unless you turn it off.
     private(set) var shareLibrary = true
     private(set) var hasLoaded = false
+    /// Why the first load failed; Friends shows Try again instead of an empty page (UX-063).
+    private(set) var loadProblem: String?
     var problem: String?
     /// A one-line result of the last request ("Request sent to @ana.").
     var notice: String?
@@ -101,8 +103,9 @@ final class SocialModel {
                 recommendations = try response.body.json.items
             }
             hasLoaded = true
+            loadProblem = nil
         } catch {
-            problem = "Your friends could not be loaded. Aaru could not reach the server."
+            failLoad("Your friends could not be loaded. Aaru could not reach the server.")
         }
     }
 
@@ -209,7 +212,13 @@ final class SocialModel {
         incoming = []
         outgoing = []
         blocked = []
+        invites = []
+        activity = []
+        activityNext = nil
+        recommendations = []
+        shareLibrary = true
         hasLoaded = false
+        loadProblem = nil
         problem = nil
         notice = nil
     }
@@ -218,6 +227,15 @@ final class SocialModel {
         let message: String?
         init(_ message: String?) {
             self.message = message
+        }
+    }
+
+    /// A first load that fails is a Try again (UX-063); a later one keeps what is shown.
+    private func failLoad(_ message: String) {
+        if hasLoaded {
+            problem = message
+        } else {
+            loadProblem = message
         }
     }
 
@@ -300,22 +318,6 @@ extension SocialModel {
         }
     }
 
-    /// The row with the viewer's reaction set to `emoji` (or cleared), counts kept in step.
-    static func reacted(_ item: ActivityItem, _ emoji: String?) -> ActivityItem {
-        var counts = Dictionary((item.reactions ?? []).map { ($0.emoji, $0.count) }) { first, _ in first }
-        if let mine = item.myReaction {
-            counts[mine, default: 1] -= 1
-        }
-        if let emoji {
-            counts[emoji, default: 0] += 1
-        }
-        var copy = item
-        let kept = counts.filter { $0.value > 0 }.sorted { $0.value > $1.value }
-        copy.reactions = kept.isEmpty ? nil : kept.map { .init(emoji: $0.key, count: $0.value) }
-        copy.myReaction = emoji
-        return copy
-    }
-
     /// Adds a recommendation to Plan to watch, or dismisses it. Either way it leaves the list.
     func answer(_ item: RecommendationItem, add: Bool) async {
         guard let api else { return }
@@ -382,21 +384,5 @@ extension SocialModel {
             }
             await load()
         }
-    }
-}
-
-extension SocialUser {
-    /// "Ana · @ana", or "@ana" when there is no name.
-    var label: String {
-        displayName.map { "\($0) · @\(handle)" } ?? "@\(handle)"
-    }
-
-    /// One or two letters for a monogram.
-    var monogram: String {
-        let words = (displayName ?? "").split(whereSeparator: \.isWhitespace)
-        if words.count >= 2, let first = words[0].first, let second = words[1].first {
-            return "\(first)\(second)".uppercased()
-        }
-        return String(words.first?.first ?? handle.first ?? "?").uppercased()
     }
 }

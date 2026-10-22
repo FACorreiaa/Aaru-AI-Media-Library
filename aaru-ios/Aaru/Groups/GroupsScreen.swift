@@ -3,9 +3,11 @@ import SwiftUI
 
 /// GRP-004 / GRP-005: the Groups tab. A stack on iPhone (groups → channels → chat); a split
 /// view on iPad and Mac, with groups and their channels in the sidebar and members in the
-/// inspector.
+/// inspector. On iPhone it also holds Friends (SOC-003), which has no tab of its own there.
 struct GroupsScreen: View {
     let groups: GroupsModel
+    /// Friends, pushed from Groups on iPhone. Nil in previews.
+    var social: SocialModel?
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
@@ -13,7 +15,7 @@ struct GroupsScreen: View {
     var body: some View {
         #if os(iOS)
             if sizeClass == .compact {
-                GroupsStack(groups: groups)
+                GroupsStack(groups: groups, social: social)
             } else {
                 GroupsSplit(groups: groups)
             }
@@ -31,17 +33,34 @@ private enum GroupRoute: Hashable {
 /// iPhone: one column, pushed.
 private struct GroupsStack: View {
     let groups: GroupsModel
+    let social: SocialModel?
+    @Environment(AppRouter.self) private var router
     @State private var path: [GroupRoute] = []
     @State private var sheet: GroupSheet?
     @State private var confirm: GroupConfirm?
 
     var body: some View {
+        @Bindable var router = router
         NavigationStack(path: $path) {
             GroupsHome(
                 groups: groups,
                 onOpen: { path = [.group($0.id)] },
                 onCreate: { sheet = .create }
             )
+            #if os(iOS)
+            .toolbar {
+                if social != nil {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Friends", systemImage: "person.2") { router.showsFriendsInGroups = true }
+                    }
+                }
+            }
+            #endif
+            .navigationDestination(isPresented: $router.showsFriendsInGroups) {
+                if let social {
+                    FriendsContent(model: social)
+                }
+            }
             .navigationDestination(for: GroupRoute.self) { route in
                 switch route {
                 case let .group(groupID):

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The menu bar on the Mac, and the ⌘ shortcuts a hardware keyboard shows on iPad: New List
-/// (⌘N), Search (⌘F), Refresh (⌘R), the Go menu (⌘1…⌘7), and the standard sidebar and toolbar
+/// (⌘N), Search (⌘F), Refresh (⌘R), the Go menu (⌘1…⌘8), and the standard sidebar and toolbar
 /// commands. ⌘, comes from the Settings scene.
 struct AaruCommands: Commands {
     let router: AppRouter
