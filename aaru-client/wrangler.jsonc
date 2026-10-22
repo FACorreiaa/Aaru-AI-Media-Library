@@ -26,7 +26,7 @@
     // Error reporting (Sentry project aaru-web, EU). A DSN is public, not a secret. The Worker
     // reads it at runtime; the build bakes the same value into the browser chunk
     // (vite.config.ts). Empty turns reporting off in both.
-    "SENTRY_DSN": "",
+    "SENTRY_DSN": "https://463ded6ff8bd2387b8a15f2710cc3b16@o4510766840872960.ingest.de.sentry.io/4512299384635472",
   },
   // www answers with a permanent redirect to the apex (src/start.ts).
   "routes": [
@@ -41,7 +41,7 @@
         "CHANNEL": "beta",
         "APPLE_SERVICES_ID": "",
         "GOOGLE_CLIENT_ID": "1021071971791-bi4c3f06bokufcrd612t4m1homqd8l2k.apps.googleusercontent.com",
-        "SENTRY_DSN": "",
+        "SENTRY_DSN": "https://463ded6ff8bd2387b8a15f2710cc3b16@o4510766840872960.ingest.de.sentry.io/4512299384635472",
       },
       "routes": [{ "pattern": "beta.aaruapp.com", "custom_domain": true }],
     },
