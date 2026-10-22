@@ -35,7 +35,7 @@ missing state, a dead end, an accessibility failure; **low** drift and polish.
 
 | Item | State | Where |
 | --- | --- | --- |
-| Root navigation per §18: five iPhone tabs, sidebar with everything on iPad and Mac, no Settings row on Mac (UX-001, 003, 004) | done | APL-001…003 |
+| Root navigation per §18: five iPhone tabs, sidebar with everything on iPad and Mac, no Settings row on Mac (UX-001, 003, 004); Friends after the rebase | done | APL-001…003, APL-043 |
 | iPhone account button → Settings sheet with Done; Lists in Library; More = Insights, Listens, Recaps (UX-001, 016, 035) | done | APL-021, APL-300, APL-301, APL-303 |
 | Mac Go menu ⌘1…⌘7, ⌘, for the Settings scene (UX-003) | done | APL-004 |
 | Settings as eight pages; iPhone and iPad list of links; Mac `TabView` of seven panes, Delete account at the bottom of Account; one view per page (UX-020…023, 025, 030, 032) | done | APL-008…011, APL-013, APL-018, APL-020, APL-035 |
@@ -283,3 +283,33 @@ Realtime needed no change.
 | APL-337 | low | Title/TitleRoomParts.swift:135 | Gold flagged at 3.62:1 on light Paper | No change: these are star icons, not text, so the 3:1 non-text rule applies and they pass. No system red in these folders | no change |
 | APL-338 | low | Library, Calendar | Split view for Library and Calendar | Library's grid is the content and the title room already has two columns; Month already shows its agenda beside the grid | deferred, doesn't fit |
 | APL-339 | low | Library, Lists | Drag-and-drop beyond list reorder | Only list reorder; dropping onto sidebar lists needs RootView work | deferred: dropping a title onto a sidebar list needs a title drop payload, the same product call as APL-130 |
+
+### Rebase onto main (2026-10-22)
+
+Main gained ten merges while this branch was open, six of them on Apple: friend profiles (#124),
+friend interactions (#128), Sentry (#127), Live Activity token and catch-up (#129, #132) and
+friend invites (#122); #130 moved web Friends to its own nav item (§18, SOC-003). Each new view
+was checked against the items above: Dynamic Type, VoiceOver labels, 44pt targets,
+`LoadFailedView` instead of a false empty state, the List and Watch party labels, "library" not
+"shelf". Main's behaviour is kept everywhere; these are the changes on top.
+
+| ID | Sev | File:line | Problem | Fix | Status |
+| --- | --- | --- | --- | --- | --- |
+| APL-043 | high | `Navigation/AppRouter.swift`, `RootView.swift` | Main made Friends an `AppTab`. A sixth compact tab puts More back on iPhone and hides Groups and its badge again (APL-001, UX-001). | Product call: Friends is a sidebar destination on iPad and Mac, between Lists and Groups (Go menu ⌘6, now ⌘1…⌘8). On iPhone it stays out of the tab bar: Groups has a Friends button in its toolbar that pushes Friends in the Groups stack, and Settings → Friends & privacy has a Friends row (`router.showFriends()` closes the sheet, selects Groups, pushes Friends). | fixed |
+| APL-044 | med | `Social/FriendsView.swift` (`FriendsPage`) | Friends & privacy repeated the whole friends list, invites and requests that Friends now holds. | As on the web (§18): handle, a Friends row with the count or "N asking", Show my library to friends, Location. Lists, invites and requests live on Friends. | fixed |
+| APL-045 | med | `Social/FriendsScreen.swift`, `FriendsView.swift` | Friends made its own `SocialModel` per screen, so Settings and Friends disagreed until a reload; its `NavigationLink(value:)` to a profile could not push inside a typed-path stack. | One `SocialModel` (`settings.models.social`) behind Friends, Settings and Groups. `FriendsContent` carries no stack of its own so Groups can push it; friend rows use destination links. | fixed |
+| APL-046 | med | `Social/FriendsScreen.swift`, `SocialModel.swift` | A failed first load showed "Choose a handle" or "No friends yet": false states. `reset()` left invites, activity and recommendations of the last account. | `loadProblem` before the first load shows `LoadFailedView("Friends didn't load")`; a spinner until then. `reset()` clears every new field. | fixed |
+| APL-047 | med | `Social/RecommendViews.swift` (InviteToGroup) | A failed groups load read "No groups yet". | `LoadFailedView` overlay with Try again. | fixed |
+| APL-048 | med | `Social/RecommendViews.swift` (RecommendSheet) | "No friends yet" showed before friends had loaded. | Spinner until loaded, Try again on failure, the empty line only after a load. | fixed |
+| APL-049 | low | `Social/FriendProfileView.swift` | One-off failure text; "shelves" in the privacy line. | `LoadFailedView`; "Only friends see each other's libraries." | fixed |
+| APL-050 | low | `Social/*` | System red for errors. | `Color(.danger)`. | fixed |
+| APL-051 | low | `Social/InviteSheet.swift`, `InviteViews.swift`, `FriendProfileView.swift`, `RecommendViews.swift` | System serif instead of the display face. | `.aaruDisplay`. | fixed |
+| APL-052 | low | `Social/FriendsScreen.swift`, `FriendProfileView.swift` | Episodes written by hand ("S1 E2") in activity and profile. | `EpisodeCode.short`, as everywhere else. | fixed |
+| APL-053 | med | `Social/FriendsScreen.swift`, `FriendsView.swift`, `FriendProfileView.swift` | Fixed 36pt and 64pt monograms; the profile header clipped at accessibility sizes. | `@ScaledMetric` sizes; the header stacks at accessibility sizes. | fixed |
+| APL-054 | med | `Social/FriendsScreen.swift`, `InviteViews.swift` | Reaction chips, the React menu and the invite share button under 44pt. | 44pt frames with a rectangular hit shape. | fixed |
+| APL-055 | low | `Social/FriendsView.swift`, `InviteViews.swift` | "@" read aloud before the handle field; lowercase placeholders; names and invite text cut to one line. | "@" hidden from VoiceOver; "Handle" / "Their handle"; two lines. Context-menu items get symbols. | fixed |
+| APL-056 | med | `Settings/ImportDetailView.swift` | Main's "Find it" (IMP-011) was a borderless text button under 44pt; its footer said "goes on your shelf" and overlapped the audit's "Showing 200 of N". | 44pt hit area, VoiceOver label kept; one footer: "goes in your library at once", then the count. | fixed |
+| APL-057 | low | `Search/SearchModel.swift`, `SearchRows.swift` | Main's pick mode for Find it was written against the pre-split SearchView. | Pick mode lives in `SearchModel` (`choose(_:for:)`), rows are one `TapHitRow` that VoiceOver reads as "\(action) \(title)", Cancel in pick mode. | fixed |
+| APL-058 | low | `Title/TitleDetailView.swift` | Main's "Recommend to friends" and the audit's "Remove from library…" both changed the More menu. | Both kept: Recommend before Remove, Remove confirmed. | fixed |
+| APL-059 | med | `RootView.swift` | The rebase conflict in `RootView` would have dropped main's invite handling (#122) and the Live Activity start (#129, #132). | Re-applied: `RootView` opens an `InviteLink` when signed in, otherwise keeps it until sign-in; `MainTabs` ignores invite URLs; `LiveActivityRegistrar.current?.start()` kept. | fixed |
+| APL-060 | low | `Social/`, `Settings/ImportSources.swift` | The merged files went over swiftlint's 400-line and complexity limits. | Split: `InviteViews.swift`, `SocialWords.swift`, CAT file import into `ImportSources.swift`; `SocialModel.failLoad`. | fixed |

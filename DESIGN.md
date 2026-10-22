@@ -250,7 +250,7 @@ What the Mac app does today (Apple audit, 2026-10-21, `docs/audit/apple.md`):
   over a 760 × 520 minimum. Settings is the Settings scene, sized to its content.
 - **Menu bar.** File → New List (⌘N). Edit → Search Titles (⌘F, the catalog search sheet over
   any destination). View → Refresh (⌘R, the selected destination reloads), the standard sidebar
-  and toolbar commands. Go → the seven sidebar rows (⌘1…⌘7). ⌘, opens Settings. A hardware
+  and toolbar commands. Go → the eight sidebar rows (⌘1…⌘8). ⌘, opens Settings. A hardware
   keyboard on iPad gets the same shortcuts, with Settings in Go.
 - **Settings scene.** Seven panes (§18), each the same page view iPhone and iPad push, each with
   its own stack for an import job or History.
@@ -544,7 +544,10 @@ The feeling to protect: **social is a room you invite people into, not a feed yo
 
 ### Friends and profiles (SOC-001/003, pulled forward 2026-10-21)
 
-Friends is its own tab on Apple and its own page on the web. It opens on "Lately": one quiet row
+Friends is its own page on the web and its own sidebar destination on iPad and Mac, between
+Lists and Groups. On iPhone the five tabs are full (§18), so Groups opens it from a Friends
+button in its toolbar, and Settings → Friends & privacy links to it (Apple audit, 2026-10-22,
+APL-043). It opens on "Lately": one quiet row
 per friend, title and day ("Ana watched 3 episodes, up to S1 · E3 Severance", "Today"), with the
 poster, and Earlier for more. No unread badge and no push: you visit it. Below come Invite,
 requests, friends and blocks.
@@ -705,13 +708,14 @@ bottom, Insights and Settings.
   Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
   names where you came from. Sign out lives on Account only.
-- **iPad.** The `sidebarAdaptable` sidebar: the six, then a bottom section with Insights and
-  Settings.
+- **iPad.** The `sidebarAdaptable` sidebar: the seven (Friends between Lists and Groups), then a
+  bottom section with Insights and Settings.
 - **Mac.** The same sidebar without Settings: Settings is the Settings scene (⌘, and the app
-  menu) and nothing else. A Go menu switches the seven rows with ⌘1…⌘7.
+  menu) and nothing else. A Go menu switches the eight rows with ⌘1…⌘8.
 - **iPhone.** The tab bar holds five: Home · Discover · Library · Calendar · Groups. A sixth tab
   would push Lists, Groups and its badge behind More. Lists opens from Library (a "Lists" row on
-  top and in the toolbar) and from Home's lists; Insights from Home's Last 7 days and Library's
+  top and in the toolbar) and from Home's lists; Friends from a Friends button in Groups'
+  toolbar and from Settings → Friends & privacy; Insights from Home's Last 7 days and Library's
   More menu; Settings from an account button (`person.crop.circle`, top trailing on Home and
   Library), presented as a sheet with Done.
 
@@ -743,7 +747,7 @@ Where each existing piece goes:
 | Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
 | --- | --- | --- |
 | Account | `AccountPage`: `ProfileEditor` (handle and name), Signed in with + Link Google, `AppearanceSection`, Sign out | `AccountSettings` first section; `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
-| Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsView`'s sections inline (not a push from Account); `ConcertPlaceSection` |
+| Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsPage` (`Social/FriendsView.swift`): handle, a Friends row that opens Friends (`router.showFriends()`), Show my library to friends; `ConcertPlaceSection`. The friend lists, invites and requests live on Friends (`FriendsScreen`), as on the web |
 | Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
 | Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |
 | Connections | `ConnectionsSection`, `StremioSection`, `MusicSection` | `ConnectionsSection` (+ `ConnectionSetupView`, `BrowserExtensionView`), `StremioSection`, `MusicSection` (from `ConnectedAppsSettings`) |
@@ -787,7 +791,8 @@ Where each existing piece goes:
 
 **Apple, as built (audit, 2026-10-21, `docs/audit/apple.md`).**
 
-- **Shell.** iPhone: the five tabs and nothing else in the tab bar (no More), an account button (`person.crop.circle`, top trailing on
+- **Shell.** iPhone: the five tabs and nothing else in the tab bar (no More; Lists inside Library,
+  Friends inside Groups), an account button (`person.crop.circle`, top trailing on
   Home and Library) that presents Settings as a sheet with Done. iPad and Mac:
   `.sidebarAdaptable` with every destination, Insights (and Settings on iPad) in a bottom
   section. One catalog search sheet at the root, opened by each screen's Search button and ⌘F.
