@@ -125,10 +125,24 @@ private struct MainTabs: View {
     /// An agent request a notification asked to open (OUT-004).
     @State private var linkedPlan: LinkedTitle?
 
+    /// iPhone and a compact iPad window: a tab bar of five, no sidebar. `.sidebarOnly` alone
+    /// still counts a hidden tab there and turns the fifth into More, so those tabs are left out.
+    private var compactTabBar: Bool {
+        #if os(iOS)
+            sizeClass == .compact
+        #else
+            false
+        #endif
+    }
+
+    private func isShown(_ destination: AppTab) -> Bool {
+        !compactTabBar || destination.isInCompactTabBar
+    }
+
     var body: some View {
         @Bindable var router = router
         TabView(selection: $router.tab) {
-            ForEach(AppTab.primary) { destination in
+            ForEach(AppTab.primary.filter(isShown)) { destination in
                 Tab(destination.title, systemImage: destination.symbol, value: destination) {
                     screen(for: destination)
                 }
@@ -136,12 +150,14 @@ private struct MainTabs: View {
                 // Lists has no tab on iPhone; it opens from Library and Home (§18).
                 .tabPlacement(destination.isInCompactTabBar ? .automatic : .sidebarOnly)
             }
-            TabSection {
-                ForEach(AppTab.secondary) { destination in
-                    Tab(destination.title, systemImage: destination.symbol, value: destination) {
-                        screen(for: destination)
+            if !compactTabBar {
+                TabSection {
+                    ForEach(AppTab.secondary) { destination in
+                        Tab(destination.title, systemImage: destination.symbol, value: destination) {
+                            screen(for: destination)
+                        }
+                        .tabPlacement(.sidebarOnly)
                     }
-                    .tabPlacement(.sidebarOnly)
                 }
             }
         }

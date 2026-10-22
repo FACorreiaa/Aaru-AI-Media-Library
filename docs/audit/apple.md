@@ -112,6 +112,7 @@ Calendar, Week, Title.
 | APL-036 | low | `Settings/SettingsWindow.swift:30` | The Mac Settings window had only a minimum size. | 560–820 × 480+, ideal 640 × 640, `.contentSize` resizability. | fixed |
 | APL-037 | low | `Social/FriendsView.swift:5-41` | Friends was a push two levels down from Account; Friends & privacy is a page of its own. | `FriendsPage` with the sections inline, a "Choose a handle" link when there is none, a loading row, context menus with symbols, scaled monograms. | fixed |
 | APL-038 | low | `Home/NowPlaying.swift:49`, `Home/NowPlayingCard.swift:66`, `:83` | Now playing (#118, merged during the audit) spelled its episode code by hand, cut the episode line at one line and had a 32pt time toggle. | `EpisodeCode.short`, two lines, 44pt. Its 30 s poll, Tonight's filter and the Live Activity registrar were carried through the rebase unchanged. | fixed |
+| APL-039 | high | `Aaru/RootView.swift:131-146` | Found in the simulator shots: on iPhone the tab bar showed Home · Discover · Library · Calendar · More, with Groups and its badge under More. `.tabPlacement(.sidebarOnly)` hides a tab from the bar but iOS still counts it. | At compact width the `TabView` holds only the five tab-bar destinations and no bottom section; the sidebar keeps everything at regular width. | fixed |
 
 ### Groups and the gateway
 
