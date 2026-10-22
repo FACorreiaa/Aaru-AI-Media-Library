@@ -29,6 +29,7 @@ struct HomeScreen: View {
     @State private var width: CGFloat = 0
     @Environment(AppRouter.self) var router
     @Environment(\.dynamicTypeSize) private var dynamicType
+    @Environment(\.scenePhase) private var scenePhase
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -86,6 +87,15 @@ struct HomeScreen: View {
                     await model.shelfChanged()
                 }
                 .task { await model.loadPlans() }
+                // Players report only on a change, so what is playing is asked again every 30 s
+                // while Home is open and the app is in front; the card's clock runs in between.
+                .task(id: scenePhase) {
+                    guard scenePhase == .active else { return }
+                    while !Task.isCancelled {
+                        await model.loadNowPlaying()
+                        try? await Task.sleep(for: .seconds(30))
+                    }
+                }
                 .task { await imports?.load() }
                 .task {
                     if !lists.hasLoaded {
@@ -135,12 +145,12 @@ struct HomeScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if model.loadFailed, model.isEmpty, model.discover.isEmpty {
+        if model.loadFailed, model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil {
             LoadFailedView(
                 title: "Couldn't load Home",
                 message: "Aaru could not reach the server. Check your connection and try again."
             ) { await reload() }
-        } else if model.isEmpty, model.discover.isEmpty, model.hasLoaded {
+        } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil, model.hasLoaded {
             ContentUnavailableView {
                 Label(HomeEmptyCopy.headline, systemImage: "sparkles.tv")
             } description: {
@@ -155,7 +165,7 @@ struct HomeScreen: View {
             }
         } else {
             ScrollView {
-                if model.isEmpty, model.discover.isEmpty {
+                if model.isEmpty, model.discover.isEmpty, model.nowPlaying == nil {
                     // The first load, inside the scroll view so pull to refresh works already.
                     ProgressView()
                         .frame(maxWidth: .infinity)
@@ -171,6 +181,7 @@ struct HomeScreen: View {
     private var sections: some View {
         VStack(alignment: .leading, spacing: 28) {
             header
+            nowPlayingSection
             if compact {
                 tonightSection
                 waitingSection
@@ -197,12 +208,21 @@ struct HomeScreen: View {
         }
     }
 
+    /// Full width under the heading, above the split, so it leads on every screen size.
+    @ViewBuilder private var nowPlayingSection: some View {
+        if let playing = model.nowPlaying {
+            NowPlayingCard(playing: playing, wide: !compact)
+                .padding(.horizontal, 20)
+        }
+    }
+
     func cardWidth(_ size: HomeCardSize) -> CGFloat {
         size.width(compact: compact, dynamicType: dynamicType)
     }
 
     func reload() async {
         await model.load()
+        await model.loadNowPlaying()
         await model.loadPlans()
         await imports?.load()
     }
