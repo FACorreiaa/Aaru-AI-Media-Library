@@ -12,4 +12,8 @@ DEVELOPMENT_TEAM = 84X9WYBF36
 // both derived from the app's bundle id so Beta and Release never share data.
 APP_GROUP_ID = group.$(APP_BUNDLE_ID)
 
+// Crash and error reports (Sentry, aaru-ios project, EU). A DSN is public, not a secret.
+// Empty turns reporting off. Write it as https:/$()/<key>@<host>/<id>: `//` starts a comment.
+SENTRY_DSN =
+
 #include? "Secrets.xcconfig"
