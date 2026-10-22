@@ -20,7 +20,13 @@ export default defineConfig({
             gecko: {
               id: 'extension@aaruapp.com',
               strict_min_version: '142.0',
-              data_collection_permissions: { required: ['none'] },
+              // Error reports (src/lib/reporting) are technical data. Mozilla lets that
+              // category only be optional: Firefox shows it at install as an opt-in, and the
+              // background sends nothing unless it was granted (reportingAllowed).
+              data_collection_permissions: {
+                required: ['none'],
+                optional: ['technicalAndInteraction'],
+              },
             },
           },
         }

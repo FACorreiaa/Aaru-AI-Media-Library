@@ -1,4 +1,6 @@
 import { useRouter } from '@tanstack/solid-router'
+import { onMount } from 'solid-js'
+import { reportBrowserError } from '../lib/observability/browser'
 import { cn } from '../lib/cn'
 import { Wordmark } from './Brand'
 import { Button, buttonVariants } from './ui/button'
@@ -6,6 +8,8 @@ import { Button, buttonVariants } from './ui/button'
 /** The branded fallback when a page cannot load: the message, and a way to try again. */
 export function RouteError(props: { error: unknown }) {
   const router = useRouter()
+  // The router's boundary catches this before the page's error handler can, so report it here.
+  onMount(() => reportBrowserError(props.error))
   const message = () =>
     props.error instanceof Error && props.error.message
       ? props.error.message
