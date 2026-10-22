@@ -10,9 +10,15 @@ struct StremioEpisodeMap: Sendable {
     /// How far TMDB's air date may sit from Cinemeta's release day: time zones, a day-late upload.
     static let tolerance: TimeInterval = 36 * 60 * 60
 
-    /// Cinemeta's episode list for an IMDb series.
-    let videos: @Sendable (String) async throws -> [StremioWatched.Video]
-    var cache = VideoCache()
+    /// Cinemeta's entry for an IMDb series.
+    let series: @Sendable (String) async throws -> StremioSeries
+    var cache = SeriesCache()
+
+    /// TVDB's id for IMDb series `imdb`, which names the show Aaru tracks when TMDB lists the
+    /// series as an entry of its own (TMDB `336301` for `tt14986406`, a near-empty duplicate).
+    func tvdb(imdb: String) async -> String? {
+        await cache.series(imdb, fetch: series)?.tvdb
+    }
 
     /// The episode of `title` that Stremio's `key` of IMDb series `imdb` is. `key` itself when the
     /// numbers can be trusted: the show is that IMDb series, or its IMDb id is unknown, and it has
@@ -24,7 +30,7 @@ struct StremioEpisodeMap: Sendable {
         if sameSeries, episodes.contains(where: { $0.season == key.season && $0.episode == key.episode }) {
             return key
         }
-        guard let listed = await cache.videos(imdb, fetch: videos) else { return sameSeries ? key : nil }
+        guard let listed = await cache.series(imdb, fetch: series)?.videos else { return sameSeries ? key : nil }
         return Self.match(key, listed: listed, episodes: episodes) ?? (sameSeries ? key : nil)
     }
 
@@ -48,19 +54,19 @@ struct StremioEpisodeMap: Sendable {
         return try? EpisodeKey(season: aired[order].season, episode: aired[order].episode)
     }
 
-    /// Cinemeta's lists for a few hours: a player reports each episode several times.
-    actor VideoCache {
+    /// Cinemeta's entries for a few hours: a player reports each episode several times.
+    actor SeriesCache {
         static let lifetime: TimeInterval = 6 * 60 * 60
         static let capacity = 200
 
-        private var entries: [String: (fetched: Date, videos: [StremioWatched.Video])] = [:]
+        private var entries: [String: (fetched: Date, series: StremioSeries)] = [:]
 
-        /// Nil when Cinemeta failed; an empty list when it does not know the series.
-        func videos(
-            _ imdb: String, fetch: @Sendable (String) async throws -> [StremioWatched.Video]
-        ) async -> [StremioWatched.Video]? {
+        /// Nil when Cinemeta failed; an empty entry when it does not know the series.
+        func series(
+            _ imdb: String, fetch: @Sendable (String) async throws -> StremioSeries
+        ) async -> StremioSeries? {
             if let entry = entries[imdb], Date().timeIntervalSince(entry.fetched) < Self.lifetime {
-                return entry.videos
+                return entry.series
             }
             guard let fetched = try? await fetch(imdb) else { return nil }
             if entries.count >= Self.capacity {

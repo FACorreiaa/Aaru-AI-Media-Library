@@ -69,20 +69,26 @@ struct StremioAccount: Sendable {
     /// A show's episodes in Cinemeta, which Stremio's ids (`tt…:season:episode`) come from.
     /// Empty when Cinemeta does not know the show.
     func videos(imdb: String) async throws -> [StremioWatched.Video] {
-        guard imdb.hasPrefix("tt"), imdb.dropFirst(2).allSatisfy(\.isNumber) else { return [] }
+        try await series(imdb: imdb).videos
+    }
+
+    /// A show in Cinemeta: its episodes and its TVDB id. Empty when Cinemeta does not know it.
+    func series(imdb: String) async throws -> StremioSeries {
+        guard imdb.hasPrefix("tt"), imdb.dropFirst(2).allSatisfy(\.isNumber) else { return StremioSeries() }
         let url = cinemetaBase.appending(path: "meta/series/\(imdb).json")
         let envelope: CinemetaEnvelope
         do {
             envelope = try await cinemeta.decode(CinemetaEnvelope.self, request(url))
         } catch let error as ProviderError where error.kind == .notFound {
-            return []
+            return StremioSeries()
         }
-        return (envelope.meta?.videos ?? []).compactMap { video in
+        let videos = (envelope.meta?.videos ?? []).compactMap { video -> StremioWatched.Video? in
             guard let season = video.season, let episode = video.episode ?? video.number else { return nil }
             return StremioWatched.Video(
                 id: video.id, season: season, episode: episode, released: video.released.flatMap(Self.date)
             )
         }
+        return StremioSeries(tvdb: envelope.meta?.tvdbID?.value, videos: videos)
     }
 
     static func date(_ raw: String) -> Date? {
@@ -130,13 +136,41 @@ struct StremioAccount: Sendable {
     }
 }
 
-/// Cinemeta's `meta/series/{id}.json`, only the episode list.
-private struct CinemetaEnvelope: Decodable {
-    struct Meta: Decodable {
-        let videos: [CinemetaVideo]?
-    }
+/// A show as Cinemeta lists it.
+struct StremioSeries: Equatable, Sendable {
+    /// TVDB's id for the show. TVDB, like TMDB, can keep as one show's season what IMDb lists as
+    /// a series of its own (Bleach: Thousand-Year Blood War), so this names the show Aaru tracks.
+    var tvdb: String?
+    var videos: [StremioWatched.Video] = []
+}
 
-    let meta: Meta?
+/// Cinemeta's `meta/series/{id}.json`: the episode list and the TVDB id.
+private struct CinemetaEnvelope: Decodable {
+    let meta: CinemetaMeta?
+}
+
+private struct CinemetaMeta: Decodable {
+    let videos: [CinemetaVideo]?
+    let tvdbID: LenientID?
+
+    private enum CodingKeys: String, CodingKey {
+        case videos
+        case tvdbID = "tvdb_id"
+    }
+}
+
+/// An id Cinemeta writes as a number or a string; anything else reads as absent.
+private struct LenientID: Decodable {
+    let value: String?
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let number = try? container.decode(Int.self) {
+            value = number > 0 ? String(number) : nil
+        } else {
+            value = (try? container.decode(String.self)).flatMap { Int($0) }.map(String.init)
+        }
+    }
 }
 
 private struct CinemetaVideo: Decodable {

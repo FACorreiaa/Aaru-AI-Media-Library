@@ -2269,8 +2269,10 @@ Stremio's numbers are Cinemeta's (IMDb's seasons): Bleach: Thousand-Year Blood W
 series, seasons 1–4, while TMDB keeps it as Bleach S2, so S3·E11 ticked nothing. A `player` or
 `library` event for an IMDb series that is not the matched show's own (or an episode the show lacks)
 is placed by Cinemeta's release day (±36 h; same-day pairs in order), and dropped when it cannot be
-placed rather than ticking a wrong episode (`StremioEpisodeMap`). The history import (IMP-016) still
-uses Stremio's numbers as they come. A `start` for the next episode closes the last one, ticking it only when it
+placed rather than ticking a wrong episode (`StremioEpisodeMap`). The series itself is found by
+Cinemeta's TVDB id before its IMDb id: TMDB answers `tt14986406` with a near-empty entry of its own
+(`336301`, one episode), which the first scrobble had made a second Bleach title; TVDB's id is
+Bleach's. The history import (IMP-016) still uses Stremio's numbers as they come. A `start` for the next episode closes the last one, ticking it only when it
 was last reported at ≥ 80%. With it, the web's last-7-days block became a wide strip under
 Tonight (owner, same day). This closes WID-005's "scrobble start is P3" and SCR-001's "may start
 the WID-005 Live Activity via push".
