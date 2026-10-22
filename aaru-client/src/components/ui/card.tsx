@@ -3,9 +3,9 @@ import { splitProps } from 'solid-js'
 
 import { cx } from '~/lib/cva'
 
-/** Aaru: the plain surface panel, for an element that is not a `Card` (a `<details>`, a link,
- *  a grid cell). */
-export const cardClass = 'rounded-card bg-surface'
+// Aaru: `cardClass` lives in its own module so a page that only borrows the class (the
+// landing page) does not load `cx` and tailwind-merge with it.
+export { cardClass } from './card-class'
 
 export type CardProps = ComponentProps<'div'>
 

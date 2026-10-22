@@ -1,9 +1,13 @@
 import { useRouter } from '@tanstack/solid-router'
 import { Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
-import { cn } from '~/lib/utils'
 import { Wordmark } from './Brand'
-import { Button, buttonVariants } from '~/components/ui'
+
+// These two are the router's defaults, so they load with every page. They spell out the
+// primary button's look instead of importing Button: that would put Kobalte and tailwind-merge
+// (~13 KB gzip) into every page's first load for a page that is almost never seen.
+const primary =
+  'mt-8 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground outline-none transition-[transform,background-color] hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:active:scale-[0.98]'
 
 /** The branded fallback when a page cannot load: the message, and a way to try again. */
 export function RouteError(props: { error: unknown }) {
@@ -28,14 +32,14 @@ export function RouteError(props: { error: unknown }) {
       </Show>
       <h1 class="font-display text-3xl font-medium">This page did not load</h1>
       <p class="mt-3 text-muted">{message()}</p>
-      <Button
-        variant="default"
-        size="lg"
+      {/* eslint-disable-next-line no-restricted-syntax -- see `primary` above */}
+      <button
+        type="button"
+        class={primary}
         onClick={() => void router.invalidate()}
-        class="mt-8"
       >
         Try again
-      </Button>
+      </button>
     </Dynamic>
   )
 }
@@ -52,10 +56,7 @@ export function NotFound() {
         Nothing lives here
       </h1>
       <p class="mt-3 text-muted">This page does not exist, or it moved.</p>
-      <a
-        href={home}
-        class={cn(buttonVariants({ variant: 'default', size: 'lg' }), 'mt-8')}
-      >
+      <a href={home} class={primary}>
         Go home
       </a>
     </main>

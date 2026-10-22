@@ -7,7 +7,7 @@ import { LegalLinks } from '../components/LegalPage'
 import { PosterFan } from '../components/PosterFan'
 import { StoreButtons } from '../components/StoreButtons'
 import { cardClass } from '~/components/ui'
-import { cn } from '~/lib/utils'
+// No `cn` here: it brings tailwind-merge, and the landing page joins no conflicting classes.
 import { FAN, KIND_CARDS } from '../lib/landing/art'
 import { SITE_URL, X_URL } from '../lib/site'
 import { useSignedIn } from '../lib/session/use-signed-in'
@@ -218,7 +218,7 @@ function Landing() {
             <div class="flex flex-col gap-3">
               <For each={faqs}>
                 {([question, answer]) => (
-                  <details class={cn(cardClass, 'group px-6 py-5 open:pb-6')}>
+                  <details class={`${cardClass} group px-6 py-5 open:pb-6`}>
                     <summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-medium [&::-webkit-details-marker]:hidden">
                       {question}
                       <span
