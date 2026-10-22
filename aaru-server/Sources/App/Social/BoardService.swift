@@ -22,23 +22,41 @@ struct BoardService: Sendable {
         case top
     }
 
+    /// A page of posts and the ones this viewer should see behind a spoiler veil.
+    struct Page: Sendable {
+        var posts: [BoardPost]
+        var veiled: Set<UUID>
+    }
+
     private var social: SocialService {
         SocialService(stores: stores)
     }
 
     /// Posts by the viewer's audience. `top` is the last seven days by upvotes and ignores `before`.
-    func feed(sort: Sort, before: UUID?, limit: Int?, viewer: UserID) async throws -> [BoardPost] {
+    func feed(sort: Sort, before: UUID?, limit: Int?, viewer: UserID) async throws -> Page {
         let authors = try await audience(viewer)
+        let posts: [BoardPost]
         switch sort {
         case .recent:
             let size = min(max(limit ?? Self.defaultPageSize, 1), Self.maxPageSize)
-            return try await stores.boards.feed(authors: authors, before: before, limit: size, viewer: viewer)
+            posts = try await stores.boards.feed(authors: authors, before: before, limit: size, viewer: viewer)
         case .top:
-            return try await stores.boards.top(
+            posts = try await stores.boards.top(
                 authors: authors, since: now().addingTimeInterval(-Self.topWindow), limit: Self.topLimit,
                 viewer: viewer
             )
         }
+        return try await Page(posts: posts, veiled: veiled(posts, viewer: viewer))
+    }
+
+    /// Posts whose spoiler stamp is ahead of the viewer's own progress. Progress is read once per title.
+    func veiled(_ posts: [BoardPost], viewer: UserID) async throws -> Set<UUID> {
+        let stamped = posts.filter { $0.spoiler != nil && $0.titleID != nil && $0.author.id != viewer }
+        var progress: [TitleID: TitleProgress] = [:]
+        for title in Set(stamped.compactMap(\.titleID)) {
+            progress[title] = try await stores.groupKinds.progress(title: title, users: [viewer])[viewer]
+        }
+        return Set(stamped.filter { GroupService.veils($0.spoiler, $0.titleID.flatMap { progress[$0] }) }.map(\.id))
     }
 
     func create(
@@ -47,14 +65,15 @@ struct BoardService: Sendable {
         // The store's reads join profiles: a post by someone without a handle would vanish.
         let author = try await social.requireHandle(viewer)
         let body = try Self.validBody(body)
+        // Validate before any catalog call.
+        var stored: Double?
+        if let rating {
+            guard ref != nil else { throw GroupService.invalid("rating", "Pick the title you are rating.") }
+            stored = try Rating(rating).value
+        }
         var title: Title?
         if let ref {
             title = try await resolver.resolve(ref)
-        }
-        var stored: Double?
-        if let rating {
-            guard title != nil else { throw GroupService.invalid("rating", "Pick the title you are rating.") }
-            stored = try Rating(rating).value
         }
         var stamp: SpoilerStamp?
         if let title {
@@ -66,6 +85,16 @@ struct BoardService: Sendable {
                 stamp = mine.flatMap(GroupService.autoStamp)
             }
         }
+        // A rating is a library write: a new title lands as Watched, an existing one keeps its status.
+        if let ref, let title, let stored {
+            let existing = try await stores.library.item(userID: viewer, titleID: title.id)
+            let itemID = if let existing {
+                existing.id
+            } else {
+                try await library.add(ref, status: .finished, userID: viewer).item.id
+            }
+            _ = try await library.patch(itemID, userID: viewer, patch: ItemPatch(rating: stored))
+        }
         return try await stores.boards.createPost(
             BoardPost(
                 id: UUID(), author: author, titleID: title?.id, rating: stored, body: body, spoiler: stamp,
@@ -74,8 +103,9 @@ struct BoardService: Sendable {
         )
     }
 
-    func post(_ id: UUID, viewer: UserID) async throws -> BoardPost {
-        try await requireVisible(id, viewer: viewer)
+    func post(_ id: UUID, viewer: UserID) async throws -> (post: BoardPost, veiled: Bool) {
+        let found = try await requireVisible(id, viewer: viewer)
+        return try await (found, !veiled([found], viewer: viewer).isEmpty)
     }
 
     func edit(_ id: UUID, body: String, viewer: UserID) async throws -> BoardPost {
