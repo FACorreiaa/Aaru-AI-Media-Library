@@ -13,6 +13,7 @@ struct TitleDetailView: View {
     @State private var page = ""
     @State private var showsListPicker = false
     @State private var discusses = false
+    @State private var recommends = false
     /// Nil in previews and outside the signed-in app.
     @Environment(GroupsModel.self) private var groups: GroupsModel?
     @State private var openEpisode: EpisodeKey?
@@ -81,11 +82,20 @@ struct TitleDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button("Add to list", systemImage: "text.badge.plus") { showsListPicker = true }
             }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Recommend to friends…", systemImage: "hand.thumbsup") { recommends = true }
+            }
             if groups?.managedGroups.isEmpty == false {
                 ToolbarItem(placement: .secondaryAction) {
                     Button("Discuss in a group…", systemImage: "bubble.left.and.bubble.right") { discusses = true }
                 }
             }
+        }
+        .sheet(isPresented: $recommends) {
+            RecommendSheet(
+                model: SocialModel(api: model.api),
+                title: (MediaRef(titleId: entry.title.id, _type: entry.title._type), entry.title.title)
+            )
         }
         .sheet(isPresented: $discusses) {
             if let groups {

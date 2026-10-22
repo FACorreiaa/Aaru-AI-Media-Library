@@ -14,6 +14,7 @@ import { AddToListDialog } from '../components/AddToListDialog'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
+import { RecommendDialog } from '../components/Recommendations'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
@@ -118,6 +119,13 @@ function TitleRoom() {
   }
   const [removing, setRemoving] = createSignal(false)
   const [removeBusy, setRemoveBusy] = createSignal(false)
+  const [recommending, setRecommending] = createSignal(false)
+  // Mounted on first open, then kept, so closing plays the exit (WEB-011).
+  const [recommendedOnce, setRecommendedOnce] = createSignal(false)
+  const recommendTitle = () => {
+    setRecommendedOnce(true)
+    setRecommending(true)
+  }
   const [notes, setNotes] = createSignal(page().entry.notes ?? '')
   const [pageNumber, setPageNumber] = createSignal(
     page().entry.bookProgress?.page?.toString() ?? '',
@@ -410,6 +418,9 @@ function TitleRoom() {
               type={entry().title.type}
               name={entry().title.title}
             />
+            <Button variant="quiet" onClick={recommendTitle}>
+              Recommend
+            </Button>
           </Show>
           <DropdownMenu placement="bottom-end">
             <DropdownMenuTrigger
@@ -660,6 +671,18 @@ function TitleRoom() {
               onClose={() => setOpened(null)}
             />
           )}
+        </Show>
+        <Show when={recommendedOnce()}>
+          <RecommendDialog
+            open={recommending()}
+            title={{
+              ref: { titleId: entry().title.id, type: entry().title.type },
+              name: entry().title.title,
+              posterUrl: entry().title.posterUrl,
+              kind: kindOf(entry().title.type, entry().title.isAnime),
+            }}
+            onClose={() => setRecommending(false)}
+          />
         </Show>
         <Show when={pickedOnce()}>
           <AddToListDialog

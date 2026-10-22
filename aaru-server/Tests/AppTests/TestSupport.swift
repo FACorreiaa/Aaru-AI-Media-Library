@@ -339,6 +339,7 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         oauth: untouched,
         social: untouched,
         friendViews: untouched,
+        interactions: untouched,
         groups: untouched,
         groupKinds: untouched,
         agent: untouched,

@@ -291,10 +291,11 @@ export const saveSocialSettings = createServerFn({ method: 'POST' })
 export const loadFriendsPage = createServerFn({ method: 'GET' }).handler(
   async () => {
     const client = api(sessionToken())
-    const [me, activity, social] = await Promise.all([
+    const [me, activity, social, recommendations] = await Promise.all([
       client.GET('/v1/me'),
       client.GET('/v1/activity'),
       loadSocial(),
+      client.GET('/v1/me/recommendations'),
     ])
     const account = check(me, 'Your account could not be loaded.')
     return {
@@ -302,6 +303,78 @@ export const loadFriendsPage = createServerFn({ method: 'GET' }).handler(
       displayName: account.displayName,
       social,
       activity: check(activity, 'Your friends’ activity could not be loaded.'),
+      recommendations: check(
+        recommendations,
+        'Your recommendations could not be loaded.',
+      ).items,
     }
   },
 )
+
+// SOC-007 reactions and SOC-006 recommendations.
+
+export type RecommendationItem = components['schemas']['RecommendationItem']
+export type Reaction = components['schemas']['ReactionSet']['emoji']
+
+export const REACTIONS: Reaction[] = ['❤️', '😂', '😮', '😭', '🔥', '👏']
+
+/** Sets your reaction on a row, or clears it with `null`. */
+export const reactTo = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      id: z.string().min(1).max(100),
+      emoji: z.enum(['❤️', '😂', '😮', '😭', '🔥', '👏']).nullable(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const client = api(sessionToken())
+    const params = { params: { path: { id: data.id } } }
+    checkEmpty(
+      data.emoji
+        ? await client.PUT('/v1/activity/{id}/reaction', {
+            ...params,
+            body: { emoji: data.emoji },
+          })
+        : await client.DELETE('/v1/activity/{id}/reaction', params),
+      'That reaction was not saved.',
+    )
+  })
+
+export const loadRecommendations = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<RecommendationItem[]> =>
+    check(
+      await api(sessionToken()).GET('/v1/me/recommendations'),
+      'Your recommendations could not be loaded.',
+    ).items,
+)
+
+export const recommend = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      to: z.array(z.string().uuid()).min(1).max(10),
+      title: mediaRef,
+      note: z.string().max(140).optional(),
+    }),
+  )
+  .handler(async ({ data }) =>
+    checkEmpty(
+      await api(sessionToken()).POST('/v1/social/recommendations', {
+        body: data,
+      }),
+      'That recommendation was not sent.',
+    ),
+  )
+
+/** Adds it to Plan to watch (`add`) or dismisses it. Either way it leaves the list. */
+export const answerRecommendation = createServerFn({ method: 'POST' })
+  .validator(z.object({ id: z.string().uuid(), add: z.boolean() }))
+  .handler(async ({ data }) => {
+    const client = api(sessionToken())
+    const params = { params: { path: { id: data.id } } }
+    checkEmpty(
+      data.add
+        ? await client.POST('/v1/me/recommendations/{id}/add', params)
+        : await client.DELETE('/v1/me/recommendations/{id}', params),
+      'That recommendation is gone.',
+    )
+  })

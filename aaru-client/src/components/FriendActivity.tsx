@@ -4,22 +4,47 @@ import { kindOf } from '../lib/library/model'
 import {
   activityDay,
   activityVerb,
+  withReaction,
   inviterName,
   monogram,
 } from '../lib/social/model'
-import { loadActivity } from '../lib/social/server'
-import type { ActivityPage } from '../lib/social/server'
+import { REACTIONS, loadActivity, reactTo } from '../lib/social/server'
+import type { ActivityItem, ActivityPage, Reaction } from '../lib/social/server'
 import { Poster } from './Poster'
 import { Button } from '~/components/ui'
 
-// SOC-003 (minimal): what friends watched and finished in the last two weeks, newest first.
-// Only dated ticks and finishes; imports never show. A room you visit, not a feed you are fed:
-// no badge, no push.
-export function FriendActivity(props: { page: ActivityPage }) {
+// SOC-003 (minimal): what you and your friends watched and finished in the last two weeks,
+// newest first. Only dated ticks and finishes; imports never show. A room you visit, not a feed
+// you are fed: no badge, no push. Friends' rows take one of six reactions (SOC-007); yours show
+// what friends left.
+export function FriendActivity(props: { page: ActivityPage; me?: string }) {
   const [items, setItems] = createSignal(props.page.items)
   const [next, setNext] = createSignal(props.page.nextBefore)
   const [loading, setLoading] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [picking, setPicking] = createSignal<string | null>(null)
+
+  const mine = (item: ActivityItem) => item.user.handle === props.me
+
+  /** Applies a reaction at once, and puts the row back if the server says no. */
+  async function react(item: ActivityItem, emoji: Reaction) {
+    setPicking(null)
+    const chosen = item.myReaction === emoji ? null : emoji
+    const before = items()
+    setItems(
+      items().map((row) =>
+        row.id === item.id ? withReaction(row, chosen) : row,
+      ),
+    )
+    try {
+      await reactTo({ data: { id: item.id, emoji: chosen } })
+    } catch (error) {
+      setItems(before)
+      setProblem(
+        error instanceof Error ? error.message : 'That reaction was not saved.',
+      )
+    }
+  }
 
   async function more() {
     const before = next()
@@ -64,17 +89,32 @@ export function FriendActivity(props: { page: ActivityPage }) {
                 >
                   {monogram(item.user)}
                 </Link>
-                <p class="min-w-0 flex-1 text-sm leading-snug">
-                  <span class="font-medium">{inviterName(item.user)}</span>{' '}
-                  {activityVerb(item)}{' '}
-                  <span class="font-medium">{item.title.title}</span>
-                  <Show when={item.finished && item.rating}>
-                    {(rating) => (
-                      <span class="text-muted"> · ★ {rating()}</span>
-                    )}
-                  </Show>
-                  <span class="block text-muted">{activityDay(item.day)}</span>
-                </p>
+                <div class="min-w-0 flex-1 text-sm leading-snug">
+                  <p>
+                    <span class="font-medium">
+                      {mine(item) ? 'You' : inviterName(item.user)}
+                    </span>{' '}
+                    {activityVerb(item)}{' '}
+                    <span class="font-medium">{item.title.title}</span>
+                    <Show when={item.finished && item.rating}>
+                      {(rating) => (
+                        <span class="text-muted"> · ★ {rating()}</span>
+                      )}
+                    </Show>
+                    <span class="block text-muted">
+                      {activityDay(item.day)}
+                    </span>
+                  </p>
+                  <Reactions
+                    item={item}
+                    own={mine(item)}
+                    picking={picking() === item.id}
+                    onPick={() =>
+                      setPicking(picking() === item.id ? null : item.id)
+                    }
+                    onReact={(emoji) => void react(item, emoji)}
+                  />
+                </div>
                 <Poster
                   url={item.title.posterUrl}
                   kind={kindOf(item.title.type, item.title.isAnime)}
@@ -105,5 +145,67 @@ export function FriendActivity(props: { page: ActivityPage }) {
         )}
       </Show>
     </section>
+  )
+}
+
+function Reactions(props: {
+  item: ActivityItem
+  own: boolean
+  picking: boolean
+  onPick: () => void
+  onReact: (emoji: Reaction) => void
+}) {
+  return (
+    <div class="mt-1 flex flex-wrap items-center gap-1.5">
+      <For each={props.item.reactions ?? []}>
+        {(reaction) => (
+          <Button
+            variant="ghost"
+            size="bare"
+            disabled={props.own}
+            aria-pressed={props.item.myReaction === reaction.emoji}
+            aria-label={`${reaction.emoji} ${reaction.count}`}
+            class={`inline-flex min-h-8 items-center gap-1 rounded-full px-2.5 text-xs disabled:cursor-default ${
+              props.item.myReaction === reaction.emoji
+                ? 'bg-accent/15 text-ink ring-1 ring-accent'
+                : 'bg-surface'
+            }`}
+            onClick={() => props.onReact(reaction.emoji as Reaction)}
+          >
+            <span aria-hidden="true">{reaction.emoji}</span>
+            {reaction.count}
+          </Button>
+        )}
+      </For>
+      <Show when={!props.own}>
+        <Button
+          variant="ghost"
+          size="bare"
+          aria-expanded={props.picking}
+          aria-label="React"
+          class="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-surface px-2 text-xs text-muted hover:text-ink"
+          onClick={() => props.onPick()}
+        >
+          +
+        </Button>
+        <Show when={props.picking}>
+          <span role="group" aria-label="Reactions" class="flex gap-1">
+            <For each={REACTIONS}>
+              {(emoji) => (
+                <Button
+                  variant="ghost"
+                  size="bare"
+                  aria-label={emoji}
+                  class="grid size-8 place-items-center rounded-full text-base hover:bg-surface motion-safe:transition-transform motion-safe:active:scale-90"
+                  onClick={() => props.onReact(emoji)}
+                >
+                  {emoji}
+                </Button>
+              )}
+            </For>
+          </span>
+        </Show>
+      </Show>
+    </div>
   )
 }

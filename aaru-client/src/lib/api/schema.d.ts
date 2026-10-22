@@ -313,6 +313,95 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/activity/{id}/reaction': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description An ActivityItem id. */
+        id: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /** React to a friend's activity row with one of six emoji; reacting again replaces it. Your own rows take none. 404 unless you can see the row. */
+    put: operations['setActivityReaction']
+    post?: never
+    delete: operations['clearActivityReaction']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/recommendations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Send a title to up to 10 friends, with an optional note of up to 140 characters. Anyone who is not your friend makes the whole request a 404. Needs your own handle. */
+    post: operations['recommendTitle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/recommendations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Titles friends sent you that you have not added or dismissed, newest first. Only from people who are still your friends. */
+    get: operations['listRecommendations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/recommendations/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['dismissRecommendation']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/recommendations/{id}/add': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations. */
+    post: operations['addRecommendation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/blocks': {
     parameters: {
       query?: never
@@ -2344,6 +2433,35 @@ export interface components {
       rating?: number
       /** Format: date-time */
       at: string
+      /** @description How many of each emoji, most first. Absent when none. */
+      reactions?: components['schemas']['ReactionCount'][]
+      /** @description Your own reaction on this row. */
+      myReaction?: string
+    }
+    ReactionCount: {
+      emoji: string
+      count: number
+    }
+    ReactionSet: {
+      /** @enum {string} */
+      emoji: '❤️' | '😂' | '😮' | '😭' | '🔥' | '👏'
+    }
+    RecommendationCreate: {
+      to: string[]
+      title: components['schemas']['MediaRef']
+      note?: string
+    }
+    RecommendationItem: {
+      /** Format: uuid */
+      id: string
+      from: components['schemas']['SocialUser']
+      title: components['schemas']['TitleSummary']
+      note?: string
+      /** Format: date-time */
+      createdAt: string
+    }
+    RecommendationList: {
+      items: components['schemas']['RecommendationItem'][]
     }
     ActivityPage: {
       items: components['schemas']['ActivityItem'][]
@@ -3874,6 +3992,140 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ActivityPage']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  setActivityReaction: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description An ActivityItem id. */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReactionSet']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  clearActivityReaction: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description An ActivityItem id. */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  recommendTitle: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RecommendationCreate']
+      }
+    }
+    responses: {
+      /** @description Sent. A title already waiting for the same friend is not sent twice. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listRecommendations: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RecommendationList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  dismissRecommendation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Dismissed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  addRecommendation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Added. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

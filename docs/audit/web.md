@@ -164,9 +164,9 @@ Reading the table:
   | Settings → Account | 90.6 | 153.7 | 125.6 |
   | A group channel | 111.3 | 202.6 | 191.3 |
 
-  After the second merge of `main` (friends, invites, IMP-011; `main` itself grew the shared
-  chunk by ~2.8 KB): `/_shell` 112.8, Home 158.8, Title 163.6, a group channel 193.8, Friends
-  123.8. The public invite letter `/i/$code` is 105.5 (barrel `TextField`, `Checkbox`, `Button`,
+  After merging `main`'s friends work (invites, IMP-011, reactions and recommendations; `main`
+  itself grew the shared chunk to 82.3): `/_shell` 113.0, Home 159.1, Title 167.3, a group
+  channel 194.1, Friends 130.7. The public invite letter `/i/$code` is 105.5 (barrel `TextField`, `Checkbox`, `Button`,
   like sign-in).
 
   Most of what is left is step 1's Kobalte cost (accepted), paid once in the shell and cached

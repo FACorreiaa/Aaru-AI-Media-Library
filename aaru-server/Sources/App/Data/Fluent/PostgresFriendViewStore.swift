@@ -29,6 +29,18 @@ struct PostgresFriendViewStore: FriendViewStore {
 
     private struct TitleRow: Decodable { let titleId: UUID }
 
+    private struct ActivityRow: Decodable {
+        let userId: UUID
+        let titleId: UUID
+        let day: String
+        let episodes: Int
+        let lastSeason: Int?
+        let lastEpisode: Int?
+        let finished: Bool
+        let rating: Double?
+        let lastAt: Date
+    }
+
     func socialSettings(_ id: UserID) async throws -> SocialSettings {
         struct Row: Decodable { let shareLibraryWithFriends: Bool }
         let row = try await sql.raw("""
@@ -84,17 +96,6 @@ struct PostgresFriendViewStore: FriendViewStore {
     }
 
     func activity(viewer: UserID, since: Date, before: Date, limit: Int) async throws -> [FriendActivity] {
-        struct Row: Decodable {
-            let userId: UUID
-            let titleId: UUID
-            let day: String
-            let episodes: Int
-            let lastSeason: Int?
-            let lastEpisode: Int?
-            let finished: Bool
-            let rating: Double?
-            let lastAt: Date
-        }
         let rows = try await sql.raw("""
         WITH visible AS (
             SELECT f.id FROM (
@@ -104,6 +105,8 @@ struct PostgresFriendViewStore: FriendViewStore {
             ) f
             LEFT JOIN social_settings s ON s.user_id = f.id
             WHERE coalesce(s.share_library_with_friends, true)
+            -- Your own rows too, so you see what friends reacted to (SOC-007).
+            UNION ALL SELECT \(bind: viewer.rawValue)
         ), events AS (
             SELECT li.user_id, li.title_id, ep.watched_at AS at, ep.season, ep.episode, false AS finished,
                 li.rating
@@ -125,7 +128,7 @@ struct PostgresFriendViewStore: FriendViewStore {
         GROUP BY user_id, title_id, (at AT TIME ZONE 'UTC')::date
         ORDER BY max(at) DESC
         LIMIT \(bind: limit)
-        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
+        """).all(decoding: ActivityRow.self, keyDecodingStrategy: .convertFromSnakeCase)
         return rows.map {
             FriendActivity(
                 friend: UserID($0.userId), titleID: TitleID($0.titleId), day: $0.day, episodes: $0.episodes,

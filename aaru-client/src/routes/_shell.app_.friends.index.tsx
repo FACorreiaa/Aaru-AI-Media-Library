@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { FriendActivity } from '../components/FriendActivity'
+import { RecommendationInbox } from '../components/Recommendations'
 import { FriendsSection } from '../components/settings/FriendsSection'
 import { loadFriendsPage } from '../lib/social/server'
 
@@ -20,7 +21,8 @@ function Friends() {
         <h1 class="mt-4 font-display text-4xl font-medium tracking-tight">
           Friends
         </h1>
-        <FriendActivity page={page().activity} />
+        <RecommendationInbox items={page().recommendations} />
+        <FriendActivity page={page().activity} me={page().handle} />
         <div class="mt-10 max-w-3xl">
           <FriendsSection handle={page().handle} state={page().social} />
         </div>

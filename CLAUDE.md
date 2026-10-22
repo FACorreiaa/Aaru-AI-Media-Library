@@ -186,6 +186,9 @@ Use these words in code, APIs, and UI:
 - **Invite** — a one-use link (`aaruapp.com/i/{code}`, 14 days) that makes whoever opens it the
   sender's friend, optionally carrying one title to watch together. Friend invites only: groups
   have no invite links
+- **Recommendation** — one title a user sends friends, with an optional note; it waits until the
+  friend adds it to Plan to watch or dismisses it
+- **Reaction** — one of six emoji a friend leaves on an activity row (a person's title on one day)
 - **Points event** — one row in the append-only points ledger, idempotent by dedupe key.
   Never a counter
 - **Streak** — consecutive local days with at least one progress write

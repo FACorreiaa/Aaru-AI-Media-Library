@@ -1,6 +1,7 @@
 import type { MediaKind } from '../library/model'
 import type {
   ActivityItem,
+  Reaction,
   FriendItem,
   FriendProfile,
   SocialUser,
@@ -128,4 +129,24 @@ export function friendsSince(date: string): string {
     month: 'long',
     year: 'numeric',
   })}`
+}
+
+/** The row with the viewer's reaction set to `emoji` (or cleared), counts kept in step. */
+export function withReaction(
+  item: ActivityItem,
+  emoji: Reaction | null,
+): ActivityItem {
+  const counts = new Map((item.reactions ?? []).map((r) => [r.emoji, r.count]))
+  if (item.myReaction)
+    counts.set(item.myReaction, (counts.get(item.myReaction) ?? 1) - 1)
+  if (emoji) counts.set(emoji, (counts.get(emoji) ?? 0) + 1)
+  const reactions = [...counts]
+    .filter(([, count]) => count > 0)
+    .map(([e, count]) => ({ emoji: e, count }))
+    .sort((a, b) => b.count - a.count)
+  return {
+    ...item,
+    myReaction: emoji ?? undefined,
+    reactions: reactions.length ? reactions : undefined,
+  }
 }

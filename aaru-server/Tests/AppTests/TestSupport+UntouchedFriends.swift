@@ -23,3 +23,29 @@ extension UntouchedStore: FriendViewStore {
         throw Touched()
     }
 }
+
+extension UntouchedStore: InteractionStore {
+    func reactions(on _: [ActivityKey], viewer _: UserID) async throws -> [ActivityKey: ReactionSummary] {
+        throw Touched()
+    }
+
+    func react(_: String?, on _: ActivityKey, by _: UserID, now _: Date) async throws {
+        throw Touched()
+    }
+
+    func hasTitle(_: UserID, _: TitleID) async throws -> Bool {
+        throw Touched()
+    }
+
+    func recommend(_: [Recommendation]) async throws {
+        throw Touched()
+    }
+
+    func inbox(_: UserID, limit _: Int) async throws -> [Recommendation] {
+        throw Touched()
+    }
+
+    func resolve(_: UUID, to _: UserID, added _: Bool, now _: Date) async throws -> Recommendation? {
+        throw Touched()
+    }
+}

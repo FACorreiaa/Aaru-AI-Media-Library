@@ -975,6 +975,8 @@ Modelled on Norviq's `social_*` design (`norviq-backend/.../Social`, `CreateSoci
 | `social_blocks` | blocker, blocked |
 | `social_reports` | reporter, target, reason |
 | `social_invites` | code (12 random base62), inviter, optional title, expiry (14 days), redeemed_by, revoked_at |
+| `social_reactions` | user, owner, title, UTC day, one of six emoji; one per user and row (SOC-007) |
+| `social_recommendations` | from, to, title, note (140), created, added_at, dismissed_at; one waiting per pair and title (SOC-006) |
 | `social_settings` | `share_library_with_friends` (default on, 2026-10-21); P5 adds `show_points`, `show_streaks`, `leaderboard_opt_in` |
 
 Rules:

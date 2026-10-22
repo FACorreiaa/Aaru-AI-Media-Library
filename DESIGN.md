@@ -544,6 +544,13 @@ Watching (covers with "S2 · E4" or "Page 120"), a "You both" card (titles you b
 you both finished, what they loved that you haven't), and Recently finished with their stars. A
 friend who hides their library shows only the header and one line saying so.
 
+Interactions stay small (SOC-006/007). A friend's row in Lately takes one of six reactions
+(❤️ 😂 😮 😭 🔥 👏) from a small "+" (a menu on Apple); counts sit under the row, yours ringed in
+accent, and your own rows show what friends left. A title page and a friend's profile offer
+Recommend: pick friends or a title, add a note of up to 140 characters. What friends sent you sits
+at the top of Friends, "For you from friends", with Add to Plan to watch and Dismiss. A profile
+also offers Invite to a group, through the group invites that already exist.
+
 ### Invites (SOC-002, pulled forward 2026-10-21)
 
 A friend invite is a letter, not a growth hack. The page or sheet it opens shows the mascot

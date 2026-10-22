@@ -12,3 +12,6 @@ API_BASE_URL = https:/$()/api.aaruapp.com
 APS_ENVIRONMENT = production
 // Sign in with Google: the iOS OAuth client for this bundle id (public). Empty hides the button.
 GOOGLE_CLIENT_ID = 1021071971791-me5t60upgnaqdcfa04l2bgca1dhkteuf.apps.googleusercontent.com
+
+// Sentry environment for this build's crash reports.
+SENTRY_ENVIRONMENT = production

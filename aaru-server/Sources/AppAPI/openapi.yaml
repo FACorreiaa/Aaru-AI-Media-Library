@@ -316,6 +316,76 @@ paths:
               schema: {$ref: '#/components/schemas/ActivityPage'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/activity/{id}/reaction:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}, description: 'An ActivityItem id.'}
+    put:
+      operationId: setActivityReaction
+      summary: React to a friend's activity row with one of six emoji; reacting again replaces it. Your own rows take none. 404 unless you can see the row.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReactionSet'}
+      responses:
+        '204':
+          description: Saved.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: clearActivityReaction
+      responses:
+        '204':
+          description: Removed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/recommendations:
+    post:
+      operationId: recommendTitle
+      summary: Send a title to up to 10 friends, with an optional note of up to 140 characters. Anyone who is not your friend makes the whole request a 404. Needs your own handle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RecommendationCreate'}
+      responses:
+        '204':
+          description: Sent. A title already waiting for the same friend is not sent twice.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/recommendations:
+    get:
+      operationId: listRecommendations
+      summary: Titles friends sent you that you have not added or dismissed, newest first. Only from people who are still your friends.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RecommendationList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/recommendations/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    delete:
+      operationId: dismissRecommendation
+      responses:
+        '204':
+          description: Dismissed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/recommendations/{id}/add:
+    post:
+      operationId: addRecommendation
+      summary: Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Added.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/social/blocks:
     get:
       operationId: listBlocks
@@ -2816,6 +2886,49 @@ components:
         finished: {type: boolean}
         rating: {type: number}
         at: {type: string, format: date-time}
+        reactions:
+          type: array
+          description: How many of each emoji, most first. Absent when none.
+          items: {$ref: '#/components/schemas/ReactionCount'}
+        myReaction: {type: string, description: Your own reaction on this row.}
+    ReactionCount:
+      type: object
+      required: [emoji, count]
+      properties:
+        emoji: {type: string}
+        count: {type: integer}
+    ReactionSet:
+      type: object
+      required: [emoji]
+      properties:
+        emoji:
+          type: string
+          enum: ['❤️', '😂', '😮', '😭', '🔥', '👏']
+    RecommendationCreate:
+      type: object
+      required: [to, title]
+      properties:
+        to:
+          type: array
+          items: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/MediaRef'}
+        note: {type: string}
+    RecommendationItem:
+      type: object
+      required: [id, from, title, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        from: {$ref: '#/components/schemas/SocialUser'}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        note: {type: string}
+        createdAt: {type: string, format: date-time}
+    RecommendationList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/RecommendationItem'}
     ActivityPage:
       type: object
       required: [items]

@@ -1,8 +1,14 @@
 import { Link, createFileRoute } from '@tanstack/solid-router'
-import { For, Show } from 'solid-js'
+import { For, Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { Poster } from '../components/Poster'
 import { BackLink } from '../components/shell/BackLink'
+import {
+  GroupInviteDialog,
+  RecommendDialog,
+} from '../components/Recommendations'
+import { Button } from '~/components/ui'
+import { lastShown } from '../lib/presence'
 import { kindOf } from '../lib/library/model'
 import {
   countsLine,
@@ -36,6 +42,9 @@ export const Route = createFileRoute('/_shell/app_/friends/$handle')({
 function Profile() {
   const loaded = Route.useLoaderData()
   const profile = () => loaded().profile
+  const [dialog, setDialog] = createSignal<'recommend' | 'group' | null>(null)
+  // Kept on its last value so the closing dialog plays its exit (WEB-011).
+  const shownDialog = lastShown(dialog)
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
@@ -83,6 +92,32 @@ function Profile() {
                     </Show>
                   </div>
                 </header>
+                <div class="mt-5 flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => setDialog('recommend')}>
+                    Recommend a title
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="quiet"
+                    onClick={() => setDialog('group')}
+                  >
+                    Invite to a group
+                  </Button>
+                </div>
+                <Show when={shownDialog() === 'recommend'}>
+                  <RecommendDialog
+                    open={dialog() === 'recommend'}
+                    friend={friend().user}
+                    onClose={() => setDialog(null)}
+                  />
+                </Show>
+                <Show when={shownDialog() === 'group'}>
+                  <GroupInviteDialog
+                    open={dialog() === 'group'}
+                    friend={friend().user}
+                    onClose={() => setDialog(null)}
+                  />
+                </Show>
 
                 <Show
                   when={friend().sharing}
