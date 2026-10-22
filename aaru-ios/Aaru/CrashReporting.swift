@@ -21,8 +21,11 @@ enum CrashReporting {
             options.enableAutoBreadcrumbTracking = false
             options.enableNetworkBreadcrumbs = false
             options.enableCaptureFailedRequests = false
-            options.attachScreenshot = false
-            options.attachViewHierarchy = false
+            #if os(iOS)
+                // UIKit-only options; macOS never attaches either.
+                options.attachScreenshot = false
+                options.attachViewHierarchy = false
+            #endif
             options.enableAppHangTracking = true
             options.beforeSend = { event in
                 event.user = nil
