@@ -1,56 +1,104 @@
 import AaruAPI
 import SwiftUI
 
-/// APP-006: every list, with create, rename and delete. A list is membership, not a filter.
+/// A list pushed from Lists in a navigation stack.
+struct ListRoute: Hashable {
+    let id: String
+}
+
+/// APP-006: every list, with create, rename and delete. A list is membership, not a filter. In a
+/// stack (iPhone, Library) a row pushes the list; in `ListsScreen`'s split view it selects it.
 struct ListsView: View {
     let lists: ListsModel
     let library: LibraryModel
     let api: Client?
+    /// The split view's selection. Nil: rows push in the surrounding stack.
+    var selection: Binding<String?>?
 
-    @State private var naming: Naming?
+    @Environment(AppRouter.self) private var router
+    @State private var naming: ListNaming?
+    @State private var deleting: ListSummary?
 
-    private enum Naming: Identifiable {
-        case new
-        case rename(ListSummary)
-
-        var id: String {
-            switch self {
-            case .new: "new"
-            case let .rename(list): list.id
-            }
-        }
+    init(lists: ListsModel, library: LibraryModel, api: Client?, selection: Binding<String?>? = nil) {
+        self.lists = lists
+        self.library = library
+        self.api = api
+        self.selection = selection
     }
 
     var body: some View {
-        List {
-            ForEach(lists.lists, id: \.id) { list in
-                NavigationLink {
-                    ListDetailView(listID: list.id, lists: lists, library: library, api: api)
-                } label: {
-                    LabeledContent(list.name) {
-                        Text(list.itemCount == 1 ? "1 title" : "\(list.itemCount) titles")
-                    }
+        rows
+            .scrollContentBackground(.hidden)
+            .background(Color(.paper))
+            .overlay { state }
+            .safeAreaInset(edge: .bottom) { ProblemBanner(message: lists.problem) { lists.problem = nil } }
+            .navigationTitle("Lists")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    // ⌘N (File → New List) does the same from anywhere.
+                    Button("New list", systemImage: "plus") { naming = .new }
                 }
-                .contextMenu {
-                    Button("Rename", systemImage: "pencil") { naming = .rename(list) }
-                    Button("Delete", systemImage: "trash", role: .destructive) {
-                        Task { await lists.delete(list.id) }
+            }
+            .sheet(item: $naming) { naming in
+                NameListSheet(title: naming.title, initial: naming.initial, lists: lists) { name in
+                    switch naming {
+                    case .new: await lists.create(named: name) != nil
+                    case let .rename(list): await lists.rename(list.id, to: name) != nil
                     }
                 }
             }
-            .onDelete { offsets in
-                let ids = offsets.map { lists.lists[$0].id }
-                Task { for id in ids {
-                    await lists.delete(id)
-                } }
+            .confirmationDialog(
+                "Delete “\(deleting?.name ?? "")”?",
+                isPresented: $deleting.isPresent,
+                titleVisibility: .visible,
+                presenting: deleting
+            ) { list in
+                Button("Delete list", role: .destructive) { Task { await lists.delete(list.id) } }
+            } message: { _ in
+                Text("The list goes; the titles stay in your library.")
             }
-            .listRowBackground(Color.clear)
+            .modifier(ListRouteDestination(isEnabled: selection == nil, lists: lists, library: library, api: api))
+            .onChange(of: router.pendingNewList, initial: true) { _, pending in
+                guard pending else { return }
+                router.pendingNewList = false
+                naming = .new
+            }
+            .task { await lists.load() }
+            .refreshable { await lists.load() }
+            .refreshesOnCommand(.lists) { await lists.load() }
+    }
+
+    @ViewBuilder private var rows: some View {
+        if let selection {
+            List(selection: selection) {
+                ForEach(lists.lists, id: \.id) { list in
+                    NavigationLink(value: list.id) { ListRowLabel(list: list) }
+                        .contextMenu { menu(list) }
+                }
+                .onDelete(perform: confirmDelete)
+            }
+            .listStyle(.sidebar)
+        } else {
+            List {
+                ForEach(lists.lists, id: \.id) { list in
+                    NavigationLink(value: ListRoute(id: list.id)) { ListRowLabel(list: list) }
+                        .contextMenu { menu(list) }
+                }
+                .onDelete(perform: confirmDelete)
+                .listRowBackground(Color.clear)
+            }
+            .listStyle(.plain)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Color(.paper))
-        .overlay {
-            if lists.hasLoaded, lists.lists.isEmpty {
+    }
+
+    /// The first load failing, loading, or no lists yet.
+    @ViewBuilder private var state: some View {
+        if lists.lists.isEmpty {
+            if let failure = lists.loadProblem {
+                LoadFailedView(title: "Your lists didn't load", message: failure) { await lists.load() }
+            } else if !lists.hasLoaded {
+                ProgressView()
+            } else {
                 ContentUnavailableView {
                     Label("No lists yet", systemImage: "list.bullet.rectangle")
                 } description: {
@@ -60,203 +108,87 @@ struct ListsView: View {
                 }
             }
         }
-        .safeAreaInset(edge: .bottom) { ProblemBanner(message: lists.problem) { lists.problem = nil } }
-        .navigationTitle("Lists")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("New list", systemImage: "plus") { naming = .new }
-            }
-        }
-        .sheet(item: $naming) { naming in
-            NameListSheet(
-                title: {
-                    if case .new = naming {
-                        "New list"
-                    } else {
-                        "Rename list"
-                    }
-                }(),
-                initial: {
-                    if case let .rename(list) = naming {
-                        list.name
-                    } else {
-                        ""
-                    }
-                }()
-            ) { name in
-                switch naming {
-                case .new: await lists.create(named: name)
-                case let .rename(list): await lists.rename(list.id, to: name)
-                }
-            }
-        }
-        .task { await lists.load() }
-        .refreshable { await lists.load() }
+    }
+
+    @ViewBuilder private func menu(_ list: ListSummary) -> some View {
+        Button("Rename", systemImage: "pencil") { naming = .rename(list) }
+        Button("Delete…", systemImage: "trash", role: .destructive) { deleting = list }
+    }
+
+    /// A swipe asks first, as the context menu does (UX-079).
+    private func confirmDelete(_ offsets: IndexSet) {
+        deleting = offsets.first.map { lists.lists[$0] }
     }
 }
 
-/// One list: its titles in order, swipe to remove, drag to reorder, "Add titles" to search into
-/// it. Rows carry status, progress and the next airing (LST-003).
-struct ListDetailView: View {
-    let listID: String
+/// One list in the index: its name and how many titles it holds.
+private struct ListRowLabel: View {
+    let list: ListSummary
+
+    var body: some View {
+        LabeledContent(list.name) {
+            Text(list.itemCount == 1 ? "1 title" : "\(list.itemCount) titles")
+        }
+    }
+}
+
+private enum ListNaming: Identifiable {
+    case new
+    case rename(ListSummary)
+
+    var id: String {
+        switch self {
+        case .new: "new"
+        case let .rename(list): list.id
+        }
+    }
+
+    var title: String {
+        if case .new = self {
+            "New list"
+        } else {
+            "Rename list"
+        }
+    }
+
+    var initial: String {
+        if case let .rename(list) = self {
+            list.name
+        } else {
+            ""
+        }
+    }
+}
+
+/// In a stack, a list row pushes its detail. A split view's sidebar has no stack to push on.
+private struct ListRouteDestination: ViewModifier {
+    let isEnabled: Bool
     let lists: ListsModel
     let library: LibraryModel
     let api: Client?
 
-    @State private var detail: ListDetail?
-    @State private var showsSearch = false
-
-    var body: some View {
-        List {
-            ForEach(detail?.items ?? [], id: \.title.id) { item in
-                row(for: item)
-                    .listRowBackground(Color.clear)
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.navigationDestination(for: ListRoute.self) { route in
+                ListDetailView(listID: route.id, lists: lists, library: library, api: api)
             }
-            .onDelete { offsets in
-                guard let detail else { return }
-                let ids = offsets.map { detail.items[$0].title.id }
-                Task {
-                    for id in ids {
-                        if let updated = await lists.remove(titleID: id, from: listID) {
-                            self.detail = updated
-                        }
-                    }
-                }
-            }
-            .onMove { source, destination in
-                guard var items = detail?.items else { return }
-                let before = detail
-                items.move(fromOffsets: source, toOffset: destination)
-                detail?.items = items
-                Task {
-                    if let saved = await lists.reorder(listID, titleIDs: items.map(\.title.id)) {
-                        detail = saved
-                    } else {
-                        detail = before
-                    }
-                }
-            }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Color(.paper))
-        .overlay {
-            if let detail, detail.items.isEmpty {
-                ContentUnavailableView {
-                    Label("Nothing on this list", systemImage: "text.badge.plus")
-                } actions: {
-                    Button("Add titles") { showsSearch = true }.buttonStyle(.borderedProminent)
-                }
-            } else if detail == nil {
-                ProgressView()
-            }
-        }
-        .safeAreaInset(edge: .bottom) { ProblemBanner(message: lists.problem) { lists.problem = nil } }
-        .navigationTitle(detail?.name ?? "List")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Add titles", systemImage: "plus") { showsSearch = true }
-                    .disabled(detail == nil)
-            }
-            #if os(iOS)
-                ToolbarItem(placement: .primaryAction) { EditButton() }
-            #endif
-        }
-        .sheet(isPresented: $showsSearch) {
-            if let list = Binding($detail) {
-                SearchView(api: api, library: library, lists: lists, intoList: list)
-            }
-        }
-        .task { detail = await lists.detail(listID) }
-    }
-
-    @ViewBuilder private func row(for item: ListItem) -> some View {
-        // A title on the shelf opens its Title room; one that is only on the list does not. The
-        // local library wins over the row's entry: it is the copy Title detail edits.
-        if let entry = library.entry(forTitle: item.title.id) ?? item.entry {
-            NavigationLink {
-                TitleDetailView(entry: entry, api: api, library: library, lists: lists)
-            } label: { ListItemRow(item: item) }
         } else {
-            ListItemRow(item: item)
+            content
         }
     }
 }
 
-/// Picks lists for one title: tap to add; a new list can be made on the spot.
-struct ListPickerSheet: View {
-    let ref: MediaRef
-    let titleName: String
-    let lists: ListsModel
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var added: Set<String> = []
-    @State private var working: Set<String> = []
-    @State private var makesNew = false
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Button("New list…", systemImage: "plus") { makesNew = true }
-                ForEach(lists.lists, id: \.id) { list in
-                    Button {
-                        Task { await add(to: list.id) }
-                    } label: {
-                        HStack {
-                            Text(list.name).foregroundStyle(Color(.ink))
-                            Spacer()
-                            if working.contains(list.id) {
-                                ProgressView().controlSize(.small)
-                            } else if added.contains(list.id) {
-                                Image(systemName: "checkmark").foregroundStyle(.tint)
-                                    .accessibilityLabel("Added")
-                            }
-                        }
-                    }
-                    .disabled(added.contains(list.id))
-                }
-            }
-            .safeAreaInset(edge: .bottom) { ProblemBanner(message: lists.problem) { lists.problem = nil } }
-            .navigationTitle("Add “\(titleName)”")
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-            #endif
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-                }
-                .sheet(isPresented: $makesNew) {
-                    NameListSheet(title: "New list", initial: "") { name in
-                        if let list = await lists.create(named: name) {
-                            await add(to: list.id)
-                        }
-                    }
-                }
-                .task {
-                    if !lists.hasLoaded {
-                        await lists.load()
-                    }
-                }
-        }
-    }
-
-    private func add(to id: String) async {
-        guard !working.contains(id) else { return }
-        working.insert(id)
-        defer { working.remove(id) }
-        if await lists.add(ref, to: id) != nil {
-            added.insert(id)
-        }
-    }
-}
-
-/// A one-field sheet for naming a list.
-private struct NameListSheet: View {
+/// A one-field sheet for naming a list. It closes only once the save worked (UX-079); a failure
+/// stays in the sheet with the name kept.
+struct NameListSheet: View {
     let title: String
     let initial: String
-    let onSave: (String) async -> Void
+    let lists: ListsModel
+    let onSave: (String) async -> Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
+    @State private var saving = false
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -265,6 +197,11 @@ private struct NameListSheet: View {
                 TextField("Name", text: $name)
                     .focused($focused)
                     .onSubmit(save)
+                if let problem = lists.problem {
+                    Text(problem)
+                        .font(.footnote)
+                        .foregroundStyle(Color(.danger))
+                }
             }
             .navigationTitle(title)
             #if os(iOS)
@@ -274,10 +211,11 @@ private struct NameListSheet: View {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save", action: save)
-                            .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                            .disabled(saving || name.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                 }
                 .onAppear {
+                    lists.problem = nil
                     name = initial
                     focused = true
                 }
@@ -287,30 +225,14 @@ private struct NameListSheet: View {
 
     private func save() {
         let value = name
+        guard !saving, !value.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         Task {
-            await onSave(value)
-            dismiss()
-        }
-    }
-}
-
-/// The bottom message for a write that failed. Tap to dismiss.
-struct ProblemBanner: View {
-    let message: String?
-    let onDismiss: () -> Void
-
-    var body: some View {
-        if let message {
-            Label(message, systemImage: "exclamationmark.arrow.circlepath")
-                .font(.callout)
-                .foregroundStyle(Color(.paper))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.danger), in: RoundedRectangle(cornerRadius: 14))
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
-                .onTapGesture(perform: onDismiss)
+            saving = true
+            let saved = await onSave(value)
+            saving = false
+            if saved {
+                dismiss()
+            }
         }
     }
 }

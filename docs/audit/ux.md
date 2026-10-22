@@ -140,32 +140,35 @@ and extension-connect pages (web).
 
 ## Apple agent must do
 
-- [ ] Root navigation per §18: iPhone tab bar Home · Discover · Library · Calendar · Groups; iPad
+Done in the Apple audit (2026-10-21): see the checklist in `docs/audit/apple.md`. Still open:
+the DaySheet tap needs a TestFlight check, and UX-073 is partial.
+
+- [x] Root navigation per §18: iPhone tab bar Home · Discover · Library · Calendar · Groups; iPad
       and Mac sidebar Home · Discover · Library · Calendar · Lists · Groups, then Insights (and
       Settings on iPad) in a bottom `TabSection`; no Settings row on Mac (UX-001, UX-003, UX-004).
-- [ ] iPhone: account button (`person.crop.circle`, top-trailing on Home and Library) presents
+- [x] iPhone: account button (`person.crop.circle`, top-trailing on Home and Library) presents
       Settings as a sheet with Done; Library gets a "Lists" entry; Library's More menu keeps
       Insights, Listens and Recaps (UX-001, UX-016, UX-035).
-- [ ] Mac: Go menu ⌘1…⌘7 for the sidebar rows; ⌘, opens the Settings scene (UX-003).
-- [ ] Settings rebuilt to the eight pages with the section moves of §18; iPhone/iPad list of
+- [x] Mac: Go menu ⌘1…⌘7 for the sidebar rows; ⌘, opens the Settings scene (UX-003).
+- [x] Settings rebuilt to the eight pages with the section moves of §18; iPhone/iPad list of
       `NavigationLink`s; Mac Settings scene as a `TabView` of seven panes with Delete account at
       the bottom of Account (UX-020, UX-021, UX-022, UX-023, UX-025, UX-030, UX-032).
-- [ ] Import page in `CLAUDE.md` order, "Any other CSV" last, new hint, empty jobs line
+- [x] Import page in `CLAUDE.md` order, "Any other CSV" last, new hint, empty jobs line
       (UX-026, UX-027, UX-034).
-- [ ] One verb, Disconnect; footer on agent-request alerts; per-page problem banner
+- [x] One verb, Disconnect; footer on agent-request alerts; per-page problem banner
       (UX-024, UX-029, UX-031).
-- [ ] `aaru://settings/<slug>` deep links; push re-read after sign-in (UX-012, UX-017).
-- [ ] Copy: "library" not "shelf"; shared-list channel label; group-message wording; per-kind
+- [x] `aaru://settings/<slug>` deep links; push re-read after sign-in (UX-012, UX-017).
+- [x] Copy: "library" not "shelf"; shared-list channel label; group-message wording; per-kind
       status words; one tick phrasing; one episode code; `kind.noun`; show-status labels;
       Grid / Rows; Listens; vendor-free errors; Year; "watched, read and listened to"; Start
       watching without albums; "Watching now…" (UX-040…UX-050, UX-052…UX-054).
-- [ ] History page (Your data: `GET /v1/actions`, Undo via `POST /v1/actions/{id}/undo`) and
+- [x] History page (Your data: `GET /v1/actions`, Undo via `POST /v1/actions/{id}/undo`) and
       Remove from library on the title page (`DELETE /v1/library/items/{id}`), journaled and
       undoable. Must do (UX-060, UX-061).
-- [ ] States: no false empty states; one shared first-load error state with Try again;
+- [x] States: no false empty states; one shared first-load error state with Try again;
       filter-aware Calendar empties; group detail failures keep the group (UX-062, UX-063,
       UX-065, UX-067).
-- [ ] Dead ends: DaySheet episode tap (verify on TestFlight), episode sheet Done, book Page save,
+- [x] Dead ends: DaySheet episode tap (verify on TestFlight), episode sheet Done, book Page save,
       Library missing item, list members addable, handle/friends buttons, Music empty button,
       failed import removable + row count, list delete confirm and picker, plan sheet reload,
       Discuss for every member, owner Leave hint, split banner and inspector, 401 message, compact

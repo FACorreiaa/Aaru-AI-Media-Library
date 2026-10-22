@@ -41,8 +41,15 @@ struct WidgetSnapshot: Codable, Sendable, Equatable {
             "\(libraryItemId)-\(season)-\(number)"
         }
 
+        /// "S01E05", for the Week widget's dense cells only.
         var episodeCode: String {
             String(format: "S%02dE%02d", season, number)
+        }
+
+        /// "S1 · E5", the app's code everywhere but the week grid (UX-045). The widget target has
+        /// no `EpisodeCode`, so it is spelled here.
+        var shortCode: String {
+            "S\(season) · E\(number)"
         }
 
         /// The day it airs: an exact time on the viewer's calendar, a date-only air date in UTC

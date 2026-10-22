@@ -1,11 +1,15 @@
 import SwiftUI
 
-/// An iPhone month day, tapped: what airs that day, one row each (CAL-003).
+/// An iPhone month day, tapped: what airs that day, one row each (CAL-003). A row opens the
+/// episode sheet from here, over this sheet, so the tap is never lost under it (UX-068).
 struct DaySheet: View {
     let day: Date
     let feed: CalendarFeed
+    /// "Open show": this sheet closes and the calendar pushes the show.
+    var onOpenShow: (String) -> Void
 
     var body: some View {
+        @Bindable var feed = feed
         let entries = feed.entries(on: day)
         NavigationStack {
             ScrollView {
@@ -15,7 +19,9 @@ struct DaySheet: View {
                         Divider().padding(.leading, 66)
                     }
                     if entries.isEmpty {
-                        Text("Nothing from your shows airs this day.")
+                        Text(feed.filter.isActive
+                            ? "No episodes match these filters this day."
+                            : "Nothing from your shows airs this day.")
                             .font(.callout)
                             .foregroundStyle(Color(.muted))
                             .padding(24)
@@ -30,5 +36,10 @@ struct DaySheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .sheet(isPresented: $feed.openedID.isPresent) {
+            CalendarEpisodeSheet(feed: feed, onOpenShow: onOpenShow)
+        }
+        .onAppear { feed.isDaySheetOpen = true }
+        .onDisappear { feed.isDaySheetOpen = false }
     }
 }

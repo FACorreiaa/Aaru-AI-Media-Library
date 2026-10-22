@@ -2,12 +2,14 @@ import AaruAPI
 import SwiftUI
 
 extension Components.Schemas.ChannelKind {
+    /// The UI word. Stored kinds stay as they are: `shelf` reads "List" (a list the group edits
+    /// together, UX-041) and `watch` reads "Watch party" (a Room, owner 2026-10-21).
     var label: String {
         switch self {
         case .text: "Text"
         case .title: "Title"
         case .watch: "Watch party"
-        case .shelf: "Shelf"
+        case .shelf: "List"
         }
     }
 
@@ -17,7 +19,7 @@ extension Components.Schemas.ChannelKind {
         case .text: "Talk about anything."
         case .title: "One film, show or book. Spoilers stay hidden from anyone behind."
         case .watch: "Start watching together, with a shared countdown."
-        case .shelf: "A list of titles everyone in the group adds to."
+        case .shelf: "A list the whole group adds to."
         }
     }
 
@@ -26,7 +28,7 @@ extension Components.Schemas.ChannelKind {
         case .text: "number"
         case .title: "film.stack"
         case .watch: "play.rectangle"
-        case .shelf: "books.vertical"
+        case .shelf: "list.bullet.rectangle.portrait"
         }
     }
 }
@@ -61,13 +63,16 @@ struct NewChannelSheet: View {
                                 Image(systemName: option.symbol)
                                     .frame(width: 24)
                                     .foregroundStyle(Color(.accent))
+                                    .accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(option.label)
                                     Text(option.explanation).font(.caption).foregroundStyle(Color(.muted))
                                 }
                                 Spacer(minLength: 8)
                                 if kind == option {
-                                    Image(systemName: "checkmark").foregroundStyle(Color(.accent))
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(Color(.accent))
+                                        .accessibilityHidden(true)
                                 }
                             }
                             .contentShape(.rect)
@@ -99,7 +104,7 @@ struct NewChannelSheet: View {
                     Text("Lowercase, with dashes for spaces.")
                 }
                 if let problem = groups.problem {
-                    Text(problem).foregroundStyle(.red)
+                    Text(problem).foregroundStyle(Color(.danger))
                 }
             }
             .formStyle(.grouped)
@@ -140,23 +145,12 @@ struct ChannelKindMark: View {
 
     var body: some View {
         if channel.kind == .title, let title = channel.title {
-            PosterThumb(url: title.posterURL, kind: title.mediaKind)
+            PosterThumb(url: title.posterURL, kind: title.mediaKind, cornerRadius: 2)
+                .frame(width: 14)
         } else {
             Image(systemName: channel.kind.symbol)
                 .foregroundStyle(Color(.muted))
                 .accessibilityHidden(true)
         }
-    }
-}
-
-private struct PosterThumb: View {
-    let url: URL?
-    let kind: MediaKind
-
-    var body: some View {
-        PosterView(url: url, kind: kind)
-            .frame(width: 14)
-            .clipShape(RoundedRectangle(cornerRadius: 2))
-            .accessibilityHidden(true)
     }
 }

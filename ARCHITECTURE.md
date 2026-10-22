@@ -589,6 +589,21 @@ Parse known column layouts:
   year first watched). Once the show matches, `EpisodeNameMatcher` numbers its episodes against
   TMDB's list (same season first, else the one episode in the show with that name). The
   all-profiles account download is refused
+- TV Time (IMP-012, `TVTimeCSVParser`): one CSV of TV Time's export at a time, told by its columns.
+  From *Export my data*: `tvtime-series-episodes.csv` (`series_tvdb_id`, `season`, `episode`,
+  `is_watched`, `watched_at`: one row per show, watched episodes ticked, a followed show with none
+  watched planned), `tvtime-series.csv` (`status`: `not_started_yet` → wishlist, `continuing` /
+  `up_to_date` → in progress, `stopped` → dropped) and `tvtime-movies.csv` (`imdb_id`, `year`,
+  `is_watched`: finished on `watched_at`, else wishlist). From the GDPR export:
+  `tracking-prod-records-v2.csv` (`key` = `watch-episode-…` / `rewatch-episode-…` with `s_id` the
+  show's TVDB id and `s_no`/`ep_no`; `user-series-…` rows carry follow, watch-later and archived
+  flags), `tracking-prod-records.csv` (movies only, `entity_type=movie`: by TV Time's English slug
+  and release year, or name only up to the year watched when the release date is `0001-01-01`),
+  `followed_tv_show.csv` (`tv_show_id`, `archived`) and `seen_episode.csv` (episodes by
+  `show_name`, name only). Shows match by TVDB id → TMDB `/find`, IMDb id second; a show whose TVDB
+  id TMDB does not know falls back to the exact-name match (`nameOnly` on a row with ids). Episode
+  numbers are TVDB's aired order. Lists, ratings and the JSON copies are not read. A `.zip` is
+  refused with "unzip it first"
 
 Unmatched rows are counted and listed on the job; they are not silently dropped without stats.
 
@@ -645,6 +660,10 @@ Merge when the same user imports several sources, in order:
 5. Goodreads CSV  
 6. CAT  
 7. Netflix viewing activity  
+8. TV Time export  
+9. MyAnimeList XML  
+10. AniList list  
+11. Any other CSV (fills gaps only)  
 
 Later sources fill empty fields; they do not overwrite a non-empty rating, status, or progress from an earlier source unless the incoming event is newer *and* the source is explicitly marked authoritative. v1 can skip “newer” and use fill-empty-only. That is enough.
 
@@ -1255,6 +1274,8 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Primary user import | Trakt |
 | CAT | Pasted list, ICS file, or the user's own iCal link read once; no scraping |
 | Netflix | The per-profile Viewing activity CSV (IMP-018); live plays through the browser extension (SCR-007) |
+| TV Time | Its export's CSVs, one at a time (IMP-012, 2026-10-21): Export my data or the GDPR zip, unzipped by the user |
+| Bingers | Not imported (2026-10-21). Its only official path is a beta API for paid Legend/Icon subscribers; see BACKLOG IMP-019 |
 | Scraping | Forbidden. One owner exception (2026-10-21): the SCR-007 browser extension reads the player page the user is watching, in their browser; the server fetches nothing |
 | Backend | Hummingbird only |
 | First clients | iOS and Mac, with widgets and a Live Activity |

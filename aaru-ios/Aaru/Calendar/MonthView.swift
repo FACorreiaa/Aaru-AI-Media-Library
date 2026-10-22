@@ -4,6 +4,10 @@ import SwiftUI
 struct MonthView: View {
     let model: MonthModel
     var onSearch: () -> Void
+    /// Set while a filter is on: empty states offer "Clear filters" (UX-067).
+    var onClearFilters: (() -> Void)?
+    /// "Open show" from the iPhone day sheet's episode sheet: pushes on the calendar's stack.
+    var onOpenShow: (String) -> Void = { _ in }
 
     /// iPhone: the tapped day, open as a sheet (CAL-003).
     @State private var openDay: Date?
@@ -19,7 +23,9 @@ struct MonthView: View {
 
     var body: some View {
         Group {
-            if isWide {
+            if let failure = model.loadProblem {
+                LoadFailedView(title: "The calendar didn't load", message: failure) { await model.load() }
+            } else if isWide {
                 HStack(spacing: 0) {
                     VStack(spacing: 8) {
                         MonthSwitcher(model: model)
@@ -27,7 +33,7 @@ struct MonthView: View {
                     }
                     .padding(16)
                     Divider()
-                    AgendaList(model: model, onSearch: onSearch)
+                    AgendaList(model: model, onSearch: onSearch, onClearFilters: onClearFilters)
                         .frame(width: 330)
                 }
             } else {
@@ -39,31 +45,31 @@ struct MonthView: View {
                     .padding(.horizontal, 12)
                     .padding(.bottom, 8)
                     Divider()
-                    AgendaList(model: model, onSearch: onSearch)
+                    AgendaList(model: model, onSearch: onSearch, onClearFilters: onClearFilters)
                 }
             }
         }
         .toolbar { toolbar }
-        .sheet(isPresented: Binding(get: { openDay != nil }, set: {
-            if !$0 {
-                openDay = nil
-            }
-        })) {
+        .sheet(isPresented: $openDay.isPresent) {
             if let openDay {
-                DaySheet(day: openDay, feed: model.feed)
+                DaySheet(day: openDay, feed: model.feed) { id in
+                    self.openDay = nil
+                    onOpenShow(id)
+                }
             }
         }
     }
 
+    /// ⌘← and ⌘→ step the month; plain arrows stay with the grid and lists.
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             Button("Previous month", systemImage: "chevron.left") { step(-1) }
-                .keyboardShortcut(.leftArrow, modifiers: [])
+                .keyboardShortcut(.leftArrow, modifiers: .command)
             Button("Today") { Task { await model.goToToday() } }
                 .keyboardShortcut("t", modifiers: .command)
                 .disabled(model.showsToday)
             Button("Next month", systemImage: "chevron.right") { step(1) }
-                .keyboardShortcut(.rightArrow, modifiers: [])
+                .keyboardShortcut(.rightArrow, modifiers: .command)
         }
     }
 

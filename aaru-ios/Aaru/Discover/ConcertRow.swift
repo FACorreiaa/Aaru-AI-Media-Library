@@ -84,7 +84,7 @@ struct ConcertRow: View {
                     if compact, let day {
                         Text(day.short)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(Color(.accent))
                     }
                     Text(concert.name)
                         .font(.headline)
@@ -174,7 +174,7 @@ private struct ConcertDateStub: View {
         VStack(spacing: 0) {
             Text(day.month)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color(.accent))
             Text(day.day)
                 .font(.aaruDisplay(.largeTitle))
                 .monospacedDigit()

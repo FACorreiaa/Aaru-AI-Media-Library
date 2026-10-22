@@ -38,7 +38,7 @@ struct Composer: View {
         VStack(alignment: .leading, spacing: 6) {
             if editing != nil {
                 HStack {
-                    Label("Editing message", systemImage: "pencil").font(.caption)
+                    Label("Editing", systemImage: "pencil").font(.caption)
                     Spacer()
                     Button("Cancel", action: onCancelEdit).font(.caption).buttonStyle(.borderless)
                 }
@@ -62,20 +62,23 @@ struct Composer: View {
                     }
                 }
             }
-            HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .bottom, spacing: 4) {
                 field
                 Button(editing == nil ? "Send" : "Save", systemImage: "arrow.up.circle.fill", action: onSend)
                     .labelStyle(.iconOnly)
                     .font(.title2)
                     .foregroundStyle(canSend ? Color(.accent) : Color(.muted))
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(.rect)
                     .buttonStyle(.plain)
                     .disabled(!canSend)
                     .keyboardShortcut(.return, modifiers: .command)
+                    .help(editing == nil ? "Send (⌘↩)" : "Save (⌘↩)")
             }
             if text.count > ChannelModel.maxLength - 500 {
                 Text("\(text.count) / \(ChannelModel.maxLength)")
                     .font(.caption)
-                    .foregroundStyle(text.count > ChannelModel.maxLength ? .red : Color(.muted))
+                    .foregroundStyle(text.count > ChannelModel.maxLength ? Color(.danger) : Color(.muted))
             }
         }
         .padding(.horizontal, 16)
@@ -84,7 +87,7 @@ struct Composer: View {
     }
 
     private var field: some View {
-        TextField("Message #\(channelName)", text: $text, axis: .vertical)
+        TextField("Write in #\(channelName)", text: $text, axis: .vertical)
             .lineLimit(1 ... 6)
             .textFieldStyle(.plain)
             .padding(.horizontal, 12)

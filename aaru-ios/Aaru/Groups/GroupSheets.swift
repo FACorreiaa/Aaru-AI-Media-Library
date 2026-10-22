@@ -24,11 +24,14 @@ enum GroupSheet: Identifiable {
 
 enum GroupConfirm: Identifiable {
     case leave(GroupSummary)
+    /// The owner asked to leave: they must hand the group on first (UX-084).
+    case ownerLeave(GroupSummary)
     case delete(GroupSummary)
 
     var id: String {
         switch self {
         case let .leave(group): "leave-\(group.id)"
+        case let .ownerLeave(group): "owner-leave-\(group.id)"
         case let .delete(group): "delete-\(group.id)"
         }
     }
@@ -42,10 +45,16 @@ struct GroupPresentation: ViewModifier {
     /// A new group opens on its first channel.
     let onCreated: (GroupDetail) -> Void
     let onChannelCreated: (String, GroupChannel) -> Void
+    /// Members: a sheet on iPhone, the inspector in the split.
+    let onShowMembers: (String) -> Void
+
+    @Environment(AppRouter.self) private var router
+    /// A Settings page to open once the sheet in the way has closed.
+    @State private var settingsAfterSheet: SettingsPage?
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: $sheet) { sheet in sheetContent(sheet) }
+            .sheet(item: $sheet, onDismiss: openPendingSettings) { sheet in sheetContent(sheet) }
             .confirmationDialog(
                 confirmTitle,
                 isPresented: Binding(get: { confirm != nil }, set: {
@@ -59,15 +68,25 @@ struct GroupPresentation: ViewModifier {
                 switch confirm {
                 case let .leave(group):
                     Button("Leave", role: .destructive) { Task { await groups.leave(group.id) } }
+                case let .ownerLeave(group):
+                    Button("Open Members") { onShowMembers(group.id) }
                 case let .delete(group):
                     Button("Delete group", role: .destructive) { Task { await groups.delete(group.id) } }
                 }
             } message: { confirm in
                 switch confirm {
                 case .leave: Text("You stop seeing its channels. A friend in it can invite you back.")
-                case .delete: Text("Every channel and message goes, for everyone. This can't be undone.")
+                case .ownerLeave:
+                    Text("Make someone else owner first, in Members. Then you can leave, or delete the group instead.")
+                case .delete: Text("Every channel and group message goes, for everyone. This can't be undone.")
                 }
             }
+    }
+
+    private func openPendingSettings() {
+        guard let page = settingsAfterSheet else { return }
+        settingsAfterSheet = nil
+        router.openSettings(page)
     }
 
     @ViewBuilder
@@ -84,7 +103,10 @@ struct GroupPresentation: ViewModifier {
                 await groups.rename(groupID, to: name)
             }
         case let .invite(groupID):
-            InviteFriendsSheet(groups: groups, groupID: groupID)
+            InviteFriendsSheet(groups: groups, groupID: groupID) {
+                settingsAfterSheet = .friends
+                self.sheet = nil
+            }
         case let .members(groupID):
             NavigationStack {
                 MemberList(groups: groups, groupID: groupID) { self.sheet = .invite(groupID) }
@@ -105,7 +127,7 @@ struct GroupPresentation: ViewModifier {
 
     private var confirmTitle: String {
         switch confirm {
-        case let .leave(group): "Leave \(group.name)?"
+        case let .leave(group), let .ownerLeave(group): "Leave \(group.name)?"
         case let .delete(group): "Delete \(group.name)?"
         case nil: ""
         }
@@ -133,189 +155,12 @@ struct GroupMenuItems: View {
         }
         Divider()
         if group.role == .owner {
+            // The owner can't leave without handing the group on; the dialog says how (UX-084).
+            Button("Leave group…", systemImage: "rectangle.portrait.and.arrow.right") { confirm(.ownerLeave(group)) }
             Button("Delete group", systemImage: "trash", role: .destructive) { confirm(.delete(group)) }
         } else {
             Button("Leave group", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
                 confirm(.leave(group))
-            }
-        }
-    }
-}
-
-/// A group's name: create or rename.
-private struct GroupNameSheet: View {
-    let title: String
-    let initial: String
-    /// True when saved; the sheet then closes.
-    let onSave: (String) async -> Bool
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var saving = false
-    @FocusState private var focused: Bool
-
-    private var trimmed: String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Name", text: $name)
-                        .focused($focused)
-                        .onSubmit(save)
-                } footer: {
-                    Text("Only friends you invite can find it.")
-                }
-            }
-            .formStyle(.grouped)
-            .navigationTitle(title)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", action: save).disabled(saving || trimmed.isEmpty || trimmed.count > 50)
-                }
-            }
-        }
-        .onAppear {
-            name = initial
-            focused = true
-        }
-    }
-
-    private func save() {
-        guard !trimmed.isEmpty, trimmed.count <= 50 else { return }
-        Task {
-            saving = true
-            if await onSave(trimmed) {
-                dismiss()
-            }
-            saving = false
-        }
-    }
-}
-
-/// A channel's name and topic. The server lowercases the name and turns spaces into dashes.
-private struct ChannelEditorSheet: View {
-    let groups: GroupsModel
-    let groupID: String
-    let channel: GroupChannel
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var topic = ""
-    @State private var saving = false
-    @State private var confirmsDelete = false
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    HStack(spacing: 2) {
-                        Text("#").foregroundStyle(Color(.muted))
-                        TextField("movie-night", text: $name)
-                            .autocorrectionDisabled()
-                        #if os(iOS)
-                            .textInputAutocapitalization(.never)
-                        #endif
-                    }
-                    TextField("Topic (optional)", text: $topic, axis: .vertical)
-                        .lineLimit(1 ... 3)
-                } footer: {
-                    Text("Lowercase, with dashes for spaces.")
-                }
-                if let problem = groups.problem {
-                    Text(problem).foregroundStyle(.red)
-                }
-                if !channel.isDefault {
-                    Section {
-                        Button("Delete channel", role: .destructive) { confirmsDelete = true }
-                    }
-                }
-            }
-            .formStyle(.grouped)
-            .navigationTitle("Edit channel")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", action: save)
-                        .disabled(saving || name.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            }
-            .confirmationDialog("Delete #\(channel.name)?", isPresented: $confirmsDelete) {
-                Button("Delete channel", role: .destructive) {
-                    Task {
-                        if await groups.deleteChannel(channel, in: groupID) {
-                            dismiss()
-                        }
-                    }
-                }
-            } message: {
-                Text("Every message in it goes, for everyone.")
-            }
-        }
-        .onAppear {
-            groups.problem = nil
-            name = channel.name
-            topic = channel.topic ?? ""
-        }
-    }
-
-    private func save() {
-        Task {
-            saving = true
-            defer { saving = false }
-            if await groups.updateChannel(channel, in: groupID, name: name, topic: topic) {
-                dismiss()
-            }
-        }
-    }
-}
-
-/// Friends only: a group is reachable no other way.
-private struct InviteFriendsSheet: View {
-    let groups: GroupsModel
-    let groupID: String
-    @Environment(\.dismiss) private var dismiss
-
-    private var detail: GroupDetail? {
-        groups.details[groupID]
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if groups.friends.isEmpty {
-                    Text("No friends yet. Add them in Settings → Profile and friends.")
-                        .foregroundStyle(Color(.muted))
-                }
-                ForEach(groups.friends, id: \.userId) { friend in
-                    HStack(spacing: 12) {
-                        Monogram(text: friend.monogram)
-                        Text(friend.label).lineLimit(1)
-                        Spacer(minLength: 8)
-                        if detail?.members.contains(where: { $0.user.userId == friend.userId }) == true {
-                            Text("In group").foregroundStyle(Color(.muted))
-                        } else if detail?.invited.contains(where: { $0.userId == friend.userId }) == true {
-                            Text("Invited").foregroundStyle(Color(.muted))
-                        } else {
-                            Button("Invite") { Task { await groups.invite(friend, to: groupID) } }
-                                .buttonStyle(.bordered)
-                        }
-                    }
-                }
-            }
-            .scrollContentBackground(.hidden)
-            .background(Color(.paper))
-            .navigationTitle("Invite friends")
-            .safeAreaInset(edge: .bottom) { ProblemBanner(message: groups.problem) { groups.problem = nil } }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-            }
-            .task {
-                await groups.loadFriends()
-                await groups.loadDetail(groupID)
             }
         }
     }

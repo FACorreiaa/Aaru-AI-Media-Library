@@ -21,3 +21,6 @@ aaru-ios/build/
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Full-size Apple audit screenshots stay local; the JPEGs beside them are committed.
+docs/audit/apple-shots/*.png

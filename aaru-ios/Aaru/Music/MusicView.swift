@@ -1,9 +1,10 @@
 import AaruAPI
 import SwiftUI
 
-/// MUS-008: the listening log and its top lists. Recent and Top sit side by side when there is
+/// MUS-008: Listens, the log of what the user played, and its top lists (UX-049: the page is
+/// "Listens"; "Listening" stays for albums in progress). Recent and Top sit side by side when there is
 /// room and behind a switch when there is not. Reached from Library's menu, Insights and
-/// Settings → Connected apps → Music.
+/// Settings → Connections → Music.
 struct MusicView: View {
     let api: Client?
     /// Album rows open their title page only when this is passed and the album is in it.
@@ -43,14 +44,14 @@ struct MusicView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .navigationTitle("Music")
+        .navigationTitle("Listens")
         .background(Color(.paper))
     }
 
     private func pane(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(.title2, design: .serif, weight: .semibold))
+                .font(.aaruDisplay(.title2, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
             content()
         }
@@ -60,29 +61,30 @@ struct MusicView: View {
 
 /// Listens newest first under day headings, fifty at a time.
 private struct RecentListens: View {
-    let api: Client?
     let library: LibraryModel?
 
-    @State private var listens: [Listen] = []
-    @State private var next: Date?
-    @State private var loading = false
-    @State private var loaded = false
-    @State private var problem: String?
+    @State private var model: RecentListensModel
+    @Environment(AppRouter.self) private var router
 
-    private static let page = 50
+    init(api: Client?, library: LibraryModel?) {
+        self.library = library
+        _model = State(initialValue: RecentListensModel(api: api))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if loaded, listens.isEmpty, problem == nil {
-                ContentUnavailableView(
-                    "No listens yet",
-                    systemImage: "music.note",
-                    description: Text(
-                        "Connect a scrobbler in Settings → Connected apps, and what you play shows up here."
-                    )
-                )
+            if model.loaded, model.listens.isEmpty, model.problem == nil {
+                ContentUnavailableView {
+                    Label("No listens yet", systemImage: "music.note")
+                } description: {
+                    Text("Connect a scrobbler, and what you play shows up here.")
+                } actions: {
+                    // The words used to name the place; now the button goes there (UX-077).
+                    Button("Connect a scrobbler") { router.openSettings(.connections) }
+                        .buttonStyle(.borderedProminent)
+                }
             }
-            ForEach(Listening.byDay(listens, now: .now), id: \.heading) { day in
+            ForEach(Listening.byDay(model.listens, now: .now), id: \.heading) { day in
                 Text(day.heading.uppercased())
                     .font(.caption.weight(.semibold))
                     .tracking(1.5)
@@ -97,42 +99,18 @@ private struct RecentListens: View {
                     }
                 }
             }
-            if let problem {
-                Text(problem).font(.footnote).foregroundStyle(.red).padding(.top, 12)
+            if let problem = model.problem {
+                Text(problem).font(.footnote).foregroundStyle(Color(.danger)).padding(.top, 12)
             }
-            if loading {
+            if model.loading {
                 ProgressView().frame(maxWidth: .infinity).padding(.vertical, 16)
-            } else if let next {
-                Button("Load more") { Task { await load(before: next) } }
+            } else if let next = model.next {
+                Button("Load more") { Task { await model.load(before: next) } }
                     .buttonStyle(.bordered)
                     .padding(.top, 16)
             }
         }
-        .task { await load(before: nil) }
-    }
-
-    private func load(before: Date?) async {
-        guard let api, !loading, before != nil || !loaded else { return }
-        loading = true
-        defer {
-            loading = false
-            loaded = true
-        }
-        do {
-            switch try await api.listListens(query: .init(before: before, limit: Self.page)) {
-            case let .ok(response):
-                let page = try response.body.json
-                listens += page.items
-                next = page.next
-                problem = nil
-            case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your listens could not be loaded."
-            }
-        } catch is CancellationError {
-            return
-        } catch {
-            problem = "Your listens could not be loaded. Aaru could not reach the server."
-        }
+        .task { await model.load(before: nil) }
     }
 }
 
@@ -162,54 +140,40 @@ private struct ListenRow: View {
     }
 }
 
-/// The top twenty for 7 days, 30 days, this year or all time.
+/// The top twenty for 7 days, 30 days, a year or all time.
 private struct TopListens: View {
-    let api: Client?
     let library: LibraryModel?
 
-    @State private var span = InsightsSpan.last30
-    @State private var rank = TopListenBy.artist
-    @State private var rows: [TopListenRow]?
-    @State private var problem: String?
+    @State private var model: TopListensModel
 
-    private static let spans: [InsightsSpan] = [.last7, .last30, .year, .all]
+    init(api: Client?, library: LibraryModel?) {
+        self.library = library
+        _model = State(initialValue: TopListensModel(api: api))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Period", selection: $span) {
-                ForEach(Self.spans) { Text($0 == .year ? "This year" : $0.label).tag($0) }
+            // "Year", as on Insights (UX-053).
+            Picker("Period", selection: $model.span) {
+                ForEach(TopListensModel.spans) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
-            Picker("Rank", selection: $rank) {
+            Picker("Rank", selection: $model.rank) {
                 ForEach(TopListenBy.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
-            if let rows {
+            if let rows = model.rows {
                 if rows.isEmpty {
                     Text("Nothing played then.").font(.footnote).foregroundStyle(Color(.muted))
                 } else {
-                    TopListenList(rows: rows, rank: rank, library: library)
+                    TopListenList(rows: rows, rank: model.rank, library: library)
                 }
-            } else if let problem {
-                Text(problem).font(.footnote).foregroundStyle(.red)
+            } else if let problem = model.problem {
+                Text(problem).font(.footnote).foregroundStyle(Color(.danger))
             } else {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 120)
             }
         }
-        .task(id: "\(span.rawValue)-\(rank.rawValue)") { await load() }
-    }
-
-    private func load() async {
-        guard let api else { return }
-        rows = nil
-        problem = nil
-        let year = Calendar.current.component(.year, from: .now)
-        do {
-            rows = try await Listening.top(api, by: rank, span: span, year: year, limit: 20)
-        } catch is CancellationError {
-            return
-        } catch {
-            problem = "The top list could not be loaded."
-        }
+        .task(id: model.key) { await model.load() }
     }
 }

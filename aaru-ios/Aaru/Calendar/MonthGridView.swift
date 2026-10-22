@@ -43,6 +43,8 @@ struct MonthGridView: View {
     /// iPhone: the tapped day opens as a sheet.
     var onOpenDay: ((Date) -> Void)?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private static let spacing: CGFloat = 4
 
     var body: some View {
@@ -80,7 +82,7 @@ struct MonthGridView: View {
         ) {
             ForEach(model.gridDays, id: \.self) { day in
                 Button {
-                    withAnimation(.snappy) { model.select(day) }
+                    withAnimation(reduceMotion ? nil : .snappy) { model.select(day) }
                     onOpenDay?(day)
                 } label: {
                     MonthDayCell(
@@ -147,7 +149,14 @@ private struct MonthDayCell: View {
     private var posters: some View {
         HStack(alignment: .top, spacing: 3) {
             ForEach(visible, id: \.cellID) { entry in
-                PosterThumb(entry: entry)
+                PosterThumb(url: entry.title.posterUrl.flatMap(URL.init(string:)), initials: entry.title.initials)
+                    .overlay {
+                        if let badge = entry.badge {
+                            RoundedRectangle(cornerRadius: 6).strokeBorder(badge.tint, lineWidth: 1.5)
+                        }
+                    }
+                    .opacity(entry.watched ? 0.4 : 1)
+                    .frame(maxWidth: 72)
             }
             if overflow > 0 {
                 Text("+\(overflow)")
@@ -167,46 +176,6 @@ private struct MonthDayCell: View {
         case 0: return date
         case 1: return "\(date), \(entries[0].title.title)"
         default: return "\(date), \(entries.count) episodes"
-        }
-    }
-}
-
-/// A 2:3 poster, else a teal-to-gold tile with the show's initials. Dimmed once watched.
-private struct PosterThumb: View {
-    let entry: CalendarEntry
-
-    var body: some View {
-        Color(.medallion)
-            .aspectRatio(2 / 3, contentMode: .fit)
-            .overlay {
-                AsyncImage(url: entry.title.posterUrl.flatMap(URL.init(string:))) { phase in
-                    if let image = phase.image {
-                        image.resizable().scaledToFill()
-                    } else {
-                        initials
-                    }
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay {
-                if let badge = entry.badge {
-                    RoundedRectangle(cornerRadius: 6).strokeBorder(badge.tint, lineWidth: 1.5)
-                }
-            }
-            .opacity(entry.watched ? 0.4 : 1)
-            .frame(maxWidth: 72)
-    }
-
-    private var initials: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color(.accent).opacity(0.55), Color(.gold).opacity(0.45)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            Text(entry.title.initials)
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.white)
-                .minimumScaleFactor(0.6)
         }
     }
 }

@@ -6,15 +6,42 @@ import SwiftUI
 struct ImportDetailView: View {
     let id: String
     let imports: ImportsModel
+    /// For "Find it" (IMP-011): the catalog search over this library and these lists.
+    let api: Client?
     let library: LibraryModel
     let lists: ListsModel
-    let api: Client?
+    /// After the plan is applied, or a row found by hand after it: the library and lists catch up.
+    var onApplied: @MainActor () async -> Void
 
     @State private var detail: ImportDetail?
     @State private var applying = false
     /// The unmatched row being found in search.
     @State private var finding: ImportRow?
+    @State private var confirmsDiscard = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppRouter.self) private var router
+
+    /// From Home's last-import card, outside Settings.
+    init(id: String, imports: ImportsModel, library: LibraryModel, lists: ListsModel, api: Client?) {
+        self.id = id
+        self.imports = imports
+        self.api = api
+        self.library = library
+        self.lists = lists
+        onApplied = {
+            await library.sync(api: api)
+            await lists.load()
+        }
+    }
+
+    init(id: String, context: SettingsContext) {
+        self.id = id
+        imports = context.imports
+        api = context.api
+        library = context.library
+        lists = context.lists
+        onApplied = { await context.refreshLibrary() }
+    }
 
     private var job: ImportJob? {
         detail?.job
@@ -26,32 +53,30 @@ struct ImportDetailView: View {
                 Section {
                     LabeledContent("Status", value: job.stateLabel)
                     if let error = job.errorSummary, job.state == .failed {
-                        Text(error).font(.footnote).foregroundStyle(.red)
+                        Text(error).font(.footnote).foregroundStyle(Color(.danger))
+                    }
+                    if job.state == .failed {
+                        // UX-078: a failed import can be cleared away, back to Import.
+                        Button("Remove this import", role: .destructive) { Task { await discard() } }
                     }
                 }
                 if job.isWorking {
                     Section {
                         ImportLedger(steps: job.steps)
                         if job.state == .queued {
-                            Button("Cancel this import", role: .destructive) {
-                                Task {
-                                    if await imports.discard(id) {
-                                        dismiss()
-                                    }
-                                }
-                            }
+                            Button("Cancel this import", role: .destructive) { Task { await discard() } }
                         }
                     } footer: {
                         Text(
-                            "You can leave: the plan waits under Imports, and nothing reaches your shelf "
-                                + "until you approve it."
+                            "You can leave: the plan waits under Settings → Import, and nothing reaches your "
+                                + "library until you approve it."
                         )
                     }
                 }
                 if !job.isWorking, job.state != .failed {
                     Section(job.state == .planned ? "The plan" : "Result") {
                         LabeledContent(
-                            job.state == .planned ? "New on your shelf" : "Added",
+                            job.state == .planned ? "New in your library" : "Added",
                             value: "\(job.stats.created)"
                         )
                         LabeledContent(job.state == .planned ? "Filled in" : "Updated", value: "\(job.stats.updated)")
@@ -63,15 +88,16 @@ struct ImportDetailView: View {
                     Section {
                         Button(applying ? "Importing…" : "Approve and import") { Task { await apply() } }
                             .disabled(applying)
-                        Button("Discard", role: .destructive) {
-                            Task {
-                                if await imports.discard(id) {
-                                    dismiss()
-                                }
-                            }
-                        }
+                        Button("Discard", role: .destructive) { confirmsDiscard = true }
                     } footer: {
-                        Text("One step to undo: it lands in your history as a single action.")
+                        Text("One step to undo: it lands in History, in Your data, as a single action.")
+                    }
+                }
+                if job.state == .succeeded || job.state == .partial {
+                    Section {
+                        Button("See it in History", systemImage: "clock.arrow.circlepath") { router.openHistory() }
+                    } footer: {
+                        Text("Undo the whole import there in one step.")
                     }
                 }
                 rows(.unmatched, title: "Not matched")
@@ -81,22 +107,30 @@ struct ImportDetailView: View {
                 ProgressView().frame(maxWidth: .infinity)
             }
         }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
-        .background(Color(.paper))
-        .safeAreaInset(edge: .bottom) { ProblemBanner(message: imports.problem) { imports.problem = nil } }
-        .navigationTitle(job?.filename ?? job?.sourceLabel ?? "Import")
+        .settingsPage(job?.filename ?? job?.sourceLabel ?? "Import", problem: problem)
+        .confirmationDialog("Discard this plan?", isPresented: $confirmsDiscard, titleVisibility: .visible) {
+            Button("Discard", role: .destructive) { Task { await discard() } }
+        } message: {
+            Text("Nothing was added yet. You can import the file again later.")
+        }
         .task(id: id) { await poll() }
         .sheet(item: $finding) { row in
             SearchView(api: api, library: library, lists: lists, pick: pick(for: row))
         }
     }
 
-    /// Rows can be found by hand once matching is over: into the plan, or straight onto the shelf.
+    /// Rows can be found by hand once matching is over: into the plan, or straight into the library.
     private var canFind: Bool {
         guard let job else { return false }
         return !job.isWorking && job.state != .failed
     }
+
+    private var problem: Binding<String?> {
+        Binding(get: { imports.problem }, set: { imports.problem = $0 })
+    }
+
+    /// Rows shown per outcome; the rest are counted (UX-078).
+    private static let shownRows = 200
 
     @ViewBuilder
     private func rows(_ outcome: Components.Schemas.ImportRow.OutcomePayload, title: String) -> some View {
@@ -104,7 +138,7 @@ struct ImportDetailView: View {
         let findable = outcome == .unmatched && canFind
         if !matching.isEmpty {
             Section {
-                ForEach(matching.prefix(200), id: \.index) { row in
+                ForEach(matching.prefix(Self.shownRows), id: \.index) { row in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(row.label)
@@ -116,20 +150,26 @@ struct ImportDetailView: View {
                             Spacer(minLength: 8)
                             Button("Find it") { finding = row }
                                 .buttonStyle(.borderless)
+                                .frame(minHeight: 44)
                                 .accessibilityLabel("Find \(row.title)")
                         }
                     }
                 }
             } header: {
-                Text("\(title) (\(matching.count))")
+                Text("\(title) (\(matching.count.formatted()))")
             } footer: {
-                if findable {
-                    Text(
-                        job?.state == .planned
-                            ? "Find it searches the catalog. The title you choose joins the plan."
-                            : "Find it searches the catalog. The title you choose goes on your shelf at once, "
-                            + "and can be undone from History."
-                    )
+                VStack(alignment: .leading, spacing: 4) {
+                    if findable {
+                        Text(
+                            job?.state == .planned
+                                ? "Find it searches the catalog. The title you choose joins the plan."
+                                : "Find it searches the catalog. The title you choose goes in your library at "
+                                + "once, and can be undone from History."
+                        )
+                    }
+                    if matching.count > Self.shownRows {
+                        Text("Showing \(Self.shownRows) of \(matching.count.formatted()).")
+                    }
                 }
             }
         }
@@ -151,7 +191,7 @@ struct ImportDetailView: View {
     }
 
     /// Saves the pick and updates the row and the counts in place. After approval it was written
-    /// to the shelf, so the library catches up behind the closing sheet.
+    /// to the library, so the library catches up behind the closing sheet.
     private func resolve(_ row: ImportRow, with hit: CatalogHit) async -> String? {
         guard let resolved = await imports.resolve(id, row: row.index, with: hit) else {
             defer { imports.problem = nil }
@@ -162,12 +202,15 @@ struct ImportDetailView: View {
             detail?.rows[position] = resolved.row
         }
         if resolved.job.state != .planned {
-            Task {
-                await library.sync(api: api)
-                await lists.load()
-            }
+            Task { await onApplied() }
         }
         return nil
+    }
+
+    private func discard() async {
+        if await imports.discard(id) {
+            dismiss()
+        }
     }
 
     /// Polls every two seconds while the server is still matching. The job list carries the
@@ -190,8 +233,7 @@ struct ImportDetailView: View {
         defer { applying = false }
         if await imports.apply(id) != nil {
             detail = await imports.detail(id)
-            await library.sync(api: api)
-            await lists.load()
+            await onApplied()
         }
     }
 }

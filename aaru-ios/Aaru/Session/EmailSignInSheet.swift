@@ -16,61 +16,64 @@ struct EmailSignInSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 20) {
-                Text(codeSent ? "Check your email" : "Sign in with email")
-                    .font(.aaruDisplay(.title))
-                Text(codeSent
-                    ? "We sent a six-digit code to \(email). It works once, for 15 minutes."
-                    : "We'll email you a six-digit code. No password.")
-                    .foregroundStyle(Color(.muted))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if codeSent {
-                    field("Code", text: $code, prompt: "123 456", focus: .code)
-                        .textContentType(.oneTimeCode)
-                    #if os(iOS)
-                        .keyboardType(.numberPad)
-                    #endif
-                } else {
-                    field("Email", text: $email, prompt: "you@example.com", focus: .email)
-                        .textContentType(.emailAddress)
-                        .autocorrectionDisabled()
-                    #if os(iOS)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                    #endif
-                }
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.callout)
-                        .foregroundStyle(.red)
+            // Scrolls so the field and its button stay reachable at accessibility text sizes.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(codeSent ? "Check your email" : "Sign in with email")
+                        .font(.aaruDisplay(.title))
+                    Text(codeSent
+                        ? "We sent a six-digit code to \(email). It works once, for 15 minutes."
+                        : "We'll email you a six-digit code. No password.")
+                        .foregroundStyle(Color(.muted))
                         .fixedSize(horizontal: false, vertical: true)
-                }
 
-                Button(action: submit) {
-                    ZStack {
-                        Text(codeSent ? "Sign in" : "Send code").opacity(isWorking ? 0 : 1)
-                        if isWorking {
-                            ProgressView()
+                    if codeSent {
+                        field("Code", text: $code, prompt: "123 456", focus: .code)
+                            .textContentType(.oneTimeCode)
+                        #if os(iOS)
+                            .keyboardType(.numberPad)
+                        #endif
+                    } else {
+                        field("Email", text: $email, prompt: "you@example.com", focus: .email)
+                            .textContentType(.emailAddress)
+                            .autocorrectionDisabled()
+                        #if os(iOS)
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                        #endif
+                    }
+
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.callout)
+                            .foregroundStyle(Color(.danger))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Button(action: submit) {
+                        ZStack {
+                            Text(codeSent ? "Sign in" : "Send code").opacity(isWorking ? 0 : 1)
+                            if isWorking {
+                                ProgressView()
+                            }
                         }
                     }
-                }
-                .buttonStyle(OutlineCapsuleButtonStyle())
-                .disabled(isWorking || (codeSent ? code.filter(\.isNumber).count != 6 : !email.contains("@")))
+                    .buttonStyle(OutlineCapsuleButtonStyle())
+                    .disabled(isWorking || (codeSent ? code.filter(\.isNumber).count != 6 : !email.contains("@")))
 
-                if codeSent {
-                    Button("Use a different email or send a new code") {
-                        codeSent = false
-                        code = ""
-                        errorMessage = nil
+                    if codeSent {
+                        Button("Use a different email or send a new code") {
+                            codeSent = false
+                            code = ""
+                            errorMessage = nil
+                        }
+                        .font(.callout)
+                        .frame(maxWidth: .infinity)
                     }
-                    .font(.callout)
-                    .frame(maxWidth: .infinity)
                 }
-                Spacer()
+                .padding(24)
             }
-            .padding(24)
+            .scrollBounceBehavior(.basedOnSize)
             .background(Color(.paper).ignoresSafeArea())
             .foregroundStyle(Color(.ink))
             .toolbar {

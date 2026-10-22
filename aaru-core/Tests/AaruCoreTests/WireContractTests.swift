@@ -23,7 +23,7 @@ struct WireContractTests {
         #expect(
             ImportSource.allCases.map(\.rawValue) == [
                 "trakt", "stremio", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics",
-                "netflix_csv", "mal_xml", "anilist", "csv",
+                "netflix_csv", "tvtime_csv", "mal_xml", "anilist", "csv",
             ]
         )
     }
@@ -37,6 +37,8 @@ struct WireContractTests {
         #expect(ImportSource.goodreadsCSV.mergeRank < ImportSource.catList.mergeRank)
         #expect(ImportSource.catList.mergeRank < ImportSource.catICS.mergeRank)
         #expect(ImportSource.catICS.mergeRank < ImportSource.netflixCSV.mergeRank)
+        #expect(ImportSource.netflixCSV.mergeRank < ImportSource.tvTimeCSV.mergeRank)
+        #expect(ImportSource.tvTimeCSV.mergeRank < ImportSource.malXML.mergeRank)
     }
 
     @Test

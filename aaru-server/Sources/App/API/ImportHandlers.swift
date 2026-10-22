@@ -22,6 +22,7 @@ extension APIImplementation {
         case .imdb: source = .imdbCSV
         case .letterboxd: source = .letterboxdCSV
         case .netflix: source = .netflixCSV
+        case .tvtime: source = .tvTimeCSV
         case .goodreads: source = .goodreadsCSV
         case .mal: source = .malXML
         case .csv: source = .genericCSV
