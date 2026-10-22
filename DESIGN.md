@@ -639,8 +639,9 @@ On the web, one component library, then performance:
   primary button so every page's first load does not carry Kobalte and tailwind-merge; for the
   same reason `cardClass` sits in a module with no imports.
 - **Measured after step 2 (2026-10-22, gzip, against `main` with its query cache):** shared
-  77.4 → 79.1 KB, the landing page 86.0 → 88.7, Home 99.1 → 125.7 (the shell, the sidebar and
-  Search's host), Title 93.0 → 130.3. The per-route table is in `docs/audit/web.md`.
+  77.4 → 79.1 KB, the landing page 86.0 → 88.7. A signed-in page's first load (shell included,
+  cached across navigations): Home 99.1 → 175.7, Title 93.0 → 180.5, Calendar 92.2 → 167.7.
+  The per-route table and the follow-ups are in `docs/audit/web.md`.
 
 ## 18. Navigation and Settings (owner, 2026-10-21)
 
