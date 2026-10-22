@@ -30,7 +30,7 @@ extension HomeScreen {
         }
     }
 
-    /// Agent requests waiting for the user (OUT-004), with the heron while any wait.
+    /// Agent requests waiting for the user (OUT-004), with the owl while any wait.
     @ViewBuilder var waitingSection: some View {
         if let api, !model.plans.isEmpty {
             VStack(alignment: .leading, spacing: 12) {

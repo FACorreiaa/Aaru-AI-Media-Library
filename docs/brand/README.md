@@ -11,7 +11,7 @@
 | `source/app-icon-small.svg` | `a-mark-small` at 80% on flat navy | macOS 16/32 pt, favicons, extension 16/32/48 |
 | `source/wordmark.svg` | The poster's "Aaru", traced, `fill="currentColor"` | `Wordmark` image set (template, vector), web `wordmark.svg` as a CSS mask over the text colour |
 | `out/owl/web/og.jpg` | The poster cropped to 1200x630 | `aaru-client/public/og.jpg` |
-| Owl mascot | BRD-003 | `Mascot` image set, web `mascot*.webp`, the agent's mark |
+| `source/owl-2048.png` | `owl_mascot.py`: the owl cropped from the poster, 4x by Real-ESRGAN (`upscale_master.py`) down to 2048 px, cut out with BiRefNet (rembg). Committed master, transparent | `Mascot` image set and web `mascot*.webp` (720/1440 wide); its head is `OwlMark` (iOS @2x/@3x, web `owl-mark.webp` 128 px), the agent's mark |
 
 Run (Pillow, NumPy, SciPy; `brew install potrace librsvg`):
 

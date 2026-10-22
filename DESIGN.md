@@ -61,7 +61,7 @@ headed "The Field" with one line of when it is and what is live ("Tuesday evenin
 progress · 2 airing today"). **Tonight** (§5) leads, then the user's rows, then Discover. On a
 wide screen (web ≥1024px, iPad and Mac at regular width) a side column holds what Aaru is doing
 for the user: requests waiting for an answer, the **last import** (collapsed `JobLedger`, the
-heron while it matches, opens the import), the last 7 days, status counts, the recap banner and
+owl while it matches, opens the import), the last 7 days, status counts, the recap banner and
 the user's lists. On a phone the same blocks follow the rows. The composer is still M13; the
 nav label stays "Home".
 
@@ -672,11 +672,11 @@ thing being talked about.
   and a tap to reveal. It never shows a spoiler by default.
 
 **Composer.** One box, auto-growing. Enter sends and Shift+Enter adds a line. `@` suggests
-members, with Aaru first, wearing the medallion. A sent message appears at once, dimmed until
+members, with Aaru first, wearing the owl. A sent message appears at once, dimmed until
 the server confirms, and gets a retry if it fails.
 
 **Aaru in a group.** Aaru speaks only when tagged, as a member row with the medallion. While
-it works, the heron breathes in its row ("Aaru is thinking…"), never bouncing dots. Its answer
+it works, the owl breathes in its row ("Aaru is thinking…"), never bouncing dots. Its answer
 is short text plus catalog cards (`TitleCard`, `CalendarRow`, `Shelf`). Every button on a card
 acts for whoever taps it. Aaru never adds anything for the group on its own.
 
@@ -974,9 +974,10 @@ sets, brand assets), main wins.
   "Aaru", used as artwork, never set in a font.
 - **Mark and icon.** The A with the amber star and the swoosh. The app icon is that mark on
   night navy.
-- **Mascot.** The white and amber robot owl, on signed-out surfaces, always on the medallion
-  disc. A small owl is also the agent's mark: its eye glow pulses slowly while Aaru works, and
-  holds still under Reduce Motion.
+- **Mascot.** The white and amber robot owl, on signed-out surfaces, always on the `night` disc
+  (the poster's sky, the same in both appearances, so the white owl reads). Its head on the same
+  disc is the agent's mark (`OwlMark` on the web, `Image(.owlMark)` on Apple): it breathes slowly
+  while Aaru works and holds still under Reduce Motion.
 - **Tagline.** "Your stories. Your world."
 - **Enforced.** `.github/workflows/ci-brand.yml` runs `scripts/generate-tokens.mjs --check` and
   `scripts/brand-guard.sh`: no colour literals outside the generated tokens, no serif or bundled
@@ -985,8 +986,9 @@ sets, brand assets), main wins.
 Assets and how they are made: `docs/brand/README.md`. Colour tokens (`Paper`, `Surface`,
 `Stone`, `Ink`, `Muted`, `Medallion`, accent, `Gold`, `Agent`, `Line`, `Danger`) are generated
 into the asset catalogs, `aaru-client/src/tokens.css` and the extension's popup from one file,
-`design/tokens.json`. The marks and icons come from `docs/brand/owl_poster.py` (BRD-002); until
-the owl ships (BRD-003), the old bird and the reed mark are still the mascot and the agent's mark.
+`design/tokens.json`. The marks and icons come from `docs/brand/owl_poster.py` (BRD-002), the owl
+and its head from `docs/brand/owl_mascot.py` (BRD-003). The guard rejects the retired heron and
+reed mark by name.
 
 ### Mindspace (visual language, 2026-10-21; palette and type replaced 2026-10-22)
 
@@ -1017,7 +1019,7 @@ AI" UI.
   soft blue/amber chromatic edge on the focal art (`fringe`, web). All static: nothing animates.
   All gone under increased contrast, forced colours or Reduce Transparency. Every other screen
   is flat Paper with hairlines.
-- **Agent presence.** Quiet: the agent's mark (the owl, once BRD-003 ships) beside "Waiting for
+- **Agent presence.** Quiet: the owl's head on the night disc beside "Waiting for
   you" or an import that is matching, only while something is in progress, and still under Reduce
   Motion.
 

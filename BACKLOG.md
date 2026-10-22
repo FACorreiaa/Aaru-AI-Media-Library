@@ -415,8 +415,8 @@ account or a stranger that has not happened yet.
 | REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
 | DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
 | BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
-| BRD-002 | In progress | this PR | App icon approved by the owner 2026-10-22 (large + small variant) |
-| BRD-003 | Planned | | |
+| BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
+| BRD-003 | In progress | this PR | |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -772,8 +772,9 @@ and goes with BRD-003.
 
 ### BRD-003 · Owl mascot and agent mark · M · owner, 2026-10-22
 The owl cut out of the poster replaces the bird in `Mascot` and the web `mascot*.webp`. A small
-owl replaces the heron as the agent's mark, its eye glow pulsing slowly while Aaru works, still
-under Reduce Motion. The guard then also bans `heron` and `ReedMark`.
+owl's head on a `night` disc (a new token: the poster's sky in both appearances) replaces the
+reed mark and the heron as the agent's mark, breathing while Aaru works, still under Reduce
+Motion. The guard then also bans `heron` and the reed mark by name.
 
 **Done when:** no client shows the bird, the heron or the reeds. Known limit: the owl is about
 600 px tall in the poster; ask for a 2048 px master before an App Store release.

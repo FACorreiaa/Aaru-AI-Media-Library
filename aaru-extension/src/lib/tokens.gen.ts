@@ -14,4 +14,5 @@ export const COLORS = {
   agent: { light: '#97591a', dark: '#eab27a' },
   danger: { light: '#a3372a', dark: '#f2a08f' },
   medallion: { light: '#eef1f6', dark: '#e7ebf1' },
+  night: { light: '#16233a', dark: '#16233a' },
 } as const

@@ -2,7 +2,7 @@ import { For, Show, createSignal } from 'solid-js'
 import type { Cover, KindCard as Kind, TypeTile } from '../lib/landing/art'
 import { COLORS } from '../lib/tokens.gen'
 
-// Teal → gold, the brand gradient, in three steps so a stack of type tiles reads as three. Light
+// Blue → amber, the brand gradient, in three steps so a stack of type tiles reads as three. Light
 // token values in either appearance: the tiles are fixed brand art with Paper text. A shade of
 // Ink rises from the foot so the title, which sits there, passes AA on every step.
 const shade = `linear-gradient(to top, ${COLORS.ink.light}73, transparent 60%)`

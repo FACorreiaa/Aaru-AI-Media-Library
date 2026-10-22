@@ -40,4 +40,8 @@ serif=$(git grep -InE '\.serif([^a-zA-Z]|$)|\.custom\("' -- 'aaru-ios/*.swift' |
 webserif=$(git grep -IniE 'ui-serif|Newsreader|Georgia|@font-face' -- 'aaru-client/src' 'aaru-extension/src' || true)
 [ -z "$webserif" ] || fail "Serif or bundled font on the web. Use var(--font-display) (the system sans)." "$webserif"
 
+# Retired marks (DESIGN.md "Brand", 2026-10-22): the owl replaced the heron and the reed mark.
+retired=$(git grep -IniE 'heron|reed[ -]?mark' -- 'aaru-client/src' 'aaru-ios' 'aaru-extension/src' || true)
+[ -z "$retired" ] || fail "Retired mark. The owl (OwlMark / Image(.owlMark)) is Aaru's mark now." "$retired"
+
 exit $status

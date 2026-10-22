@@ -1,9 +1,9 @@
 import SwiftUI
 
-// GRP-011: how `@aaru` appears in a group. Aaru is the heron on its medallion, never a monogram,
+// GRP-011: how `@aaru` appears in a group. Aaru is the owl on its night disc, never a monogram,
 // so it never reads as a member.
 
-/// The heron on the medallion. Breathes while Aaru is working; still under Reduce Motion.
+/// The owl's head on the night disc. Breathes while Aaru is working; still under Reduce Motion.
 struct AaruAvatar: View {
     var size: CGFloat = 36
     var breathing = false
@@ -12,11 +12,10 @@ struct AaruAvatar: View {
 
     var body: some View {
         ZStack {
-            Circle().fill(Color(.medallion))
-            Image(.mascot)
+            Circle().fill(Color(.night))
+            Image(.owlMark)
                 .resizable()
-                .scaledToFit()
-                .padding(.top, size * 0.08)
+                .scaledToFill()
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
@@ -35,7 +34,7 @@ struct AaruAvatar: View {
     }
 }
 
-/// A reply from Aaru: the heron, "Aaru" with an assistant tag, what it answers, the text, and
+/// A reply from Aaru: the owl, "Aaru" with an assistant tag, what it answers, the text, and
 /// title cards whose buttons are the reader's own taps.
 struct AgentMessageRow: View {
     let message: GroupMessage

@@ -34,6 +34,7 @@
   --color-on-accent: var(--on-accent);
   --color-line: var(--line);
   --color-medallion: var(--medallion);
+  --color-night: var(--night);
   --color-danger: var(--danger);
   --color-stone: var(--stone);
   --color-gold: var(--gold);
@@ -60,8 +61,8 @@
      - `muted` is Aaru's quiet text colour, so `text-muted` stays as it was; shadcn's muted
        *background* (`bg-muted`, skeletons, track fills) is the surface, through Tailwind's
        background-only namespace.
-     - `accent` is Aaru's teal. shadcn's highlight (`bg-accent` on a focused menu item, a
-       pressed toggle) is therefore teal with `accent-foreground` (on-accent) text, the way a
+     - `accent` is Aaru's ice blue. shadcn's highlight (`bg-accent` on a focused menu item, a
+       pressed toggle) is therefore accent with `accent-foreground` (on-accent) text, the way a
        system menu highlights in the accent colour. */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -440,7 +441,7 @@ body {
   pointer-events: none;
 }
 
-/* A soft chromatic edge, teal on one side and gold on the other, and a long low shadow. For
+/* A soft chromatic edge, blue on one side and amber on the other, and a long low shadow. For
    the single focal piece (Tonight, the Title room's poster), never a list of cards. */
 .fringe {
   box-shadow:

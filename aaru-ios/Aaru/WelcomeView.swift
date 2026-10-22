@@ -128,17 +128,17 @@ struct WelcomeView: View {
     }
 }
 
-/// The mascot on a paper disc, so its painted edge reads the same in light and dark.
+/// The owl on the night disc (the poster's sky), so the white owl reads in light and dark.
 private struct MascotMedallion: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color(.medallion))
+                .fill(Color(.night))
             Image(.mascot)
                 .resizable()
                 .scaledToFit()
                 .padding(.top, 10)
-                .accessibilityLabel("Aaru's mascot, a small teal bird carrying books and a film reel")
+                .accessibilityLabel("Aaru's mascot, a small white robot owl with glowing amber eyes")
         }
         .aspectRatio(1, contentMode: .fit)
         .clipShape(Circle())
