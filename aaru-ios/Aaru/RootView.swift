@@ -23,6 +23,9 @@ struct RootView: View {
     @State private var linkedTitle: LinkedTitle?
     /// An agent request a notification asked to open (OUT-004).
     @State private var linkedPlan: LinkedTitle?
+    /// A friend invite link (SOC-002). Opened signed out, it waits here through sign-in.
+    @State private var pendingInvite: InviteLink?
+    @State private var openInvite: InviteLink?
 
     private var flow: AuthFlow {
         AuthFlow(api: api, session: session)
@@ -41,6 +44,9 @@ struct RootView: View {
                     }
                 }
                 .tabViewStyle(.sidebarAdaptable)
+                .sheet(item: $openInvite) { link in
+                    InviteSheet(api: api, link: link)
+                }
                 .sheet(item: $linkedPlan) { link in
                     if let api {
                         PlanSheet(api: api, id: link.id) { linkedPlan = nil }
@@ -112,6 +118,10 @@ struct RootView: View {
         }
         // A signed-out device keeps nothing of the last user's library.
         .onChange(of: session.isSignedIn) { _, signedIn in
+            if signedIn, let invite = pendingInvite {
+                pendingInvite = nil
+                openInvite = invite
+            }
             if !signedIn {
                 library.reset()
                 lists.reset()
@@ -147,6 +157,14 @@ struct RootView: View {
             PushInbox.shared.groupLink = nil
         }
         .onOpenURL { url in
+            if let invite = InviteLink(url) {
+                if session.isSignedIn {
+                    openInvite = invite
+                } else {
+                    pendingInvite = invite
+                }
+                return
+            }
             guard session.isSignedIn else { return }
             if let id = WidgetLink.libraryItemId(in: url) {
                 linkedTitle = LinkedTitle(id: id)

@@ -177,6 +177,9 @@ Use these words in code, APIs, and UI:
 - **Listen** — one play of a track a music scrobbler sent (MUS-005). Append-only and never a
   library write; the same play sent twice is kept once
 - **Friend** — a mutual, accepted connection. There is no one-way follow
+- **Invite** — a one-use link (`aaruapp.com/i/{code}`, 14 days) that makes whoever opens it the
+  sender's friend, optionally carrying one title to watch together. Friend invites only: groups
+  have no invite links
 - **Points event** — one row in the append-only points ledger, idempotent by dedupe key.
   Never a counter
 - **Streak** — consecutive local days with at least one progress write

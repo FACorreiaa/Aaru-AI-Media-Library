@@ -2,8 +2,9 @@
 export const BINDING_COOKIE = 'aaru_oauth'
 
 /**
- * Where to go after signing in. Only Aaru's own app pages and the OAuth consent page, never
- * another origin (`//host`, `https://…`) and never a protocol trick.
+ * Where to go after signing in. Only Aaru's own app pages, the OAuth consent page, the
+ * extension's connect page and a friend invite link, never another origin (`//host`,
+ * `https://…`) and never a protocol trick.
  */
 export function safeNext(next: unknown): string {
   if (typeof next !== 'string') return '/app'
@@ -12,6 +13,9 @@ export function safeNext(next: unknown): string {
   const allowed =
     next === '/app' ||
     next.startsWith('/app/') ||
-    next.startsWith('/oauth/consent?')
+    next.startsWith('/oauth/consent?') ||
+    next === '/connect/extension' ||
+    next.startsWith('/connect/extension?') ||
+    /^\/i\/[A-Za-z0-9]{1,32}$/.test(next)
   return allowed ? next : '/app'
 }

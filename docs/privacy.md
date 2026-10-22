@@ -47,6 +47,11 @@ send about another user (the reason and your note). The person you block or repo
 told. Deleting your account removes all of it; a report someone sent about you keeps its reason
 but no longer points to you.
 
+**Invite links.** When you make an invite link, Aaru stores it with the title you attached (if
+any), when it expires, and, once used, who opened it. Anyone holding the link sees your name,
+your handle and that title, and nothing from your library. A link works once, for two weeks,
+and you can revoke it. Deleting your account removes your links.
+
 **Groups.** If you create or join a group, Aaru stores the group's name, its channels, who is in
 it and with what role, invites waiting for an answer, and where you last read in each channel.
 Every message you send in a group is stored as you wrote it, with who you tagged, and the other

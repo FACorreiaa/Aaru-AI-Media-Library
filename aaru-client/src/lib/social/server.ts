@@ -1,7 +1,9 @@
 import { createServerFn } from '@tanstack/solid-start'
+import { getCookie } from '@tanstack/solid-start/server'
 import { z } from 'zod'
 import { api } from '../api/client'
 import { errorMessage } from '../api/errors'
+import { SESSION_COOKIE } from '../session/cookie'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { components } from '../api/schema'
 
@@ -132,5 +134,96 @@ export const unblockUser = createServerFn({ method: 'POST' })
         params: { path: { userId: data.userId } },
       }),
       'That person was not unblocked.',
+    ),
+  )
+
+// SOC-002 friend invite links.
+
+export type FriendInvite = components['schemas']['FriendInvite']
+export type InvitePreview = components['schemas']['InvitePreview']
+export type InviteRedemption = components['schemas']['InviteRedemption']
+export type MediaRef = components['schemas']['MediaRef']
+
+export const loadInvites = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<FriendInvite[]> =>
+    check(
+      await api(sessionToken()).GET('/v1/social/invites'),
+      'Your invites could not be loaded.',
+    ).items,
+)
+
+const mediaRef = z.object({
+  titleId: z.string().uuid().optional(),
+  type: z.enum(['movie', 'show', 'book', 'album']),
+  ids: z.record(z.string(), z.string()).optional(),
+  title: z.string().optional(),
+  year: z.number().int().optional(),
+})
+
+export const createInvite = createServerFn({ method: 'POST' })
+  .validator(z.object({ title: mediaRef.optional() }))
+  .handler(async ({ data }): Promise<FriendInvite> =>
+    check(
+      await api(sessionToken()).POST('/v1/social/invites', {
+        body: { title: data.title },
+      }),
+      'The invite was not made.',
+    ),
+  )
+
+export const revokeInvite = createServerFn({ method: 'POST' })
+  .validator(z.object({ code: z.string().min(1).max(32) }))
+  .handler(async ({ data }) =>
+    checkEmpty(
+      await api(sessionToken()).DELETE('/v1/social/invites/{code}', {
+        params: { path: { code: data.code } },
+      }),
+      'That invite is already gone.',
+    ),
+  )
+
+/** An invite link's page: what it shows, and who is looking (null when signed out). */
+export type InvitePage = {
+  /** Null when the code is unknown, spent, revoked, expired or blocked. */
+  preview: InvitePreview | null
+  viewer: { handle?: string; displayName?: string } | null
+}
+
+/**
+ * Public: it sends the session only when there is one, so the server can say where the
+ * viewer stands with the inviter and the page knows whether they still need a handle.
+ */
+export const loadInvite = createServerFn({ method: 'GET' })
+  .validator(z.object({ code: z.string().min(1).max(32) }))
+  .handler(async ({ data }): Promise<InvitePage> => {
+    const token = getCookie(SESSION_COOKIE)
+    const client = api(token)
+    const [preview, me] = await Promise.all([
+      client.GET('/v1/invites/{code}', {
+        params: { path: { code: data.code } },
+      }),
+      token ? client.GET('/v1/me') : Promise.resolve(null),
+    ])
+    if (preview.response.status !== 404 && preview.data === undefined)
+      throw new Error(
+        errorMessage(preview.error, 'This invite could not be opened.'),
+      )
+    const viewer = me?.data
+      ? { handle: me.data.handle, displayName: me.data.displayName }
+      : null
+    return { preview: preview.data ?? null, viewer }
+  })
+
+export const redeemInvite = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({ code: z.string().min(1).max(32), addTitle: z.boolean() }),
+  )
+  .handler(async ({ data }): Promise<InviteRedemption> =>
+    check(
+      await api(sessionToken()).POST('/v1/social/invites/{code}/redeem', {
+        params: { path: { code: data.code } },
+        body: { addTitle: data.addTitle },
+      }),
+      'The invite could not be accepted.',
     ),
   )

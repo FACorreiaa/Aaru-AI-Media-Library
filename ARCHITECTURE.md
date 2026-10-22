@@ -316,7 +316,8 @@ protocol fixes the paths), `/v1/social/*`
 and `/v1/devices` (airing push, pulled into 2 on 2026-10-15), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
 with GAM-006a and grew with GAM-006c, 2026-10-20), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*` (6). Pulled forward with groups (2026-10-20):
-`/v1/me/profile`, `/v1/social/*` (friends, requests, blocks, reports), `/v1/groups/*`,
+`/v1/me/profile`, `/v1/social/*` (friends, requests, blocks, reports, invite links), the public
+invite preview `/v1/invites/{code}`, `/v1/groups/*`,
 `/v1/group-invites/*`, `/v1/me/group-invites`, `/v1/realtime/ticket` and `/v1/ws`.
 
 ### Recap stats (GAM-006a)
@@ -952,7 +953,7 @@ Modelled on Norviq's `social_*` design (`norviq-backend/.../Social`, `CreateSoci
 | `social_friendships` | one row per pair, ordered ids, `created_at` |
 | `social_blocks` | blocker, blocked |
 | `social_reports` | reporter, target, reason |
-| `social_invites` | code, inviter, redeemed_by, expiry |
+| `social_invites` | code (12 random base62), inviter, optional title, expiry (14 days), redeemed_by, revoked_at |
 | `social_settings` | `profile_visibility` (default `private`), `show_points`, `show_streaks`, `leaderboard_opt_in` |
 
 Rules:
@@ -960,6 +961,13 @@ Rules:
 - **Private by default.** A new account is invisible until the user changes
   `profile_visibility`. Friend-only is the most open default Aaru ever offers. There are no
   public profile pages indexed by search engines.
+- **Invite links (SOC-002, 2026-10-21).** `https://aaruapp.com/i/{code}`, one use. Redeeming
+  makes the pair friends in one transaction (the conditional update on the invite is the lock)
+  and drops pending requests between them. The preview `GET /v1/invites/{code}` is the only
+  public social route and shows only the inviter's name, handle and chosen title; every dead
+  end is one 404. The web Worker serves `/.well-known/apple-app-site-association` claiming
+  `/i/*` for the App Store and Beta app ids, so the apps open the same URL. Android will claim
+  it through `assetlinks.json` when there is an Android app.
 - **A block is invisible.** A blocked user gets `404` for everything about the blocker, the
   same response as for a user who does not exist. Blocks apply both ways in feeds,
   leaderboards, rooms, and DMs.
