@@ -113,7 +113,7 @@ function Chevron(props: { flip?: boolean }) {
   )
 }
 
-/** Wide art: the show's backdrop, then its poster, then a teal-to-gold wash with the title. */
+/** Wide art: the show's backdrop, then its poster, then a blue-to-amber wash with the title. */
 export function Art(props: { sources: (string | undefined)[]; title: string }) {
   const urls = () => props.sources.filter((u): u is string => !!u)
   const [failed, setFailed] = createSignal(0)

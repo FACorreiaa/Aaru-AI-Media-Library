@@ -63,7 +63,7 @@ enum HomeCardSize {
     }
 }
 
-/// Wide catalog art with the teal-to-gold wash over Surface when there is none.
+/// Wide catalog art with the blue-to-amber wash over Surface when there is none.
 struct HomeArt: View {
     let url: URL?
     let aspect: CGFloat

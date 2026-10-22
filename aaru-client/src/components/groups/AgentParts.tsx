@@ -4,18 +4,19 @@ import { Button } from '~/components/ui'
 import type { MessageComponent } from '../../lib/groups/agent'
 import { addTitleToLibrary } from '../../lib/groups/kinds-server'
 import { kindName, kindOf, statusLabel } from '../../lib/library/model'
-import { MascotMedallion } from '../Brand'
+import { OwlMark } from '../Brand'
 import { Poster } from '../Poster'
 
-// GRP-011 on the web: how Aaru appears in a channel. It wears the medallion, says it is an
+// GRP-011 on the web: how Aaru appears in a channel. It wears the owl, says it is an
 // assistant, breathes while it works, and answers with title cards whose buttons act for
 // whoever taps them.
 
-/** Aaru's avatar: the medallion, at the size of a member's monogram. */
+/** Aaru's avatar: the owl's head on the night disc, at the size of a member's monogram. */
 export function AaruAvatar(props: { size?: 'sm' | 'md'; breathing?: boolean }) {
   return (
-    <MascotMedallion
-      class={`shrink-0 ${props.size === 'sm' ? 'size-7' : 'size-10'} ${props.breathing ? 'aaru-breathe' : ''}`}
+    <OwlMark
+      class={props.size === 'sm' ? 'size-7' : 'size-10'}
+      breathing={props.breathing}
     />
   )
 }

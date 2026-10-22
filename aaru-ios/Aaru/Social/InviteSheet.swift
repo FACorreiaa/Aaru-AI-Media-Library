@@ -231,11 +231,11 @@ private struct InviteHandleField: View {
     }
 }
 
-/// The mascot on a paper disc, as on the welcome screen.
+/// The owl on the night disc, as on the welcome screen.
 private struct InviteMedallion: View {
     var body: some View {
         ZStack {
-            Circle().fill(Color(.medallion))
+            Circle().fill(Color(.night))
             Image(.mascot)
                 .resizable()
                 .scaledToFit()

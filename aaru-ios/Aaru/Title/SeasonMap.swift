@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A4: the centre of the Title room. One heat grid per season, one cell per episode; a tap
 /// corrects one episode, "Mark watched" paints the season. Every write goes through the model.
-/// Watched cells are filled teal; the next one stands on Paper inside a gold ring.
+/// Watched cells are filled accent; the next one stands on Paper inside a gold ring.
 struct SeasonMap: View {
     let model: TitleDetailModel
     let onOpen: (EpisodeKey) -> Void

@@ -11,6 +11,7 @@
   --agent: #97591a;
   --danger: #a3372a;
   --medallion: #eef1f6;
+  --night: #16233a;
   --line: rgb(18 26 40 / 0.12);
   --line-strong: rgb(18 26 40 / 0.22);
   color-scheme: light;
@@ -29,6 +30,7 @@
     --agent: #eab27a;
     --danger: #f2a08f;
     --medallion: #e7ebf1;
+    --night: #16233a;
     --line: rgb(231 235 241 / 0.1);
     --line-strong: rgb(231 235 241 / 0.2);
     color-scheme: dark;
@@ -47,6 +49,7 @@
   --agent: #eab27a;
   --danger: #f2a08f;
   --medallion: #e7ebf1;
+  --night: #16233a;
   --line: rgb(231 235 241 / 0.1);
   --line-strong: rgb(231 235 241 / 0.2);
   color-scheme: dark;
