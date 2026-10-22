@@ -24,14 +24,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       ],
       links: [
         { rel: 'stylesheet', href: styleCss },
-        // The display face is on nearly every page's first screen.
-        {
-          rel: 'preload',
-          href: '/fonts/newsreader-roman.woff2',
-          as: 'font',
-          type: 'font/woff2',
-          crossOrigin: 'anonymous',
-        },
         { rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
         {
           rel: 'icon',

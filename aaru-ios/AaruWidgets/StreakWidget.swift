@@ -109,7 +109,7 @@ struct StreakWidgetView: View {
                 .accessibilityHidden(true)
             Spacer(minLength: 0)
             Text("\(summary.current)")
-                .font(.custom("Newsreader-Medium", size: 40, relativeTo: .largeTitle))
+                .font(.system(.largeTitle, design: .default, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(Palette.ink)
                 .minimumScaleFactor(0.6)

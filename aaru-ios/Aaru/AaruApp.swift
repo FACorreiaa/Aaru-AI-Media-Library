@@ -13,7 +13,6 @@ struct AaruApp: App {
         CrashReporting.start()
         // Posters are referenced by catalog URL, never re-hosted; keep them warm on disk.
         URLCache.shared = URLCache(memoryCapacity: 64 << 20, diskCapacity: 512 << 20)
-        AaruType.registerFonts()
     }
 
     var body: some Scene {

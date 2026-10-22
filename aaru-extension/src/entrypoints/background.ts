@@ -6,6 +6,7 @@ import { makeDeliver } from '../lib/reporting/deliver'
 import { createReporter } from '../lib/reporting/reporter'
 import { parseContentError } from '../lib/reporting/config'
 import { Session } from '../lib/session'
+import { COLORS } from '../lib/tokens.gen'
 import {
   API_BASE,
   PENDING_MAX_AGE_MS,
@@ -150,10 +151,11 @@ async function retryPending(): Promise<void> {
 
 type Badge = '' | '✓' | '?' | '!'
 
+// The toolbar does not follow the page's scheme, so the badge uses the light tokens.
 const BADGE_COLORS: Record<Exclude<Badge, ''>, string> = {
-  '✓': '#1f6970',
-  '?': '#4b6668',
-  '!': '#a33a2c',
+  '✓': COLORS.accent.light,
+  '?': COLORS.muted.light,
+  '!': COLORS.danger.light,
 }
 
 async function badge(text: Badge): Promise<void> {

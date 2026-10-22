@@ -36,6 +36,14 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-22
 
+- **Rebrand to the owl poster (owner, 2026-10-22).** The poster "Aaru Owl: Your stories. Your
+  world." is the standard from now on (DESIGN.md "Brand"). The name stays Aaru; the teal bird,
+  reeds, heron and teal → gold go. The owner chose: dark-first with a derived light mode, both
+  following the system; the system sans for every heading (Newsreader is dropped, reversing
+  2026-10-21); every asset extracted from the one poster; the owl as both the mascot and the
+  agent's mark. Reminded of the "no rebrands before 10 strangers" rule; went ahead. Main's brand
+  files win over any branch, and `ci-brand.yml` blocks colour literals and other faces
+  (BRD-001…003).
 - **Achievements now: the whole of P5's core (owner, 2026-10-22).** Pulled forward before the
   P2 gate, with 0 strangers: the points ledger (GAM-001), levels (GAM-002), streaks (GAM-003),
   badges (GAM-004), the friends leaderboard (GAM-005) and the streak widget (WID-007). The
@@ -406,6 +414,9 @@ account or a stranger that has not happened yet.
 | REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
 | REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
 | DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
+| BRD-001 | In progress | this PR; `ci-brand.yml` | Palette, type, guard. Owner checks TestFlight + beta web in light and dark |
+| BRD-002 | Planned | | |
+| BRD-003 | Planned | | |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -739,6 +750,32 @@ No API, auth, import, permission or persistence change.
 `weekGold`, no `Color.accentColor`. Every heading is in Newsreader, the widgets included. The
 Field and the Title room ship on all clients. The owner has checked the TestFlight build:
 widgets, Dynamic Type at accessibility sizes, VoiceOver, and the Mac window.
+
+### BRD-001 · Owl palette and system sans · M · owner, 2026-10-22
+The poster's palette in `design/tokens.json` (night navy, silver-white, ice-blue accent, amber
+gold and agent), regenerated for web, Apple and the browser extension. The extension's popup and
+toolbar badge read the generated tokens instead of hand copies. Newsreader removed from both
+clients; `Font.aaruDisplay`, `Font.widgetDisplay` and `--font-display` are the system sans.
+`scripts/brand-guard.sh` and `ci-brand.yml` fail a PR with colour literals or another face.
+
+**Done when:** the token check and guard pass in CI, every pair passes AA in both appearances,
+and the owner has checked TestFlight and beta.aaruapp.com in light and dark.
+
+### BRD-002 · Mark, wordmark and icons from the poster · M · owner, 2026-10-22
+The A-mark and wordmark traced from the poster to SVG (`docs/brand/`). They become the app icon
+(iOS, macOS squircle, BETA band), the favicons and PWA icons, the extension icons, the landing
+mark and the OG image (cropped from the poster). Replaces `ReedMark`.
+
+**Done when:** every icon and mark on every client comes from the traced SVG, and `reed-mark`
+is gone.
+
+### BRD-003 · Owl mascot and agent mark · M · owner, 2026-10-22
+The owl cut out of the poster replaces the bird in `Mascot` and the web `mascot*.webp`. A small
+owl replaces the heron as the agent's mark, its eye glow pulsing slowly while Aaru works, still
+under Reduce Motion. The guard then also bans `heron` and `ReedMark`.
+
+**Done when:** no client shows the bird, the heron or the reeds. Known limit: the owl is about
+600 px tall in the poster; ask for a 2048 px master before an App Store release.
 
 ## P0 · M1 — Server foundation
 
