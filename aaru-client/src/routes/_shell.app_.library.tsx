@@ -3,6 +3,7 @@ import { useAppShell, useSearchHost } from '../components/shell/context'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { optionalBoolean, optionalEnum } from '../lib/search-params'
 import { AddToListDialog } from '../components/AddToListDialog'
+import { CardMenu } from '../components/CardMenu'
 import { Poster } from '../components/Poster'
 import { Segmented } from '../components/Segmented'
 import {
@@ -30,10 +31,12 @@ import type {
   MediaKind,
 } from '../lib/library/model'
 import { libraryQuery } from '../lib/queries'
+import type { MarkTarget } from '../lib/title/model'
 
 // APP-003 on the web: the library, at parity with the Apple apps' `LibraryView`. `?search=true`
 // opens Search on arrival; `?status=` and `?kind=` open it filtered (Home's count chips link
-// there, and back or a reload keeps the filter, UX-088).
+// there, and back or a reload keeps the filter, UX-088). Every card has a menu (right-click, a
+// long press, or its "⋯") to mark it watched or open it.
 // Search loads only when it is first opened: it is not part of the page's first paint.
 
 const STATUSES = ['wishlist', 'in_progress', 'finished', 'dropped'] as const
@@ -71,6 +74,7 @@ function readLayout(): Layout {
 
 function Library() {
   const loaded = Route.useLoaderData()
+  const { queryClient } = Route.useRouteContext()()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const [entries, setEntries] = createSignal<LibraryEntry[]>(loaded())
@@ -121,6 +125,28 @@ function Library() {
   })
 
   const rows = createMemo(() => shelf(entries(), kind(), status()))
+  const byId = createMemo(() => new Map(entries().map((e) => [e.id, e])))
+  const targetOf = (id: string): MarkTarget => {
+    const entry = byId().get(id)
+    return {
+      type: entry?.title.type ?? 'book',
+      status: entry?.status,
+      progress: entry?.progress,
+    }
+  }
+
+  /** After a mark from a card's menu: its answer, or the library again after an undo. */
+  async function changed(entry?: LibraryEntry) {
+    if (entry) {
+      setEntries((list) => upsert(list, entry))
+      return
+    }
+    try {
+      setEntries(await queryClient.query({ ...libraryQuery, staleTime: 0 }))
+    } catch {
+      // The undo landed; the shelf catches up on the next visit.
+    }
+  }
   const statusChoices = createMemo<StatusChoice[]>(() => [
     { value: 'any', label: 'Any status' },
     ...statusOptions(kind()).map((s) => ({ value: s.status, label: s.label })),
@@ -254,46 +280,56 @@ function Library() {
               <ul class="mt-8 divide-y divide-line">
                 <For each={rows()}>
                   {(row) => (
-                    <li class="flex items-center gap-4">
-                      <Link
-                        to="/app/title/$id"
-                        params={{ id: row.id }}
-                        class="flex min-w-0 flex-1 items-center gap-4 py-3"
+                    <li>
+                      <CardMenu
+                        id={row.id}
+                        name={row.title}
+                        target={targetOf(row.id)}
+                        onChanged={(entry) => void changed(entry)}
+                        tone="row"
+                        class="flex items-center gap-4"
                       >
-                        <Poster
-                          url={row.posterUrl}
-                          kind={row.kind}
-                          class="w-12 shrink-0"
-                        />
-                        <div class="min-w-0">
-                          <p class="line-clamp-2 font-medium">{row.title}</p>
-                          <p class="truncate text-sm text-muted">
-                            {(row.kind === 'album'
-                              ? [row.byline, row.year]
-                              : [
-                                  row.year,
-                                  KINDS.find((k) => k.kind === row.kind)?.label,
-                                ]
-                            )
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                          <p class="text-sm text-muted">
-                            {[statusLabel(row.status, row.kind), row.detail]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                        </div>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="shrink-0 text-muted hover:text-ink"
-                        aria-label={`Add ${row.title} to a list`}
-                        onClick={() => chooseList(row.id)}
-                      >
-                        List…
-                      </Button>
+                        <Link
+                          to="/app/title/$id"
+                          params={{ id: row.id }}
+                          class="flex min-w-0 flex-1 items-center gap-4 py-3"
+                        >
+                          <Poster
+                            url={row.posterUrl}
+                            kind={row.kind}
+                            class="w-12 shrink-0"
+                          />
+                          <div class="min-w-0">
+                            <p class="line-clamp-2 font-medium">{row.title}</p>
+                            <p class="truncate text-sm text-muted">
+                              {(row.kind === 'album'
+                                ? [row.byline, row.year]
+                                : [
+                                    row.year,
+                                    KINDS.find((k) => k.kind === row.kind)
+                                      ?.label,
+                                  ]
+                              )
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </p>
+                            <p class="text-sm text-muted">
+                              {[statusLabel(row.status, row.kind), row.detail]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </p>
+                          </div>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          class="shrink-0 text-muted hover:text-ink"
+                          aria-label={`Add ${row.title} to a list`}
+                          onClick={() => chooseList(row.id)}
+                        >
+                          List…
+                        </Button>
+                      </CardMenu>
                     </li>
                   )}
                 </For>
@@ -304,37 +340,46 @@ function Library() {
               <For each={rows()}>
                 {(row) => (
                   <li>
-                    <Link
-                      to="/app/title/$id"
-                      params={{ id: row.id }}
-                      class="block"
+                    <CardMenu
+                      id={row.id}
+                      name={row.title}
+                      target={targetOf(row.id)}
+                      onChanged={(entry) => void changed(entry)}
                     >
-                      {/* Among posters a square cover keeps their baseline; in the Music
+                      <Link
+                        to="/app/title/$id"
+                        params={{ id: row.id }}
+                        class="block"
+                      >
+                        {/* Among posters a square cover keeps their baseline; in the Music
                           filter every cover is square and needs no slot. */}
-                      <Poster
-                        url={row.posterUrl}
-                        kind={row.kind}
-                        frame={kind() !== 'album'}
-                      />
-                      <p class="mt-2 line-clamp-2 text-sm font-medium">
-                        {row.title}
-                      </p>
-                      <Show when={row.kind === 'album' && row.byline}>
-                        <p class="truncate text-xs text-muted">{row.byline}</p>
-                      </Show>
-                      <p class="truncate text-xs text-muted">
-                        {row.detail ?? statusLabel(row.status, row.kind)}
-                      </p>
-                    </Link>
-                    <Button
-                      variant="link"
-                      size="bare"
-                      class="mt-1 text-xs font-medium text-muted hover:text-ink"
-                      aria-label={`Add ${row.title} to a list`}
-                      onClick={() => chooseList(row.id)}
-                    >
-                      List…
-                    </Button>
+                        <Poster
+                          url={row.posterUrl}
+                          kind={row.kind}
+                          frame={kind() !== 'album'}
+                        />
+                        <p class="mt-2 line-clamp-2 text-sm font-medium">
+                          {row.title}
+                        </p>
+                        <Show when={row.kind === 'album' && row.byline}>
+                          <p class="truncate text-xs text-muted">
+                            {row.byline}
+                          </p>
+                        </Show>
+                        <p class="truncate text-xs text-muted">
+                          {row.detail ?? statusLabel(row.status, row.kind)}
+                        </p>
+                      </Link>
+                      <Button
+                        variant="link"
+                        size="bare"
+                        class="mt-1 text-xs font-medium text-muted hover:text-ink"
+                        aria-label={`Add ${row.title} to a list`}
+                        onClick={() => chooseList(row.id)}
+                      >
+                        List…
+                      </Button>
+                    </CardMenu>
                   </li>
                 )}
               </For>
