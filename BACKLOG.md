@@ -517,7 +517,7 @@ account or a stranger that has not happened yet.
 | SHR-001 | Open | none | |
 | GAM-001 | Built, unverified | `points_events`, `PointsRules`, award/revoke in the library transaction, friend/room/listen/import hooks; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-002 | Built, unverified | `Levels`, `GET /v1/me/progress`, `GET /v1/me/points`; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
-| GAM-003 | In progress | AaruCore `Streak` (travel grace), `check_ins`, `X-Timezone` (server + AaruAPI), milestone bonuses; StreakTests, GamificationTests | web, iOS |
+| GAM-003 | Built, unverified | AaruCore `Streak` (travel grace), `check_ins`, `X-Timezone` (server + AaruAPI), milestone bonuses; StreakTests, GamificationTests; web + iOS streak strip | owner judges design; TestFlight |
 | WID-007 | Built, unverified | `AaruWidgets/StreakWidget.swift` (small + accessory), timeline at the next two local midnights via AaruCore `Streak` | flip at midnight on TestFlight |
 | GAM-004 | Built, unverified | `BadgeCatalog` (62, 9 hidden), facts query, `user_badges`, `GamificationWorker` backfill, undo takes a tier back, `/v1/me/badges`; BadgeRuleTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-005 | Built, unverified | two `social_settings` switches (partial PUT), `FriendProfile.achievements`, `GET /v1/social/leaderboard`; LeaderboardTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
