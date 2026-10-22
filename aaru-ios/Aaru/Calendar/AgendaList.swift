@@ -5,6 +5,7 @@ import SwiftUI
 struct AgendaList: View {
     let model: MonthModel
     var onSearch: () -> Void
+    var onClearFilters: (() -> Void)?
 
     var body: some View {
         let sections = model.agenda
@@ -19,8 +20,12 @@ struct AgendaList: View {
                         AgendaHeader(day: section.day, isToday: model.isToday(section.day))
                     }
                 }
-                if sections.isEmpty, model.feed.hasLoaded {
+                if sections.isEmpty, model.isLoaded {
                     empty
+                } else if !model.isLoaded {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(24)
                 }
             }
             .padding(.bottom, 16)
@@ -29,18 +34,29 @@ struct AgendaList: View {
 
     private var empty: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(model.isEmptyMonth
-                ? "Nothing from your shows airs this month."
-                : "Nothing more from your shows this month.")
+            Text(emptyText)
                 .font(.callout)
                 .foregroundStyle(Color(.muted))
-            if model.isEmptyMonth {
+            if let onClearFilters {
+                Button("Clear filters", action: onClearFilters)
+                    .buttonStyle(.bordered)
+            } else if model.isEmptyMonth {
                 Button("Search", action: onSearch)
                     .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
             }
         }
         .padding(16)
+    }
+}
+
+extension AgendaList {
+    private var emptyText: String {
+        switch (onClearFilters != nil, model.isEmptyMonth) {
+        case (true, true): "No episodes this month match these filters."
+        case (true, false): "No more episodes this month match these filters."
+        case (false, true): "Nothing from your shows airs this month."
+        case (false, false): "Nothing more from your shows this month."
+        }
     }
 }
 
@@ -70,7 +86,7 @@ private struct AgendaHeader: View {
 extension CalendarEntry {
     /// "S2 · E5", the agenda's quieter code.
     var shortCode: String {
-        "S\(season) · E\(number)"
+        EpisodeCode.short(season: season, number: number)
     }
 
     /// The local time, or nil for a date-only air date.

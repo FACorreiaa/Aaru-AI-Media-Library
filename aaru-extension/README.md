@@ -35,13 +35,13 @@ Against a local stack, set `WXT_API_BASE=http://localhost:8080` and
 
 ## Error reporting (Sentry)
 
-Errors only, to the `aaru-extension` project (EU), as `docs/privacy.md` says. Off unless the
-build has a DSN:
+Errors only, to the `aaru-extension` project (EU), as `docs/privacy.md` says. A store build
+(`npm run build` / `npm run zip`) reports to the project's DSN in `src/lib/reporting/config.ts`;
+`npm run dev` reports nothing. Set `WXT_SENTRY_DSN=` (empty) to build one with reporting off, and
+pass the release for readable issues:
 
 ```bash
-WXT_SENTRY_DSN=https://…@….ingest.de.sentry.io/… \
-WXT_SENTRY_RELEASE=$(git rev-parse HEAD) \
-npm run zip
+WXT_SENTRY_RELEASE=$(git rev-parse HEAD) npm run zip
 ```
 
 `WXT_SENTRY_ENVIRONMENT` defaults to `production` (`development` under `npm run dev`); the

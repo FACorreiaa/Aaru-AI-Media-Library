@@ -9,9 +9,15 @@ struct MusicInsights: View {
     let api: Client?
     let library: LibraryModel?
 
-    @State private var rank = TopListenBy.artist
-    @State private var rows: [TopListenRow]?
-    @State private var failed = false
+    @State private var model: TopListensModel
+
+    init(music: Components.Schemas.StatsMusic, period: InsightsPeriod, api: Client?, library: LibraryModel?) {
+        self.music = music
+        self.period = period
+        self.api = api
+        self.library = library
+        _model = State(initialValue: TopListensModel(api: api, limit: 5))
+    }
 
     var body: some View {
         PanelSection(title: "Music") {
@@ -27,7 +33,7 @@ struct MusicInsights: View {
                 )
             }
             if music.listens > 0 {
-                Picker("Rank", selection: $rank) {
+                Picker("Rank", selection: $model.rank) {
                     ForEach(TopListenBy.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -36,38 +42,28 @@ struct MusicInsights: View {
             NavigationLink {
                 MusicView(api: api, library: library)
             } label: {
+                // The log's one name (UX-049).
                 HStack(spacing: 4) {
-                    Text("All listening")
+                    Text("All listens")
                     Image(systemName: "chevron.right").font(.footnote.weight(.semibold))
+                        .accessibilityHidden(true)
                 }
             }
             .font(.body.weight(.semibold))
         }
-        .task(id: "\(period.hashValue)-\(rank.rawValue)") { await load() }
-    }
-
-    @ViewBuilder private var top: some View {
-        if let rows {
-            TopListenList(rows: rows, rank: rank, library: library)
-        } else if failed {
-            Text("The top list could not be loaded.").font(.footnote).foregroundStyle(Color(.muted))
-        } else {
-            ProgressView().frame(maxWidth: .infinity)
+        .task(id: "\(period.hashValue)-\(model.rank.rawValue)") {
+            guard music.listens > 0 else { return }
+            await model.load(span: period.span, year: period.year, month: period.month)
         }
     }
 
-    private func load() async {
-        guard let api, music.listens > 0 else { return }
-        rows = nil
-        failed = false
-        do {
-            rows = try await Listening.top(
-                api, by: rank, span: period.span, year: period.year, month: period.month, limit: 5
-            )
-        } catch is CancellationError {
-            return
-        } catch {
-            failed = true
+    @ViewBuilder private var top: some View {
+        if let rows = model.rows {
+            TopListenList(rows: rows, rank: model.rank, library: library)
+        } else if model.problem != nil {
+            Text("The top list could not be loaded.").font(.footnote).foregroundStyle(Color(.muted))
+        } else {
+            ProgressView().frame(maxWidth: .infinity)
         }
     }
 }

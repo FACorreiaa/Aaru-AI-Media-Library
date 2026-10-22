@@ -170,8 +170,9 @@ extension CalendarEntry {
         }
     }
 
+    /// "S01E05", the week cell's code (DESIGN.md §14). Everywhere else reads `shortCode`.
     var code: String {
-        String(format: "S%02dE%02d", season, number)
+        EpisodeCode.padded(season: season, number: number)
     }
 
     /// "HBO · 9:00 PM", either half alone, or nil. A date-only air date has no time to show.

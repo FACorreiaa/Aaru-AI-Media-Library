@@ -46,7 +46,12 @@ struct HomeRow<Content: View>: View {
 enum HomeCardSize {
     case wide, poster, banner
 
-    func width(compact: Bool) -> CGFloat {
+    /// The card's width; at the accessibility text sizes cards widen so titles have room.
+    func width(compact: Bool, dynamicType: DynamicTypeSize = .large) -> CGFloat {
+        base(compact: compact) * (dynamicType.isAccessibilitySize ? 1.4 : 1)
+    }
+
+    private func base(compact: Bool) -> CGFloat {
         switch (self, compact) {
         case (.wide, true): 300
         case (.wide, false): 340
@@ -99,16 +104,23 @@ struct HomeChip: View {
     }
 }
 
-/// On a Mac a card lifts under the pointer, so it reads as clickable.
+/// Under a pointer (Mac, iPad) a card lifts, so it reads as clickable.
 struct HoverLift: ViewModifier {
-    @State private var hovering = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    #if os(macOS)
+        @State private var hovering = false
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    #endif
 
     func body(content: Content) -> some View {
-        content
-            .scaleEffect(hovering && !reduceMotion ? 1.02 : 1)
-            .shadow(color: .black.opacity(hovering ? 0.18 : 0), radius: 8, y: 4)
-            .animation(.easeOut(duration: 0.15), value: hovering)
-            .onHover { hovering = $0 }
+        #if os(iOS)
+            // iPad's pointer: the system lift, which follows Reduce Motion itself.
+            content.hoverEffect(.lift)
+        #else
+            content
+                .scaleEffect(hovering && !reduceMotion ? 1.02 : 1)
+                .shadow(color: .black.opacity(hovering ? 0.18 : 0), radius: 8, y: 4)
+                .animation(.easeOut(duration: 0.15), value: hovering)
+                .onHover { hovering = $0 }
+        #endif
     }
 }

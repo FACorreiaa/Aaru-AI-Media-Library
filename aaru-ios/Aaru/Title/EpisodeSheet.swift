@@ -35,7 +35,7 @@ struct EpisodeSheet: View {
             EpisodeStill(url: episode.stillUrl.flatMap(URL.init(string:)))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("S\(episode.season) · E\(episode.number)")
+                Text(EpisodeCode.short(season: episode.season, number: episode.number))
                     .font(.footnote.weight(.medium).monospacedDigit())
                     .foregroundStyle(Color(.muted))
                 Text(episode.name ?? "Episode \(episode.number)")

@@ -30,16 +30,13 @@ struct FriendProfileView: View {
                 ContentUnavailableView(
                     "Not your friend",
                     systemImage: "person.slash",
-                    description: Text("Only friends see each other's shelves.")
+                    description: Text("Only friends see each other's libraries.")
                 )
             case .failed:
-                ContentUnavailableView {
-                    Label("Couldn't load this profile", systemImage: "wifi.exclamationmark")
-                } description: {
-                    Text("Aaru could not reach the server.")
-                } actions: {
-                    Button("Try again") { Task { await load() } }
-                }
+                LoadFailedView(
+                    title: "Couldn't load this profile",
+                    message: "Aaru could not reach the server. Check your connection and try again."
+                ) { await load() }
             case let .loaded(profile):
                 ScrollView {
                     VStack(alignment: .leading, spacing: 32) {
@@ -93,7 +90,7 @@ struct FriendProfileView: View {
         if let compare = profile.compare {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("You both").font(.system(.title3, design: .serif, weight: .medium))
+                    Text("You both").font(.aaruDisplay(.title3))
                     Text(Self.bothFinished(compare.bothFinished))
                         .font(.subheadline)
                         .foregroundStyle(Color(.muted))
@@ -142,21 +139,27 @@ struct FriendProfileView: View {
 
 private struct ProfileHeader: View {
     let profile: FriendProfile
+    @ScaledMetric(relativeTo: .title) private var side: CGFloat = 64
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var since: String {
         profile.friendsSince.formatted(.dateTime.month(.wide).year())
     }
 
     var body: some View {
-        HStack(spacing: 16) {
+        // Stacked at the accessibility sizes, so the name keeps the width.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 16))
+        layout {
             Text(profile.user.monogram)
-                .font(.system(.title, design: .serif, weight: .medium))
-                .frame(width: 64, height: 64)
+                .font(.aaruDisplay(.title))
+                .frame(width: side, height: side)
                 .background(Color(.medallion).opacity(0.2), in: .circle)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(profile.user.inviteName)
-                    .font(.system(.largeTitle, design: .serif, weight: .medium))
+                    .font(.aaruDisplay(.largeTitle))
                 Text("@\(profile.user.handle) · Friends since \(since)")
                     .font(.subheadline)
                     .foregroundStyle(Color(.muted))
@@ -201,7 +204,7 @@ private struct CoverShelf: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(small ? .subheadline.weight(.semibold) : .system(.title3, design: .serif, weight: .medium))
+                .font(small ? .subheadline.weight(.semibold) : .aaruDisplay(.title3))
             if covers.isEmpty, let empty {
                 Text(empty).font(.subheadline).foregroundStyle(Color(.muted))
             } else {
@@ -232,7 +235,7 @@ private extension FriendItem {
     /// "S2 · E4", "Page 120", or nothing.
     var progress: String? {
         if let season = lastSeason, let episode = lastEpisode {
-            return "S\(season) · E\(episode)"
+            return EpisodeCode.short(season: season, number: episode)
         }
         return bookPage.map { "Page \($0)" }
     }

@@ -5,36 +5,44 @@ import SwiftUI
 /// now (SCR-008, §15) sits under the heading when there is something; Tonight leads, then
 /// Continue watching, the albums being listened to (MUS-001), what airs next, Start watching and
 /// Unfinished as Trakt-style rows of cards, then Discover's public rows (DISC-001). Requests
-/// waiting for the user, the last import, the week, the shelf's counts, the recap and the user's
+/// waiting for the user, the last import, the week, the library's counts, the recap and the user's
 /// lists sit in a side column on wide screens and after the rows on a phone. Renders from the
-/// cache first, then refreshes.
+/// cache first, then refreshes. The sections are in `HomeSections.swift`.
 struct HomeScreen: View {
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
     /// The user's imports, for the newest one's note. Nil in previews.
     var imports: ImportsModel?
-    /// Switches the app to another destination (Calendar, Discover, Lists).
-    var onSelectTab: (RootView.AppTab) -> Void
+    /// Switches the app to another destination (Calendar, Discover).
+    var onSelectTab: (AppTab) -> Void
     /// Switches to Library, filtered to one status.
     var onShowLibrary: (LibraryStatus) -> Void
 
-    @State private var model: HomeModel
-    @State private var showsSearch = false
-    @State private var recap: RecapPeriod?
-    @State private var listTarget: CatalogHit?
-    /// Agent requests waiting for the user (OUT-004), pinned above the rows.
-    @State private var plans: [AgentPlan] = []
+    @State var model: HomeModel
+    @State var recap: RecapPeriod?
+    @State var listTarget: CatalogHit?
+    /// Home's stack: a title opened from a card or from an airing's sheet.
+    @State var path: [String] = []
+    /// Home's own width: a narrow regular window (iPad at 2/3, a small Mac window) takes the
+    /// phone's single column, since the 340pt side column would squeeze the rows.
+    @State private var width: CGFloat = 0
+    @Environment(AppRouter.self) var router
+    @Environment(\.dynamicTypeSize) private var dynamicType
     @Environment(\.scenePhase) private var scenePhase
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
-        private var compact: Bool {
-            sizeClass == .compact
+        var compact: Bool {
+            sizeClass == .compact || (width > 0 && width < Self.sideColumnMinWidth)
         }
     #else
-        private let compact = false
+        var compact: Bool {
+            width > 0 && width < Self.sideColumnMinWidth
+        }
     #endif
+
+    private static let sideColumnMinWidth: CGFloat = 760
 
     init(
         api: Client?,
@@ -42,7 +50,7 @@ struct HomeScreen: View {
         lists: ListsModel,
         imports: ImportsModel? = nil,
         model: HomeModel? = nil,
-        onSelectTab: @escaping (RootView.AppTab) -> Void = { _ in },
+        onSelectTab: @escaping (AppTab) -> Void = { _ in },
         onShowLibrary: @escaping (LibraryStatus) -> Void = { _ in }
     ) {
         self.api = api
@@ -55,7 +63,7 @@ struct HomeScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             content
                 .navigationTitle("Home")
             #if os(iOS)
@@ -63,22 +71,22 @@ struct HomeScreen: View {
             #endif
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Search", systemImage: "magnifyingglass") { showsSearch = true }
+                        Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                     }
                     #if os(macOS)
                         ToolbarItem {
-                            Button("Refresh", systemImage: "arrow.clockwise") { Task { await model.load() } }
-                                .keyboardShortcut("r", modifiers: .command)
+                            Button("Refresh", systemImage: "arrow.clockwise") { Task { await reload() } }
                                 .disabled(model.isLoading)
                         }
                     #endif
                 }
-                // Each appearance: the first load, or a refetch if the shelf changed while away.
+                .accountButton()
+                // Each appearance: the first load, or a refetch if the library changed while away.
                 .task {
                     await model.loadIfNeeded()
                     await model.shelfChanged()
                 }
-                .task { await loadPlans() }
+                .task { await model.loadPlans() }
                 // Players report only on a change, so what is playing is asked again every 30 s
                 // while Home is open and the app is in front; the card's clock runs in between.
                 .task(id: scenePhase) {
@@ -94,22 +102,18 @@ struct HomeScreen: View {
                         await lists.load()
                     }
                 }
-                .refreshable {
-                    await model.load()
-                    await model.loadNowPlaying()
-                    await loadPlans()
-                    await imports?.load()
-                }
+                // View → Refresh (⌘R) while Home is showing.
+                .refreshesOnCommand(.home) { await reload() }
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
-                // Adds from Search and Discover land on the shelf; Home's rows come from other endpoints.
+                // Adds from Search and Discover land in the library; Home's rows come from other endpoints.
                 .onChange(of: library.revision) { Task { await model.shelfChanged() } }
-                .sheet(
-                    isPresented: $showsSearch,
-                    onDismiss: { Task { await model.shelfChanged() } },
-                    content: { SearchView(api: api, library: library, lists: lists) }
-                )
+                // A request answered anywhere (a notification's sheet too) leaves "Waiting for you" (UX-082).
+                .onReceive(NotificationCenter.default.publisher(for: .aaruPlanDecided)) { note in
+                    guard let plan = note.object as? AgentPlan else { return }
+                    Task { await model.planDecided(plan) }
+                }
                 .sheet(item: $listTarget) { hit in
                     ListPickerSheet(
                         ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
@@ -117,106 +121,91 @@ struct HomeScreen: View {
                         lists: lists
                     )
                 }
+                // "Airing soon" opens the episode, as the calendar does, with "Open show" in it (UX-092).
+                .sheet(
+                    isPresented: Binding(
+                        get: { model.airingFeed.openedID != nil },
+                        set: {
+                            if !$0 {
+                                model.airingFeed.openedID = nil
+                            }
+                        }
+                    ),
+                    onDismiss: { Task { await model.shelfChanged() } },
+                    content: { CalendarEpisodeSheet(feed: model.airingFeed) { path.append($0) } }
+                )
                 .recapStory($recap, api: api)
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: model.problem) { model.problem = nil }
                 }
                 .background { FieldBackground() }
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 
     @ViewBuilder
     private var content: some View {
-        if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty, model.hasLoaded {
+        if model.loadFailed, model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty {
+            LoadFailedView(
+                title: "Couldn't load Home",
+                message: "Aaru could not reach the server. Check your connection and try again."
+            ) { await reload() }
+        } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty, model.hasLoaded {
             ContentUnavailableView {
-                Label("Add a show to see what's next", systemImage: "sparkles.tv")
+                Label(HomeEmptyCopy.headline, systemImage: "sparkles.tv")
             } description: {
-                Text("Shows you are watching, things to start, and new episodes land here.")
+                Text("What you are watching, reading and listening to, and what airs next, lands here.")
             } actions: {
                 Button("Browse Discover") { onSelectTab(.discover) }
                     .buttonStyle(.borderedProminent)
-                Button("Search") { showsSearch = true }
+                Button("Search") { router.showsSearch = true }
+                    .buttonStyle(.bordered)
+                Button(HomeEmptyCopy.importAction) { router.openSettings(.imports) }
                     .buttonStyle(.bordered)
             }
-        } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty {
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    header
-                    nowPlayingSection
-                    if compact {
+                if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty {
+                    // The first load, inside the scroll view so pull to refresh works already.
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .containerRelativeFrame(.vertical)
+                } else {
+                    sections.padding(.vertical, 16)
+                }
+            }
+            .refreshable { await reload() }
+        }
+    }
+
+    private var sections: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            header
+            nowPlayingSection
+            if compact {
+                tonightSection
+                waitingSection
+                welcome
+                ownRows
+                sideBlocks
+                discoverRows
+            } else {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 28) {
                         tonightSection
-                        waitingSection
                         welcome
                         ownRows
-                        sideBlocks
                         discoverRows
-                    } else {
-                        HStack(alignment: .top, spacing: 8) {
-                            VStack(alignment: .leading, spacing: 28) {
-                                tonightSection
-                                welcome
-                                ownRows
-                                discoverRows
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            VStack(alignment: .leading, spacing: 24) {
-                                waitingSection
-                                sideBlocks
-                            }
-                            .frame(width: 340)
-                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 24) {
+                        waitingSection
+                        sideBlocks
+                    }
+                    .frame(width: 340)
                 }
-                .padding(.vertical, 16)
             }
         }
-    }
-
-    /// The last 7 days (to Insights, shown at zero too) and the shelf's counts (to Library,
-    /// hidden at zero).
-    /// A failure leaves the requests on the server; the next appearance shows them.
-    private func loadPlans() async {
-        guard let api, case let .ok(response)? = try? await api.listPlans(query: .init(status: .pending)) else {
-            return
-        }
-        plans = (try? response.body.json.items) ?? plans
-    }
-
-    @ViewBuilder private var summary: some View {
-        if let stats = model.weekStats {
-            NavigationLink {
-                InsightsView(api: api, library: library, model: InsightsModel(api: api, span: .last7))
-            } label: {
-                WeekStrip(stats: stats)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-        }
-        if let counts = model.counts, counts.total > 0 {
-            CountChips(counts: counts, onSelect: onShowLibrary)
-        }
-    }
-}
-
-// MARK: The Field's sections
-
-extension HomeScreen {
-    /// "The Field", and when it is: "Tuesday evening · 3 in progress · 2 airing today".
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("The Field")
-                .font(.aaruDisplay(.largeTitle, weight: .semibold))
-                .foregroundStyle(Color(.ink))
-                .accessibilityAddTraits(.isHeader)
-            Text(model.fieldLine)
-                .font(.subheadline)
-                .monospacedDigit()
-                .foregroundStyle(Color(.muted))
-        }
-        .padding(.horizontal, 20)
     }
 
     /// Full width under the heading, above the split, so it leads on every screen size.
@@ -227,170 +216,14 @@ extension HomeScreen {
         }
     }
 
-    @ViewBuilder private var tonightSection: some View {
-        if let tonight = model.tonight {
-            TonightCard(
-                tonight: tonight,
-                isPending: model.pending.contains(tonight.primary.libraryItemId),
-                wide: !compact
-            ) { entry in Task { await model.markNextWatched(entry) } }
-                .padding(.horizontal, 20)
-        }
+    func cardWidth(_ size: HomeCardSize) -> CGFloat {
+        size.width(compact: compact, dynamicType: dynamicType)
     }
 
-    /// Agent requests waiting for the user (OUT-004), with the heron while any wait.
-    @ViewBuilder private var waitingSection: some View {
-        if let api, !plans.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    Text("Waiting for you").eyebrow()
-                        .accessibilityAddTraits(.isHeader)
-                    AgentPresence(label: "Aaru is waiting for your answer")
-                }
-                ForEach(plans, id: \.id) { plan in
-                    PlanCardView(api: api, plan: plan) { decided in
-                        if decided.status == .applied {
-                            Task { await model.load() }
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-        }
-    }
-
-    @ViewBuilder private var welcome: some View {
-        if model.isEmpty {
-            HomeWelcome { showsSearch = true }
-                .padding(.horizontal, 20)
-        }
-    }
-
-    /// The user's own rows. Continue watching leaves out the show Tonight already leads with,
-    /// and whatever is playing now.
-    @ViewBuilder private var ownRows: some View {
-        let playing = model.playingItemIds
-        let continuing = model.continueWatching.filter { entry in
-            guard !playing.contains(entry.libraryItemId) else { return false }
-            guard case let .continuing(lead)? = model.tonight?.primary else { return true }
-            return entry.libraryItemId != lead.libraryItemId
-        }
-        if !continuing.isEmpty {
-            HomeRow(title: "Continue watching") {
-                ForEach(continuing, id: \.libraryItemId) { entry in
-                    ContinueCard(
-                        entry: entry,
-                        width: HomeCardSize.wide.width(compact: compact),
-                        isPending: model.pending.contains(entry.libraryItemId)
-                    ) { Task { await model.markNextWatched(entry) } }
-                    #if os(iOS)
-                        .contextMenu {
-                            Button("Start watching", systemImage: "play.circle") {
-                                Task { await model.startWatching(entry) }
-                            }
-                        }
-                    #endif
-                }
-            }
-        }
-        if !model.listening.isEmpty {
-            HomeRow(title: "Listening") {
-                ForEach(model.listening) { row in
-                    ListeningCard(row: row, width: HomeCardSize.poster.width(compact: compact))
-                }
-            }
-        }
-        if !model.upcoming.isEmpty {
-            HomeRow(title: "Airing soon", trailing: ("See calendar", { onSelectTab(.calendar) })) {
-                ForEach(model.upcoming, id: \.cellID) { entry in
-                    AiringCard(
-                        entry: entry,
-                        when: model.airingLabel(entry),
-                        width: HomeCardSize.banner.width(compact: compact)
-                    )
-                }
-            }
-        }
-        if !model.startWatching.isEmpty {
-            HomeRow(title: "Start watching") {
-                ForEach(model.startWatching, id: \.libraryItemId) { entry in
-                    StartCard(entry: entry, width: HomeCardSize.poster.width(compact: compact))
-                }
-            }
-        }
-        if !model.unfinished.isEmpty {
-            HomeRow(title: "Unfinished") {
-                ForEach(model.unfinished, id: \.libraryItemId) { entry in
-                    UnfinishedCard(
-                        entry: entry,
-                        reason: model.unfinishedLabel(entry),
-                        width: HomeCardSize.poster.width(compact: compact)
-                    )
-                }
-            }
-        }
-    }
-
-    /// The side column on wide screens, after the rows on a phone: the last import, the week,
-    /// the shelf's counts, the recap and the user's lists.
-    @ViewBuilder private var sideBlocks: some View {
-        if let imports, let job = lastImport {
-            NavigationLink {
-                ImportDetailView(id: job.id, imports: imports, library: library, lists: lists, api: api)
-            } label: {
-                LastImportCard(job: job)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-        }
-        summary
-        if let offered = RecapPeriod.offered(now: .now, calendar: model.calendar) {
-            RecapBanner(period: offered) { recap = offered }
-                .padding(.horizontal, 20)
-        }
-        if !lists.lists.isEmpty {
-            HomeRow(title: "Your lists", trailing: ("All lists", { onSelectTab(.lists) })) {
-                ForEach(lists.lists, id: \.id) { list in
-                    NavigationLink {
-                        ListDetailView(listID: list.id, lists: lists, library: library, api: api)
-                    } label: {
-                        ListChip(list: list)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    private var lastImport: ImportJob? {
-        imports?.jobs.max { $0.createdAt < $1.createdAt }
-    }
-}
-
-extension HomeScreen {
-    /// DISC-001: the public rows, after the user's own. The first one leads to the Discover tab.
-    private var discoverRows: some View {
-        let rows = model.discover.filter { !$0.items.isEmpty }
-        return ForEach(rows, id: \.id) { row in
-            HomeRow(
-                title: row.title,
-                note: row.note,
-                trailing: row.id == rows.first?.id ? ("See Discover", { onSelectTab(.discover) }) : nil
-            ) {
-                ForEach(row.items) { hit in
-                    DiscoverCard(
-                        hit: hit,
-                        libraryItemID: model.libraryItemID(hit),
-                        badge: DiscoverCard.releaseBadge(hit.releaseDate, row: row.id),
-                        width: HomeCardSize.poster.width(compact: compact),
-                        isAdding: model.adding.contains(hit.id)
-                    ) { status in
-                        Task { await model.add(hit, status: status) }
-                    } onAddToList: {
-                        listTarget = hit
-                    }
-                }
-            }
-        }
+    func reload() async {
+        await model.load()
+        await model.loadNowPlaying()
+        await model.loadPlans()
+        await imports?.load()
     }
 }

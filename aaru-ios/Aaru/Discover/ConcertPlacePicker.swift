@@ -38,7 +38,7 @@ struct ConcertPlacePicker: View {
                             ProgressView()
                         } else if place == model.savedPlace {
                             Image(systemName: "checkmark")
-                                .foregroundStyle(Color.accentColor)
+                                .foregroundStyle(Color(.accent))
                                 .accessibilityHidden(true)
                         }
                     }

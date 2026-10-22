@@ -96,13 +96,18 @@ struct RecapView: View {
     }
 
     private var closeButton: some View {
-        Button("Close", systemImage: "xmark") { dismiss() }
-            .labelStyle(.iconOnly)
-            .font(.body.weight(.semibold))
-            .padding(8)
-            .contentShape(Circle())
-            .buttonStyle(.plain)
-            .keyboardShortcut(.cancelAction)
+        Button {
+            dismiss()
+        } label: {
+            Label("Close", systemImage: "xmark")
+                .labelStyle(.iconOnly)
+                .font(.body.weight(.semibold))
+                // The glyph stays small; the tap target is 44pt.
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut(.cancelAction)
     }
 
     private var placeholder: some View {

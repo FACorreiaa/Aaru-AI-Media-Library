@@ -20,6 +20,9 @@ struct AddMenu: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
                 .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.25)))
+                // The capsule stays slim; the tap target is 44pt.
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         } primaryAction: {
             onAdd(.wishlist)
         }

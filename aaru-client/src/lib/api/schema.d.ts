@@ -2197,6 +2197,7 @@ export interface components {
         | 'cat_list'
         | 'cat_ics'
         | 'netflix_csv'
+        | 'tvtime_csv'
         | 'mal_xml'
         | 'anilist'
         | 'csv'
@@ -6467,12 +6468,13 @@ export interface operations {
   createCSVImport: {
     parameters: {
       query: {
-        /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity or Goodreads CSV, or any other CSV read by its column names (`csv`). */
+        /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
         source:
           | 'auto'
           | 'imdb'
           | 'letterboxd'
           | 'netflix'
+          | 'tvtime'
           | 'goodreads'
           | 'mal'
           | 'csv'

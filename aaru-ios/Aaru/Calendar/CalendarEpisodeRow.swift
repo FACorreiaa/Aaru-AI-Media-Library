@@ -72,6 +72,8 @@ struct CalendarTick: View {
         .buttonStyle(.plain)
         .disabled(feed.pending.contains(entry.cellID))
         .sensoryFeedback(.success, trigger: entry.watched) { _, now in now }
-        .accessibilityLabel("\(entry.watched ? "Mark unwatched" : "Mark watched"): \(entry.title.title) \(entry.code)")
+        .accessibilityLabel(
+            "\(entry.watched ? "Mark unwatched" : "Mark watched"): \(entry.title.title) \(entry.shortCode)"
+        )
     }
 }

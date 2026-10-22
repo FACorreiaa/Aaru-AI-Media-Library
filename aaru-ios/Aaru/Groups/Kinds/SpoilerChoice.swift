@@ -23,7 +23,7 @@ enum SpoilerChoice: Hashable {
         case .auto: "At your progress"
         case .free: "No spoilers"
         case .ending: "Spoils the ending"
-        case let .upTo(season, episode): "Up to S\(season)E\(episode)"
+        case let .upTo(season, episode): "Up to \(EpisodeCode.text(season: season, episode: episode))"
         }
     }
 
@@ -44,7 +44,7 @@ extension Components.Schemas.SpoilerStamp {
             return "Spoils the ending"
         }
         guard let season, let episode else { return nil }
-        return "Up to S\(season)E\(episode)"
+        return "Up to \(EpisodeCode.text(season: season, episode: episode))"
     }
 }
 
@@ -79,7 +79,7 @@ struct SpoilerMenu: View {
         .menuStyle(.button)
         .buttonStyle(.borderless)
         .fixedSize()
-        .accessibilityHint("Who sees this message veiled until they catch up.")
+        .accessibilityHint("Who sees this veiled until they catch up.")
         .sheet(isPresented: $picksEpisode) {
             NavigationStack {
                 Form {
@@ -87,7 +87,7 @@ struct SpoilerMenu: View {
                         Stepper("Season \(season)", value: $season, in: 0 ... 99)
                         Stepper("Episode \(episode)", value: $episode, in: 1 ... 999)
                     } footer: {
-                        Text("Anyone who hasn't watched up to this episode sees the message veiled until they tap it.")
+                        Text("Anyone who hasn't watched up to this episode sees it veiled until they tap it.")
                     }
                 }
                 .formStyle(.grouped)

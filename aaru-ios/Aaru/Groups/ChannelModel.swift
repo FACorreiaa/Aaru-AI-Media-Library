@@ -22,6 +22,8 @@ final class ChannelModel {
     /// Mentions `@aaru` is answering, until when (GRP-011).
     var thinking: [String: Date] = [:]
     var problem: String?
+    /// Why the first page failed; nil once anything has loaded (UX-063).
+    private(set) var loadProblem: String?
 
     @ObservationIgnored private let api: Client?
     @ObservationIgnored private let unreadAtOpen: Int
@@ -68,11 +70,21 @@ final class ChannelModel {
                     firstUnreadID = Self.firstUnread(in: page, unread: unreadAtOpen, viewer: myUserID)
                 }
                 hasLoaded = true
+                loadProblem = nil
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "This channel could not be loaded."
+                loadFailed((try? error.body.json.message) ?? "This channel could not be loaded.")
             }
         } catch {
-            problem = "This channel could not be loaded. Aaru could not reach the server."
+            loadFailed("This channel could not be loaded. Aaru could not reach the server.")
+        }
+    }
+
+    /// Nothing on screen yet: the error takes the channel's place. Otherwise it is a banner.
+    private func loadFailed(_ message: String) {
+        if hasLoaded {
+            problem = message
+        } else {
+            loadProblem = message
         }
     }
 
@@ -143,7 +155,7 @@ final class ChannelModel {
                 markedReadID = nil
                 await markRead()
             case let .default(_, error):
-                fail(outgoing, (try? error.body.json.message) ?? "That message was not sent.")
+                fail(outgoing, (try? error.body.json.message) ?? "That was not sent.")
             }
         } catch {
             fail(outgoing, nil)
@@ -172,10 +184,10 @@ final class ChannelModel {
                 try merge([response.body.json])
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That message was not edited."
+                problem = (try? error.body.json.message) ?? "That was not edited."
             }
         } catch {
-            problem = "That message was not edited. Aaru could not reach the server."
+            problem = "That was not edited. Aaru could not reach the server."
         }
         return false
     }
@@ -189,10 +201,10 @@ final class ChannelModel {
             case .noContent:
                 markDeleted(message.id)
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That message was not deleted."
+                problem = (try? error.body.json.message) ?? "That was not deleted."
             }
         } catch {
-            problem = "That message was not deleted. Aaru could not reach the server."
+            problem = "That was not deleted. Aaru could not reach the server."
         }
     }
 

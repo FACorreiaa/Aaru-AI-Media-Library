@@ -10,7 +10,7 @@ struct OnRepeatCard: View {
     var body: some View {
         Eyebrow(text: "On repeat")
         Text(artist)
-            .font(.system(size: 56, weight: .medium, design: .serif))
+            .font(.aaruDisplay(size: 56))
             .lineLimit(2)
             .padding(.top, 16)
             .rise(0.12)
@@ -22,12 +22,12 @@ struct OnRepeatCard: View {
             ForEach(Array(tracks.enumerated()), id: \.offset) { rank, track in
                 HStack(alignment: .firstTextBaseline, spacing: 16) {
                     Text("\(rank + 1)")
-                        .font(.system(.title2, design: .serif))
+                        .font(.aaruDisplay(.title2))
                         .monospacedDigit()
                         .opacity(0.7)
                         .frame(width: 24, alignment: .leading)
                     Text(track)
-                        .font(.system(.title, design: .serif))
+                        .font(.aaruDisplay(.title))
                         .lineLimit(1)
                 }
                 .rise(0.36 + Double(rank) * 0.16)

@@ -12,6 +12,8 @@ typealias MediaRef = Components.Schemas.MediaRef
 final class ListsModel {
     private(set) var lists: [ListSummary] = []
     private(set) var hasLoaded = false
+    /// The first load failed: Lists shows the error with Try again, not "No lists yet" (UX-063).
+    private(set) var loadProblem: String?
     var problem: String?
 
     @ObservationIgnored private let api: Client?
@@ -34,11 +36,46 @@ final class ListsModel {
             case let .ok(response):
                 lists = try response.body.json.items
                 hasLoaded = true
+                loadProblem = nil
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your lists could not be loaded."
+                failLoad((try? error.body.json.message) ?? "Your lists could not be loaded.")
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            failLoad("Your lists could not be loaded. Aaru could not reach the server.")
+        }
+    }
+
+    /// Before the first load the failure is the screen; after it, a banner over what is shown.
+    private func failLoad(_ message: String) {
+        if hasLoaded {
+            problem = message
+        } else {
+            loadProblem = message
+        }
+    }
+
+    /// The lists that already hold a title, so the picker can mark them (UX-079). There is no
+    /// membership endpoint, so this reads each list once, side by side; nil when any read fails.
+    func listIDs(containing titleID: String) async -> Set<String>? {
+        guard let api else { return nil }
+        let ids = lists.map(\.id)
+        return await withTaskGroup(of: (String, Bool?).self) { group in
+            for id in ids {
+                group.addTask {
+                    guard case let .ok(response) = try? await api.getList(path: .init(id: id)),
+                          let detail = try? response.body.json
+                    else { return (id, nil) }
+                    return (id, detail.items.contains { $0.title.id == titleID })
+                }
+            }
+            var holding: Set<String> = []
+            for await (id, contains) in group {
+                guard let contains else { return nil }
+                if contains {
+                    holding.insert(id)
+                }
+            }
+            return holding
         }
     }
 
@@ -54,10 +91,11 @@ final class ListsModel {
         }
     }
 
-    func rename(_ id: String, to name: String) async {
+    @discardableResult
+    func rename(_ id: String, to name: String) async -> ListDetail? {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let api, !name.isEmpty else { return }
-        await write("The list could not be renamed.") {
+        guard let api, !name.isEmpty else { return nil }
+        return await write("The list could not be renamed.") {
             switch try await api.renameList(path: .init(id: id), body: .json(.init(name: name))) {
             case let .ok(response): try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -127,6 +165,7 @@ final class ListsModel {
     func reset() {
         lists = []
         hasLoaded = false
+        loadProblem = nil
         problem = nil
     }
 

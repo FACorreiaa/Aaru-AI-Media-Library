@@ -54,8 +54,26 @@ final class WeekModel {
         feed.isLoading
     }
 
+    /// The visible days, a day wider each side for date-only air dates near midnight.
+    var visible: Range<Date>? {
+        guard let from = calendar.date(byAdding: .day, value: -1, to: start),
+              let until = calendar.date(byAdding: .day, value: 8, to: start)
+        else { return nil }
+        return from ..< until
+    }
+
+    /// This week's episodes have loaded (not just some other window's).
+    var isLoaded: Bool {
+        visible.map(feed.covers) ?? false
+    }
+
+    /// This week has not loaded and its load failed.
+    var loadProblem: String? {
+        visible.flatMap(feed.loadProblem(for:))
+    }
+
     var isEmptyWeek: Bool {
-        hasLoaded && days.allSatisfy { entries(on: $0).isEmpty }
+        isLoaded && days.allSatisfy { entries(on: $0).isEmpty }
     }
 
     func toggle(_ entry: CalendarEntry) async {
@@ -99,11 +117,8 @@ final class WeekModel {
     /// Fetches only when the visible days (plus a day each side, for date-only air dates near
     /// midnight) are not already loaded.
     func loadIfNeeded() async {
-        guard let window,
-              let from = calendar.date(byAdding: .day, value: -1, to: start),
-              let until = calendar.date(byAdding: .day, value: 8, to: start)
-        else { return }
-        await feed.ensure(from ..< until, fetching: window)
+        guard let window, let visible else { return }
+        await feed.ensure(visible, fetching: window)
     }
 
     /// A week either side of the visible one, so stepping a day rarely refetches.

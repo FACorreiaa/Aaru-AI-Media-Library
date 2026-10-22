@@ -187,6 +187,43 @@ Reading the table:
   About/Privacy +3. Sign-in +20.3, consent +22.1, the magic-link page +15.3 and the extension
   page +15.1 are `TextField`, `Checkbox` and `Button` from the barrel (WEB-015), i.e. Kobalte.
 
+## Beta fixes (2026-10-22, `fix/web-audit-beta`)
+
+Found on beta.aaruapp.com after #130, signed in, in Chrome.
+
+- **Hard load of Settings and Friends: "This page did not load — t is not a function".**
+  Account, Friends & privacy, Notifications, Import, Connections and Delete (and `/app/friends`)
+  failed on a hard load and worked after client-side navigation. `SettingsSection` tested
+  `props.children` (and `description`, `footer`) in `<Show when>` and read it again in the body.
+  Each read of a JSX prop getter creates the content anew. During hydration the first copy, made
+  only for the test, claims the server's nodes from the hydration registry; the second, the one
+  rendered, reaches Kobalte's polymorphic `<Dynamic>` (Alert, Button, Switch, Collapsible…),
+  which finds no node to claim and no client template, and throws `template is not a function`.
+  Pages whose sections begin with plain elements hydrated by luck. Every slot is now resolved
+  once with `children(() => props.x)` (`SettingsSection`, `ConfirmDialog`, the groups dialog
+  `Frame`, `TextFieldErrorMessage`). An ESLint rule (`SLOT_TWICE` in `eslint.config.js`) rejects
+  `when={props.children|description|footer}`, and it also covers `components/ui`.
+  Reproduced and verified with a production build against a stub API with a test session:
+  every Settings page, `/app/friends`, `/app` and `/app/calendar` hard-load cleanly.
+- **Search focus.** It opened on "Done" from the second open on: Kobalte looks for the
+  `autofocus` field before the lazy panel is in the dialog, then focuses the first button a task
+  after the panel focused its field. `lib/dialog-focus.ts` takes that over (shell Search and a
+  list's Add titles). Esc or Done now returns focus to the control that opened Search: the
+  sidebar or top bar button (passed in, since Safari does not focus a clicked button), or what
+  was focused for ⌘K.
+- **Search result actions.** "List…" and "As…" read as cut-off labels. A row's actions no longer
+  shrink (the title wraps instead); the list button is an icon with "List" beside it from `sm`
+  and an `aria-label` always; the status menu beside Add is a chevron (`AddControl`, so
+  Discover, Home's rows and a list's members change with it).
+- **`aria-current`.** The wordmark (sidebar and top bar) linked to `/app` and so carried
+  `aria-current="page"` on every `/app` page. It is a router link that drops the attribute; only
+  the nav row is current.
+- **Library order.** With 152 shows in progress, Now pushed the filters and the shelf several
+  screens down. The filters now sit under the title; Now follows, showing the newest 6 per group
+  with "Show all N" / "Show fewer"; a chosen status hides Now (the shelf is that list); the shelf
+  has a heading that names the filter ("Shows · Watching", "All titles") with its count, and a
+  link that arrives with `?status=` or `?kind=` scrolls to it when it is below the fold.
+
 ## Web items in `docs/audit/ux.md`
 
 | Item | Status |

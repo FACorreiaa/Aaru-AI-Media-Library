@@ -1,4 +1,4 @@
-import { Show } from 'solid-js'
+import { Show, children } from 'solid-js'
 import type { JSX } from 'solid-js'
 import {
   AlertDialog,
@@ -29,6 +29,8 @@ export function ConfirmDialog(props: {
   onCancel: () => void
 }) {
   let cancel: HTMLButtonElement | undefined
+  // Resolved once: tested in `when` and shown in the body (see SettingsSection).
+  const description = children(() => props.description)
   return (
     <AlertDialog
       open={props.open}
@@ -46,10 +48,8 @@ export function ConfirmDialog(props: {
         >
           <AlertDialogHeader>
             <AlertDialogTitle>{props.title}</AlertDialogTitle>
-            <Show when={props.description}>
-              <AlertDialogDescription>
-                {props.description}
-              </AlertDialogDescription>
+            <Show when={description()}>
+              <AlertDialogDescription>{description()}</AlertDialogDescription>
             </Show>
           </AlertDialogHeader>
           <AlertDialogFooter class="mt-2 flex-row flex-wrap justify-end">

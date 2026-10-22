@@ -182,9 +182,12 @@ spreadsheet.
 backdrop with the title on it; a book card is its cover. Each shows how far along it is ("4 of
 10 episodes" with a bar, "35%", "Page 120") and the one next step: **Mark S1 · E5 watched**
 ticks the next aired episode, **Update page** moves a book, **Mark read** / **Mark watched**
-closes it (wording aligned 2026-10-21, UX-043/044). A
-kind chip narrows Now with the shelf; another status hides it. Cards scroll sideways on phones
-and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
+closes it (wording aligned 2026-10-21, UX-043/044). The filters sit under the page title,
+above Now (2026-10-22). A kind chip narrows Now with the shelf; choosing any status hides it,
+since the shelf is then that list. Each group shows its newest six, with "Show all N" to open
+the rest in place. Below Now the shelf has its own heading, naming the filter ("Shows ·
+Watching", "All titles") with a count; arriving with `?status=` or `?kind=` scrolls to it.
+Cards scroll sideways on phones and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
 carry Open Library's page count, so a page reads "Page 120 of 412" with its bar.
 
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
@@ -243,6 +246,17 @@ On Mac, the agent lives in a **sidebar + inspector**, library in the middle
 Menu bar: "log last episode", "what's on tonight", paste a list.
 
 The Mac is where imports and shelves get built. iPhone is The Field + Tonight + check-offs.
+
+What the Mac app does today (Apple audit, 2026-10-21, `docs/audit/apple.md`):
+
+- **Window.** One `WindowGroup`, 1180 × 780 by default, `windowResizability(.contentMinSize)`
+  over a 760 × 520 minimum. Settings is the Settings scene, sized to its content.
+- **Menu bar.** File → New List (⌘N). Edit → Search Titles (⌘F, the catalog search sheet over
+  any destination). View → Refresh (⌘R, the selected destination reloads), the standard sidebar
+  and toolbar commands. Go → the eight sidebar rows (⌘1…⌘8). ⌘, opens Settings. A hardware
+  keyboard on iPad gets the same shortcuts, with Settings in Go.
+- **Settings scene.** Seven panes (§18), each the same page view iPhone and iPad push, each with
+  its own stack for an import job or History.
 
 ## 11. Capture (paste anything, get a plan)
 
@@ -309,7 +323,7 @@ rows of wide cards, one job per row.
   the catalogs: Trending shows, this season's anime ("Fall 2026 anime"), Trending movies, On
   the air, Trending anime, New shows, In theaters, Trending books, then New albums and Coming
   soon (MUS-002, square covers; an upcoming album wears its release day, "Tomorrow", "Oct 30"). A card not on the shelf is
-  an add (tap: wishlist; hold or "As…": a status or a list); a card on the shelf wears a check
+  an add (tap: wishlist; hold or the chevron beside Add: a status or a list); a card on the shelf wears a check
   and opens the item. A new account sees a slim "Add a show to see what's next" header above
   them instead of an empty screen. The same rows for everyone; never "because you watched".
 
@@ -547,7 +561,10 @@ The feeling to protect: **social is a room you invite people into, not a feed yo
 
 ### Friends and profiles (SOC-001/003, pulled forward 2026-10-21)
 
-Friends is its own tab on Apple and its own page on the web. It opens on "Lately": one quiet row
+Friends is its own page on the web and its own sidebar destination on iPad and Mac, between
+Lists and Groups. On iPhone the five tabs are full (§18), so Groups opens it from a Friends
+button in its toolbar, and Settings → Friends & privacy links to it (Apple audit, 2026-10-22,
+APL-043). It opens on "Lately": one quiet row
 per friend, title and day ("Ana watched 3 episodes, up to S1 · E3 Severance", "Today"), with the
 poster, and Earlier for more. No unread badge and no push: you visit it. Below come Invite,
 requests, friends and blocks.
@@ -708,13 +725,14 @@ bottom, Insights and Settings.
   Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
   names where you came from. Sign out lives on Account only.
-- **iPad.** The `sidebarAdaptable` sidebar: the six, then a bottom section with Insights and
-  Settings.
+- **iPad.** The `sidebarAdaptable` sidebar: the seven (Friends between Lists and Groups), then a
+  bottom section with Insights and Settings.
 - **Mac.** The same sidebar without Settings: Settings is the Settings scene (⌘, and the app
-  menu) and nothing else. A Go menu switches the seven rows with ⌘1…⌘7.
+  menu) and nothing else. A Go menu switches the eight rows with ⌘1…⌘8.
 - **iPhone.** The tab bar holds five: Home · Discover · Library · Calendar · Groups. A sixth tab
   would push Lists, Groups and its badge behind More. Lists opens from Library (a "Lists" row on
-  top and in the toolbar) and from Home's lists; Insights from Home's Last 7 days and Library's
+  top and in the toolbar) and from Home's lists; Friends from a Friends button in Groups'
+  toolbar and from Settings → Friends & privacy; Insights from Home's Last 7 days and Library's
   More menu; Settings from an account button (`person.crop.circle`, top trailing on Home and
   Library), presented as a sheet with Done.
 
@@ -746,7 +764,7 @@ Where each existing piece goes:
 | Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
 | --- | --- | --- |
 | Account | `AccountPage`: `ProfileEditor` (handle and name), Signed in with + Link Google, `AppearanceSection`, Sign out | `AccountSettings` first section; `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
-| Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsView`'s sections inline (not a push from Account); `ConcertPlaceSection` |
+| Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsPage` (`Social/FriendsView.swift`): handle, a Friends row that opens Friends (`router.showFriends()`), Show my library to friends; `ConcertPlaceSection`. The friend lists, invites and requests live on Friends (`FriendsScreen`), as on the web |
 | Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
 | Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |
 | Connections | `ConnectionsSection`, `StremioSection`, `MusicSection` | `ConnectionsSection` (+ `ConnectionSetupView`, `BrowserExtensionView`), `StremioSection`, `MusicSection` (from `ConnectedAppsSettings`) |
@@ -787,6 +805,52 @@ Where each existing piece goes:
   Bingers import).
 - On the Mac, Delete account folds into Account and Settings leaves the sidebar.
 - The web Calendar route follows its name.
+
+**Apple, as built (audit, 2026-10-21, `docs/audit/apple.md`).**
+
+- **Shell.** iPhone: the five tabs and nothing else in the tab bar (no More; Lists inside Library,
+  Friends inside Groups), an account button (`person.crop.circle`, top trailing on
+  Home and Library) that presents Settings as a sheet with Done. iPad and Mac:
+  `.sidebarAdaptable` with every destination, Insights (and Settings on iPad) in a bottom
+  section. One catalog search sheet at the root, opened by each screen's Search button and ⌘F.
+- **States.** A first load that fails shows `LoadFailedView` (the reason and Try again), never an
+  empty state; an empty state shows only after a load succeeded. Panels above a group chat use
+  the compact `PanelLoadFailed`. Later failures keep what is on screen and show the
+  `ProblemBanner`, a button that dismisses.
+- **History.** Your data → History: the journal newest first, who made each change (you, an
+  import, a connection, Aaru), when, and Undo with a confirm; undone rows are struck through.
+  An applied import or agent request links "See it in History" / "Open History".
+- **Remove from library.** Library's context menu and the title room's More menu, confirmed:
+  "Its status, rating, notes and progress go with it. You can undo this in Settings → Your
+  data → History." Afterwards a ribbon offers "Undo in History".
+- **Library.** On iPhone a Lists row tops the grid and the rows, and the toolbar has a Lists
+  button. Layout reads Grid / Rows; More holds Insights, Listens and Recaps. A new account sees
+  "Your library is empty" with Search and "Bring your history"; with filters on, "No titles
+  match these filters" with Clear filters.
+- **Lists.** A split view on iPad and Mac ("Choose a list" until one is picked), a stack at
+  compact width. Deleting a list is confirmed. Members not in the library have an Add control
+  (tap: Plan to …, hold: pick a status). The picker is titled "Add “X” to a list" and marks the
+  lists that already hold it.
+- **Calendar.** `CalendarEmptyState` on every view, with Clear filters when filters hide
+  airings. The episode sheet has Done. On iPhone the Week / Month / Missed switch sits under
+  the bar, which holds Today and the week arrows. On iPad, where the bar is shared with the
+  tab bar, a row over the grid steps by week and day. The Mac's toolbar holds all five. Keys:
+  ⌥⌘←/→ week, ⌘←/→ day or month, ⌘T today.
+- **Home.** One empty headline, "Add something to see what's next", with Search, Browse
+  Discover and "Bring your history". Airing soon opens the episode sheet, with "Open show".
+  One column below 760pt. The Live Activity item reads "Watching now…" here and in the title
+  room's More menu, which also holds "Discuss in a group…" and "Remove from library…". Albums
+  are not in Start watching.
+- **Groups.** The `shelf` channel kind reads **List** (`list.bullet.rectangle.portrait`), the
+  `watch` kind **Watch party**; code names stay. The shared list shows the channel header with
+  "Not end-to-end", and the header's popover adds the `@aaru` line when the group has it.
+  Discuss in a group lists every group: Open, Start (managers) or "An admin can start one."
+  The owner's menu has "Leave group…", which explains handing the group on first. In the split
+  view Members is always the inspector.
+- **Words.** One episode code, "S1 · E8"; "S01E05" only in the week grid's cells. Discover's
+  credit is "Rows from" the providers on screen, and no error names a vendor. Listens is
+  "Listens", linked as "All listens ›", with 7 days / 30 days / Year / All time and a
+  "Connect a scrobbler" button when empty.
 
 ---
 

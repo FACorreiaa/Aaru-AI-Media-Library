@@ -96,7 +96,8 @@ extension NowPlayingItem {
             kind: playing.episode == nil ? .movie : .episode,
             name: playing.title.title,
             subtitle: playing.episode.map { episode in
-                ["S\(episode.season) · E\(episode.number)", playing.episodeName].compactMap(\.self)
+                [EpisodeCode.short(season: episode.season, number: episode.number), playing.episodeName]
+                    .compactMap(\.self)
                     .joined(separator: " · ")
             },
             source: source,

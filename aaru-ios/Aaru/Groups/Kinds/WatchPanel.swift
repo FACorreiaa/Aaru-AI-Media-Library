@@ -28,7 +28,10 @@ struct WatchPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if !model.hasLoaded {
+            if !model.hasLoaded, let problem = model.problem {
+                // The first load failed: say so, never "No watch party yet" (UX-063).
+                PanelLoadFailed(message: problem) { await model.load() }
+            } else if !model.hasLoaded {
                 ProgressView().frame(maxWidth: .infinity)
             } else if let party = model.party {
                 TitleCardRow(title: party.title, mine: nil)
@@ -45,8 +48,8 @@ struct WatchPanel: View {
                         .controlSize(.small)
                 }
             }
-            if let problem = model.problem {
-                Text(problem).font(.caption).foregroundStyle(.red)
+            if model.hasLoaded, let problem = model.problem {
+                Text(problem).font(.caption).foregroundStyle(Color(.danger))
             }
         }
         .padding(.horizontal, 16)
@@ -71,7 +74,7 @@ struct WatchPanel: View {
     @ViewBuilder
     private func episodeBadge(_ party: WatchParty) -> some View {
         if let season = party.season, let episode = party.episode {
-            Text("S\(season)E\(episode)")
+            Text(EpisodeCode.text(season: season, episode: episode))
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -122,7 +125,7 @@ struct WatchPanel: View {
         let remaining = max(0, (party.startsAt ?? date).timeIntervalSince(model.serverNow(date)))
         return HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text("\(Int(remaining.rounded(.up)))")
-                .font(.system(size: 34, weight: .semibold, design: .rounded))
+                .font(.system(.largeTitle, design: .rounded, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText(countsDown: true))
             Text("Press play when it reaches zero.").font(.callout).foregroundStyle(Color(.muted))
@@ -149,6 +152,8 @@ struct WatchPanel: View {
                 ForEach(WatchPartyModel.reactionSet, id: \.self) { emoji in
                     Button(emoji) { react(emoji) }
                         .font(.title3)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(.rect)
                         .buttonStyle(.borderless)
                         .accessibilityLabel("React \(emoji)")
                 }
