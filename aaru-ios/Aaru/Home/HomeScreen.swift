@@ -16,8 +16,8 @@ struct HomeScreen: View {
     var imports: ImportsModel?
     /// Switches the app to another destination (Calendar, Discover, Lists).
     var onSelectTab: (RootView.AppTab) -> Void
-    /// Switches to Library, filtered to one status.
-    var onShowLibrary: (LibraryStatus) -> Void
+    /// Switches to Library, filtered: to one status (the count chips) or one kind (the profile).
+    var onShowLibrary: (LibraryFilter) -> Void
 
     @State private var model: HomeModel
     @State private var showsSearch = false
@@ -43,7 +43,7 @@ struct HomeScreen: View {
         imports: ImportsModel? = nil,
         model: HomeModel? = nil,
         onSelectTab: @escaping (RootView.AppTab) -> Void = { _ in },
-        onShowLibrary: @escaping (LibraryStatus) -> Void = { _ in }
+        onShowLibrary: @escaping (LibraryFilter) -> Void = { _ in }
     ) {
         self.api = api
         self.library = library
@@ -61,6 +61,8 @@ struct HomeScreen: View {
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif
+                // The profile (GAM-006b) leads; the top trailing spot is the account button's (§18).
+                .profileEntry(api: api, library: library, lists: lists) { onShowLibrary(LibraryFilter(kind: $0)) }
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Search", systemImage: "magnifyingglass") { showsSearch = true }
@@ -121,6 +123,7 @@ struct HomeScreen: View {
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: model.problem) { model.problem = nil }
                 }
+                .undoToast()
                 .background { FieldBackground() }
         }
     }
@@ -196,7 +199,7 @@ struct HomeScreen: View {
             .padding(.horizontal, 20)
         }
         if let counts = model.counts, counts.total > 0 {
-            CountChips(counts: counts, onSelect: onShowLibrary)
+            CountChips(counts: counts) { onShowLibrary(LibraryFilter(status: $0)) }
         }
     }
 }
@@ -280,13 +283,13 @@ extension HomeScreen {
                         width: HomeCardSize.wide.width(compact: compact),
                         isPending: model.pending.contains(entry.libraryItemId)
                     ) { Task { await model.markNextWatched(entry) } }
-                    #if os(iOS)
-                        .contextMenu {
-                            Button("Start watching", systemImage: "play.circle") {
-                                Task { await model.startWatching(entry) }
-                            }
+                        .markWatchedMenu(library.entry(entry.libraryItemId), api: api, library: library) {
+                            #if os(iOS)
+                                Button("Start watching", systemImage: "play.circle") {
+                                    Task { await model.startWatching(entry) }
+                                }
+                            #endif
                         }
-                    #endif
                 }
             }
         }
@@ -305,6 +308,7 @@ extension HomeScreen {
                         when: model.airingLabel(entry),
                         width: HomeCardSize.banner.width(compact: compact)
                     )
+                    .markWatchedMenu(library.entry(entry.libraryItemId), api: api, library: library) {}
                 }
             }
         }
@@ -312,6 +316,7 @@ extension HomeScreen {
             HomeRow(title: "Start watching") {
                 ForEach(model.startWatching, id: \.libraryItemId) { entry in
                     StartCard(entry: entry, width: HomeCardSize.poster.width(compact: compact))
+                        .markWatchedMenu(library.entry(entry.libraryItemId), api: api, library: library) {}
                 }
             }
         }

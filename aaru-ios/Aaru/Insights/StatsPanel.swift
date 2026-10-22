@@ -318,7 +318,7 @@ private struct TopTitles: View {
 }
 
 /// Ten bins on the 1–10 scale; a half star rounds up.
-private struct RatingsHistogram: View {
+struct RatingsHistogram: View {
     let ratings: Components.Schemas.StatsRatings
 
     var body: some View {

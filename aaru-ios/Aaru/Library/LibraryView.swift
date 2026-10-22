@@ -63,6 +63,7 @@ struct LibraryView: View {
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: nowProblem) { nowProblem = nil }
                 }
+                .undoToast()
                 .background(Color(.paper))
         }
     }
@@ -97,7 +98,9 @@ struct LibraryView: View {
                     ForEach(rows) { row in
                         NavigationLink(value: row.id) { PosterCard(row: row) }
                             .buttonStyle(.plain)
-                            .contextMenu { addToListButton(row) }
+                            .markWatchedMenu(library.entry(row.id), api: api, library: library) {
+                                addToListButton(row)
+                            }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -112,7 +115,9 @@ struct LibraryView: View {
                 ForEach(rows) { row in
                     NavigationLink(value: row.id) { LibraryListRow(row: row) }
                         .listRowBackground(Color.clear)
-                        .contextMenu { addToListButton(row) }
+                        .markWatchedMenu(library.entry(row.id), api: api, library: library) {
+                            addToListButton(row)
+                        }
                 }
             }
             .listStyle(.plain)
