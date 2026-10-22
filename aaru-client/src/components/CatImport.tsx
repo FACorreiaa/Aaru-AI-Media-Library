@@ -2,10 +2,17 @@ import { Show, createSignal } from 'solid-js'
 import { readImportFile } from '../lib/imports/file'
 import { startCatFeedImport, uploadCatImport } from '../lib/imports/server'
 import type { ImportJob } from '../lib/imports/server'
-import { Button } from './ui/button'
-
-const field =
-  'min-h-11 min-w-0 flex-1 rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none'
+import {
+  Button,
+  FileField,
+  FileFieldHiddenInput,
+  FileFieldTrigger,
+  TextField,
+  TextFieldDescription,
+  TextFieldInput,
+  TextFieldLabel,
+  TextFieldTextArea,
+} from '~/components/ui'
 
 // IMP-009/010: Pogdesign CAT has no list export, so its shows come in three ways: the iCal link,
 // the iCal file, or a pasted list. Only shows come across; CAT's watched episodes do not.
@@ -47,28 +54,31 @@ export function CatImport(props: { onImported: (job: ImportJob) => void }) {
           )
         }}
       >
-        <label for="cat-link" class="text-sm">
-          Your CAT iCal link
-        </label>
-        <div class="flex flex-wrap gap-2">
-          <input
-            id="cat-link"
-            type="url"
-            autocomplete="off"
-            spellcheck={false}
-            placeholder="https://www.pogdesign.co.uk/cat/download_ics/…"
-            class={field}
-            value={link()}
-            onInput={(e) => setLink(e.currentTarget.value)}
-          />
-          <Button type="submit" disabled={busy() || link().trim() === ''}>
-            Import
-          </Button>
-        </div>
-        <span class="text-xs text-muted">
-          In CAT, signed in: copy the “Download iCal File” link. Aaru reads it
-          once and doesn't keep it.
-        </span>
+        <TextField value={link()} onChange={setLink} class="gap-1">
+          <TextFieldLabel class="font-normal">
+            Your CAT iCal link
+          </TextFieldLabel>
+          <div class="flex flex-wrap gap-2">
+            <TextFieldInput
+              type="url"
+              autocomplete="off"
+              spellcheck={false}
+              placeholder="https://www.pogdesign.co.uk/cat/download_ics/…"
+              class="min-w-0 flex-1"
+            />
+            <Button
+              variant="outline"
+              type="submit"
+              disabled={busy() || link().trim() === ''}
+            >
+              Import
+            </Button>
+          </div>
+          <TextFieldDescription class="text-xs text-muted">
+            In CAT, signed in: copy the “Download iCal File” link. Aaru reads it
+            once and doesn't keep it.
+          </TextFieldDescription>
+        </TextField>
       </form>
       <form
         class="flex flex-col gap-1"
@@ -80,43 +90,50 @@ export function CatImport(props: { onImported: (job: ImportJob) => void }) {
           )
         }}
       >
-        <label for="cat-list" class="text-sm">
-          Or paste your shows, one per line
-        </label>
-        <textarea
-          id="cat-list"
-          rows={4}
-          spellcheck={false}
-          placeholder={'Severance\nThe Bear\nBrothers (2026)'}
-          class={`${field} py-3`}
-          value={list()}
-          onInput={(e) => setList(e.currentTarget.value)}
-        />
+        <TextField value={list()} onChange={setList} class="gap-1">
+          <TextFieldLabel class="font-normal">
+            Or paste your shows, one per line
+          </TextFieldLabel>
+          <TextFieldTextArea
+            rows={4}
+            spellcheck={false}
+            placeholder={'Severance\nThe Bear\nBrothers (2026)'}
+          />
+        </TextField>
         <div class="flex flex-wrap items-center gap-2">
-          <Button type="submit" disabled={busy() || list().trim() === ''}>
+          <Button
+            variant="outline"
+            type="submit"
+            disabled={busy() || list().trim() === ''}
+          >
             Import list
           </Button>
-          <label class="cursor-pointer text-sm text-accent hover:underline">
-            or upload the .ics file
-            <input
-              type="file"
-              accept=".ics,.txt,text/calendar,text/plain"
-              class="sr-only"
-              disabled={busy()}
-              onChange={(e) => {
-                const file = e.currentTarget.files?.[0]
-                e.currentTarget.value = ''
-                if (file)
-                  void run(
-                    async () =>
-                      uploadCatImport({
-                        data: { text: await readImportFile(file) },
-                      }),
-                    'That file could not be imported.',
-                  )
-              }}
-            />
-          </label>
+          <FileField
+            class="size-auto items-start"
+            accept=".ics,.txt,text/calendar,text/plain"
+            maxFiles={1}
+            disabled={busy()}
+            onFileAccept={(files) => {
+              const file = files.at(0)
+              if (file)
+                void run(
+                  async () =>
+                    uploadCatImport({
+                      data: { text: await readImportFile(file) },
+                    }),
+                  'That file could not be imported.',
+                )
+            }}
+          >
+            <FileFieldHiddenInput />
+            <FileFieldTrigger
+              variant="link"
+              size="bare"
+              class="text-sm font-normal text-accent"
+            >
+              or upload the .ics file
+            </FileFieldTrigger>
+          </FileField>
         </div>
       </form>
       <Show when={busy()}>

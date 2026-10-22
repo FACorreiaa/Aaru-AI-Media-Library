@@ -26,12 +26,21 @@ import type {
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 import { AddToListDialog } from './AddToListDialog'
-import { Button } from './ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import {
+  Button,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
+import { lastShown } from '../lib/presence'
 
 /** All searches films, shows and anime together; books and albums are never in it, and the last
  * rows of an All search offer them instead. */
-type Scope = MediaKind | 'all'
+export type Scope = MediaKind | 'all'
 
 const SCOPES: Array<{ kind: Scope; label: string }> = [
   { kind: 'all', label: 'All' },
@@ -47,13 +56,15 @@ const PLACEHOLDERS: Partial<Record<Scope, string>> = {
  * `list` (LST-003), each hit adds to that list instead of the library. */
 export function SearchPanel(props: {
   entries?: LibraryEntry[]
+  /** The tab it opens on (UX-087: the empty calendar opens Shows). */
+  scope?: Scope
   onAdded?: (entry: LibraryEntry) => void
   onClose: () => void
   list?: ListDetail
   onListChanged?: (detail: ListDetail) => void
 }) {
   const [query, setQuery] = createSignal('')
-  const [kind, setKind] = createSignal<Scope>('all')
+  const [kind, setKind] = createSignal<Scope>(props.scope ?? 'all')
   let input: HTMLInputElement | undefined
   // The routes load this panel lazily, after their dialog has opened: `autofocus` only acts
   // when the dialog opens, so the first mount focuses the field itself.
@@ -66,6 +77,7 @@ export function SearchPanel(props: {
   // Hits being added right now: a second click waits instead of adding twice.
   const [adding, setAdding] = createSignal<Set<string>>(new Set())
   const [listTarget, setListTarget] = createSignal<CatalogHit | null>(null)
+  const shownListTarget = lastShown(listTarget)
   let latest = 0
 
   createEffect(() => {
@@ -170,7 +182,7 @@ export function SearchPanel(props: {
     <Tabs
       value={kind()}
       onChange={(next) => setKind(next as Scope)}
-      class="flex max-h-[85dvh] w-full flex-col"
+      class="flex max-h-[85dvh] w-full flex-col gap-0"
     >
       <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
         <h2 class="font-display text-2xl font-medium">
@@ -186,27 +198,29 @@ export function SearchPanel(props: {
         </Button>
       </div>
       <div class="flex flex-col gap-3 px-5 pt-4">
-        <label for="search" class="sr-only">
-          Search
-        </label>
-        <input
-          ref={input}
-          id="search"
-          type="search"
-          autofocus
-          autocomplete="off"
-          placeholder={PLACEHOLDERS[kind()] ?? 'Title'}
-          value={query()}
-          onInput={(e) => setQuery(e.currentTarget.value)}
-          class="min-h-12 w-full rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
-        />
+        <TextField value={query()} onChange={setQuery}>
+          <TextFieldLabel class="sr-only">Search</TextFieldLabel>
+          <TextFieldInput
+            ref={input}
+            type="search"
+            autofocus
+            autocomplete="off"
+            placeholder={PLACEHOLDERS[kind()] ?? 'Title'}
+            class="min-h-12 rounded-panel border-transparent bg-surface px-4 text-base placeholder:text-muted/70"
+          />
+        </TextField>
         <TabsList
-          class="-mx-5 flex gap-2 overflow-x-auto px-5"
+          class="-mx-5 flex h-auto w-auto justify-start gap-2 overflow-x-auto rounded-none bg-transparent px-5 ring-0"
           aria-label="Type"
         >
           <For each={SCOPES}>
             {(option) => (
-              <TabsTrigger value={option.kind}>{option.label}</TabsTrigger>
+              <TabsTrigger
+                value={option.kind}
+                class="h-auto flex-none shrink-0 rounded-full border border-line px-4 py-1.5 text-ink transition-colors hover:bg-surface data-[selected]:border-transparent data-[selected]:bg-ink data-[selected]:text-paper"
+              >
+                {option.label}
+              </TabsTrigger>
             )}
           </For>
         </TabsList>
@@ -278,7 +292,7 @@ export function SearchPanel(props: {
                           when={!isOnShelf(hit, props.entries ?? [])}
                           fallback={
                             <span class="text-sm font-medium text-accent">
-                              On your shelf
+                              In your library
                             </span>
                           }
                         >
@@ -307,6 +321,7 @@ export function SearchPanel(props: {
                           }
                         >
                           <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => void addToTarget(hit, list())}
                           >
@@ -326,27 +341,30 @@ export function SearchPanel(props: {
             }
           >
             <li class="py-3">
-              <button
-                type="button"
+              <Button
+                variant="soft"
+                size="bare"
                 onClick={() => setKind('book')}
-                class="w-full rounded-panel px-3 py-2 text-left text-sm font-medium text-accent hover:bg-surface"
+                class="w-full justify-start rounded-panel px-3 py-2 text-left text-sm text-accent"
               >
                 Search Books for “{query().trim()}”
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="soft"
+                size="bare"
                 onClick={() => setKind('album')}
-                class="w-full rounded-panel px-3 py-2 text-left text-sm font-medium text-accent hover:bg-surface"
+                class="w-full justify-start rounded-panel px-3 py-2 text-left text-sm text-accent"
               >
                 Search Music for “{query().trim()}”
-              </button>
+              </Button>
             </li>
           </Show>
         </ul>
       </TabsContent>
-      <Show when={listTarget()}>
+      <Show when={shownListTarget()}>
         {(hit) => (
           <AddToListDialog
+            open={listTarget() !== null}
             mediaRef={{
               type: hit().type,
               ids: hit().ids,

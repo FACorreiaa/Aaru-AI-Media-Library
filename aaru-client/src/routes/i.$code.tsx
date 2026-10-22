@@ -3,7 +3,16 @@ import { Match, Show, Switch, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { MascotMedallion, Wordmark } from '../components/Brand'
 import { Poster } from '../components/Poster'
-import { Button } from '../components/ui/button'
+import {
+  Button,
+  Checkbox,
+  CheckboxControl,
+  CheckboxInput,
+  CheckboxLabel,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
 import { kindOf, statusLabel } from '../lib/library/model'
 import {
   handleProblem,
@@ -171,20 +180,24 @@ function Invite() {
                 onAddTitle={setAddTitle}
               />
               <Show when={needsHandle()}>
-                <label for="handle" class="mt-8 block text-sm font-semibold">
-                  Choose a handle so {inviterName(preview().inviter)} knows it’s
-                  you
-                </label>
-                <input
-                  id="handle"
+                <TextField
+                  class="mt-8 gap-2"
                   value={handle()}
-                  onInput={(event) => setHandle(event.currentTarget.value)}
-                  autocomplete="username"
-                  autocapitalize="none"
-                  spellcheck={false}
-                  placeholder="@yourname"
-                  class="mt-2 min-h-12 w-full rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
-                />
+                  onChange={setHandle}
+                >
+                  <TextFieldLabel class="text-sm font-semibold">
+                    Choose a handle so {inviterName(preview().inviter)} knows
+                    it’s you
+                  </TextFieldLabel>
+                  <TextFieldInput
+                    id="handle"
+                    autocomplete="username"
+                    autocapitalize="none"
+                    spellcheck={false}
+                    placeholder="@yourname"
+                    class="min-h-12 border-0 bg-surface px-4 text-base"
+                  />
+                </TextField>
               </Show>
               <Show
                 when={page().viewer}
@@ -265,17 +278,17 @@ function Letter(props: {
                 <p class="font-display text-xl leading-snug italic">
                   “{invitePlea(title().title, kind())}”
                 </p>
-                <label class="mt-3 flex min-h-11 cursor-pointer items-center gap-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={props.addTitle}
-                    onChange={(event) =>
-                      props.onAddTitle(event.currentTarget.checked)
-                    }
-                    class="size-5 shrink-0 accent-[var(--accent)]"
-                  />
-                  Add to my {statusLabel('wishlist', kind())}
-                </label>
+                <Checkbox
+                  class="mt-3 flex min-h-11 items-center gap-3 text-sm"
+                  checked={props.addTitle}
+                  onChange={props.onAddTitle}
+                >
+                  <CheckboxInput />
+                  <CheckboxControl />
+                  <CheckboxLabel class="cursor-pointer font-normal">
+                    Add to my {statusLabel('wishlist', kind())}
+                  </CheckboxLabel>
+                </Checkbox>
               </div>
             </div>
           )

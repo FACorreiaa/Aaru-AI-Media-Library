@@ -7,9 +7,16 @@ import {
   saveSubscription,
 } from '../lib/push/server'
 import type { NotificationSettings, PushSetup } from '../lib/push/server'
-import { Button } from './ui/button'
-import { Card } from './ui/card'
-import { Switch } from './ui/switch'
+import { SettingsSection } from './settings/SettingsSection'
+import {
+  Button,
+  Switch,
+  SwitchControl,
+  SwitchDescription,
+  SwitchInput,
+  SwitchLabel,
+  SwitchThumb,
+} from '~/components/ui'
 
 type SettingKey = keyof NotificationSettings
 
@@ -127,64 +134,85 @@ export function NotificationsSection(props: { setup: PushSetup }) {
   }
 
   return (
-    <Card class="mt-10 p-5">
-      <h2 class="font-display text-xl font-medium">Notifications</h2>
-      <For each={switches}>
-        {(item) => (
-          <Switch
-            class="mt-3 flex items-start gap-3 text-sm"
-            checked={settings()[item.key]}
-            onChange={(checked) => void toggle(item.key, checked)}
-            label={item.label}
-            description={item.detail}
-          />
-        )}
-      </For>
-
-      <Show
-        when={props.setup.publicKey}
-        fallback={
-          <p class="mt-4 text-sm text-muted">
-            Alerts in the browser are not available yet.
-          </p>
-        }
+    <>
+      <SettingsSection
+        title="What alerts you"
+        description="These are your account's, so your iPhone and your browsers follow them."
+        footer="Requests from your connected agents always alert you."
       >
-        {(publicKey) => (
-          <div class="mt-4">
-            <Show when={support() === 'needs-install'}>
-              <p class="text-sm text-muted">
-                On iPhone and iPad, add Aaru to your Home Screen (Share → Add to
-                Home Screen) and open it from there to get alerts.
-              </p>
-            </Show>
-            <Show when={support() === 'unsupported'}>
-              <p class="text-sm text-muted">
-                This browser cannot show alerts from websites.
-              </p>
-            </Show>
-            <Show when={support() === 'supported'}>
-              <Button
-                disabled={busy()}
-                onClick={() =>
-                  void (subscribed() ? turnOff() : turnOn(publicKey()))
-                }
+        <div class="flex flex-col gap-4">
+          <For each={switches}>
+            {(item) => (
+              <Switch
+                class="flex items-start gap-3 text-sm"
+                checked={settings()[item.key]}
+                onChange={(checked) => void toggle(item.key, checked)}
               >
-                {subscribed()
-                  ? 'Turn off alerts in this browser'
-                  : 'Turn on alerts in this browser'}
-              </Button>
-            </Show>
-          </div>
-        )}
-      </Show>
+                <SwitchInput />
+                <SwitchControl>
+                  <SwitchThumb />
+                </SwitchControl>
+                <span>
+                  <SwitchLabel class="cursor-pointer font-normal">
+                    {item.label}
+                  </SwitchLabel>
+                  <SwitchDescription class="block text-xs">
+                    {item.detail}
+                  </SwitchDescription>
+                </span>
+              </Switch>
+            )}
+          </For>
+        </div>
+      </SettingsSection>
 
-      <Show when={problem()}>
-        {(message) => (
-          <p role="alert" class="mt-3 text-sm text-danger">
-            {message()}
-          </p>
-        )}
-      </Show>
-    </Card>
+      <SettingsSection title="This browser">
+        <Show
+          when={props.setup.publicKey}
+          fallback={
+            <p class="text-sm text-muted">
+              Alerts in the browser are not available yet.
+            </p>
+          }
+        >
+          {(publicKey) => (
+            <div>
+              <Show when={support() === 'needs-install'}>
+                <p class="text-sm text-muted">
+                  On iPhone and iPad, add Aaru to your Home Screen (Share → Add
+                  to Home Screen) and open it from there to get alerts.
+                </p>
+              </Show>
+              <Show when={support() === 'unsupported'}>
+                <p class="text-sm text-muted">
+                  This browser cannot show alerts from websites.
+                </p>
+              </Show>
+              <Show when={support() === 'supported'}>
+                <Button
+                  variant="outline"
+                  disabled={busy()}
+                  onClick={() =>
+                    void (subscribed() ? turnOff() : turnOn(publicKey()))
+                  }
+                >
+                  {subscribed()
+                    ? 'Turn off alerts in this browser'
+                    : 'Turn on alerts in this browser'}
+                </Button>
+              </Show>
+            </div>
+          )}
+        </Show>
+
+        <Show when={problem()}>
+          {(message) => (
+            <p role="alert" class="mt-3 text-sm text-danger">
+              {message()}
+            </p>
+          )}
+        </Show>
+      </SettingsSection>
+    </>
   )
 }

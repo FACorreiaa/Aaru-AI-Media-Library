@@ -8,7 +8,7 @@ import {
 } from '../lib/title/album'
 import type { AlbumTrack } from '../lib/title/album'
 import { Poster } from './Poster'
-import { Badge } from './ui/badge'
+import { Badge } from '~/components/ui'
 
 // MUS-001 on the web: an album's Title room. The cover is the room; the chrome stays out of its
 // way. Read only: no playback, no ticks, no progress.
@@ -45,7 +45,7 @@ export function AlbumHeader(props: {
               </span>
             </Show>
             <For each={props.genres ?? []}>
-              {(genre) => <Badge tone="soft">{genre}</Badge>}
+              {(genre) => <Badge variant="soft">{genre}</Badge>}
             </For>
           </div>
         </Show>

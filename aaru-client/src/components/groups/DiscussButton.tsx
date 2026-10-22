@@ -1,12 +1,24 @@
 import { useNavigate } from '@tanstack/solid-router'
 import { For, Show, createSignal, onMount } from 'solid-js'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogPortal,
+  DialogTitle,
+} from '~/components/ui'
 import { createChannel, getGroup, listGroups } from '../../lib/groups/server'
-import type { GroupSummary } from '../../lib/groups/server'
+import type { Channel, GroupSummary } from '../../lib/groups/server'
 import type { MediaType } from '../../lib/media'
 
+/** Each group's channel for this title, once looked up: a channel, none, or not known yet. */
+type Found = Record<string, Channel | null | undefined>
+
 /**
- * "Discuss in a group…" on a Title page (GRP-007): opens this title's channel in a group I
- * manage, making it if the group has none. Hidden when I manage no group.
+ * "Discuss in a group…" on a Title page (GRP-007, UX-083): every group I am in. "Open" where
+ * the title already has a channel; where it has none, owners and admins can "Start" one and a
+ * member is told who can. Hidden when I am in no group.
  */
 export function DiscussButton(props: {
   titleId: string
@@ -15,29 +27,43 @@ export function DiscussButton(props: {
 }) {
   const navigate = useNavigate()
   const [groups, setGroups] = createSignal<GroupSummary[]>([])
+  const [found, setFound] = createSignal<Found>({})
   const [open, setOpen] = createSignal(false)
   const [busy, setBusy] = createSignal<string | null>(null)
   const [problem, setProblem] = createSignal<string | null>(null)
-  let dialog: HTMLDialogElement | undefined
 
   onMount(async () => {
     try {
-      setGroups((await listGroups()).filter((g) => g.role !== 'member'))
+      setGroups(await listGroups())
     } catch {
       // Without groups the button simply stays hidden.
     }
   })
 
+  // Looked up when the dialog opens: which groups already talk about this title.
+  async function lookUp() {
+    await Promise.all(
+      groups().map(async (group) => {
+        try {
+          const detail = await getGroup({ data: { groupId: group.id } })
+          const channel =
+            detail.channels.find(
+              (c) => c.kind === 'title' && c.title?.id === props.titleId,
+            ) ?? null
+          setFound((all) => ({ ...all, [group.id]: channel }))
+        } catch {
+          setFound((all) => ({ ...all, [group.id]: null }))
+        }
+      }),
+    )
+  }
+
   async function discuss(group: GroupSummary) {
     setBusy(group.id)
     setProblem(null)
     try {
-      const detail = await getGroup({ data: { groupId: group.id } })
-      const existing = detail.channels.find(
-        (c) => c.kind === 'title' && c.title?.id === props.titleId,
-      )
       const channel =
-        existing ??
+        found()[group.id] ??
         (await createChannel({
           data: {
             groupId: group.id,
@@ -45,7 +71,7 @@ export function DiscussButton(props: {
             title: { titleId: props.titleId, type: props.type },
           },
         }))
-      dialog?.close()
+      setOpen(false)
       await navigate({
         to: '/app/groups/$groupId/$channelId',
         params: { groupId: group.id, channelId: channel.id },
@@ -61,48 +87,73 @@ export function DiscussButton(props: {
 
   return (
     <Show when={groups().length > 0}>
-      <button
-        type="button"
-        class="mt-4 ml-2 rounded-full border border-ink/25 px-4 py-1.5 text-sm font-semibold hover:bg-surface"
+      <Button
+        variant="outline"
+        size="sm"
+        class="mt-4 ml-2"
         onClick={() => {
+          setProblem(null)
           setOpen(true)
-          queueMicrotask(() => dialog?.showModal())
+          void lookUp()
         }}
       >
         Discuss in a group…
-      </button>
-      <Show when={open()}>
-        <dialog
-          ref={dialog}
-          aria-label="Discuss in a group"
-          onClose={() => setOpen(false)}
-          class="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-[20px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/40"
-        >
-          <div class="p-5">
-            <h2 class="font-display text-2xl font-medium">
-              Discuss {props.name}
-            </h2>
-            <p class="mt-1 text-sm text-muted">
-              Opens its channel in the group, or makes one. Spoilers stay veiled
-              for whoever is behind.
-            </p>
+      </Button>
+      <Dialog open={open()} onOpenChange={setOpen}>
+        <DialogPortal>
+          <DialogContent
+            placement="sheet"
+            showCloseButton={false}
+            class="block w-[min(28rem,calc(100vw-2rem))] gap-0 p-5 sm:max-w-none"
+          >
+            <DialogTitle class="text-2xl">Discuss {props.name}</DialogTitle>
+            <DialogDescription class="mt-1">
+              Opens its channel in the group, or starts one. Spoilers stay
+              veiled for whoever is behind.
+            </DialogDescription>
             <ul class="mt-4 grid gap-1.5">
               <For each={groups()}>
-                {(group) => (
-                  <li>
-                    <button
-                      type="button"
-                      disabled={busy() !== null}
-                      onClick={() => void discuss(group)}
-                      class="flex w-full items-center justify-between rounded-xl bg-surface px-4 py-3 text-left font-medium hover:bg-surface/70 disabled:opacity-50"
-                    >
-                      <span class="truncate">{group.name}</span>
-                      <span class="text-sm text-muted">
-                        {busy() === group.id ? 'Opening…' : '→'}
+                {(group) => {
+                  const channel = () => found()[group.id]
+                  const manages = () => group.role !== 'member'
+                  const known = () => channel() !== undefined
+                  return (
+                    <li class="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-surface px-4 py-2">
+                      <span class="min-w-0">
+                        <span class="block truncate font-medium">
+                          {group.name}
+                        </span>
+                        <Show when={known() && !channel() && !manages()}>
+                          <span class="block text-xs text-muted">
+                            No channel yet. Owners and admins start one.
+                          </span>
+                        </Show>
                       </span>
-                    </button>
-                  </li>
-                )}
+                      <Show
+                        when={known()}
+                        fallback={
+                          <span class="text-sm text-muted">Looking…</span>
+                        }
+                      >
+                        <Show when={channel() || manages()}>
+                          <Button
+                            size="xs"
+                            variant={channel() ? 'default' : 'outline'}
+                            disabled={busy() !== null}
+                            aria-label={`${channel() ? 'Open' : 'Start'} in ${group.name}`}
+                            onClick={() => void discuss(group)}
+                          >
+                            {busy() === group.id
+                              ? 'Opening…'
+                              : channel()
+                                ? 'Open'
+                                : 'Start'}
+                          </Button>
+                        </Show>
+                      </Show>
+                    </li>
+                  )
+                }}
               </For>
             </ul>
             <Show when={problem()}>
@@ -113,17 +164,13 @@ export function DiscussButton(props: {
               )}
             </Show>
             <div class="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => dialog?.close()}
-                class="rounded-full px-4 py-2 text-sm font-medium text-muted hover:text-ink"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
                 Cancel
-              </button>
+              </Button>
             </div>
-          </div>
-        </dialog>
-      </Show>
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>
     </Show>
   )
 }

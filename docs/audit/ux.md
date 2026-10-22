@@ -174,27 +174,27 @@ and extension-connect pages (web).
 
 ## Web agent must do
 
-- [ ] Shell per §18: one pathless layout route with the sidebar (≥1024px persistent and
+- [x] Shell per §18: one pathless layout route with the sidebar (≥1024px persistent and
       collapsible, a Sheet below), six destinations, Insights and Settings at the bottom, account
       row; Groups mention badge; one in-place Search with ⌘K; Sign out only on Account; every
       `/app` page inside it, back links that name where you came from (UX-002, UX-006, UX-007,
       UX-008, UX-009).
-- [ ] `/app/calendar` with `/app/week` redirecting; page titles from the item's name; Not found
+- [x] `/app/calendar` with `/app/week` redirecting; page titles from the item's name; Not found
       and legal pages lead back into the app; landing reads the session and has a current FAQ
       (UX-005, UX-010, UX-013, UX-014, UX-015).
-- [ ] `next` through every sign-in redirect and the magic link (UX-011).
-- [ ] Settings at `/app/settings/{account,friends,notifications,import,connections,data,about,delete}`
+- [x] `next` through every sign-in redirect and the magic link (UX-011).
+- [x] Settings at `/app/settings/{account,friends,notifications,import,connections,data,about,delete}`
       with the sub-nav and section moves of §18; old slugs redirect; desktop `/app/settings` →
       account; Trakt returns to `import` (UX-020…UX-027, UX-030, UX-031, UX-033, UX-034).
-- [ ] Drop TV Time from the landing and `ImportSources` (UX-028).
-- [ ] Copy: "library" not "shelf"; shared-list channel label; group-message wording; per-kind
+- [ ] Drop TV Time from the landing and `ImportSources` (UX-028). Deferred: TV Time import in a separate PR.
+- [x] Copy: "library" not "shelf"; shared-list channel label; group-message wording; per-kind
       status words; tick phrasing; episode code; show-status labels; Grid / Rows and the credit
       line; Listens; vendor-free errors; Year; "watched, read and listened to"; Start watching
       without albums (UX-040…UX-045, UX-047…UX-050, UX-052…UX-054).
-- [ ] History page (Your data: `GET /v1/actions`, Undo via `POST /v1/actions/{id}/undo`) and
+- [x] History page (Your data: `GET /v1/actions`, Undo via `POST /v1/actions/{id}/undo`) and
       Remove from library on the title page (`DELETE /v1/library/items/{id}`), journaled and
       undoable. Must do (UX-060, UX-061).
-- [ ] States and dead ends: channel and group load failures, Discover empty and fallbacks,
+- [x] States and dead ends: channel and group load failures, Discover empty and fallbacks,
       list members addable, handle/friends links to the new slugs, Import on new-account empty
       states and Clear filters, popover `@aaru` line, failed import removable + row count,
       Home "New list", recap close and reload, Discuss for every member, owner Leave hint, rail

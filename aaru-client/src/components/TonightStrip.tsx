@@ -5,7 +5,7 @@ import type { ContinueEntry } from '../lib/home/model'
 import { pickEpisode, pickReason } from '../lib/home/tonight'
 import type { Tonight, TonightPick } from '../lib/home/tonight'
 import { Art } from './HomeRows'
-import { Button, buttonVariants } from './ui/button'
+import { Button, buttonVariants } from '~/components/ui'
 
 // VIEWS.md `TonightStrip`: the Field's focal piece. One thing to watch now, lit and large, and
 // one more on a line under it. Composed in the browser (lib/home/tonight.ts); a mark-watched
@@ -64,7 +64,7 @@ export function TonightStrip(props: {
             <Show when={continuing()}>
               {(entry) => (
                 <Button
-                  variant="primary"
+                  variant="default"
                   disabled={props.busy}
                   onClick={() => props.onWatched(entry())}
                   aria-label={`Mark ${entry().title.title} ${shortCode(entry().next.season, entry().next.number)} watched`}

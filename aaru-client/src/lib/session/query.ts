@@ -16,17 +16,24 @@ const sessionQuery = queryOptions({
   staleTime: Infinity,
 })
 
-/** The signed-in session for a `beforeLoad`, or a redirect to sign-in. A signed-out answer
- * is never kept, so signing in is seen on the next navigation. */
+/** The signed-in session for a `beforeLoad`, or a redirect to sign-in that carries `next`
+ * (UX-011), so a push or an email link lands where it pointed once you are in. A signed-out
+ * answer is never kept, so signing in is seen on the next navigation. */
 export async function requireSession(
   queryClient: QueryClient,
+  next?: string,
 ): Promise<Extract<Session, { signedIn: true }>> {
   const session = await queryClient.query(sessionQuery)
   if (!session.signedIn) {
     queryClient.removeQueries({ queryKey: SESSION_KEY })
-    throw redirect({ to: '/sign-in' })
+    throw redirect({ to: '/sign-in', search: next ? { next } : {} })
   }
   return session
+}
+
+/** The session changed under this tab (a new name or handle): ask again on the next read. */
+export function forgetSession(queryClient: QueryClient) {
+  queryClient.removeQueries({ queryKey: SESSION_KEY })
 }
 
 /** Signing out, or landing on sign-in signed out: nothing of the last account stays in

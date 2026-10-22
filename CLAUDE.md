@@ -24,7 +24,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation). No HTTP client in it |
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
-| Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI primitives in `src/components/ui` (solid-ui's shapes on native elements, no Kobalte), animation through `motion/mini` (DESIGN.md §17). No DB access, no business logic |
+| Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI from shadcn-solid on Kobalte, every component as source in `src/components/ui` behind the `~/components/ui` barrel, themed on Aaru's tokens; animation through `motion/mini` via `src/lib/motion.ts` (DESIGN.md §17). No DB access, no business logic |
 | Browser extension | `aaru-extension/` — WXT, one Manifest V3 source for Chrome and Firefox (SCR-007). Reads the player on Netflix, Disney+ and Prime Video and calls `/v1/scrobble/*` with a scrobble-only token. A client like the others: no rules of its own |
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
@@ -137,6 +137,11 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
 - Imports are jobs, not request-path work. An import endpoint enqueues and returns a job id.
 - Image posters are referenced by catalog URLs. Do not download and host TMDB/Open Library artwork in MVP unless a legal/technical need appears.
 - Secrets stay in environment / server config. Never commit API keys.
+- **Web UI rule** (owner, 2026-10-21): all web UI comes from shadcn-solid in
+  `aaru-client/src/components/ui`, always imported through the barrel `~/components/ui`. A
+  missing component is added from shadcn-solid's manual install into that folder (and the
+  barrel), never hand-rolled and never a raw `button`/`input`/`select`/`textarea`/`dialog`.
+  Aaru looks are variants on those components. ESLint enforces it.
 
 ## Domain language
 

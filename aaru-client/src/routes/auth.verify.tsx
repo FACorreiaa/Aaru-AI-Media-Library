@@ -7,9 +7,9 @@ import {
 import { Show, createSignal } from 'solid-js'
 import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
-import { Button } from '../components/ui/button'
-import { takeNext } from '../lib/session/pending-next'
+import { Button } from '~/components/ui'
 import { signInWithEmailLink } from '../lib/session/session'
+import { takeNext } from '../lib/session/pending-next'
 
 // The link in the sign-in email (MAGIC_LINK_BASE_URL). The token is spent only when the user
 // taps the button, so a mail scanner opening the link does not use it up.

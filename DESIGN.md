@@ -636,13 +636,25 @@ Motion rules (the first written ones; they hold for any later surface):
 - The share image carries only the user's own numbers and the brand, no posters, so the web
   canvas and the Apple renderer draw the same card. Nothing is shared without a tap.
 
-On the web (2026-10-20), performance comes first:
-- **Native HTML first, CSS before Motion.** `aaru-client/src/components/ui` keeps solid-ui's
-  component shapes on native elements: `<dialog>` for modals and confirms, native radios for
-  segmented controls and radio groups, a `role="switch"` checkbox, `<details>`, `<select>`.
-  Tabs and toasts are a few lines of our own. Kobalte was measured and dropped (2026-10-21):
-  +36 KB gzip, +29 KB on the week page, for what the browser already does. Entrances stay CSS
-  keyframes.
+On the web, one component library, then performance:
+- **shadcn-solid on Kobalte, every component (owner, 2026-10-21).** This reverses the
+  2026-10-20 "native HTML first, Kobalte measured and dropped" rule. All 46 shadcn-solid
+  components live as source in `aaru-client/src/components/ui` (Kobalte, plus corvu, embla,
+  cmdk-solid, somoto, unovis and solid-table where the registry uses them) and are imported
+  only through the `~/components/ui` barrel. One `cn` (`tailwind-merge` + `clsx`, in
+  `~/lib/utils`), `cva`/`cx` as the registry ships them (`~/lib/cva`). shadcn's CSS variables
+  are Aaru's tokens, so `bg-primary` is the teal and a menu's highlighted row is teal with
+  on-accent text, the way a system menu highlights; Aaru's own looks (pill buttons at 44 pt,
+  `quiet`/`ink`/`soft`, segment chips) are variants on those components.
+- **Enter and exit from `tw-animate-css`.** Kobalte overlays animate with its
+  `data-[expanded]:animate-in` / `data-[closed]:animate-out` classes. With reduced motion a
+  global rule in `styles.css` turns every one of them off (and the components' transitions),
+  so Kobalte unmounts at once. Page entrances stay CSS keyframes.
+- **Measured (2026-10-21, gzip):** every page's shared JS 72.0 → 83.7 KB (+11.7), `/app`
+  95.3 → 115.4, `/app_/week` 88.8 → 111.5, `/app_/settings` 75.4 → 95.5, `/app_/title/$id`
+  88.3 → 125.4 (the heaviest, with Kobalte's ToggleGroup, Switch, Dialog and somoto), all JS
+  247.5 → 291.5, CSS 13.9 → 25.2. Accepted by the owner. Without `"sideEffects"` in
+  `package.json` the barrel did not tree-shake and every page carried 152 KB; keep it.
 - **Motion only for what CSS cannot do:** an exit before an element leaves, siblings sliding
   into the gap (FLIP), direction-aware swaps, and one short scale pop when the user ticks an
   episode (never on load). Through `src/lib/motion.ts` on `motion/mini`, only `transform` and
@@ -650,6 +662,21 @@ On the web (2026-10-20), performance comes first:
   reduced import `src/lib/reduced-motion.ts`, so they do not load `motion/mini`. Every
   animation follows a tap, so `motion/mini` is never preloaded: it loads when the browser is idle.
 - `npm run size` holds every route to `size-budget.json` in CI.
+- **One choice of a few is a radio group.** Every one-of-N switch (a view, a kind, a period, a
+  layout, a status picker) is `Segmented` (`src/components/Segmented.tsx`, `pill` or `chip`) on
+  shadcn-solid's SegmentedControl: "radio, 2 of 3", arrows move the choice, a second tap never
+  clears it. There is no ToggleGroup; a real on/off is a Switch or a Checkbox.
+- **Overlays play their exit.** A dialog, sheet or drawer takes `open` and stays mounted on its
+  last value (`lastShown` in `src/lib/presence.ts`) while Kobalte plays the close, then the page
+  lets it go. None is mounted only while open.
+- **Raw controls are a lint error.** `button`, `input`, `select`, `textarea` and `dialog` come
+  from the barrel. The one exception is the router's default error page, which spells out the
+  primary button so every page's first load does not carry Kobalte and tailwind-merge; for the
+  same reason `cardClass` sits in a module with no imports.
+- **Measured after step 2 (2026-10-22, gzip, against `main` with its query cache):** shared
+  77.4 → 79.1 KB, the landing page 86.0 → 88.7. A signed-in page's first load (shell included,
+  cached across navigations): Home 99.1 → 156.7, Title 93.0 → 161.4, Calendar 92.2 → 140.1.
+  The per-route table and the follow-ups are in `docs/audit/web.md`.
 
 ## 18. Navigation and Settings (owner, 2026-10-21)
 
@@ -661,7 +688,8 @@ bottom, Insights and Settings.
 
 - **Web.** One shell for every `/app` page. At 1024px and up a persistent left sidebar
   (collapsible to icons): the wordmark, Search (⌘K; opens in place on every page), the six
-  destinations, a gap, Insights, Settings, and last the account row (name and @handle, opens
+  destinations with Friends between Lists and Groups (its own page since SOC-003, owner
+  2026-10-21), a gap, Insights, Settings, and last the account row (name and @handle, opens
   Settings → Account). Groups carries the mention count. Below 1024px a top bar (wordmark,
   Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
@@ -703,14 +731,14 @@ Where each existing piece goes:
 
 | Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
 | --- | --- | --- |
-| Account | `AccountPage` card (name, providers, Link Google, Sign out); the handle and name editor out of `SocialSection`; `AppearanceSection` | `AccountSettings` first section; `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
-| Friends & privacy | `SocialSection` without the profile editor; `ConcertPlaceSection` | `FriendsView`'s sections inline (not a push from Account); `ConcertPlaceSection` |
+| Account | `AccountPage`: `ProfileEditor` (handle and name), Signed in with + Link Google, `AppearanceSection`, Sign out | `AccountSettings` first section; `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
+| Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsView`'s sections inline (not a push from Account); `ConcertPlaceSection` |
 | Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
-| Import | `ImportsPage` without the export card: `TraktImport`, `FILE_SOURCES`, the AniList form, `CatImport`, `StremioHistoryImport`, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |
-| Connections | `ConnectionsSection`, `StremioSection`, `MusicSection` (from `app_.settings.connected`) | `ConnectionsSection` (+ `ConnectionSetupView`, `BrowserExtensionView`), `StremioSection`, `MusicSection` (from `ConnectedAppsSettings`) |
-| Your data | recap shortcuts from `app_.settings.recaps` (its Insights link goes: Insights is in the sidebar); the export card; History (new) | recap shortcuts (`RecapDeck`'s, now also in Library's menu); `ExportDataSection`; History (new) |
-| About | the "About Aaru" card of `app_.settings.about` | `AboutView` without the delete section |
-| Delete account | the delete section and `AlertDialog` of `app_.settings.about` | `AboutView`'s delete section and dialog |
+| Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |
+| Connections | `ConnectionsSection`, `StremioSection`, `MusicSection` | `ConnectionsSection` (+ `ConnectionSetupView`, `BrowserExtensionView`), `StremioSection`, `MusicSection` (from `ConnectedAppsSettings`) |
+| Your data | `_shell.app_.settings.data`: recap shortcuts, History (`/v1/actions`, Undo per action), Export | recap shortcuts (`RecapDeck`'s, now also in Library's menu); `ExportDataSection`; History (new) |
+| About | `_shell.app_.settings.about`: wordmark, `Credits`, links | `AboutView` without the delete section |
+| Delete account | `_shell.app_.settings.delete` with `ConfirmDialog` | `AboutView`'s delete section and dialog |
 
 **Presentation.**
 

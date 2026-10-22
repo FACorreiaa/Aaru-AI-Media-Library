@@ -1,8 +1,20 @@
+import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import { canChangeLibrary, lastUsedLabel } from '../lib/stremio/model'
-import { AlertDialog } from './ui/alert-dialog'
-import { Button, buttonVariants } from './ui/button'
-import { Card } from './ui/card'
+import {
+  Button,
+  buttonVariants,
+  Checkbox,
+  CheckboxControl,
+  CheckboxDescription,
+  CheckboxInput,
+  CheckboxLabel,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '~/components/ui'
+import { ConfirmDialog } from './ConfirmDialog'
+import { SettingsSection } from './settings/SettingsSection'
 import {
   connectStremio,
   listStremio,
@@ -49,7 +61,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
       if (fresh()?.token.id === token.id) setFresh(null)
       setLinks(links().filter((link) => link.id !== token.id))
     } catch (error) {
-      fail(error, 'That Stremio link was not revoked.')
+      fail(error, 'Stremio was not disconnected.')
     } finally {
       setRevoking(false)
       setPending(null)
@@ -66,36 +78,48 @@ export function StremioSection(props: { links: AgentToken[] }) {
   }
 
   return (
-    <Card class="mt-10 p-5">
-      <h2 class="font-display text-xl font-medium">Stremio</h2>
-      <p class="mt-2 max-w-[60ch] text-sm text-muted">
-        Your Continue watching, Next 7 days and Plan to watch appear as rows in
-        Stremio. Finishing an episode there ticks it here, and every change
-        shows in your history with an undo. Works with Stremio Web and Stremio 5
-        on desktop.
-      </p>
-
+    <SettingsSection
+      id="stremio"
+      title="Stremio"
+      description="Your Continue watching, Next 7 days and Plan to watch appear as rows in Stremio. Finishing an episode there ticks it here, and every change shows in your history with an undo. Works with Stremio Web and Stremio 5 on desktop."
+      footer={
+        <>
+          What you watched before connecting comes in once, from{' '}
+          <Link
+            to="/app/settings/import"
+            hash="stremio"
+            class="font-semibold text-accent hover:underline"
+          >
+            Import your Stremio history
+          </Link>
+          .
+        </>
+      }
+    >
       <StremioGuide />
 
       <Show
         when={fresh()}
         fallback={
           <div class="mt-4 flex flex-col gap-3">
-            <label class="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                class="mt-0.5 accent-accent"
-                checked={allowWrites()}
-                onChange={(e) => setAllowWrites(e.currentTarget.checked)}
-              />
-              <span>
-                Also let Stremio add titles and unmark episodes.
-                <span class="block text-xs text-muted">
+            <Checkbox
+              class="flex items-start gap-2.5"
+              checked={allowWrites()}
+              onChange={setAllowWrites}
+            >
+              <CheckboxInput />
+              <CheckboxControl class="mt-0.5" />
+              <span class="flex flex-col gap-1">
+                <CheckboxLabel class="cursor-pointer leading-snug font-normal">
+                  Also let Stremio add titles and unmark episodes.
+                </CheckboxLabel>
+                <CheckboxDescription class="text-xs text-muted">
                   Removing a title in Stremio never removes it from Aaru.
-                </span>
+                </CheckboxDescription>
               </span>
-            </label>
+            </Checkbox>
             <Button
+              variant="outline"
               class="self-start"
               disabled={busy()}
               onClick={() => void connect()}
@@ -114,7 +138,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
             <div class="flex flex-wrap gap-2">
               <a
                 href={connection().stremio.installUrl}
-                class={buttonVariants({ variant: 'primary' })}
+                class={buttonVariants({ variant: 'default' })}
               >
                 Open in Stremio
               </a>
@@ -122,23 +146,25 @@ export function StremioSection(props: { links: AgentToken[] }) {
                 href={connection().stremio.webInstallUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                class={buttonVariants()}
+                class={buttonVariants({ variant: 'outline' })}
               >
                 Install on Stremio Web
               </a>
               <Button
+                variant="outline"
                 onClick={() => void copy(connection().stremio.manifestUrl)}
               >
                 {copied() ? 'Copied' : 'Copy link'}
               </Button>
             </div>
-            <button
-              type="button"
-              class="self-start text-sm font-semibold text-accent hover:underline"
+            <Button
+              variant="link"
+              size="bare"
+              class="self-start text-sm font-semibold text-accent"
               onClick={() => setFresh(null)}
             >
               Done
-            </button>
+            </Button>
           </div>
         )}
       </Show>
@@ -169,18 +195,18 @@ export function StremioSection(props: { links: AgentToken[] }) {
                   class="shrink-0"
                   onClick={() => setPending(link)}
                 >
-                  Revoke
+                  Disconnect
                 </Button>
               </li>
             )}
           </For>
         </ul>
       </Show>
-      <AlertDialog
+      <ConfirmDialog
         open={pending() !== null}
-        title="Revoke this Stremio link?"
-        description="Stremio stops showing your Aaru library."
-        confirmLabel="Revoke"
+        title="Disconnect Stremio?"
+        description="Stremio can no longer reach your library, and its Aaru rows go."
+        confirmLabel="Disconnect"
         busy={revoking()}
         onConfirm={() => {
           const token = pending()
@@ -188,7 +214,7 @@ export function StremioSection(props: { links: AgentToken[] }) {
         }}
         onCancel={() => setPending(null)}
       />
-    </Card>
+    </SettingsSection>
   )
 }
 
@@ -210,17 +236,17 @@ const behaviour = [
 // The setup steps, so nobody has to leave the app to learn how the addon works.
 function StremioGuide() {
   return (
-    <details class="group mt-4 rounded-panel border border-line">
-      <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+    <Collapsible class="group rounded-panel border border-line">
+      <CollapsibleTrigger class="flex w-full cursor-pointer items-center justify-between gap-4 rounded-panel px-4 py-3 text-left text-sm font-semibold">
         How to set it up
         <span
           aria-hidden="true"
-          class="text-lg leading-none text-muted transition-transform group-open:rotate-45"
+          class="text-lg leading-none text-muted transition-transform group-data-[expanded]:rotate-45"
         >
           +
         </span>
-      </summary>
-      <div class="max-w-[60ch] px-4 pb-4 text-sm text-muted">
+      </CollapsibleTrigger>
+      <CollapsibleContent class="max-w-prose px-4 pb-4 text-sm text-muted">
         <ol class="list-decimal space-y-1.5 pl-5">
           <For each={setupSteps}>{(step) => <li>{step}</li>}</For>
         </ol>
@@ -230,12 +256,12 @@ function StremioGuide() {
         </ul>
         <h3 class="mt-4 font-semibold text-ink">History and lost links</h3>
         <p class="mt-1.5">
-          Import from Stremio, in Imports &amp; export, brings in what you
+          Import your Stremio history, in Settings → Import, brings in what you
           watched before, once: approve the code on stremio.com, then review the
           import before anything changes. The install link is shown only once.
-          If you lose it, revoke it and connect again.
+          If you lose it, disconnect and connect again.
         </p>
-      </div>
-    </details>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

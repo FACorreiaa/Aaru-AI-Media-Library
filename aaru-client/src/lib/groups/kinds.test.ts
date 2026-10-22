@@ -59,7 +59,7 @@ describe('spoiler control', () => {
   it('labels the chip', () => {
     expect(spoilerChoiceLabel({ mode: 'auto' })).toBe('Marked at your progress')
     expect(spoilerChoiceLabel({ mode: 'episode', season: 2, episode: 1 })).toBe(
-      'Spoils up to S2E1',
+      'Spoils up to S2 · E1',
     )
   })
 
@@ -70,7 +70,7 @@ describe('spoiler control', () => {
   })
 
   it('tags my own stamps', () => {
-    expect(stampLabel({ season: 1, episode: 3 })).toBe('S1E3')
+    expect(stampLabel({ season: 1, episode: 3 })).toBe('S1 · E3')
     expect(stampLabel({ ending: true })).toBe('Ending')
     expect(stampLabel(undefined)).toBeNull()
   })
@@ -85,11 +85,13 @@ describe('progress labels', () => {
     ).toBe('Finished')
     expect(
       progressLabel({ user, status: 'in_progress', season: 1, episode: 3 }),
-    ).toBe('S1E3')
+    ).toBe('S1 · E3')
     expect(progressLabel({ user, status: 'wishlist' })).toBe('Planned')
     expect(progressLabel({ user, status: 'wishlist' }, 'show')).toBe(
       'Plan to watch',
     )
+    expect(progressLabel({ user, status: 'finished' }, 'show')).toBe('Watched')
+    expect(progressLabel({ user, status: 'finished' }, 'book')).toBe('Read')
   })
 })
 

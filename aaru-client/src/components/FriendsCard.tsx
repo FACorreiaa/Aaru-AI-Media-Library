@@ -1,10 +1,18 @@
 import { Link } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
+import {
+  Switch,
+  SwitchControl,
+  SwitchDescription,
+  SwitchInput,
+  SwitchLabel,
+  SwitchThumb,
+} from '~/components/ui'
 import { saveSocialSettings } from '../lib/social/server'
-import { Switch } from './ui/switch'
+import { SettingsSection } from './settings/SettingsSection'
 
-// Settings → Account: your handle, the way to Friends, and whether friends see your library
-// (SOC-001). Strangers never see anything, whatever this says.
+// Settings → Friends & privacy: your handle, the way to Friends, and whether friends see your
+// library (SOC-001). Strangers never see anything, whatever this says.
 export function FriendsCard(props: {
   handle?: string
   shareLibraryWithFriends: boolean
@@ -24,37 +32,47 @@ export function FriendsCard(props: {
   }
 
   return (
-    <section
+    <SettingsSection
       id="profile"
-      class="mt-10 scroll-mt-6 rounded-[20px] bg-surface p-5"
+      title="Friends"
+      description={
+        <>
+          <Show when={props.handle} fallback={<span>No handle yet.</span>}>
+            {(handle) => (
+              <>
+                Your handle{' '}
+                <span class="font-medium text-ink">@{handle()}</span>.
+              </>
+            )}
+          </Show>{' '}
+          <Link
+            to="/app/friends"
+            class="font-semibold text-accent hover:underline"
+          >
+            Friends, invites and requests
+          </Link>
+        </>
+      }
     >
-      <h2 class="font-display text-xl font-medium">Profile and friends</h2>
-      <p class="mt-2 text-sm">
-        <Show
-          when={props.handle}
-          fallback={<span class="text-muted">No handle yet.</span>}
-        >
-          {(handle) => (
-            <>
-              <span class="text-muted">Your handle</span>{' '}
-              <span class="font-medium">@{handle()}</span>
-            </>
-          )}
-        </Show>{' '}
-        <Link
-          to="/app/friends"
-          class="font-semibold text-accent hover:underline"
-        >
-          Friends, invites and requests
-        </Link>
-      </p>
       <Switch
-        class="mt-4"
+        class="flex items-start gap-3 text-sm"
         checked={sharing()}
         onChange={(next) => void change(next)}
-        label="Show my library to friends"
-        description="Friends see what you’re watching, what you finished and what you share. Nobody else ever does."
-      />
+      >
+        <SwitchInput />
+        <SwitchControl>
+          <SwitchThumb />
+        </SwitchControl>
+        <span>
+          <SwitchLabel class="cursor-pointer">
+            Show my library to friends
+          </SwitchLabel>
+          <SwitchDescription class="block text-xs">
+            Friends see what you’re watching, what you finished and what you
+            share. Nobody else ever does.
+          </SwitchDescription>
+        </span>
+      </Switch>
       <Show when={problem()}>
         {(message) => (
           <p role="alert" class="mt-3 text-sm text-danger">
@@ -62,6 +80,6 @@ export function FriendsCard(props: {
           </p>
         )}
       </Show>
-    </section>
+    </SettingsSection>
   )
 }

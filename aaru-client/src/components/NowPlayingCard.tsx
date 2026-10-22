@@ -8,7 +8,7 @@ import {
 } from '../lib/nowplaying/model'
 import type { NowPlaying } from '../lib/nowplaying/model'
 import { Art } from './HomeRows'
-import { Button, buttonVariants } from './ui/button'
+import { Button, buttonVariants } from '~/components/ui'
 
 // VIEWS.md `NowPlayingCard` (DESIGN.md §15, SCR-008): what Stremio or the browser extension
 // is playing now, across the top of the Field. Art, the episode, a bar and "17m left", which a
@@ -79,15 +79,16 @@ export function NowPlayingCard(props: {
                   style={{ width: `${(fraction() ?? 0) * 100}%` }}
                 />
               </div>
-              <button
-                type="button"
-                class="shrink-0 text-sm text-muted tabular-nums hover:text-ink"
+              <Button
+                variant="ghost"
+                size="bare"
+                class="shrink-0 font-normal tabular-nums"
                 disabled={props.playing.state === 'paused'}
                 onClick={() => setShowEnd((on) => !on)}
                 aria-label={showEnd() ? 'Show time left' : 'Show when it ends'}
               >
                 {time()}
-              </button>
+              </Button>
             </div>
           </Show>
 
@@ -96,7 +97,7 @@ export function NowPlayingCard(props: {
               <div class="mt-auto flex flex-wrap gap-2 pt-5">
                 <Show when={props.onWatched && props.playing.episode}>
                   <Button
-                    variant="primary"
+                    variant="default"
                     disabled={props.busy}
                     onClick={() => props.onWatched?.()}
                     aria-label={`Mark ${title().title} ${episode() ?? ''} watched`}

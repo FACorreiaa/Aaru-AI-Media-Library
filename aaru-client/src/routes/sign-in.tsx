@@ -14,7 +14,12 @@ import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import type { GoogleCredential } from '../components/GoogleSignInButton'
 import { MascotMedallion, Wordmark } from '../components/Brand'
 import { LegalLinks } from '../components/LegalPage'
-import { Button } from '../components/ui/button'
+import {
+  Button,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
 import {
   getSession,
   getSignInConfig,
@@ -84,6 +89,7 @@ function SignIn() {
     event.preventDefault()
     void run(async () => {
       await sendCode({ data: { email: email() } })
+      // The email also carries a link; it opens in a new tab without this page's `next`.
       rememberNext(search().next)
       go('code')
     })
@@ -110,7 +116,7 @@ function SignIn() {
     })
 
   const field =
-    'min-h-12 w-full rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none'
+    'min-h-12 rounded-panel border-transparent bg-surface px-4 text-base placeholder:text-muted/70'
   // As tall as the Apple button above it.
   const tall = 'min-h-13 w-full text-base'
 
@@ -122,7 +128,7 @@ function SignIn() {
         <h1 class="mt-8 font-display text-4xl leading-tight font-medium tracking-tight text-balance">
           <Show
             when={step() === 'code'}
-            fallback="Everything you watch and read, on one shelf."
+            fallback="Everything you watch, read and listen to, in one library."
           >
             Check your email
           </Show>
@@ -157,27 +163,29 @@ function SignIn() {
                 />
               )}
             </Show>
-            <Button size="lg" class={tall} onClick={() => go('email')}>
+            <Button
+              variant="outline"
+              size="lg"
+              class={tall}
+              onClick={() => go('email')}
+            >
               Continue with email
             </Button>
           </Show>
 
           <Show when={step() === 'email'}>
             <form class="flex flex-col gap-3" onSubmit={submitEmail}>
-              <label for="email" class="text-sm font-medium">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                autocomplete="email"
-                required
-                autofocus
-                placeholder="you@example.com"
-                class={field}
-                value={email()}
-                onInput={(e) => setEmail(e.currentTarget.value)}
-              />
+              <TextField value={email()} onChange={setEmail} required>
+                <TextFieldLabel>Email</TextFieldLabel>
+                <TextFieldInput
+                  id="email"
+                  type="email"
+                  autocomplete="email"
+                  autofocus
+                  placeholder="you@example.com"
+                  class={field}
+                />
+              </TextField>
               <Show when={error()}>
                 {(message) => (
                   <p role="alert" class="text-sm text-danger">
@@ -186,6 +194,7 @@ function SignIn() {
                 )}
               </Show>
               <Button
+                variant="outline"
                 type="submit"
                 size="lg"
                 class={tall}
@@ -206,20 +215,17 @@ function SignIn() {
 
           <Show when={step() === 'code'}>
             <form class="flex flex-col gap-3" onSubmit={submitCode}>
-              <label for="code" class="text-sm font-medium">
-                Code
-              </label>
-              <input
-                id="code"
-                inputmode="numeric"
-                autocomplete="one-time-code"
-                required
-                autofocus
-                placeholder="123 456"
-                class={`${field} tracking-[0.2em]`}
-                value={code()}
-                onInput={(e) => setCode(e.currentTarget.value)}
-              />
+              <TextField value={code()} onChange={setCode} required>
+                <TextFieldLabel>Code</TextFieldLabel>
+                <TextFieldInput
+                  id="code"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  autofocus
+                  placeholder="123 456"
+                  class={`${field} tracking-[0.2em]`}
+                />
+              </TextField>
               <Show when={error()}>
                 {(message) => (
                   <p role="alert" class="text-sm text-danger">
@@ -228,6 +234,7 @@ function SignIn() {
                 )}
               </Show>
               <Button
+                variant="outline"
                 type="submit"
                 size="lg"
                 class={tall}

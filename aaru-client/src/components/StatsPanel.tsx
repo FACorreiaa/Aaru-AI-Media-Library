@@ -16,10 +16,9 @@ import type { InsightsPeriod } from '../lib/insights/model'
 import { kindOf } from '../lib/library/model'
 import { dayLabel } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
-import { cn } from '../lib/cn'
+import { cn } from '~/lib/utils'
 import { Poster } from './Poster'
-import { buttonVariants } from './ui/button'
-import { cardClass } from './ui/card'
+import { buttonVariants, cardClass } from '~/components/ui'
 
 // Insights: one period's numbers, drawn plainly. Bars are static CSS, no chart library; the
 // Recap is where the same numbers move.

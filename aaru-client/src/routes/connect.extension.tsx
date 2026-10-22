@@ -1,9 +1,9 @@
-import { createFileRoute, redirect } from '@tanstack/solid-router'
+import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
 import { Match, Switch, createSignal, onCleanup, onMount } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
-import { Button } from '../components/ui/button'
+import { Button, buttonVariants } from '~/components/ui'
 import { connectExtension, revokeConnection } from '../lib/agents/server'
 import {
   CONNECTED,
@@ -127,6 +127,12 @@ function ConnectExtension() {
             What you finish on Netflix, Disney+ and Prime Video in this browser
             is now marked watched in Aaru. You can close this tab.
           </p>
+          <Link
+            to="/app/settings/connections"
+            class={`${buttonVariants({ variant: 'default' })} mt-6`}
+          >
+            Open Aaru
+          </Link>
         </Match>
         <Match when={stage() === 'declined'}>
           <h1 class="font-display text-3xl font-medium">Not connected</h1>
@@ -150,18 +156,19 @@ function ConnectExtension() {
           </h1>
           <p class="mt-3 text-muted">
             It will mark episodes and films you finish on Netflix, Disney+ and
-            Prime Video. It can’t read your library. Revoke it any time in
+            Prime Video. It can’t read your library. Disconnect it any time in
             Settings → Connections.
           </p>
           <div class="mt-6 flex flex-wrap gap-2">
             <Button
-              variant="primary"
+              variant="default"
               disabled={stage() !== 'ready'}
               onClick={() => void approve()}
             >
               {stage() === 'connecting' ? 'Connecting…' : 'Approve'}
             </Button>
             <Button
+              variant="outline"
               disabled={stage() === 'connecting'}
               onClick={() => setStage('declined')}
             >

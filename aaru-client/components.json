@@ -1,0 +1,14 @@
+{
+  "tailwind": {
+    "css": "src/styles.css",
+    "cssVariables": true
+  },
+  "tsx": true,
+  "aliases": {
+    "components": "~/components",
+    "ui": "~/components/ui",
+    "utils": "~/lib/utils",
+    "lib": "~/lib",
+    "hooks": "~/hooks"
+  }
+}

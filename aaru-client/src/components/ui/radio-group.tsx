@@ -1,109 +1,192 @@
-import { createContext, createUniqueId, useContext } from 'solid-js'
-import type { JSX } from 'solid-js'
-import { cn } from '../../lib/cn'
+import type { VoidProps } from 'solid-js'
+import { splitProps, type ComponentProps, type ValidComponent } from 'solid-js'
+import { RadioGroup as RadioGroupPrimitive } from '@kobalte/core/radio-group'
 
-// A radio group on native radios (no Kobalte): the browser gives arrow keys and one tab stop.
-// Each option is a visually hidden `<input type="radio">` sharing the group's `name`, followed by
-// the visible label, ringed by `peer-focus-visible`. The value is
-// controlled: after a change the radios are set back to what `value` says.
+import { cx } from '~/lib/cva'
 
-type RadioGroupContextValue = {
-  name: string
-  value: () => string | undefined
-  select: (value: string) => void
-}
+export type RadioGroupProps<T extends ValidComponent = 'div'> = ComponentProps<
+  typeof RadioGroupPrimitive<T>
+>
 
-const RadioGroupContext = createContext<RadioGroupContextValue>()
+export const RadioGroup = <T extends ValidComponent = 'div'>(
+  props: RadioGroupProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupProps, ['class'])
 
-export function RadioGroup(props: {
-  value?: string
-  onChange?: (value: string) => void
-  'aria-label'?: string
-  class?: string
-  children: JSX.Element
-}) {
-  const name = `radio-${createUniqueId()}`
   return (
-    <RadioGroupContext.Provider
-      value={{
-        name,
-        value: () => props.value,
-        select: (value) => props.onChange?.(value),
-      }}
-    >
-      <div
-        role="radiogroup"
-        aria-label={props['aria-label']}
-        class={props.class}
-      >
-        {props.children}
-      </div>
-    </RadioGroupContext.Provider>
+    <RadioGroupPrimitive
+      data-slot="radio-group"
+      class={cx('grid gap-3', props.class)}
+      {...rest}
+    />
   )
 }
 
-/** One option. `on` / `off` are the label's classes when chosen and when not: plain utilities
- *  the stylesheet already has, rather than `data-*` variants it would grow by. */
-export function RadioOption(props: {
-  value: string
-  disabled?: boolean
-  class?: string
-  on: string
-  off: string
-  children: JSX.Element
-}) {
-  const group = useContext(RadioGroupContext)!
-  const checked = () => group.value() === props.value
+export type RadioGroupItemsProps = ComponentProps<'div'>
+
+export const RadioGroupItems = (props: RadioGroupItemsProps) => {
+  const [, rest] = splitProps(props, ['class'])
+
   return (
-    // `relative`: the hidden radio is absolutely positioned, so focus scrolls to here.
-    <label class="relative flex">
-      <input
-        type="radio"
-        class="peer sr-only"
-        name={group.name}
-        value={props.value}
-        checked={checked()}
-        disabled={props.disabled}
-        onChange={() => {
-          group.select(props.value)
-          // Controlled: a change the owner did not take is undone.
-          for (const radio of document.getElementsByName(group.name))
-            (radio as HTMLInputElement).checked =
-              (radio as HTMLInputElement).value === group.value()
-        }}
-      />
-      <span
-        class={cn(
-          'cursor-pointer peer-focus-visible:outline-2 peer-focus-visible:outline-accent peer-disabled:opacity-50',
-          props.class,
-          checked() ? props.on : props.off,
-        )}
-      >
-        {props.children}
-      </span>
-    </label>
+    <div
+      role="presentation"
+      data-slot="radio-group-items"
+      class={cx('flex gap-3', props.class)}
+      {...rest}
+    />
   )
 }
 
-/** A chip: accent when chosen, outlined otherwise. */
-export function RadioGroupItem(props: {
-  value: string
-  disabled?: boolean
-  class?: string
-  children: JSX.Element
-}) {
+export type RadioGroupItemInputProps<T extends ValidComponent = 'input'> =
+  ComponentProps<typeof RadioGroupPrimitive.ItemInput<T>>
+
+export const RadioGroupItemInput = <T extends ValidComponent = 'input'>(
+  props: RadioGroupItemInputProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupItemInputProps, ['class'])
+
   return (
-    <RadioOption
-      value={props.value}
-      disabled={props.disabled}
-      class={cn(
-        'inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold peer-focus-visible:outline-offset-2',
-        props.class,
-      )}
-      on="border-accent bg-accent text-on-accent"
-      off="border-ink/25"
+    <RadioGroupPrimitive.ItemInput
+      data-slot="radio-group-item-input"
+      class={cx('peer/radio-group', props.class)}
+      {...rest}
+    />
+  )
+}
+
+export type RadioGroupItemProps<T extends ValidComponent = 'div'> =
+  ComponentProps<typeof RadioGroupPrimitive.Item<T>>
+
+export const RadioGroupItem = <T extends ValidComponent = 'div'>(
+  props: RadioGroupItemProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupItemProps, [
+    'class',
+    'children',
+  ])
+
+  return (
+    <RadioGroupPrimitive.Item
+      data-slot="radio-group-item"
+      class={cx('flex items-center gap-3', props.class)}
+      {...rest}
     >
       {props.children}
-    </RadioOption>
+    </RadioGroupPrimitive.Item>
+  )
+}
+
+export type RadioGroupItemControlProps<T extends ValidComponent = 'div'> =
+  ComponentProps<typeof RadioGroupPrimitive.ItemControl<T>>
+
+export const RadioGroupItemControl = <T extends ValidComponent = 'div'>(
+  props: RadioGroupItemControlProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupItemControlProps, ['class'])
+
+  return (
+    <RadioGroupPrimitive.ItemControl
+      data-slot="radio-group-item-control"
+      class={cx(
+        'border-input dark:bg-input/30 flex size-4 items-center justify-center rounded-full border shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        'data-[invalid]:ring-destructive/20 dark:data-[invalid]:ring-destructive/40 data-[invalid]:border-destructive',
+        'peer-focus-visible/radio-group:ring-ring/50 peer-focus-visible/radio-group:border-ring peer-focus-visible/radio-group:ring-[3px]',
+        props.class,
+      )}
+      {...rest}
+    />
+  )
+}
+
+export type RadioGroupItemIndicatorProps<T extends ValidComponent = 'div'> =
+  VoidProps<ComponentProps<typeof RadioGroupPrimitive.ItemIndicator<T>>>
+
+export const RadioGroupItemIndicator = <T extends ValidComponent = 'div'>(
+  props: RadioGroupItemIndicatorProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupItemIndicatorProps, ['class'])
+
+  return (
+    <RadioGroupPrimitive.ItemIndicator
+      forceMount
+      data-slot="radio-group-item-indicator"
+      class={cx('data-[checked]:bg-primary size-2 rounded-full', props.class)}
+      {...rest}
+    />
+  )
+}
+
+export type RadioGroupLabelProps<T extends ValidComponent = 'span'> =
+  ComponentProps<typeof RadioGroupPrimitive.Label<T>>
+
+export const RadioGroupLabel = <T extends ValidComponent = 'span'>(
+  props: RadioGroupLabelProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupLabelProps, ['class'])
+
+  return (
+    <RadioGroupPrimitive.Label
+      forceMount
+      data-slot="radio-group-label"
+      class={cx('text-sm font-medium select-none', props.class)}
+      {...rest}
+    />
+  )
+}
+
+export type RadioGroupItemLabelProps<T extends ValidComponent = 'span'> =
+  ComponentProps<typeof RadioGroupPrimitive.ItemLabel<T>>
+
+export const RadioGroupItemLabel = <T extends ValidComponent = 'span'>(
+  props: RadioGroupItemLabelProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupItemLabelProps, ['class'])
+
+  return (
+    <RadioGroupPrimitive.ItemLabel
+      forceMount
+      data-slot="radio-group-item-label"
+      class={cx(
+        'data-invalid:text-destructive text-sm font-medium select-none',
+        props.class,
+      )}
+      {...rest}
+    />
+  )
+}
+
+export type RadioGroupDescriptionProps<T extends ValidComponent = 'span'> =
+  ComponentProps<typeof RadioGroupPrimitive.Label<T>>
+
+export const RadioGroupDescription = <T extends ValidComponent = 'span'>(
+  props: RadioGroupDescriptionProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupDescriptionProps, ['class'])
+
+  return (
+    <RadioGroupPrimitive.Description
+      forceMount
+      data-slot="radio-group-description"
+      class={cx('text-muted-foreground text-sm', props.class)}
+      {...rest}
+    />
+  )
+}
+
+export type RadioGroupErrorMessageProps<T extends ValidComponent = 'span'> =
+  ComponentProps<typeof RadioGroupPrimitive.ErrorMessage<T>>
+
+export const RadioGroupErrorMessage = <T extends ValidComponent = 'span'>(
+  props: RadioGroupErrorMessageProps<T>,
+) => {
+  const [, rest] = splitProps(props as RadioGroupErrorMessageProps, ['class'])
+
+  return (
+    <RadioGroupPrimitive.ErrorMessage
+      forceMount
+      data-slot="radio-group-error-message"
+      class={cx('text-destructive text-sm', props.class)}
+      {...rest}
+    />
   )
 }

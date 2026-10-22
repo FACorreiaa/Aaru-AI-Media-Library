@@ -11,7 +11,7 @@ import {
 import { REACTIONS, loadActivity, reactTo } from '../lib/social/server'
 import type { ActivityItem, ActivityPage, Reaction } from '../lib/social/server'
 import { Poster } from './Poster'
-import { Button } from './ui/button'
+import { Button } from '~/components/ui'
 
 // SOC-003 (minimal): what you and your friends watched and finished in the last two weeks,
 // newest first. Only dated ticks and finishes; imports never show. A room you visit, not a feed
@@ -159,8 +159,9 @@ function Reactions(props: {
     <div class="mt-1 flex flex-wrap items-center gap-1.5">
       <For each={props.item.reactions ?? []}>
         {(reaction) => (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="bare"
             disabled={props.own}
             aria-pressed={props.item.myReaction === reaction.emoji}
             aria-label={`${reaction.emoji} ${reaction.count}`}
@@ -173,31 +174,33 @@ function Reactions(props: {
           >
             <span aria-hidden="true">{reaction.emoji}</span>
             {reaction.count}
-          </button>
+          </Button>
         )}
       </For>
       <Show when={!props.own}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="bare"
           aria-expanded={props.picking}
           aria-label="React"
           class="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-surface px-2 text-xs text-muted hover:text-ink"
           onClick={() => props.onPick()}
         >
           +
-        </button>
+        </Button>
         <Show when={props.picking}>
           <span role="group" aria-label="Reactions" class="flex gap-1">
             <For each={REACTIONS}>
               {(emoji) => (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="bare"
                   aria-label={emoji}
                   class="grid size-8 place-items-center rounded-full text-base hover:bg-surface motion-safe:transition-transform motion-safe:active:scale-90"
                   onClick={() => props.onReact(emoji)}
                 >
                   {emoji}
-                </button>
+                </Button>
               )}
             </For>
           </span>

@@ -25,8 +25,7 @@ import type {
 import { prefersReducedMotion } from '../lib/reduced-motion'
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
-import { Badge, badgeVariants } from './ui/badge'
-import { Button } from './ui/button'
+import { Badge, badgeVariants, Button } from '~/components/ui'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
 // the arrow keys scroll it, and on desktop it has its own back / forward buttons.
@@ -46,8 +45,6 @@ export function Row(props: {
       left: direction * scroller.clientWidth * 0.85,
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
     })
-  const arrow =
-    'grid h-8 w-8 place-items-center rounded-full border border-line text-ink hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent'
   return (
     <section class="mt-10" aria-labelledby={id}>
       <div class="flex items-end justify-between gap-4">
@@ -62,22 +59,22 @@ export function Row(props: {
         <div class="flex items-center gap-3">
           {props.action}
           <div class="hidden gap-1 md:flex">
-            <button
-              type="button"
-              class={arrow}
+            <Button
+              variant="quiet"
+              size="icon-sm"
               aria-label={`Scroll ${props.title} back`}
               onClick={() => scroll(-1)}
             >
               <Chevron flip />
-            </button>
-            <button
-              type="button"
-              class={arrow}
+            </Button>
+            <Button
+              variant="quiet"
+              size="icon-sm"
               aria-label={`Scroll ${props.title} forward`}
               onClick={() => scroll(1)}
             >
               <Chevron />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -144,7 +141,7 @@ export function Art(props: { sources: (string | undefined)[]; title: string }) {
 }
 
 /** Text on art: a dark scrim chip, legible on any image in either theme. */
-const chip = badgeVariants({ tone: 'scrim' })
+const chip = badgeVariants({ variant: 'scrim' })
 
 /** Continue watching: the next episode of an in-progress show, with a check to mark it. The
  * card hands back its element, so a show that leaves the row can play its exit first. */
@@ -170,7 +167,7 @@ export function ContinueCard(props: {
           title={e().title.title}
         />
         <Show when={e().isFinale}>
-          <Badge tone="ink" class="absolute top-2 right-2">
+          <Badge variant="ink" class="absolute top-2 right-2">
             Finale
           </Badge>
         </Show>
@@ -194,12 +191,13 @@ export function ContinueCard(props: {
           </Link>
           <p class="truncate text-sm text-muted">{nextLine(e())}</p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="quiet"
+          size="bare"
           disabled={props.busy}
           onClick={() => props.onWatched(e(), card)}
           aria-label={`Mark ${e().title.title} ${shortCode(e().next.season, e().next.number)} watched`}
-          class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-accent transition-colors hover:bg-accent hover:text-on-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50"
+          class="size-9 shrink-0 font-normal text-accent hover:bg-accent hover:text-on-accent"
         >
           <svg viewBox="0 0 20 20" class="h-4 w-4" aria-hidden="true">
             <path
@@ -211,13 +209,14 @@ export function ContinueCard(props: {
               stroke-linejoin="round"
             />
           </svg>
-        </button>
+        </Button>
       </div>
     </article>
   )
 }
 
-/** Start watching: a wishlist title and how long it takes; an album, who made it. */
+/** Start watching: a wishlist film, show or anime and how long it takes. Albums are not in it
+ *  (UX-052): in progress they have Listening. */
 export function StartCard(props: { entry: StartEntry }) {
   const e = () => props.entry
   const kind = () => kindOf(e().title.type, e().title.isAnime)
@@ -322,7 +321,7 @@ export function AiringCard(props: {
         <Show when={kind()}>
           {(text) => (
             <Badge
-              tone={e().kind === 'finale' ? 'ink' : 'accent'}
+              variant={e().kind === 'finale' ? 'ink' : 'default'}
               class="absolute top-2 right-2"
             >
               {text()}
@@ -343,7 +342,7 @@ export function AiringCard(props: {
   )
 }
 
-/** DISC-001: a poster from a public row, on Home and on Discover. On the shelf it links to
+/** DISC-001: a poster from a public row, on Home and on Discover. In the library it links to
  * the item; otherwise it carries search's add control and a list button. With `today` (the
  * viewer's local "YYYY-MM-DD"), the art wears the release-date badge. */
 export function DiscoverCard(props: {
@@ -415,7 +414,7 @@ export function DiscoverCard(props: {
       <Show
         when={!h().libraryItemId}
         fallback={
-          <p class="mt-2 text-xs font-medium text-accent">On your shelf</p>
+          <p class="mt-2 text-xs font-medium text-accent">In your library</p>
         }
       >
         <div class="mt-2 flex flex-wrap items-center gap-2">

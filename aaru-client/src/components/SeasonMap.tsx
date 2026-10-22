@@ -1,9 +1,9 @@
 import { For } from 'solid-js'
 import { cellState, episodeKey } from '../lib/title/model'
 import type { CellState, Episode, Season } from '../lib/title/model'
-import { cn } from '../lib/cn'
+import { cn } from '~/lib/utils'
 import { pop } from '../lib/motion'
-import { cardClass } from './ui/card'
+import { Button, cardClass } from '~/components/ui'
 
 const CELL: Record<CellState, string> = {
   watched: 'bg-accent text-on-accent',
@@ -49,9 +49,10 @@ export function SeasonMap(props: {
                     cellState(episode, props.watched, props.next)
                   const key = episodeKey(episode.season, episode.number)
                   return (
-                    <button
-                      type="button"
-                      class={`h-7 min-w-7 rounded-[8px] px-1 text-[11px] font-semibold tabular-nums transition-colors ${CELL[state()]}`}
+                    <Button
+                      variant="ghost"
+                      size="bare"
+                      class={`h-7 min-w-7 rounded-[8px] px-1 text-[11px] font-semibold tabular-nums transition-colors hover:text-current disabled:opacity-100 motion-safe:active:scale-100 ${CELL[state()]}`}
                       aria-pressed={state() === 'watched'}
                       aria-label={`${season.number === 0 ? 'Special' : `Season ${season.number}`}, episode ${episode.number}${episode.name ? `, ${episode.name}` : ''}, ${STATE_LABEL[state()]}`}
                       title={episode.name ?? `Episode ${episode.number}`}
@@ -66,7 +67,7 @@ export function SeasonMap(props: {
                       }}
                     >
                       {episode.number}
-                    </button>
+                    </Button>
                   )
                 }}
               </For>

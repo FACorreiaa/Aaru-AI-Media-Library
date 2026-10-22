@@ -5,10 +5,10 @@ import { TOP_BY } from '../../lib/music/listening-model'
 import type { TopBy } from '../../lib/music/listening-model'
 import { topListens } from '../../lib/music/listening'
 import type { Stats } from '../../lib/recap/model'
-import { cn } from '../../lib/cn'
-import { cardClass } from '../ui/card'
-import { SegmentedControl, SegmentedControlItem } from '../ui/segmented-control'
+import { cn } from '~/lib/utils'
+import { cardClass } from '~/components/ui'
 import { TopList } from './TopList'
+import { Segmented } from '../Segmented'
 
 // MUS-008: Insights' Music section. Its own tiles, apart from the library's: listening never
 // adds to them. The top five load for the period Insights shows.
@@ -60,24 +60,14 @@ export function MusicInsights(props: {
         </For>
       </dl>
 
-      <SegmentedControl
-        class="mt-6 flex w-fit overflow-hidden rounded-full border border-line text-sm"
-        aria-label="Top list"
+      <Segmented
+        label="Top list"
+        class="mt-6"
+        itemClass="px-4 py-1.5 text-sm"
+        options={TOP_BY.map((o) => ({ value: o.by, label: o.label }))}
         value={by()}
-        onChange={(next) => setBy(next as TopBy)}
-      >
-        <For each={TOP_BY}>
-          {(option) => (
-            <SegmentedControlItem
-              value={option.by}
-              variant="surface"
-              class="px-4 py-1.5"
-            >
-              {option.label}
-            </SegmentedControlItem>
-          )}
-        </For>
-      </SegmentedControl>
+        onChange={setBy}
+      />
       <div class="mt-2 min-h-16" aria-busy={top.loading}>
         <Show
           when={top()}
@@ -107,7 +97,7 @@ export function MusicInsights(props: {
         to="/app/music"
         class="mt-2 inline-block text-sm font-semibold text-accent hover:underline"
       >
-        All listening ›
+        All listens ›
       </Link>
     </section>
   )

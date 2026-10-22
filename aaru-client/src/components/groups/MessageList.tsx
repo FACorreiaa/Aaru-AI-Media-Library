@@ -11,6 +11,7 @@ import {
   onMount,
 } from 'solid-js'
 import type { JSX } from 'solid-js'
+import { Button, TextField, TextFieldTextArea } from '~/components/ui'
 import {
   buildTimeline,
   dayLabel,
@@ -70,7 +71,7 @@ import { Monogram, useGroup, useShell, useVisiblePoll } from './shell'
 /**
  * MessageList (GRP-005): one channel's conversation and its composer. Flat rows grouped into
  * runs, day dividers, a "New" line where you stopped reading, pinned to the bottom with "Jump
- * to present". New messages, edits, deletes and typing arrive over the realtime socket
+ * to present". New group messages, edits, deletes and typing arrive over the realtime socket
  * (GRP-006); it polls slowly only while the socket is down.
  */
 export function MessageList(props: {
@@ -290,7 +291,9 @@ export function MessageList(props: {
       })
     } catch (error) {
       setProblem(
-        error instanceof Error ? error.message : 'Older messages did not load.',
+        error instanceof Error
+          ? error.message
+          : "Earlier group messages didn't load.",
       )
     } finally {
       setLoadingOlder(false)
@@ -432,9 +435,7 @@ export function MessageList(props: {
   }
 
   const unreadSummary = () =>
-    missed() > 0
-      ? `${missed()} new ${missed() === 1 ? 'message' : 'messages'}`
-      : 'Jump to present'
+    missed() > 0 ? `${missed()} new` : 'Jump to present'
 
   return (
     <section
@@ -456,8 +457,21 @@ export function MessageList(props: {
           aria-live="polite"
           aria-relevant="additions"
         >
-          <Show when={loadingOlder()}>
-            <p class="py-2 text-center text-xs text-muted">Loading earlier…</p>
+          <Show when={hasOlder()}>
+            <div class="flex justify-center py-2">
+              <Show
+                when={!loadingOlder()}
+                fallback={<p class="text-xs text-muted">Loading earlier…</p>}
+              >
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => void loadOlder()}
+                >
+                  Load earlier
+                </Button>
+              </Show>
+            </div>
           </Show>
           <Show when={!hasOlder()}>
             <div class="px-4 pt-6 pb-4 md:px-6">
@@ -474,13 +488,13 @@ export function MessageList(props: {
                 <Show when={props.channel.topic}> {props.channel.topic}</Show>
               </p>
               <Show when={scope.detail().members.length < 2}>
-                <button
-                  type="button"
+                <Button
+                  size="sm"
                   onClick={() => scope.openInvite()}
-                  class="mt-4 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-on-accent"
+                  class="mt-4"
                 >
                   Invite friends
-                </button>
+                </Button>
               </Show>
             </div>
           </Show>
@@ -505,7 +519,7 @@ export function MessageList(props: {
                   <div
                     data-new-line
                     role="separator"
-                    aria-label="New messages"
+                    aria-label="New"
                     class="relative my-2 flex items-center px-4 md:px-6"
                   >
                     <span class="h-px flex-1 bg-accent" />
@@ -592,16 +606,15 @@ export function MessageList(props: {
                             }
                           >
                             <Match when={m().deleted}>
-                              <p class="text-sm text-muted italic">
-                                Message deleted
-                              </p>
+                              <p class="text-sm text-muted italic">Deleted</p>
                             </Match>
                             <Match when={hidden()}>
                               <p class="text-sm text-muted">
-                                Message from someone you blocked ·{' '}
-                                <button
-                                  type="button"
-                                  class="font-medium text-accent hover:underline"
+                                Hidden: from someone you blocked ·{' '}
+                                <Button
+                                  variant="link"
+                                  size="bare"
+                                  class="font-medium text-accent"
                                   onClick={() =>
                                     setRevealed(
                                       new Set([...revealed(), m().id]),
@@ -609,7 +622,7 @@ export function MessageList(props: {
                                   }
                                 >
                                   Show
-                                </button>
+                                </Button>
                               </p>
                             </Match>
                             <Match when={m().veiled && !unveiled().has(m().id)}>
@@ -630,22 +643,24 @@ export function MessageList(props: {
                           <Show when={confirmDelete() === m().id}>
                             <p class="mt-1 flex items-center gap-3 text-sm">
                               <span class="text-muted">
-                                Delete this message?
+                                Delete it for everyone?
                               </span>
-                              <button
-                                type="button"
-                                class="font-semibold text-danger"
+                              <Button
+                                variant="ghost"
+                                size="bare"
+                                class="font-semibold text-danger hover:text-danger"
                                 onClick={() => void remove(m())}
                               >
                                 Delete
-                              </button>
-                              <button
-                                type="button"
-                                class="text-muted hover:text-ink"
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="bare"
+                                class="font-normal"
                                 onClick={() => setConfirmDelete(null)}
                               >
                                 Cancel
-                              </button>
+                              </Button>
                             </p>
                           </Show>
                         </div>
@@ -658,21 +673,23 @@ export function MessageList(props: {
                         >
                           <div class="absolute -top-3 right-4 flex overflow-hidden rounded-lg border border-line bg-paper text-xs shadow-sm opacity-0 group-hover/msg:opacity-100 focus-within:opacity-100 md:right-6 [@media(hover:none)]:static [@media(hover:none)]:self-start [@media(hover:none)]:opacity-100">
                             <Show when={mine()}>
-                              <button
-                                type="button"
-                                class="px-2.5 py-1 hover:bg-surface"
+                              <Button
+                                variant="soft"
+                                size="bare"
+                                class="rounded-none px-2.5 py-1 font-normal"
                                 onClick={() => setEditing(m().id)}
                               >
                                 Edit
-                              </button>
+                              </Button>
                             </Show>
-                            <button
-                              type="button"
-                              class="px-2.5 py-1 text-danger hover:bg-surface"
+                            <Button
+                              variant="soft"
+                              size="bare"
+                              class="rounded-none px-2.5 py-1 font-normal text-danger"
                               onClick={() => setConfirmDelete(m().id)}
                             >
                               Delete
-                            </button>
+                            </Button>
                           </div>
                         </Show>
                       </article>
@@ -718,19 +735,21 @@ export function MessageList(props: {
                           <Show when={p().state === 'failed'}>
                             <p class="mt-0.5 flex items-center gap-3 text-xs">
                               <span class="text-danger">Not sent.</span>
-                              <button
-                                type="button"
-                                class="font-semibold text-accent"
+                              <Button
+                                variant="ghost"
+                                size="bare"
+                                class="font-semibold text-accent hover:text-accent"
                                 onClick={() => {
                                   setPending(retryPending(pending(), p().nonce))
                                   void deliver(p())
                                 }}
                               >
                                 Retry
-                              </button>
-                              <button
-                                type="button"
-                                class="text-muted hover:text-ink"
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="bare"
+                                class="font-normal"
                                 onClick={() =>
                                   setPending(
                                     settlePending(pending(), p().nonce),
@@ -738,7 +757,7 @@ export function MessageList(props: {
                                 }
                               >
                                 Discard
-                              </button>
+                              </Button>
                             </p>
                           </Show>
                         </div>
@@ -755,13 +774,14 @@ export function MessageList(props: {
           <div class="h-2" />
         </div>
         <Show when={!atBottom()}>
-          <button
-            type="button"
+          <Button
+            variant="ink"
+            size="sm"
             onClick={() => scrollToBottom(true)}
-            class="group-pop absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-paper shadow-lg"
+            class="absolute bottom-3 left-1/2 -translate-x-1/2 font-medium shadow-lg animate-in duration-200 fade-in-0 zoom-in-95 slide-in-from-bottom-2"
           >
             {unreadSummary()} ↓
-          </button>
+          </Button>
         </Show>
       </div>
 
@@ -806,36 +826,37 @@ function EditBox(props: {
   })
   return (
     <div class="mt-1">
-      <textarea
-        ref={box}
-        value={text()}
-        maxLength={4000}
-        aria-label="Edit message"
-        onInput={(e) => {
-          setText(e.currentTarget.value)
-          e.currentTarget.style.height = 'auto'
-          e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 220)}px`
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault()
-            props.onCancel()
-          } else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-            e.preventDefault()
-            props.onSave(text())
-          }
-        }}
-        class="w-full resize-none rounded-xl border-0 bg-surface px-3 py-2 text-[15px] leading-6 focus:ring-2 focus:ring-accent"
-      />
+      <TextField value={text()} onChange={setText}>
+        <TextFieldTextArea
+          ref={box}
+          maxLength={4000}
+          aria-label="Edit"
+          onInput={(e) => {
+            e.currentTarget.style.height = 'auto'
+            e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 220)}px`
+          }}
+          onKeyDown={(e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+              e.preventDefault()
+              props.onCancel()
+            } else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+              e.preventDefault()
+              props.onSave(text())
+            }
+          }}
+          class="min-h-0 w-full resize-none rounded-xl border-0 bg-surface px-3 py-2 text-[15px] leading-6 md:text-[15px]"
+        />
+      </TextField>
       <p class="text-xs text-muted">
         Enter to save · Esc to cancel ·{' '}
-        <button
-          type="button"
-          class="font-medium text-accent"
+        <Button
+          variant="link"
+          size="bare"
+          class="text-xs font-medium text-accent"
           onClick={() => props.onSave(text())}
         >
           Save
-        </button>
+        </Button>
       </p>
     </div>
   )

@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/solid-router'
 import { For } from 'solid-js'
 import type { WeekStrip } from '../lib/home/model'
-import { cn } from '../lib/cn'
-import { cardClass } from './ui/card'
+import { cardClass } from '~/components/ui'
+import { cn } from '~/lib/utils'
 
 // GAM-006d on the Field: the last 7 days in numbers, across the main column under Tonight
 // (owner, 2026-10-21: "should be horizontal", not a small block in the side column). Four

@@ -1,4 +1,4 @@
-import { For, Index, Show, createEffect, createSignal, on } from 'solid-js'
+import { Index, Show, createEffect, createSignal, on } from 'solid-js'
 import {
   SEASON_KINDS,
   canShift,
@@ -15,9 +15,8 @@ import { hitKey } from '../lib/library/model'
 import { play, slideIn } from '../lib/motion'
 import { createDiscoverAdder } from './DiscoverRows'
 import { DiscoverCard } from './HomeRows'
-import { Alert } from './ui/alert'
-import { Button } from './ui/button'
-import { SegmentedControl, SegmentedControlItem } from './ui/segmented-control'
+import { Alert, Button } from '~/components/ui'
+import { Segmented } from './Segmented'
 
 const SKELETON_CARDS = 12
 
@@ -158,15 +157,16 @@ export function SeasonBrowser(props: {
   return (
     <section class="mt-8" aria-label="Seasons">
       <div class="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          class={arrow}
+        <Button
+          variant="soft"
+          size="bare"
+          class={`${arrow} font-normal`}
           aria-label={`Previous season, ${seasonLabel(step(-1))}`}
           disabled={!canShift(props.season, -1, props.today)}
           onClick={() => props.onChange(props.kind, step(-1))}
         >
           ‹
-        </button>
+        </Button>
         <div ref={heading} class="min-w-0 text-center">
           <h2
             class="font-display text-5xl font-medium tracking-tight tabular-nums md:text-6xl"
@@ -176,41 +176,36 @@ export function SeasonBrowser(props: {
           </h2>
           <p class="mt-2 text-sm text-muted">{meta()}</p>
         </div>
-        <button
-          type="button"
-          class={arrow}
+        <Button
+          variant="soft"
+          size="bare"
+          class={`${arrow} font-normal`}
           aria-label={`Next season, ${seasonLabel(step(1))}`}
           disabled={!canShift(props.season, 1, props.today)}
           onClick={() => props.onChange(props.kind, step(1))}
         >
           ›
-        </button>
+        </Button>
       </div>
 
       <div class="mt-6 flex justify-center overflow-x-auto">
-        <SegmentedControl
-          class="flex shrink-0 gap-1.5 text-sm"
-          aria-label="What to list"
+        <Segmented
+          label="What to list"
+          variant="chip"
+          class="shrink-0 flex-nowrap"
+          itemClass="px-4 py-1.5 text-sm whitespace-nowrap"
+          options={SEASON_KINDS.map((o) => ({ value: o.kind, label: o.label }))}
           value={props.kind}
-          onChange={(kind) => props.onChange(kind as SeasonKind, props.season)}
-        >
-          <For each={SEASON_KINDS}>
-            {(option) => (
-              <SegmentedControlItem
-                value={option.kind}
-                variant="chip"
-                class="px-4 py-1.5 whitespace-nowrap"
-              >
-                {option.label}
-              </SegmentedControlItem>
-            )}
-          </For>
-        </SegmentedControl>
+          onChange={(kind) => props.onChange(kind, props.season)}
+        />
       </div>
 
       <Show when={failed()}>
         {(message) => (
-          <Alert class="mt-6 flex items-center justify-between gap-3">
+          <Alert
+            variant="destructive"
+            class="mt-6 flex items-center justify-between gap-3"
+          >
             <span>{message()}</span>
             <Button variant="quiet" size="sm" onClick={retry}>
               Try again
@@ -221,8 +216,8 @@ export function SeasonBrowser(props: {
       <Show when={first()?.unavailable}>
         <div class="mt-8 flex flex-col items-center gap-3 rounded-panel bg-surface px-4 py-6 text-center text-sm text-muted">
           <p>
-            {props.kind === 'anime' ? 'AniList' : 'TMDB'} isn’t answering right
-            now. Try this season again in a few minutes.
+            This season’s list isn’t answering right now. Try again in a few
+            minutes.
           </p>
           <Button variant="quiet" size="sm" onClick={retry}>
             Try again

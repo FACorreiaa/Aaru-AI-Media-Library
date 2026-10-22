@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal, onMount } from 'solid-js'
+import { Button } from '~/components/ui'
 import { hitRef } from '../../lib/groups/kinds'
 import {
   addChannelItem,
@@ -18,8 +19,10 @@ import { TitlePicker } from './TitlePicker'
 import { useGroup } from './shell'
 
 /**
- * A shelf channel (GRP-008): titles the whole group adds to and takes off. Each card says who
- * added it and whether it is in my library; "Add to my library" is my own journaled tap.
+ * A `shelf` channel (GRP-008), called a List in the UI (UX-041): titles the whole group adds to
+ * and takes off. Each card says who added it and whether it is in my library; "Add to my
+ * library" is my own journaled tap. The search opens inline, under its button, rather than in a
+ * popover: it holds a field and a page of results.
  */
 export function ShelfView(props: {
   channel: Channel
@@ -41,7 +44,7 @@ export function ShelfView(props: {
       setItems(await listChannelItems({ data: ref() }))
     } catch (error) {
       setProblem(
-        error instanceof Error ? error.message : 'The shelf did not load.',
+        error instanceof Error ? error.message : "The list didn't load.",
       )
       if (!items()) setItems([])
     }
@@ -116,20 +119,19 @@ export function ShelfView(props: {
             </h2>
             <p class="mt-0.5 text-sm text-muted">
               {props.channel.topic ??
-                'A shelf the whole group adds to. Anyone here can add or remove a title.'}
+                'A list the whole group adds to. Anyone here can add or remove a title.'}
             </p>
           </div>
-          <button
-            type="button"
+          <Button
+            size="sm"
             aria-expanded={adding()}
             onClick={() => setAdding(!adding())}
-            class="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-on-accent"
           >
             {adding() ? 'Done' : 'Add a title'}
-          </button>
+          </Button>
         </div>
         <Show when={adding()}>
-          <div class="group-pop mt-4 max-w-xl rounded-2xl border border-line bg-paper p-4 shadow-sm">
+          <div class="mt-4 max-w-xl rounded-2xl border border-line bg-paper p-4 shadow-sm animate-in duration-150 fade-in-0 slide-in-from-top-1">
             <TitlePicker onPick={add} busy={busy().has('add')} />
           </div>
         </Show>
@@ -142,14 +144,14 @@ export function ShelfView(props: {
         </Show>
         <Show
           when={items()}
-          fallback={<p class="mt-8 text-sm text-muted">Loading the shelf…</p>}
+          fallback={<p class="mt-8 text-sm text-muted">Loading the list…</p>}
         >
           {(list) => (
             <Show
               when={list().length > 0}
               fallback={
                 <p class="mt-10 text-center text-muted">
-                  Nothing here yet. Add the first title.
+                  Nothing on this list yet. Add the first title.
                 </p>
               }
             >
@@ -184,14 +186,14 @@ export function ShelfView(props: {
                         <Show
                           when={item.myStatus}
                           fallback={
-                            <button
-                              type="button"
+                            <Button
+                              variant="outline"
+                              size="xs"
                               disabled={busy().has(item.title.id)}
                               onClick={() => addToMine(item)}
-                              class="rounded-full border border-ink/25 px-3 py-1 text-xs font-semibold hover:bg-surface disabled:opacity-50"
                             >
                               Add to my library
-                            </button>
+                            </Button>
                           }
                         >
                           {(status) => (
@@ -207,12 +209,13 @@ export function ShelfView(props: {
                       <Show
                         when={removing() === item.title.id}
                         fallback={
-                          <button
-                            type="button"
-                            aria-label={`Remove ${item.title.title} from the shelf`}
-                            title="Remove from the shelf"
+                          <Button
+                            variant="ghost"
+                            size="bare"
+                            aria-label={`Remove ${item.title.title} from list`}
+                            title="Remove from list"
                             onClick={() => setRemoving(item.title.id)}
-                            class="absolute right-1.5 grid size-7 place-items-center rounded-full bg-paper/90 text-muted opacity-0 shadow-sm group-hover/item:opacity-100 hover:text-danger focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                            class="absolute right-1.5 size-7 bg-paper/90 font-normal opacity-0 shadow-sm group-hover/item:opacity-100 hover:text-danger focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                             classList={{
                               'top-1.5': item.title.type !== 'album',
                               'top-[calc(50cqw+0.375rem)]':
@@ -220,24 +223,26 @@ export function ShelfView(props: {
                             }}
                           >
                             ×
-                          </button>
+                          </Button>
                         }
                       >
                         <div class="absolute inset-x-1.5 top-1.5 flex items-center justify-between gap-2 rounded-xl bg-paper/95 px-3 py-2 text-xs shadow">
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="bare"
                             onClick={() => remove(item)}
-                            class="font-semibold text-danger"
+                            class="text-xs font-semibold text-danger hover:text-danger"
                           >
-                            Remove
-                          </button>
-                          <button
-                            type="button"
+                            Remove from list
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="bare"
                             onClick={() => setRemoving(null)}
-                            class="text-muted"
+                            class="text-xs font-normal"
                           >
                             Keep
-                          </button>
+                          </Button>
                         </div>
                       </Show>
                     </li>

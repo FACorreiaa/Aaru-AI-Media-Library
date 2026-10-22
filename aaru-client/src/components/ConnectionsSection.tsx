@@ -2,13 +2,26 @@ import { For, Show, createMemo, createResource, createSignal } from 'solid-js'
 import { AGENT_KINDS, accessLabel, kindLabel } from '../lib/agents/model'
 import type { AgentKind } from '../lib/agents/model'
 import { lastUsedLabel } from '../lib/stremio/model'
-import { cn } from '../lib/cn'
-import { AlertDialog } from './ui/alert-dialog'
-import { Button, buttonVariants } from './ui/button'
+import {
+  Button,
+  buttonVariants,
+  Checkbox,
+  CheckboxControl,
+  CheckboxDescription,
+  CheckboxInput,
+  CheckboxLabel,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+  RadioGroup,
+  RadioGroupItem,
+  RadioGroupItemInput,
+  RadioGroupItemLabel,
+  toast,
+} from '~/components/ui'
+import { ConfirmDialog } from './ConfirmDialog'
+import { SettingsSection } from './settings/SettingsSection'
 import { EXTENSION_STORES } from '../lib/agents/extension'
-import { RadioGroup, RadioGroupItem } from './ui/radio-group'
-import { showToast } from './ui/toast'
-import { cardClass } from './ui/card'
 import {
   createConnection,
   getSetup,
@@ -82,7 +95,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
       if (fresh()?.token.id === token.id) setFresh(null)
       setConnections(connections().filter((c) => c.id !== token.id))
     } catch (error) {
-      fail(error, 'That connection was not revoked.')
+      fail(error, 'That connection was not disconnected.')
     } finally {
       setRevoking(false)
       setPending(null)
@@ -90,19 +103,15 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
   }
 
   return (
-    <section class={cn(cardClass, 'mt-10 p-5')}>
-      <h2 class="font-display text-xl font-medium">Connections</h2>
-      <p class="mt-2 max-w-[60ch] text-sm text-muted">
-        Let an AI agent read your library over MCP: what you are watching, what
-        airs this week, what to add. If you allow changes, it can change one
-        item at a time, and every change shows in your history with an undo. The
-        browser extension marks what you finish on streaming sites.
-      </p>
-
+    <SettingsSection
+      id="agents"
+      title="Agents"
+      description="Let an AI agent read your library over MCP: what you are watching, what airs this week, what to add. If you allow changes, it can change one item at a time, and every change shows in your history with an undo. The browser extension marks what you finish on streaming sites."
+    >
       <Show
         when={fresh()}
         fallback={
-          <div class="mt-4 flex flex-col gap-4">
+          <div class="flex flex-col gap-4">
             <RadioGroup
               aria-label="Agent"
               class="flex flex-wrap gap-2"
@@ -112,7 +121,10 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
               <For each={CHOICES}>
                 {(option) => (
                   <RadioGroupItem value={option}>
-                    {kindLabel(option)}
+                    <RadioGroupItemInput />
+                    <RadioGroupItemLabel class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-ink/25 px-4 text-sm font-semibold peer-focus-visible/radio-group:outline-2 peer-focus-visible/radio-group:outline-offset-2 peer-focus-visible/radio-group:outline-accent data-[checked]:border-accent data-[checked]:bg-accent data-[checked]:text-on-accent">
+                      {kindLabel(option)}
+                    </RadioGroupItemLabel>
                   </RadioGroupItem>
                 )}
               </For>
@@ -125,50 +137,55 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
             </Show>
 
             <Show when={kind() && preview()?.auth === 'token'}>
-              <label class="flex flex-col gap-1 text-sm">
-                <span class="font-medium">Name</span>
-                <input
+              <TextField
+                class="max-w-sm gap-1.5"
+                value={name()}
+                onChange={setName}
+              >
+                <TextFieldLabel>Name</TextFieldLabel>
+                <TextFieldInput
                   type="text"
                   maxLength={80}
                   placeholder={kindLabel(mcpKind())}
-                  class="min-h-11 max-w-sm rounded-field border border-line bg-paper px-3"
-                  value={name()}
-                  onInput={(e) => setName(e.currentTarget.value)}
                 />
-              </label>
-              <label class="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  class="mt-0.5 accent-accent"
-                  checked={allowWrites()}
-                  onChange={(e) => setAllowWrites(e.currentTarget.checked)}
-                />
-                <span>
-                  Allow changes
-                  <span class="block text-xs text-muted">
+              </TextField>
+              <Checkbox
+                class="flex items-start gap-2.5"
+                checked={allowWrites()}
+                onChange={setAllowWrites}
+              >
+                <CheckboxInput />
+                <CheckboxControl class="mt-0.5" />
+                <span class="flex flex-col gap-1">
+                  <CheckboxLabel class="cursor-pointer font-normal">
+                    Allow changes
+                  </CheckboxLabel>
+                  <CheckboxDescription class="text-xs text-muted">
                     One item at a time, as a tap would. It can never remove
                     anything or change many items at once.
-                  </span>
+                  </CheckboxDescription>
                 </span>
-              </label>
-              <label class="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  class="mt-0.5"
-                  checked={allowImports()}
-                  onChange={(e) => setAllowImports(e.currentTarget.checked)}
-                />
-                <span>
-                  Allow imports
-                  <span class="block text-xs text-muted">
+              </Checkbox>
+              <Checkbox
+                class="flex items-start gap-2.5"
+                checked={allowImports()}
+                onChange={setAllowImports}
+              >
+                <CheckboxInput />
+                <CheckboxControl class="mt-0.5" />
+                <span class="flex flex-col gap-1">
+                  <CheckboxLabel class="cursor-pointer font-normal">
+                    Allow imports
+                  </CheckboxLabel>
+                  <CheckboxDescription class="text-xs text-muted">
                     It can hand Aaru a list (IMDb, Letterboxd, Goodreads,
                     MyAnimeList, any CSV). You review the import here before
                     anything is added.
-                  </span>
+                  </CheckboxDescription>
                 </span>
-              </label>
+              </Checkbox>
               <Button
-                variant="primary"
+                variant="default"
                 class="self-start"
                 disabled={busy()}
                 onClick={() => void create()}
@@ -180,7 +197,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
         }
       >
         {(connection) => (
-          <div class="mt-4 flex flex-col gap-3 rounded-panel border border-line p-4">
+          <div class="flex flex-col gap-3 rounded-panel border border-line p-4">
             <p class="text-sm font-medium">
               Your token is in the steps below. Anyone with it can read your
               library, so treat it like a password; it is shown only now.
@@ -188,13 +205,14 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
             <Show when={connection().setup}>
               {(setup) => <SetupSteps setup={setup()} />}
             </Show>
-            <button
-              type="button"
-              class="self-start text-sm font-semibold text-accent hover:underline"
+            <Button
+              variant="link"
+              size="bare"
+              class="self-start text-sm font-semibold text-accent"
               onClick={() => setFresh(null)}
             >
               Done
-            </button>
+            </Button>
           </div>
         )}
       </Show>
@@ -208,7 +226,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
       </Show>
 
       <Show when={connections().length > 0}>
-        <ul class="mt-4 divide-y divide-line">
+        <ul class="mt-4 divide-y divide-line border-t border-line">
           <For each={connections()}>
             {(token) => (
               <li class="flex items-center justify-between gap-4 py-3">
@@ -225,18 +243,18 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
                   class="shrink-0"
                   onClick={() => setPending(token)}
                 >
-                  Revoke
+                  Disconnect
                 </Button>
               </li>
             )}
           </For>
         </ul>
       </Show>
-      <AlertDialog
+      <ConfirmDialog
         open={pending() !== null}
-        title={`Revoke ${asked()?.name ?? ''}?`}
-        description="Anything using it stops working at once."
-        confirmLabel="Revoke"
+        title={`Disconnect ${asked()?.name ?? ''}?`}
+        description={`${asked()?.name ?? 'It'} can no longer reach your library.`}
+        confirmLabel="Disconnect"
         busy={revoking()}
         onConfirm={() => {
           const token = pending()
@@ -244,7 +262,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
         }}
         onCancel={() => setPending(null)}
       />
-    </section>
+    </SettingsSection>
   )
 }
 
@@ -252,7 +270,7 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
 function ExtensionSteps() {
   return (
     <div class="flex flex-col gap-3">
-      <p class="max-w-[60ch] text-sm">
+      <p class="max-w-prose text-sm">
         Finish an episode or a film on Netflix, Disney+ or Prime Video in your
         browser and it is marked watched here. The extension can’t read your
         library.
@@ -277,7 +295,7 @@ function ExtensionSteps() {
                 href={store.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                class={buttonVariants()}
+                class={buttonVariants({ variant: 'outline' })}
               >
                 {store.label}
               </a>
@@ -318,7 +336,7 @@ function CopyBlock(props: { text: string; wrap?: boolean }) {
       await navigator.clipboard.writeText(props.text)
       setCopied(true)
       // The label change is silent to a screen reader; the toast is announced.
-      showToast('Copied to the clipboard.')
+      toast('Copied to the clipboard.')
       setTimeout(() => setCopied(false), 2000)
     } catch {
       // Clipboard can be blocked; the text stays selectable.
@@ -332,13 +350,14 @@ function CopyBlock(props: { text: string; wrap?: boolean }) {
       >
         {props.text}
       </pre>
-      <button
-        type="button"
-        class="absolute right-2 top-2 rounded-full border border-ink/25 bg-surface px-3 py-1 text-xs font-semibold"
+      <Button
+        variant="outline"
+        size="xs"
+        class="absolute top-2 right-2 bg-surface"
         onClick={() => void copy()}
       >
         {copied() ? 'Copied' : 'Copy'}
-      </button>
+      </Button>
     </div>
   )
 }

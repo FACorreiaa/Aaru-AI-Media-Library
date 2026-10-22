@@ -1,6 +1,9 @@
 import type { components } from '../api/schema'
 import { statusLabel } from '../library/model'
 import type { MediaKind } from '../library/model'
+import { episodeCode } from '../title/model'
+
+export { episodeCode }
 
 // GRP-007…GRP-009 on the web: the pure half of title, shelf and watch channels. The server
 // decides what is veiled, who may start a party and when it starts; these only label, count
@@ -31,8 +34,8 @@ export const KIND_OPTIONS: Array<{
   },
   {
     kind: 'shelf',
-    label: 'Shelf',
-    hint: 'A list of titles everyone in the group can add to.',
+    label: 'List',
+    hint: 'A list the whole group adds to.',
   },
 ]
 
@@ -106,11 +109,7 @@ export function validEpisode(season: number, episode: number): boolean {
   )
 }
 
-export function episodeCode(season: number, episode: number): string {
-  return `S${season}E${episode}`
-}
-
-/** The small tag on my own stamped message: "S1E3", "Ending", or nothing. */
+/** The small tag on my own stamped message: "S1 · E3", "Ending", or nothing. */
 export function stampLabel(stamp?: SpoilerStamp): string | null {
   if (!stamp) return null
   if (stamp.ending) return 'Ending'
@@ -119,13 +118,16 @@ export function stampLabel(stamp?: SpoilerStamp): string | null {
   return null
 }
 
-/** Where someone is in a title: "S1E3", "Finished", "Plan to watch", or "Not started". */
+/**
+ * Where someone is in a title, in the kind's own words (UX-043): "S1 · E3", "Watched", "Read",
+ * "Plan to watch", or "Not started".
+ */
 export function progressLabel(
   progress?: MemberProgress,
   kind: MediaKind | null = null,
 ): string {
   if (!progress?.status) return 'Not started'
-  if (progress.status === 'finished') return 'Finished'
+  if (progress.status === 'finished') return statusLabel('finished', kind)
   if (progress.season !== undefined && progress.episode !== undefined)
     return episodeCode(progress.season, progress.episode)
   return statusLabel(progress.status, kind)

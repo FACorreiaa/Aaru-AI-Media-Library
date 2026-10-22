@@ -1,5 +1,6 @@
+import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
-import { Button } from './ui/button'
+import { Button } from '~/components/ui'
 import { countsLine, decidedLabel, expiresLabel } from '../lib/plans/model'
 import { approvePlan, denyPlan } from '../lib/plans/server'
 import type { AgentPlan } from '../lib/plans/server'
@@ -55,19 +56,38 @@ export function PlanCard(props: {
         fallback={
           <div class="mt-4 flex flex-wrap gap-2">
             <Button
-              variant="primary"
+              variant="default"
               disabled={busy()}
               onClick={() => void decide(true)}
             >
               Approve
             </Button>
-            <Button disabled={busy()} onClick={() => void decide(false)}>
+            <Button
+              variant="outline"
+              disabled={busy()}
+              onClick={() => void decide(false)}
+            >
               Not this
             </Button>
           </div>
         }
       >
-        {(label) => <p class="mt-4 text-sm font-medium">{label()}</p>}
+        {(label) => (
+          <p class="mt-4 text-sm font-medium">
+            {label()}
+            {/* UX-060: the history it promises is one click away. */}
+            <Show when={plan().status === 'applied'}>
+              {' '}
+              <Link
+                to="/app/settings/data"
+                hash="history"
+                class="text-accent hover:underline"
+              >
+                Open History
+              </Link>
+            </Show>
+          </p>
+        )}
       </Show>
       <Show when={problem()}>
         {(message) => (

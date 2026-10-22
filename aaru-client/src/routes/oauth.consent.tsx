@@ -3,7 +3,17 @@ import { Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
-import { Button } from '../components/ui/button'
+import {
+  Button,
+  Checkbox,
+  CheckboxControl,
+  CheckboxDescription,
+  CheckboxInput,
+  CheckboxLabel,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
 import { answerOAuthRequest, getOAuthRequest } from '../lib/oauth/server'
 import { getSession } from '../lib/session/session'
 
@@ -95,42 +105,45 @@ function Consent() {
         answer.
       </p>
 
-      <label class="mt-6 flex flex-col gap-1 text-sm">
-        <span class="font-medium">Name in your history</span>
-        <input
+      <TextField value={name()} onChange={setName} class="mt-6 gap-1">
+        <TextFieldLabel>Name in your history</TextFieldLabel>
+        <TextFieldInput
           type="text"
           maxLength={80}
           placeholder={request().clientName}
-          class="min-h-11 rounded-field border border-line bg-paper px-3"
-          value={name()}
-          onInput={(e) => setName(e.currentTarget.value)}
         />
-      </label>
-      <label class="mt-4 flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          class="mt-0.5 accent-accent"
-          checked={allowWrites()}
-          onChange={(e) => setAllowWrites(e.currentTarget.checked)}
-        />
-        <span>
-          Allow changes
-          <span class="block text-xs text-muted">
+      </TextField>
+      <Checkbox
+        class="mt-4 flex items-start gap-2.5"
+        checked={allowWrites()}
+        onChange={setAllowWrites}
+      >
+        <CheckboxInput />
+        <CheckboxControl class="mt-0.5" />
+        <span class="flex flex-col gap-1">
+          <CheckboxLabel class="cursor-pointer leading-snug font-normal">
+            Allow changes
+          </CheckboxLabel>
+          <CheckboxDescription class="text-xs text-muted">
             One item at a time, as a tap would. Bigger changes wait for your
-            approval here. Revoke it any time in Settings → Connections.
-          </span>
+            approval here. Disconnect it any time in Settings → Connections.
+          </CheckboxDescription>
         </span>
-      </label>
+      </Checkbox>
 
       <div class="mt-6 flex flex-wrap gap-2">
         <Button
-          variant="primary"
+          variant="default"
           disabled={busy()}
           onClick={() => void answer(true)}
         >
           Allow
         </Button>
-        <Button disabled={busy()} onClick={() => void answer(false)}>
+        <Button
+          variant="outline"
+          disabled={busy()}
+          onClick={() => void answer(false)}
+        >
           Not now
         </Button>
       </div>

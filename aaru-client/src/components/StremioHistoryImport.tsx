@@ -2,8 +2,8 @@ import { useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal, onCleanup } from 'solid-js'
 import { pollStremioImport, startStremioImport } from '../lib/imports/server'
 import type { StremioLink } from '../lib/imports/server'
-import { cn } from '../lib/cn'
-import { Button, buttonVariants } from './ui/button'
+import { cn } from '~/lib/utils'
+import { Button, buttonVariants } from '~/components/ui'
 
 const POLL_MS = 3000
 
@@ -77,6 +77,7 @@ export function StremioHistoryImport(props: { class?: string }) {
               your Stremio password never reaches Aaru.
             </p>
             <Button
+              variant="outline"
               class="self-start"
               disabled={busy()}
               onClick={() => void start()}
@@ -107,20 +108,21 @@ export function StremioHistoryImport(props: { class?: string }) {
                 href={current().link}
                 target="_blank"
                 rel="noopener noreferrer"
-                class={cn(buttonVariants({ variant: 'primary' }), 'self-start')}
+                class={cn(buttonVariants({ variant: 'default' }), 'self-start')}
               >
                 Approve on stremio.com
               </a>
               <p class="text-xs text-muted" aria-live="polite">
                 Waiting for approval. This page moves on by itself.
               </p>
-              <button
-                type="button"
-                class="self-start text-sm font-semibold text-accent hover:underline"
+              <Button
+                variant="link"
+                size="bare"
+                class="self-start text-sm font-semibold text-accent"
                 onClick={cancel}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}

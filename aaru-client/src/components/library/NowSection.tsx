@@ -6,10 +6,17 @@ import type { LibraryEntry, MediaKind } from '../../lib/library/model'
 import { setEpisode, updateItem } from '../../lib/title/server'
 import { pop } from '../../lib/motion'
 import { Poster } from '../Poster'
-import { Alert } from '../ui/alert'
-import { Button, buttonVariants } from '../ui/button'
-import { cardClass } from '../ui/card'
-import { cn } from '../../lib/cn'
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  buttonVariants,
+  cardClass,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
+import { cn } from '~/lib/utils'
 
 // APP-017 · "Now" at the top of Library: what the user is in the middle of, as big cards with a
 // progress bar and the one next step — tick the next episode, move a book's page, finish. Each
@@ -47,7 +54,13 @@ export function NowSection(props: {
   return (
     <Show when={sections().length > 0}>
       <div class="mt-6 flex flex-col gap-8" aria-label="Now">
-        <Show when={problem()}>{(message) => <Alert>{message()}</Alert>}</Show>
+        <Show when={problem()}>
+          {(message) => (
+            <Alert variant="destructive">
+              <AlertDescription>{message()}</AlertDescription>
+            </Alert>
+          )}
+        </Show>
         <For each={sections()}>
           {(section) => (
             <section aria-labelledby={`now-${section.group}`}>
@@ -210,7 +223,7 @@ function NowCard(props: {
               <Show when={props.item.next}>
                 {(next) => (
                   <Button
-                    variant="primary"
+                    variant="default"
                     size="sm"
                     class="min-h-11"
                     disabled={props.pending}
@@ -225,7 +238,7 @@ function NowCard(props: {
               </Show>
               <Show when={isBook()}>
                 <Button
-                  variant="primary"
+                  variant="default"
                   size="sm"
                   class="min-h-11"
                   disabled={props.pending}
@@ -236,15 +249,16 @@ function NowCard(props: {
               </Show>
               <Show when={!props.item.next}>
                 <Button
+                  variant="outline"
                   size="sm"
                   class="min-h-11"
                   disabled={props.pending}
                   onClick={() => props.onFinish()}
                 >
                   {isBook()
-                    ? 'Finished'
+                    ? 'Mark read'
                     : isAlbum()
-                      ? 'Listened'
+                      ? 'Mark listened'
                       : 'Mark watched'}
                 </Button>
               </Show>
@@ -276,21 +290,21 @@ function NowCard(props: {
               }
             }}
           >
-            <label class="sr-only" for={`page-${e().id}`}>
-              Page
-            </label>
-            <input
-              id={`page-${e().id}`}
+            <TextField
               name="page"
-              type="number"
-              min="0"
-              inputmode="numeric"
-              value={e().bookProgress?.page ?? ''}
-              placeholder="Page"
-              class="min-h-11 w-24 rounded-field border border-line bg-paper px-3 text-sm"
-              autofocus
-            />
-            <Button variant="primary" size="sm" class="min-h-11" type="submit">
+              defaultValue={String(e().bookProgress?.page ?? '')}
+            >
+              <TextFieldLabel class="sr-only">Page</TextFieldLabel>
+              <TextFieldInput
+                type="number"
+                min="0"
+                inputmode="numeric"
+                placeholder="Page"
+                class="w-24"
+                autofocus
+              />
+            </TextField>
+            <Button variant="default" size="sm" class="min-h-11" type="submit">
               Save
             </Button>
             <Button

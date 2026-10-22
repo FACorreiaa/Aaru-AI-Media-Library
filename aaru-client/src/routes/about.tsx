@@ -27,11 +27,10 @@ function About() {
         About Aaru
       </h1>
       <p class="mt-4 leading-relaxed text-muted">
-        Aaru keeps everything you watch, read and listen to on one shelf: films,
-        shows, anime, books and albums in one calm library, with four plain
-        statuses. It is private by default, with no public profile and no ads.
-        The name comes from the Egyptian Field of Reeds, a calm place where
-        stories live.
+        Aaru keeps everything you watch, read and listen to in one calm library:
+        films, shows, anime, books and albums, with four plain statuses. It is
+        private by default, with no public profile and no ads. The name comes
+        from the Egyptian Field of Reeds, a calm place where stories live.
       </p>
 
       <h2

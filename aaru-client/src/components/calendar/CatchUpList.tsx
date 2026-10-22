@@ -3,9 +3,9 @@ import { agendaDayLabel, entryDay } from '../../lib/calendar/model'
 import type { CalendarEntry } from '../../lib/calendar/model'
 import { missedLine } from '../../lib/calendar/filters'
 import type { MissedShow } from '../../lib/calendar/filters'
-import { cn } from '../../lib/cn'
+import { cn } from '~/lib/utils'
 import { Poster } from '../Poster'
-import { cardClass } from '../ui/card'
+import { cardClass } from '~/components/ui'
 import { EpisodeRow } from './EpisodeRow'
 
 /** Missed (CAL-002): what aired in the last four weeks and is not watched, one card per show,

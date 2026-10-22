@@ -6,7 +6,13 @@ import { inviteExpiry, invitePlea } from '../lib/social/model'
 import { createInvite, loadInvites, revokeInvite } from '../lib/social/server'
 import type { FriendInvite } from '../lib/social/server'
 import { Poster } from './Poster'
-import { Button } from './ui/button'
+import {
+  Button,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
+import { SettingsSection } from './settings/SettingsSection'
 
 // SOC-002: one-use invite links. Each link befriends the first person who opens it, within two
 // weeks. A link may carry one title ("Watch Arrival with me"), picked from the catalog.
@@ -87,30 +93,29 @@ export function InviteFriends() {
   }
 
   return (
-    <div class="mt-6 rounded-[16px] bg-paper p-4">
-      <h3 class="font-display text-lg font-medium">Invite a friend</h3>
-      <p class="mt-1 max-w-[60ch] text-sm text-muted">
-        A link that works once, for two weeks. Whoever opens it joins Aaru (or
-        signs in) and you’re friends.
-      </p>
-
+    <SettingsSection
+      id="invite"
+      title="Invite a friend"
+      description="A link that works once, for two weeks. Whoever opens it joins Aaru (or signs in) and you’re friends."
+    >
       <Show
         when={title()}
         fallback={
-          <form class="mt-4 flex flex-wrap items-end gap-2" onSubmit={search}>
-            <label class="flex flex-col gap-1 text-sm">
-              <span class="font-medium">
+          <form class="flex flex-wrap items-end gap-2" onSubmit={search}>
+            <TextField
+              class="w-64 max-w-full gap-1.5"
+              value={query()}
+              onChange={setQuery}
+            >
+              <TextFieldLabel>
                 Something to watch together{' '}
                 <span class="font-normal text-muted">(optional)</span>
-              </span>
-              <input
+              </TextFieldLabel>
+              <TextFieldInput
                 type="search"
-                class="min-h-11 w-64 max-w-full rounded-[14px] border border-line bg-surface px-3 outline-none focus:ring-2 focus:ring-accent"
                 placeholder="A film, show or book"
-                value={query()}
-                onInput={(event) => setQuery(event.currentTarget.value)}
               />
-            </label>
+            </TextField>
             <Button
               type="submit"
               variant="quiet"
@@ -122,7 +127,7 @@ export function InviteFriends() {
         }
       >
         {(picked) => (
-          <div class="mt-4 flex items-center gap-3">
+          <div class="flex items-center gap-3">
             <Poster
               url={picked().posterUrl}
               kind={kindOf(picked().type, picked().isAnime)}
@@ -149,9 +154,10 @@ export function InviteFriends() {
           <For each={hits()}>
             {(hit) => (
               <li>
-                <button
-                  type="button"
-                  class="flex min-h-12 w-full items-center gap-3 py-2 text-left text-sm hover:bg-surface"
+                <Button
+                  variant="ghost"
+                  size="bare"
+                  class="flex min-h-12 w-full justify-start gap-3 rounded-none py-2 text-left text-sm font-normal hover:bg-paper"
                   onClick={() => setTitle(hit)}
                 >
                   <Poster
@@ -164,14 +170,14 @@ export function InviteFriends() {
                   <Show when={hit.year}>
                     <span class="text-muted">{hit.year}</span>
                   </Show>
-                </button>
+                </Button>
               </li>
             )}
           </For>
         </ul>
       </Show>
 
-      <Button variant="primary" class="mt-4" disabled={busy()} onClick={make}>
+      <Button class="mt-4" disabled={busy()} onClick={make}>
         {busy() ? 'Making link…' : 'Make an invite link'}
       </Button>
 
@@ -238,6 +244,6 @@ export function InviteFriends() {
           </For>
         </ul>
       </Show>
-    </div>
+    </SettingsSection>
   )
 }
