@@ -2229,7 +2229,13 @@ or stop hears the session as it stands: update, or end (2026-10-22). The activit
 up before its poster is fetched, under a background-task assertion: in the first live test
 (Bleach, 2026-10-22) the poster download used up the wake, so pause and stop missed the Lock
 Screen until the app was opened. Stremio reports a new episode only once it has played a while
-(E12's first `start` came 2:41 in), so the activity appears that late. A `start` for the next episode closes the last one, ticking it only when it
+(E12's first `start` came 2:41 in), so the activity appears that late. The same test found
+Stremio's numbers are Cinemeta's (IMDb's seasons): Bleach: Thousand-Year Blood War is its own IMDb
+series, seasons 1–4, while TMDB keeps it as Bleach S2, so S3·E11 ticked nothing. A `player` or
+`library` event for an IMDb series that is not the matched show's own (or an episode the show lacks)
+is placed by Cinemeta's release day (±36 h; same-day pairs in order), and dropped when it cannot be
+placed rather than ticking a wrong episode (`StremioEpisodeMap`). The history import (IMP-016) still
+uses Stremio's numbers as they come. A `start` for the next episode closes the last one, ticking it only when it
 was last reported at ≥ 80%. With it, the web's last-7-days block became a wide strip under
 Tonight (owner, same day). This closes WID-005's "scrobble start is P3" and SCR-001's "may start
 the WID-005 Live Activity via push".
