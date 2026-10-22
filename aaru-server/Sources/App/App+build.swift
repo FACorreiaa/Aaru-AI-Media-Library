@@ -57,12 +57,12 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
             )
         ),
         configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
-        // The web push manager finishes in-flight sends on shutdown.
+        // The web push manager finishes in-flight sends on shutdown; `/metrics` listens on its own port.
         services: backgroundServices(
             fluent: fluent, stores: stores, services: services,
             airing: AiringNotifier(stores: stores, sender: pushSender, webPush: webPush),
             logger: logger
-        ) + [webPush?.manager].compactMap(\.self),
+        ) + [webPush?.manager].compactMap(\.self) + metricsServices(port: config.metricsPort, logger: logger),
         logger: logger
     )
 }
@@ -236,11 +236,12 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
     return fluent
 }
 
-/// Builds the router: logging, the shared error shape, auth, then the generated `/v1` handlers.
+/// Builds the router: logging, metrics, the shared error shape, auth, then the generated `/v1` handlers.
 func buildRouter(stores: Stores, services: Services, metricsSecret: String = "") throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
         RedactedLogRequestsMiddleware(.info)
+        HTTPMetricsMiddleware()
         ErrorMiddleware()
         AuthMiddleware(sessions: stores.sessions)
         // store request context in TaskLocal; must be last

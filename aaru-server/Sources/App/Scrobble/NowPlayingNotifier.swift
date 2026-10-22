@@ -74,7 +74,9 @@ struct NowPlayingNotifier: Sendable {
 
     private func deliver(_ push: LiveActivityPush, to tokens: [LiveActivityToken]) async {
         for token in tokens {
-            switch try? await sender.send(push, to: token) {
+            let outcome = try? await sender.send(push, to: token)
+            Metrics.shared.push("live_activity", outcome)
+            switch outcome {
             case .deadToken?: try? await stores.watchEvents.forgetLiveActivity(token: token.token)
             case .sent?, nil: continue
             }

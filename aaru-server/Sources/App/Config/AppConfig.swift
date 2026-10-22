@@ -79,6 +79,9 @@ struct AppConfig: Sendable {
     /// `METRICS_SECRET`: the bearer facorreia.com/apps sends to `/internal/metrics`. Empty turns
     /// the route off.
     var metricsSecret: String
+    /// `METRICS_PORT`: where `GET /metrics` (Prometheus) listens, apart from the API port so the
+    /// Ingress never routes to it. 0 turns it off.
+    var metricsPort: Int
 
     static let defaultRealtimeOrigins = "https://aaruapp.com,https://www.aaruapp.com,https://beta.aaruapp.com"
 
@@ -110,7 +113,8 @@ struct AppConfig: Sendable {
             ),
             anthropic: anthropicSettings(from: reader),
             concertsAPIKey: reader.string(forKey: "ticketmaster.api.key").flatMap(\.nilIfBlank),
-            metricsSecret: reader.string(forKey: "metrics.secret", default: "")
+            metricsSecret: reader.string(forKey: "metrics.secret", default: ""),
+            metricsPort: reader.int(forKey: "metrics.port", default: 9090)
         )
     }
 
