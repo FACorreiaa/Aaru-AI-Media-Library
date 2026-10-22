@@ -85,14 +85,15 @@ export function TraktImport(props: {
           >
             {busy() === 'import' ? 'Starting…' : 'Import from Trakt'}
           </Button>
-          <button
-            type="button"
-            class="text-sm font-semibold text-accent hover:underline disabled:opacity-50"
+          <Button
+            variant="link"
+            size="bare"
+            class="text-sm font-semibold text-accent"
             disabled={busy() !== undefined}
             onClick={() => void run('disconnect')}
           >
             {busy() === 'disconnect' ? 'Disconnecting…' : 'Disconnect'}
-          </button>
+          </Button>
         </div>
       </Show>
       <Show when={problem()}>

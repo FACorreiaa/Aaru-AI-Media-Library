@@ -40,8 +40,11 @@ import { Route as ShellAppSettingsAccountRouteImport } from './routes/_shell.app
 import { Route as ShellAppSettingsConnectedRouteImport } from './routes/_shell.app_.settings.connected'
 import { Route as ShellAppSettingsConnectionsRouteImport } from './routes/_shell.app_.settings.connections'
 import { Route as ShellAppSettingsDataRouteImport } from './routes/_shell.app_.settings.data'
+import { Route as ShellAppSettingsDeleteRouteImport } from './routes/_shell.app_.settings.delete'
+import { Route as ShellAppSettingsFriendsRouteImport } from './routes/_shell.app_.settings.friends'
 import { Route as ShellAppSettingsImportRouteImport } from './routes/_shell.app_.settings.import'
 import { Route as ShellAppSettingsImportsRouteImport } from './routes/_shell.app_.settings.imports'
+import { Route as ShellAppSettingsNotificationsRouteImport } from './routes/_shell.app_.settings.notifications'
 import { Route as ShellAppSettingsRecapsRouteImport } from './routes/_shell.app_.settings.recaps'
 import { Route as ShellAppTitleIdRouteImport } from './routes/_shell.app_.title.$id'
 import { Route as ShellAppGroupsGroupIdIndexRouteImport } from './routes/_shell.app_.groups.$groupId.index'
@@ -203,6 +206,16 @@ const ShellAppSettingsDataRoute = ShellAppSettingsDataRouteImport.update({
   path: '/data',
   getParentRoute: () => ShellAppSettingsRoute,
 } as any)
+const ShellAppSettingsDeleteRoute = ShellAppSettingsDeleteRouteImport.update({
+  id: '/delete',
+  path: '/delete',
+  getParentRoute: () => ShellAppSettingsRoute,
+} as any)
+const ShellAppSettingsFriendsRoute = ShellAppSettingsFriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
+  getParentRoute: () => ShellAppSettingsRoute,
+} as any)
 const ShellAppSettingsImportRoute = ShellAppSettingsImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -213,6 +226,12 @@ const ShellAppSettingsImportsRoute = ShellAppSettingsImportsRouteImport.update({
   path: '/imports',
   getParentRoute: () => ShellAppSettingsRoute,
 } as any)
+const ShellAppSettingsNotificationsRoute =
+  ShellAppSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => ShellAppSettingsRoute,
+  } as any)
 const ShellAppSettingsRecapsRoute = ShellAppSettingsRecapsRouteImport.update({
   id: '/recaps',
   path: '/recaps',
@@ -264,8 +283,11 @@ export interface FileRoutesByFullPath {
   '/app/settings/connected': typeof ShellAppSettingsConnectedRoute
   '/app/settings/connections': typeof ShellAppSettingsConnectionsRoute
   '/app/settings/data': typeof ShellAppSettingsDataRoute
+  '/app/settings/delete': typeof ShellAppSettingsDeleteRoute
+  '/app/settings/friends': typeof ShellAppSettingsFriendsRoute
   '/app/settings/import': typeof ShellAppSettingsImportRoute
   '/app/settings/imports': typeof ShellAppSettingsImportsRoute
+  '/app/settings/notifications': typeof ShellAppSettingsNotificationsRoute
   '/app/settings/recaps': typeof ShellAppSettingsRecapsRoute
   '/app/title/$id': typeof ShellAppTitleIdRoute
   '/app/groups/': typeof ShellAppGroupsIndexRoute
@@ -299,8 +321,11 @@ export interface FileRoutesByTo {
   '/app/settings/connected': typeof ShellAppSettingsConnectedRoute
   '/app/settings/connections': typeof ShellAppSettingsConnectionsRoute
   '/app/settings/data': typeof ShellAppSettingsDataRoute
+  '/app/settings/delete': typeof ShellAppSettingsDeleteRoute
+  '/app/settings/friends': typeof ShellAppSettingsFriendsRoute
   '/app/settings/import': typeof ShellAppSettingsImportRoute
   '/app/settings/imports': typeof ShellAppSettingsImportsRoute
+  '/app/settings/notifications': typeof ShellAppSettingsNotificationsRoute
   '/app/settings/recaps': typeof ShellAppSettingsRecapsRoute
   '/app/title/$id': typeof ShellAppTitleIdRoute
   '/app/groups': typeof ShellAppGroupsIndexRoute
@@ -339,8 +364,11 @@ export interface FileRoutesById {
   '/_shell/app_/settings/connected': typeof ShellAppSettingsConnectedRoute
   '/_shell/app_/settings/connections': typeof ShellAppSettingsConnectionsRoute
   '/_shell/app_/settings/data': typeof ShellAppSettingsDataRoute
+  '/_shell/app_/settings/delete': typeof ShellAppSettingsDeleteRoute
+  '/_shell/app_/settings/friends': typeof ShellAppSettingsFriendsRoute
   '/_shell/app_/settings/import': typeof ShellAppSettingsImportRoute
   '/_shell/app_/settings/imports': typeof ShellAppSettingsImportsRoute
+  '/_shell/app_/settings/notifications': typeof ShellAppSettingsNotificationsRoute
   '/_shell/app_/settings/recaps': typeof ShellAppSettingsRecapsRoute
   '/_shell/app_/title/$id': typeof ShellAppTitleIdRoute
   '/_shell/app_/groups/': typeof ShellAppGroupsIndexRoute
@@ -379,8 +407,11 @@ export interface FileRouteTypes {
     | '/app/settings/connected'
     | '/app/settings/connections'
     | '/app/settings/data'
+    | '/app/settings/delete'
+    | '/app/settings/friends'
     | '/app/settings/import'
     | '/app/settings/imports'
+    | '/app/settings/notifications'
     | '/app/settings/recaps'
     | '/app/title/$id'
     | '/app/groups/'
@@ -414,8 +445,11 @@ export interface FileRouteTypes {
     | '/app/settings/connected'
     | '/app/settings/connections'
     | '/app/settings/data'
+    | '/app/settings/delete'
+    | '/app/settings/friends'
     | '/app/settings/import'
     | '/app/settings/imports'
+    | '/app/settings/notifications'
     | '/app/settings/recaps'
     | '/app/title/$id'
     | '/app/groups'
@@ -453,8 +487,11 @@ export interface FileRouteTypes {
     | '/_shell/app_/settings/connected'
     | '/_shell/app_/settings/connections'
     | '/_shell/app_/settings/data'
+    | '/_shell/app_/settings/delete'
+    | '/_shell/app_/settings/friends'
     | '/_shell/app_/settings/import'
     | '/_shell/app_/settings/imports'
+    | '/_shell/app_/settings/notifications'
     | '/_shell/app_/settings/recaps'
     | '/_shell/app_/title/$id'
     | '/_shell/app_/groups/'
@@ -695,6 +732,20 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ShellAppSettingsDataRouteImport
       parentRoute: typeof ShellAppSettingsRoute
     }
+    '/_shell/app_/settings/delete': {
+      id: '/_shell/app_/settings/delete'
+      path: '/delete'
+      fullPath: '/app/settings/delete'
+      preLoaderRoute: typeof ShellAppSettingsDeleteRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
+    }
+    '/_shell/app_/settings/friends': {
+      id: '/_shell/app_/settings/friends'
+      path: '/friends'
+      fullPath: '/app/settings/friends'
+      preLoaderRoute: typeof ShellAppSettingsFriendsRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
+    }
     '/_shell/app_/settings/import': {
       id: '/_shell/app_/settings/import'
       path: '/import'
@@ -707,6 +758,13 @@ declare module '@tanstack/solid-router' {
       path: '/imports'
       fullPath: '/app/settings/imports'
       preLoaderRoute: typeof ShellAppSettingsImportsRouteImport
+      parentRoute: typeof ShellAppSettingsRoute
+    }
+    '/_shell/app_/settings/notifications': {
+      id: '/_shell/app_/settings/notifications'
+      path: '/notifications'
+      fullPath: '/app/settings/notifications'
+      preLoaderRoute: typeof ShellAppSettingsNotificationsRouteImport
       parentRoute: typeof ShellAppSettingsRoute
     }
     '/_shell/app_/settings/recaps': {
@@ -775,8 +833,11 @@ interface ShellAppSettingsRouteChildren {
   ShellAppSettingsConnectedRoute: typeof ShellAppSettingsConnectedRoute
   ShellAppSettingsConnectionsRoute: typeof ShellAppSettingsConnectionsRoute
   ShellAppSettingsDataRoute: typeof ShellAppSettingsDataRoute
+  ShellAppSettingsDeleteRoute: typeof ShellAppSettingsDeleteRoute
+  ShellAppSettingsFriendsRoute: typeof ShellAppSettingsFriendsRoute
   ShellAppSettingsImportRoute: typeof ShellAppSettingsImportRoute
   ShellAppSettingsImportsRoute: typeof ShellAppSettingsImportsRoute
+  ShellAppSettingsNotificationsRoute: typeof ShellAppSettingsNotificationsRoute
   ShellAppSettingsRecapsRoute: typeof ShellAppSettingsRecapsRoute
   ShellAppSettingsIndexRoute: typeof ShellAppSettingsIndexRoute
 }
@@ -787,8 +848,11 @@ const ShellAppSettingsRouteChildren: ShellAppSettingsRouteChildren = {
   ShellAppSettingsConnectedRoute: ShellAppSettingsConnectedRoute,
   ShellAppSettingsConnectionsRoute: ShellAppSettingsConnectionsRoute,
   ShellAppSettingsDataRoute: ShellAppSettingsDataRoute,
+  ShellAppSettingsDeleteRoute: ShellAppSettingsDeleteRoute,
+  ShellAppSettingsFriendsRoute: ShellAppSettingsFriendsRoute,
   ShellAppSettingsImportRoute: ShellAppSettingsImportRoute,
   ShellAppSettingsImportsRoute: ShellAppSettingsImportsRoute,
+  ShellAppSettingsNotificationsRoute: ShellAppSettingsNotificationsRoute,
   ShellAppSettingsRecapsRoute: ShellAppSettingsRecapsRoute,
   ShellAppSettingsIndexRoute: ShellAppSettingsIndexRoute,
 }

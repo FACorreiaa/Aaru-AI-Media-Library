@@ -115,13 +115,14 @@ export function StremioHistoryImport(props: { class?: string }) {
               <p class="text-xs text-muted" aria-live="polite">
                 Waiting for approval. This page moves on by itself.
               </p>
-              <button
-                type="button"
-                class="self-start text-sm font-semibold text-accent hover:underline"
+              <Button
+                variant="link"
+                size="bare"
+                class="self-start text-sm font-semibold text-accent"
                 onClick={cancel}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}

@@ -2,14 +2,9 @@ import type { components } from '../api/schema'
 
 type ImportJob = components['schemas']['ImportJob']
 
+// CLAUDE.md's import order (UX-026). Trakt, Stremio history, Pogdesign CAT and AniList are
+// their own forms on Import; these are the file sources between them, "Any other CSV" last.
 export const FILE_SOURCES = [
-  {
-    source: 'auto',
-    label: 'Any site',
-    hint: 'A CSV from any site (Netflix, Simkl, Serializd, StoryGraph, a spreadsheet) or MAL-format XML (MyAnimeList, Kitsu, AniList). Aaru reads the columns.',
-    accept:
-      '.csv,.xml,.gz,text/csv,text/plain,application/xml,text/xml,application/gzip',
-  },
   {
     source: 'imdb',
     label: 'IMDb',
@@ -23,15 +18,15 @@ export const FILE_SOURCES = [
     accept: '.csv,text/csv,text/plain',
   },
   {
-    source: 'netflix',
-    label: 'Netflix',
-    hint: 'Account → Profile → Viewing activity → Download all. One profile per file.',
-    accept: '.csv,text/csv,text/plain',
-  },
-  {
     source: 'goodreads',
     label: 'Goodreads',
     hint: 'goodreads_library_export.csv. Custom shelves become lists.',
+    accept: '.csv,text/csv,text/plain',
+  },
+  {
+    source: 'netflix',
+    label: 'Netflix',
+    hint: 'Account → Profile → Viewing activity → Download all. One profile per file.',
     accept: '.csv,text/csv,text/plain',
   },
   {
@@ -39,6 +34,13 @@ export const FILE_SOURCES = [
     label: 'MyAnimeList',
     hint: 'MAL → Profile → Export → Anime list. The .xml.gz file as downloaded.',
     accept: '.xml,.gz,application/xml,text/xml,application/gzip',
+  },
+  {
+    source: 'auto',
+    label: 'Any other CSV',
+    hint: 'A CSV from any other site, or a spreadsheet. Aaru reads the columns.',
+    accept:
+      '.csv,.xml,.gz,text/csv,text/plain,application/xml,text/xml,application/gzip',
   },
 ] as const
 

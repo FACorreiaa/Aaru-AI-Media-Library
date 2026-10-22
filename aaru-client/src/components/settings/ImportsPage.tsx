@@ -7,18 +7,29 @@ import {
   Alert,
   AlertDescription,
   Button,
-  buttonVariants,
-  Card,
+  FileField,
+  FileFieldHiddenInput,
+  FileFieldTrigger,
+  TextField,
+  TextFieldDescription,
+  TextFieldErrorMessage,
+  TextFieldInput,
+  TextFieldLabel,
 } from '~/components/ui'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../../lib/imports/model'
 import { readImportFile } from '../../lib/imports/file'
 import { startAniListImport, uploadImport } from '../../lib/imports/server'
 import type { ImportJob, TraktConnection } from '../../lib/imports/server'
 import { SettingsPageTitle } from './SettingsNav'
+import { SettingsSection } from './SettingsSection'
 
 type FileSource = (typeof FILE_SOURCES)[number]['source']
+const fileSource = (source: FileSource) =>
+  FILE_SOURCES.find((s) => s.source === source)!
 
-/** Settings → Imports & export: every way in, the jobs so far, and the way out. */
+const tile = 'flex flex-col gap-1 rounded-card border border-line p-4'
+
+/** Settings → Import (DESIGN.md §18): every way in, in CLAUDE.md's import order, then the jobs. */
 export function ImportsPage(props: {
   imports: ImportJob[]
   trakt: TraktConnection
@@ -79,13 +90,49 @@ export function ImportsPage(props: {
     }
   }
 
+  function FileTile(p: { source: FileSource }) {
+    const option = fileSource(p.source)
+    return (
+      <FileField
+        class={`${tile} size-auto items-stretch justify-start`}
+        accept={option.accept}
+        maxFiles={1}
+        disabled={uploading() !== null}
+        onFileAccept={(files) => {
+          const file = files.at(0)
+          if (file) void upload(option.source, file)
+        }}
+        onFileReject={() =>
+          setProblem(`That is not a file Aaru reads for ${option.label}.`)
+        }
+      >
+        <FileFieldHiddenInput />
+        <FileFieldTrigger
+          variant="ghost"
+          size="bare"
+          class="-m-4 flex h-auto flex-col items-start gap-1 rounded-card p-4 text-left font-normal whitespace-normal text-ink hover:bg-surface hover:text-ink"
+        >
+          <span class="font-medium">
+            {uploading() === option.source
+              ? 'Uploading…'
+              : `Import from ${option.label}`}
+          </span>
+          <span class="text-xs text-muted">{option.hint}</span>
+        </FileFieldTrigger>
+      </FileField>
+    )
+  }
+
   return (
     <>
-      <SettingsPageTitle title="Imports & export" />
+      <SettingsPageTitle
+        title="Import"
+        description="Aaru matches every row first and shows you the plan. Nothing changes until you approve it, and an import undoes in one step."
+      />
 
       <Show when={problem()}>
         {(message) => (
-          <Alert variant="destructive" class="mt-4">
+          <Alert variant="destructive" class="mb-6">
             <AlertDescription>{message()}</AlertDescription>
           </Alert>
         )}
@@ -93,109 +140,82 @@ export function ImportsPage(props: {
       <Show when={props.traktReturn}>
         {(result) =>
           result().ok ? (
-            <p role="status" class="mt-4 rounded-panel bg-surface p-3 text-sm">
+            <p role="status" class="mb-6 rounded-panel bg-surface p-3 text-sm">
               {result().message}
             </p>
           ) : (
-            <Alert variant="destructive" class="mt-4">
+            <Alert variant="destructive" class="mb-6">
               <AlertDescription>{result().message}</AlertDescription>
             </Alert>
           )
         }
       </Show>
 
-      <section class="mt-6">
-        <h3 class="font-display text-xl font-medium">Bring your history</h3>
-        <p class="mt-2 max-w-[60ch] text-muted">
-          Aaru matches every row first and shows you the plan. Nothing changes
-          until you approve it, and an import undoes in one step.
-        </p>
-        <div class="mt-5 grid gap-3 sm:grid-cols-2">
-          <TraktImport
-            connection={trakt()}
-            returnTo={() => `${window.location.origin}/app/settings/import`}
-            onDisconnected={() => setTrakt({ connected: false })}
-          />
-          <For each={FILE_SOURCES}>
-            {(option) => (
-              <label class="flex cursor-pointer flex-col gap-1 rounded-card border border-line p-4 hover:bg-surface">
-                <span class="font-medium">
-                  {uploading() === option.source
-                    ? 'Uploading…'
-                    : `Import from ${option.label}`}
-                </span>
-                <span class="text-xs text-muted">{option.hint}</span>
-                <input
-                  type="file"
-                  accept={option.accept}
-                  class="sr-only"
-                  disabled={uploading() !== null}
-                  onChange={(e) => {
-                    const file = e.currentTarget.files?.[0]
-                    e.currentTarget.value = ''
-                    if (file) void upload(option.source, file)
-                  }}
-                />
-              </label>
-            )}
-          </For>
-          <form
-            class="flex flex-col gap-2 rounded-card border border-line p-4 sm:col-span-2"
-            onSubmit={importAniList}
-          >
-            <label for="anilist-username" class="font-medium">
-              Import from AniList
-            </label>
-            <span class="text-xs text-muted">
-              Your username. The anime list must be public.
-            </span>
-            <div class="flex flex-wrap gap-2">
-              <input
-                id="anilist-username"
-                name="username"
-                autocomplete="off"
-                autocapitalize="off"
-                spellcheck={false}
-                placeholder="username"
-                class="min-h-11 min-w-0 flex-1 rounded-panel border-0 bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:ring-2 focus:ring-accent focus:outline-none"
-                value={anilistName()}
-                onInput={(e) => setAnilistName(e.currentTarget.value)}
-                aria-describedby={
-                  anilistProblem() ? 'anilist-problem' : undefined
-                }
-              />
-              <Button
-                variant="outline"
-                type="submit"
-                disabled={anilistBusy() || anilistName().trim() === ''}
-              >
-                {anilistBusy() ? 'Starting…' : 'Import'}
-              </Button>
-            </div>
-            <Show when={anilistProblem()}>
-              {(message) => (
-                <p
-                  id="anilist-problem"
-                  role="alert"
-                  class="text-sm text-danger"
-                >
-                  {message()}
-                </p>
-              )}
-            </Show>
-          </form>
-          <CatImport onImported={(job) => void open(job)} />
-          <div class="flex flex-col gap-1 rounded-card border border-line p-4 sm:col-span-2">
+      <SettingsSection title="Trakt">
+        <TraktImport
+          connection={trakt()}
+          returnTo={() => `${window.location.origin}/app/settings/import`}
+          onDisconnected={() => setTrakt({ connected: false })}
+        />
+      </SettingsSection>
+
+      <SettingsSection id="history-sources" title="Bring your history">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div id="stremio" class={`${tile} scroll-mt-6 sm:col-span-2`}>
             <span class="font-medium">Import from Stremio</span>
             <StremioHistoryImport class="mt-1" />
           </div>
+          <FileTile source="imdb" />
+          <FileTile source="letterboxd" />
+          <FileTile source="goodreads" />
+          <CatImport onImported={(job) => void open(job)} />
+          <FileTile source="netflix" />
+          <FileTile source="mal" />
+          <form class={`${tile} gap-2 sm:col-span-2`} onSubmit={importAniList}>
+            <TextField
+              value={anilistName()}
+              onChange={setAnilistName}
+              validationState={anilistProblem() ? 'invalid' : 'valid'}
+              class="gap-1"
+            >
+              <TextFieldLabel class="text-base">
+                Import from AniList
+              </TextFieldLabel>
+              <TextFieldDescription class="text-xs text-muted">
+                Your username. The anime list must be public.
+              </TextFieldDescription>
+              <div class="mt-1 flex flex-wrap gap-2">
+                <TextFieldInput
+                  name="username"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck={false}
+                  placeholder="username"
+                  class="min-w-0 flex-1"
+                />
+                <Button
+                  variant="outline"
+                  type="submit"
+                  disabled={anilistBusy() || anilistName().trim() === ''}
+                >
+                  {anilistBusy() ? 'Starting…' : 'Import'}
+                </Button>
+              </div>
+              <TextFieldErrorMessage class="text-sm text-danger">
+                {anilistProblem()}
+              </TextFieldErrorMessage>
+            </TextField>
+          </form>
+          <FileTile source="auto" />
         </div>
-      </section>
+      </SettingsSection>
 
-      <Show when={jobs().length > 0}>
-        <section id="imports" class="mt-10 scroll-mt-6">
-          <h3 class="font-display text-xl font-medium">Imports</h3>
-          <ul class="mt-3 divide-y divide-line">
+      <SettingsSection id="imports" title="Imports">
+        <Show
+          when={jobs().length > 0}
+          fallback={<p class="text-sm text-muted">No imports yet.</p>}
+        >
+          <ul class="-my-3 divide-y divide-line">
             <For each={jobs()}>
               {(job) => (
                 <li>
@@ -221,33 +241,8 @@ export function ImportsPage(props: {
               )}
             </For>
           </ul>
-        </section>
-      </Show>
-
-      <Card class="mt-10 block p-5">
-        <h3 class="font-display text-xl font-medium">Export your data</h3>
-        <p class="mt-2 text-sm text-muted">
-          Everything Aaru holds for you. The spreadsheet opens anywhere and
-          imports back into Aaru.
-        </p>
-        {/* Plain links, not router links: the Worker answers with a download. */}
-        <div class="mt-4 flex flex-wrap gap-3">
-          <a
-            href="/app/export?format=json"
-            download=""
-            class={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            Everything (JSON)
-          </a>
-          <a
-            href="/app/export?format=csv"
-            download=""
-            class={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            Library spreadsheet (CSV)
-          </a>
-        </div>
-      </Card>
+        </Show>
+      </SettingsSection>
     </>
   )
 }

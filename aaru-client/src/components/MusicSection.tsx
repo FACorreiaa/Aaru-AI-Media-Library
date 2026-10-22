@@ -12,7 +12,6 @@ import {
 } from '../lib/music/model'
 import type { Scrobbler } from '../lib/music/model'
 import { lastUsedLabel } from '../lib/stremio/model'
-import { cn } from '~/lib/utils'
 import {
   Button,
   buttonVariants,
@@ -21,9 +20,9 @@ import {
   RadioGroupItemInput,
   RadioGroupItemLabel,
   toast,
-  cardClass,
 } from '~/components/ui'
 import { ConfirmDialog } from './ConfirmDialog'
+import { SettingsSection } from './settings/SettingsSection'
 import {
   connectScrobbler,
   latestListen,
@@ -126,17 +125,14 @@ export function MusicSection(props: {
   }
 
   return (
-    <section class={cn(cardClass, 'mt-10 p-5')}>
-      <h2 class="font-display text-xl font-medium">Music</h2>
-      <p class="mt-2 max-w-[60ch] text-sm text-muted">
-        Plays on YouTube, YouTube Music, Spotify and Apple Music in a browser,
-        or any app on Android, land in your listening log. The Spotify and Apple
-        Music apps on iPhone can’t send plays.
-      </p>
-
+    <SettingsSection
+      id="music"
+      title="Music"
+      description="Plays on YouTube, YouTube Music, Spotify and Apple Music in a browser, or any app on Android, land in your Listens. The Spotify and Apple Music apps on iPhone can’t send plays."
+    >
       <Show when={latest()}>
         {(listen) => (
-          <p class="mt-4 text-sm">
+          <p class="text-sm">
             <span class="text-muted">Last listen: </span>
             <span class="font-medium">{listenTitle(listen())}</span>
             <span class="block text-xs text-muted">
@@ -146,7 +142,7 @@ export function MusicSection(props: {
               to="/app/music"
               class="mt-1 inline-block font-semibold text-accent hover:underline"
             >
-              All listening ›
+              All listens ›
             </Link>
           </p>
         )}
@@ -173,7 +169,7 @@ export function MusicSection(props: {
                 )}
               </For>
             </RadioGroup>
-            <p class="max-w-[60ch] text-sm">{scrobblerSummary(choice())}</p>
+            <p class="max-w-prose text-sm">{scrobblerSummary(choice())}</p>
             <Button
               variant="default"
               class="self-start"
@@ -245,7 +241,7 @@ export function MusicSection(props: {
         }}
         onCancel={() => setPending(null)}
       />
-    </section>
+    </SettingsSection>
   )
 }
 
@@ -262,10 +258,7 @@ function SetupSteps(props: { setup: MusicSetup }) {
                   href={link().url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class={cn(
-                    buttonVariants({ variant: 'outline', size: 'sm' }),
-                    'self-start',
-                  )}
+                  class={`${buttonVariants({ variant: 'outline', size: 'sm' })} self-start`}
                 >
                   {link().label}
                 </a>
@@ -313,13 +306,14 @@ function CopyField(props: { label: string; value: string; secret?: boolean }) {
     <div class="flex items-center gap-3 rounded-field bg-paper p-2 pl-3">
       <dt class="w-20 shrink-0 text-xs text-muted">{props.label}</dt>
       <dd class="min-w-0 flex-1 break-all font-mono text-xs">{shown()}</dd>
-      <button
-        type="button"
-        class="shrink-0 rounded-full border border-ink/25 bg-surface px-3 py-1 text-xs font-semibold"
+      <Button
+        variant="outline"
+        size="xs"
+        class="shrink-0 bg-surface"
         onClick={() => void copy()}
       >
         {copied() ? 'Copied' : 'Copy'}
-      </button>
+      </Button>
     </div>
   )
 }

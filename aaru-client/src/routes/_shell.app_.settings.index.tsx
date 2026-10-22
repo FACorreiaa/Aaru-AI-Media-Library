@@ -1,10 +1,19 @@
-import { createFileRoute, redirect } from '@tanstack/solid-router'
-import { AccountPage } from '../components/settings/AccountPage'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/solid-router'
+import { onMount } from 'solid-js'
 import { SettingsList } from '../components/settings/SettingsNav'
-import { loadAccountPage } from '../lib/settings/account'
 import { optionalString } from '../lib/search-params'
 
-// A phone sees the list of groups; a desktop sees Account beside the rail.
+// UX-033: a phone sees the list of pages; from 768px, where the sub-nav is beside the page,
+// /app/settings is Account. Old anchors (#profile, #friends…) land on their page.
+const ANCHORS: Partial<Record<string, string>> = {
+  '#profile': '/app/settings/friends',
+  '#friends': '/app/settings/friends',
+  '#handle': '/app/settings/account',
+  '#notifications': '/app/settings/notifications',
+  '#concerts': '/app/settings/friends',
+  '#imports': '/app/settings/import',
+}
+
 export const Route = createFileRoute('/_shell/app_/settings/')({
   head: () => ({ meta: [{ title: 'Settings · Aaru' }] }),
   // A Trakt sign-in started before Settings had pages still returns here.
@@ -18,18 +27,16 @@ export const Route = createFileRoute('/_shell/app_/settings/')({
         search: { trakt: search.trakt },
       })
   },
-  loader: () => loadAccountPage(),
   component: SettingsIndex,
 })
 
 function SettingsIndex() {
-  const loaded = Route.useLoaderData()
-  return (
-    <>
-      <SettingsList />
-      <div class="hidden md:block">
-        <AccountPage data={loaded()} />
-      </div>
-    </>
-  )
+  const navigate = useNavigate()
+  onMount(() => {
+    const anchored = ANCHORS[window.location.hash]
+    const wide = window.matchMedia('(min-width: 48rem)').matches
+    const to = anchored ?? (wide ? '/app/settings/account' : null)
+    if (to) void navigate({ to, replace: true })
+  })
+  return <SettingsList />
 }

@@ -1,66 +1,97 @@
 import { Link, useLocation } from '@tanstack/solid-router'
-import { For } from 'solid-js'
+import { For, Show } from 'solid-js'
+import { BackIcon } from '../shell/icons'
+import { cn } from '~/lib/utils'
 
-/** Settings' groups, in order. The same groups as the Apple apps' Settings list. */
-export const SETTINGS_GROUPS = [
+export type SettingsPage = {
+  to:
+    | '/app/settings/account'
+    | '/app/settings/friends'
+    | '/app/settings/notifications'
+    | '/app/settings/import'
+    | '/app/settings/connections'
+    | '/app/settings/data'
+    | '/app/settings/about'
+    | '/app/settings/delete'
+  label: string
+  hint: string
+  danger?: boolean
+}
+
+/** DESIGN.md §18: the eight pages, in this order, on every platform. */
+export const SETTINGS_PAGES: SettingsPage[] = [
   {
     to: '/app/settings/account',
     label: 'Account',
-    hint: 'Name, sign-in, friends, notifications, appearance and concerts',
+    hint: 'Name and handle, how you sign in, appearance',
+  },
+  {
+    to: '/app/settings/friends',
+    label: 'Friends & privacy',
+    hint: 'Friends, requests, blocks and your location',
+  },
+  {
+    to: '/app/settings/notifications',
+    label: 'Notifications',
+    hint: 'New episodes, mentions and group invites',
   },
   {
     to: '/app/settings/import',
-    label: 'Imports & export',
-    hint: 'Trakt, files, AniList, CAT, Stremio history and your data',
+    label: 'Import',
+    hint: 'Trakt, Stremio history, files and your imports',
   },
   {
     to: '/app/settings/connections',
-    label: 'Connected apps',
-    hint: 'Stremio and agents',
+    label: 'Connections',
+    hint: 'Agents, the Stremio addon and music scrobblers',
   },
   {
     to: '/app/settings/data',
-    label: 'Insights & recaps',
-    hint: 'Your months and years as a story',
+    label: 'Your data',
+    hint: 'Recaps, history with undo, and export',
   },
   {
     to: '/app/settings/about',
     label: 'About',
-    hint: 'Credits, privacy and deleting your account',
+    hint: 'Version, credits and privacy',
   },
-] as const
+  {
+    to: '/app/settings/delete',
+    label: 'Delete account',
+    hint: 'Your account and library, for good',
+    danger: true,
+  },
+]
 
 const trimmed = (path: string) => path.replace(/\/+$/, '')
 
-/** True on `/app/settings` itself, where a phone shows the group list. */
+/** True on `/app/settings` itself, where a phone shows the list of pages. */
 export function useSettingsIndex() {
   const location = useLocation()
   return () => trimmed(location().pathname) === '/app/settings'
 }
 
-/** The desktop rail. `/app/settings` shows Account beside it, so Account reads as current. */
+/** The sub-nav beside a Settings page, from 768px. Delete account sits last, after a rule. */
 export function SettingsRail() {
   const location = useLocation()
-  const current = (to: string) => {
-    const path = trimmed(location().pathname)
-    return (
-      path === to ||
-      (to === '/app/settings/account' && path === '/app/settings')
-    )
-  }
+  const current = (to: string) => trimmed(location().pathname) === to
   return (
     <nav aria-label="Settings" class="hidden md:block">
-      <ul class="sticky top-6 flex flex-col gap-1 text-sm font-medium">
-        <For each={SETTINGS_GROUPS}>
-          {(group) => (
-            <li>
+      <ul class="sticky top-6 flex flex-col gap-0.5 text-sm font-medium">
+        <For each={SETTINGS_PAGES}>
+          {(page) => (
+            <li class={cn(page.danger && 'mt-3 border-t border-line pt-3')}>
               <Link
-                to={group.to}
-                class="block rounded-full px-3 py-1.5 text-muted hover:bg-surface hover:text-ink"
-                classList={{ 'bg-surface !text-ink': current(group.to) }}
-                aria-current={current(group.to) ? 'page' : undefined}
+                to={page.to}
+                class={cn(
+                  'block rounded-full px-3 py-2 hover:bg-surface',
+                  page.danger ? 'text-danger' : 'text-muted hover:text-ink',
+                  current(page.to) && 'bg-surface',
+                  current(page.to) && !page.danger && 'text-ink',
+                )}
+                aria-current={current(page.to) ? 'page' : undefined}
               >
-                {group.label}
+                {page.label}
               </Link>
             </li>
           )}
@@ -70,21 +101,28 @@ export function SettingsRail() {
   )
 }
 
-/** A phone's Settings: one row per group, each opening its page. */
+/** A phone's Settings: one row per page with its hint line. */
 export function SettingsList() {
   return (
     <nav aria-label="Settings" class="md:hidden">
-      <ul class="divide-y divide-line rounded-card bg-surface">
-        <For each={SETTINGS_GROUPS}>
-          {(group) => (
+      <ul class="divide-y divide-line overflow-hidden rounded-card bg-surface">
+        <For each={SETTINGS_PAGES}>
+          {(page) => (
             <li>
               <Link
-                to={group.to}
-                class="flex min-h-14 items-center justify-between gap-4 px-4 py-3 hover:text-accent"
+                to={page.to}
+                class="flex min-h-14 items-center justify-between gap-4 px-4 py-3 hover:bg-stone/50"
               >
                 <span class="min-w-0">
-                  <span class="block font-medium">{group.label}</span>
-                  <span class="block text-sm text-muted">{group.hint}</span>
+                  <span
+                    class={cn(
+                      'block font-medium',
+                      page.danger && 'text-danger',
+                    )}
+                  >
+                    {page.label}
+                  </span>
+                  <span class="block text-sm text-muted">{page.hint}</span>
                 </span>
                 <span aria-hidden="true" class="shrink-0 text-xl text-muted">
                   ›
@@ -98,17 +136,24 @@ export function SettingsList() {
   )
 }
 
-/** A Settings page's title; on a phone it also leads back to the group list. */
-export function SettingsPageTitle(props: { title: string }) {
+/** A Settings page's title; on a phone it also leads back to the list ("‹ Settings"). */
+export function SettingsPageTitle(props: {
+  title: string
+  description?: string
+}) {
   return (
-    <div>
+    <div class="mb-6">
       <Link
         to="/app/settings"
-        class="inline-flex min-h-11 items-center text-sm font-medium text-muted hover:text-ink md:hidden"
+        class="-ml-1 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-muted hover:text-ink md:hidden"
       >
-        ‹ Settings
+        <BackIcon class="size-4" />
+        Settings
       </Link>
       <h2 class="font-display text-2xl font-medium md:mt-1">{props.title}</h2>
+      <Show when={props.description}>
+        <p class="mt-1 max-w-prose text-sm text-muted">{props.description}</p>
+      </Show>
     </div>
   )
 }

@@ -1,18 +1,22 @@
 import { Show, Suspense, createSignal, lazy } from 'solid-js'
 import { placeLabel } from '../lib/concerts/place'
+import { lastShown } from '../lib/presence'
 import type { ConcertPlaceSetting } from '../lib/concerts/model'
 import { deleteConcertPlace } from '../lib/concerts/server'
-import { Button, Card } from '~/components/ui'
+import { Button } from '~/components/ui'
+import { SettingsSection } from './settings/SettingsSection'
 
 // The picker loads on the first tap: Account is opened far more often than the city changes.
 const CityPicker = lazy(() =>
   import('./CityPicker').then((m) => ({ default: m.CityPicker })),
 )
 
-/** Settings → Account: the city Discover's Concerts view starts from (MUS-003). */
+/** Friends & privacy → Location (DESIGN.md §18): the city Discover's Concerts view starts
+ * from (MUS-003), the one place Aaru stores where you are. */
 export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
   const [setting, setSetting] = createSignal(props.setting)
   const [picking, setPicking] = createSignal(false)
+  const picked = lastShown(() => (picking() ? true : null))
   const [removing, setRemoving] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
 
@@ -32,12 +36,16 @@ export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
   }
 
   return (
-    <Card class="mt-10 block p-5">
-      <h2 class="font-display text-xl font-medium">Concerts near</h2>
+    <SettingsSection
+      id="location"
+      title="Location"
+      description="The only place Aaru keeps where you are, and only while concerts are on."
+    >
+      <h3 class="text-sm font-semibold">Concerts near</h3>
       <Show
         when={setting().place}
         fallback={
-          <p class="mt-2 text-sm text-muted">
+          <p class="mt-1 text-sm text-muted">
             No city yet. Concerts on Discover start from it when you don’t share
             your location.
           </p>
@@ -45,7 +53,7 @@ export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
       >
         {(place) => (
           <>
-            <p class="mt-2 font-medium text-ink">{placeLabel(place())}</p>
+            <p class="mt-1 font-medium text-ink">{placeLabel(place())}</p>
             <p class="mt-1 text-sm text-muted">
               Concerts on Discover start from here. Saved to about a kilometre.
             </p>
@@ -74,11 +82,16 @@ export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
           </p>
         )}
       </Show>
-      <Show when={picking()}>
+      {/* Mounted from the first tap on, so closing plays the exit (WEB-011). */}
+      <Show when={picked()}>
         <Suspense>
-          <CityPicker onSaved={setSetting} onClose={() => setPicking(false)} />
+          <CityPicker
+            open={picking()}
+            onSaved={setSetting}
+            onClose={() => setPicking(false)}
+          />
         </Suspense>
       </Show>
-    </Card>
+    </SettingsSection>
   )
 }

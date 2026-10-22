@@ -6,7 +6,7 @@ import { getTraktConnection, listImports } from '../lib/imports/server'
 import { optionalString } from '../lib/search-params'
 
 export const Route = createFileRoute('/_shell/app_/settings/import')({
-  head: () => ({ meta: [{ title: 'Imports & export · Settings · Aaru' }] }),
+  head: () => ({ meta: [{ title: 'Import · Settings · Aaru' }] }),
   // Trakt's sign-in comes back here with `?trakt=connected|denied|failed`.
   validateSearch: (search): { trakt?: string } => ({
     trakt: optionalString(search.trakt),

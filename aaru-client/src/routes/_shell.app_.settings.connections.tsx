@@ -7,9 +7,10 @@ import { listConnections } from '../lib/agents/server'
 import { latestListen, listScrobblers } from '../lib/music/server'
 import { listStremio } from '../lib/stremio/server'
 
-// Apps that reach Aaru with a token of their own: Stremio's addon, music scrobblers and agents.
+// Settings → Connections (DESIGN.md §18): everything that reaches Aaru with a token of its own,
+// agents first, then Stremio's addon and music scrobblers. One verb ends each: Disconnect.
 export const Route = createFileRoute('/_shell/app_/settings/connections')({
-  head: () => ({ meta: [{ title: 'Connected apps · Settings · Aaru' }] }),
+  head: () => ({ meta: [{ title: 'Connections · Settings · Aaru' }] }),
   loader: async () => {
     const [stremio, scrobblers, latest, connections] = await Promise.all([
       listStremio(),
@@ -27,10 +28,10 @@ function Connected() {
   const loaded = Route.useLoaderData()
   return (
     <>
-      <SettingsPageTitle title="Connected apps" />
+      <SettingsPageTitle title="Connections" />
+      <ConnectionsSection connections={loaded().connections} />
       <StremioSection links={loaded().stremio} />
       <MusicSection scrobblers={loaded().scrobblers} latest={loaded().latest} />
-      <ConnectionsSection connections={loaded().connections} />
     </>
   )
 }

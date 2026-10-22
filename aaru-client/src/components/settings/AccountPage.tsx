@@ -1,14 +1,13 @@
 import { useNavigate, useRouter } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
-import { ConcertPlaceSection } from '../ConcertPlaceSection'
 import { GoogleSignInButton } from '../GoogleSignInButton'
 import { AppearanceSection } from '../AppearanceSection'
-import { NotificationsSection } from '../NotificationsSection'
-import { SocialSection } from '../SocialSection'
-import { Alert, AlertDescription, Button, Card } from '~/components/ui'
+import { Alert, AlertDescription, Button } from '~/components/ui'
 import { linkGoogle, signOut } from '../../lib/session/session'
 import type { AccountPageData } from '../../lib/settings/account'
+import { ProfileEditor } from './ProfileEditor'
 import { SettingsPageTitle } from './SettingsNav'
+import { SettingsSection } from './SettingsSection'
 
 const providerNames = {
   apple: 'Apple',
@@ -16,7 +15,8 @@ const providerNames = {
   google: 'Google',
 } as const
 
-/** Settings → Account: who you are, how you sign in, friends, notifications and concerts. */
+/** Settings → Account (DESIGN.md §18): name and handle, how you sign in, this device's
+ * appearance, and Sign out, which lives here only (UX-009). */
 export function AccountPage(props: { data: AccountPageData }) {
   const router = useRouter()
   const navigate = useNavigate()
@@ -43,22 +43,30 @@ export function AccountPage(props: { data: AccountPageData }) {
       <SettingsPageTitle title="Account" />
       <Show when={problem()}>
         {(message) => (
-          <Alert variant="destructive" class="mt-4">
+          <Alert variant="destructive" class="mb-6">
             <AlertDescription>{message()}</AlertDescription>
           </Alert>
         )}
       </Show>
 
-      <Card class="mt-6 block p-5">
-        <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt class="text-muted">Name</dt>
-          <dd>{account().displayName ?? 'Not set'}</dd>
-          <dt class="text-muted">Signed in with</dt>
-          <dd>{providers()}</dd>
-        </dl>
+      <ProfileEditor
+        handle={account().handle}
+        displayName={account().displayName}
+        onSaved={(user) => {
+          setAccount({
+            ...account(),
+            handle: user.handle,
+            displayName: user.displayName,
+          })
+          // The sidebar's account row reads the session.
+          void router.invalidate()
+        }}
+      />
+
+      <SettingsSection title="Signed in with" description={providers()}>
         <Show when={canLinkGoogle()}>
           {(clientId) => (
-            <div class="mt-4 max-w-xs">
+            <div class="max-w-xs">
               <p class="mb-2 text-sm text-muted">
                 Link Google to sign in with it too.
               </p>
@@ -82,31 +90,18 @@ export function AccountPage(props: { data: AccountPageData }) {
             </div>
           )}
         </Show>
-        <Button variant="outline" size="sm" onClick={leave} class="mt-4">
-          Sign out
-        </Button>
-      </Card>
-
-      <SocialSection
-        handle={account().handle}
-        displayName={account().displayName}
-        state={props.data.social}
-        onProfileSaved={(user) =>
-          setAccount({
-            ...account(),
-            handle: user.handle,
-            displayName: user.displayName,
-          })
-        }
-      />
-
-      <NotificationsSection setup={props.data.push} />
+      </SettingsSection>
 
       <AppearanceSection />
 
-      <Show when={props.data.concerts?.available ? props.data.concerts : null}>
-        {(setting) => <ConcertPlaceSection setting={setting()} />}
-      </Show>
+      <SettingsSection
+        title="Sign out"
+        description="Signs this browser out. Your library stays as it is."
+      >
+        <Button variant="outline" onClick={() => void leave()}>
+          Sign out
+        </Button>
+      </SettingsSection>
     </>
   )
 }

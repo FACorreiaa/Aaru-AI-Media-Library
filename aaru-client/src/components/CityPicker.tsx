@@ -2,15 +2,24 @@ import { For, Match, Switch, createSignal, onCleanup } from 'solid-js'
 import { placeLabel, placeQuery } from '../lib/concerts/place'
 import type { ConcertPlace, ConcertPlaceSetting } from '../lib/concerts/model'
 import { saveConcertPlace, searchConcertPlaces } from '../lib/concerts/server'
-import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogPortal,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
 
 const DEBOUNCE_MS = 300
 
 /**
  * MUS-003's "Concerts near" picker: type a city, pick one of the matches, and it is saved as the
- * account's concerts city (shared with the Apple apps). Exists only while open.
+ * account's concerts city (shared with the Apple apps). `open` false plays the exit.
  */
 export function CityPicker(props: {
+  open?: boolean
   onSaved: (setting: ConcertPlaceSetting) => void
   onClose: () => void
 }) {
@@ -74,7 +83,7 @@ export function CityPicker(props: {
 
   return (
     <Dialog
-      open
+      open={props.open ?? true}
       onOpenChange={(open) => {
         if (!open) props.onClose()
       }}
@@ -100,21 +109,18 @@ export function CityPicker(props: {
             </Button>
           </div>
           <div class="px-5 pt-4">
-            <label for="city-search" class="sr-only">
-              City
-            </label>
-            <input
-              id="city-search"
-              type="search"
-              autofocus
-              autocomplete="off"
-              spellcheck={false}
-              placeholder="Search for a city"
-              maxlength={100}
-              value={text()}
-              onInput={(e) => type(e.currentTarget.value)}
-              class="min-h-11 w-full rounded-full border-0 bg-surface px-4 text-sm placeholder:text-muted focus:ring-2 focus:ring-accent"
-            />
+            <TextField value={text()} onChange={type}>
+              <TextFieldLabel class="sr-only">City</TextFieldLabel>
+              <TextFieldInput
+                type="search"
+                autofocus
+                autocomplete="off"
+                spellcheck={false}
+                placeholder="Search for a city"
+                maxlength={100}
+                class="rounded-full border-0 bg-surface px-4 text-sm"
+              />
+            </TextField>
           </div>
           <div
             class="min-h-40 px-3 py-3"
@@ -151,9 +157,10 @@ export function CityPicker(props: {
                     <For each={found()}>
                       {(place) => (
                         <li>
-                          <button
-                            type="button"
-                            class="flex w-full items-center justify-between gap-3 rounded-[12px] px-3 py-2.5 text-left transition-colors hover:bg-surface disabled:opacity-60 disabled:hover:bg-transparent"
+                          <Button
+                            variant="ghost"
+                            size="bare"
+                            class="flex w-full items-center justify-between gap-3 rounded-[12px] px-3 py-2.5 text-left font-normal text-ink hover:bg-surface hover:text-ink disabled:opacity-60"
                             disabled={saving() !== null}
                             onClick={() => void choose(place)}
                           >
@@ -170,7 +177,7 @@ export function CityPicker(props: {
                             <span class="shrink-0 text-sm text-muted">
                               {saving() === placeKey(place) ? 'Saving…' : ''}
                             </span>
-                          </button>
+                          </Button>
                         </li>
                       )}
                     </For>
