@@ -5,8 +5,8 @@ import { serverReportingOptions } from './lib/observability/server'
 
 /**
  * The Worker entry (wrangler.jsonc `main`): Start's own handler, wrapped for error reporting
- * when this environment has a `SENTRY_DSN`. Without one the handler is exported as it is and
- * the Sentry SDK never initialises.
+ * when this environment has a `SENTRY_DSN` and this is a built Worker. Without one, and under
+ * `npm run dev`, the handler is exported as it is and the Sentry SDK never initialises.
  */
 const entry = createServerEntry({
   fetch: (request) => handler.fetch(request),
@@ -14,7 +14,7 @@ const entry = createServerEntry({
 
 const release = import.meta.env.VITE_SENTRY_RELEASE || undefined
 
-export default env.SENTRY_DSN
+export default env.SENTRY_DSN && !import.meta.env.DEV
   ? withSentry(
       (workerEnv: Env) => serverReportingOptions(workerEnv, release),
       entry as ExportedHandler<Env>,

@@ -9,9 +9,19 @@ export type ReportingConfig = {
   release: string | undefined
 }
 
-/** From the build's environment (`WXT_SENTRY_*`). An empty DSN turns reporting off. */
+/** The `aaru-extension` project's DSN. Public, not a secret: it can only send errors in. */
+const STORE_DSN =
+  'https://5a52d56dbe22c31fb68459c9de01c1ab@o4510766840872960.ingest.de.sentry.io/4512299387256913'
+
+/**
+ * From the build's environment (`WXT_SENTRY_*`). A production build reports to `STORE_DSN`
+ * unless `WXT_SENTRY_DSN` says otherwise; `npm run dev` and tests report nothing. An empty DSN
+ * turns it off.
+ */
 export const BUILD_REPORTING: ReportingConfig = {
-  dsn: import.meta.env.WXT_SENTRY_DSN ?? '',
+  dsn:
+    import.meta.env.WXT_SENTRY_DSN ??
+    (import.meta.env.MODE === 'production' ? STORE_DSN : ''),
   environment:
     import.meta.env.WXT_SENTRY_ENVIRONMENT ||
     (import.meta.env.MODE === 'development' ? 'development' : 'production'),

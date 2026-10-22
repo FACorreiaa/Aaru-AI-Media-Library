@@ -14,6 +14,6 @@ APP_GROUP_ID = group.$(APP_BUNDLE_ID)
 
 // Crash and error reports (Sentry, aaru-ios project, EU). A DSN is public, not a secret.
 // Empty turns reporting off. Write it as https:/$()/<key>@<host>/<id>: `//` starts a comment.
-SENTRY_DSN =
+SENTRY_DSN = https:/$()/80b4e445b1422fcee3f5d98ede1b2d04@o4510766840872960.ingest.de.sentry.io/4512299389026384
 
 #include? "Secrets.xcconfig"
