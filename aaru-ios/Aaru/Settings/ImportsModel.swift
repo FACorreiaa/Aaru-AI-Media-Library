@@ -17,113 +17,6 @@ extension ImportRow: @retroactive Identifiable {
 
 typealias ImportFileSource = Operations.CreateCSVImport.Input.Query.SourcePayload
 
-extension ImportFileSource: @retroactive Identifiable {
-    public var id: String {
-        rawValue
-    }
-
-
-    var label: String {
-        switch self {
-        case .auto: "Any other CSV"
-        case .csv: "CSV"
-        case .imdb: "IMDb"
-        case .letterboxd: "Letterboxd"
-        case .netflix: "Netflix"
-        case .goodreads: "Goodreads"
-        case .mal: "MyAnimeList"
-        }
-    }
-
-    var hint: String {
-        switch self {
-        case .auto, .csv:
-            "A CSV from any other site, or a spreadsheet. Aaru reads the columns."
-        case .imdb: "Your ratings or watchlist export (CSV)."
-        case .letterboxd: "diary.csv, ratings.csv, watched.csv or watchlist.csv from your export."
-        case .netflix: "Account → Profile → Viewing activity → Download all. One profile per file."
-        case .goodreads: "goodreads_library_export.csv. Custom shelves become lists."
-        case .mal: "On MyAnimeList: Profile → Export → Anime list. The .xml or .xml.gz file."
-        }
-    }
-}
-
-extension ImportJob {
-    var sourceLabel: String {
-        switch source {
-        case .imdbCsv: "IMDb"
-        case .letterboxdCsv: "Letterboxd"
-        case .goodreadsCsv: "Goodreads"
-        case .trakt: "Trakt"
-        case .stremio: "Stremio"
-        case .catList, .catIcs: "Pogdesign CAT"
-        case .netflixCsv: "Netflix"
-        case .malXml: "MyAnimeList"
-        case .anilist: "AniList"
-        case .csv: "CSV"
-        }
-    }
-
-    var stateLabel: String {
-        switch state {
-        case .queued: errorSummary == nil ? "In line" : "Paused, retrying soon"
-        case .running: rowsTotal > 0
-            ? "Matching titles… \(min(100, rowsMatched * 100 / rowsTotal))%"
-            : "Matching titles…"
-        case .planned: "Ready to review"
-        case .succeeded: "Imported"
-        case .partial: "Imported, \(stats.unmatched) unmatched"
-        case .failed: "Failed"
-        }
-    }
-
-    /// Still changing on the server: the screen polls until it is not.
-    var isWorking: Bool {
-        state == .queued || state == .running
-    }
-}
-
-/// One row of Import's "Bring your history", in `CLAUDE.md`'s import order (UX-026). Trakt has
-/// its own section above; "Any other CSV" is last and only fills gaps.
-enum HistorySource: Hashable, Identifiable {
-    case stremio
-    case file(ImportFileSource)
-    case cat
-    case aniList
-
-    static let ordered: [HistorySource] = [
-        .stremio, .file(.imdb), .file(.letterboxd), .file(.goodreads), .cat, .file(.netflix), .file(.mal),
-        .aniList, .file(.auto),
-    ]
-
-    var id: String {
-        switch self {
-        case .stremio: "stremio"
-        case let .file(source): source.rawValue
-        case .cat: "cat"
-        case .aniList: "anilist"
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .stremio: "Stremio history"
-        case let .file(source): source.label
-        case .cat: "Pogdesign CAT"
-        case .aniList: "AniList"
-        }
-    }
-
-    var hint: String {
-        switch self {
-        case .stremio: "What you watched before, approved on stremio.com."
-        case let .file(source): source.hint
-        case .cat: "Your iCal link or file, or a list of shows."
-        case .aniList: "Your public anime list, by username."
-        }
-    }
-}
-
 /// APP-007: the user's imports. Upload a file, watch it get matched, approve the plan.
 @MainActor
 @Observable
@@ -373,6 +266,25 @@ final class ImportsModel {
         return false
     }
 
+    func reset() {
+        jobs = []
+        hasLoaded = false
+        trakt = nil
+        problem = nil
+    }
+
+    private func replace(_ job: ImportJob) {
+        if let index = jobs.firstIndex(where: { $0.id == job.id }) {
+            jobs[index] = job
+        } else {
+            jobs.insert(job, at: 0)
+        }
+    }
+}
+
+// MARK: Files
+
+extension ImportsModel {
     /// Reads a picked export file and uploads it. MyAnimeList's export downloads gzipped; the
     /// server takes the XML inside.
     func upload(fileAt url: URL, source: ImportFileSource) async -> ImportJob? {
@@ -421,9 +333,11 @@ final class ImportsModel {
         }
         return await importCAT(text)
     }
+}
 
-    // MARK: Trakt (IMP-002/003)
+// MARK: Trakt (IMP-002/003)
 
+extension ImportsModel {
     func loadTrakt() async {
         guard let api else { return }
         if case let .ok(response) = try? await api.getTraktConnection() {
@@ -496,21 +410,6 @@ final class ImportsModel {
             }
         } catch {
             problem = "Trakt was not disconnected. Aaru could not reach the server."
-        }
-    }
-
-    func reset() {
-        jobs = []
-        hasLoaded = false
-        trakt = nil
-        problem = nil
-    }
-
-    private func replace(_ job: ImportJob) {
-        if let index = jobs.firstIndex(where: { $0.id == job.id }) {
-            jobs[index] = job
-        } else {
-            jobs.insert(job, at: 0)
         }
     }
 }

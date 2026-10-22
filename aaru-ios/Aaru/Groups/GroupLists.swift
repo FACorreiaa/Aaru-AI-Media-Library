@@ -67,7 +67,8 @@ struct GroupsEmptyState: View {
         ContentUnavailableView {
             Label("No groups yet", systemImage: "bubble.left.and.bubble.right")
         } description: {
-            Text(needsHandle ? "Choose a handle first, so friends see who is talking." : "Make a place to talk with friends.")
+            Text(needsHandle ? "Choose a handle first, so friends see who is talking." :
+                "Make a place to talk with friends.")
         } actions: {
             if needsHandle {
                 Button("Choose a handle") { router.openSettings(.account) }

@@ -89,27 +89,25 @@ struct CalendarEpisodeSheet: View {
     }
 
     @ViewBuilder private func actionButtons(_ entry: CalendarEntry) -> some View {
-        Group {
-            Button {
-                Task { await feed.toggle(entry) }
-            } label: {
-                Label(
-                    entry.watched ? "Watched" : aired(entry) ? "Mark watched" : "Not aired yet",
-                    systemImage: entry.watched ? "checkmark.circle.fill" : "circle"
-                )
-                .frame(minHeight: 30)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(entry.watched ? Color(.accent) : Color(.ink).opacity(0.75))
-            .disabled(feed.pending.contains(entry.cellID) || (!aired(entry) && !entry.watched))
-            Button {
-                dismiss()
-                onOpenShow(entry.libraryItemId)
-            } label: {
-                Label("Open show", systemImage: "info.circle").frame(minHeight: 30)
-            }
-            .buttonStyle(.bordered)
+        Button {
+            Task { await feed.toggle(entry) }
+        } label: {
+            Label(
+                entry.watched ? "Watched" : aired(entry) ? "Mark watched" : "Not aired yet",
+                systemImage: entry.watched ? "checkmark.circle.fill" : "circle"
+            )
+            .frame(minHeight: 30)
         }
+        .buttonStyle(.borderedProminent)
+        .tint(entry.watched ? Color(.accent) : Color(.ink).opacity(0.75))
+        .disabled(feed.pending.contains(entry.cellID) || (!aired(entry) && !entry.watched))
+        Button {
+            dismiss()
+            onOpenShow(entry.libraryItemId)
+        } label: {
+            Label("Open show", systemImage: "info.circle").frame(minHeight: 30)
+        }
+        .buttonStyle(.bordered)
     }
 
     private func still(_ entry: CalendarEntry) -> some View {

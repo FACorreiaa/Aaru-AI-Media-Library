@@ -105,8 +105,12 @@ final class LibraryModel {
     /// Adds a catalog hit (Search, Discover) with a starting status. Returns what went wrong, or
     /// nil when the title is in the library.
     func add(_ hit: CatalogHit, status: LibraryStatus, api: Client?) async -> String? {
-        await add(MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year), named: hit.title,
-                  status: status, api: api)
+        await add(
+            MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
+            named: hit.title,
+            status: status,
+            api: api
+        )
     }
 
     /// Adds a title by reference (a list member not yet in the library, UX-072).

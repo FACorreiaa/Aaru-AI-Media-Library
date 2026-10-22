@@ -262,7 +262,7 @@ final class TitleDetailModel {
         } else {
             watched.remove(key)
         }
-        problem = message
-            ?? "\(EpisodeCode.short(season: key.season, number: key.number)) was not saved. Aaru could not reach the server."
+        let code = EpisodeCode.short(season: key.season, number: key.number)
+        problem = message ?? "\(code) was not saved. Aaru could not reach the server."
     }
 }

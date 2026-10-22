@@ -144,11 +144,19 @@ private enum ListNaming: Identifiable {
     }
 
     var title: String {
-        if case .new = self { "New list" } else { "Rename list" }
+        if case .new = self {
+            "New list"
+        } else {
+            "Rename list"
+        }
     }
 
     var initial: String {
-        if case let .rename(list) = self { list.name } else { "" }
+        if case let .rename(list) = self {
+            list.name
+        } else {
+            ""
+        }
     }
 }
 

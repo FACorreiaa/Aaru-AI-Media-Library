@@ -7,7 +7,7 @@ import Observation
 @MainActor
 @Observable
 final class AccountModel {
-    private(set) var me: Components.Schemas.Me?
+    private(set) var profile: Components.Schemas.Me?
     private(set) var linking = false
     var problem: String?
 
@@ -18,12 +18,12 @@ final class AccountModel {
     }
 
     var canLinkGoogle: Bool {
-        api != nil && AppEnvironment.googleClientID != nil && me.map { !$0.providers.contains(.google) } == true
+        api != nil && AppEnvironment.googleClientID != nil && profile.map { !$0.providers.contains(.google) } == true
     }
 
     /// "Apple, Email", or "—" before the account loads.
     var providers: String {
-        let names = (me?.providers ?? []).map { provider in
+        let names = (profile?.providers ?? []).map { provider in
             switch provider {
             case .apple: "Apple"
             case .google: "Google"
@@ -37,7 +37,7 @@ final class AccountModel {
         guard let api else { return }
         do {
             if case let .ok(response) = try await api.getMe() {
-                me = try response.body.json
+                profile = try response.body.json
             }
         } catch {
             problem = "Your account could not be loaded. Aaru could not reach the server."
@@ -53,7 +53,7 @@ final class AccountModel {
         do {
             switch try await api.linkGoogle(body: .json(.init(idToken: token.idToken, nonce: token.nonce))) {
             case let .ok(success):
-                me = try success.body.json
+                profile = try success.body.json
             case let .default(_, error):
                 problem = (try? error.body.json.message) ?? "Google was not linked."
             }
@@ -63,7 +63,7 @@ final class AccountModel {
     }
 
     func reset() {
-        me = nil
+        profile = nil
         problem = nil
     }
 }

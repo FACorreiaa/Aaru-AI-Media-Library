@@ -36,7 +36,9 @@ struct WeekView: View {
             // iPad's bar shares its width with the tab bar and would fold the arrows into its
             // More menu, so a wide window steps from a row over the grid instead.
             .safeAreaInset(edge: .top, spacing: 0) {
-                if isWide { stepperRow }
+                if isWide {
+                    stepperRow
+                }
             }
         #endif
     }

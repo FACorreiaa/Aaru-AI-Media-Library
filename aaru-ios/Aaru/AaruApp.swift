@@ -22,10 +22,10 @@ struct AaruApp: App {
             // ⌘, and the app menu: the only Settings on the Mac (DESIGN.md §18).
             Settings {
                 SettingsWindow(context: services.settingsContext)
-                .environment(services.session)
-                .environment(services.router)
-                .tint(Color(.accent))
-                .appliesAppearance()
+                    .environment(services.session)
+                    .environment(services.router)
+                    .tint(Color(.accent))
+                    .appliesAppearance()
             }
             .windowResizability(.contentSize)
         #endif

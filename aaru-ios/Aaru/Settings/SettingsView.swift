@@ -131,7 +131,7 @@ private struct AccountSummary: View {
                 .frame(width: avatar, height: avatar)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(social.displayName ?? account.me?.displayName ?? social.handle.map { "@\($0)" } ?? "Account")
+                Text(social.displayName ?? account.profile?.displayName ?? social.handle.map { "@\($0)" } ?? "Account")
                     .font(.title3)
                     .foregroundStyle(Color(.ink))
                 Text(account.providers == "—" ? "Name, handle, sign-in" : "Signed in with \(account.providers)")

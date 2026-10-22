@@ -216,7 +216,7 @@ private struct NowCard: View {
                         "Mark \(EpisodeCode.short(season: next.season, number: next.number)) watched",
                         systemImage: "checkmark"
                     )
-                        .frame(minHeight: 30)
+                    .frame(minHeight: 30)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color(.accent))

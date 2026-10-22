@@ -214,14 +214,14 @@ struct CalendarScreen: View {
     #Preview("iPhone · month") {
         CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
             .defaultAppStorage(.preview(mode: .month))
-        .environment(AppRouter())
+            .environment(AppRouter())
             .environment(\.horizontalSizeClass, .compact)
     }
 
     #Preview("iPhone · week · dark") {
         CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
             .defaultAppStorage(.preview(mode: .week))
-        .environment(AppRouter())
+            .environment(AppRouter())
             .environment(\.horizontalSizeClass, .compact)
             .preferredColorScheme(.dark)
     }

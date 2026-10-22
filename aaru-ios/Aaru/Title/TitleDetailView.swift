@@ -184,8 +184,11 @@ extension TitleDetailView {
                 Button {
                     Task { await model.toggle(next) }
                 } label: {
-                    Label("Mark \(EpisodeCode.short(season: next.season, number: next.number)) watched", systemImage: "checkmark")
-                        .monospacedDigit()
+                    Label(
+                        "Mark \(EpisodeCode.short(season: next.season, number: next.number)) watched",
+                        systemImage: "checkmark"
+                    )
+                    .monospacedDigit()
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(model.pending.contains(next))

@@ -215,10 +215,10 @@ private struct MainTabs: View {
                     realtime.start()
                 }
             }
-            #if os(iOS)
-                // Live Activity tokens go up while signed in; signing out cancels it.
-                .task { await LiveActivityRegistrar.current?.follow() }
-            #endif
+        #if os(iOS)
+            // Live Activity tokens go up while signed in; signing out cancels it.
+            .task { await LiveActivityRegistrar.current?.follow() }
+        #endif
             // A notification tapped before sign-in, or before the app was running, waits in
             // PushInbox; this view only exists signed in, so it reads it on appear too (UX-012).
             .onChange(of: PushInbox.shared.planID, initial: true) { _, id in
@@ -311,7 +311,8 @@ extension Optional {
 #Preview {
     RootView(
         api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil),
-        settings: SettingsServices(api: nil), groups: GroupsModel(api: nil, realtime: nil), realtime: RealtimeClient(baseURL: nil) { nil }
+        settings: SettingsServices(api: nil), groups: GroupsModel(api: nil, realtime: nil),
+        realtime: RealtimeClient(baseURL: nil) { nil }
     )
     .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
     .environment(AppRouter())

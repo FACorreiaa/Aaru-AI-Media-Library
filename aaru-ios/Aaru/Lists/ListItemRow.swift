@@ -33,10 +33,13 @@ struct ListItemRow: View {
                         }
                         if let next = item.nextAiring {
                             TimelineView(.everyMinute) { context in
-                                Text(EpisodeCode.short(season: next.season, number: next.number) + " · " + HomeModel.airingLabel(
-                                    airsAt: next.airsAt, airTimeKnown: next.airTimeKnown, now: context.date,
-                                    calendar: .aaru
-                                ))
+                                Text(EpisodeCode.short(season: next.season, number: next.number) + " · " + HomeModel
+                                    .airingLabel(
+                                        airsAt: next.airsAt,
+                                        airTimeKnown: next.airTimeKnown,
+                                        now: context.date,
+                                        calendar: .aaru
+                                    ))
                             }
                             .font(.footnote)
                             .foregroundStyle(.tint)

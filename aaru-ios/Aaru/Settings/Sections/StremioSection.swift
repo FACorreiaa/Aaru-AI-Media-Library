@@ -60,12 +60,16 @@ struct StremioSection: View {
                 )
             }
         }
-        .confirmsDisconnect($disconnecting, stops: { _ in "Stremio stops showing your Aaru library." }, perform: { token in
-            if created?.token.id == token.id {
-                created = nil
+        .confirmsDisconnect(
+            $disconnecting,
+            stops: { _ in "Stremio stops showing your Aaru library." },
+            perform: { token in
+                if created?.token.id == token.id {
+                    created = nil
+                }
+                Task { await model.disconnect(token) }
             }
-            Task { await model.disconnect(token) }
-        })
+        )
     }
 
     private func connect() {

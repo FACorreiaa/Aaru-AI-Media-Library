@@ -66,7 +66,6 @@ struct AboutView: View {
                 Link("About Aaru on the web", destination: Self.url("https://aaruapp.com/about"))
                 Link("Contact", destination: Self.url("mailto:privacy@aaruapp.com"))
             }
-
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)

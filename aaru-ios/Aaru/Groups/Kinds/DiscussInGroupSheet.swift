@@ -48,7 +48,7 @@ struct DiscussInGroupSheet: View {
                             action: action(in: group),
                             working: working == group.id
                         ) { open(group) }
-                        .disabled(working != nil || action(in: group) == .unavailable)
+                            .disabled(working != nil || action(in: group) == .unavailable)
                     }
                 } footer: {
                     Text("Group messages there hide spoilers from anyone who hasn't caught up.")
