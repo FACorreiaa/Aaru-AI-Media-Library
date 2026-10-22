@@ -105,10 +105,18 @@ struct FriendsView: View {
 
     var body: some View {
         List {
+            if !model.recommendations.isEmpty {
+                Section("For you from friends") {
+                    ForEach(model.recommendations, id: \.id) { item in
+                        RecommendationRow(item: item) { add in Task { await model.answer(item, add: add) } }
+                    }
+                }
+            }
             if !model.activity.isEmpty {
                 Section("Lately") {
                     ForEach(model.activity, id: \.id) { item in
-                        NavigationLink(value: item.user) { ActivityRow(item: item) }
+                        let own = item.user.handle == model.handle
+                        ActivityRow(item: item, own: own) { emoji in Task { await model.react(emoji, to: item) } }
                     }
                     if model.activityNext != nil {
                         Button("Earlier") { Task { await model.loadEarlierActivity() } }

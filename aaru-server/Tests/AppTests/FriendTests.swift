@@ -148,18 +148,18 @@ struct FriendTests {
                 )
             }
             _ = try await add(env, "movie", env.stubMovie("Heat"), "finished", token: ana.token)
-            // Your own activity is not in your friends' feed.
+            // Your own rows are in your feed too, so you see what friends reacted to.
             _ = try await add(env, "movie", env.stubMovie("Arrival"), "finished")
 
             let items = try #require(try await env.send(.get, "/v1/activity").json()["items"] as? [[String: Any]])
-            #expect(Set(titles(items)) == ["Andor", "Heat"])
+            #expect(Set(titles(items)) == ["Andor", "Heat", "Arrival"])
             let andor = try #require(items.first { ($0["title"] as? [String: Any])?["title"] as? String == "Andor" })
             #expect(andor["episodes"] as? Int == 3)
             #expect(andor["lastEpisode"] as? Int == 3)
             #expect(andor["finished"] as? Bool == false)
             #expect((andor["user"] as? [String: Any])?["handle"] as? String == ana.handle)
-            #expect(try await env.send(.get, "/v1/activity", token: ana.token).json()["items"]
-                .map { titles($0) } == ["Arrival"])
+            let anas = try await env.send(.get, "/v1/activity", token: ana.token).json()["items"]
+            #expect(Set(titles(anas)) == ["Andor", "Heat", "Arrival"])
 
             // A tick without a known date (an import, a restore) is not activity.
             let showID = try #require(UUID(uuidString: show))
@@ -169,7 +169,7 @@ struct FriendTests {
                 """).run()
             }
             let after = try #require(try await env.send(.get, "/v1/activity").json()["items"] as? [[String: Any]])
-            #expect(titles(after) == ["Heat"])
+            #expect(Set(titles(after)) == ["Heat", "Arrival"])
         }
     }
 }

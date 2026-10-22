@@ -1,8 +1,13 @@
 import { Link, createFileRoute, redirect } from '@tanstack/solid-router'
-import { For, Show } from 'solid-js'
+import { For, Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { AppHeader } from '../components/AppHeader'
 import { Poster } from '../components/Poster'
+import {
+  GroupInviteDialog,
+  RecommendDialog,
+} from '../components/Recommendations'
+import { Button } from '../components/ui/button'
 import { kindOf } from '../lib/library/model'
 import {
   countsLine,
@@ -41,6 +46,7 @@ export const Route = createFileRoute('/app_/friends/$handle')({
 function Profile() {
   const loaded = Route.useLoaderData()
   const profile = () => loaded().profile
+  const [dialog, setDialog] = createSignal<'recommend' | 'group' | null>(null)
   return (
     <div class="min-h-[100dvh]">
       <AppHeader class="max-w-4xl" />
@@ -88,6 +94,30 @@ function Profile() {
                     </Show>
                   </div>
                 </header>
+                <div class="mt-5 flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => setDialog('recommend')}>
+                    Recommend a title
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="quiet"
+                    onClick={() => setDialog('group')}
+                  >
+                    Invite to a group
+                  </Button>
+                </div>
+                <Show when={dialog() === 'recommend'}>
+                  <RecommendDialog
+                    friend={friend().user}
+                    onClose={() => setDialog(null)}
+                  />
+                </Show>
+                <Show when={dialog() === 'group'}>
+                  <GroupInviteDialog
+                    friend={friend().user}
+                    onClose={() => setDialog(null)}
+                  />
+                </Show>
 
                 <Show
                   when={friend().sharing}

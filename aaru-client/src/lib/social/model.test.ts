@@ -5,6 +5,7 @@ import {
   countsLine,
   handleProblem,
   itemProgress,
+  withReaction,
   inviteExpiry,
   invitePlea,
   inviterName,
@@ -112,6 +113,30 @@ describe('social model', () => {
     )
     expect(itemProgress({ ...item, bookPage: 120 })).toBe('Page 120')
     expect(itemProgress(item)).toBe(null)
+  })
+
+  it('keeps reaction counts in step with yours', () => {
+    const row = {
+      id: 'x',
+      user: ana,
+      title: base(),
+      day: '2026-10-21',
+      episodes: 0,
+      finished: true,
+      at: '2026-10-21T20:00:00Z',
+      reactions: [{ emoji: '🔥', count: 2 }],
+    }
+    const loved = withReaction(row, '❤️')
+    expect(loved.myReaction).toBe('❤️')
+    expect(loved.reactions).toEqual([
+      { emoji: '🔥', count: 2 },
+      { emoji: '❤️', count: 1 },
+    ])
+    const switched = withReaction(loved, '🔥')
+    expect(switched.reactions).toEqual([{ emoji: '🔥', count: 3 }])
+    const cleared = withReaction(switched, null)
+    expect(cleared.myReaction).toBeUndefined()
+    expect(cleared.reactions).toEqual([{ emoji: '🔥', count: 2 }])
   })
 })
 
