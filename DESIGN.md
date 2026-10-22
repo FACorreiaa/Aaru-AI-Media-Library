@@ -627,6 +627,20 @@ On the web, one component library, then performance:
   reduced import `src/lib/reduced-motion.ts`, so they do not load `motion/mini`. Every
   animation follows a tap, so `motion/mini` is never preloaded: it loads when the browser is idle.
 - `npm run size` holds every route to `size-budget.json` in CI.
+- **One choice of a few is a radio group.** Every one-of-N switch (a view, a kind, a period, a
+  layout, a status picker) is `Segmented` (`src/components/Segmented.tsx`, `pill` or `chip`) on
+  shadcn-solid's SegmentedControl: "radio, 2 of 3", arrows move the choice, a second tap never
+  clears it. There is no ToggleGroup; a real on/off is a Switch or a Checkbox.
+- **Overlays play their exit.** A dialog, sheet or drawer takes `open` and stays mounted on its
+  last value (`lastShown` in `src/lib/presence.ts`) while Kobalte plays the close, then the page
+  lets it go. None is mounted only while open.
+- **Raw controls are a lint error.** `button`, `input`, `select`, `textarea` and `dialog` come
+  from the barrel. The one exception is the router's default error page, which spells out the
+  primary button so every page's first load does not carry Kobalte and tailwind-merge; for the
+  same reason `cardClass` sits in a module with no imports.
+- **Measured after step 2 (2026-10-22, gzip, against `main` with its query cache):** shared
+  77.4 → 79.1 KB, the landing page 86.0 → 88.7, Home 99.1 → 125.7 (the shell, the sidebar and
+  Search's host), Title 93.0 → 130.3. The per-route table is in `docs/audit/web.md`.
 
 ## 18. Navigation and Settings (owner, 2026-10-21)
 
@@ -680,14 +694,14 @@ Where each existing piece goes:
 
 | Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
 | --- | --- | --- |
-| Account | `AccountPage` card (name, providers, Link Google, Sign out); the handle and name editor out of `SocialSection`; `AppearanceSection` | `AccountSettings` first section; `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
-| Friends & privacy | `SocialSection` without the profile editor; `ConcertPlaceSection` | `FriendsView`'s sections inline (not a push from Account); `ConcertPlaceSection` |
+| Account | `AccountPage`: `ProfileEditor` (handle and name), Signed in with + Link Google, `AppearanceSection`, Sign out | `AccountSettings` first section; `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
+| Friends & privacy | `FriendsSection` (the friend lists, from the old `SocialSection`); `ConcertPlaceSection` | `FriendsView`'s sections inline (not a push from Account); `ConcertPlaceSection` |
 | Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
-| Import | `ImportsPage` without the export card: `TraktImport`, `FILE_SOURCES`, the AniList form, `CatImport`, `StremioHistoryImport`, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |
-| Connections | `ConnectionsSection`, `StremioSection`, `MusicSection` (from `app_.settings.connected`) | `ConnectionsSection` (+ `ConnectionSetupView`, `BrowserExtensionView`), `StremioSection`, `MusicSection` (from `ConnectedAppsSettings`) |
-| Your data | recap shortcuts from `app_.settings.recaps` (its Insights link goes: Insights is in the sidebar); the export card; History (new) | recap shortcuts (`RecapDeck`'s, now also in Library's menu); `ExportDataSection`; History (new) |
-| About | the "About Aaru" card of `app_.settings.about` | `AboutView` without the delete section |
-| Delete account | the delete section and `AlertDialog` of `app_.settings.about` | `AboutView`'s delete section and dialog |
+| Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |
+| Connections | `ConnectionsSection`, `StremioSection`, `MusicSection` | `ConnectionsSection` (+ `ConnectionSetupView`, `BrowserExtensionView`), `StremioSection`, `MusicSection` (from `ConnectedAppsSettings`) |
+| Your data | `_shell.app_.settings.data`: recap shortcuts, History (`/v1/actions`, Undo per action), Export | recap shortcuts (`RecapDeck`'s, now also in Library's menu); `ExportDataSection`; History (new) |
+| About | `_shell.app_.settings.about`: wordmark, `Credits`, links | `AboutView` without the delete section |
+| Delete account | `_shell.app_.settings.delete` with `ConfirmDialog` | `AboutView`'s delete section and dialog |
 
 **Presentation.**
 

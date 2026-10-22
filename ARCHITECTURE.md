@@ -886,9 +886,19 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   somoto, unovis where the registry uses them), copied as source into `src/components/ui` and
   imported only through its barrel `~/components/ui`. Its CSS variables point at Aaru's design
   tokens (`src/styles.css`), so the look is Aaru's. Routes and feature components compose those
-  primitives; compositions such as `ConfirmDialog` live in `src/components`, not in `ui`. ESLint
-  enforces the barrel and (from step 2 of the web audit) bans raw form controls and modals.
-  Motion stays in `src/lib/motion.ts` (DESIGN.md §17).
+  primitives; compositions such as `ConfirmDialog` and `Segmented` live in `src/components`, not
+  in `ui`. ESLint enforces the barrel and fails on raw form controls and modals. Motion stays in
+  `src/lib/motion.ts` (DESIGN.md §17).
+- App shell (DESIGN.md §18): one pathless layout route, `routes/_shell.tsx`, wraps every `/app`
+  page (files `_shell.app.tsx` and `_shell.app_.*.tsx`; URLs unchanged). Its `beforeLoad` is the
+  one sign-in check (`requireSession`, through the query cache, with `next`), and its component
+  is `components/shell/AppShell.tsx`: the shadcn-solid Sidebar from 1024px, the same sidebar as
+  a sheet below, the one Search dialog (⌘K) that pages lend their library to
+  (`useSearchHost`), and the Toaster. Back links name the page you came from (`BackLink`).
+- Settings are eight child routes of `_shell.app_.settings.tsx` (`account`, `friends`,
+  `notifications`, `import`, `connections`, `data`, `about`, `delete`) with a rail from 768px
+  and a list below; the old slugs (`connected`, `imports`, `recaps`) and hashes redirect.
+  `/app/week` redirects to `/app/calendar`.
 
 ## Tracking integrations (Phase 3)
 
