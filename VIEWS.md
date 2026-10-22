@@ -31,7 +31,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Shelf | `Shelf` | `GET /v1/library/items` + saved query | 1–2 · M6 / M7 |
 | Library · Now | `NowCard` (Library only; the agent does not emit it — `TonightStrip` is its agent counterpart) | the synced shelf; `PUT .../episodes/{s}/{e}`, `PATCH /v1/library/items/{id}` | 2 · APP-017 |
 | Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
-| Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage | 2 · M9 |
+| Import studio | `MatchTable`, `PlanCard`, `JobLedger` | `POST /v1/imports/*`, unmatched triage (`POST /v1/imports/{id}/rows/{index}/resolve`) | 2 · M9 |
 | Capture | `JobLedger`, `MatchTable`, `PlanCard` | `POST /v1/imports/capture` | 7 · M13 |
 | Undo ribbon | `UndoRibbon` | action journal + undo endpoint | 1 · M4 |
 | History (Settings → Your data) | none — journaled actions newest first, by whom (you, an import, a connection), Undo; an applied import or request links here (UX-060) | `GET /v1/actions`, `POST /v1/actions/{id}/undo` | 2 · DESIGN.md §9, §18 (2026-10-21) |

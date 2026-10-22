@@ -28,14 +28,16 @@ extension APIImplementation {
         guard (kind == .update) == (watchEventID != nil) else {
             throw Self.invalid("watchEventId", "Sent with `update` only, and always with it.")
         }
-        let registered = try await stores.watchEvents.registerLiveActivity(
-            LiveActivityToken(
-                token: token, kind: kind, environment: body.environment == .production ? .production : .sandbox,
-                topic: body.bundleId, watchEventID: watchEventID
-            ),
-            userID: currentUser(), now: Date()
+        let registration = LiveActivityToken(
+            token: token, kind: kind, environment: body.environment == .production ? .production : .sandbox,
+            topic: body.bundleId, watchEventID: watchEventID
         )
-        guard registered else { throw AppError.notFound() }
+        let userID = try currentUser()
+        guard try await stores.watchEvents.registerLiveActivity(registration, userID: userID, now: Date())
+        else { throw AppError.notFound() }
+        if kind == .update {
+            await services.scrobble.liveActivity?.caughtUp(registration, userID: userID, now: Date())
+        }
         return .noContent(.init())
     }
 

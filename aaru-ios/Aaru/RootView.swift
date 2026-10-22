@@ -65,8 +65,9 @@ struct RootView: View {
                     }
                 }
                 #if os(iOS)
-                // Live Activity tokens go up while signed in; signing out cancels it.
-                .task { await LiveActivityRegistrar.current?.follow() }
+                // Launch already follows Live Activity tokens; signing in starts it again so the
+                // current tokens go up with the new session.
+                .task { LiveActivityRegistrar.current?.start() }
                 #endif
                 .sheet(item: $linkedTitle) { link in
                     NavigationStack {

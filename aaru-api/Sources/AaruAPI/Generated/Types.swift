@@ -578,6 +578,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/{id}/apply`.
     /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)`.
     func applyImport(_ input: Operations.ApplyImport.Input) async throws -> Operations.ApplyImport.Output
+    /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/resolve`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)`.
+    func resolveImportRow(_ input: Operations.ResolveImportRow.Input) async throws -> Operations.ResolveImportRow.Output
     /// - Remark: HTTP `GET /v1/shelves`.
     /// - Remark: Generated from `#/paths//v1/shelves/get(listShelves)`.
     func listShelves(_ input: Operations.ListShelves.Input) async throws -> Operations.ListShelves.Output
@@ -2034,6 +2039,21 @@ extension APIProtocol {
         try await applyImport(Operations.ApplyImport.Input(
             path: path,
             headers: headers
+        ))
+    }
+    /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/resolve`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)`.
+    public func resolveImportRow(
+        path: Operations.ResolveImportRow.Input.Path,
+        headers: Operations.ResolveImportRow.Input.Headers = .init(),
+        body: Operations.ResolveImportRow.Input.Body
+    ) async throws -> Operations.ResolveImportRow.Output {
+        try await resolveImportRow(Operations.ResolveImportRow.Input(
+            path: path,
+            headers: headers,
+            body: body
         ))
     }
     /// - Remark: HTTP `GET /v1/shelves`.
@@ -25744,6 +25764,207 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/resolve`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)`.
+    public enum ResolveImportRow {
+        public static let id: Swift.String = "resolveImportRow"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/path/id`.
+                public var id: Swift.String
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/path/index`.
+                public var index: Swift.Int
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                ///   - index:
+                public init(
+                    id: Swift.String,
+                    index: Swift.Int
+                ) {
+                    self.id = id
+                    self.index = index
+                }
+            }
+            public var path: Operations.ResolveImportRow.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveImportRow.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveImportRow.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ResolveImportRow.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/requestBody/json/mediaRef`.
+                    public var mediaRef: Components.Schemas.MediaRef
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - mediaRef:
+                    public init(mediaRef: Components.Schemas.MediaRef) {
+                        self.mediaRef = mediaRef
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case mediaRef
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/requestBody/content/application\/json`.
+                case json(Operations.ResolveImportRow.Input.Body.JsonPayload)
+            }
+            public var body: Operations.ResolveImportRow.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.ResolveImportRow.Input.Path,
+                headers: Operations.ResolveImportRow.Input.Headers = .init(),
+                body: Operations.ResolveImportRow.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content/json`.
+                    public struct JsonPayload: Codable, Hashable, Sendable {
+                        /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content/json/job`.
+                        public var job: Components.Schemas.ImportJob
+                        /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content/json/row`.
+                        public var row: Components.Schemas.ImportRow
+                        /// Creates a new `JsonPayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - job:
+                        ///   - row:
+                        public init(
+                            job: Components.Schemas.ImportJob,
+                            row: Components.Schemas.ImportRow
+                        ) {
+                            self.job = job
+                            self.row = row
+                        }
+                        public enum CodingKeys: String, CodingKey {
+                            case job
+                            case row
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content/application\/json`.
+                    case json(Operations.ResolveImportRow.Output.Ok.Body.JsonPayload)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Operations.ResolveImportRow.Output.Ok.Body.JsonPayload {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ResolveImportRow.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ResolveImportRow.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Matched. The job's counts and the row as it now stands.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ResolveImportRow.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ResolveImportRow.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

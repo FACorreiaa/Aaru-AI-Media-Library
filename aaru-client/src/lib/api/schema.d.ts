@@ -1654,6 +1654,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/{id}/rows/{index}/resolve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row. */
+    post: operations['resolveImportRow']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/shelves': {
     parameters: {
       query?: never
@@ -6029,6 +6046,39 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  resolveImportRow: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+        index: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          mediaRef: components['schemas']['MediaRef']
+        }
+      }
+    }
+    responses: {
+      /** @description Matched. The job's counts and the row as it now stands. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            job: components['schemas']['ImportJob']
+            row: components['schemas']['ImportRow']
+          }
         }
       }
       default: components['responses']['Error']

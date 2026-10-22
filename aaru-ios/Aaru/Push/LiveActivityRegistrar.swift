@@ -7,21 +7,30 @@
     /// Hands ActivityKit's push tokens to the API (SCR-008) so the server can start "Now watching"
     /// when a scrobble starts, and update and end it as the player pauses, resumes and stops: the
     /// device's push-to-start token, and each scrobble activity's own token with the watch event
-    /// it follows. Runs while signed in; best effort, so a failed upload waits for the next token.
+    /// it follows. Runs from launch, so a background launch for a pushed-in activity still sends
+    /// its token; best effort, so a failed upload (signed out, offline) waits for the next token.
     final class LiveActivityRegistrar: Sendable {
         /// Set once at launch, like `PushRegistrar.current`.
         @MainActor static var current: LiveActivityRegistrar?
 
         private let api: Client?
+        /// The one follower. A second start replaces it rather than running beside it.
+        @MainActor private var following: Task<Void, Never>?
 
         init(api: Client?) {
             self.api = api
         }
 
-        /// Follows the tokens until cancelled: the signed-in root runs it as a task, so signing
-        /// out stops it.
-        func follow() async {
+        /// Follows the tokens from now on, in place of any earlier follower. The app delegate
+        /// starts it at launch and the signed-in root again on sign-in: a fresh follow yields
+        /// the current tokens again, so they go up with the new session.
+        @MainActor func start() {
             guard api != nil else { return }
+            following?.cancel()
+            following = Task { await self.follow() }
+        }
+
+        private func follow() async {
             await withTaskGroup(of: Void.self) { group in
                 group.addTask { await self.followPushToStart() }
                 group.addTask { await self.followActivities() }

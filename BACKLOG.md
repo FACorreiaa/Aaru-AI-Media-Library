@@ -311,7 +311,7 @@ are on `main` and wait for the next promote PR. Unmerged branches (Groups, realt
 | --- | --- | --- | --- |
 | **P0 — Rails** | 14/16 (1 built, unverified; 1 dropped) | **Met** | Nothing. `INFRA_TOKEN` is unset by choice, so promote PRs are opened by hand and Server Deploy's promote job shows red |
 | **P1 — Basics (API)** | 30/31 (1 built, unverified) | **Met** | Nothing; CAT-010's first production load of the anime mappings is unconfirmed (CronJob first fires 2026-11-02) |
-| **P2 — Clients, widgets, imports** | 31/54 (12 built, unverified; 3 partial; 7 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) built but never run on a real CAT export; unmatched-row triage (IMP-011) open |
+| **P2 — Clients, widgets, imports** | 31/54 (12 built, unverified; 3 partial; 7 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) built but never run on a real CAT export; unmatched-row triage (IMP-011) built, never run on a real import |
 | **P3 — Tracking** | 1/6 (1 partial) | Not met | Stremio addon built and deployed (SCR-003) but playback never tried live; no `/v1/scrobble/*` routes, no Plex/Jellyfin |
 | **P4 — Social** | 0/6 (1 partial) | Not met | Only push plumbing (SOC-005, airing alerts) is on `main` |
 | **P5 — Gamification** | 1/9 (1 partial) | Not met | Recap (GAM-006a) only; no points ledger, streaks, badges |
@@ -424,7 +424,7 @@ account or a stranger that has not happened yet.
 | IMP-008 | Done | #13; ImportParserTests | |
 | IMP-009 | Built, unverified | `feat/cat-import`; CATImport.swift, CATImportTests | Stub catalog and synthetic lists only; no real CAT profile paste yet |
 | IMP-010 | Built, unverified | `feat/cat-import`; CATCalendarParser, CATCalendarFeed | SUMMARY format confirmed on a real export (`Show S01E02 - \nTitle`, 45 shows); a same-name tie breaks on the episode's air date; link not yet run live |
-| IMP-011 | Open | ImportDetailView lists unmatched rows only | No resolve/search-and-pick UI |
+| IMP-011 | Built, unverified | `POST /v1/imports/{id}/rows/{index}/resolve`; ImportService+Resolve.swift, ImportResolveTests; "Find it" on web + Apple import detail | Not run on a real import yet |
 | IMP-012 | Deferred | BACKLOG "Parked 2026-10-16 by the owner" | Needs a real export |
 | IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |
 | IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
@@ -1716,6 +1716,14 @@ Let the user resolve unmatched rows by searching and picking the right title.
 **Done when:** resolving a row creates the library item with the source's status and rating
 applied, and the job's unmatched count decreases.
 
+**Built 2026-10-22:** `POST /v1/imports/{id}/rows/{index}/resolve` with the `mediaRef` of a
+search hit. Before approval the pick joins the plan, which is decided again as a whole (rows on
+one title still merge). After approval the row is decided against the library as it is then
+(fill empty, forward only, never past a status set by hand) and written at once as its own
+undoable action ("Matched “…” from Goodreads by hand"); the job turns `succeeded` when nothing is
+left unmatched. Each unmatched row on the import page has "Find it" (web dialog, Apple sheet):
+the catalog search, started on the row's title and kind.
+
 ### IMP-012 · TV Time export import · M
 **Needs:** IMP-005, IMP-004.
 TV Time shut down on 2025-07-15 and its users hold GDPR data exports. Parse the export's
@@ -2199,7 +2207,9 @@ web (polled every 30 s while visible), above Tonight on iPhone and Mac; Tonight 
 watching leave that show out meanwhile. The server pushes the "Now watching" Live Activity over
 APNs: push-to-start on a session's first `start`, update on pause and resume, end on the stop,
 from tokens the app registers at `PUT /v1/devices/live-activity`; the app also starts it when it
-opens on a session. A `start` for the next episode closes the last one, ticking it only when it
+opens on a session. The app follows its tokens from launch, so a background launch (iOS waking it
+for a push-started activity) uploads the activity's token, and a token that arrives after a pause
+or stop hears the session as it stands: update, or end (2026-10-22). A `start` for the next episode closes the last one, ticking it only when it
 was last reported at ≥ 80%. With it, the web's last-7-days block became a wide strip under
 Tonight (owner, same day). This closes WID-005's "scrobble start is P3" and SCR-001's "may start
 the WID-005 Live Activity via push".
