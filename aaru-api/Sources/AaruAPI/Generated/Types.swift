@@ -112,6 +112,32 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/activity`.
     /// - Remark: Generated from `#/paths//v1/activity/get(listFriendActivity)`.
     func listFriendActivity(_ input: Operations.ListFriendActivity.Input) async throws -> Operations.ListFriendActivity.Output
+    /// React to a friend's activity row with one of six emoji; reacting again replaces it. Your own rows take none. 404 unless you can see the row.
+    ///
+    /// - Remark: HTTP `PUT /v1/activity/{id}/reaction`.
+    /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/put(setActivityReaction)`.
+    func setActivityReaction(_ input: Operations.SetActivityReaction.Input) async throws -> Operations.SetActivityReaction.Output
+    /// - Remark: HTTP `DELETE /v1/activity/{id}/reaction`.
+    /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/delete(clearActivityReaction)`.
+    func clearActivityReaction(_ input: Operations.ClearActivityReaction.Input) async throws -> Operations.ClearActivityReaction.Output
+    /// Send a title to up to 10 friends, with an optional note of up to 140 characters. Anyone who is not your friend makes the whole request a 404. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/recommendations`.
+    /// - Remark: Generated from `#/paths//v1/social/recommendations/post(recommendTitle)`.
+    func recommendTitle(_ input: Operations.RecommendTitle.Input) async throws -> Operations.RecommendTitle.Output
+    /// Titles friends sent you that you have not added or dismissed, newest first. Only from people who are still your friends.
+    ///
+    /// - Remark: HTTP `GET /v1/me/recommendations`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/get(listRecommendations)`.
+    func listRecommendations(_ input: Operations.ListRecommendations.Input) async throws -> Operations.ListRecommendations.Output
+    /// - Remark: HTTP `DELETE /v1/me/recommendations/{id}`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/delete(dismissRecommendation)`.
+    func dismissRecommendation(_ input: Operations.DismissRecommendation.Input) async throws -> Operations.DismissRecommendation.Output
+    /// Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations.
+    ///
+    /// - Remark: HTTP `POST /v1/me/recommendations/{id}/add`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/add/post(addRecommendation)`.
+    func addRecommendation(_ input: Operations.AddRecommendation.Input) async throws -> Operations.AddRecommendation.Output
     /// People you blocked.
     ///
     /// - Remark: HTTP `GET /v1/social/blocks`.
@@ -881,6 +907,76 @@ extension APIProtocol {
     ) async throws -> Operations.ListFriendActivity.Output {
         try await listFriendActivity(Operations.ListFriendActivity.Input(
             query: query,
+            headers: headers
+        ))
+    }
+    /// React to a friend's activity row with one of six emoji; reacting again replaces it. Your own rows take none. 404 unless you can see the row.
+    ///
+    /// - Remark: HTTP `PUT /v1/activity/{id}/reaction`.
+    /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/put(setActivityReaction)`.
+    public func setActivityReaction(
+        path: Operations.SetActivityReaction.Input.Path,
+        headers: Operations.SetActivityReaction.Input.Headers = .init(),
+        body: Operations.SetActivityReaction.Input.Body
+    ) async throws -> Operations.SetActivityReaction.Output {
+        try await setActivityReaction(Operations.SetActivityReaction.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /v1/activity/{id}/reaction`.
+    /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/delete(clearActivityReaction)`.
+    public func clearActivityReaction(
+        path: Operations.ClearActivityReaction.Input.Path,
+        headers: Operations.ClearActivityReaction.Input.Headers = .init()
+    ) async throws -> Operations.ClearActivityReaction.Output {
+        try await clearActivityReaction(Operations.ClearActivityReaction.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Send a title to up to 10 friends, with an optional note of up to 140 characters. Anyone who is not your friend makes the whole request a 404. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/recommendations`.
+    /// - Remark: Generated from `#/paths//v1/social/recommendations/post(recommendTitle)`.
+    public func recommendTitle(
+        headers: Operations.RecommendTitle.Input.Headers = .init(),
+        body: Operations.RecommendTitle.Input.Body
+    ) async throws -> Operations.RecommendTitle.Output {
+        try await recommendTitle(Operations.RecommendTitle.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Titles friends sent you that you have not added or dismissed, newest first. Only from people who are still your friends.
+    ///
+    /// - Remark: HTTP `GET /v1/me/recommendations`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/get(listRecommendations)`.
+    public func listRecommendations(headers: Operations.ListRecommendations.Input.Headers = .init()) async throws -> Operations.ListRecommendations.Output {
+        try await listRecommendations(Operations.ListRecommendations.Input(headers: headers))
+    }
+    /// - Remark: HTTP `DELETE /v1/me/recommendations/{id}`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/delete(dismissRecommendation)`.
+    public func dismissRecommendation(
+        path: Operations.DismissRecommendation.Input.Path,
+        headers: Operations.DismissRecommendation.Input.Headers = .init()
+    ) async throws -> Operations.DismissRecommendation.Output {
+        try await dismissRecommendation(Operations.DismissRecommendation.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations.
+    ///
+    /// - Remark: HTTP `POST /v1/me/recommendations/{id}/add`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/add/post(addRecommendation)`.
+    public func addRecommendation(
+        path: Operations.AddRecommendation.Input.Path,
+        headers: Operations.AddRecommendation.Input.Headers = .init()
+    ) async throws -> Operations.AddRecommendation.Output {
+        try await addRecommendation(Operations.AddRecommendation.Input(
+            path: path,
             headers: headers
         ))
     }
@@ -4294,6 +4390,14 @@ public enum Components {
             public var rating: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/ActivityItem/at`.
             public var at: Foundation.Date
+            /// How many of each emoji, most first. Absent when none.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/reactions`.
+            public var reactions: [Components.Schemas.ReactionCount]?
+            /// Your own reaction on this row.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/myReaction`.
+            public var myReaction: Swift.String?
             /// Creates a new `ActivityItem`.
             ///
             /// - Parameters:
@@ -4307,6 +4411,8 @@ public enum Components {
             ///   - finished:
             ///   - rating:
             ///   - at:
+            ///   - reactions: How many of each emoji, most first. Absent when none.
+            ///   - myReaction: Your own reaction on this row.
             public init(
                 id: Swift.String,
                 user: Components.Schemas.SocialUser,
@@ -4317,7 +4423,9 @@ public enum Components {
                 lastEpisode: Swift.Int? = nil,
                 finished: Swift.Bool,
                 rating: Swift.Double? = nil,
-                at: Foundation.Date
+                at: Foundation.Date,
+                reactions: [Components.Schemas.ReactionCount]? = nil,
+                myReaction: Swift.String? = nil
             ) {
                 self.id = id
                 self.user = user
@@ -4329,6 +4437,8 @@ public enum Components {
                 self.finished = finished
                 self.rating = rating
                 self.at = at
+                self.reactions = reactions
+                self.myReaction = myReaction
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -4341,6 +4451,140 @@ public enum Components {
                 case finished
                 case rating
                 case at
+                case reactions
+                case myReaction
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ReactionCount`.
+        public struct ReactionCount: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ReactionCount/emoji`.
+            public var emoji: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ReactionCount/count`.
+            public var count: Swift.Int
+            /// Creates a new `ReactionCount`.
+            ///
+            /// - Parameters:
+            ///   - emoji:
+            ///   - count:
+            public init(
+                emoji: Swift.String,
+                count: Swift.Int
+            ) {
+                self.emoji = emoji
+                self.count = count
+            }
+            public enum CodingKeys: String, CodingKey {
+                case emoji
+                case count
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ReactionSet`.
+        public struct ReactionSet: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ReactionSet/emoji`.
+            @frozen public enum EmojiPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case _x2764_️ = "❤️"
+                case _x1F602_ = "😂"
+                case _x1F62E_ = "😮"
+                case _x1F62D_ = "😭"
+                case _x1F525_ = "🔥"
+                case _x1F44F_ = "👏"
+            }
+            /// - Remark: Generated from `#/components/schemas/ReactionSet/emoji`.
+            public var emoji: Components.Schemas.ReactionSet.EmojiPayload
+            /// Creates a new `ReactionSet`.
+            ///
+            /// - Parameters:
+            ///   - emoji:
+            public init(emoji: Components.Schemas.ReactionSet.EmojiPayload) {
+                self.emoji = emoji
+            }
+            public enum CodingKeys: String, CodingKey {
+                case emoji
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RecommendationCreate`.
+        public struct RecommendationCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecommendationCreate/to`.
+            public var to: [Swift.String]
+            /// - Remark: Generated from `#/components/schemas/RecommendationCreate/title`.
+            public var title: Components.Schemas.MediaRef
+            /// - Remark: Generated from `#/components/schemas/RecommendationCreate/note`.
+            public var note: Swift.String?
+            /// Creates a new `RecommendationCreate`.
+            ///
+            /// - Parameters:
+            ///   - to:
+            ///   - title:
+            ///   - note:
+            public init(
+                to: [Swift.String],
+                title: Components.Schemas.MediaRef,
+                note: Swift.String? = nil
+            ) {
+                self.to = to
+                self.title = title
+                self.note = note
+            }
+            public enum CodingKeys: String, CodingKey {
+                case to
+                case title
+                case note
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RecommendationItem`.
+        public struct RecommendationItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecommendationItem/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RecommendationItem/from`.
+            public var from: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/RecommendationItem/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/RecommendationItem/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RecommendationItem/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Creates a new `RecommendationItem`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - from:
+            ///   - title:
+            ///   - note:
+            ///   - createdAt:
+            public init(
+                id: Swift.String,
+                from: Components.Schemas.SocialUser,
+                title: Components.Schemas.TitleSummary,
+                note: Swift.String? = nil,
+                createdAt: Foundation.Date
+            ) {
+                self.id = id
+                self.from = from
+                self.title = title
+                self.note = note
+                self.createdAt = createdAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case from
+                case title
+                case note
+                case createdAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RecommendationList`.
+        public struct RecommendationList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecommendationList/items`.
+            public var items: [Components.Schemas.RecommendationItem]
+            /// Creates a new `RecommendationList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.RecommendationItem]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
             }
         }
         /// - Remark: Generated from `#/components/schemas/ActivityPage`.
@@ -11937,6 +12181,792 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/activity/get(listFriendActivity)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// React to a friend's activity row with one of six emoji; reacting again replaces it. Your own rows take none. 404 unless you can see the row.
+    ///
+    /// - Remark: HTTP `PUT /v1/activity/{id}/reaction`.
+    /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/put(setActivityReaction)`.
+    public enum SetActivityReaction {
+        public static let id: Swift.String = "setActivityReaction"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/activity/{id}/reaction/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// An ActivityItem id.
+                ///
+                /// - Remark: Generated from `#/paths/v1/activity/{id}/reaction/PUT/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id: An ActivityItem id.
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.SetActivityReaction.Input.Path
+            /// - Remark: Generated from `#/paths/v1/activity/{id}/reaction/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetActivityReaction.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetActivityReaction.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SetActivityReaction.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/activity/{id}/reaction/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/activity/{id}/reaction/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.ReactionSet)
+            }
+            public var body: Operations.SetActivityReaction.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.SetActivityReaction.Input.Path,
+                headers: Operations.SetActivityReaction.Input.Headers = .init(),
+                body: Operations.SetActivityReaction.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/put(setActivityReaction)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.SetActivityReaction.Output.NoContent)
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/put(setActivityReaction)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.SetActivityReaction.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/put(setActivityReaction)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `DELETE /v1/activity/{id}/reaction`.
+    /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/delete(clearActivityReaction)`.
+    public enum ClearActivityReaction {
+        public static let id: Swift.String = "clearActivityReaction"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/activity/{id}/reaction/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// An ActivityItem id.
+                ///
+                /// - Remark: Generated from `#/paths/v1/activity/{id}/reaction/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id: An ActivityItem id.
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.ClearActivityReaction.Input.Path
+            /// - Remark: Generated from `#/paths/v1/activity/{id}/reaction/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ClearActivityReaction.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ClearActivityReaction.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ClearActivityReaction.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.ClearActivityReaction.Input.Path,
+                headers: Operations.ClearActivityReaction.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Removed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/delete(clearActivityReaction)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.ClearActivityReaction.Output.NoContent)
+            /// Removed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/delete(clearActivityReaction)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.ClearActivityReaction.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/activity/{id}/reaction/delete(clearActivityReaction)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Send a title to up to 10 friends, with an optional note of up to 140 characters. Anyone who is not your friend makes the whole request a 404. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/recommendations`.
+    /// - Remark: Generated from `#/paths//v1/social/recommendations/post(recommendTitle)`.
+    public enum RecommendTitle {
+        public static let id: Swift.String = "recommendTitle"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/recommendations/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RecommendTitle.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RecommendTitle.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RecommendTitle.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/social/recommendations/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/recommendations/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.RecommendationCreate)
+            }
+            public var body: Operations.RecommendTitle.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.RecommendTitle.Input.Headers = .init(),
+                body: Operations.RecommendTitle.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Sent. A title already waiting for the same friend is not sent twice.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/recommendations/post(recommendTitle)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RecommendTitle.Output.NoContent)
+            /// Sent. A title already waiting for the same friend is not sent twice.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/recommendations/post(recommendTitle)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RecommendTitle.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/recommendations/post(recommendTitle)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Titles friends sent you that you have not added or dismissed, newest first. Only from people who are still your friends.
+    ///
+    /// - Remark: HTTP `GET /v1/me/recommendations`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/get(listRecommendations)`.
+    public enum ListRecommendations {
+        public static let id: Swift.String = "listRecommendations"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/recommendations/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListRecommendations.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListRecommendations.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListRecommendations.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListRecommendations.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/recommendations/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/recommendations/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.RecommendationList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.RecommendationList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListRecommendations.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListRecommendations.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/recommendations/get(listRecommendations)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListRecommendations.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListRecommendations.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/recommendations/get(listRecommendations)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `DELETE /v1/me/recommendations/{id}`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/delete(dismissRecommendation)`.
+    public enum DismissRecommendation {
+        public static let id: Swift.String = "dismissRecommendation"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/recommendations/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/recommendations/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DismissRecommendation.Input.Path
+            /// - Remark: Generated from `#/paths/v1/me/recommendations/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DismissRecommendation.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DismissRecommendation.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DismissRecommendation.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DismissRecommendation.Input.Path,
+                headers: Operations.DismissRecommendation.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Dismissed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/delete(dismissRecommendation)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DismissRecommendation.Output.NoContent)
+            /// Dismissed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/delete(dismissRecommendation)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DismissRecommendation.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/delete(dismissRecommendation)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations.
+    ///
+    /// - Remark: HTTP `POST /v1/me/recommendations/{id}/add`.
+    /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/add/post(addRecommendation)`.
+    public enum AddRecommendation {
+        public static let id: Swift.String = "addRecommendation"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/recommendations/{id}/add/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/recommendations/{id}/add/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.AddRecommendation.Input.Path
+            /// - Remark: Generated from `#/paths/v1/me/recommendations/{id}/add/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddRecommendation.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddRecommendation.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AddRecommendation.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.AddRecommendation.Input.Path,
+                headers: Operations.AddRecommendation.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Added.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/add/post(addRecommendation)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.AddRecommendation.Output.NoContent)
+            /// Added.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/add/post(addRecommendation)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.AddRecommendation.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/recommendations/{id}/add/post(addRecommendation)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

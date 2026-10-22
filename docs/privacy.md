@@ -54,6 +54,11 @@ you finished and when, your ratings, the last episode you ticked, and which titl
 They never see your notes. Episodes you imported or restored don't show up as activity. Turn off
 "Show my library to friends" in Settings and they see only your name and handle.
 
+**Reactions and recommendations.** When you react to a friend's activity, Aaru stores which
+emoji, on which of their titles and which day. When you recommend a title, Aaru stores it with
+your note until your friend adds or dismisses it. Only the two of you see a recommendation;
+your friend and their other friends see reactions on their rows.
+
 **Invite links.** When you make an invite link, Aaru stores it with the title you attached (if
 any), when it expires, and, once used, who opened it. Anyone holding the link sees your name,
 your handle and that title, and nothing from your library. A link works once, for two weeks,

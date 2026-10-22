@@ -12,6 +12,7 @@ import {
 import { AddToListDialog } from '../components/AddToListDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
+import { RecommendDialog } from '../components/Recommendations'
 import { Wordmark } from '../components/Brand'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
@@ -80,6 +81,7 @@ function TitleRoom() {
   const [pending, setPending] = createSignal<Set<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
   const [picking, setPicking] = createSignal(false)
+  const [recommending, setRecommending] = createSignal(false)
   const [notes, setNotes] = createSignal(page().entry.notes ?? '')
   const [pageNumber, setPageNumber] = createSignal(
     page().entry.bookProgress?.page?.toString() ?? '',
@@ -364,6 +366,9 @@ function TitleRoom() {
               type={entry().title.type}
               name={entry().title.title}
             />
+            <Button variant="quiet" onClick={() => setRecommending(true)}>
+              Recommend
+            </Button>
           </Show>
         </div>
 
@@ -556,6 +561,17 @@ function TitleRoom() {
               onClose={() => setOpened(null)}
             />
           )}
+        </Show>
+        <Show when={recommending()}>
+          <RecommendDialog
+            title={{
+              ref: { titleId: entry().title.id, type: entry().title.type },
+              name: entry().title.title,
+              posterUrl: entry().title.posterUrl,
+              kind: kindOf(entry().title.type, entry().title.isAnime),
+            }}
+            onClose={() => setRecommending(false)}
+          />
         </Show>
         <Show when={picking()}>
           <AddToListDialog

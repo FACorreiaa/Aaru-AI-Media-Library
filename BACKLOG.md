@@ -482,8 +482,8 @@ account or a stranger that has not happened yet.
 | SOC-003 | Partial | `GET /v1/activity` (dated ticks and finishes, 14 days); FriendTests; web `/app/friends`, iOS Friends tab | No `FriendStories` on Home, no scrobbles, no save-to-wishlist yet |
 | SOC-004 | Open | none | |
 | SOC-005 | Partial | #17, #42, #45; Push.swift, `/v1/devices`, `/v1/me/notifications` | Airing push only; no friend-request category |
-| SOC-006 | Open | none | Pulled forward 2026-10-21 |
-| SOC-007 | Open | none | Pulled forward 2026-10-21 |
+| SOC-006 | Built, unverified | `social_recommendations`, `/v1/social/recommendations`, `/v1/me/recommendations*`; InteractionTests; web Recommend (title page, profile) and inbox, iOS RecommendSheet and inbox | No push to the recipient yet (needs a notification category) |
+| SOC-007 | Built, unverified | `social_reactions`, `PUT/DELETE /v1/activity/{id}/reaction`, reactions on `ActivityItem`; InteractionTests; web and iOS Lately rows | |
 | SHR-001 | Open | none | |
 | GAM-001 | Open | none | |
 | GAM-002 | Open | none | |
@@ -2326,6 +2326,10 @@ on your own items on your profile. No push.
 
 **Done when:** only a friend who can see the action can react to it, and unfriending or blocking
 removes the reaction from view.
+
+**Built 2026-10-21:** a reaction is on an activity row (`{owner}-{title}-{day}`), one per person,
+from ❤️ 😂 😮 😭 🔥 👏. Lately now shows your own rows too ("You finished Heat"), so you see what
+friends left; your own rows take no reaction.
 
 ### SHR-001 · Shared lists · M
 **Needs:** SOC-002, LST-002.

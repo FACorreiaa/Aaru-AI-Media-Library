@@ -58,7 +58,79 @@ protocol FriendViewStore: Sendable {
     /// When the two became friends; nil when they are not.
     func friendsSince(_ first: UserID, _ second: UserID) async throws -> Date?
     func shelf(of owner: UserID, viewer: UserID, limit: Int) async throws -> FriendShelf
-    /// The viewer's friends' activity at or after `since` and before `before`, newest first.
-    /// Friends who hide their library are left out.
+    /// The viewer's and their friends' activity at or after `since` and before `before`, newest
+    /// first. Friends who hide their library are left out.
     func activity(viewer: UserID, since: Date, before: Date, limit: Int) async throws -> [FriendActivity]
+}
+
+// MARK: Reactions and recommendations (SOC-007, SOC-006)
+
+/// One activity row: a person's title on one UTC day. Its id is `{owner}-{title}-{yyyy-MM-dd}`.
+struct ActivityKey: Hashable, Sendable {
+    var owner: UserID
+    var titleID: TitleID
+    var day: String
+
+    var id: String {
+        "\(owner)-\(titleID)-\(day)"
+    }
+
+    init(owner: UserID, titleID: TitleID, day: String) {
+        self.owner = owner
+        self.titleID = titleID
+        self.day = day
+    }
+
+    /// Parses an id; nil for anything malformed.
+    init?(id: String) {
+        let uuidLength = 36
+        guard id.count == uuidLength * 2 + 12 else { return nil }
+        let owner = id.prefix(uuidLength)
+        let title = id.dropFirst(uuidLength + 1).prefix(uuidLength)
+        let day = String(id.suffix(10))
+        guard let ownerID = UUID(uuidString: String(owner)), let titleID = UUID(uuidString: String(title)),
+              day.wholeMatch(of: /\d{4}-\d{2}-\d{2}/) != nil
+        else { return nil }
+        self.init(owner: UserID(ownerID), titleID: TitleID(titleID), day: day)
+    }
+}
+
+/// The reactions Aaru offers, the only ones the table accepts.
+enum Reaction {
+    static let all = ["❤️", "😂", "😮", "😭", "🔥", "👏"]
+
+    /// Where an emoji sits in the set, for a stable order between equal counts.
+    static func order(_ emoji: String) -> Int {
+        all.firstIndex(of: emoji) ?? all.count
+    }
+}
+
+/// Reactions on one activity row: how many of each, and the viewer's own.
+struct ReactionSummary: Sendable, Equatable {
+    var counts: [String: Int] = [:]
+    var mine: String?
+}
+
+/// A title one friend sent another, waiting to be added or dismissed.
+struct Recommendation: Sendable, Equatable {
+    var id: UUID
+    var sender: UserID
+    var recipient: UserID
+    var titleID: TitleID
+    var note: String?
+    var createdAt: Date
+}
+
+protocol InteractionStore: Sendable {
+    func reactions(on rows: [ActivityKey], viewer: UserID) async throws -> [ActivityKey: ReactionSummary]
+    /// Sets the viewer's reaction on a row, or removes it when `emoji` is nil.
+    func react(_ emoji: String?, on row: ActivityKey, by user: UserID, now: Date) async throws
+    /// True when the owner has the title in their library at all: a row can only be about that.
+    func hasTitle(_ owner: UserID, _ titleID: TitleID) async throws -> Bool
+    /// Inserts recommendations; one already waiting for the same pair and title is left alone.
+    func recommend(_ recommendations: [Recommendation]) async throws
+    /// Waiting recommendations to `user` from people who are still their friends, newest first.
+    func inbox(_ user: UserID, limit: Int) async throws -> [Recommendation]
+    /// Marks a waiting recommendation to `user` added or dismissed. Nil when none was waiting.
+    func resolve(_ id: UUID, to user: UserID, added: Bool, now: Date) async throws -> Recommendation?
 }

@@ -18,6 +18,8 @@ struct FriendProfileView: View {
     }
 
     @State private var stage = Stage.loading
+    @State private var recommending = false
+    @State private var invitingToGroup = false
 
     var body: some View {
         Group {
@@ -63,6 +65,24 @@ struct FriendProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
         #endif
             .task { await load() }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button("Recommend a title", systemImage: "hand.thumbsup") { recommending = true }
+                        Button("Invite to a group", systemImage: "bubble.left.and.bubble.right") {
+                            invitingToGroup = true
+                        }
+                    } label: {
+                        Label("Actions", systemImage: "ellipsis.circle")
+                    }
+                }
+            }
+            .sheet(isPresented: $recommending) {
+                RecommendSheet(model: SocialModel(api: api), friend: friend)
+            }
+            .sheet(isPresented: $invitingToGroup) {
+                GroupInviteSheet(api: api, friend: friend)
+            }
     }
 
     @ViewBuilder

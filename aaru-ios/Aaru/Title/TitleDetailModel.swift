@@ -44,7 +44,7 @@ final class TitleDetailModel {
     /// The last write that failed and was rolled back. Shown until the next action.
     var problem: String?
 
-    @ObservationIgnored private let api: Client?
+    @ObservationIgnored let api: Client?
     @ObservationIgnored private let library: LibraryModel
 
     /// `title` is for previews: the detail already loaded, nothing to fetch.

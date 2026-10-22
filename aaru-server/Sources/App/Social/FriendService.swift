@@ -15,6 +15,7 @@ struct FriendProfile: Sendable {
 /// One activity row with the people and titles it names.
 struct ActivityFeed: Sendable {
     var items: [FriendActivity]
+    var reactions: [ActivityKey: ReactionSummary] = [:]
     var people: [UserID: SocialUser]
     var titles: [TitleID: Title]
 }
@@ -55,18 +56,25 @@ struct FriendService: Sendable {
         )
     }
 
-    /// Friends' last two weeks, newest first, one page at a time.
+    /// Your and your friends' last two weeks, newest first, one page at a time.
     func activity(_ viewer: UserID, before: Date?) async throws -> ActivityFeed {
         let now = now()
         let items = try await stores.friendViews.activity(
             viewer: viewer, since: now.addingTimeInterval(-Self.activityWindow), before: before ?? now,
             limit: Self.activityPage
         )
-        let friends = try await stores.social.friends(viewer)
-        let people = Dictionary(friends.map { ($0.id, $0) }) { first, _ in first }
+        var everyone = try await stores.social.friends(viewer)
+        if let own = try await stores.social.socialUser(viewer) {
+            everyone.append(own)
+        }
+        let people = Dictionary(everyone.map { ($0.id, $0) }) { first, _ in first }
         // A friend without a handle has no social identity yet; their rows wait until they claim one.
         let shown = items.filter { people[$0.friend] != nil }
-        return try await ActivityFeed(items: shown, people: people, titles: titles(shown.map(\.titleID)))
+        let keys = shown.map { ActivityKey(owner: $0.friend, titleID: $0.titleID, day: $0.day) }
+        return try await ActivityFeed(
+            items: shown, reactions: stores.interactions.reactions(on: keys, viewer: viewer), people: people,
+            titles: titles(shown.map(\.titleID))
+        )
     }
 
     private func titles(_ ids: [TitleID]) async throws -> [TitleID: Title] {

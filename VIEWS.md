@@ -46,6 +46,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Invite (the Friends section) | none — "Invite a friend" (optionally with a title picked from search), the share sheet, open invites with time left and Revoke | `GET`/`POST /v1/social/invites`, `DELETE /v1/social/invites/{code}`, `GET /v1/search` | 4 · SOC-002 (owner pulled forward 2026-10-21) |
 | Invite letter | none — web `/i/{code}`, an `InviteSheet` in the apps: who sent it, the title it carries with an "Add to my Plan to watch" switch, a handle field when the friend has none, Join Aaru (signed out) or Add as a friend | `GET /v1/invites/{code}` (public), `POST /v1/social/invites/{code}/redeem`, `PUT /v1/me/profile` | 4 · SOC-002 (2026-10-21) |
 | Friends (tab on Apple, `/app/friends` on the web) | none — Lately (friends' last two weeks), Invite, requests, friends, blocks | `GET /v1/activity`, `/v1/social/*` | 4 · SOC-003 minimal (owner 2026-10-21) |
+| Recommend | none — a sheet from a title (pick friends) or a friend's profile (find a title), with a note of up to 140 characters; the friend's "For you from friends" at the top of Friends adds it to Plan to watch or dismisses it | `POST /v1/social/recommendations`, `GET /v1/me/recommendations`, `POST …/{id}/add`, `DELETE …/{id}` | 4 · SOC-006 (2026-10-21) |
 | Friend profile | none — shelf first: header with counts, Watching, You both (both want, both finished, they loved), Recently finished; only a name when they hide their library | `GET /v1/social/friends/{userId}/profile` | 4 · SOC-001/003 (2026-10-21) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
@@ -154,7 +155,8 @@ The eleven new components add product, not agent reach, and each has a reason:
 The agent may emit the read-only social components. It posts in a group channel only as a
 reply to an explicit `@aaru` mention, and only with catalog components whose buttons are the
 viewer's own taps. It never starts a thread, never sends a DM, and never sends a friend request,
-a group invite or a room invite: those are user acts with no agent write path. A
+an invite link, a group invite, a room invite, a reaction or a recommendation: those are user
+acts with no agent write path. A
 twenty-ninth component still needs a paragraph here.
 
 ---

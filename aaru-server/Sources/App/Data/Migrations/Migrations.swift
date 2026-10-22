@@ -50,6 +50,7 @@ let allMigrations: [any Migration] = [
     AddAuditIndexes(),
     AddFriendInvites(),
     AddSocialSettings(),
+    AddSocialInteractions(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

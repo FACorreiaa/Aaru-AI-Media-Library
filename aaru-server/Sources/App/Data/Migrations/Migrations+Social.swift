@@ -110,3 +110,45 @@ struct AddSocialSettings: SQLMigration {
         "DROP TABLE social_settings",
     ]
 }
+
+/// SOC-007 reactions and SOC-006 recommendations. A reaction is on one activity row: a friend's
+/// title on one UTC day, as `/v1/activity` groups it. A recommendation waits in the recipient's
+/// inbox until they add it to Plan to watch or dismiss it.
+struct AddSocialInteractions: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE social_reactions (
+            user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title_id uuid NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+            day date NOT NULL,
+            emoji text NOT NULL CHECK (emoji IN ('❤️', '😂', '😮', '😭', '🔥', '👏')),
+            created_at timestamptz NOT NULL,
+            PRIMARY KEY (user_id, owner_id, title_id, day)
+        )
+        """,
+        "CREATE INDEX social_reactions_row ON social_reactions (owner_id, title_id, day)",
+        """
+        CREATE TABLE social_recommendations (
+            id uuid PRIMARY KEY,
+            from_user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            to_user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title_id uuid NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+            note text CHECK (char_length(note) <= 140),
+            created_at timestamptz NOT NULL,
+            added_at timestamptz,
+            dismissed_at timestamptz,
+            CHECK (from_user_id <> to_user_id)
+        )
+        """,
+        """
+        CREATE UNIQUE INDEX social_recommendations_open ON social_recommendations (from_user_id, to_user_id, title_id)
+        WHERE added_at IS NULL AND dismissed_at IS NULL
+        """,
+        "CREATE INDEX social_recommendations_inbox ON social_recommendations (to_user_id, created_at DESC)",
+    ]
+    let backward = [
+        "DROP TABLE social_recommendations",
+        "DROP TABLE social_reactions",
+    ]
+}

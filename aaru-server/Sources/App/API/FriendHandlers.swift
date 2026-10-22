@@ -38,10 +38,16 @@ extension APIImplementation {
         let feed = try await friendViews.activity(currentUser(), before: input.query.before)
         let items: [Components.Schemas.ActivityItem] = feed.items.compactMap { item in
             guard let user = feed.people[item.friend], let title = feed.titles[item.titleID] else { return nil }
+            let key = ActivityKey(owner: item.friend, titleID: item.titleID, day: item.day)
+            let reactions = feed.reactions[key]
+            let counts = (reactions?.counts ?? [:])
+                .sorted { ($0.value, Reaction.order($1.key)) > ($1.value, Reaction.order($0.key)) }
+                .map { Components.Schemas.ReactionCount(emoji: $0.key, count: $0.value) }
             return .init(
-                id: "\(item.friend)-\(item.titleID)-\(item.day)", user: .init(user), title: .init(title),
-                day: item.day, episodes: item.episodes, lastSeason: item.lastSeason, lastEpisode: item.lastEpisode,
-                finished: item.finished, rating: item.rating, at: item.lastAt
+                id: key.id, user: .init(user), title: .init(title), day: item.day, episodes: item.episodes,
+                lastSeason: item.lastSeason, lastEpisode: item.lastEpisode, finished: item.finished,
+                rating: item.rating, at: item.lastAt, reactions: counts.isEmpty ? nil : counts,
+                myReaction: reactions?.mine
             )
         }
         let full = feed.items.count == FriendService.activityPage
