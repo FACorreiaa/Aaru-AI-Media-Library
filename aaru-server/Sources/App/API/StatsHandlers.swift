@@ -13,6 +13,52 @@ extension APIImplementation {
     }
 }
 
+extension APIImplementation {
+    func getProfileStats(_: Operations.GetProfileStats.Input) async throws -> Operations.GetProfileStats.Output {
+        try await .ok(.init(body: .json(.init(services.stats.profile(userID: currentUser())))))
+    }
+}
+
+extension Components.Schemas.ProfileStats {
+    init(_ stats: ProfileStats) {
+        self.init(
+            memberSince: stats.memberSince,
+            episodesWatched: stats.episodesWatched,
+            minutesWatched: stats.minutesWatched,
+            pagesRead: stats.pagesRead,
+            shows: .init(stats.shows),
+            anime: .init(stats.anime),
+            movies: .init(stats.movies),
+            books: .init(stats.books),
+            byKind: stats.byKind.map {
+                .init(
+                    kind: .init(rawValue: $0.kind.rawValue) ?? .movie, episodes: $0.episodes, minutes: $0.minutes,
+                    finished: $0.finished
+                )
+            },
+            topGenres: stats.topGenres.map { .init(name: $0.name, minutes: $0.minutes, titles: $0.titles) },
+            topNetworks: stats.topNetworks.map { .init(name: $0.name, minutes: $0.minutes, titles: $0.titles) },
+            mostWatched: stats.mostWatched.map {
+                .init(title: .init($0.title), episodes: $0.episodes, minutes: $0.minutes)
+            },
+            ratings: .init(
+                count: stats.ratings.count, mean: stats.ratings.mean,
+                highest: stats.ratings.highest.map(Components.Schemas.TitleSummary.init),
+                highestRating: stats.ratings.highestRating, distribution: stats.ratings.distribution
+            )
+        )
+    }
+}
+
+extension Components.Schemas.LibraryCounts {
+    init(_ counts: ProfileStats.Counts) {
+        self.init(
+            wishlist: counts.wishlist, inProgress: counts.inProgress, finished: counts.finished,
+            dropped: counts.dropped
+        )
+    }
+}
+
 extension Components.Schemas.Stats {
     init(_ stats: PeriodStats) {
         let totals = stats.totals

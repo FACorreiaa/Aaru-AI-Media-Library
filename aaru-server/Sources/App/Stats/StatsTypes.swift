@@ -173,6 +173,8 @@ protocol StatsStore: Sendable {
     /// Activity on local days in `[from, until)` of `timeZone`, ordered by day.
     func activity(userID: UserID, from: LocalDay, until: LocalDay, timeZone: TimeZone) async throws
         -> [StatsActivity]
+    /// GAM-006b: one row per library item, and when the account was made.
+    func library(userID: UserID) async throws -> (rows: [ProfileRow], memberSince: Date?)
 }
 
 /// GAM-006a/c: what one user watched and read in a period. Derived only from their own library.
