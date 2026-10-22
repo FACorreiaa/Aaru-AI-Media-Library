@@ -267,7 +267,10 @@ func buildRouter(stores: Stores, services: Services, metricsSecret: String = "")
     StremioRoutes(
         service: StremioService(
             library: services.library, schedule: services.schedule, catalog: services.catalog,
-            scrobble: services.scrobble
+            scrobble: services.scrobble,
+            episodeMap: services.imports.stremio.map { account in
+                StremioEpisodeMap(videos: { try await account.videos(imdb: $0) })
+            }
         ),
         tokens: services.agentTokens
     ).register(on: router)
