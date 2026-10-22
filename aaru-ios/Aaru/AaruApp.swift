@@ -39,6 +39,7 @@ struct AaruApp: App {
             )
             .environment(services.session)
             .environment(services.router)
+            .environment(services.progress)
             // The asset catalog's global accent (NSAccentColorName) does not reach SwiftUI on
             // iOS 26, so the brand teal is set here. Views use `Color(.accent)`, never
             // `Color.accentColor`.

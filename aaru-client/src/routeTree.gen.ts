@@ -21,6 +21,7 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
+import { Route as ShellAppAchievementsRouteImport } from './routes/_shell.app_.achievements'
 import { Route as ShellAppCalendarRouteImport } from './routes/_shell.app_.calendar'
 import { Route as ShellAppDiscoverRouteImport } from './routes/_shell.app_.discover'
 import { Route as ShellAppGroupsRouteImport } from './routes/_shell.app_.groups'
@@ -113,6 +114,11 @@ const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ShellAppAchievementsRoute = ShellAppAchievementsRouteImport.update({
+  id: '/app_/achievements',
+  path: '/app/achievements',
+  getParentRoute: () => ShellRoute,
 } as any)
 const ShellAppCalendarRoute = ShellAppCalendarRouteImport.update({
   id: '/app_/calendar',
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/app/achievements': typeof ShellAppAchievementsRoute
   '/app/calendar': typeof ShellAppCalendarRoute
   '/app/discover': typeof ShellAppDiscoverRoute
   '/app/groups': typeof ShellAppGroupsRouteWithChildren
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/app/achievements': typeof ShellAppAchievementsRoute
   '/app/calendar': typeof ShellAppCalendarRoute
   '/app/discover': typeof ShellAppDiscoverRoute
   '/app/insights': typeof ShellAppInsightsRoute
@@ -381,6 +389,7 @@ export interface FileRoutesById {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/_shell/app_/achievements': typeof ShellAppAchievementsRoute
   '/_shell/app_/calendar': typeof ShellAppCalendarRoute
   '/_shell/app_/discover': typeof ShellAppDiscoverRoute
   '/_shell/app_/groups': typeof ShellAppGroupsRouteWithChildren
@@ -428,6 +437,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/app/achievements'
     | '/app/calendar'
     | '/app/discover'
     | '/app/groups'
@@ -473,6 +483,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/app/achievements'
     | '/app/calendar'
     | '/app/discover'
     | '/app/insights'
@@ -516,6 +527,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/_shell/app_/achievements'
     | '/_shell/app_/calendar'
     | '/_shell/app_/discover'
     | '/_shell/app_/groups'
@@ -649,6 +661,13 @@ declare module '@tanstack/solid-router' {
       fullPath: '/oauth/consent'
       preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_shell/app_/achievements': {
+      id: '/_shell/app_/achievements'
+      path: '/app/achievements'
+      fullPath: '/app/achievements'
+      preLoaderRoute: typeof ShellAppAchievementsRouteImport
+      parentRoute: typeof ShellRoute
     }
     '/_shell/app_/calendar': {
       id: '/_shell/app_/calendar'
@@ -941,6 +960,7 @@ const ShellAppSettingsRouteWithChildren =
 
 interface ShellRouteChildren {
   ShellAppRoute: typeof ShellAppRoute
+  ShellAppAchievementsRoute: typeof ShellAppAchievementsRoute
   ShellAppCalendarRoute: typeof ShellAppCalendarRoute
   ShellAppDiscoverRoute: typeof ShellAppDiscoverRoute
   ShellAppGroupsRoute: typeof ShellAppGroupsRouteWithChildren
@@ -961,6 +981,7 @@ interface ShellRouteChildren {
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAppRoute: ShellAppRoute,
+  ShellAppAchievementsRoute: ShellAppAchievementsRoute,
   ShellAppCalendarRoute: ShellAppCalendarRoute,
   ShellAppDiscoverRoute: ShellAppDiscoverRoute,
   ShellAppGroupsRoute: ShellAppGroupsRouteWithChildren,

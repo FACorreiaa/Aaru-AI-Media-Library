@@ -97,8 +97,13 @@ enum WidgetSync {
             }
     }
 
-    /// Saves the snapshot and asks every placed widget to redraw.
+    /// Saves the snapshot and asks every placed widget to redraw. A snapshot built without the
+    /// streak keeps the last one read.
     static func publish(_ snapshot: WidgetSnapshot) {
+        var snapshot = snapshot
+        if snapshot.streak == nil {
+            snapshot.streak = WidgetSnapshotStore.load()?.streak
+        }
         WidgetSnapshotStore.save(snapshot)
         WidgetCenter.shared.reloadAllTimelines()
     }
@@ -111,6 +116,7 @@ enum WidgetSync {
         async let upNextOutput = api.getUpNext()
         async let calendarOutput = api.getCalendar(query: .init(from: window.lowerBound, to: window.upperBound))
         async let albums = listening(api: api)
+        async let streak = streak(api: api)
         let (upNext, airing) = try await (upNextOutput, calendarOutput)
         guard case let .ok(upNextResponse) = upNext, case let .ok(airingResponse) = airing else {
             throw RefreshFailed()
@@ -119,7 +125,16 @@ enum WidgetSync {
             upNext: upNextResponse.body.json, airing: airingResponse.body.json.items, listening: [], now: now
         )
         next.listening = await albums ?? WidgetSnapshotStore.load()?.listening
+        next.streak = await streak
         publish(next)
+    }
+
+    /// The streak (WID-007), or nil when the read failed; `publish` then keeps the last one.
+    private static func streak(api: Client) async -> WidgetSnapshot.StreakState? {
+        guard case let .ok(response) = try? await api.getProgress(),
+              let streak = try? response.body.json.streak
+        else { return nil }
+        return WidgetSnapshot.StreakState(streak)
     }
 
     /// The albums being listened to, or nil when the read failed.
@@ -132,4 +147,18 @@ enum WidgetSync {
     }
 
     struct RefreshFailed: Error {}
+}
+
+extension WidgetSnapshot.StreakState {
+    /// The widget's copy of `/v1/me/progress`'s streak: the run as its last day and length, and
+    /// the active days of the last week for the bars.
+    init(_ streak: Components.Schemas.StreakState) {
+        let active = streak.days.filter(\.active).map(\.date)
+        self.init(
+            current: streak.current,
+            longest: streak.longest,
+            lastActive: streak.current > 0 ? active.max() : nil,
+            active: active
+        )
+    }
 }

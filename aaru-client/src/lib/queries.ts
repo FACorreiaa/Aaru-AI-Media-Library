@@ -1,4 +1,6 @@
 import { queryOptions } from '@tanstack/solid-query'
+import { PROGRESS_KEY } from './achievements/keys'
+import { getBadges, getProgress } from './achievements/server'
 import { getCalendar } from './calendar/server'
 import { getConcertPlace } from './concerts/server'
 import { getDiscover, getUpNext } from './home/server'
@@ -70,6 +72,17 @@ export const myStatsQuery = (ask: StatsAsk) =>
     queryKey: ['stats', ask.span, ask.year, ask.month, ask.tz],
     queryFn: () => getStats({ data: ask }),
   })
+
+/** GAM-001…004: level, streak and unseen badges. `UnlockWatcher` refetches it after a write. */
+export const progressQuery = queryOptions({
+  queryKey: PROGRESS_KEY,
+  queryFn: () => getProgress(),
+})
+
+export const badgesQuery = queryOptions({
+  queryKey: ['badges'],
+  queryFn: () => getBadges(),
+})
 
 export const calendarQuery = (range: { from: string; to: string }) =>
   queryOptions({

@@ -60,6 +60,13 @@ const SearchPanel = lazy(() =>
   import('../SearchPanel').then((m) => ({ default: m.SearchPanel })),
 )
 
+// GAM-004's unlock toast and card: its own chunk, after the page, never on a first load's path.
+const UnlockWatcher = lazy(() =>
+  import('../achievements/UnlockWatcher').then((m) => ({
+    default: m.UnlockWatcher,
+  })),
+)
+
 type Destination = {
   to:
     | '/app'
@@ -282,6 +289,10 @@ export function AppShell(props: {
         </DialogPortal>
       </Dialog>
       <Toaster />
+      {/* Its own boundary, so loading it never suspends the page around it. */}
+      <Suspense>
+        <UnlockWatcher />
+      </Suspense>
     </ShellContext.Provider>
   )
 }

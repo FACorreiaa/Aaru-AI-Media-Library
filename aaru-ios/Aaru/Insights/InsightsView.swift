@@ -13,6 +13,8 @@ struct InsightsView: View {
     @State private var model: InsightsModel
     @State private var recap: RecapPeriod?
     @Environment(\.dynamicTypeSize) private var dynamicType
+    /// Achievements opens from here too (DESIGN.md §17); nil in previews.
+    @Environment(ProgressModel.self) private var achievements: ProgressModel?
 
     init(api: Client?, library: LibraryModel? = nil, model: InsightsModel? = nil) {
         self.api = api
@@ -33,6 +35,17 @@ struct InsightsView: View {
             .frame(maxWidth: .infinity)
         }
         .navigationTitle("Insights")
+        .toolbar {
+            if let achievements {
+                ToolbarItem {
+                    NavigationLink {
+                        AchievementsView(model: achievements)
+                    } label: {
+                        Label("Achievements", systemImage: "rosette")
+                    }
+                }
+            }
+        }
         .task(id: model.period) { await model.load() }
         .refreshable { await model.load() }
         // View → Refresh (⌘R) while Insights is showing.

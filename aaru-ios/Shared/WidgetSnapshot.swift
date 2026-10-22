@@ -1,3 +1,4 @@
+import AaruCore
 import Foundation
 
 /// What the widgets render (WID-001): written by the app into the App Group after every Home load
@@ -97,6 +98,9 @@ struct WidgetSnapshot: Codable, Sendable, Equatable {
     /// MUS-001 still decodes; nil reads as none.
     var listening: [Album]?
     var writtenAt: Date
+    /// WID-007: the streak as `/v1/me/progress` last read it. Nil before GAM-003 or before the
+    /// first read; the Streak widget then asks to open the app.
+    var streak: StreakState?
 
     static let utc: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
@@ -120,6 +124,49 @@ struct WidgetSnapshot: Codable, Sendable, Equatable {
             return airing.airTimeKnown ? airing.airsAt > now : airing.day(in: calendar) >= today
         }
     }
+}
+
+extension WidgetSnapshot {
+    /// The streak in plain values: the current run as its last day and length, and the active days
+    /// of the week before the write. Enough for AaruCore's `Streak` to say what any later day reads.
+    struct StreakState: Codable, Sendable, Equatable {
+        var current: Int
+        var longest: Int
+        /// The run's last local day, `yyyy-MM-dd`; nil when there is no run.
+        var lastActive: String?
+        /// Active local days among the last seven at the write.
+        var active: [String]
+
+        /// The days this state knows were active: the run, rebuilt back from its last day, and
+        /// the week's.
+        var knownDays: Set<String> {
+            var days = Set(active)
+            if let lastActive, current > 0 {
+                days.formUnion((0 ..< current).compactMap { Streak.adding(-$0, to: lastActive) })
+            }
+            return days
+        }
+
+        /// What the streak reads on a later local day, by the shared rule: a run whose last day is
+        /// before yesterday has ended.
+        func summary(on today: String) -> StreakSummary {
+            let days = knownDays.map { StreakDay(date: $0, timeZone: "", firstAt: .distantPast) }
+            var summary = Streak.summarize(days, today: today)
+            summary.longest = max(summary.longest, longest)
+            return summary
+        }
+
+        /// The seven days ending `today`, oldest first, and whether each was active.
+        func week(ending today: String) -> [(date: String, active: Bool)] {
+            let known = knownDays
+            return (0 ..< 7).reversed().compactMap { back in
+                Streak.adding(-back, to: today).map { ($0, known.contains($0)) }
+            }
+        }
+    }
+
+    /// The Streak widget's kind, so the app can reload just it after a progress read.
+    static let streakWidgetKind = "AaruStreak"
 }
 
 /// CAL-001's episode kind, for badges and colours.
@@ -154,6 +201,13 @@ enum WidgetSnapshotStore {
     static func clear() {
         guard let url else { return }
         try? FileManager.default.removeItem(at: url)
+    }
+
+    /// A progress read (GAM-003): the streak changes alone, the rest of the snapshot stays.
+    static func setStreak(_ streak: WidgetSnapshot.StreakState) {
+        guard var snapshot = load(), snapshot.streak != streak else { return }
+        snapshot.streak = streak
+        save(snapshot)
     }
 
     /// A tick made elsewhere, applied wherever the episode appears so widgets agree with the app

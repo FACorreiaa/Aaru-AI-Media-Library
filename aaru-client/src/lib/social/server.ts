@@ -278,30 +278,54 @@ export const loadSocialSettings = createServerFn({ method: 'GET' }).handler(
     ),
 )
 
+export type SocialSettings = components['schemas']['SocialSettings']
+
+/** Saves the switches you changed; the rest keep their saved values (GAM-005 added two). */
 export const saveSocialSettings = createServerFn({ method: 'POST' })
-  .validator(z.object({ shareLibraryWithFriends: z.boolean() }))
-  .handler(async ({ data }) =>
-    check(
-      await api(sessionToken()).PUT('/v1/me/social-settings', { body: data }),
-      'Your sharing setting was not saved.',
-    ),
+  .validator(
+    z.object({
+      shareLibraryWithFriends: z.boolean().optional(),
+      showAchievementsToFriends: z.boolean().optional(),
+      leaderboardOptIn: z.boolean().optional(),
+    }),
   )
+  .handler(async ({ data }): Promise<SocialSettings> => {
+    const client = api(sessionToken())
+    const fallback = 'Your sharing setting was not saved.'
+    // The library switch is required on the wire; read it when this change leaves it out.
+    const shareLibraryWithFriends =
+      data.shareLibraryWithFriends ??
+      check(await client.GET('/v1/me/social-settings'), fallback)
+        .shareLibraryWithFriends
+    return check(
+      await client.PUT('/v1/me/social-settings', {
+        body: { ...data, shareLibraryWithFriends },
+      }),
+      fallback,
+    )
+  })
 
 /** The Friends page: who you are, your friends and requests, and their last two weeks. */
 export const loadFriendsPage = createServerFn({ method: 'GET' }).handler(
   async () => {
     const client = api(sessionToken())
-    const [me, activity, social, recommendations] = await Promise.all([
-      client.GET('/v1/me'),
-      client.GET('/v1/activity'),
-      loadSocial(),
-      client.GET('/v1/me/recommendations'),
-    ])
+    const [me, activity, social, recommendations, progress, board] =
+      await Promise.all([
+        client.GET('/v1/me'),
+        client.GET('/v1/activity'),
+        loadSocial(),
+        client.GET('/v1/me/recommendations'),
+        client.GET('/v1/me/progress'),
+        client.GET('/v1/social/leaderboard'),
+      ])
     const account = check(me, 'Your account could not be loaded.')
     return {
       handle: account.handle,
       displayName: account.displayName,
       social,
+      // GAM-002/005: the "You" card and "This week". Either missing just leaves its card out.
+      progress: progress.data ?? null,
+      board: board.data ?? null,
       activity: check(activity, 'Your friends’ activity could not be loaded.'),
       recommendations: check(
         recommendations,

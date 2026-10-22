@@ -14,6 +14,7 @@ struct RootView: View {
     let realtime: RealtimeClient
     @Environment(SessionStore.self) private var session
     @Environment(AppRouter.self) private var router
+    @Environment(ProgressModel.self) private var progress: ProgressModel?
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -79,6 +80,7 @@ struct RootView: View {
                 imports.reset()
                 settings.reset()
                 groups.reset()
+                progress?.reset()
                 realtime.reset()
                 router.reset()
                 HomeCache().clear()
@@ -133,6 +135,7 @@ private struct MainTabs: View {
     let settings: SettingsContext
 
     @Environment(AppRouter.self) private var router
+    @Environment(ProgressModel.self) private var progress: ProgressModel?
     @Environment(\.scenePhase) private var scenePhase
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -225,6 +228,13 @@ private struct MainTabs: View {
             }
             // The tab's mention badge needs the counts before the tab is opened.
             .task { await groups.load() }
+            // Badges earned elsewhere (an import, another device) toast on return (GAM-004).
+            .task(id: scenePhase) {
+                if scenePhase == .active {
+                    await progress?.refresh()
+                }
+            }
+            .modifier(OptionalUnlockToast(model: progress))
             // The socket is open while the app is active, and its events keep groups current.
             .task { await groups.follow() }
             .task(id: scenePhase) {
@@ -318,6 +328,20 @@ private struct MainTabs: View {
 
     struct LinkedTitle: Identifiable {
         let id: String
+    }
+}
+
+/// The unlock toast over the signed-in app, when the environment has a progress model (previews
+/// have none).
+private struct OptionalUnlockToast: ViewModifier {
+    let model: ProgressModel?
+
+    func body(content: Content) -> some View {
+        if let model {
+            content.unlockToast(model)
+        } else {
+            content
+        }
     }
 }
 

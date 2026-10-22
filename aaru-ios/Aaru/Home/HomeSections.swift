@@ -160,9 +160,18 @@ extension HomeScreen {
         }
     }
 
-    /// The last 7 days (to Insights, shown at zero too) and the library's counts (to Library,
-    /// hidden at zero).
+    /// The streak and level (to Achievements), the last 7 days (to Insights, shown at zero too)
+    /// and the library's counts (to Library, hidden at zero).
     @ViewBuilder private var summary: some View {
+        if let achievements, let progress = achievements.progress {
+            NavigationLink {
+                AchievementsView(model: achievements)
+            } label: {
+                StreakBar(progress: progress, isLink: true)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+        }
         if let stats = model.weekStats {
             NavigationLink {
                 InsightsView(api: api, library: library, model: InsightsModel(api: api, span: .last7))
