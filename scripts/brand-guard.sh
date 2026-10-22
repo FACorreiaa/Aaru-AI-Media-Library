@@ -22,6 +22,14 @@ hex=$(git grep -InE '#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})([^0-9a-zA-Z_-]|$)' -- \
   grep -vE '#000([^0-9a-zA-Z_-]|$)' || true)
 [ -z "$hex" ] || fail "Colour literal outside the tokens. Add or use a token in design/tokens.json." "$hex"
 
+# The same for rgb()/rgba(): only black (shadows, masks) may be written out; a tint is a token,
+# e.g. color-mix(in srgb, var(--accent) 60%, transparent).
+rgbweb=$(git grep -InE 'rgba?\( *[0-9]' -- \
+  'aaru-client/src' 'aaru-extension/src' \
+  ':!aaru-client/src/tokens.css' ':!aaru-extension/src/entrypoints/popup/tokens.css' ':!*.test.ts' |
+  grep -vE 'rgba?\( *0[ _,]+0[ _,]+0[ _,/)]' || true)
+[ -z "$rgbweb" ] || fail "rgb() colour outside the tokens. Use a token, or color-mix() on one." "$rgbweb"
+
 # Apple: colours come from the asset catalog's colour sets, which the same file generates.
 rgb=$(git grep -InE '(Color|UIColor|NSColor)\((red|hue|white):|Color\(hex' -- 'aaru-ios/*.swift' || true)
 [ -z "$rgb" ] || fail "Colour literal in Swift. Use a colour set generated from design/tokens.json." "$rgb"

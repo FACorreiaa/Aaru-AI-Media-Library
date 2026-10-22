@@ -414,8 +414,8 @@ account or a stranger that has not happened yet.
 | REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
 | REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
 | DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
-| BRD-001 | In progress | this PR; `ci-brand.yml` | Palette, type, guard. Owner checks TestFlight + beta web in light and dark |
-| BRD-002 | Planned | | |
+| BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
+| BRD-002 | In progress | this PR | App icon approved by the owner 2026-10-22 (large + small variant) |
 | BRD-003 | Planned | | |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
@@ -762,12 +762,13 @@ clients; `Font.aaruDisplay`, `Font.widgetDisplay` and `--font-display` are the s
 and the owner has checked TestFlight and beta.aaruapp.com in light and dark.
 
 ### BRD-002 · Mark, wordmark and icons from the poster · M · owner, 2026-10-22
-The A-mark and wordmark traced from the poster to SVG (`docs/brand/`). They become the app icon
-(iOS, macOS squircle, BETA band), the favicons and PWA icons, the extension icons, the landing
-mark and the OG image (cropped from the poster). Replaces `ReedMark`.
+The A-mark and wordmark traced from the poster to SVG (`docs/brand/owl_poster.py`). They become
+the app icon (iOS, macOS squircle, BETA band), with a simplified mark at 40 px and below, the
+favicons and PWA icons, the extension icons, the landing icon and the wordmark on both clients
+(one colour, the text's). The OG image is the poster cropped. `ReedMark` is the agent's mark
+and goes with BRD-003.
 
-**Done when:** every icon and mark on every client comes from the traced SVG, and `reed-mark`
-is gone.
+**Done when:** every icon and the wordmark on every client come from the traced SVGs.
 
 ### BRD-003 · Owl mascot and agent mark · M · owner, 2026-10-22
 The owl cut out of the poster replaces the bird in `Mascot` and the web `mascot*.webp`. A small

@@ -1,9 +1,40 @@
 # Brand assets
 
-`source/` holds the four AI-drafted originals (2026-10-10) and one upscaled master. Everything
-shipped is derived from them by `process.py`; edit the script, not the outputs.
+**The standard since 2026-10-22 is the owl poster** (`source/owl-poster.png`, DESIGN.md "Brand").
+`owl_poster.py` derives every mark and icon from it; edit the script, not the outputs.
 
-| Source | Becomes | Where it ships |
+| Output | How | Where it ships |
+| --- | --- | --- |
+| `source/a-mark.svg` | The A, its swooshes and the amber star. The silver is traced with potrace at 8x; the star is clean geometry measured from the poster | Master for the app icon |
+| `source/a-mark-small.svg` | Legs as fitted geometry (no swooshes), thicker, and a bigger star: for 40 px and below | Master for the small icon |
+| `source/app-icon.svg` | The A-mark at 64% on a navy gradient with the hologram's blue glow (owner approved 2026-10-22) | iOS 1024, macOS 128–512 pt, PWA, `apple-touch-icon`, extension 96/128, landing `app-icon.webp` |
+| `source/app-icon-small.svg` | `a-mark-small` at 80% on flat navy | macOS 16/32 pt, favicons, extension 16/32/48 |
+| `source/wordmark.svg` | The poster's "Aaru", traced, `fill="currentColor"` | `Wordmark` image set (template, vector), web `wordmark.svg` as a CSS mask over the text colour |
+| `out/owl/web/og.jpg` | The poster cropped to 1200x630 | `aaru-client/public/og.jpg` |
+| Owl mascot | BRD-003 | `Mascot` image set, web `mascot*.webp`, the agent's mark |
+
+Run (Pillow, NumPy, SciPy; `brew install potrace librsvg`):
+
+```bash
+cd docs/brand && python3 -m venv .venv && .venv/bin/pip install pillow numpy scipy
+.venv/bin/python owl_poster.py
+```
+
+It rewrites the SVGs in `source/` and writes rasters to `out/owl/` (not committed). Copy
+`out/owl/AppIcon*.appiconset/*.png` into the asset catalog, `out/owl/web/*` (except `app-icon.png`,
+which goes to `src/assets/brand/app-icon.webp` through `cwebp -q 90`) into `aaru-client/public/`,
+and `out/owl/extension/*` into `aaru-extension/public/icon/`. The `BETA` band (`process.py`
+`beta_band`) is navy with amber type.
+
+Known limits: the poster is 1536x1024, so the traced marks are smoothed reconstructions, not the
+artist's vectors, and the owl tops out at about 600 px tall. Ask for masters before an App Store
+release.
+
+## Retired (teal bird and reeds, 2026-10-10 to 2026-10-21)
+
+Kept for reference; nothing below ships once BRD-003 lands.
+
+| Source | Became | Shipped in |
 | --- | --- | --- |
 | `icon_mascot.py` (variant B, chosen 2026-10-21) | The app icon: the painted mascot from `mascot-2048.png`, cropped from crest to books with the reel in hand, lifted off its paper and set on deep teal with a soft glow. No redraw; the pixels are the master's. `install_icon.py` builds the iOS icon, macOS squircle set and `BETA` band variant | `aaru-ios/Aaru/Assets.xcassets/AppIcon*` |
 | `icon_reeds.py` (variant A, 2026-10-10) | Retired as the app icon on 2026-10-21: five cattail reeds in front of a half sun. Still behind the web favicons, PWA icons and landing `app-icon.webp` until those are redone | `aaru-client/static/`, landing `app-icon.webp` |

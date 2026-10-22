@@ -1,7 +1,7 @@
 import { createLink } from '@tanstack/solid-router'
 import { splitProps } from 'solid-js'
 import type { JSX } from 'solid-js'
-import wordmark from '../assets/brand/wordmark.webp'
+import wordmark from '../assets/brand/wordmark.svg'
 import mascot from '../assets/brand/mascot.webp'
 import mascot2x from '../assets/brand/mascot@2x.webp'
 
@@ -18,12 +18,19 @@ const HomeLink = createLink(
 export function Wordmark(props: { class?: string; to?: '/' | '/app' }) {
   return (
     <HomeLink to={props.to ?? '/'} class="block" aria-label="Aaru">
-      <img
-        src={wordmark}
-        alt="Aaru"
-        width="656"
-        height="263"
-        class={props.class ?? 'h-8 w-auto md:h-9'}
+      {/* The poster's wordmark as a mask over the text colour, so it is ink in light and dark
+          (DESIGN.md "Brand"). The link carries the name. */}
+      <span
+        aria-hidden="true"
+        class={`block aspect-[3094/777] bg-current text-ink ${props.class ?? 'h-8 w-auto md:h-9'}`}
+        style={{
+          'mask-image': `url(${wordmark})`,
+          'mask-size': 'contain',
+          'mask-repeat': 'no-repeat',
+          '-webkit-mask-image': `url(${wordmark})`,
+          '-webkit-mask-size': 'contain',
+          '-webkit-mask-repeat': 'no-repeat',
+        }}
       />
     </HomeLink>
   )

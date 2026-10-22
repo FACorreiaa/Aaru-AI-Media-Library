@@ -244,7 +244,7 @@ body {
   background: var(--surface);
   box-shadow:
     0 0 0 1px var(--line),
-    0 22px 40px -22px rgb(15 34 36 / 0.6);
+    0 22px 40px -22px rgb(0 0 0 / 0.6);
   filter: brightness(calc(1 - var(--reach) * 0.06));
 }
 

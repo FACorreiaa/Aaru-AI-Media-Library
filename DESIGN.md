@@ -985,8 +985,8 @@ sets, brand assets), main wins.
 Assets and how they are made: `docs/brand/README.md`. Colour tokens (`Paper`, `Surface`,
 `Stone`, `Ink`, `Muted`, `Medallion`, accent, `Gold`, `Agent`, `Line`, `Danger`) are generated
 into the asset catalogs, `aaru-client/src/tokens.css` and the extension's popup from one file,
-`design/tokens.json`. Until the owl artwork ships (BRD-002, BRD-003), the old bird, reed mark
-and heron are still in the asset catalogs.
+`design/tokens.json`. The marks and icons come from `docs/brand/owl_poster.py` (BRD-002); until
+the owl ships (BRD-003), the old bird and the reed mark are still the mascot and the agent's mark.
 
 ### Mindspace (visual language, 2026-10-21; palette and type replaced 2026-10-22)
 
