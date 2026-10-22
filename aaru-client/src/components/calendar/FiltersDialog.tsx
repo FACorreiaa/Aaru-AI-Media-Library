@@ -1,4 +1,3 @@
-import { For } from 'solid-js'
 import { activeCount } from '../../lib/calendar/filters'
 import type {
   CalendarFilter,
@@ -16,21 +15,22 @@ import {
   SwitchInput,
   SwitchLabel,
   SwitchThumb,
-  ToggleGroup,
-  ToggleGroupItem,
 } from '~/components/ui'
+import { Segmented } from '../Segmented'
 
 /** The calendar's filters, loaded on first open so the page stays inside its size budget. */
 export default function FiltersDialog(props: {
   filter: CalendarFilter
   onFilter: (filter: CalendarFilter) => void
+  /** Defaults to true; the parent keeps it mounted with false so its exit plays (WEB-011). */
+  open?: boolean
   onClose: () => void
 }) {
   const set = (patch: Partial<CalendarFilter>) =>
     props.onFilter({ ...props.filter, ...patch })
   return (
     <Dialog
-      open
+      open={props.open ?? true}
       onOpenChange={(open) => {
         if (!open) props.onClose()
       }}
@@ -123,25 +123,13 @@ function Choice(props: {
   return (
     <div>
       <p class="mb-2 text-sm font-medium">{props.label}</p>
-      <ToggleGroup
-        class="flex w-fit rounded-full border border-line p-0.5"
-        aria-label={props.label}
+      <Segmented
+        label={props.label}
+        itemClass="flex min-h-9 items-center px-3 text-sm"
+        options={props.options.map(([value, label]) => ({ value, label }))}
         value={props.value}
-        onChange={(next: string | null) => next && props.onChange(next)}
-      >
-        <For each={props.options}>
-          {([value, label]) => (
-            <ToggleGroupItem
-              value={value}
-              variant="ink"
-              size="bare"
-              class="min-h-9 px-3 text-sm"
-            >
-              {label}
-            </ToggleGroupItem>
-          )}
-        </For>
-      </ToggleGroup>
+        onChange={props.onChange}
+      />
     </div>
   )
 }

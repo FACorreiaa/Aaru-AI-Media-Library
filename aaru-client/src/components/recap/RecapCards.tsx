@@ -93,8 +93,8 @@ export function RecapCardView(props: {
               {card().heading}
             </h2>
             <Line>
-              Everything you watched and read, from your own shelf. Tap to go
-              on.
+              Everything you watched, read and listened to, from your own
+              library. Tap to go on.
             </Line>
           </>
         )}

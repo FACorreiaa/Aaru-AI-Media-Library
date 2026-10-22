@@ -2,7 +2,7 @@ import { Show } from 'solid-js'
 import { badge, metaLine, shortCode } from '../../lib/calendar/model'
 import type { CalendarEntry } from '../../lib/calendar/model'
 import { Poster } from '../Poster'
-import { Badge } from '~/components/ui'
+import { Badge, Button } from '~/components/ui'
 import { WatchButton } from './WatchButton'
 
 /** One episode as a row: poster, show, code and name, network and time, and the tick. The row
@@ -21,9 +21,10 @@ export function EpisodeRow(props: {
   const meta = () => props.when ?? metaLine(e())
   return (
     <li class="flex items-center gap-1">
-      <button
-        type="button"
-        class="flex min-w-0 flex-1 items-center gap-3 rounded-field py-2 pr-1 text-left transition-colors hover:bg-ink/5"
+      <Button
+        variant="soft"
+        size="bare"
+        class="flex min-w-0 flex-1 items-center gap-3 rounded-field py-2 pr-1 text-left transition-colors hover:bg-ink/5 justify-start font-normal motion-safe:active:scale-100"
         classList={{ 'opacity-55': e().watched }}
         onClick={() => props.onOpen(e())}
       >
@@ -58,7 +59,7 @@ export function EpisodeRow(props: {
             <span class="block truncate text-xs text-muted">{meta()}</span>
           </Show>
         </span>
-      </button>
+      </Button>
       <WatchButton
         entry={e()}
         pending={props.pending}

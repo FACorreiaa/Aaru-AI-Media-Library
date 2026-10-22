@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import {
-  For,
   Match,
   Show,
   Switch,
@@ -11,12 +10,7 @@ import {
 import { optionalEnum, optionalInt } from '../lib/search-params'
 import { StatsPanel } from '../components/StatsPanel'
 import { MusicInsights } from '../components/music/MusicInsights'
-import {
-  Alert,
-  AlertDescription,
-  ToggleGroup,
-  ToggleGroupItem,
-} from '~/components/ui'
+import { Alert, AlertDescription, Button } from '~/components/ui'
 import {
   SPANS,
   insightsLabel,
@@ -31,6 +25,7 @@ import type { InsightsPeriod } from '../lib/insights/model'
 import { isEmpty } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
 import { getStats } from '../lib/recap/server'
+import { Segmented } from '../components/Segmented'
 
 // Insights on the web: the last 7 or 30 days, a month, a year, or all time in numbers, the browsable twin of the
 // Recap story. Stats load in the browser, which knows the viewer's time zone and "this month".
@@ -134,59 +129,46 @@ function Insights() {
         </h1>
 
         <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <ToggleGroup
-            class="flex overflow-hidden rounded-full border border-line text-sm"
-            aria-label="Period"
-            // '' until the period is known: controlled, with nothing chosen yet.
-            value={period()?.span ?? ''}
-            onChange={(span: string | null) => {
-              if (!span) return
+          <Segmented
+            label="Period"
+            itemClass="px-4 py-1.5 text-sm"
+            options={SPANS.map((o) => ({ value: o.span, label: o.label }))}
+            value={period()?.span}
+            onChange={(span) => {
               const p = period()
               const current = now()
-              const option = SPANS.find((o) => o.span === span)
-              if (p && current && option) go(withSpan(p, option.span, current))
+              if (p && current) go(withSpan(p, span, current))
             }}
-          >
-            <For each={SPANS}>
-              {(option) => (
-                <ToggleGroupItem
-                  size="bare"
-                  value={option.span}
-                  variant="surface"
-                  class="px-4 py-1.5"
-                >
-                  {option.label}
-                </ToggleGroupItem>
-              )}
-            </For>
-          </ToggleGroup>
+          />
           <Show when={period()}>
             {(p) => (
               <div class="flex items-center gap-2">
                 <Show when={p().span !== 'all' && !isRolling(p().span)}>
-                  <button
-                    type="button"
-                    class={arrow}
+                  <Button
+                    variant="soft"
+                    size="bare"
+                    class={`${arrow} font-normal`}
                     aria-label="Earlier"
                     disabled={!step(-1)}
                     onClick={() => go(step(-1))}
                   >
                     ‹
-                  </button>
+                  </Button>
                 </Show>
                 <span class="min-w-[8.5rem] text-center font-medium">
                   {insightsLabel(p())}
                 </span>
                 <Show when={p().span !== 'all' && !isRolling(p().span)}>
-                  <button
-                    type="button"
-                    class={arrow}
+                  <Button
+                    variant="soft"
+                    size="bare"
+                    class={`${arrow} font-normal`}
                     aria-label="Later"
                     disabled={!step(1)}
                     onClick={() => go(step(1))}
                   >
                     ›
-                  </button>
+                  </Button>
                 </Show>
               </div>
             )}

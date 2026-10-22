@@ -12,6 +12,9 @@ import {
   Button,
   buttonVariants,
   cardClass,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
 } from '~/components/ui'
 import { cn } from '~/lib/utils'
 
@@ -253,9 +256,9 @@ function NowCard(props: {
                   onClick={() => props.onFinish()}
                 >
                   {isBook()
-                    ? 'Finished'
+                    ? 'Mark read'
                     : isAlbum()
-                      ? 'Listened'
+                      ? 'Mark listened'
                       : 'Mark watched'}
                 </Button>
               </Show>
@@ -287,20 +290,20 @@ function NowCard(props: {
               }
             }}
           >
-            <label class="sr-only" for={`page-${e().id}`}>
-              Page
-            </label>
-            <input
-              id={`page-${e().id}`}
+            <TextField
               name="page"
-              type="number"
-              min="0"
-              inputmode="numeric"
-              value={e().bookProgress?.page ?? ''}
-              placeholder="Page"
-              class="min-h-11 w-24 rounded-field border border-line bg-paper px-3 text-sm"
-              autofocus
-            />
+              defaultValue={String(e().bookProgress?.page ?? '')}
+            >
+              <TextFieldLabel class="sr-only">Page</TextFieldLabel>
+              <TextFieldInput
+                type="number"
+                min="0"
+                inputmode="numeric"
+                placeholder="Page"
+                class="w-24"
+                autofocus
+              />
+            </TextField>
             <Button variant="default" size="sm" class="min-h-11" type="submit">
               Save
             </Button>

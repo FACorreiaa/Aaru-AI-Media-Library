@@ -149,8 +149,9 @@ function MonthDay(props: {
   const phone = () => (count() <= 2 ? props.entries : props.entries.slice(0, 1))
   const wide = () => (count() <= 3 ? props.entries : props.entries.slice(0, 2))
   return (
-    <button
-      type="button"
+    <Button
+      variant="soft"
+      size="bare"
       aria-pressed={props.selected}
       aria-label={`${parts.weekday} ${parts.day}${isToday() ? ', today' : ''}, ${
         count() === 0
@@ -159,7 +160,7 @@ function MonthDay(props: {
             ? '1 episode'
             : `${count()} episodes`
       }`}
-      class="flex min-h-20 min-w-0 flex-col gap-1 rounded-field p-1 text-left transition md:min-h-28 md:p-1.5"
+      class="flex min-h-20 min-w-0 flex-col gap-1 rounded-field p-1 text-left transition md:min-h-28 md:p-1.5 items-stretch justify-start font-normal motion-safe:active:scale-100"
       classList={{
         'bg-surface hover:ring-1 hover:ring-line': !props.selected,
         'bg-accent/15 ring-2 ring-accent': props.selected,
@@ -189,7 +190,7 @@ function MonthDay(props: {
           <More count={count() - wide().length} />
         </Show>
       </span>
-    </button>
+    </Button>
   )
 }
 

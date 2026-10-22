@@ -1,7 +1,14 @@
 import { For, Show, createSignal, lazy } from 'solid-js'
 import { activeCount } from '../../lib/calendar/filters'
 import type { CalendarFilter, CalendarView } from '../../lib/calendar/filters'
-import { Badge, Button, ToggleGroup, ToggleGroupItem } from '~/components/ui'
+import {
+  Badge,
+  Button,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
+import { Segmented } from '../Segmented'
 
 const FiltersDialog = lazy(() => import('./FiltersDialog'))
 
@@ -27,37 +34,31 @@ export function CalendarToolbar(props: {
   onFilter: (filter: CalendarFilter) => void
 }) {
   const [filtersOpen, setFiltersOpen] = createSignal(false)
+  const [filtersMounted, setFiltersMounted] = createSignal(false)
   const count = () => activeCount(props.filter)
   const week = () => props.view === 'week'
 
   return (
     <div class="flex flex-wrap items-center gap-2">
-      <ToggleGroup
-        class="flex rounded-full border border-line p-0.5"
-        aria-label="Calendar view"
-        value={props.view}
-        onChange={(next: string | null) =>
-          next && props.onView(next as CalendarView)
-        }
-      >
-        <For each={VIEWS}>
-          {(option) => (
-            <ToggleGroupItem
-              size="bare"
-              variant="ink"
-              value={option.value}
-              class="min-h-9 gap-1.5 px-3 text-sm"
-            >
+      <Segmented
+        label="Calendar view"
+        itemClass="flex min-h-9 items-center gap-1.5 px-3 text-sm"
+        options={VIEWS.map((option) => ({
+          value: option.value,
+          label: (
+            <>
               {option.label}
               <Show when={option.value === 'missed' && props.missedCount > 0}>
                 <Badge size="xs" variant="default">
                   {props.missedCount}
                 </Badge>
               </Show>
-            </ToggleGroupItem>
-          )}
-        </For>
-      </ToggleGroup>
+            </>
+          ),
+        }))}
+        value={props.view}
+        onChange={props.onView}
+      />
 
       <Show when={props.view !== 'missed'}>
         <nav class="flex items-center gap-1" aria-label="Move through days">
@@ -114,19 +115,16 @@ export function CalendarToolbar(props: {
               »
             </Button>
           </Show>
-          <label class="relative">
-            <span class="sr-only">Go to date</span>
-            <input
-              type="date"
-              class="min-h-11 rounded-full border border-line bg-paper px-3 text-sm"
-              value={props.selected}
-              disabled={!props.ready}
-              onChange={(event) => {
-                const day = event.currentTarget.value
-                if (day) props.onGoTo(day)
-              }}
-            />
-          </label>
+          <TextField
+            value={props.selected}
+            disabled={!props.ready}
+            onChange={(day) => {
+              if (day) props.onGoTo(day)
+            }}
+          >
+            <TextFieldLabel class="sr-only">Go to date</TextFieldLabel>
+            <TextFieldInput type="date" class="w-auto rounded-full px-3" />
+          </TextField>
         </nav>
       </Show>
 
@@ -135,7 +133,10 @@ export function CalendarToolbar(props: {
         size="sm"
         class="min-h-11"
         aria-haspopup="dialog"
-        onClick={() => setFiltersOpen(true)}
+        onClick={() => {
+          setFiltersMounted(true)
+          setFiltersOpen(true)
+        }}
       >
         Filters
         <Show when={count() > 0}>
@@ -145,8 +146,10 @@ export function CalendarToolbar(props: {
         </Show>
       </Button>
 
-      <Show when={filtersOpen()}>
+      {/* Mounted from the first open on, so closing plays its exit (WEB-011). */}
+      <Show when={filtersMounted()}>
         <FiltersDialog
+          open={filtersOpen()}
           filter={props.filter}
           onFilter={props.onFilter}
           onClose={() => setFiltersOpen(false)}
@@ -183,15 +186,16 @@ export function FilterChips(props: {
         <For each={chips()}>
           {(chip) => (
             <li>
-              <button
-                type="button"
+              <Button
+                variant="soft"
+                size="bare"
                 class="flex min-h-9 items-center gap-1.5 rounded-full bg-ink/10 px-3 text-sm font-medium hover:bg-ink/15"
                 aria-label={`Remove filter: ${chip.label}`}
                 onClick={() => props.onFilter(chip.clear)}
               >
                 {chip.label}
                 <span aria-hidden="true">×</span>
-              </button>
+              </Button>
             </li>
           )}
         </For>

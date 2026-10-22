@@ -1,6 +1,6 @@
 import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import type { SearchSchemaInput } from '@tanstack/solid-router'
-import { Match, Switch, createSignal, onMount } from 'solid-js'
+import { Match, Switch, createEffect, createSignal, on } from 'solid-js'
 import { optionalInt } from '../lib/search-params'
 import { RecapStory } from '../components/recap/RecapStory'
 import { Alert, AlertDescription } from '~/components/ui'
@@ -9,6 +9,8 @@ import type { RecapCard } from '../lib/recap/deck'
 import { periodLabel } from '../lib/recap/model'
 import type { Stats } from '../lib/recap/model'
 import { getStats } from '../lib/recap/server'
+import { useAppShell } from '../components/shell/context'
+import { prefersReducedMotion } from '../lib/reduced-motion'
 
 // GAM-006a on the web: the Recap story for `?year=` and optional `?month=`, the twin of the
 // Apple apps' `RecapView`. Stats load in the browser, which knows the viewer's time zone.
@@ -32,27 +34,53 @@ function Recap() {
     | { kind: 'failed'; message: string }
   >({ kind: 'loading' })
   const label = () => periodLabel(search())
+  const shell = useAppShell()
+  const [open, setOpen] = createSignal(true)
 
-  onMount(async () => {
-    try {
-      const stats = await getStats({
-        data: {
-          year: search().year,
-          month: search().month,
-          tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-        },
-      })
-      setState({ kind: 'ready', stats, deck: cards(stats) })
-    } catch (err) {
-      setState({
-        kind: 'failed',
-        message:
-          err instanceof Error
-            ? err.message
-            : 'Your recap could not be loaded.',
-      })
+  // UX-081: a new ?year/&month loads its own recap; a stale answer never replaces a newer one.
+  let request = 0
+  createEffect(
+    on(
+      () => [search().year, search().month] as const,
+      async ([year, month]) => {
+        const mine = ++request
+        setState({ kind: 'loading' })
+        setOpen(true)
+        try {
+          const stats = await getStats({
+            data: {
+              year,
+              month,
+              tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+            },
+          })
+          if (mine === request)
+            setState({ kind: 'ready', stats, deck: cards(stats) })
+        } catch (err) {
+          if (mine === request)
+            setState({
+              kind: 'failed',
+              message:
+                err instanceof Error
+                  ? err.message
+                  : 'Your recap could not be loaded.',
+            })
+        }
+      },
+    ),
+  )
+
+  /** Close goes back where the recap was opened from (Home, Insights, Your data), else Home,
+   *  once the story's exit has played. */
+  function close() {
+    setOpen(false)
+    const leave = () => {
+      if (shell.previous()) window.history.back()
+      else void navigate({ to: '/app' })
     }
-  })
+    if (prefersReducedMotion()) leave()
+    else window.setTimeout(leave, 200)
+  }
 
   const ready = () => {
     const current = state()
@@ -93,9 +121,10 @@ function Recap() {
           <Match when={ready()}>
             {(current) => (
               <RecapStory
+                open={open()}
                 stats={current().stats}
                 deck={current().deck}
-                onClose={() => navigate({ to: '/app' })}
+                onClose={close}
               />
             )}
           </Match>

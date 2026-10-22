@@ -10,10 +10,11 @@ import { cardClass } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { FAN, KIND_CARDS } from '../lib/landing/art'
 import { SITE_URL, X_URL } from '../lib/site'
+import { useSignedIn } from '../lib/session/use-signed-in'
 import appIcon from '../assets/brand/app-icon.webp'
 import tmdbLogo from '../assets/brand/tmdb-blue-short.svg'
 
-const title = 'Aaru · One private shelf for everything you follow'
+const title = 'Aaru · One private library for everything you follow'
 const description =
   'Track TV shows, movies, anime, books, music and sports in one private library. Import from Trakt, IMDb, Letterboxd and Goodreads. No ads, no tracking.'
 
@@ -37,7 +38,7 @@ export const Route = createFileRoute('/')({
 const faqs: Array<[string, string]> = [
   [
     'Is my library public?',
-    'No. Everything is private. Sharing, when it arrives, is opt-in and friends only.',
+    'No. Everything is private. Friends and groups are opt-in and friends only, and there is no public profile or feed.',
   ],
   [
     'Can I take my data out?',
@@ -75,6 +76,7 @@ function XIcon(props: { class?: string }) {
 }
 
 function Landing() {
+  const signedIn = useSignedIn()
   return (
     <>
       <header class="mx-auto flex h-18 max-w-6xl items-center justify-between px-5 md:px-8">
@@ -108,10 +110,10 @@ function Landing() {
             <XIcon />
           </a>
           <Link
-            to="/sign-in"
+            to={signedIn() ? '/app' : '/sign-in'}
             class="text-ink transition-colors hover:text-accent"
           >
-            Sign in
+            {signedIn() ? 'Open Aaru' : 'Sign in'}
           </Link>
         </nav>
       </header>
@@ -131,7 +133,7 @@ function Landing() {
               style={{ '--delay': '60ms' }}
             >
               Everything you watch, read and follow.
-              <span class="block text-accent">One calm shelf.</span>
+              <span class="block text-accent">One calm library.</span>
             </h1>
             <p
               class="rise mt-6 max-w-[48ch] text-lg leading-relaxed text-muted"
@@ -145,10 +147,10 @@ function Landing() {
               style={{ '--delay': '180ms' }}
             >
               <Link
-                to="/sign-in"
+                to={signedIn() ? '/app' : '/sign-in'}
                 class="inline-flex items-center rounded-full bg-accent px-7 py-3.5 text-base font-semibold whitespace-nowrap text-on-accent shadow-[0_8px_24px_-12px_rgb(31_105_112/0.6)] transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               >
-                Get started on the web
+                {signedIn() ? 'Open Aaru' : 'Get started on the web'}
               </Link>
               <StoreButtons align="center" />
             </div>
@@ -163,7 +165,7 @@ function Landing() {
           class="mx-auto max-w-6xl scroll-mt-6 px-5 py-20 md:px-8 md:py-24"
         >
           <h2 class="max-w-[22ch] font-display text-3xl leading-tight font-medium tracking-tight md:text-5xl">
-            All of it, on one shelf.
+            All of it, in one library.
           </h2>
           <p class="mt-4 max-w-[52ch] text-lg leading-relaxed text-muted">
             One search, one library and four plain statuses for everything you

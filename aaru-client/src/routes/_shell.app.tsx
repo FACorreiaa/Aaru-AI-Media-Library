@@ -66,7 +66,7 @@ import { setEpisode } from '../lib/title/server'
 // watching come with the page; the calendar row loads in the browser, which knows the
 // viewer's "today", as do this month's stats, Discover's public rows (DISC-001) and the list
 // chips, so a cold provider cache never holds the page. Each of those hides itself if it
-// fails. Search opens in place and shares the library for its "On your shelf" marks; the same
+// fails. Search opens in place and shares the library for its "In your library" marks; the same
 // library fills the Listening row (MUS-001), which stays hidden until it holds an album.
 // Search loads only when it is first opened: it is not part of the page's first paint.
 //
@@ -84,7 +84,12 @@ export const Route = createFileRoute('/_shell/app')({
 function Home() {
   const loaded = Route.useLoaderData()
   const [continuing, setContinuing] = createSignal(loaded().continueWatching)
-  const [starting, setStarting] = createSignal(loaded().startWatching)
+  // UX-052: albums stay out of Start watching; in progress they have Listening.
+  const withoutAlbums = <T extends { title: { type: string } }>(rows: T[]) =>
+    rows.filter((row) => row.title.type !== 'album')
+  const [starting, setStarting] = createSignal(
+    withoutAlbums(loaded().startWatching),
+  )
   const [unfinished, setUnfinished] = createSignal(loaded().unfinished ?? [])
   const [counts, setCounts] = createSignal(loaded().counts)
   const [strip, setStrip] = createSignal<WeekStrip | null>(null)
@@ -121,19 +126,19 @@ function Home() {
         setEntries((recent) => recent.reduce(upsert, library))
       })
       .catch(() => {
-        // Adding still works; titles just lack their "On your shelf" mark. Try again later.
+        // Adding still works; titles just lack their "In your library" mark. Try again later.
         libraryRequested = false
       })
   }
 
   function showUpNext(fresh: UpNext) {
     setContinuing(fresh.continueWatching)
-    setStarting(fresh.startWatching)
+    setStarting(withoutAlbums(fresh.startWatching))
     setUnfinished(fresh.unfinished ?? [])
     setCounts(fresh.counts)
   }
 
-  /** A title added from Search or a Discover row: mark it on the shelf and refresh the rows. */
+  /** A title added from Search or a Discover row: mark it in the library and refresh the rows. */
   async function added(entry: LibraryEntry) {
     setProblem(null)
     setEntries((current) => upsert(current, entry))
@@ -465,7 +470,7 @@ function Home() {
 
               <Show when={chips().length > 0}>
                 <nav
-                  aria-label="Your shelf by status"
+                  aria-label="Your library by status"
                   class="flex flex-wrap gap-2"
                 >
                   <For each={chips()}>
@@ -532,6 +537,7 @@ function Home() {
                       </For>
                       <Link
                         to="/app/lists"
+                        search={{ new: '1' }}
                         class="rounded-full border border-dashed border-line px-4 py-2 text-sm font-medium text-accent hover:bg-surface"
                       >
                         New list
@@ -613,27 +619,23 @@ function Home() {
               >
                 <div>
                   <h2 class="font-display text-xl font-medium">
-                    Add a show to see what’s next
+                    Add something to see what’s next
                   </h2>
                   <p class="mt-1 text-sm text-muted">
-                    Pick from the rows below, browse Discover, or search. What
-                    you watch and what airs next land here.
+                    Pick from the rows below, search, or bring your history from
+                    another app. What you watch and what airs next land here.
                   </p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                   <Link
-                    to="/app/discover"
-                    class="rounded-full border border-line px-5 py-2 text-sm font-semibold hover:bg-paper"
+                    to="/app/settings/import"
+                    class={buttonVariants({ variant: 'quiet', size: 'sm' })}
                   >
-                    Discover
+                    Bring your history
                   </Link>
-                  <button
-                    type="button"
-                    onClick={openSearch}
-                    class="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-on-accent"
-                  >
+                  <Button variant="default" size="sm" onClick={openSearch}>
                     Search
-                  </button>
+                  </Button>
                 </div>
               </div>
             </Show>
@@ -649,22 +651,22 @@ function Home() {
             <Show when={empty() && discoverReady() && discover().length === 0}>
               <div class="mx-auto mt-16 max-w-sm text-center">
                 <h2 class="font-display text-2xl font-medium">
-                  Add a show to see what’s next
+                  Add something to see what’s next
                 </h2>
                 <p class="mt-2 text-muted">
-                  Shows you are watching, what you want to start, and what airs
+                  What you are watching, what you want to start, and what airs
                   this week land here.
                 </p>
-                <div class="mt-6 flex items-center justify-center gap-3">
-                  <Link
-                    to="/app/discover"
-                    class={buttonVariants({ variant: 'default', size: 'lg' })}
-                  >
-                    Discover
-                  </Link>
-                  <Button variant="quiet" size="lg" onClick={openSearch}>
+                <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <Button variant="default" size="lg" onClick={openSearch}>
                     Search
                   </Button>
+                  <Link
+                    to="/app/settings/import"
+                    class={buttonVariants({ variant: 'quiet', size: 'lg' })}
+                  >
+                    Bring your history
+                  </Link>
                 </div>
               </div>
             </Show>

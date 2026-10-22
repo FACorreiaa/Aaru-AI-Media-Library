@@ -12,11 +12,13 @@ export default function DaySheet(props: {
   keyOf: (entry: CalendarEntry) => string
   onOpen: (entry: CalendarEntry) => void
   onToggle: (entry: CalendarEntry) => void
+  /** Defaults to true; the parent keeps it mounted with false so its exit plays (WEB-011). */
+  open?: boolean
   onClose: () => void
 }) {
   return (
     <Dialog
-      open
+      open={props.open ?? true}
       onOpenChange={(open) => {
         if (!open) props.onClose()
       }}

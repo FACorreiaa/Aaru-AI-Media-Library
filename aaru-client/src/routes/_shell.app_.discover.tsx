@@ -1,5 +1,6 @@
-import { Link, createFileRoute } from '@tanstack/solid-router'
+import { Link, createFileRoute, useRouter } from '@tanstack/solid-router'
 import {
+  For,
   Match,
   Show,
   Suspense,
@@ -9,12 +10,8 @@ import {
   onMount,
 } from 'solid-js'
 import { DiscoverRows } from '../components/DiscoverRows'
-import {
-  Alert,
-  AlertDescription,
-  ToggleGroup,
-  ToggleGroupItem,
-} from '~/components/ui'
+import { Alert, AlertDescription, Button, Skeleton } from '~/components/ui'
+import { useAppShell } from '../components/shell/context'
 import { CREDITS, TMDB_URL } from '../lib/credits'
 import { localDayKey } from '../lib/calendar/model'
 import type { ConcertPlaceSetting } from '../lib/concerts/model'
@@ -26,6 +23,7 @@ import { getDiscover } from '../lib/home/server'
 import { seasonOf } from '../lib/discover/season'
 import type { SeasonKey, SeasonKind } from '../lib/discover/season'
 import { optionalEnum, optionalInt } from '../lib/search-params'
+import { Segmented } from '../components/Segmented'
 
 // The Seasons and Concerts views load on their own, the first time someone opens them.
 const SeasonBrowser = lazy(() =>
@@ -84,13 +82,49 @@ export const Route = createFileRoute('/_shell/app_/discover')({
   component: DiscoverPage,
 })
 
-const ANILIST = CREDITS.find((c) => c.name === 'AniList')?.href
-const OPEN_LIBRARY = CREDITS.find((c) => c.name === 'Open Library')?.href
+const ANILIST = CREDITS.find((c) => c.name === 'AniList')?.href ?? ''
+const OPEN_LIBRARY = CREDITS.find((c) => c.name === 'Open Library')?.href ?? ''
+
+type Source = { name: string; href: string }
+const TMDB: Source = { name: 'TMDB', href: TMDB_URL }
+
+/** UX-048: the credit names the providers of the rows on screen. Concerts carry their own. */
+function sourcesFor(
+  view: DiscoverView,
+  kind: SeasonKind | undefined,
+): Source[] {
+  if (view === 'concerts') return []
+  if (view === 'seasons')
+    return (kind ?? 'anime') === 'anime'
+      ? [{ name: 'AniList', href: ANILIST }]
+      : [TMDB]
+  return [
+    TMDB,
+    { name: 'AniList', href: ANILIST },
+    { name: 'Open Library', href: OPEN_LIBRARY },
+  ]
+}
+
+/** Seasons and Concerts load their code on first view: a row-sized placeholder holds the page. */
+function Placeholder() {
+  return (
+    <div class="mt-8 flex flex-col gap-4" aria-hidden="true">
+      <Skeleton class="mx-auto h-14 w-48 rounded-panel" />
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-4">
+        <For each={[0, 1, 2, 3, 4, 5]}>
+          {() => <Skeleton class="aspect-[2/3] rounded-card" />}
+        </For>
+      </div>
+    </div>
+  )
+}
 
 function DiscoverPage() {
   const loaded = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const router = useRouter()
+  const shell = useAppShell()
   const [rows, setRows] = createSignal<DiscoverRow[]>(loaded().rows)
   const [today, setToday] = createSignal<string | null>(null)
   const [problem, setProblem] = createSignal<string | null>(loaded().problem)
@@ -128,46 +162,25 @@ function DiscoverPage() {
           What is out, coming, and airing now. Add anything in one tap.
         </p>
 
-        <ToggleGroup
-          class="mt-6 flex w-fit overflow-hidden rounded-full border border-line text-sm"
-          aria-label="Discover view"
+        <Segmented
+          label="Discover view"
+          class="mt-6"
+          itemClass="px-4 py-1.5 text-sm"
+          options={[
+            { value: 'today', label: 'Today' },
+            { value: 'seasons', label: 'Seasons' },
+            ...(concertsOn()
+              ? [{ value: 'concerts' as const, label: 'Concerts' }]
+              : []),
+          ]}
           value={view()}
-          onChange={(next: string | null) =>
-            next &&
+          onChange={(next) =>
             void navigate({
-              search:
-                next === 'seasons' || next === 'concerts' ? { view: next } : {},
+              search: next === 'today' ? {} : { view: next },
               replace: true,
             })
           }
-        >
-          <ToggleGroupItem
-            size="bare"
-            value="today"
-            variant="surface"
-            class="px-4 py-1.5"
-          >
-            Today
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            size="bare"
-            value="seasons"
-            variant="surface"
-            class="px-4 py-1.5"
-          >
-            Seasons
-          </ToggleGroupItem>
-          <Show when={concertsOn()}>
-            <ToggleGroupItem
-              size="bare"
-              value="concerts"
-              variant="surface"
-              class="px-4 py-1.5"
-            >
-              Concerts
-            </ToggleGroupItem>
-          </Show>
-        </ToggleGroup>
+        />
 
         <Show when={problem()}>
           {(message) => (
@@ -179,16 +192,38 @@ function DiscoverPage() {
 
         <Switch
           fallback={
-            <DiscoverRows
-              rows={rows()}
-              onRowsChange={setRows}
-              today={today()}
-              onProblem={setProblem}
-            />
+            <Show
+              when={rows().some((row) => row.items.length > 0)}
+              fallback={
+                <div class="mx-auto mt-20 max-w-sm text-center">
+                  <h2 class="font-display text-2xl font-medium">
+                    Nothing to discover right now
+                  </h2>
+                  <p class="mt-2 text-muted">
+                    The catalog lists could not be loaded. Search still works.
+                  </p>
+                  <div class="mt-6 flex flex-wrap justify-center gap-3">
+                    <Button onClick={() => void router.invalidate()}>
+                      Try again
+                    </Button>
+                    <Button variant="quiet" onClick={() => shell.openSearch()}>
+                      Search
+                    </Button>
+                  </div>
+                </div>
+              }
+            >
+              <DiscoverRows
+                rows={rows()}
+                onRowsChange={setRows}
+                today={today()}
+                onProblem={setProblem}
+              />
+            </Show>
           }
         >
           <Match when={view() === 'seasons'}>
-            <Suspense>
+            <Suspense fallback={<Placeholder />}>
               <SeasonBrowser
                 kind={search().kind ?? 'anime'}
                 season={season()}
@@ -200,7 +235,7 @@ function DiscoverPage() {
           </Match>
           <Match when={view() === 'concerts' && concerts()}>
             {(setting) => (
-              <Suspense>
+              <Suspense fallback={<Placeholder />}>
                 <ConcertList
                   setting={setting()}
                   today={day()}
@@ -212,31 +247,27 @@ function DiscoverPage() {
         </Switch>
 
         <footer class="mt-16 border-t border-line pt-6 text-sm text-muted">
-          Lists from{' '}
-          <a
-            href={TMDB_URL}
-            rel="noopener"
-            class="font-medium text-accent hover:underline"
-          >
-            TMDB
-          </a>
-          ,{' '}
-          <a
-            href={ANILIST}
-            rel="noopener"
-            class="font-medium text-accent hover:underline"
-          >
-            AniList
-          </a>{' '}
-          and{' '}
-          <a
-            href={OPEN_LIBRARY}
-            rel="noopener"
-            class="font-medium text-accent hover:underline"
-          >
-            Open Library
-          </a>
-          .{' '}
+          <Show when={sourcesFor(view(), search().kind).length > 0}>
+            Rows from{' '}
+            <For each={sourcesFor(view(), search().kind)}>
+              {(source, i) => (
+                <>
+                  {i() > 0 &&
+                    (i() === sourcesFor(view(), search().kind).length - 1
+                      ? ' and '
+                      : ', ')}
+                  <a
+                    href={source.href}
+                    rel="noopener"
+                    class="font-medium text-accent hover:underline"
+                  >
+                    {source.name}
+                  </a>
+                </>
+              )}
+            </For>
+            .{' '}
+          </Show>
           <Link
             to="/about"
             hash="credits"

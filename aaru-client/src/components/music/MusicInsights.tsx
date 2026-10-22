@@ -6,8 +6,9 @@ import type { TopBy } from '../../lib/music/listening-model'
 import { topListens } from '../../lib/music/listening'
 import type { Stats } from '../../lib/recap/model'
 import { cn } from '~/lib/utils'
-import { cardClass, ToggleGroup, ToggleGroupItem } from '~/components/ui'
+import { cardClass } from '~/components/ui'
 import { TopList } from './TopList'
+import { Segmented } from '../Segmented'
 
 // MUS-008: Insights' Music section. Its own tiles, apart from the library's: listening never
 // adds to them. The top five load for the period Insights shows.
@@ -59,25 +60,14 @@ export function MusicInsights(props: {
         </For>
       </dl>
 
-      <ToggleGroup
-        class="mt-6 flex w-fit overflow-hidden rounded-full border border-line text-sm"
-        aria-label="Top list"
+      <Segmented
+        label="Top list"
+        class="mt-6"
+        itemClass="px-4 py-1.5 text-sm"
+        options={TOP_BY.map((o) => ({ value: o.by, label: o.label }))}
         value={by()}
-        onChange={(next: string | null) => next && setBy(next as TopBy)}
-      >
-        <For each={TOP_BY}>
-          {(option) => (
-            <ToggleGroupItem
-              size="bare"
-              value={option.by}
-              variant="surface"
-              class="px-4 py-1.5"
-            >
-              {option.label}
-            </ToggleGroupItem>
-          )}
-        </For>
-      </ToggleGroup>
+        onChange={setBy}
+      />
       <div class="mt-2 min-h-16" aria-busy={top.loading}>
         <Show
           when={top()}
@@ -107,7 +97,7 @@ export function MusicInsights(props: {
         to="/app/music"
         class="mt-2 inline-block text-sm font-semibold text-accent hover:underline"
       >
-        All listening ›
+        All listens ›
       </Link>
     </section>
   )

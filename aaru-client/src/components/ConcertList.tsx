@@ -31,16 +31,12 @@ import type {
 import { getArtistConcerts, getConcertsNear } from '../lib/concerts/server'
 import { play } from '../lib/motion'
 import { CityPicker } from './CityPicker'
-import {
-  Alert,
-  Button,
-  buttonVariants,
-  ToggleGroup,
-  ToggleGroupItem,
-} from '~/components/ui'
+import { Alert, Button, buttonVariants } from '~/components/ui'
+import { Segmented } from './Segmented'
 
 const TICKETMASTER = CREDITS.find((c) => c.name === 'Ticketmaster')?.href
-const UNAVAILABLE = 'Ticketmaster isn’t answering right now.'
+// UX-050: the vendor stays in the credit line, not the error.
+const UNAVAILABLE = 'Concert listings aren’t answering right now.'
 /** Artists' concerts shown before "Show all". */
 const ARTIST_PREVIEW = 5
 const SKELETON_ROWS = 3
@@ -298,27 +294,18 @@ export function ConcertList(props: {
         </div>
 
         <Show when={near().state !== 'no_place'}>
-          <ToggleGroup
-            class="mt-4 flex w-fit gap-1.5 text-sm"
-            aria-label="Distance"
+          <Segmented
+            label="Distance"
+            variant="chip"
+            class="mt-4"
+            itemClass="px-4 py-1.5 text-sm tabular-nums whitespace-nowrap"
+            options={RADII.map((km) => ({
+              value: String(km),
+              label: `${km} km`,
+            }))}
             value={String(radius())}
-            onChange={(next: string | null) =>
-              next && setRadius(Number(next) as Radius)
-            }
-          >
-            <For each={RADII}>
-              {(km) => (
-                <ToggleGroupItem
-                  size="bare"
-                  value={String(km)}
-                  variant="chip"
-                  class="px-4 py-1.5 tabular-nums whitespace-nowrap"
-                >
-                  {km} km
-                </ToggleGroupItem>
-              )}
-            </For>
-          </ToggleGroup>
+            onChange={(next) => setRadius(Number(next) as Radius)}
+          />
         </Show>
 
         <Show when={locateProblem()}>

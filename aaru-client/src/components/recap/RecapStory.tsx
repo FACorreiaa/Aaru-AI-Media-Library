@@ -4,7 +4,7 @@ import type { Stats } from '../../lib/recap/model'
 import { RecapCardView } from './RecapCards'
 import { prefersReducedMotion } from '../../lib/reduced-motion'
 import { shareRecap } from './share'
-import { Dialog, DialogContent, DialogPortal } from '~/components/ui'
+import { Dialog, DialogContent, DialogPortal, Button } from '~/components/ui'
 
 // GAM-006a: the Recap story. Tap the right of a card to go on, the left to go back, hold to
 // pause; arrows and Esc on a keyboard. Cards advance on their own unless the viewer asked for
@@ -24,6 +24,8 @@ const BACKDROPS = [
 export function RecapStory(props: {
   stats: Stats
   deck: RecapCard[]
+  /** Defaults to true; false plays the dialog's exit before the page moves on (WEB-011). */
+  open?: boolean
   onClose: () => void
 }) {
   const [index, setIndex] = createSignal(0)
@@ -96,7 +98,7 @@ export function RecapStory(props: {
 
   return (
     <Dialog
-      open
+      open={props.open ?? true}
       onOpenChange={(open) => {
         if (!open) props.onClose()
       }}
@@ -129,13 +131,14 @@ export function RecapStory(props: {
                   )}
                 </For>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="soft"
+                size="bare"
                 class="-mr-2 rounded-full px-3 py-1 text-sm font-medium hover:bg-current/10"
                 onClick={() => props.onClose()}
               >
                 Close
-              </button>
+              </Button>
             </div>
             <p class="sr-only" aria-live="polite">
               Card {index() + 1} of {props.deck.length}
@@ -157,8 +160,9 @@ export function RecapStory(props: {
                           onPointerDown={(e) => e.stopPropagation()}
                           onPointerUp={(e) => e.stopPropagation()}
                         >
-                          <button
-                            type="button"
+                          <Button
+                            variant="soft"
+                            size="bare"
                             class="rounded-full border-2 border-current px-6 py-3 font-medium hover:bg-current/10 disabled:opacity-60"
                             disabled={sharing()}
                             onClick={share}
@@ -166,7 +170,7 @@ export function RecapStory(props: {
                             {sharing()
                               ? 'Making the image…'
                               : 'Share as an image'}
-                          </button>
+                          </Button>
                           {/* Always present, so the note is announced when it appears: a toast
                           region outside this modal would be inert while it is open. */}
                           <p

@@ -4,9 +4,20 @@ import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { optionalBoolean, optionalEnum } from '../lib/search-params'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { Poster } from '../components/Poster'
-import { Button, ToggleGroup, ToggleGroupItem } from '~/components/ui'
+import { Segmented } from '../components/Segmented'
+import {
+  Button,
+  buttonVariants,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui'
 import { getLibrary } from '../lib/library/server'
 import { NowSection } from '../components/library/NowSection'
+import { lastShown } from '../lib/presence'
 import {
   KINDS,
   shelf,
@@ -20,10 +31,13 @@ import type {
   MediaKind,
 } from '../lib/library/model'
 
-// APP-003 on the web: the shelf, at parity with the Apple apps' `LibraryView`. `?search=true`
-// opens Search on arrival; `?status=` opens the shelf filtered to one status (Home's count
-// chips link there).
+// APP-003 on the web: the library, at parity with the Apple apps' `LibraryView`. `?search=true`
+// opens Search on arrival; `?status=` and `?kind=` open it filtered (Home's count chips link
+// there, and back or a reload keeps the filter, UX-088).
 // Search loads only when it is first opened: it is not part of the page's first paint.
+
+const STATUSES = ['wishlist', 'in_progress', 'finished', 'dropped'] as const
+const KIND_VALUES = ['film', 'show', 'anime', 'book', 'album'] as const
 
 export const Route = createFileRoute('/_shell/app_/library')({
   head: () => ({ meta: [{ title: 'Library · Aaru' }] }),
@@ -31,25 +45,25 @@ export const Route = createFileRoute('/_shell/app_/library')({
     search,
   ): {
     search?: boolean
-    status?: 'wishlist' | 'in_progress' | 'finished' | 'dropped'
+    status?: LibraryStatus
+    kind?: MediaKind
   } => ({
     search: optionalBoolean(search.search),
-    status: optionalEnum(search.status, [
-      'wishlist',
-      'in_progress',
-      'finished',
-      'dropped',
-    ]),
+    status: optionalEnum(search.status, STATUSES),
+    kind: optionalEnum(search.kind, KIND_VALUES),
   }),
   loader: () => getLibrary(),
   component: Library,
 })
 
-type Layout = 'grid' | 'list'
+type Layout = 'grid' | 'rows'
+type StatusChoice = { value: LibraryStatus | 'any'; label: string }
 
 function readLayout(): Layout {
   try {
-    return localStorage.getItem('library.layout') === 'list' ? 'list' : 'grid'
+    // 'list' is what this was called before Grid / Rows (UX-048).
+    const stored = localStorage.getItem('library.layout')
+    return stored === 'rows' || stored === 'list' ? 'rows' : 'grid'
   } catch {
     return 'grid'
   }
@@ -60,18 +74,26 @@ function Library() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const [entries, setEntries] = createSignal<LibraryEntry[]>(loaded())
-  const [kind, setKind] = createSignal<MediaKind | null>(null)
-  // The status filter lives in the URL, so a link can open the shelf already filtered.
+  // Both filters live in the URL, so a link can open the library already filtered.
+  const kind = () => search().kind ?? null
   const status = () => search().status ?? null
-  function setStatus(next: LibraryStatus | null) {
+  function setFilters(next: {
+    kind?: MediaKind | null
+    status?: LibraryStatus | null
+  }) {
     void navigate({
-      search: (prev) => ({ ...prev, status: next ?? undefined }),
+      search: (prev) => ({
+        ...prev,
+        ...('kind' in next ? { kind: next.kind ?? undefined } : {}),
+        ...('status' in next ? { status: next.status ?? undefined } : {}),
+      }),
       replace: true,
     })
   }
   const [layout, setLayout] = createSignal<Layout>('grid')
   // The entry whose "List…" was clicked: the picker adds its title to a list.
   const [listTarget, setListTarget] = createSignal<LibraryEntry | null>(null)
+  const shownTarget = lastShown(listTarget)
   // UX-007: the shell's one Search, lent this page's library for its marks.
   const shell = useAppShell()
   useSearchHost({
@@ -99,6 +121,12 @@ function Library() {
   })
 
   const rows = createMemo(() => shelf(entries(), kind(), status()))
+  const statusChoices = createMemo<StatusChoice[]>(() => [
+    { value: 'any', label: 'Any status' },
+    ...statusOptions(kind()).map((s) => ({ value: s.status, label: s.label })),
+  ])
+  const statusChoice = () =>
+    statusChoices().find((c) => c.value === (status() ?? 'any'))
 
   function chooseLayout(next: Layout) {
     setLayout(next)
@@ -112,7 +140,7 @@ function Library() {
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
-        <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
+        <h1 class="font-display text-4xl font-medium tracking-tight">
           Library
         </h1>
 
@@ -123,82 +151,55 @@ function Library() {
         />
 
         <div class="mt-6 flex flex-wrap items-center gap-2">
-          <ToggleGroup
-            class="flex flex-wrap gap-2"
-            aria-label="Kind"
+          <Segmented
+            label="Kind"
+            variant="chip"
+            itemClass="px-4 py-1.5 text-sm"
+            options={[
+              { value: 'all', label: 'All' },
+              ...KINDS.map((k) => ({ value: k.kind, label: k.label })),
+            ]}
             value={kind() ?? 'all'}
-            onChange={(next: string | null) =>
-              next && setKind(next === 'all' ? null : (next as MediaKind))
+            onChange={(next) =>
+              setFilters({ kind: next === 'all' ? null : next })
             }
+          />
+          <Select<StatusChoice>
+            aria-label="Status"
+            options={statusChoices()}
+            optionValue="value"
+            optionTextValue="label"
+            value={statusChoice()}
+            disallowEmptySelection
+            onChange={(choice) => {
+              if (choice)
+                setFilters({
+                  status: choice.value === 'any' ? null : choice.value,
+                })
+            }}
+            itemComponent={(p) => (
+              <SelectItem item={p.item}>{p.item.rawValue.label}</SelectItem>
+            )}
           >
-            <ToggleGroupItem
-              size="bare"
-              value="all"
-              variant="chip"
-              class="px-4 py-1.5 text-sm"
-            >
-              All
-            </ToggleGroupItem>
-            <For each={KINDS}>
-              {(option) => (
-                <ToggleGroupItem
-                  size="bare"
-                  value={option.kind}
-                  variant="chip"
-                  class="px-4 py-1.5 text-sm"
-                >
-                  {option.label}
-                </ToggleGroupItem>
-              )}
-            </For>
-          </ToggleGroup>
-          <label class="sr-only" for="status-filter">
-            Status
-          </label>
-          <select
-            id="status-filter"
-            class="rounded-full border border-line bg-transparent py-1.5 pr-8 pl-4 text-sm font-medium text-ink focus:ring-2 focus:ring-accent"
-            value={status() ?? ''}
-            onChange={(e) =>
-              setStatus((e.currentTarget.value || null) as LibraryStatus | null)
-            }
-          >
-            <option value="">Any status</option>
-            <For each={statusOptions(kind())}>
-              {(s) => (
-                // `selected` on the option: the select's value is applied before the
-                // options exist.
-                <option value={s.status} selected={s.status === status()}>
-                  {s.label}
-                </option>
-              )}
-            </For>
-          </select>
-          <ToggleGroup
-            class="ml-auto flex overflow-hidden rounded-full border border-line text-sm"
-            aria-label="Layout"
+            <SelectTrigger class="h-auto rounded-full border-line py-1.5 pr-3 pl-4 font-medium shadow-none">
+              <SelectValue<StatusChoice>>
+                {(state) => state.selectedOption().label}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectPortal>
+              <SelectContent class="rounded-panel border-line bg-paper" />
+            </SelectPortal>
+          </Select>
+          <Segmented
+            class="ml-auto"
+            label="Layout"
+            options={[
+              { value: 'grid', label: 'Grid' },
+              { value: 'rows', label: 'Rows' },
+            ]}
             value={layout()}
-            onChange={(next: string | null) =>
-              next && chooseLayout(next as Layout)
-            }
-          >
-            <ToggleGroupItem
-              size="bare"
-              value="grid"
-              variant="surface"
-              class="px-3 py-1.5"
-            >
-              Grid
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              size="bare"
-              value="list"
-              variant="surface"
-              class="px-3 py-1.5"
-            >
-              List
-            </ToggleGroupItem>
-          </ToggleGroup>
+            onChange={chooseLayout}
+          />
         </div>
 
         <Show
@@ -215,23 +216,34 @@ function Library() {
                     <p class="mt-2 text-muted">
                       No titles match these filters.
                     </p>
+                    <Button
+                      variant="outline"
+                      class="mt-6"
+                      onClick={() => setFilters({ kind: null, status: null })}
+                    >
+                      Clear filters
+                    </Button>
                   </>
                 }
               >
                 <h2 class="font-display text-2xl font-medium">
-                  Your shelf is empty
+                  Your library is empty
                 </h2>
                 <p class="mt-2 text-muted">
-                  Search for a film, show, anime, book or album to start.
+                  Search for a film, show, anime, book or album, or bring your
+                  history from another app.
                 </p>
-                <Button
-                  variant="default"
-                  size="lg"
-                  onClick={openSearch}
-                  class="mt-6"
-                >
-                  Search
-                </Button>
+                <div class="mt-6 flex flex-wrap justify-center gap-3">
+                  <Button variant="default" size="lg" onClick={openSearch}>
+                    Search
+                  </Button>
+                  <Link
+                    to="/app/settings/import"
+                    class={buttonVariants({ variant: 'outline', size: 'lg' })}
+                  >
+                    Bring your history
+                  </Link>
+                </div>
               </Show>
             </div>
           }
@@ -273,13 +285,15 @@ function Library() {
                           </p>
                         </div>
                       </Link>
-                      <button
-                        type="button"
-                        class="shrink-0 text-sm font-medium text-muted hover:text-ink"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="shrink-0 text-muted hover:text-ink"
+                        aria-label={`Add ${row.title} to a list`}
                         onClick={() => chooseList(row.id)}
                       >
                         List…
-                      </button>
+                      </Button>
                     </li>
                   )}
                 </For>
@@ -295,8 +309,8 @@ function Library() {
                       params={{ id: row.id }}
                       class="block"
                     >
-                      {/* Among posters a square cover keeps their baseline; on the Music
-                          shelf every cover is square and needs no slot. */}
+                      {/* Among posters a square cover keeps their baseline; in the Music
+                          filter every cover is square and needs no slot. */}
                       <Poster
                         url={row.posterUrl}
                         kind={row.kind}
@@ -312,13 +326,15 @@ function Library() {
                         {row.detail ?? statusLabel(row.status, row.kind)}
                       </p>
                     </Link>
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
+                      size="bare"
                       class="mt-1 text-xs font-medium text-muted hover:text-ink"
+                      aria-label={`Add ${row.title} to a list`}
                       onClick={() => chooseList(row.id)}
                     >
                       List…
-                    </button>
+                    </Button>
                   </li>
                 )}
               </For>
@@ -326,9 +342,10 @@ function Library() {
           </Show>
         </Show>
       </div>
-      <Show when={listTarget()}>
+      <Show when={shownTarget()}>
         {(entry) => (
           <AddToListDialog
+            open={listTarget() !== null}
             mediaRef={{ titleId: entry().title.id, type: entry().title.type }}
             titleName={entry().title.title}
             onClose={() => setListTarget(null)}

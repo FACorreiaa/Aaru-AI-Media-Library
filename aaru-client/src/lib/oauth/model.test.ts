@@ -7,6 +7,9 @@ describe('safeNext', () => {
       '/oauth/consent?request=abc',
     )
     expect(safeNext('/app/settings')).toBe('/app/settings')
+    expect(safeNext('/connect/extension?name=Firefox')).toBe(
+      '/connect/extension?name=Firefox',
+    )
   })
 
   it('refuses anything that could leave Aaru', () => {

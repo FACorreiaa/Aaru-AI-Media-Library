@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/solid-router'
 import { For, Show, createResource, createSignal, onMount } from 'solid-js'
 import { AlbumLink, Cover, TopList } from '../components/music/TopList'
-import { Button, ToggleGroup, ToggleGroupItem } from '~/components/ui'
+import { Button } from '~/components/ui'
 import {
   TOP_BY,
   byDay,
@@ -11,12 +11,13 @@ import {
 import type { TopBy } from '../lib/music/listening-model'
 import { listListens, topListens } from '../lib/music/listening'
 import type { Listen } from '../lib/music/listening'
+import { Segmented } from '../components/Segmented'
 
-// MUS-008: the listening log and its top lists. Recent and Top sit side by side on a wide
+// MUS-008: Listens (the log) and its top lists. Recent and Top sit side by side on a wide
 // screen and behind a switch on a phone. Everything loads in the browser, which knows the
 // viewer's time zone.
 export const Route = createFileRoute('/_shell/app_/music')({
-  head: () => ({ meta: [{ title: 'Music · Aaru' }] }),
+  head: () => ({ meta: [{ title: 'Listens · Aaru' }] }),
   component: Music,
 })
 
@@ -25,14 +26,11 @@ const PAGE = 50
 const SPANS = [
   { span: 'last7', label: '7 days' },
   { span: 'last30', label: '30 days' },
-  { span: 'year', label: 'This year' },
+  { span: 'year', label: 'Year' },
   { span: 'all', label: 'All time' },
 ] as const
 
 type TopSpan = (typeof SPANS)[number]['span']
-
-const segments =
-  'flex w-fit overflow-hidden rounded-full border border-line text-sm'
 
 function Music() {
   const [now, setNow] = createSignal<Date | null>(null)
@@ -43,33 +41,19 @@ function Music() {
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
-          Music
+          Listens
         </h1>
-        <ToggleGroup
-          class={`${segments} mt-6 md:hidden`}
-          aria-label="Show"
+        <Segmented
+          label="Show"
+          class="mt-6 md:hidden"
+          itemClass="px-4 py-1.5 text-sm"
+          options={[
+            { value: 'recent', label: 'Recent' },
+            { value: 'top', label: 'Top' },
+          ]}
           value={view()}
-          onChange={(next: string | null) =>
-            next && setView(next as 'recent' | 'top')
-          }
-        >
-          <ToggleGroupItem
-            size="bare"
-            value="recent"
-            variant="surface"
-            class="px-4 py-1.5"
-          >
-            Recent
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            size="bare"
-            value="top"
-            variant="surface"
-            class="px-4 py-1.5"
-          >
-            Top
-          </ToggleGroupItem>
-        </ToggleGroup>
+          onChange={setView}
+        />
         <Show when={now()}>
           {(today) => (
             <div class="mt-6 grid gap-10 md:grid-cols-2">
@@ -210,44 +194,20 @@ function Top(props: { now: Date }) {
         Top
       </h2>
       <div class="flex flex-wrap gap-2 md:mt-4">
-        <ToggleGroup
-          class={segments}
-          aria-label="Period"
+        <Segmented
+          label="Period"
+          itemClass="px-3 py-1.5 text-sm"
+          options={SPANS.map((o) => ({ value: o.span, label: o.label }))}
           value={span()}
-          onChange={(next: string | null) => next && setSpan(next as TopSpan)}
-        >
-          <For each={SPANS}>
-            {(option) => (
-              <ToggleGroupItem
-                size="bare"
-                value={option.span}
-                variant="surface"
-                class="px-3 py-1.5"
-              >
-                {option.label}
-              </ToggleGroupItem>
-            )}
-          </For>
-        </ToggleGroup>
-        <ToggleGroup
-          class={segments}
-          aria-label="Rank"
+          onChange={setSpan}
+        />
+        <Segmented
+          label="Rank"
+          itemClass="px-3 py-1.5 text-sm"
+          options={TOP_BY.map((o) => ({ value: o.by, label: o.label }))}
           value={by()}
-          onChange={(next: string | null) => next && setBy(next as TopBy)}
-        >
-          <For each={TOP_BY}>
-            {(option) => (
-              <ToggleGroupItem
-                size="bare"
-                value={option.by}
-                variant="surface"
-                class="px-3 py-1.5"
-              >
-                {option.label}
-              </ToggleGroupItem>
-            )}
-          </For>
-        </ToggleGroup>
+          onChange={setBy}
+        />
       </div>
       <div class="mt-2 min-h-16" aria-busy={top.loading}>
         <Show

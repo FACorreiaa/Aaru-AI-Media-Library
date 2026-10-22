@@ -137,7 +137,7 @@ export function importSteps(job: ImportJob): ImportStep[] {
       progress: matching ? job.rowsMatched / job.rowsTotal : undefined,
     },
     {
-      label: 'Check against your shelf',
+      label: 'Check against your library',
       state: checking ? 'current' : 'todo',
     },
     {

@@ -18,6 +18,8 @@ export default function CalendarEpisodeSheet(props: {
   entry: CalendarEntry
   pending: boolean
   onToggle: (entry: CalendarEntry) => void
+  /** Defaults to true; the parent keeps it mounted with false so its exit plays (WEB-011). */
+  open?: boolean
   onClose: () => void
 }) {
   const e = () => props.entry
@@ -27,7 +29,7 @@ export default function CalendarEpisodeSheet(props: {
 
   return (
     <Dialog
-      open
+      open={props.open ?? true}
       onOpenChange={(open) => {
         if (!open) props.onClose()
       }}

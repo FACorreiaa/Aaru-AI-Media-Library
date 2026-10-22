@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/solid-router'
+import { lastShown } from '../lib/presence'
 import { useAppShell } from '../components/shell/context'
 import {
   Show,
@@ -163,6 +164,9 @@ function Calendar() {
     if (!key) return undefined
     return entries().find((entry) => entryKey(entry) === key) ?? opened
   })
+  // WEB-011: the sheets stay mounted on their last value while their exit plays.
+  const shownDay = lastShown(dayOpen)
+  const shownEntry = lastShown(openEntry)
 
   onMount(() => {
     const now = localDayKey(new Date())
@@ -532,9 +536,10 @@ function Calendar() {
         </div>
       </div>
 
-      <Show when={dayOpen()}>
+      <Show when={shownDay()}>
         {(day) => (
           <DaySheet
+            open={dayOpen() !== null}
             day={day()}
             entries={byDay().get(day()) ?? []}
             pending={pendingSet()}
@@ -548,9 +553,10 @@ function Calendar() {
           />
         )}
       </Show>
-      <Show when={openEntry()}>
+      <Show when={shownEntry()}>
         {(entry) => (
           <CalendarEpisodeSheet
+            open={openEntry() !== undefined}
             entry={entry()}
             pending={pending().has(entryKey(entry()))}
             onToggle={(next) => void toggle(next)}

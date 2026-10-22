@@ -2,6 +2,7 @@ import { episodeCode } from '../../lib/calendar/model'
 import type { CalendarEntry } from '../../lib/calendar/model'
 import { cn } from '~/lib/utils'
 import { pop } from '../../lib/motion'
+import { Button } from '~/components/ui'
 
 /** The calendar's tick: a 44px round toggle, filled once watched. The page owns the state and
  *  the optimistic write; a pending write disables it so a double tap never sends two. */
@@ -14,8 +15,9 @@ export function WatchButton(props: {
   const label = () =>
     `${props.entry.title.title} ${episodeCode(props.entry.season, props.entry.number)} watched`
   return (
-    <button
-      type="button"
+    <Button
+      variant="soft"
+      size="bare"
       aria-pressed={props.entry.watched}
       aria-label={label()}
       disabled={props.pending}
@@ -50,6 +52,6 @@ export function WatchButton(props: {
           />
         </svg>
       </span>
-    </button>
+    </Button>
   )
 }

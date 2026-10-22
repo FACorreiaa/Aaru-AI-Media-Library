@@ -15,7 +15,7 @@ import { DiscoverCard, Row } from './HomeRows'
 /**
  * DISC-001: the public rows, as Home shows them under the user's own and as the Discover page
  * shows them alone. The server names and orders the rows; any row id renders. Adding a card
- * flips every card for that title to "On your shelf" with no refetch.
+ * flips every card for that title to "In your library" with no refetch.
  */
 /**
  * Adding a public card to the library, shared by the Discover rows and the Seasons view: one

@@ -10,6 +10,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Button,
 } from '~/components/ui'
 
 // APP-010, CAL-002 · `WeekGrid` (DESIGN.md §14, VIEWS.md): Pogdesign CAT's dense week, in Aaru's
@@ -57,7 +58,7 @@ export function WeekGrid(props: WeekGridProps) {
                   aria-label={`${parts().weekday} ${parts().day}, ${count()} episodes`}
                   // `cn`, not classList: the trigger's own text colour must lose to these.
                   class={cn(
-                    'flex h-auto min-h-16 flex-col items-center justify-center gap-0 rounded-field px-0 py-0 text-xs font-normal transition-colors focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+                    'flex h-auto min-h-16 flex-col items-center justify-center gap-0 rounded-field px-0 py-0 text-xs font-normal transition-colors',
                     day() === props.selected
                       ? 'bg-ink text-paper'
                       : day() === props.today
@@ -190,9 +191,10 @@ function EpisodeCell(props: {
         'ring-line': e().kind === 'regular',
       }}
     >
-      <button
-        type="button"
-        class="block w-full text-left"
+      <Button
+        variant="soft"
+        size="bare"
+        class="block w-full text-left rounded-none font-normal hover:bg-transparent motion-safe:active:scale-100"
         aria-label={`${e().title.title}, ${episodeCode(e().season, e().number)}${
           e().episodeName ? `, ${e().episodeName}` : ''
         }. Details`}
@@ -213,7 +215,7 @@ function EpisodeCell(props: {
             <p class="truncate text-muted">{meta()}</p>
           </Show>
         </div>
-      </button>
+      </Button>
       <Show when={label()}>
         {(text) => (
           <Badge

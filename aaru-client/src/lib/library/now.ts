@@ -84,7 +84,7 @@ export function nowItem(entry: LibraryEntry): NowItem {
         ? pages
           ? `${pages} pages`
           : 'Just started'
-        : 'In progress',
+        : 'Watching',
   }
 }
 

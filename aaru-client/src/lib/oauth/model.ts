@@ -12,6 +12,8 @@ export function safeNext(next: unknown): string {
   const allowed =
     next === '/app' ||
     next.startsWith('/app/') ||
-    next.startsWith('/oauth/consent?')
+    next.startsWith('/oauth/consent?') ||
+    next === '/connect/extension' ||
+    next.startsWith('/connect/extension?')
   return allowed ? next : '/app'
 }

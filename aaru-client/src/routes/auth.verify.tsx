@@ -9,6 +9,7 @@ import { optionalString } from '../lib/search-params'
 import { Wordmark } from '../components/Brand'
 import { Button } from '~/components/ui'
 import { signInWithEmailLink } from '../lib/session/session'
+import { takeNext } from '../lib/session/pending-next'
 
 // The link in the sign-in email (MAGIC_LINK_BASE_URL). The token is spent only when the user
 // taps the button, so a mail scanner opening the link does not use it up.
@@ -37,7 +38,7 @@ function VerifyLink() {
     try {
       await signInWithEmailLink({ data: { token } })
       await router.invalidate()
-      await navigate({ to: '/app' })
+      await navigate({ href: takeNext() })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {

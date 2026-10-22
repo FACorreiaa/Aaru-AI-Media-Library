@@ -58,9 +58,9 @@ export default [
         },
       ],
       // Raw form controls and modals go through the components (Button, TextField, Select,
-      // Dialog…). A warning until step 2 has migrated the routes, then an error.
+      // Dialog…). Every caller is migrated (WEB-005), so a new raw one fails the lint.
       'no-restricted-syntax': [
-        'warn',
+        'error',
         {
           selector:
             'JSXOpeningElement[name.name=/^(button|input|select|textarea|dialog)$/]',
