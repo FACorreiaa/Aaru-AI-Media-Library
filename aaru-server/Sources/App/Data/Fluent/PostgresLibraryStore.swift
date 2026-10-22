@@ -20,8 +20,8 @@ struct PostgresLibraryStore: LibraryStore {
             let action = try await database.transaction { database in
                 let sql = try sqlDatabase(database)
                 let inverse = try await Self.run(op, userID: userID, sql: sql)
-                if kind == "import" {
-                    try await Self.markImportedTicks(op.itemIDs, sql: sql)
+                if Self.undatedKinds.contains(kind) {
+                    try await Self.markUndatedTicks(op.itemIDs, sql: sql)
                 }
                 let entry = JournalEntry(
                     inverse: inverse, itemIDs: op.itemIDs, actor: caller.actor, kind: kind, summary: summary,
@@ -217,9 +217,13 @@ struct PostgresLibraryStore: LibraryStore {
         return fields
     }
 
-    /// An import's ticks were not watched today: `now()` is the transaction's start, so it picks
-    /// out exactly the rows this import wrote. A snapshot insert already writes them unknown.
-    private static func markImportedTicks(_ itemIDs: [LibraryItemID], sql: any SQLDatabase) async throws {
+    /// Writes whose ticks were not watched today: an import, and the whole show marked watched
+    /// (PROG-005).
+    static let undatedKinds: Set<String> = ["import", "show"]
+
+    /// `now()` is the transaction's start, so it picks out exactly the rows this write made. A
+    /// snapshot insert already writes them unknown.
+    private static func markUndatedTicks(_ itemIDs: [LibraryItemID], sql: any SQLDatabase) async throws {
         guard !itemIDs.isEmpty else { return }
         try await sql.raw("""
         UPDATE episode_progress SET watched_at_known = false

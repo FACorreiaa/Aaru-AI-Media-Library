@@ -41,6 +41,17 @@ extension LibraryService {
 
     /// Nil when the patch changes nothing.
     func preparePatch(_ current: LibraryEntry, patch: ItemPatch, caller: Caller) throws -> PreparedWrite? {
+        let fields = try patchedFields(current, patch: patch, caller: caller)
+        guard fields != current.fields else { return nil }
+        return PreparedWrite(
+            op: .setFields(current.item.id, fields), kind: "update",
+            summary: Self.updateSummary(current: current, fields: fields),
+            itemID: current.item.id, title: current.title
+        )
+    }
+
+    /// The item's fields with `patch` applied.
+    func patchedFields(_ current: LibraryEntry, patch: ItemPatch, caller: Caller) throws -> ItemFields {
         var fields = current.fields
         if let status = patch.status, status != fields.status {
             fields.status = status
@@ -63,12 +74,7 @@ extension LibraryService {
             fields.isOwned = owned
         }
         try applyBookProgress(patch, to: &fields, type: current.title.type)
-        guard fields != current.fields else { return nil }
-        return PreparedWrite(
-            op: .setFields(current.item.id, fields), kind: "update",
-            summary: Self.updateSummary(current: current, fields: fields),
-            itemID: current.item.id, title: current.title
-        )
+        return fields
     }
 
     func prepareDelete(_ current: LibraryEntry) -> PreparedWrite {
@@ -103,6 +109,35 @@ extension LibraryService {
         return try await prepareProgress(watch: aired, unwatch: [], show: show, journal: ("season", summary))
     }
 
+    /// PROG-005: the whole show watched, as one action. Every aired regular episode is ticked, with
+    /// the watch date unknown (the journal kind "show" marks the ticks undated), and the status
+    /// follows `prepareProgress`: an ended or canceled show finishes, a running one stays in
+    /// progress, caught up. `patch` carries any other fields of the same tap (its status is the
+    /// reason for this write and is not applied as such). Nil when nothing would change.
+    func prepareShowWatched(_ show: ShowContext, patch: ItemPatch = ItemPatch(), caller: Caller) async throws
+        -> PreparedWrite?
+    {
+        var rest = patch
+        rest.status = nil
+        var fields = try patchedFields(show.entry, patch: rest, caller: caller)
+        let current = try await stores.library.watched(itemID: show.entry.item.id)
+        let airedRegular = show.episodes.filter {
+            $0.season > 0 && Self.hasAired($0, titleStatus: show.status, now: now())
+        }
+        let unwatched = airedRegular.compactMap { try? EpisodeKey(season: $0.season, episode: $0.episode) }
+            .filter { !current.contains($0) }
+        let finishes = !airedRegular.isEmpty && (show.status == .ended || show.status == .canceled)
+        if finishes, fields.status != .finished, caller.actor == .user {
+            fields.statusByHand = true
+        }
+        let summary = "Marked \(show.entry.title.title) watched (\(unwatched.count) episodes)"
+        let write = try await prepareProgress(
+            watch: unwatched, unwatch: [], show: show, fields: fields, journal: ("show", summary)
+        )
+        guard case let .batch(ops) = write.op, ops.count > 1 || !unwatched.isEmpty else { return nil }
+        return write
+    }
+
     /// An episode op together with the status it implies, as one action: the first tick moves
     /// wishlist → in progress; watching every aired episode of an ended or canceled show finishes
     /// it. A running show never auto-finishes.
@@ -110,6 +145,7 @@ extension LibraryService {
         watch: [EpisodeKey],
         unwatch: [EpisodeKey],
         show: ShowContext,
+        fields base: ItemFields? = nil,
         journal: (kind: String, summary: String)
     ) async throws -> PreparedWrite {
         let current = show.entry
@@ -119,7 +155,7 @@ extension LibraryService {
         var watched = try await stores.library.watched(itemID: id)
         watched.formUnion(watch)
         watched.subtract(unwatch)
-        var fields = current.fields
+        var fields = base ?? current.fields
         if fields.status == .wishlist, !watched.isEmpty {
             fields.status = .inProgress
         }
@@ -141,7 +177,8 @@ extension LibraryService {
     }
 
     /// Applies one prepared write as one journaled action.
-    func commit(_ write: PreparedWrite, userID: UserID, caller: Caller) async throws {
+    @discardableResult
+    func commit(_ write: PreparedWrite, userID: UserID, caller: Caller) async throws -> ActionRecord {
         try await stores.library.apply(
             write.op, userID: userID, caller: caller, kind: write.kind, summary: caller.summary(write.summary)
         )

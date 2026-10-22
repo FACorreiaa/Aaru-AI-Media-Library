@@ -17,6 +17,7 @@ struct TitleDetailView: View {
     @State private var confirmsRemoval = false
     /// Nil in previews and outside the signed-in app.
     @Environment(GroupsModel.self) private var groups: GroupsModel?
+    @Environment(ToastCenter.self) private var toasts: ToastCenter?
     @State private var openEpisode: EpisodeKey?
     @State private var expandedSeasons: Set<Int> = []
     @Environment(\.dismiss) private var dismiss
@@ -81,6 +82,7 @@ struct TitleDetailView: View {
         .scrollDismissesKeyboard(.interactively)
         // The rollback message sits where the tap was: at the bottom, not above a long season list.
         .safeAreaInset(edge: .bottom) { ProblemBanner(message: model.problem) { model.problem = nil } }
+        .undoToast()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Add to list", systemImage: "text.badge.plus") { showsListPicker = true }
@@ -130,6 +132,7 @@ struct TitleDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
         #endif
             .task {
+                model.toasts = toasts
                 notes = entry.notes ?? ""
                 page = entry.bookProgress?.page.map(String.init) ?? ""
                 await load()
@@ -174,7 +177,8 @@ extension TitleDetailView {
     }
 
     /// The next step: the next episode to mark, for a show with one aired and unwatched; then
-    /// the status, in this kind's words. Stacked at accessibility sizes.
+    /// the status, in this kind's words, and "Caught up" beside it once a running show has
+    /// nothing aired left (PROG-005). Stacked at accessibility sizes.
     private var actions: some View {
         let layout = typeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
@@ -198,6 +202,12 @@ extension TitleDetailView {
             }
             .pickerStyle(.menu)
             .fixedSize()
+            if let caughtUp = model.caughtUpLine {
+                Label(caughtUp, systemImage: "checkmark.seal")
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .foregroundStyle(Color(.muted))
+            }
         }
         .controlSize(.large)
     }

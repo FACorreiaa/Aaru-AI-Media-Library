@@ -34,6 +34,17 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-22
+
+- **Whole show watched, and profile stats now (owner, 2026-10-22).** A long press on a show
+  (iOS), or its card menu on the web, marks the whole show watched (PROG-005), and so does
+  choosing Watched for a show on its page. Every aired episode is ticked in one action, applied at
+  once with an Undo toast, and the ticks' watch dates are unknown: the Recap and Insights do not
+  count them as today. An ended or canceled show becomes Watched; a running one stays Watching,
+  caught up. GAM-006b's profile is pulled forward without badges or points: all-time numbers
+  from the library as it is (`GET /v1/me/profile/stats`), undated ticks included, opened from a
+  medallion on Home (iOS) and in the header (web). Insights stays the dated, per-period view.
+
 ## Decisions recorded 2026-10-21
 
 - **Friend invite links, profiles and basic social now (owner, 2026-10-21).** Pulled forward
@@ -390,11 +401,12 @@ account or a stranger that has not happened yet.
 | LIB-003 | Done | #2; LibraryTests | |
 | LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
 | AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
-| AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Server only; no client undo ribbon |
+| AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Clients undo through PROG-005's toast only; no undo ribbon |
 | PROG-001 | Done | #2; episodes PUT route | |
 | PROG-002 | Done | #2; seasons watched route | |
 | PROG-003 | Done | #2; LibraryTests nextEpisode | |
 | PROG-004 | Done | #2; ValidationTests percent | |
+| PROG-005 | Done | ShowWatchedTests | Pulled forward 2026-10-22; not yet run on TestFlight |
 | LST-001 | Done | #2; ListShelfTests visibility | |
 | LST-002 | Done | #2; `/v1/lists/{id}/items`, `/order` | |
 | LST-003 | Built, unverified | ListShelfTests LST-003, CatalogRefreshTests | iOS not checked on TestFlight yet |
@@ -497,7 +509,7 @@ account or a stranger that has not happened yet.
 | GAM-005 | Open | none | |
 | GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
 | GAM-006e | Done | #67; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
-| GAM-006b | Partial | #43 Insights covers all-time/by-kind | No genres, profile placement, badges |
+| GAM-006b | Partial | #43 Insights; ShowWatchedTests "GAM-006b" | Profile pulled forward 2026-10-22; badges wait for GAM-001 |
 | CAT-018 | Done | #66; GenreTests, CatalogAdapterTests "genre names" | Pulled forward 2026-10-21 for GAM-006e; backfill runs in the catalog refresher |
 | RT-001 | Open | none (PR #48 open) | |
 | DM-001 | Open | none | |
@@ -1072,6 +1084,18 @@ Optional `page` / `percent` on `Progress`. No scrobble positions.
 
 **Done when:** setting `percent` outside 0–100 is rejected, and page and percent cannot
 disagree silently (store one, derive the other only if total pages is known).
+
+### PROG-005 · Whole show watched · S · owner, 2026-10-22
+**Needs:** PROG-002, PROG-003, AUD-002.
+`POST /v1/library/items/{id}/watched` ticks every aired regular episode as one action and
+returns it, so a client can offer Undo. `PATCH` with `status: finished` on a show, and adding a
+show as finished, do the same. The ticks are undated (journal kind `show`, like an import). An
+ended or canceled show finishes; a running one stays in progress, caught up. iOS: long press on
+Library and Home cards, and the status picker. Web: a card menu (⋯, right-click, long press) and
+the status select. Both show "Marked N episodes · Undo".
+
+**Done when:** one request ticks a 60-episode show in one undoable action, unaired episodes stay
+unticked, and this week's Insights does not move.
 
 ---
 
@@ -2662,7 +2686,11 @@ share image holds no posters and no other user's data.
 MAL-style all-time stats on a profile (`StatsPanel`): days watched, mean score, genre and
 network breakdowns, anime vs TV. A genre card joins the Recap once genres are stored.
 
-**Done when:** every number matches `/v1/me/stats` summed over the same years.
+**Pulled forward 2026-10-22 without badges:** `GET /v1/me/profile/stats` counts the library as
+it is, undated ticks included, so it can exceed `/v1/me/stats?span=all`, which counts dated
+activity only. The profile says so. Badges wait for GAM-001.
+
+**Done when:** every number matches the library's own ticks, finishes and ratings.
 
 ### CAT-018 · Store genres · S · pulled forward 2026-10-21
 TMDB `genres` and AniList `genres` are decoded today but only used to compute `isAnime`. Store

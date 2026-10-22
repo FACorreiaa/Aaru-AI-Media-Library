@@ -24,11 +24,13 @@ import type {
 } from '../lib/home/model'
 import { prefersReducedMotion } from '../lib/reduced-motion'
 import { AddControl } from './AddControl'
+import { CardMenu } from './CardMenu'
 import { Poster } from './Poster'
 import { Badge, badgeVariants, Button } from '~/components/ui'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
-// the arrow keys scroll it, and on desktop it has its own back / forward buttons.
+// the arrow keys scroll it, and on desktop it has its own back / forward buttons. A card that
+// holds a library item has its menu (CardMenu): mark it watched, or open it.
 
 /** A horizontal row: a heading, an optional action, and cards that snap as they scroll. */
 export function Row(props: {
@@ -149,75 +151,87 @@ export function ContinueCard(props: {
   entry: ContinueEntry
   busy: boolean
   onWatched: (entry: ContinueEntry, card: HTMLElement) => void
+  onChanged: (entry?: LibraryEntry) => void
 }) {
   const e = () => props.entry
   const runtime = () => runtimeLabel(e().nextRuntimeMinutes)
   let card!: HTMLElement
   return (
     <article ref={card} class="w-[min(78vw,22rem)] shrink-0 snap-start">
-      <Link
-        to="/app/title/$id"
-        params={{ id: e().libraryItemId }}
-        tabindex="-1"
-        aria-hidden="true"
-        class="relative block aspect-video overflow-hidden rounded-panel shadow-[0_0_0_1px_var(--line)]"
+      <CardMenu
+        id={e().libraryItemId}
+        name={e().title.title}
+        target={{ type: e().title.type, status: 'in_progress' }}
+        onChanged={props.onChanged}
+        triggerClass="top-2 left-2"
       >
-        <Art
-          sources={[e().title.backdropUrl, e().title.posterUrl]}
-          title={e().title.title}
-        />
-        <Show when={e().isFinale}>
-          <Badge variant="ink" class="absolute top-2 right-2">
-            Finale
-          </Badge>
-        </Show>
-        <div class="absolute inset-x-2 bottom-2 flex items-end justify-between gap-2">
-          <Show when={runtime()} fallback={<span />}>
-            <span class={chip}>{runtime()}</span>
-          </Show>
-          <span class={chip}>
-            {remainingLabel(e().remainingCount, e().remainingMinutes)}
-          </span>
-        </div>
-      </Link>
-      <div class="mt-2 flex items-start gap-3">
-        <div class="min-w-0 flex-1">
-          <Link
-            to="/app/title/$id"
-            params={{ id: e().libraryItemId }}
-            class="block truncate font-semibold hover:underline"
-          >
-            {e().title.title}
-          </Link>
-          <p class="truncate text-sm text-muted">{nextLine(e())}</p>
-        </div>
-        <Button
-          variant="quiet"
-          size="bare"
-          disabled={props.busy}
-          onClick={() => props.onWatched(e(), card)}
-          aria-label={`Mark ${e().title.title} ${shortCode(e().next.season, e().next.number)} watched`}
-          class="size-9 shrink-0 font-normal text-accent hover:bg-accent hover:text-on-accent"
+        <Link
+          to="/app/title/$id"
+          params={{ id: e().libraryItemId }}
+          tabindex="-1"
+          aria-hidden="true"
+          class="relative block aspect-video overflow-hidden rounded-panel shadow-[0_0_0_1px_var(--line)]"
         >
-          <svg viewBox="0 0 20 20" class="h-4 w-4" aria-hidden="true">
-            <path
-              d="m4.5 10.5 3.5 3.5 7.5-8"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </Button>
-      </div>
+          <Art
+            sources={[e().title.backdropUrl, e().title.posterUrl]}
+            title={e().title.title}
+          />
+          <Show when={e().isFinale}>
+            <Badge variant="ink" class="absolute top-2 right-2">
+              Finale
+            </Badge>
+          </Show>
+          <div class="absolute inset-x-2 bottom-2 flex items-end justify-between gap-2">
+            <Show when={runtime()} fallback={<span />}>
+              <span class={chip}>{runtime()}</span>
+            </Show>
+            <span class={chip}>
+              {remainingLabel(e().remainingCount, e().remainingMinutes)}
+            </span>
+          </div>
+        </Link>
+        <div class="mt-2 flex items-start gap-3">
+          <div class="min-w-0 flex-1">
+            <Link
+              to="/app/title/$id"
+              params={{ id: e().libraryItemId }}
+              class="block truncate font-semibold hover:underline"
+            >
+              {e().title.title}
+            </Link>
+            <p class="truncate text-sm text-muted">{nextLine(e())}</p>
+          </div>
+          <Button
+            variant="quiet"
+            size="bare"
+            disabled={props.busy}
+            onClick={() => props.onWatched(e(), card)}
+            aria-label={`Mark ${e().title.title} ${shortCode(e().next.season, e().next.number)} watched`}
+            class="size-9 shrink-0 font-normal text-accent hover:bg-accent hover:text-on-accent"
+          >
+            <svg viewBox="0 0 20 20" class="h-4 w-4" aria-hidden="true">
+              <path
+                d="m4.5 10.5 3.5 3.5 7.5-8"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </Button>
+        </div>
+      </CardMenu>
     </article>
   )
 }
 
 /** Start watching: a wishlist film, show or anime and how long it takes. Albums are not in it
  *  (UX-052): in progress they have Listening. */
-export function StartCard(props: { entry: StartEntry }) {
+export function StartCard(props: {
+  entry: StartEntry
+  onChanged: (entry?: LibraryEntry) => void
+}) {
   const e = () => props.entry
   const kind = () => kindOf(e().title.type, e().title.isAnime)
   const detail = () =>
@@ -225,17 +239,25 @@ export function StartCard(props: { entry: StartEntry }) {
       ? e().title.byline
       : runtimeLabel(e().runtimeMinutes) || undefined
   return (
-    <Link
-      to="/app/title/$id"
-      params={{ id: e().libraryItemId }}
-      class="block w-32 shrink-0 snap-start md:w-36"
+    <CardMenu
+      id={e().libraryItemId}
+      name={e().title.title}
+      target={{ type: e().title.type, status: 'wishlist' }}
+      onChanged={props.onChanged}
+      class="w-32 shrink-0 snap-start md:w-36"
     >
-      <Poster url={e().title.posterUrl} kind={kind()} frame />
-      <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
-      <Show when={detail()}>
-        {(text) => <p class="truncate text-xs text-muted">{text()}</p>}
-      </Show>
-    </Link>
+      <Link
+        to="/app/title/$id"
+        params={{ id: e().libraryItemId }}
+        class="block"
+      >
+        <Poster url={e().title.posterUrl} kind={kind()} frame />
+        <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
+        <Show when={detail()}>
+          {(text) => <p class="truncate text-xs text-muted">{text()}</p>}
+        </Show>
+      </Link>
+    </CardMenu>
   )
 }
 
@@ -261,6 +283,7 @@ export function ListeningCard(props: { entry: LibraryEntry }) {
 export function UnfinishedCard(props: {
   entry: UnfinishedEntry
   now: Date | null
+  onChanged: (entry?: LibraryEntry) => void
 }) {
   const e = () => props.entry
   const reason = () => {
@@ -269,27 +292,38 @@ export function UnfinishedCard(props: {
     return now ? unfinishedLabel(e(), now) : null
   }
   return (
-    <Link
-      to="/app/title/$id"
-      params={{ id: e().libraryItemId }}
-      class="block w-32 shrink-0 snap-start md:w-36"
+    <CardMenu
+      id={e().libraryItemId}
+      name={e().title.title}
+      target={{
+        type: e().title.type,
+        status: e().reason === 'dropped' ? 'dropped' : 'in_progress',
+      }}
+      onChanged={props.onChanged}
+      class="w-32 shrink-0 snap-start md:w-36"
     >
-      <Poster
-        url={e().title.posterUrl}
-        kind={kindOf(e().title.type, e().title.isAnime)}
-        frame
+      <Link
+        to="/app/title/$id"
+        params={{ id: e().libraryItemId }}
+        class="block"
       >
-        <Show when={reason()}>
-          {(text) => (
-            <span class={`absolute top-2 left-2 ${chip}`}>{text()}</span>
-          )}
+        <Poster
+          url={e().title.posterUrl}
+          kind={kindOf(e().title.type, e().title.isAnime)}
+          frame
+        >
+          <Show when={reason()}>
+            {(text) => (
+              <span class={`absolute top-2 left-2 ${chip}`}>{text()}</span>
+            )}
+          </Show>
+        </Poster>
+        <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
+        <Show when={resumeLine(e())}>
+          {(line) => <p class="text-xs text-muted">{line()}</p>}
         </Show>
-      </Poster>
-      <p class="mt-2 line-clamp-2 text-sm font-medium">{e().title.title}</p>
-      <Show when={resumeLine(e())}>
-        {(line) => <p class="text-xs text-muted">{line()}</p>}
-      </Show>
-    </Link>
+      </Link>
+    </CardMenu>
   )
 }
 
@@ -297,48 +331,59 @@ export function UnfinishedCard(props: {
 export function AiringCard(props: {
   entry: CalendarEntry
   when: string | null
+  onChanged: (entry?: LibraryEntry) => void
 }) {
   const e = () => props.entry
   const kind = () => badge(e())
   const meta = () => metaLine(e())
   return (
-    <Link
-      to="/app/title/$id"
-      params={{ id: e().libraryItemId }}
-      class="block w-56 shrink-0 snap-start transition-opacity"
-      classList={{ 'opacity-60': e().watched }}
+    <CardMenu
+      id={e().libraryItemId}
+      name={e().title.title}
+      target={{ type: e().title.type }}
+      onChanged={props.onChanged}
+      class="w-56 shrink-0 snap-start"
+      // The art's top corners carry its badges: the menu sits at its foot (art is 7rem tall).
+      triggerClass="top-17 right-2"
     >
-      <div class="relative aspect-[2/1] overflow-hidden rounded-[12px] shadow-[0_0_0_1px_var(--line)]">
-        <Art
-          sources={[e().title.backdropUrl, e().title.posterUrl]}
-          title={e().title.title}
-        />
-        <Show when={props.when}>
-          {(text) => (
-            <span class={`absolute top-2 left-2 ${chip}`}>{text()}</span>
-          )}
+      <Link
+        to="/app/title/$id"
+        params={{ id: e().libraryItemId }}
+        class="block transition-opacity"
+        classList={{ 'opacity-60': e().watched }}
+      >
+        <div class="relative aspect-[2/1] overflow-hidden rounded-[12px] shadow-[0_0_0_1px_var(--line)]">
+          <Art
+            sources={[e().title.backdropUrl, e().title.posterUrl]}
+            title={e().title.title}
+          />
+          <Show when={props.when}>
+            {(text) => (
+              <span class={`absolute top-2 left-2 ${chip}`}>{text()}</span>
+            )}
+          </Show>
+          <Show when={kind()}>
+            {(text) => (
+              <Badge
+                variant={e().kind === 'finale' ? 'ink' : 'default'}
+                class="absolute top-2 right-2"
+              >
+                {text()}
+              </Badge>
+            )}
+          </Show>
+        </div>
+        <p class="mt-2 truncate text-sm font-semibold">{e().title.title}</p>
+        <p class="truncate text-xs text-muted">
+          {[shortCode(e().season, e().number), e().episodeName]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+        <Show when={meta()}>
+          <p class="truncate text-xs text-muted">{meta()}</p>
         </Show>
-        <Show when={kind()}>
-          {(text) => (
-            <Badge
-              variant={e().kind === 'finale' ? 'ink' : 'default'}
-              class="absolute top-2 right-2"
-            >
-              {text()}
-            </Badge>
-          )}
-        </Show>
-      </div>
-      <p class="mt-2 truncate text-sm font-semibold">{e().title.title}</p>
-      <p class="truncate text-xs text-muted">
-        {[shortCode(e().season, e().number), e().episodeName]
-          .filter(Boolean)
-          .join(' · ')}
-      </p>
-      <Show when={meta()}>
-        <p class="truncate text-xs text-muted">{meta()}</p>
-      </Show>
-    </Link>
+      </Link>
+    </CardMenu>
   )
 }
 

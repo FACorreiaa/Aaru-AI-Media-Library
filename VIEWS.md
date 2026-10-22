@@ -50,7 +50,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Friend profile | none — shelf first: header with counts, Watching, You both (both want, both finished, they loved), Recently finished; only a name when they hide their library | `GET /v1/social/friends/{userId}/profile` | 4 · SOC-001/003 (2026-10-21) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
-| Profile and stats | `StatsPanel` (already on Insights), `BadgeShelf` | stats + badges routes | 5 · GAM-004/006b |
+| Profile and stats | `ProfilePanel`; `BadgeShelf` in 5. From the medallion on Home (iOS sheet, web `/app/profile`) | `GET /v1/me/profile/stats`; badges routes in 5 | 2 · GAM-006b (pulled forward 2026-10-22); 5 · GAM-004 |
 | Leaderboard | `Shelf`-like ranked list, friends only | leaderboard route | 5 · GAM-005 |
 | Groups | `GroupRail`, `ChannelList`, `MessageList`, `MemberList`, `SpoilerVeil` (a `shelf` channel reads "List" and a Room "Watch party" in the UI); agent replies inside `MessageList` carry `TitleCard`, `CalendarRow`, `Shelf` | `/v1/groups/*`, `/v1/group-invites/*`, `/v1/realtime/ticket`, `/v1/ws` | 4 · GRP-001…GRP-012 (pulled forward 2026-10-20) |
 | Watch channel | `WatchPanel` above the channel's `MessageList` | `/v1/groups/{id}/channels/{cid}/session` + `/v1/ws` | 4 · GRP-009 (absorbs ROOM-001) |
@@ -95,7 +95,10 @@ refuses and substitutes the nearest catalog piece.
 | `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
 | `BadgeShelf` | Earned badges | badge ids, tier, earned at |
-| `StatsPanel` | Insights, later profile numbers | span (`last7` / `last30` / `month` / `year` / `all`), totals with an absolute change against `prior` on rolling spans, buckets, by kind, top titles, ratings distribution (10 bins), longest run; static. Genres and mean score on a profile in 5. Music (MUS-008) sits under it on Insights |
+| `ProfilePanel` | Profile | all-time time in days and hours, episodes, pages read, tiles per kind, time by kind, top eight genres, three most watched, networks, mean score and ratings histogram; undated ticks included; static (GAM-006b) |
+| `CardMenu` | Library, Home cards (web) | ⋯, right-click or long press: "Mark show watched" / "Mark watched", Open. iOS uses the card's context menu (PROG-005) |
+| `UndoToast` | Anywhere a bulk tap writes | "Marked N episodes · Undo", about six seconds, through `/v1/actions/{id}/undo` (PROG-005) |
+| `StatsPanel` | Insights | span (`last7` / `last30` / `month` / `year` / `all`), totals with an absolute change against `prior` on rolling spans, buckets, by kind, top titles, ratings distribution (10 bins), longest run; static. All-time numbers with undated ticks live on `ProfilePanel`. Music (MUS-008) sits under it on Insights |
 | `RecapStory` | A month or year as a story | `year`, optional `month`; the deck is built on the device from `/v1/me/stats`. A year adds biggest day, genres, kinds and persona cards (GAM-006e); "On repeat" (top artist, plays · hours, top three tracks) after the top five when the period has listens (MUS-008) |
 | `GroupRail` | The groups you are in | group ids, names, monogram, unread flag, mention count, selected group |
 | `ChannelList` | A group's channels | group id, channels by kind (`text` / `title` / `watch` / `shelf`) with name, title poster for `title`, unread flag, mention count; `#general` first |

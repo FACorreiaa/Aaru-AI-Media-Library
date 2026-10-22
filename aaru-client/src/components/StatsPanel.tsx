@@ -34,6 +34,32 @@ function Section(props: { title: string; children: JSX.Element }) {
   )
 }
 
+/** Ten static bars, one per point of the 1–10 scale. Insights and the profile share it. */
+export function RatingsHistogram(props: { distribution: number[] }) {
+  return (
+    <div
+      class="flex h-28 items-end gap-1.5 text-accent"
+      role="img"
+      aria-label="Ratings from 1 to 10"
+    >
+      <For each={ratingBars(props.distribution)}>
+        {(bar) => (
+          <div class="flex h-full flex-1 flex-col justify-end gap-1">
+            <div
+              class="rounded-t-[3px] bg-current/60"
+              style={{
+                height: `${Math.max(bar.height * 100, bar.count > 0 ? 4 : 1)}%`,
+              }}
+              title={`${bar.count} rated ${bar.label}`}
+            />
+            <span class="text-center text-[11px] text-muted">{bar.label}</span>
+          </div>
+        )}
+      </For>
+    </div>
+  )
+}
+
 /** Day of a run; all time spans years, so it says which. */
 function runDay(day: string, withYear: boolean): string {
   return withYear ? `${dayLabel(day)}, ${day.slice(0, 4)}` : dayLabel(day)
@@ -50,7 +76,6 @@ export function StatsPanel(props: {
   const showLabel = (i: number) =>
     bars().length <= 12 || i === 0 || (i + 1) % 5 === 0
   const recap = () => recapPeriod(props.period)
-  const ratings = () => ratingBars(s().ratings.distribution)
   const rolling = () => isRolling(s().span)
   const chartUnit = () =>
     rolling() || s().span === 'month'
@@ -222,28 +247,7 @@ export function StatsPanel(props: {
               </p>
             )}
           </Show>
-          <div
-            class="flex h-28 items-end gap-1.5 text-accent"
-            role="img"
-            aria-label="Ratings from 1 to 10"
-          >
-            <For each={ratings()}>
-              {(bar) => (
-                <div class="flex h-full flex-1 flex-col justify-end gap-1">
-                  <div
-                    class="rounded-t-[3px] bg-current/60"
-                    style={{
-                      height: `${Math.max(bar.height * 100, bar.count > 0 ? 4 : 1)}%`,
-                    }}
-                    title={`${bar.count} rated ${bar.label}`}
-                  />
-                  <span class="text-center text-[11px] text-muted">
-                    {bar.label}
-                  </span>
-                </div>
-              )}
-            </For>
-          </div>
+          <RatingsHistogram distribution={s().ratings.distribution} />
         </Section>
       </Show>
 

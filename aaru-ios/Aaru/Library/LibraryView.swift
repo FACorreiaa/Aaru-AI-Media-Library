@@ -103,6 +103,7 @@ struct LibraryView: View {
                         ProblemBanner(message: problem) { problem = nil }
                     }
                 }
+                .undoToast()
                 .background(Color(.paper))
         }
     }
@@ -179,6 +180,9 @@ struct LibraryView: View {
     }
 
     @ViewBuilder private func rowMenu(_ row: LibraryRow) -> some View {
+        if let entry = library.entry(row.id) {
+            MarkWatchedButton(entry: entry, api: api, library: library)
+        }
         Button("Add to list…", systemImage: "text.badge.plus") { listTarget = row }
         Divider()
         Button("Remove from library…", systemImage: "trash", role: .destructive) { removing = row }

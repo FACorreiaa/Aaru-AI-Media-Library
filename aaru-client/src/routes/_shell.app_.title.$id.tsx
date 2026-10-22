@@ -11,6 +11,7 @@ import {
   onMount,
 } from 'solid-js'
 import { AddToListDialog } from '../components/AddToListDialog'
+import { announceShowWatched } from '../components/mark-watched'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
@@ -55,6 +56,7 @@ import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
 import { titlePageQuery } from '../lib/queries'
 import {
   markSeason,
+  markShowWatched,
   removeItem,
   setEpisode,
   updateItem,
@@ -65,6 +67,7 @@ import {
   episodeCode,
   episodeKey,
   hasAired,
+  isCaughtUp,
   neighbours,
   nextEpisode,
   orderedSeasons,
@@ -103,6 +106,7 @@ const watchedSet = (entry: LibraryEntry) =>
 
 function TitleRoom() {
   const page = Route.useLoaderData()
+  const { queryClient } = Route.useRouteContext()()
   const router = useRouter()
   const navigate = useNavigate()
   const title = () => page().title ?? undefined
@@ -218,10 +222,51 @@ function TitleRoom() {
     }
   }
 
+  /** The item and its ticks again, past the cache: after an undo the server's state is new. */
+  async function reload() {
+    try {
+      const fresh = await queryClient.query({
+        ...titlePageQuery(entry().id),
+        staleTime: 0,
+      })
+      commit(fresh.entry)
+    } catch {
+      // The undo landed; the room catches up on the next visit.
+    }
+  }
+
+  /** Watched, for a show, ticks every aired episode as one action (owner, 2026-10-22). An
+   * ended show finishes; a running one stays Watching, caught up, and the toast says so. */
+  async function finishShow() {
+    const before = entry()
+    const beforeWatched = watched()
+    const aired = seasons()
+      .filter((s) => s.number > 0)
+      .flatMap((s) => airedKeys(title(), s.number))
+    setProblem(null)
+    setEntry({ ...before, status: 'finished' })
+    setWatched(new Set([...beforeWatched, ...aired]))
+    try {
+      const result = await markShowWatched({ data: { id: before.id } })
+      commit(result.entry)
+      announceShowWatched(result, before.title.title, () => void reload())
+    } catch (error) {
+      setEntry(before)
+      setWatched(beforeWatched)
+      setProblem(
+        error instanceof Error
+          ? error.message
+          : `${before.title.title} was not marked watched.`,
+      )
+    }
+  }
+
   async function update(
     patch: LibraryItemPatch,
     optimistic: Partial<LibraryEntry>,
   ) {
+    if (patch.status === 'finished' && entry().title.type === 'show')
+      return finishShow()
     const before = entry()
     setProblem(null)
     setEntry({ ...before, ...optimistic })
@@ -409,6 +454,15 @@ function TitleRoom() {
               void update({ status }, { status })
             }
           />
+          <Show
+            when={isCaughtUp({
+              type: entry().title.type,
+              status: entry().status,
+              progress: entry().progress,
+            })}
+          >
+            <span class="px-1 text-sm font-medium text-accent">Caught up</span>
+          </Show>
           <Show when={!isAlbum()}>
             <Button variant="quiet" onClick={pick}>
               Add to list

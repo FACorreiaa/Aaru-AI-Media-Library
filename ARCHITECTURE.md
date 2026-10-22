@@ -351,6 +351,15 @@ The Year in Review (GAM-006e) reads `titles.genres` (CAT-018) in the same query 
 `topGenres`, `biggestDay` and `persona` in `StatsDigest`. The persona rule lives in the server;
 clients only map its key to words.
 
+The whole show marked watched (PROG-005) journals as kind `show`, and its ticks are marked
+unknown the same way an import's are (`PostgresLibraryStore.undatedKinds`), so a 60-episode mark
+never lands on today. `PATCH status: finished` on a show and adding a show as finished go through
+the same rule in `LibraryService`.
+
+The profile (GAM-006b, `GET /v1/me/profile/stats`) is the other read: `StatsStore.library` returns
+one row per library item with all its ticks, dated or not, and `ProfileDigest` derives the
+all-time numbers. It is the library's state, not activity, so it may exceed `span=all`. No table.
+
 ### Calendar and Up Next
 
 Both are derived reads over the user's library. Neither has its own table.
