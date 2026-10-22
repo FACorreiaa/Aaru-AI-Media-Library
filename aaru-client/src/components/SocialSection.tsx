@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import {
@@ -278,7 +279,7 @@ export function SocialSection(props: {
           >
             <For each={state().friends}>
               {(friend) => (
-                <Person user={friend}>
+                <Person user={friend} profile>
                   <Show
                     when={confirmBlock() === friend.userId}
                     fallback={
@@ -369,20 +370,39 @@ function People(props: { title: string; children: JSX.Element }) {
   )
 }
 
-function Person(props: { user: SocialUser; children: JSX.Element }) {
+/** One person in a list; a friend's name opens their profile. */
+function Person(props: {
+  user: SocialUser
+  children: JSX.Element
+  profile?: boolean
+}) {
+  const who = (
+    <>
+      <span
+        aria-hidden="true"
+        class="grid size-9 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-sm font-medium"
+      >
+        {monogram(props.user)}
+      </span>
+      <span class="truncate text-sm font-medium">
+        {personLabel(props.user)}
+      </span>
+    </>
+  )
   return (
     <li class="flex flex-wrap items-center justify-between gap-3 py-3">
-      <span class="flex min-w-0 items-center gap-3">
-        <span
-          aria-hidden="true"
-          class="grid size-9 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-sm font-medium"
+      <Show
+        when={props.profile}
+        fallback={<span class="flex min-w-0 items-center gap-3">{who}</span>}
+      >
+        <Link
+          to="/app/friends/$handle"
+          params={{ handle: props.user.handle }}
+          class="flex min-w-0 items-center gap-3 rounded-full hover:text-accent"
         >
-          {monogram(props.user)}
-        </span>
-        <span class="truncate text-sm font-medium">
-          {personLabel(props.user)}
-        </span>
-      </span>
+          {who}
+        </Link>
+      </Show>
       <span class="flex items-center gap-2">{props.children}</span>
     </li>
   )

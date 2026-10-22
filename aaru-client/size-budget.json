@@ -1,5 +1,5 @@
 {
-  "totalJs": 270332,
+  "totalJs": 270688,
   "css": 14620,
   "shared": 82384,
   "routes": {
@@ -7,6 +7,8 @@
     "/about": 85896,
     "/app": 103436,
     "/app_/discover": 97136,
+    "/app_/friends/": 90699,
+    "/app_/friends/$handle": 87057,
     "/app_/groups": 95358,
     "/app_/groups/": 84460,
     "/app_/groups/$groupId": 86416,

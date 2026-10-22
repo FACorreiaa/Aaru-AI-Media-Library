@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  activityDay,
+  activityVerb,
+  countsLine,
   handleProblem,
+  itemProgress,
   inviteExpiry,
   invitePlea,
   inviterName,
@@ -59,4 +63,64 @@ describe('social model', () => {
     expect(inviteExpiry('2026-10-22T13:00:00Z', now)).toBe('Expires tomorrow')
     expect(inviteExpiry('2026-10-21T20:00:00Z', now)).toBe('Expires today')
   })
+
+  it('says what a friend did', () => {
+    const row = {
+      id: 'x',
+      user: ana,
+      title: {
+        id: 't',
+        type: 'show' as const,
+        title: 'Andor',
+        isAnime: false,
+        ids: {},
+      },
+      day: '2026-10-21',
+      episodes: 1,
+      finished: false,
+      at: '2026-10-21T20:00:00Z',
+    }
+    expect(activityVerb({ ...row, lastSeason: 1, lastEpisode: 3 })).toBe(
+      'watched S1 · E3',
+    )
+    expect(
+      activityVerb({ ...row, episodes: 3, lastSeason: 1, lastEpisode: 5 }),
+    ).toBe('watched 3 episodes, up to S1 · E5')
+    expect(activityVerb({ ...row, episodes: 0, finished: true })).toBe(
+      'finished',
+    )
+    const now = new Date('2026-10-21T22:00:00Z')
+    expect(activityDay('2026-10-21', now)).toBe('Today')
+    expect(activityDay('2026-10-20', now)).toBe('Yesterday')
+    expect(activityDay('2026-10-17', now)).toBe('Sat 17 Oct')
+  })
+
+  it('sums up a shelf', () => {
+    expect(
+      countsLine({ movie: 42, show: 1, anime: 0, book: 8, album: 0 }),
+    ).toBe('42 films · 1 show · 8 books')
+    expect(countsLine({ movie: 0, show: 0, anime: 0, book: 0, album: 0 })).toBe(
+      null,
+    )
+    const item = {
+      title: base(),
+      status: 'in_progress' as const,
+      updatedAt: '',
+    }
+    expect(itemProgress({ ...item, lastSeason: 2, lastEpisode: 4 })).toBe(
+      'S2 · E4',
+    )
+    expect(itemProgress({ ...item, bookPage: 120 })).toBe('Page 120')
+    expect(itemProgress(item)).toBe(null)
+  })
 })
+
+function base() {
+  return {
+    id: 't',
+    type: 'show' as const,
+    title: 'Andor',
+    isAnime: false,
+    ids: {},
+  }
+}

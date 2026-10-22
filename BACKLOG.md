@@ -477,9 +477,9 @@ account or a stranger that has not happened yet.
 | SCR-006 | Open | none | |
 | SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
 | SCR-008 | Built, unverified | NowPlaying.swift, NowPlayingNotifier.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device |
-| SOC-001 | Partial | `profiles`, `PUT /v1/me/profile`; SocialTests | `social_settings` not built |
+| SOC-001 | Built, unverified | `profiles`, `PUT /v1/me/profile`, `social_settings` (`share_library_with_friends`), `/v1/me/social-settings`, `/v1/social/friends/{userId}/profile`; SocialTests, FriendTests | Points, streaks and leaderboard settings wait for P5 |
 | SOC-002 | Built, unverified | requests, friends, blocks, reports; invite links (`social_invites`, `/v1/social/invites`, `/v1/invites/{code}`, web `/i/{code}`, AASA); SocialTests, InviteTests | Seed signing ran on the branch 2026-10-21; universal links not tried on a device; contact email hash not built |
-| SOC-003 | Open | none | |
+| SOC-003 | Partial | `GET /v1/activity` (dated ticks and finishes, 14 days); FriendTests; web `/app/friends`, iOS Friends tab | No `FriendStories` on Home, no scrobbles, no save-to-wishlist yet |
 | SOC-004 | Open | none | |
 | SOC-005 | Partial | #17, #42, #45; Push.swift, `/v1/devices`, `/v1/me/notifications` | Airing push only; no friend-request category |
 | SOC-006 | Open | none | Pulled forward 2026-10-21 |
@@ -2285,6 +2285,14 @@ Derived from the journal and `watch_events`; no second write path.
 
 **Done when:** an undone tick disappears from friends' activity, a friend with `show_activity`
 off never appears, and the feed is friends-only with no global variant.
+
+**Minimal, 2026-10-21 (owner):** `GET /v1/activity` reads the library at query time: one row per
+friend, title and UTC day, from episode ticks with a known date and finishes, over the last 14
+days. Imported and restored ticks never show. One switch, `share_library_with_friends` (on by
+default; the owner chose friends-see-by-default), hides a friend's activity and shelves. The Friends tab
+on iOS and `/app/friends` on the web list it under "Lately"; a friend's profile
+(`/app/friends/{handle}`) is shelf first: Watching, You both (both want, both finished, they
+loved and you haven't), Recently finished. Never their notes.
 
 ### SOC-004 · Friends on the Title room · S
 **Needs:** SOC-003.

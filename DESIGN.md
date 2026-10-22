@@ -531,6 +531,19 @@ ship before the Phase 2 gate.
 
 The feeling to protect: **social is a room you invite people into, not a feed you are fed.**
 
+### Friends and profiles (SOC-001/003, pulled forward 2026-10-21)
+
+Friends is its own tab on Apple and its own page on the web. It opens on "Lately": one quiet row
+per friend, title and day ("Ana watched 3 episodes, up to S1 · E3 Severance", "Today"), with the
+poster, and Earlier for more. No unread badge and no push: you visit it. Below come Invite,
+requests, friends and blocks.
+
+A friend's profile is shelf first, like visiting someone's shelf. A monogram, their name in the
+serif face, "@ana · Friends since October 2026" and "42 films · 12 shows · 8 books". Then
+Watching (covers with "S2 · E4" or "Page 120"), a "You both" card (titles you both want, how many
+you both finished, what they loved that you haven't), and Recently finished with their stars. A
+friend who hides their library shows only the header and one line saying so.
+
 ### Invites (SOC-002, pulled forward 2026-10-21)
 
 A friend invite is a letter, not a growth hack. The page or sheet it opens shows the mascot

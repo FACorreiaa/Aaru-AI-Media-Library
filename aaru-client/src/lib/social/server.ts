@@ -227,3 +227,81 @@ export const redeemInvite = createServerFn({ method: 'POST' })
       'The invite could not be accepted.',
     ),
   )
+
+// SOC-001 settings and SOC-003: friend profiles and activity.
+
+export type FriendProfile = components['schemas']['FriendProfile']
+export type FriendItem = components['schemas']['FriendItem']
+export type ActivityItem = components['schemas']['ActivityItem']
+export type ActivityPage = components['schemas']['ActivityPage']
+
+export const loadActivity = createServerFn({ method: 'GET' })
+  .validator(z.object({ before: z.string().datetime().optional() }))
+  .handler(async ({ data }): Promise<ActivityPage> =>
+    check(
+      await api(sessionToken()).GET('/v1/activity', {
+        params: { query: { before: data.before } },
+      }),
+      'Your friends’ activity could not be loaded.',
+    ),
+  )
+
+/** A friend's profile by handle; null when they are not your friend (or not there at all). */
+export const loadFriendProfile = createServerFn({ method: 'GET' })
+  .validator(z.object({ handle: z.string().min(1).max(21) }))
+  .handler(async ({ data }): Promise<{ profile: FriendProfile | null }> => ({
+    profile: await friendProfile(data.handle),
+  }))
+
+async function friendProfile(handle: string): Promise<FriendProfile | null> {
+  {
+    const client = api(sessionToken())
+    const found = await client.GET('/v1/social/users/{handle}', {
+      params: { path: { handle } },
+    })
+    if (found.response.status === 401) sessionRejected()
+    if (found.response.status === 404 || found.data?.relationship !== 'friend')
+      return null
+    const profile = await client.GET('/v1/social/friends/{userId}/profile', {
+      params: { path: { userId: found.data.user.userId } },
+    })
+    if (profile.response.status === 404) return null
+    return check(profile, 'This profile could not be loaded.')
+  }
+}
+
+export const loadSocialSettings = createServerFn({ method: 'GET' }).handler(
+  async () =>
+    check(
+      await api(sessionToken()).GET('/v1/me/social-settings'),
+      'Your sharing setting could not be loaded.',
+    ),
+)
+
+export const saveSocialSettings = createServerFn({ method: 'POST' })
+  .validator(z.object({ shareLibraryWithFriends: z.boolean() }))
+  .handler(async ({ data }) =>
+    check(
+      await api(sessionToken()).PUT('/v1/me/social-settings', { body: data }),
+      'Your sharing setting was not saved.',
+    ),
+  )
+
+/** The Friends page: who you are, your friends and requests, and their last two weeks. */
+export const loadFriendsPage = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const client = api(sessionToken())
+    const [me, activity, social] = await Promise.all([
+      client.GET('/v1/me'),
+      client.GET('/v1/activity'),
+      loadSocial(),
+    ])
+    const account = check(me, 'Your account could not be loaded.')
+    return {
+      handle: account.handle,
+      displayName: account.displayName,
+      social,
+      activity: check(activity, 'Your friends’ activity could not be loaded.'),
+    }
+  },
+)

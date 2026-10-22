@@ -198,7 +198,7 @@ struct RootView: View {
 
     /// The app's destinations, in tab-bar and sidebar order.
     enum AppTab: String, CaseIterable, Identifiable {
-        case home, discover, library, calendar, lists, groups, settings
+        case home, discover, library, calendar, lists, friends, groups, settings
 
         var id: String {
             rawValue
@@ -211,6 +211,7 @@ struct RootView: View {
             case .library: "Library"
             case .calendar: "Calendar"
             case .lists: "Lists"
+            case .friends: "Friends"
             case .groups: "Groups"
             case .settings: "Settings"
             }
@@ -223,6 +224,7 @@ struct RootView: View {
             case .library: "books.vertical"
             case .calendar: "calendar"
             case .lists: "list.bullet.rectangle"
+            case .friends: "person.2"
             case .groups: "bubble.left.and.bubble.right"
             case .settings: "gearshape"
             }
@@ -251,6 +253,8 @@ struct RootView: View {
             NavigationStack {
                 ListsView(lists: lists, library: library, api: api)
             }
+        case .friends:
+            FriendsScreen(api: api)
         case .groups:
             GroupsScreen(groups: groups)
         case .settings:

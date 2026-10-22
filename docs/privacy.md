@@ -49,6 +49,11 @@ send about another user (the reason and your note). The person you block or repo
 told. Deleting your account removes all of it; a report someone sent about you keeps its reason
 but no longer points to you.
 
+**What your friends see.** Your friends, and only your friends, see what you are watching, what
+you finished and when, your ratings, the last episode you ticked, and which titles you both have.
+They never see your notes. Episodes you imported or restored don't show up as activity. Turn off
+"Show my library to friends" in Settings and they see only your name and handle.
+
 **Invite links.** When you make an invite link, Aaru stores it with the title you attached (if
 any), when it expires, and, once used, who opened it. Anyone holding the link sees your name,
 your handle and that title, and nothing from your library. A link works once, for two weeks,

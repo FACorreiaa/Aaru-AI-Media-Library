@@ -262,6 +262,57 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/social-settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** What your friends may see. Strangers never see anything, whatever is set here. */
+    get: operations['getSocialSettings']
+    put: operations['updateSocialSettings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/friends/{userId}/profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false). */
+    get: operations['getFriendProfile']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/activity': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out. */
+    get: operations['listFriendActivity']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/blocks': {
     parameters: {
       query?: never
@@ -2232,6 +2283,76 @@ export interface components {
     SocialUserList: {
       items: components['schemas']['SocialUser'][]
     }
+    SocialSettings: {
+      /** @description Friends see your shelves, activity and what you share. On by default. */
+      shareLibraryWithFriends: boolean
+    }
+    /** @description One title on a friend's shelf. Never their notes. */
+    FriendItem: {
+      title: components['schemas']['TitleSummary']
+      status: components['schemas']['LibraryStatus']
+      rating?: number
+      /** @description Shows. The last episode they ticked. */
+      lastSeason?: number
+      lastEpisode?: number
+      bookPage?: number
+      /** Format: date-time */
+      finishedAt?: string
+      /** Format: date-time */
+      updatedAt: string
+    }
+    KindCounts: {
+      movie: number
+      show: number
+      anime: number
+      book: number
+      album: number
+    }
+    FriendCompare: {
+      /** @description Titles you both plan to watch or read. */
+      bothWant: components['schemas']['TitleSummary'][]
+      bothFinished: number
+      /** @description Titles they rated 8 or more that you don't have. */
+      theyLoved: components['schemas']['TitleSummary'][]
+    }
+    FriendProfile: {
+      user: components['schemas']['SocialUser']
+      /** Format: date-time */
+      friendsSince: string
+      /** @description False when they hide their library; nothing below is sent then. */
+      sharing: boolean
+      counts?: components['schemas']['KindCounts']
+      watching?: components['schemas']['FriendItem'][]
+      recentlyFinished?: components['schemas']['FriendItem'][]
+      compare?: components['schemas']['FriendCompare']
+    }
+    ActivityItem: {
+      /** @description Stable per friend, title and day. */
+      id: string
+      user: components['schemas']['SocialUser']
+      title: components['schemas']['TitleSummary']
+      /**
+       * Format: date
+       * @description The UTC day.
+       */
+      day: string
+      /** @description Episodes ticked that day. */
+      episodes: number
+      lastSeason?: number
+      lastEpisode?: number
+      finished: boolean
+      rating?: number
+      /** Format: date-time */
+      at: string
+    }
+    ActivityPage: {
+      items: components['schemas']['ActivityItem'][]
+      /**
+       * Format: date-time
+       * @description Pass as `before` for the next page; absent on the last one.
+       */
+      nextBefore?: string
+    }
     FriendInvite: {
       code: string
       /** @description The link to share: https://aaruapp.com/i/{code}. */
@@ -3660,6 +3781,99 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSocialSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Your settings. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  updateSocialSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SocialSettings']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getFriendProfile: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        userId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The profile. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FriendProfile']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listFriendActivity: {
+    parameters: {
+      query?: {
+        /** @description The `nextBefore` of the previous page. */
+        before?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description One page. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ActivityPage']
+        }
       }
       default: components['responses']['Error']
     }

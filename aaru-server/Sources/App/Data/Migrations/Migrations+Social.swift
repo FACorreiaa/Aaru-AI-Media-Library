@@ -93,3 +93,20 @@ struct AddFriendInvites: SQLMigration {
         "DROP TABLE social_invites",
     ]
 }
+
+/// SOC-001 · social settings. A missing row means the defaults: friends see your library. Strangers
+/// never see anything, whatever is stored here.
+struct AddSocialSettings: SQLMigration {
+    let forward = [
+        """
+        CREATE TABLE social_settings (
+            user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            share_library_with_friends boolean NOT NULL DEFAULT true,
+            updated_at timestamptz NOT NULL DEFAULT now()
+        )
+        """,
+    ]
+    let backward = [
+        "DROP TABLE social_settings",
+    ]
+}

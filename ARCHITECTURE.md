@@ -954,13 +954,18 @@ Modelled on Norviq's `social_*` design (`norviq-backend/.../Social`, `CreateSoci
 | `social_blocks` | blocker, blocked |
 | `social_reports` | reporter, target, reason |
 | `social_invites` | code (12 random base62), inviter, optional title, expiry (14 days), redeemed_by, revoked_at |
-| `social_settings` | `profile_visibility` (default `private`), `show_points`, `show_streaks`, `leaderboard_opt_in` |
+| `social_settings` | `share_library_with_friends` (default on, 2026-10-21); P5 adds `show_points`, `show_streaks`, `leaderboard_opt_in` |
 
 Rules:
 
-- **Private by default.** A new account is invisible until the user changes
-  `profile_visibility`. Friend-only is the most open default Aaru ever offers. There are no
-  public profile pages indexed by search engines.
+- **Private by default.** A new account is invisible: nobody can find it, and strangers never see
+  any of its library. Friend-only is the most open Aaru ever gets. Once two people are friends
+  they see each other's shelves and activity unless one turns off `share_library_with_friends`
+  (owner, 2026-10-21: friendship is the opt-in). There are no public profile pages.
+- **What a friend sees** (`/v1/social/friends/{userId}/profile`, `/v1/activity`): titles, status,
+  rating, the last episode ticked, book page, and finish dates. Never notes or owned. Activity is
+  read from `library_items` and `episode_progress` at query time, ticks only when
+  `watched_at_known`, so an import never floods a friend's feed.
 - **Invite links (SOC-002, 2026-10-21).** `https://aaruapp.com/i/{code}`, one use. Redeeming
   makes the pair friends in one transaction (the conditional update on the invite is the lock)
   and drops pending requests between them. The preview `GET /v1/invites/{code}` is the only
