@@ -245,6 +245,7 @@ and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remo
 2026-10-20; groups, with minimal friends, the groups gateway and a minimal model provider,
 2026-10-20; Seasons on Discover (DISC-002) and music as a fifth kind with new albums and
 concerts (MUS-001…003), 2026-10-21; friend invite links, profiles and basic social, 2026-10-21;
+profile stats without badges (GAM-006b) and the whole show marked watched (PROG-005), 2026-10-22;
 the points ledger, levels, streaks, badges, the friends leaderboard and the streak widget
 (GAM-001…005, WID-007), 2026-10-22).
 

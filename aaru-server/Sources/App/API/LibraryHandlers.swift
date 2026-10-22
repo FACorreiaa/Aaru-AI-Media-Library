@@ -73,6 +73,15 @@ extension APIImplementation {
         return try await .ok(.init(body: .json(withWatched(entry))))
     }
 
+    func markShowWatched(_ input: Operations.MarkShowWatched.Input) async throws -> Operations.MarkShowWatched.Output {
+        let result = try await library.markShowWatched(itemID(input.path.id), userID: currentUser())
+        return try await .ok(.init(body: .json(.init(
+            entry: withWatched(result.entry),
+            action: result.action.map(Components.Schemas.Action.init),
+            episodes: result.episodes
+        ))))
+    }
+
     private func withWatched(_ entry: LibraryEntry) async throws -> Components.Schemas.LibraryEntry {
         try await .withWatched(entry, stores: stores)
     }

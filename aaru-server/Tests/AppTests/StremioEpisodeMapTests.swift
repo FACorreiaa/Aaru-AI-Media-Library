@@ -83,7 +83,7 @@ struct StremioEpisodeMapTests {
         return tmdb
     }
 
-    func account(part: String, cinemetaUp: Bool = true) -> StremioAccount {
+    func account(part: String, tvdb: String? = nil, cinemetaUp: Bool = true) -> StremioAccount {
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let videos = [(1, 1), (1, 2), (2, 1), (2, 2)].enumerated().map { index, pair in
@@ -94,7 +94,9 @@ struct StremioEpisodeMapTests {
                 "released": iso.string(from: Self.week(index + 1)),
             ] as [String: Any]
         }
-        let body = (try? JSONSerialization.data(withJSONObject: ["meta": ["videos": videos]])) ?? Data()
+        var meta: [String: Any] = ["videos": videos]
+        meta["tvdb_id"] = tvdb.flatMap { Int($0) }
+        let body = (try? JSONSerialization.data(withJSONObject: ["meta": meta])) ?? Data()
         let transport = StubTransport { request in
             guard cinemetaUp else { return OutboundResponse(status: 500, body: Data()) }
             return request.url.path() == "/meta/series/\(part).json"
@@ -142,6 +144,46 @@ struct StremioEpisodeMapTests {
                 + "action=stop&currentTime=1400000&duration=1440000.json"
             _ = try await addon.get(env, stop)
             #expect(try await addon.watched(env, item: item).isEmpty)
+        }
+    }
+
+    @Test("A series TMDB lists as a near-empty entry of its own is found by its TVDB id")
+    func duplicateEntry() async throws {
+        let part = "tt\(Int.random(in: 10_000_000 ... 99_999_999))"
+        let tvdb = String(Int.random(in: 100_000 ... 999_999))
+        try await LibraryHarness.run(stremio: account(part: part, tvdb: tvdb)) { env in
+            let addon = StremioTests()
+            let (secret, _) = try await addon.connect(env)
+            // The show, with TVDB's id, and TMDB's own entry for the part's IMDb id, as Bleach's
+            // `30984` and `336301` (one episode).
+            let tmdb = uniqueID("tmdb")
+            let duplicate = uniqueID("tmdb")
+            for (id, ids) in [
+                (tmdb, ExternalIDs(tmdb: tmdb, imdb: "tt\(Int.random(in: 10_000_000 ... 99_999_999))", tvdb: tvdb)),
+                (duplicate, ExternalIDs(tmdb: duplicate, imdb: part)),
+            ] {
+                env.fake.stubTitle(CatalogTitle(
+                    hit: CatalogHit(
+                        type: .show, title: id == tmdb ? "Split Show" : "Split Show: Part", originalTitle: nil,
+                        year: 2004, posterURL: nil, overview: nil, byline: nil, ids: ids, isAnime: true
+                    ),
+                    status: .returning, runtimeMinutes: 24
+                ))
+            }
+            env.fake.stubEpisodes(tmdb, CatalogEpisodes(
+                status: .returning, episodes: (1 ... 4).map { Self.aired(2, $0, Self.week($0)) }
+            ))
+            env.fake.stubEpisodes(duplicate, CatalogEpisodes(
+                status: .returning, episodes: [Self.aired(1, 13, Self.week(-40))]
+            ))
+            let item = try await env.add("show", tmdb: tmdb, status: "in_progress")
+
+            let stop = "/stremio/\(secret)/player/series/\(part)%3A2%3A2/"
+                + "action=stop&currentTime=1400000&duration=1440000.json"
+            #expect(try await addon.get(env, stop).status == .ok)
+            #expect(try await addon.watched(env, item: item) == ["2x4"])
+            // TMDB's own entry for the part never becomes a title.
+            #expect(try await env.stores.titles.find(ids: ExternalIDs(tmdb: duplicate), type: .show) == nil)
         }
     }
 }

@@ -222,8 +222,7 @@ struct StremioService: Sendable {
         -> (title: Title, episodes: [EpisodeKey])?
     {
         guard let episodeMap, case let .imdb(imdb) = id.base, !keys.isEmpty,
-              let title = try await scrobble.resolve(MediaRef(type: .show, ids: id.mediaRef.ids)),
-              title.type == .show
+              let title = try await show(imdb: imdb, map: episodeMap), title.type == .show
         else { return nil }
         let known = try await catalog.detail(title.id).episodes ?? []
         var episodes: [EpisodeKey] = []
@@ -233,6 +232,19 @@ struct StremioService: Sendable {
             }
         }
         return (title, episodes)
+    }
+
+    /// The show Stremio's IMDb series is: by its TVDB id first, then by the IMDb id. TMDB can list
+    /// an arc that TVDB and TMDB's own show keep as a season as an entry of its own: Stremio's
+    /// `tt14986406` (Bleach: Thousand-Year Blood War) finds a near-empty TMDB `336301`, while its
+    /// TVDB id is Bleach's (live test, 2026-10-22).
+    private func show(imdb: String, map: StremioEpisodeMap) async throws -> Title? {
+        if let tvdb = await map.tvdb(imdb: imdb),
+           let title = try await scrobble.resolve(MediaRef(type: .show, ids: ExternalIDs(tvdb: tvdb)))
+        {
+            return title
+        }
+        return try await scrobble.resolve(MediaRef(type: .show, ids: ExternalIDs(imdb: imdb)))
     }
 
     private func unwatch(_ ref: MediaRef, episodes: [EpisodeKey], caller: AgentCaller) async throws -> EventResult {

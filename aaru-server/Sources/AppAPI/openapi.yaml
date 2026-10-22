@@ -1394,6 +1394,21 @@ paths:
               schema: {$ref: '#/components/schemas/NotificationSettings'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/profile/stats:
+    get:
+      operationId: getProfileStats
+      summary: >-
+        All-time numbers for the profile (GAM-006b), from the library as it is: every ticked episode
+        counts, imported and undated ones too, so these can exceed `/v1/me/stats?span=all`, which
+        counts dated activity only.
+      responses:
+        '200':
+          description: The profile's stats.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProfileStats'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/me/stats:
     get:
       operationId: getStats
@@ -1818,6 +1833,24 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/LibraryEntry'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/library/items/{id}/watched:
+    post:
+      operationId: markShowWatched
+      summary: >-
+        Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action
+        with the watch dates unknown, so the Recap and Insights do not count them as today. An
+        ended or canceled show becomes finished; a running one stays in progress, caught up.
+        422 for anything but a show.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The item, the action to undo it with, and how many episodes it ticked.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShowWatched'}
         default:
           $ref: '#/components/responses/Error'
   /v1/library/sync:
@@ -3864,7 +3897,11 @@ components:
     LibraryItemPatch:
       type: object
       properties:
-        status: {$ref: '#/components/schemas/LibraryStatus'}
+        status:
+          $ref: '#/components/schemas/LibraryStatus'
+          description: >-
+            `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005):
+            a running show stays in progress, caught up.
         rating:
           type: number
           description: 1–10 in 0.5 steps.
@@ -4355,6 +4392,54 @@ components:
             properties:
               track: {type: string}
               count: {type: integer}
+    ShowWatched:
+      type: object
+      required: [entry, episodes]
+      properties:
+        entry: {$ref: '#/components/schemas/LibraryEntry'}
+        action:
+          $ref: '#/components/schemas/Action'
+          description: Absent when every aired episode was already watched and nothing changed.
+        episodes:
+          type: integer
+          description: Episodes this ticked.
+    ProfileStats:
+      type: object
+      required: [episodesWatched, minutesWatched, pagesRead, shows, anime, movies, books, byKind, topGenres, topNetworks, mostWatched, ratings]
+      properties:
+        memberSince: {type: string, format: date-time}
+        episodesWatched: {type: integer}
+        minutesWatched:
+          type: integer
+          description: Ticked episodes' runtime plus finished films' runtime. Books have no minutes.
+        pagesRead:
+          type: integer
+          description: Page counts of finished books, where known.
+        shows: {$ref: '#/components/schemas/LibraryCounts'}
+        anime:
+          $ref: '#/components/schemas/LibraryCounts'
+          description: Anime counts here only, never again as a show or film.
+        movies: {$ref: '#/components/schemas/LibraryCounts'}
+        books: {$ref: '#/components/schemas/LibraryCounts'}
+        byKind:
+          type: array
+          description: Movie, show, anime and book; `finished` is the finished count.
+          items: {$ref: '#/components/schemas/StatsKind'}
+        topGenres:
+          type: array
+          description: Up to eight genres by time, films, shows and anime only.
+          items: {$ref: '#/components/schemas/StatsGenre'}
+        topNetworks:
+          type: array
+          description: Up to five networks or services by time.
+          items: {$ref: '#/components/schemas/StatsGenre'}
+        mostWatched:
+          type: array
+          description: Up to three titles with the most time.
+          items: {$ref: '#/components/schemas/StatsTitle'}
+        ratings:
+          $ref: '#/components/schemas/StatsRatings'
+          description: Every rated item, whatever its status.
     StatsGenre:
       type: object
       required: [name, minutes, titles]

@@ -46,6 +46,8 @@ final class TitleDetailModel {
 
     @ObservationIgnored let api: Client?
     @ObservationIgnored private let library: LibraryModel
+    /// The undo toast, from the view's environment. Nil in previews.
+    @ObservationIgnored var toasts: ToastCenter?
 
     /// `title` is for previews: the detail already loaded, nothing to fetch.
     init(entry: LibraryEntry, api: Client?, library: LibraryModel, title: TitleDetail? = nil) {
@@ -195,6 +197,68 @@ final class TitleDetailModel {
         }
     }
 
+    /// PROG-005: Watched on a show ticks every aired episode as one action, which the toast can
+    /// undo. The server decides the status: an ended or canceled show becomes Watched, a running
+    /// one stays Watching, caught up, and the picker settles on whichever it says.
+    func markShowWatched() async {
+        let before = (entry, watched)
+        let aired = Set(orderedSeasons.filter { $0.number > 0 }.flatMap(\.episodes).filter(hasAired)
+            .map(EpisodeKey.init))
+        problem = nil
+        watched.formUnion(aired)
+        entry.status = endsAtFinale ? .finished : .inProgress
+        pending.formUnion(aired)
+        isSaving = true
+        defer {
+            pending.subtract(aired)
+            isSaving = false
+        }
+        switch await library.markShowWatched(entry.id, api: api) {
+        case let .success(result):
+            apply(result.entry)
+            // The toast can outlive this page: the undo runs either way, the reload only while open.
+            toasts?.showWatched(result) { [weak self, library, api] actionID in
+                let problem = await library.undo(actionID, api: api)
+                if problem == nil {
+                    await self?.load()
+                }
+                return problem
+            }
+        case let .failure(failure):
+            (entry, watched) = before
+            problem = failure.message
+        }
+    }
+
+    /// An ended or canceled show finishes when every episode is ticked; a running one, or one
+    /// whose detail has not loaded, is the server's call. Optimistic only.
+    private var endsAtFinale: Bool {
+        guard let status = title?.status else { return true }
+        return status == .ended || status == .canceled
+    }
+
+    /// "Caught up · next Oct 30": a running show with every aired episode watched, and its next
+    /// air date when the catalog has one. Nil for anything else.
+    var caughtUpLine: String? {
+        guard isShow, entry.status != .finished, let progress = entry.progress, progress.airedCount > 0,
+              progress.watchedCount >= progress.airedCount
+        else { return nil }
+        if let status = title?.status, status == .ended || status == .canceled {
+            return nil
+        }
+        let now = Date()
+        let next = orderedSeasons.filter { $0.number > 0 }.flatMap(\.episodes)
+            .filter { ($0.airsAt ?? .distantPast) > now }
+            .min { ($0.airsAt ?? .distantFuture) < ($1.airsAt ?? .distantFuture) }
+        guard let next, let airsAt = next.airsAt else { return "Caught up" }
+        // A date-only air date is midnight UTC of that date, so it is read in UTC.
+        var style = Date.FormatStyle.dateTime.month(.abbreviated).day()
+        if !next.airTimeKnown {
+            style.timeZone = .gmt
+        }
+        return "Caught up · next \(airsAt.formatted(style))"
+    }
+
     func airedEpisodes(in season: Int) -> Set<EpisodeKey> {
         let now = Date()
         let episodes = title?.seasons?.first { $0.number == season }?.episodes ?? []
@@ -205,6 +269,11 @@ final class TitleDetailModel {
 
     func update(_ patch: LibraryItemPatch, optimistic: (inout LibraryEntry) -> Void) async {
         guard let api else { return }
+        // A show set to Watched goes through the whole-show mark, so it gets an action to undo.
+        if isShow, patch.status == .finished, entry.status != .finished {
+            await markShowWatched()
+            return
+        }
         let before = entry
         problem = nil
         optimistic(&entry)

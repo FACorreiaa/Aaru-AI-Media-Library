@@ -11,6 +11,7 @@ import {
 import { DiscoverRows } from '../components/DiscoverRows'
 import { LastImportCard } from '../components/LastImportCard'
 import { NowPlayingCard } from '../components/NowPlayingCard'
+import { Medallion } from '../components/Medallion'
 import { PlanCard } from '../components/PlanCard'
 import { TonightStrip } from '../components/TonightStrip'
 import {
@@ -137,7 +138,12 @@ function startReads(queryClient: QueryClient, current: Date) {
 
 function Home() {
   const loaded = Route.useLoaderData()
-  const { queryClient } = Route.useRouteContext()()
+  const context = Route.useRouteContext()
+  const { queryClient } = context()
+  const session = () => ({
+    displayName: context().session.displayName,
+    handle: context().session.handle,
+  })
   /** Up next again, past the cache: after a write the rows must show it. */
   const freshUpNext = () => queryClient.query({ ...upNextQuery, staleTime: 0 })
   const [continuing, setContinuing] = createSignal(loaded().continueWatching)
@@ -211,6 +217,12 @@ function Home() {
     } catch {
       // The add landed; the rows catch up on the next visit.
     }
+  }
+
+  /** After a card's menu marked a title watched (or undid it): the rows and the library again. */
+  function refreshRows(entry?: LibraryEntry) {
+    if (entry) setEntries((current) => upsert(current, entry))
+    void freshUpNext().then(showUpNext, () => {})
   }
 
   /** The last 7 days in numbers, in the viewer's time zone. A failure just leaves the strip
@@ -486,9 +498,19 @@ function Home() {
   return (
     <div class="atmos flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
-        <h1 class="mt-6 font-display text-4xl font-medium tracking-tight md:text-5xl">
-          The Field
-        </h1>
+        <div class="mt-6 flex items-start justify-between gap-4">
+          <h1 class="font-display text-4xl font-medium tracking-tight md:text-5xl">
+            The Field
+          </h1>
+          {/* The way to the profile, as on the Apple apps' Home (owner, 2026-10-22). */}
+          <Link
+            to="/app/profile"
+            aria-label="Your profile"
+            class="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <Medallion person={session()} class="size-11 text-base" />
+          </Link>
+        </div>
         {/* Filled in the browser, which knows the viewer's day; the line is held open so
             nothing moves when it lands. */}
         <p class="mt-1 min-h-6 text-muted tabular-nums">{subline()}</p>
@@ -654,6 +676,7 @@ function Home() {
                       entry={entry}
                       busy={busy().has(entry.libraryItemId)}
                       onWatched={markWatched}
+                      onChanged={refreshRows}
                     />
                   )}
                 </For>
@@ -682,7 +705,11 @@ function Home() {
               >
                 <For each={nextAirings()}>
                   {(entry) => (
-                    <AiringCard entry={entry} when={badgeFor(entry)} />
+                    <AiringCard
+                      entry={entry}
+                      when={badgeFor(entry)}
+                      onChanged={refreshRows}
+                    />
                   )}
                 </For>
               </Row>
@@ -691,7 +718,9 @@ function Home() {
             <Show when={starting().length > 0}>
               <Row title="Start watching">
                 <For each={starting()}>
-                  {(entry) => <StartCard entry={entry} />}
+                  {(entry) => (
+                    <StartCard entry={entry} onChanged={refreshRows} />
+                  )}
                 </For>
               </Row>
             </Show>
@@ -699,7 +728,13 @@ function Home() {
             <Show when={unfinished().length > 0}>
               <Row title="Unfinished business">
                 <For each={unfinished()}>
-                  {(entry) => <UnfinishedCard entry={entry} now={now()} />}
+                  {(entry) => (
+                    <UnfinishedCard
+                      entry={entry}
+                      now={now()}
+                      onChanged={refreshRows}
+                    />
+                  )}
                 </For>
               </Row>
             </Show>

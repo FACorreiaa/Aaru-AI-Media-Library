@@ -4,6 +4,7 @@ export type TitleDetail = components['schemas']['TitleDetail']
 export type Season = components['schemas']['Season']
 export type Episode = components['schemas']['Episode']
 export type LibraryItemPatch = components['schemas']['LibraryItemPatch']
+export type ShowWatched = components['schemas']['ShowWatched']
 
 const SHOW_STATUS: Record<NonNullable<TitleDetail['status']>, string> = {
   upcoming: 'Upcoming',
@@ -111,6 +112,47 @@ export function neighbours(
   const index = all.findIndex((e) => e.season === season && e.number === number)
   if (index < 0) return {}
   return { previous: all[index - 1], next: all[index + 1] }
+}
+
+/** What a card's "Mark watched" needs to know about its item. */
+export interface MarkTarget {
+  type: components['schemas']['MediaType']
+  status?: components['schemas']['LibraryStatus']
+  progress?: components['schemas']['ShowProgress']
+}
+
+/** A running show with every aired episode ticked: it stays in progress, "Caught up". */
+export function isCaughtUp(target: MarkTarget): boolean {
+  const p = target.progress
+  return (
+    target.type === 'show' &&
+    target.status === 'in_progress' &&
+    !!p &&
+    p.airedCount > 0 &&
+    p.watchedCount === p.airedCount
+  )
+}
+
+/** The card menu's mark item: "Mark show watched" for shows and anime series, "Mark watched"
+ * for films; none for books and albums, a finished item, or a show with nothing left to tick. */
+export function markLabel(target: MarkTarget): string | null {
+  if (target.status === 'finished') return null
+  if (target.type === 'movie') return 'Mark watched'
+  if (target.type !== 'show') return null
+  const p = target.progress
+  if (p && p.airedCount > 0 && p.watchedCount === p.airedCount) return null
+  return 'Mark show watched'
+}
+
+/** The toast after marking a show watched: finished, caught up on a running show, or nothing
+ * to do. Only a change carries an Undo. */
+export function markedMessage(result: ShowWatched, name: string): string {
+  if (!result.action) return 'Already caught up'
+  const count = result.episodes.toLocaleString('en')
+  const noun = result.episodes === 1 ? 'episode' : 'episodes'
+  return result.entry.status === 'finished'
+    ? `Marked ${count} ${noun} of ${name}`
+    : `Caught up on ${count} aired ${noun}`
 }
 
 /** "12 Mar 2026", plus the time only when the catalog knows it. */

@@ -451,6 +451,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/notifications`.
     /// - Remark: Generated from `#/paths//v1/me/notifications/put(updateNotificationSettings)`.
     func updateNotificationSettings(_ input: Operations.UpdateNotificationSettings.Input) async throws -> Operations.UpdateNotificationSettings.Output
+    /// All-time numbers for the profile (GAM-006b), from the library as it is: every ticked episode counts, imported and undated ones too, so these can exceed `/v1/me/stats?span=all`, which counts dated activity only.
+    ///
+    /// - Remark: HTTP `GET /v1/me/profile/stats`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/stats/get(getProfileStats)`.
+    func getProfileStats(_ input: Operations.GetProfileStats.Input) async throws -> Operations.GetProfileStats.Output
     /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
@@ -556,6 +561,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/library/items/{id}/seasons/{season}/watched`.
     /// - Remark: Generated from `#/paths//v1/library/items/{id}/seasons/{season}/watched/post(markSeasonWatched)`.
     func markSeasonWatched(_ input: Operations.MarkSeasonWatched.Input) async throws -> Operations.MarkSeasonWatched.Output
+    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show.
+    ///
+    /// - Remark: HTTP `POST /v1/library/items/{id}/watched`.
+    /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)`.
+    func markShowWatched(_ input: Operations.MarkShowWatched.Input) async throws -> Operations.MarkShowWatched.Output
     /// Items changed and ids deleted since a previous sync token (all items when absent).
     ///
     /// - Remark: HTTP `GET /v1/library/sync`.
@@ -1820,6 +1830,13 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// All-time numbers for the profile (GAM-006b), from the library as it is: every ticked episode counts, imported and undated ones too, so these can exceed `/v1/me/stats?span=all`, which counts dated activity only.
+    ///
+    /// - Remark: HTTP `GET /v1/me/profile/stats`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/stats/get(getProfileStats)`.
+    public func getProfileStats(headers: Operations.GetProfileStats.Input.Headers = .init()) async throws -> Operations.GetProfileStats.Output {
+        try await getProfileStats(Operations.GetProfileStats.Input(headers: headers))
+    }
     /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
@@ -2063,6 +2080,19 @@ extension APIProtocol {
         headers: Operations.MarkSeasonWatched.Input.Headers = .init()
     ) async throws -> Operations.MarkSeasonWatched.Output {
         try await markSeasonWatched(Operations.MarkSeasonWatched.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show.
+    ///
+    /// - Remark: HTTP `POST /v1/library/items/{id}/watched`.
+    /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)`.
+    public func markShowWatched(
+        path: Operations.MarkShowWatched.Input.Path,
+        headers: Operations.MarkShowWatched.Input.Headers = .init()
+    ) async throws -> Operations.MarkShowWatched.Output {
+        try await markShowWatched(Operations.MarkShowWatched.Input(
             path: path,
             headers: headers
         ))
@@ -7739,6 +7769,8 @@ public enum Components {
         }
         /// - Remark: Generated from `#/components/schemas/LibraryItemPatch`.
         public struct LibraryItemPatch: Codable, Hashable, Sendable {
+            /// `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show stays in progress, caught up.
+            ///
             /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/status`.
             public var status: Components.Schemas.LibraryStatus?
             /// 1–10 in 0.5 steps.
@@ -7770,7 +7802,7 @@ public enum Components {
             /// Creates a new `LibraryItemPatch`.
             ///
             /// - Parameters:
-            ///   - status:
+            ///   - status: `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show stays in progress, caught up.
             ///   - rating: 1–10 in 0.5 steps.
             ///   - notes:
             ///   - isOwned:
@@ -9416,6 +9448,144 @@ public enum Components {
                 case priorMinutes
                 case topArtist
                 case topArtistTracks
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ShowWatched`.
+        public struct ShowWatched: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ShowWatched/entry`.
+            public var entry: Components.Schemas.LibraryEntry
+            /// Absent when every aired episode was already watched and nothing changed.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ShowWatched/action`.
+            public var action: Components.Schemas.Action?
+            /// Episodes this ticked.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ShowWatched/episodes`.
+            public var episodes: Swift.Int
+            /// Creates a new `ShowWatched`.
+            ///
+            /// - Parameters:
+            ///   - entry:
+            ///   - action: Absent when every aired episode was already watched and nothing changed.
+            ///   - episodes: Episodes this ticked.
+            public init(
+                entry: Components.Schemas.LibraryEntry,
+                action: Components.Schemas.Action? = nil,
+                episodes: Swift.Int
+            ) {
+                self.entry = entry
+                self.action = action
+                self.episodes = episodes
+            }
+            public enum CodingKeys: String, CodingKey {
+                case entry
+                case action
+                case episodes
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ProfileStats`.
+        public struct ProfileStats: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/memberSince`.
+            public var memberSince: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/episodesWatched`.
+            public var episodesWatched: Swift.Int
+            /// Ticked episodes' runtime plus finished films' runtime. Books have no minutes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/minutesWatched`.
+            public var minutesWatched: Swift.Int
+            /// Page counts of finished books, where known.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/pagesRead`.
+            public var pagesRead: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/shows`.
+            public var shows: Components.Schemas.LibraryCounts
+            /// Anime counts here only, never again as a show or film.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/anime`.
+            public var anime: Components.Schemas.LibraryCounts
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/movies`.
+            public var movies: Components.Schemas.LibraryCounts
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/books`.
+            public var books: Components.Schemas.LibraryCounts
+            /// Movie, show, anime and book; `finished` is the finished count.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/byKind`.
+            public var byKind: [Components.Schemas.StatsKind]
+            /// Up to eight genres by time, films, shows and anime only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/topGenres`.
+            public var topGenres: [Components.Schemas.StatsGenre]
+            /// Up to five networks or services by time.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/topNetworks`.
+            public var topNetworks: [Components.Schemas.StatsGenre]
+            /// Up to three titles with the most time.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/mostWatched`.
+            public var mostWatched: [Components.Schemas.StatsTitle]
+            /// Every rated item, whatever its status.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileStats/ratings`.
+            public var ratings: Components.Schemas.StatsRatings
+            /// Creates a new `ProfileStats`.
+            ///
+            /// - Parameters:
+            ///   - memberSince:
+            ///   - episodesWatched:
+            ///   - minutesWatched: Ticked episodes' runtime plus finished films' runtime. Books have no minutes.
+            ///   - pagesRead: Page counts of finished books, where known.
+            ///   - shows:
+            ///   - anime: Anime counts here only, never again as a show or film.
+            ///   - movies:
+            ///   - books:
+            ///   - byKind: Movie, show, anime and book; `finished` is the finished count.
+            ///   - topGenres: Up to eight genres by time, films, shows and anime only.
+            ///   - topNetworks: Up to five networks or services by time.
+            ///   - mostWatched: Up to three titles with the most time.
+            ///   - ratings: Every rated item, whatever its status.
+            public init(
+                memberSince: Foundation.Date? = nil,
+                episodesWatched: Swift.Int,
+                minutesWatched: Swift.Int,
+                pagesRead: Swift.Int,
+                shows: Components.Schemas.LibraryCounts,
+                anime: Components.Schemas.LibraryCounts,
+                movies: Components.Schemas.LibraryCounts,
+                books: Components.Schemas.LibraryCounts,
+                byKind: [Components.Schemas.StatsKind],
+                topGenres: [Components.Schemas.StatsGenre],
+                topNetworks: [Components.Schemas.StatsGenre],
+                mostWatched: [Components.Schemas.StatsTitle],
+                ratings: Components.Schemas.StatsRatings
+            ) {
+                self.memberSince = memberSince
+                self.episodesWatched = episodesWatched
+                self.minutesWatched = minutesWatched
+                self.pagesRead = pagesRead
+                self.shows = shows
+                self.anime = anime
+                self.movies = movies
+                self.books = books
+                self.byKind = byKind
+                self.topGenres = topGenres
+                self.topNetworks = topNetworks
+                self.mostWatched = mostWatched
+                self.ratings = ratings
+            }
+            public enum CodingKeys: String, CodingKey {
+                case memberSince
+                case episodesWatched
+                case minutesWatched
+                case pagesRead
+                case shows
+                case anime
+                case movies
+                case books
+                case byKind
+                case topGenres
+                case topNetworks
+                case mostWatched
+                case ratings
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsGenre`.
@@ -23153,6 +23323,135 @@ public enum Operations {
             }
         }
     }
+    /// All-time numbers for the profile (GAM-006b), from the library as it is: every ticked episode counts, imported and undated ones too, so these can exceed `/v1/me/stats?span=all`, which counts dated activity only.
+    ///
+    /// - Remark: HTTP `GET /v1/me/profile/stats`.
+    /// - Remark: Generated from `#/paths//v1/me/profile/stats/get(getProfileStats)`.
+    public enum GetProfileStats {
+        public static let id: Swift.String = "getProfileStats"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/profile/stats/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetProfileStats.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetProfileStats.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetProfileStats.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetProfileStats.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/profile/stats/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/profile/stats/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ProfileStats)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ProfileStats {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetProfileStats.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetProfileStats.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The profile's stats.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/profile/stats/get(getProfileStats)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetProfileStats.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetProfileStats.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/profile/stats/get(getProfileStats)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
@@ -26272,6 +26571,153 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/library/items/{id}/seasons/{season}/watched/post(markSeasonWatched)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show.
+    ///
+    /// - Remark: HTTP `POST /v1/library/items/{id}/watched`.
+    /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)`.
+    public enum MarkShowWatched {
+        public static let id: Swift.String = "markShowWatched"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/library/items/{id}/watched/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/library/items/{id}/watched/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.MarkShowWatched.Input.Path
+            /// - Remark: Generated from `#/paths/v1/library/items/{id}/watched/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkShowWatched.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MarkShowWatched.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.MarkShowWatched.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.MarkShowWatched.Input.Path,
+                headers: Operations.MarkShowWatched.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/library/items/{id}/watched/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/library/items/{id}/watched/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ShowWatched)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ShowWatched {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.MarkShowWatched.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.MarkShowWatched.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The item, the action to undo it with, and how many episodes it ticked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.MarkShowWatched.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.MarkShowWatched.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

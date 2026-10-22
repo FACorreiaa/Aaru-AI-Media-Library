@@ -8,6 +8,7 @@ import { listImports } from './imports/server'
 import { getLibrary } from './library/server'
 import { getList, getLists } from './lists/server'
 import { listPendingPlans } from './plans/server'
+import { getProfileStats } from './profile/server'
 import { getStats } from './recap/server'
 import { getTitlePage } from './title/server'
 
@@ -82,6 +83,12 @@ export const progressQuery = queryOptions({
 export const badgesQuery = queryOptions({
   queryKey: ['badges'],
   queryFn: () => getBadges(),
+})
+
+/** `/v1/me/profile/stats`: all time, no period, so one key. */
+export const profileStatsQuery = queryOptions({
+  queryKey: ['profile-stats'],
+  queryFn: () => getProfileStats(),
 })
 
 export const calendarQuery = (range: { from: string; to: string }) =>

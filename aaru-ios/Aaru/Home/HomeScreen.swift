@@ -16,8 +16,8 @@ struct HomeScreen: View {
     var imports: ImportsModel?
     /// Switches the app to another destination (Calendar, Discover).
     var onSelectTab: (AppTab) -> Void
-    /// Switches to Library, filtered to one status.
-    var onShowLibrary: (LibraryStatus) -> Void
+    /// Switches to Library, filtered: to one status (the count chips) or one kind (the profile).
+    var onShowLibrary: (LibraryFilter) -> Void
 
     @State var model: HomeModel
     @State var recap: RecapPeriod?
@@ -53,7 +53,7 @@ struct HomeScreen: View {
         imports: ImportsModel? = nil,
         model: HomeModel? = nil,
         onSelectTab: @escaping (AppTab) -> Void = { _ in },
-        onShowLibrary: @escaping (LibraryStatus) -> Void = { _ in }
+        onShowLibrary: @escaping (LibraryFilter) -> Void = { _ in }
     ) {
         self.api = api
         self.library = library
@@ -71,6 +71,8 @@ struct HomeScreen: View {
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif
+                // The profile (GAM-006b) leads; the top trailing spot is the account button's (§18).
+                .profileEntry(api: api, library: library, lists: lists) { onShowLibrary(LibraryFilter(kind: $0)) }
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
@@ -140,6 +142,7 @@ struct HomeScreen: View {
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: model.problem) { model.problem = nil }
                 }
+                .undoToast()
                 .background { FieldBackground() }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }

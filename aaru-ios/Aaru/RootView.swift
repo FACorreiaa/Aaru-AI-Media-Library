@@ -21,6 +21,8 @@ struct RootView: View {
     /// A friend invite link (SOC-002). Opened signed out, it waits here through sign-in.
     @State private var pendingInvite: InviteLink?
     @State private var openInvite: InviteLink?
+    /// The undo toast after a bulk write (PROG-005), shared by every screen and sheet.
+    @State private var toasts = ToastCenter()
 
     private var flow: AuthFlow {
         AuthFlow(api: api, session: session)
@@ -89,6 +91,7 @@ struct RootView: View {
                 #if os(iOS)
                     Task { await NowWatching.endAll() }
                 #endif
+                toasts.dismiss()
             }
         }
         .alert("Could not sign in", isPresented: $errorMessage.isPresent) {
@@ -96,6 +99,8 @@ struct RootView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        // Outermost, so the sheets above (a widget's title, a push's request) carry it too.
+        .toastCenter(toasts)
     }
 
     private var settingsContext: SettingsContext {
@@ -298,7 +303,7 @@ private struct MainTabs: View {
             HomeScreen(
                 api: api, library: library, lists: lists, imports: imports,
                 onSelectTab: { router.select($0) },
-                onShowLibrary: { router.showLibrary(status: $0) }
+                onShowLibrary: { router.showLibrary($0) }
             )
         case .discover:
             DiscoverScreen(api: api, library: library, lists: lists)

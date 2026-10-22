@@ -4,7 +4,7 @@ import { api } from '../api/client'
 import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { LibraryEntry } from '../library/model'
-import type { TitleDetail } from './model'
+import type { ShowWatched, TitleDetail } from './model'
 
 // APP-005 on the web: the same `/v1` routes the Apple apps call for the Title room.
 
@@ -94,6 +94,24 @@ export const markSeason = createServerFn({ method: 'POST' })
         errorMessage(error, `Season ${data.season} was not marked.`),
       )
     return entry
+  })
+
+/** Ticks every aired episode of a show as one undoable action. An ended show comes back
+ * finished; a running one stays in progress, caught up. No `action` when nothing changed. */
+export const markShowWatched = createServerFn({ method: 'POST' })
+  .validator(z.object({ id: itemId }))
+  .handler(async ({ data }): Promise<ShowWatched> => {
+    const {
+      data: result,
+      error,
+      response,
+    } = await api(sessionToken()).POST('/v1/library/items/{id}/watched', {
+      params: { path: { id: data.id } },
+    })
+    if (response.status === 401) sessionRejected()
+    if (!result)
+      throw new Error(errorMessage(error, 'The show was not marked watched.'))
+    return result
   })
 
 export const updateItem = createServerFn({ method: 'POST' })

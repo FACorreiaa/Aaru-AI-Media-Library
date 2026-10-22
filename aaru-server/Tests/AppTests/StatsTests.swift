@@ -10,6 +10,10 @@ extension UntouchedStore: StatsStore {
     {
         throw Touched()
     }
+
+    func library(userID _: UserID) async throws -> (rows: [ProfileRow], memberSince: Date?) {
+        throw Touched()
+    }
 }
 
 @Suite("Period stats, pure (GAM-006a)")
