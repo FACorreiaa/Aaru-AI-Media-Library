@@ -26,6 +26,14 @@ struct ShowContext: Sendable {
     var status: TitleStatus?
 }
 
+/// PROG-005: the item after the whole show was marked watched, the action that did it (nil when
+/// nothing changed), and how many episodes it ticked.
+struct ShowWatched: Sendable {
+    var entry: LibraryEntry
+    var action: ActionRecord?
+    var episodes: Int
+}
+
 /// One sync answer: what changed, what was deleted, and the token for next time.
 struct SyncResult: Sendable {
     var entries: [LibraryEntry]
@@ -57,7 +65,22 @@ struct LibraryService: Sendable {
         if let existing = try await stores.library.item(userID: userID, titleID: title.id) {
             return try await entry(existing.id, userID: userID)
         }
-        let write = prepareAdd(title, status: status, caller: caller)
+        var write = prepareAdd(title, status: status, caller: caller)
+        if title.type == .show, status == .finished, case var .insertItem(snapshot) = write.op {
+            // PROG-005: added as watched means every aired episode, in the same one action.
+            // An insert writes its ticks undated, like the whole-show mark.
+            let detail = try await catalog.detail(title.id)
+            snapshot.watched = (detail.episodes ?? []).filter {
+                $0.season > 0 && Self.hasAired($0, titleStatus: detail.status, now: now())
+            }.compactMap { try? EpisodeKey(season: $0.season, episode: $0.episode) }
+            if snapshot.watched.isEmpty || !(detail.status == .ended || detail.status == .canceled) {
+                snapshot.fields.status = snapshot.watched.isEmpty ? .wishlist : .inProgress
+                snapshot.fields.finishedAt = nil
+                snapshot.fields.statusByHand = false
+            }
+            write.op = .insertItem(snapshot)
+            write.episodes = snapshot.watched.count
+        }
         do {
             try await commit(write, userID: userID, caller: caller)
             if title.type == .show {
@@ -108,9 +131,29 @@ struct LibraryService: Sendable {
         by caller: Caller = .user
     ) async throws -> LibraryEntry {
         let current = try await entry(id, userID: userID)
+        if current.title.type == .show, patch.status == .finished, current.fields.status != .finished {
+            // PROG-005: a show set to watched by hand is the whole show watched.
+            let show = try await showContext(id, userID: userID)
+            guard let write = try await prepareShowWatched(show, patch: patch, caller: caller) else { return current }
+            try await commit(write, userID: userID, caller: caller)
+            return try await entry(id, userID: userID)
+        }
         guard let write = try preparePatch(current, patch: patch, caller: caller) else { return current }
         try await commit(write, userID: userID, caller: caller)
         return try await entry(id, userID: userID)
+    }
+
+    /// PROG-005: every aired episode of a show watched, as one undoable action. The action is nil
+    /// when there was nothing left to tick; `episodes` is how many this ticked.
+    func markShowWatched(_ id: LibraryItemID, userID: UserID, by caller: Caller = .user) async throws
+        -> ShowWatched
+    {
+        let show = try await showContext(id, userID: userID)
+        guard let write = try await prepareShowWatched(show, caller: caller) else {
+            return ShowWatched(entry: show.entry, action: nil, episodes: 0)
+        }
+        let action = try await commit(write, userID: userID, caller: caller)
+        return try await ShowWatched(entry: entry(id, userID: userID), action: action, episodes: write.episodes)
     }
 
     func delete(_ id: LibraryItemID, userID: UserID, by caller: Caller = .user) async throws {

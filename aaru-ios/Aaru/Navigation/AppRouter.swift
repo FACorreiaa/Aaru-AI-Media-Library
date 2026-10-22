@@ -164,7 +164,12 @@ final class AppRouter {
     }
 
     func showLibrary(status: LibraryStatus?) {
-        libraryFilter = LibraryFilter(status: status)
+        showLibrary(LibraryFilter(status: status))
+    }
+
+    /// Library, filtered: to one status (Home's count chips) or one kind (the profile's tiles).
+    func showLibrary(_ filter: LibraryFilter) {
+        libraryFilter = filter
         tab = .library
     }
 

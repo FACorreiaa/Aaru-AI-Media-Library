@@ -1215,6 +1215,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/profile/stats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** All-time numbers for the profile (GAM-006b), from the library as it is: every ticked episode counts, imported and undated ones too, so these can exceed `/v1/me/stats?span=all`, which counts dated activity only. */
+    get: operations['getProfileStats']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/stats': {
     parameters: {
       query?: never
@@ -1496,6 +1513,23 @@ export interface paths {
     put?: never
     /** Mark every aired episode of a season watched, as one undoable action. */
     post: operations['markSeasonWatched']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/library/items/{id}/watched': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show. */
+    post: operations['markShowWatched']
     delete?: never
     options?: never
     head?: never
@@ -3069,6 +3103,7 @@ export interface components {
       status?: components['schemas']['LibraryStatus']
     }
     LibraryItemPatch: {
+      /** @description `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show stays in progress, caught up. */
       status?: components['schemas']['LibraryStatus']
       /** @description 1–10 in 0.5 steps. */
       rating?: number
@@ -3415,6 +3450,37 @@ export interface components {
         track: string
         count: number
       }[]
+    }
+    ShowWatched: {
+      entry: components['schemas']['LibraryEntry']
+      /** @description Absent when every aired episode was already watched and nothing changed. */
+      action?: components['schemas']['Action']
+      /** @description Episodes this ticked. */
+      episodes: number
+    }
+    ProfileStats: {
+      /** Format: date-time */
+      memberSince?: string
+      episodesWatched: number
+      /** @description Ticked episodes' runtime plus finished films' runtime. Books have no minutes. */
+      minutesWatched: number
+      /** @description Page counts of finished books, where known. */
+      pagesRead: number
+      shows: components['schemas']['LibraryCounts']
+      /** @description Anime counts here only, never again as a show or film. */
+      anime: components['schemas']['LibraryCounts']
+      movies: components['schemas']['LibraryCounts']
+      books: components['schemas']['LibraryCounts']
+      /** @description Movie, show, anime and book; `finished` is the finished count. */
+      byKind: components['schemas']['StatsKind'][]
+      /** @description Up to eight genres by time, films, shows and anime only. */
+      topGenres: components['schemas']['StatsGenre'][]
+      /** @description Up to five networks or services by time. */
+      topNetworks: components['schemas']['StatsGenre'][]
+      /** @description Up to three titles with the most time. */
+      mostWatched: components['schemas']['StatsTitle'][]
+      /** @description Every rated item, whatever its status. */
+      ratings: components['schemas']['StatsRatings']
     }
     StatsGenre: {
       name: string
@@ -5633,6 +5699,27 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  getProfileStats: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The profile's stats. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProfileStats']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
   getStats: {
     parameters: {
       query?: {
@@ -6150,6 +6237,29 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['LibraryEntry']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  markShowWatched: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The item, the action to undo it with, and how many episodes it ticked. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ShowWatched']
         }
       }
       default: components['responses']['Error']

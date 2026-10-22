@@ -64,6 +64,60 @@ struct PostgresStatsStore: StatsStore {
     }
 }
 
+extension PostgresStatsStore {
+    /// Every item with all its ticks, dated or not: the profile is the library's state.
+    func library(userID: UserID) async throws -> (rows: [ProfileRow], memberSince: Date?) {
+        let query: SQLQueryString = """
+        SELECT li.title_id, t.type, t.is_anime, t.genres, t.network, li.status, li.rating,
+            coalesce(ep.episodes, 0)::int AS episodes,
+            (coalesce(ep.minutes, 0) + CASE WHEN t.type = 'movie' AND li.status = 'finished'
+                THEN coalesce(t.runtime_minutes, 0) ELSE 0 END)::int AS minutes,
+            CASE WHEN t.type = 'book' AND li.status = 'finished' THEN coalesce(t.page_count, 0) ELSE 0 END AS pages
+        FROM library_items li
+        JOIN titles t ON t.id = li.title_id
+        LEFT JOIN LATERAL (
+            SELECT count(*) AS episodes, sum(coalesce(se.runtime_minutes, t.runtime_minutes, 0)) AS minutes
+            FROM episode_progress p
+            LEFT JOIN show_episodes se ON se.title_id = li.title_id AND se.season = p.season AND se.episode = p.episode
+            WHERE p.library_item_id = li.id
+        ) ep ON true
+        WHERE li.user_id = \(bind: userID.rawValue)
+        """
+        let rows = try await sql.raw(query).all(
+            decoding: ProfileItemRow.self,
+            keyDecodingStrategy: .convertFromSnakeCase
+        )
+        .compactMap { row -> ProfileRow? in
+            guard let type = MediaType(rawValue: row.type), let status = LibraryStatus(rawValue: row.status)
+            else { return nil }
+            return ProfileRow(
+                titleID: TitleID(row.titleId), type: type, isAnime: row.isAnime, status: status, rating: row.rating,
+                episodes: row.episodes, minutes: row.minutes, pages: row.pages, genres: row.genres,
+                network: row.network
+            )
+        }
+        struct Joined: Decodable {
+            let createdAt: Date
+        }
+        let joined = try await sql.raw("SELECT created_at FROM users WHERE id = \(bind: userID.rawValue)")
+            .first(decoding: Joined.self, keyDecodingStrategy: .convertFromSnakeCase)
+        return (rows, joined?.createdAt)
+    }
+}
+
+private struct ProfileItemRow: Decodable {
+    let titleId: UUID
+    let type: String
+    let isAnime: Bool
+    let genres: [String]
+    let network: String?
+    let status: String
+    let rating: Double?
+    let episodes: Int
+    let minutes: Int
+    let pages: Int
+}
+
 private struct ActivityRow: Decodable {
     let day: String
     let titleId: UUID

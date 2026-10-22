@@ -77,14 +77,14 @@ extension HomeScreen {
                         width: cardWidth(.wide),
                         isPending: model.pending.contains(entry.libraryItemId)
                     ) { Task { await model.markNextWatched(entry) } }
-                    #if os(iOS)
-                        .contextMenu {
-                            // Starts the Live Activity; not "Start watching", which is a row (UX-052).
-                            Button("Watching now…", systemImage: "play.circle") {
-                                Task { await model.startWatching(entry) }
-                            }
+                        .markWatchedMenu(library.entry(entry.libraryItemId), api: api, library: library) {
+                            #if os(iOS)
+                                // Starts the Live Activity; not "Start watching", which is a row (UX-052).
+                                Button("Watching now…", systemImage: "play.circle") {
+                                    Task { await model.startWatching(entry) }
+                                }
+                            #endif
                         }
-                    #endif
                 }
             }
         }
@@ -109,6 +109,7 @@ extension HomeScreen {
                             }
                         }
                     }
+                    .markWatchedMenu(library.entry(entry.libraryItemId), api: api, library: library) {}
                 }
             }
         }
@@ -116,6 +117,7 @@ extension HomeScreen {
             HomeRow(title: "Start watching") {
                 ForEach(model.startable, id: \.libraryItemId) { entry in
                     StartCard(entry: entry, width: cardWidth(.poster))
+                        .markWatchedMenu(library.entry(entry.libraryItemId), api: api, library: library) {}
                 }
             }
         }
@@ -176,7 +178,7 @@ extension HomeScreen {
             .padding(.horizontal, 20)
         }
         if let counts = model.counts, counts.total > 0 {
-            CountChips(counts: counts, onSelect: onShowLibrary)
+            CountChips(counts: counts) { onShowLibrary(LibraryFilter(status: $0)) }
         }
     }
 

@@ -14,7 +14,10 @@ func testPostgresSettings() -> PostgresSettings {
         port: env["POSTGRES_PORT"].flatMap(Int.init) ?? 5432,
         user: env["POSTGRES_USER"] ?? "hb",
         password: env["POSTGRES_PASSWORD"] ?? "testing123",
-        database: env["POSTGRES_DATABASE"] ?? "hb"
+        database: env["POSTGRES_DATABASE"] ?? "hb",
+        // Suites run in parallel and each opens its own pool: production's 10 per pool ran CI's
+        // Postgres out of connections ("too many clients already") once the suite grew.
+        poolSize: 2
     )
 }
 

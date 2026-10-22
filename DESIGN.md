@@ -238,6 +238,17 @@ Every agent write has a 30-second (and later, history) undo.
 
 Ribbon at the top. One tap reverts. Action audit is a first-class view, not a log file.
 
+**Undo toast (PROG-005, 2026-10-22).** Until the ribbon exists, a bulk tap undoes from a toast
+at the bottom: "Marked 62 episodes of Severance · Undo", about six seconds, a success haptic on
+iOS, read out by VoiceOver and the web's live region. A running show says "Caught up on 18 aired
+episodes · Undo"; nothing to tick says "Already caught up", with no Undo.
+
+**Mark show watched.** A long press on a show's card (iOS: Library, Home's rows) or its card
+menu on the web (⋯, right-click, long press) offers "Mark show watched"; a film offers "Mark
+watched". It applies at once, with the toast above, never a dialog. Choosing Watched for a show
+on its page does the same. A running show stays Watching and its page shows "Caught up" beside
+the status.
+
 ## 10. Mac companion
 
 On Mac, the agent lives in a **sidebar + inspector**, library in the middle
@@ -545,10 +556,15 @@ ship before the Phase 2 gate.
 - **Friend stories** (`FriendStories`, Phase 4) — Trakt's "Today" pattern: a row of friend
   avatars, tap into a full-height card per title a friend watched today ("Kevin · Watched S2 ·
   E9 · 12:11 PM"), with a bookmark to add it to your wishlist.
-- **Profile and stats** (`StatsPanel`, Phase 5) — MAL-style numbers: days watched, episodes,
-  mean score, genre and format breakdown. The Year in Review shipped early as the Recap (below),
-  and `StatsPanel` itself as Insights (§13b, 2026-10-20); genres and the profile placement stay
-  in Phase 5.
+- **Profile and stats** (`ProfilePanel`, pulled forward 2026-10-22 without badges) — MAL-style
+  all-time numbers, private to you: a medallion at the leading end of Home's toolbar (iOS, as a
+  sheet) and of Home's heading (web, `/app/profile`) opens it. In order: name, @handle and "In
+  Aaru since"; the time in days and hours in the display serif, with hours and episodes under;
+  four tiles (shows watched · watching, anime, films, books read); where the time went (TV,
+  anime, films, one stacked bar); the top eight genres; the three titles with the most time;
+  networks; mean score and the ratings histogram; then Insights and Recap. It counts the library
+  as it is, undated ticks included, and says so ("Includes episodes without a watch date").
+  Static, like §13b. Badges (`BadgeShelf`) stay in Phase 5.
 - **Badges** (`BadgeShelf`, Phase 5) — discovery badges and milestone badges, tiered.
 - **Leaderboard** (Phase 5) — friends only, weekly, opt-in. Never global.
 - **Watch channel** (`WatchPanel`, with groups since 2026-10-20; was the Phase 6 Room) — watch
@@ -879,7 +895,8 @@ Build these as SwiftUI views. The model only returns their names and props.
 | `StreakBar` | Current streak and week ticks (Phase 5) |
 | `FriendStories` | Friends' watches today (Phase 4) |
 | `BadgeShelf` | Earned badges (Phase 5) |
-| `StatsPanel` | Insights: month, year or all-time numbers (GAM-006c, 2026-10-20; profile placement Phase 5) |
+| `StatsPanel` | Insights: month, year or all-time numbers (GAM-006c, 2026-10-20) |
+| `ProfilePanel` | Profile: all-time numbers from the library as it is (GAM-006b, 2026-10-22) |
 | `RecapStory` | A month or year as a story (GAM-006a) |
 | `WatchPanel` | Watch-together session in a group (was `RoomPanel`) |
 | `ConversationView` | E2E conversation (Phase 6) |

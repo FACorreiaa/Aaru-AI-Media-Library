@@ -27,6 +27,7 @@ import { Route as ShellAppGroupsRouteImport } from './routes/_shell.app_.groups'
 import { Route as ShellAppInsightsRouteImport } from './routes/_shell.app_.insights'
 import { Route as ShellAppLibraryRouteImport } from './routes/_shell.app_.library'
 import { Route as ShellAppMusicRouteImport } from './routes/_shell.app_.music'
+import { Route as ShellAppProfileRouteImport } from './routes/_shell.app_.profile'
 import { Route as ShellAppRecapRouteImport } from './routes/_shell.app_.recap'
 import { Route as ShellAppSettingsRouteImport } from './routes/_shell.app_.settings'
 import { Route as ShellAppWeekRouteImport } from './routes/_shell.app_.week'
@@ -142,6 +143,11 @@ const ShellAppLibraryRoute = ShellAppLibraryRouteImport.update({
 const ShellAppMusicRoute = ShellAppMusicRouteImport.update({
   id: '/app_/music',
   path: '/app/music',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppProfileRoute = ShellAppProfileRouteImport.update({
+  id: '/app_/profile',
+  path: '/app/profile',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellAppRecapRoute = ShellAppRecapRouteImport.update({
@@ -298,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/app/insights': typeof ShellAppInsightsRoute
   '/app/library': typeof ShellAppLibraryRoute
   '/app/music': typeof ShellAppMusicRoute
+  '/app/profile': typeof ShellAppProfileRoute
   '/app/recap': typeof ShellAppRecapRoute
   '/app/settings': typeof ShellAppSettingsRouteWithChildren
   '/app/week': typeof ShellAppWeekRoute
@@ -342,6 +349,7 @@ export interface FileRoutesByTo {
   '/app/insights': typeof ShellAppInsightsRoute
   '/app/library': typeof ShellAppLibraryRoute
   '/app/music': typeof ShellAppMusicRoute
+  '/app/profile': typeof ShellAppProfileRoute
   '/app/recap': typeof ShellAppRecapRoute
   '/app/week': typeof ShellAppWeekRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
@@ -387,6 +395,7 @@ export interface FileRoutesById {
   '/_shell/app_/insights': typeof ShellAppInsightsRoute
   '/_shell/app_/library': typeof ShellAppLibraryRoute
   '/_shell/app_/music': typeof ShellAppMusicRoute
+  '/_shell/app_/profile': typeof ShellAppProfileRoute
   '/_shell/app_/recap': typeof ShellAppRecapRoute
   '/_shell/app_/settings': typeof ShellAppSettingsRouteWithChildren
   '/_shell/app_/week': typeof ShellAppWeekRoute
@@ -434,6 +443,7 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/library'
     | '/app/music'
+    | '/app/profile'
     | '/app/recap'
     | '/app/settings'
     | '/app/week'
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/library'
     | '/app/music'
+    | '/app/profile'
     | '/app/recap'
     | '/app/week'
     | '/app/friends/$handle'
@@ -522,6 +533,7 @@ export interface FileRouteTypes {
     | '/_shell/app_/insights'
     | '/_shell/app_/library'
     | '/_shell/app_/music'
+    | '/_shell/app_/profile'
     | '/_shell/app_/recap'
     | '/_shell/app_/settings'
     | '/_shell/app_/week'
@@ -690,6 +702,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/music'
       fullPath: '/app/music'
       preLoaderRoute: typeof ShellAppMusicRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/profile': {
+      id: '/_shell/app_/profile'
+      path: '/app/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof ShellAppProfileRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/app_/recap': {
@@ -947,6 +966,7 @@ interface ShellRouteChildren {
   ShellAppInsightsRoute: typeof ShellAppInsightsRoute
   ShellAppLibraryRoute: typeof ShellAppLibraryRoute
   ShellAppMusicRoute: typeof ShellAppMusicRoute
+  ShellAppProfileRoute: typeof ShellAppProfileRoute
   ShellAppRecapRoute: typeof ShellAppRecapRoute
   ShellAppSettingsRoute: typeof ShellAppSettingsRouteWithChildren
   ShellAppWeekRoute: typeof ShellAppWeekRoute
@@ -967,6 +987,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAppInsightsRoute: ShellAppInsightsRoute,
   ShellAppLibraryRoute: ShellAppLibraryRoute,
   ShellAppMusicRoute: ShellAppMusicRoute,
+  ShellAppProfileRoute: ShellAppProfileRoute,
   ShellAppRecapRoute: ShellAppRecapRoute,
   ShellAppSettingsRoute: ShellAppSettingsRouteWithChildren,
   ShellAppWeekRoute: ShellAppWeekRoute,
