@@ -36,6 +36,20 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-21
 
+- **Friend invite links, profiles and basic social now (owner, 2026-10-21).** Pulled forward
+  before the P2 gate, in three PRs. (1) SOC-002's invite links: `aaruapp.com/i/{code}`, one use,
+  14 days, revocable, at most 20 open. Accepting makes both people friends at once, with no
+  request step: the sender asked by sending it, the friend by opening it. A link may carry one
+  title ("Watch Arrival with me"), and the friend chooses whether to add it to Plan to watch.
+  The Apple apps claim `/i/*` as universal links. iPhone without the app, Android and desktop
+  use the web page, which sends a signed-out friend through sign-in and back. There is no
+  Android app yet (later, its own project) and no App Store banner (TestFlight only).
+  (2) Friend profiles and activity (SOC-001 settings, SOC-003 minimal). Friends see each
+  other's library by default, behind one "Show my library to friends" switch. Strangers see
+  nothing, ever. (3) Reactions on activity (SOC-007), recommending a title to friends
+  (SOC-006), comparing libraries on a profile, and inviting a friend to a group. No DMs (P6).
+  The rule against group invite links stands: these are friend invites only.
+
 - **AniList outage: TMDB stands in (CAT-021).** AniList disabled its whole public API on
   2026-10-21 ("temporarily disabled due to severe stability issues", HTTP 403 behind
   Cloudflare). Aaru logged that as `unauthorized`, so the anime rows went empty. Now it reads as
@@ -311,9 +325,9 @@ are on `main` and wait for the next promote PR. Unmerged branches (Groups, realt
 | --- | --- | --- | --- |
 | **P0 — Rails** | 14/16 (1 built, unverified; 1 dropped) | **Met** | Nothing. `INFRA_TOKEN` is unset by choice, so promote PRs are opened by hand and Server Deploy's promote job shows red |
 | **P1 — Basics (API)** | 30/31 (1 built, unverified) | **Met** | Nothing; CAT-010's first production load of the anime mappings is unconfirmed (CronJob first fires 2026-11-02) |
-| **P2 — Clients, widgets, imports** | 31/54 (12 built, unverified; 3 partial; 7 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) built but never run on a real CAT export; unmatched-row triage (IMP-011) open |
+| **P2 — Clients, widgets, imports** | 31/54 (12 built, unverified; 3 partial; 7 open; 2 deferred; 1 dropped) | Not met | No stranger has used it; widgets and the Live Activity never seen on a device; Trakt never run on a real account; CAT list/ICS import (IMP-009/010) built but never run on a real CAT export; unmatched-row triage (IMP-011) built, never run on a real import |
 | **P3 — Tracking** | 1/6 (1 partial) | Not met | Stremio addon built and deployed (SCR-003) but playback never tried live; no `/v1/scrobble/*` routes, no Plex/Jellyfin |
-| **P4 — Social** | 0/6 (1 partial) | Not met | Only push plumbing (SOC-005, airing alerts) is on `main` |
+| **P4 — Social** | 0/8 (3 partial) | Not met | Push plumbing (SOC-005, airing alerts), handles and friends by handle (SOC-001/002 minimal), invite links built (SOC-002) |
 | **P5 — Gamification** | 1/9 (1 partial) | Not met | Recap (GAM-006a) only; no points ledger, streaks, badges |
 | **P6 — Realtime, DMs, rooms** | 0/10 | Not met | Nothing on `main` |
 | **P7 — Agent surfaces** | 0/12 (3 partial) | Not met | Agent tokens exist for Stremio only; no tool layer, MCP or model provider |
@@ -424,7 +438,7 @@ account or a stranger that has not happened yet.
 | IMP-008 | Done | #13; ImportParserTests | |
 | IMP-009 | Built, unverified | `feat/cat-import`; CATImport.swift, CATImportTests | Stub catalog and synthetic lists only; no real CAT profile paste yet |
 | IMP-010 | Built, unverified | `feat/cat-import`; CATCalendarParser, CATCalendarFeed | SUMMARY format confirmed on a real export (`Show S01E02 - \nTitle`, 45 shows); a same-name tie breaks on the episode's air date; link not yet run live |
-| IMP-011 | Open | ImportDetailView lists unmatched rows only | No resolve/search-and-pick UI |
+| IMP-011 | Built, unverified | `POST /v1/imports/{id}/rows/{index}/resolve`; ImportService+Resolve.swift, ImportResolveTests; "Find it" on web + Apple import detail | Not run on a real import yet |
 | IMP-012 | Deferred | BACKLOG "Parked 2026-10-16 by the owner" | Needs a real export |
 | IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |
 | IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
@@ -463,11 +477,13 @@ account or a stranger that has not happened yet.
 | SCR-006 | Open | none | |
 | SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
 | SCR-008 | Built, unverified | NowPlaying.swift, NowPlayingNotifier.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device |
-| SOC-001 | Open | none on main (PR #44 open) | |
-| SOC-002 | Open | none on main (PR #44 open) | |
+| SOC-001 | Partial | `profiles`, `PUT /v1/me/profile`; SocialTests | `social_settings` not built |
+| SOC-002 | Built, unverified | requests, friends, blocks, reports; invite links (`social_invites`, `/v1/social/invites`, `/v1/invites/{code}`, web `/i/{code}`, AASA); SocialTests, InviteTests | Seed signing ran on the branch 2026-10-21; universal links not tried on a device; contact email hash not built |
 | SOC-003 | Open | none | |
 | SOC-004 | Open | none | |
 | SOC-005 | Partial | #17, #42, #45; Push.swift, `/v1/devices`, `/v1/me/notifications` | Airing push only; no friend-request category |
+| SOC-006 | Open | none | Pulled forward 2026-10-21 |
+| SOC-007 | Open | none | Pulled forward 2026-10-21 |
 | SHR-001 | Open | none | |
 | GAM-001 | Open | none | |
 | GAM-002 | Open | none | |
@@ -1716,6 +1732,14 @@ Let the user resolve unmatched rows by searching and picking the right title.
 **Done when:** resolving a row creates the library item with the source's status and rating
 applied, and the job's unmatched count decreases.
 
+**Built 2026-10-22:** `POST /v1/imports/{id}/rows/{index}/resolve` with the `mediaRef` of a
+search hit. Before approval the pick joins the plan, which is decided again as a whole (rows on
+one title still merge). After approval the row is decided against the library as it is then
+(fill empty, forward only, never past a status set by hand) and written at once as its own
+undoable action ("Matched “…” from Goodreads by hand"); the job turns `succeeded` when nothing is
+left unmatched. Each unmatched row on the import page has "Find it" (web dialog, Apple sheet):
+the catalog search, started on the row's title and kind.
+
 ### IMP-012 · TV Time export import · M
 **Needs:** IMP-005, IMP-004.
 TV Time shut down on 2025-07-15 and its users hold GDPR data exports. Parse the export's
@@ -2199,7 +2223,9 @@ web (polled every 30 s while visible), above Tonight on iPhone and Mac; Tonight 
 watching leave that show out meanwhile. The server pushes the "Now watching" Live Activity over
 APNs: push-to-start on a session's first `start`, update on pause and resume, end on the stop,
 from tokens the app registers at `PUT /v1/devices/live-activity`; the app also starts it when it
-opens on a session. A `start` for the next episode closes the last one, ticking it only when it
+opens on a session. The app follows its tokens from launch, so a background launch (iOS waking it
+for a push-started activity) uploads the activity's token, and a token that arrives after a pause
+or stop hears the session as it stands: update, or end (2026-10-22). A `start` for the next episode closes the last one, ticking it only when it
 was last reported at ≥ 80%. With it, the web's last-7-days block became a wide strip under
 Tonight (owner, same day). This closes WID-005's "scrobble start is P3" and SCR-001's "may start
 the WID-005 Live Activity via push".
@@ -2235,8 +2261,13 @@ and no route exposes a profile to an unauthenticated caller.
 ### SOC-002 · Friends, requests, blocks, invites · L
 **Needs:** SOC-001.
 **Pulled forward 2026-10-20 for groups, minimal:** requests, friendships, blocks and reports,
-added by handle only. `social_invites`, invite links (they need universal links) and the
-contact email hash stay here for later.
+added by handle only. The contact email hash stays here for later.
+**Invite links, 2026-10-21:** `social_invites` (12-character code, inviter, optional title,
+expiry, redeemed by, revoked). `POST/GET /v1/social/invites`, `DELETE …/{code}`,
+`POST …/{code}/redeem {addTitle}`, and the public preview `GET /v1/invites/{code}`. Every dead
+end (unknown, spent, revoked, expired, blocked either way) is the same 404. Both sides need a
+handle. Web `/i/{code}`; the apps open the same URL as a universal link
+(`/.well-known/apple-app-site-association`).
 Tables `social_friend_requests` (pending/accepted/declined/cancelled), `social_friendships`,
 `social_blocks`, `social_reports`, `social_invites` (short code, expiry). Add by handle, by
 invite link, or by contact email hash (opt-in). A blocked user gets **404** on everything about
@@ -2270,6 +2301,23 @@ tracked show, (later) DM, room invite. Per-category preferences. Copy
 
 **Done when:** a Beta build and a Release build on the same account both receive a friend
 request push, and turning a category off stops it on every device.
+
+### SOC-006 · Recommend a title to friends · M
+**Needs:** SOC-002. Pulled forward 2026-10-21 (owner).
+`social_recommendations` (from, to, title, note up to 140 characters, added, dismissed). Send to
+up to 10 friends from a title or a friend's profile; the friend's inbox adds it to Plan to watch
+in one tap (the same write as a tap) or dismisses it. Push to the recipient. Agents get none of it.
+
+**Done when:** a recommendation reaches only friends, a block hides it both ways, and adding it
+journals one ordinary library action.
+
+### SOC-007 · Reactions on friend activity · S
+**Needs:** SOC-003. Pulled forward 2026-10-21 (owner).
+`social_reactions` (user, action, one emoji from a fixed set of six). Shown on activity rows and
+on your own items on your profile. No push.
+
+**Done when:** only a friend who can see the action can react to it, and unfriending or blocking
+removes the reaction from view.
 
 ### SHR-001 · Shared lists · M
 **Needs:** SOC-002, LST-002.

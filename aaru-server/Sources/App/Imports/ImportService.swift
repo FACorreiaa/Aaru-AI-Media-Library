@@ -113,6 +113,12 @@ struct ImportService: Sendable {
             try await stores.importJobs.savePlan(job, rows: rows)
             Self.count(job)
         } catch {
+            // A shutdown is not the job's failure: hand it back untouched, attempt uncounted, for
+            // the next worker (whatever the provider client turned the cancellation into).
+            if Task.isCancelled || error is CancellationError {
+                try? await stores.importJobs.release(job.id, now: now())
+                throw CancellationError()
+            }
             let summary = Self.summary(of: error)
             if claimed.attempts < Self.maxAttempts {
                 // Back off: 30 s, then 60 s. A provider outage usually passes.
@@ -179,7 +185,11 @@ extension ImportService {
     }
 
     static func summary(_ source: ImportSource, stats: ImportStats) -> String {
-        let name = switch source {
+        "Imported \(stats.created) new and updated \(stats.updated) from \(sourceName(source))"
+    }
+
+    static func sourceName(_ source: ImportSource) -> String {
+        switch source {
         case .imdbCSV: "IMDb"
         case .letterboxdCSV: "Letterboxd"
         case .goodreadsCSV: "Goodreads"
@@ -191,7 +201,6 @@ extension ImportService {
         case .anilist: "AniList"
         case .genericCSV: "CSV"
         }
-        return "Imported \(stats.created) new and updated \(stats.updated) from \(name)"
     }
 
     private static func summary(of error: any Error) -> String {

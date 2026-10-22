@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as AppDiscoverRouteImport } from './routes/app_.discover'
 import { Route as AppExportRouteImport } from './routes/app_.export'
 import { Route as AppGroupsRouteImport } from './routes/app_.groups'
@@ -25,6 +26,7 @@ import { Route as AppSettingsRouteImport } from './routes/app_.settings'
 import { Route as AppWeekRouteImport } from './routes/app_.week'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
+import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as AppGroupsIndexRouteImport } from './routes/app_.groups.index'
 import { Route as AppGroupsGroupIdRouteImport } from './routes/app_.groups.$groupId'
@@ -67,6 +69,12 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownAppleAppSiteAssociationRoute =
+  DotwellKnownAppleAppSiteAssociationRouteImport.update({
+    id: '/.well-known/apple-app-site-association',
+    path: '/.well-known/apple-app-site-association',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppDiscoverRoute = AppDiscoverRouteImport.update({
   id: '/app_/discover',
   path: '/app/discover',
@@ -120,6 +128,11 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
 const ConnectExtensionRoute = ConnectExtensionRouteImport.update({
   id: '/connect/extension',
   path: '/connect/extension',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ICodeRoute = ICodeRouteImport.update({
+  id: '/i/$code',
+  path: '/i/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
@@ -210,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app/discover': typeof AppDiscoverRoute
   '/app/export': typeof AppExportRoute
   '/app/groups': typeof AppGroupsRouteWithChildren
@@ -221,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
+  '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app/imports/$id': typeof AppImportsIdRoute
@@ -244,6 +259,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app/discover': typeof AppDiscoverRoute
   '/app/export': typeof AppExportRoute
   '/app/insights': typeof AppInsightsRoute
@@ -253,6 +269,7 @@ export interface FileRoutesByTo {
   '/app/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
+  '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
@@ -276,6 +293,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app_/discover': typeof AppDiscoverRoute
   '/app_/export': typeof AppExportRoute
   '/app_/groups': typeof AppGroupsRouteWithChildren
@@ -287,6 +305,7 @@ export interface FileRoutesById {
   '/app_/week': typeof AppWeekRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
+  '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app_/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app_/imports/$id': typeof AppImportsIdRoute
@@ -312,6 +331,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/app/discover'
     | '/app/export'
     | '/app/groups'
@@ -323,6 +343,7 @@ export interface FileRouteTypes {
     | '/app/week'
     | '/auth/verify'
     | '/connect/extension'
+    | '/i/$code'
     | '/oauth/consent'
     | '/app/groups/$groupId'
     | '/app/imports/$id'
@@ -346,6 +367,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/app/discover'
     | '/app/export'
     | '/app/insights'
@@ -355,6 +377,7 @@ export interface FileRouteTypes {
     | '/app/week'
     | '/auth/verify'
     | '/connect/extension'
+    | '/i/$code'
     | '/oauth/consent'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -377,6 +400,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/privacy'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/app_/discover'
     | '/app_/export'
     | '/app_/groups'
@@ -388,6 +412,7 @@ export interface FileRouteTypes {
     | '/app_/week'
     | '/auth/verify'
     | '/connect/extension'
+    | '/i/$code'
     | '/oauth/consent'
     | '/app_/groups/$groupId'
     | '/app_/imports/$id'
@@ -412,6 +437,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
+  DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   AppDiscoverRoute: typeof AppDiscoverRoute
   AppExportRoute: typeof AppExportRoute
   AppGroupsRoute: typeof AppGroupsRouteWithChildren
@@ -423,6 +449,7 @@ export interface RootRouteChildren {
   AppWeekRoute: typeof AppWeekRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
   ConnectExtensionRoute: typeof ConnectExtensionRoute
+  ICodeRoute: typeof ICodeRoute
   OauthConsentRoute: typeof OauthConsentRoute
   AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
@@ -466,6 +493,13 @@ declare module '@tanstack/solid-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/apple-app-site-association': {
+      id: '/.well-known/apple-app-site-association'
+      path: '/.well-known/apple-app-site-association'
+      fullPath: '/.well-known/apple-app-site-association'
+      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/discover': {
@@ -543,6 +577,13 @@ declare module '@tanstack/solid-router' {
       path: '/connect/extension'
       fullPath: '/connect/extension'
       preLoaderRoute: typeof ConnectExtensionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/i/$code': {
+      id: '/i/$code'
+      path: '/i/$code'
+      fullPath: '/i/$code'
+      preLoaderRoute: typeof ICodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oauth/consent': {
@@ -715,6 +756,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
+  DotwellKnownAppleAppSiteAssociationRoute:
+    DotwellKnownAppleAppSiteAssociationRoute,
   AppDiscoverRoute: AppDiscoverRoute,
   AppExportRoute: AppExportRoute,
   AppGroupsRoute: AppGroupsRouteWithChildren,
@@ -726,6 +769,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppWeekRoute: AppWeekRoute,
   AuthVerifyRoute: AuthVerifyRoute,
   ConnectExtensionRoute: ConnectExtensionRoute,
+  ICodeRoute: ICodeRoute,
   OauthConsentRoute: OauthConsentRoute,
   AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,

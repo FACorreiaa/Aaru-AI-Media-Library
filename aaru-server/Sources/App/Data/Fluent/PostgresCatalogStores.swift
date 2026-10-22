@@ -109,6 +109,19 @@ struct PostgresTitleStore: TitleStore {
     }
 
     func fillIDs(_ id: TitleID, from ids: ExternalIDs) async throws {
+        let known = idColumns.compactMap { column in ids[keyPath: column.path].map { (column.column, $0) } }
+        guard !known.isEmpty else { return }
+        // Usually one statement fills every empty id (an import calls this per matched row). Only
+        // when another title already holds one of them does it fall back to column by column, so
+        // the rest still land.
+        do {
+            let sets = SQLList(known.map { column, value in
+                SQLQueryString("\(ident: column) = coalesce(\(ident: column), \(bind: value))")
+            })
+            let empty = SQLList(known.map { SQLQueryString("\(ident: $0.0) IS NULL") }, separator: SQLRaw(" OR "))
+            try await sql.raw("UPDATE titles SET \(sets) WHERE id = \(bind: id.rawValue) AND (\(empty))").run()
+            return
+        } catch let error as any DatabaseError where error.isConstraintFailure {}
         for (column, path) in idColumns {
             guard let value = ids[keyPath: path] else { continue }
             do {
@@ -134,38 +147,6 @@ struct PostgresTitleStore: TitleStore {
             episodesHydratedAt: row.episodesHydratedAt,
             tracksHydratedAt: row.tracksHydratedAt
         )
-    }
-
-    func saveEpisodes(_ id: TitleID, _ fresh: CatalogEpisodes, hydratedAt: Date) async throws {
-        for episode in fresh.episodes {
-            try await sql.raw("""
-            INSERT INTO show_episodes
-                (id, title_id, season, episode, name, overview, airs_at, airs_at_exact, runtime_minutes,
-                 tmdb_episode_id, still_url)
-            VALUES (\(bind: UUID()), \(bind: id.rawValue), \(bind: episode.season), \(bind: episode.episode),
-                    \(bind: episode.name), \(bind: episode.overview), \(bind: episode.airsAt),
-                    \(bind: episode.airTimeKnown), \(bind: episode.runtimeMinutes), \(bind: episode.tmdbEpisodeID),
-                    \(bind: episode.stillURL?.absoluteString))
-            ON CONFLICT (title_id, season, episode) DO UPDATE SET
-                name = EXCLUDED.name, overview = EXCLUDED.overview,
-                airs_at = EXCLUDED.airs_at, airs_at_exact = EXCLUDED.airs_at_exact,
-                runtime_minutes = EXCLUDED.runtime_minutes, tmdb_episode_id = EXCLUDED.tmdb_episode_id,
-                still_url = EXCLUDED.still_url
-            """).run()
-        }
-        let status = fresh.status
-        // A provider that drops its art does not erase ours.
-        try await sql.raw("""
-        UPDATE titles SET backdrop_url = coalesce(\(bind: fresh.backdropURL?.absoluteString), backdrop_url),
-            network = coalesce(\(bind: fresh.network), network)
-        WHERE id = \(bind: id.rawValue)
-        """).run()
-        try await sql.update("titles")
-            .set("episodes_hydrated_at", to: hydratedAt)
-            .set("status", to: status?.rawValue)
-            .set("updated_at", to: hydratedAt)
-            .where("id", .equal, id.rawValue)
-            .run()
     }
 
     func titles(ids: [TitleID]) async throws -> [Title] {
@@ -345,6 +326,23 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
                     tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
                 )
             }
+    }
+
+    func mappings(mal ids: [String]) async throws -> [String: AnimeMapping] {
+        guard !ids.isEmpty else { return [:] }
+        // The first mapping per MAL id, as `mapping(mal:)` picks it.
+        let rows = try await sql.raw("""
+        SELECT DISTINCT ON (mal) * FROM anime_mappings WHERE mal = ANY(\(bind: Array(Set(ids))))
+        ORDER BY mal, anilist
+        """).all(decoding: Row.self, keyDecodingStrategy: snake)
+        return Dictionary(rows.compactMap { row in
+            row.mal.map {
+                ($0, AnimeMapping(
+                    anilist: row.anilist, mal: row.mal, anidb: row.anidb, tvdb: row.tvdb,
+                    tmdb: row.tmdb, tmdbSeason: row.tmdbSeason
+                ))
+            }
+        }, uniquingKeysWith: { first, _ in first })
     }
 
     func upsertMany(_ mappings: [AnimeMapping]) async throws {

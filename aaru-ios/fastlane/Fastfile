@@ -5,7 +5,8 @@
 #   beta         Beta config (bundle id + .beta) -> TestFlight, internal testers
 #   release      Release config -> App Store, phased, submitted for review
 #   hotfix       Release config -> App Store, not phased
-#   seed_signing creates/refreshes Aaru's match profiles (run once before the first beta)
+#   seed_signing turns on the App IDs' capabilities and reissues Aaru's match profiles
+#                (run before the first beta and after any entitlement change)
 #
 # Both Beta and Release talk to the production API; beta is client-side only.
 
@@ -46,8 +47,11 @@ platform :ios do
   lane :seed_signing do
     api_key = asc_api_key
     setup_ci if is_ci
+    enable_capabilities
     PLATFORMS.each do |platform|
-      match(type: "appstore", platform: platform, readonly: false, api_key: api_key)
+      # force: a capability turned on since the last run is only in a newly issued profile.
+      # Profiles only; certificates are never minted here.
+      match(type: "appstore", platform: platform, readonly: false, force: true, api_key: api_key)
     end
   end
 
@@ -133,6 +137,19 @@ platform :ios do
         targets: [target],
         build_configurations: [options[:config]]
       )
+    end
+  end
+
+  # Capabilities the entitlements ask for that App IDs do not grant on their own. Associated
+  # Domains (SOC-002): the apps claim aaruapp.com/i/* so invite links open them. Idempotent.
+  private_lane :enable_capabilities do
+    associated = Spaceship::ConnectAPI::BundleIdCapability::Type::ASSOCIATED_DOMAINS
+    [BUNDLE_ID, BETA_BUNDLE_ID].each do |id|
+      bundle = Spaceship::ConnectAPI::BundleId.find(id) || UI.user_error!("No App ID #{id}")
+      next if bundle.get_capabilities.any? { |capability| capability.capability_type == associated }
+
+      bundle.create_capability(associated)
+      UI.success("Associated Domains on for #{id}")
     end
   end
 

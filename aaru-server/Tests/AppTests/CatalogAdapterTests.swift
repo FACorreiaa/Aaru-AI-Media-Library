@@ -160,6 +160,16 @@ struct CatalogAdapterTests {
         let html = "An elf mage <i>outlives</i> her party.<br><br>\n(Source: Crunchyroll &amp; others)"
         let expected = "An elf mage outlives her party.\n\n(Source: Crunchyroll & others)"
         #expect(AniListText.plain(html) == expected)
+        #expect(AniListText.plain("Use &amp;lt;br&amp;gt; tags") == "Use &lt;br&gt; tags", "decoded once")
+    }
+
+    @Test("Provider dates that do not exist are no date")
+    func catalogDayRejectsRollover() {
+        #expect(Date.catalogDay("2025-02-30") == nil)
+        #expect(Date.catalogDay("2025-13-01") == nil)
+        #expect(Date.catalogDay("2025-00-10") == nil)
+        #expect(Date.catalogDay("2024-02-29") == Date(timeIntervalSince1970: 1_709_164_800))
+        #expect(Date.catalogDay("2025-03-14T10:00:00Z") == Date(timeIntervalSince1970: 1_741_910_400))
     }
 
     @Test("AniList episodes come from the schedule plus the next airing episode")

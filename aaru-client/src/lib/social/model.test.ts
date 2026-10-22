@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   handleProblem,
+  inviteExpiry,
+  invitePlea,
+  inviterName,
   monogram,
   normalizeHandle,
   personLabel,
@@ -40,5 +43,20 @@ describe('social model', () => {
   it('says whether a request was sent or became a friendship', () => {
     expect(requestOutcome(ana, 'outgoing')).toBe('Request sent to @ana.')
     expect(requestOutcome(ana, 'friend')).toBe('You and @ana are friends.')
+  })
+
+  it('words an invite in the sender’s voice', () => {
+    expect(inviterName(ana)).toBe('@ana')
+    expect(inviterName({ ...ana, displayName: ' Ana ' })).toBe('Ana')
+    expect(invitePlea('Arrival', 'film')).toBe('Watch Arrival with me.')
+    expect(invitePlea('Dune', 'book')).toBe('Read Dune with me.')
+    expect(invitePlea('Blue', 'album')).toBe('Listen to Blue with me.')
+  })
+
+  it('counts down an invite’s last days', () => {
+    const now = Date.parse('2026-10-21T12:00:00Z')
+    expect(inviteExpiry('2026-11-04T12:00:00Z', now)).toBe('Expires in 14 days')
+    expect(inviteExpiry('2026-10-22T13:00:00Z', now)).toBe('Expires tomorrow')
+    expect(inviteExpiry('2026-10-21T20:00:00Z', now)).toBe('Expires today')
   })
 })

@@ -10,21 +10,20 @@ struct AccountExport: Sendable {
     var shelves: [Shelf]
 
     static func gather(userID: UserID, stores: Stores, services: Services) async throws -> AccountExport {
-        let entries = try await services.library.sync(userID: userID, token: nil).entries
-            .sorted { $0.item.addedAt < $1.item.addedAt }
-        var watched: [LibraryItemID: [EpisodeKey]] = [:]
-        for entry in entries where entry.title.type == .show {
-            let keys = try await stores.library.watched(itemID: entry.item.id)
-            if !keys.isEmpty {
-                watched[entry.item.id] = keys.sorted { ($0.season, $0.episode) < ($1.season, $1.episode) }
-            }
-        }
-        var lists: [(AaruList, [Title])] = []
-        for list in try await services.lists.lists(userID: userID) {
-            try await lists.append((list, stores.titles.titles(ids: list.titleIDs)))
-        }
-        let shelves = try await services.shelves.shelves(userID: userID)
-        return AccountExport(entries: entries, watched: watched, lists: lists, shelves: shelves)
+        // The three reads are independent; ticks and list titles are one query each, not one per
+        // show or per list.
+        async let synced = services.library.sync(userID: userID, token: nil).entries
+        async let userLists = services.lists.lists(userID: userID)
+        async let shelves = services.shelves.shelves(userID: userID)
+        let entries = try await synced.sorted { $0.item.addedAt < $1.item.addedAt }
+        let ticks = try await stores.library.watched(itemIDs: entries.filter { $0.title.type == .show }.map(\.item.id))
+        let watched = ticks.filter { !$0.value.isEmpty }
+            .mapValues { $0.sorted { ($0.season, $0.episode) < ($1.season, $1.episode) } }
+        let allLists = try await userLists
+        let titles = try await stores.titles.titles(ids: Array(Set(allLists.flatMap(\.titleIDs))))
+        let byID = Dictionary(titles.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let lists = allLists.map { list in (list, list.titleIDs.compactMap { byID[$0] }) }
+        return try await AccountExport(entries: entries, watched: watched, lists: lists, shelves: shelves)
     }
 
     // MARK: CSV

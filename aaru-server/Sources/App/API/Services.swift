@@ -18,6 +18,7 @@ struct Services: Sendable {
     var plans: PlanService
     var oauth: OAuthService
     var social: SocialService
+    var invites: InviteService
     var groups: GroupService
     var concerts: ConcertService
     /// Open sockets and browser tickets (GRP-006). One per process.
@@ -82,6 +83,7 @@ struct Services: Sendable {
                 )
             ),
             social: SocialService(stores: stores),
+            invites: InviteService(stores: stores, library: library, webBaseURL: oauth.webBaseURL),
             groups: groups,
             concerts: ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places),
             realtime: realtime,

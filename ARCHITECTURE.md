@@ -316,7 +316,8 @@ protocol fixes the paths), `/v1/social/*`
 and `/v1/devices` (airing push, pulled into 2 on 2026-10-15), `/v1/me/points|badges|streak` (5; `/v1/me/stats` shipped early
 with GAM-006a and grew with GAM-006c, 2026-10-20), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*` (6). Pulled forward with groups (2026-10-20):
-`/v1/me/profile`, `/v1/social/*` (friends, requests, blocks, reports), `/v1/groups/*`,
+`/v1/me/profile`, `/v1/social/*` (friends, requests, blocks, reports, invite links), the public
+invite preview `/v1/invites/{code}`, `/v1/groups/*`,
 `/v1/group-invites/*`, `/v1/me/group-invites`, `/v1/realtime/ticket` and `/v1/ws`.
 
 ### Recap stats (GAM-006a)
@@ -952,7 +953,7 @@ Modelled on Norviq's `social_*` design (`norviq-backend/.../Social`, `CreateSoci
 | `social_friendships` | one row per pair, ordered ids, `created_at` |
 | `social_blocks` | blocker, blocked |
 | `social_reports` | reporter, target, reason |
-| `social_invites` | code, inviter, redeemed_by, expiry |
+| `social_invites` | code (12 random base62), inviter, optional title, expiry (14 days), redeemed_by, revoked_at |
 | `social_settings` | `profile_visibility` (default `private`), `show_points`, `show_streaks`, `leaderboard_opt_in` |
 
 Rules:
@@ -960,6 +961,13 @@ Rules:
 - **Private by default.** A new account is invisible until the user changes
   `profile_visibility`. Friend-only is the most open default Aaru ever offers. There are no
   public profile pages indexed by search engines.
+- **Invite links (SOC-002, 2026-10-21).** `https://aaruapp.com/i/{code}`, one use. Redeeming
+  makes the pair friends in one transaction (the conditional update on the invite is the lock)
+  and drops pending requests between them. The preview `GET /v1/invites/{code}` is the only
+  public social route and shows only the inviter's name, handle and chosen title; every dead
+  end is one 404. The web Worker serves `/.well-known/apple-app-site-association` claiming
+  `/i/*` for the App Store and Beta app ids, so the apps open the same URL. Android will claim
+  it through `assetlinks.json` when there is an Android app.
 - **A block is invisible.** A blocked user gets `404` for everything about the blocker, the
   same response as for a user who does not exist. Blocks apply both ways in feeds,
   leaderboards, rooms, and DMs.
@@ -1188,6 +1196,25 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
   `workflow_run` after CI passes on `main` (Khepri pattern).
 - Because beta clients hit prod, API changes must stay backward-compatible with the App Store
   build that is live.
+
+### Observability (owner, 2026-10-21)
+
+- **Grafana Cloud.** The cluster's Alloy scrapes `aaru-api` by pod annotation and collects
+  its logs. Probes cover `api.aaruapp.com/v1/health`, `aaruapp.com` and `beta.aaruapp.com`, and
+  the "Apps / Aaru" board and alerts are generated in the infra repo's `observability/`.
+  `/metrics` is served on its own listener (`METRICS_PORT`, 9090), outside the Service and the
+  Ingress, so it is never public. Route labels use the endpoint template, never an id.
+- **Sentry, errors only.** Server, web (browser and Worker), Apple apps and the browser
+  extension report errors and crashes. There is no tracing, no session replay and no PII. URLs
+  lose their query; the extension sends a streaming site's origin only. With no DSN it is a
+  no-op.
+- **PostHog, server only.** A fixed list of product events (`account_created`,
+  `import_completed`, `library_action`, `list_created`, `group_created`, `friend_added`,
+  `agent_plan_decided`) with a few fixed-word properties, keyed by the account UUID, with
+  `$process_person_profile: false` and no IP. Clients send none.
+- `docs/privacy.md` states all of this, and changes before any of it does.
+- `/internal/metrics` (the `{"users": N}` count for facorreia.com/apps, `METRICS_SECRET`) is a
+  separate contract and stays as it is.
 
 ## Decisions already made
 

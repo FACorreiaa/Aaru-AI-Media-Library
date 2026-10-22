@@ -31,14 +31,22 @@ extension ImportService {
             Array(rows[start ..< min(start + Self.chunkSize, rows.count)])
         }
         var matched = 0
-        var planned = try await Self.boundedMap(chunks, limit: Self.chunksInFlight) { chunk in
+        let planned = try await Self.boundedMap(chunks, limit: Self.chunksInFlight) { chunk in
             try await matchChunk(chunk, withoutAniListIfDown: withoutAniListIfDown)
         } finished: { chunk in
             matched += chunk.count
             try await progress(matched)
         }.flatMap(\.self)
+        return try await decided(planned, userID: userID)
+    }
+
+    /// Decides every matched title against the library as it is now. Rows for one title merge into
+    /// the first; the rest are skipped.
+    func decided(_ rows: [PlannedRow], userID: UserID) async throws -> [PlannedRow] {
+        var planned = rows
+        let context = try await mergeContext(planned, userID: userID)
         for (titleID, indices) in Self.groups(planned) {
-            let merged = try await Self.merged(seasonRows(indices.map { planned[$0] }))
+            let merged = Self.merged(Self.seasonRows(indices.map { planned[$0] }, context: context))
             for index in indices.dropFirst() {
                 planned[index].outcome = .skip
                 planned[index].reason = "Merged into an earlier row."
@@ -48,7 +56,7 @@ extension ImportService {
                 planned[first].outcome = .skip
                 planned[first].reason = "On a list only; added to the list, not your library."
             } else {
-                let decision = try await decide(merged, titleID: titleID, userID: userID)
+                let decision = Self.decide(merged, item: context.states[titleID])
                 planned[first].outcome = decision.outcome
                 planned[first].reason = decision.reason
             }
@@ -164,11 +172,13 @@ extension ImportService {
                 listMembers[list, default: []].append(titleID)
             }
         }
+        // The library as it is now, read once (the plan may be stale).
+        let context = try await mergeContext(rows, userID: userID)
         for (titleID, indices) in Self.groups(rows) {
-            let merged = try await Self.merged(seasonRows(indices.map { rows[$0] }))
+            let merged = Self.merged(Self.seasonRows(indices.map { rows[$0] }, context: context))
             // A list-only title joins its list without joining the library.
             guard merged.listOnly != true else { continue }
-            ops += try await writes(for: &rows[indices[0]], merged: merged, titleID: titleID, userID: userID)
+            ops += writes(for: &rows[indices[0]], merged: merged, titleID: titleID, item: context.states[titleID])
         }
         ops += try await listOps(listMembers, userID: userID)
         job.stats = Self.stats(rows)
@@ -185,13 +195,13 @@ extension ImportService {
     }
 
     /// Decides one title again (the library may have changed since the plan) and returns its writes.
-    private func writes(
+    func writes(
         for row: inout PlannedRow,
         merged: ImportRow,
         titleID: TitleID,
-        userID: UserID
-    ) async throws -> [LibraryOp] {
-        let decision = try await decide(merged, titleID: titleID, userID: userID)
+        item: ImportItemState?
+    ) -> [LibraryOp] {
+        let decision = Self.decide(merged, item: item)
         row.outcome = decision.outcome
         row.reason = decision.reason
         switch (decision.outcome, decision.fields, decision.itemID) {

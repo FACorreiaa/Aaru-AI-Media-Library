@@ -125,17 +125,15 @@ struct PostgresLibraryStore: LibraryStore {
         let current = try await watchedKeys(id, sql: sql)
         let added = watch.filter { !current.contains($0) }
         let removed = unwatch.filter { current.contains($0) }
-        for key in added {
+        // One statement each way: "mark the season watched" on a long show is one round trip, not
+        // one per episode.
+        try await insertTicks(added, item: id, known: true, sql: sql)
+        if !removed.isEmpty {
             try await sql.raw("""
-            INSERT INTO episode_progress (id, library_item_id, season, episode)
-            VALUES (\(bind: UUID()), \(bind: id.rawValue), \(bind: key.season), \(bind: key.episode))
-            ON CONFLICT (library_item_id, season, episode) DO NOTHING
-            """).run()
-        }
-        for key in removed {
-            try await sql.raw("""
-            DELETE FROM episode_progress WHERE library_item_id = \(bind: id.rawValue)
-            AND season = \(bind: key.season) AND episode = \(bind: key.episode)
+            DELETE FROM episode_progress ep
+            USING unnest(\(bind: removed.map(\.season))::int[], \(bind: removed.map(\.episode))::int[])
+                AS k(season, episode)
+            WHERE ep.library_item_id = \(bind: id.rawValue) AND ep.season = k.season AND ep.episode = k.episode
             """).run()
         }
         try await sql.raw("UPDATE library_items SET updated_at = now() WHERE id = \(bind: id.rawValue)").run()
@@ -152,12 +150,7 @@ struct PostgresLibraryStore: LibraryStore {
             \(bind: snapshot.addedAt), now(), \(bind: fields.finishedAt), \(bind: fields.bookPage),
             \(bind: fields.bookPercent), \(bind: fields.statusByHand ?? false))
         """).run()
-        for key in snapshot.watched {
-            try await sql.raw("""
-            INSERT INTO episode_progress (id, library_item_id, season, episode, watched_at_known)
-            VALUES (\(bind: UUID()), \(bind: snapshot.id.rawValue), \(bind: key.season), \(bind: key.episode), false)
-            """).run()
-        }
+        try await insertTicks(snapshot.watched, item: snapshot.id, known: false, sql: sql)
         try await sql.raw("""
         DELETE FROM library_tombstones
         WHERE user_id = \(bind: userID.rawValue) AND library_item_id = \(bind: snapshot.id.rawValue)
@@ -188,6 +181,24 @@ struct PostgresLibraryStore: LibraryStore {
             addedAt: row.addedAt,
             watched: watched
         )
+    }
+
+    /// Writes episode ticks in one statement. `known` is false for imports and restores, whose
+    /// `watched_at` is write time, not when the user watched (GAM-006a).
+    private static func insertTicks(
+        _ keys: [EpisodeKey],
+        item: LibraryItemID,
+        known: Bool,
+        sql: any SQLDatabase
+    ) async throws {
+        guard !keys.isEmpty else { return }
+        try await sql.raw("""
+        INSERT INTO episode_progress (id, library_item_id, season, episode, watched_at_known)
+        SELECT k.id, \(bind: item.rawValue), k.season, k.episode, \(bind: known)
+        FROM unnest(\(bind: keys.map { _ in UUID() })::uuid[], \(bind: keys.map(\.season))::int[],
+                    \(bind: keys.map(\.episode))::int[]) AS k(id, season, episode)
+        ON CONFLICT (library_item_id, season, episode) DO NOTHING
+        """).run()
     }
 
     /// Locks the user's item row and returns its fields. Another user's item is 404.

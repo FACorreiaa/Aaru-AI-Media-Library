@@ -20,6 +20,12 @@ struct PostgresSettings: Sendable {
     var user: String
     var password: String
     var database: String
+    /// `POSTGRES_POOL_SIZE`: connections this process may open. Every store shares the pool of one
+    /// event loop (`Stores.postgres(fluent.db())`), so this is the process total, not per loop.
+    /// Fluent's default of one made every request and worker queue on a single connection.
+    var poolSize: Int = 10
+    /// `POSTGRES_POOL_TIMEOUT`: seconds a query waits for a free connection before it fails.
+    var poolTimeoutSeconds: Int = 10
 
     static func load(from reader: ConfigReader) throws -> PostgresSettings {
         try PostgresSettings(
@@ -27,7 +33,25 @@ struct PostgresSettings: Sendable {
             port: reader.int(forKey: "postgres.port", default: 5432),
             user: required("postgres.user", env: "POSTGRES_USER", in: reader),
             password: required("postgres.password", env: "POSTGRES_PASSWORD", in: reader),
-            database: required("postgres.database", env: "POSTGRES_DATABASE", in: reader)
+            database: required("postgres.database", env: "POSTGRES_DATABASE", in: reader),
+            poolSize: max(1, reader.int(forKey: "postgres.pool.size", default: 10)),
+            poolTimeoutSeconds: max(1, reader.int(forKey: "postgres.pool.timeout", default: 10))
+        )
+    }
+}
+
+/// How many jobs each queue runs at once in this process. Both queues lease with `SKIP LOCKED`,
+/// so workers (and replicas) never take the same job.
+struct WorkerSettings: Sendable {
+    /// `IMPORTS_WORKERS`: imports matched at once. Each holds a few connections while it matches.
+    var imports: Int = 1
+    /// `AGENT_REPLY_WORKERS`: `@aaru` mentions answered at once.
+    var agentReplies: Int = 1
+
+    static func load(from reader: ConfigReader) -> WorkerSettings {
+        WorkerSettings(
+            imports: min(8, max(1, reader.int(forKey: "imports.workers", default: 1))),
+            agentReplies: min(8, max(1, reader.int(forKey: "agent.reply.workers", default: 1)))
         )
     }
 }
@@ -86,6 +110,8 @@ struct AppConfig: Sendable {
     var sentry: SentrySettings?
     /// Nil when `POSTHOG_PROJECT_TOKEN` is unset: no product events are sent.
     var posthog: PostHogSettings?
+    /// Jobs per queue at once (`IMPORTS_WORKERS`, `AGENT_REPLY_WORKERS`).
+    var workers: WorkerSettings
 
     static let defaultRealtimeOrigins = "https://aaruapp.com,https://www.aaruapp.com,https://beta.aaruapp.com"
 
@@ -126,13 +152,11 @@ struct AppConfig: Sendable {
                     release: reader.string(forKey: "aaru.release").flatMap(\.nilIfBlank)
                 )
             },
-            posthog: postHogSettings(from: reader)
+            posthog: postHogSettings(from: reader),
+            workers: WorkerSettings.load(from: reader)
         )
     }
 
-    /// The trial's env contract (`platform/infra/docs/llm-haiku-trial.md`): `ANTHROPIC_API_KEY`,
-    /// `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`; `ANTHROPIC_WORKSPACE_ID` when the key is not scoped
-    /// to a workspace; `ANTHROPIC_BASE_URL` only for tests and proxies.
     /// `POSTHOG_PROJECT_TOKEN` (public: it can only write events) and `POSTHOG_HOST`, PostHog's EU
     /// cloud unless set.
     static func postHogSettings(from reader: ConfigReader) throws -> PostHogSettings? {
@@ -144,6 +168,9 @@ struct AppConfig: Sendable {
         return PostHogSettings(projectToken: token, host: url)
     }
 
+    /// The trial's env contract (`platform/infra/docs/llm-haiku-trial.md`): `ANTHROPIC_API_KEY`,
+    /// `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`; `ANTHROPIC_WORKSPACE_ID` when the key is not scoped
+    /// to a workspace; `ANTHROPIC_BASE_URL` only for tests and proxies.
     static func anthropicSettings(from reader: ConfigReader) throws -> AnthropicSettings? {
         guard let key = reader.string(forKey: "anthropic.api.key"), !key.isEmpty else { return nil }
         let base = reader.string(forKey: "anthropic.base.url", default: "https://api.anthropic.com")

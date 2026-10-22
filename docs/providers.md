@@ -62,7 +62,17 @@ typed into the city search; that route's query is dropped from Aaru's request lo
 | Cloudflare | DNS, the web app (Workers), TLS for aaruapp.com | Requests to the web app (IP address, the session cookie in transit) |
 | GitHub | Source code, CI, container images | No user data |
 
+## Monitoring
+
+| Provider | Used for | Data |
+| --- | --- | --- |
+| Grafana Cloud (via the cluster's Alloy) | Server metrics, logs and uptime probes | Request counts and timings by route template, redacted request logs (no tokens, no OAuth query strings) |
+| Sentry (EU, Frankfurt) | Error and crash reports from the server, web app, Apple apps and browser extension. Errors only: no tracing, no session replay | What failed and where, device/browser type, app version, the page path without its query. Never name, email, library or message content; the extension sends a streaming site's origin only. `sendDefaultPii` off everywhere |
+| PostHog (EU) | A few product events, sent by the server only | Event name, a handful of fixed words (`provider`, `source`, `kind`, `actor`…) and the account UUID. No title, text, email or IP (`$ip` dropped), no person profiles (`$process_person_profile: false`) |
+
+Each one is a no-op when its key is not configured. Retention: Sentry 90 days, PostHog one
+year (set in each project), as `docs/privacy.md` promises.
+
 ## Not used
 
-No analytics, advertising, attribution or crash-reporting SDKs in any client. The web app has
-a `VITE_SENTRY_DSN` hook but no DSN is set and no Sentry code ships.
+No advertising, attribution or client-side analytics SDKs in any client, and no session replay.

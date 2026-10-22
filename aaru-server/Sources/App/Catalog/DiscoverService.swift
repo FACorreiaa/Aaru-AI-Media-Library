@@ -206,13 +206,17 @@ actor DiscoverCache {
         // Unstructured on purpose: one caller disconnecting must not cancel everyone's fetch.
         let task = inFlight[list] ?? Task { try await fetch() }
         inFlight[list] = task
+        // Every waiter resumes here; only the first to see its own task settle the cache (actor
+        // reentrancy: a later waiter must not clear a newer fetch or overwrite newer hits).
         do {
             let fetched = try await task.value
+            guard inFlight[list] == task else { return fetched }
             inFlight[list] = nil
             failedAt[list] = nil
             entries[list] = Entry(fetched: fetched, fetchedAt: now)
             return fetched
         } catch {
+            guard inFlight[list] == task else { return entries[list]?.fetched ?? cached?.fetched }
             inFlight[list] = nil
             failedAt[list] = now
             logger.warning("Discover list failed", metadata: ["list": "\(list.rawValue)", "error": "\(error)"])

@@ -190,13 +190,16 @@ actor SeasonCache {
         // Unstructured on purpose: one caller disconnecting must not cancel everyone's fetch.
         let task = inFlight[key] ?? Task { try await fetch() }
         inFlight[key] = task
+        // Only the first waiter to see its own task settle the cache (actor reentrancy).
         do {
             let page = try await task.value
+            guard inFlight[key] == task else { return page }
             inFlight[key] = nil
             failedAt[key] = nil
             store(key, Entry(page: page, fetchedAt: now, usedAt: now))
             return page
         } catch {
+            guard inFlight[key] == task else { return entries[key]?.page ?? stale }
             inFlight[key] = nil
             failedAt[key] = now
             logger.warning("Season page failed", metadata: ["key": "\(key)", "error": "\(error)"])

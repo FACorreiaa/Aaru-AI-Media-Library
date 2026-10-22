@@ -98,7 +98,9 @@ Each step is a row you can tap:
 5. Apply ratings
 
 Partial failure stays visible. "14 unmatched" opens a queue the agent and you finish
-together. GitHub's canvas lesson: durable state, human gates.
+together. GitHub's canvas lesson: durable state, human gates. Built for one row at a time (IMP-011): each unmatched row has "Find it", the
+catalog search started on the row's own title and kind; the pick brings the file's status,
+rating and episodes with it, into the plan before approval or as its own undoable action after.
 
 Built for file and account imports (IMP-017, web + Apple): Read your file (or library) · Wait for
 a free slot · Match each title to the catalog ("840 of 2,001" with a bar) · Check against your
@@ -528,6 +530,19 @@ ship before the Phase 2 gate.
   safety-number check live in the header, not in a settings screen.
 
 The feeling to protect: **social is a room you invite people into, not a feed you are fed.**
+
+### Invites (SOC-002, pulled forward 2026-10-21)
+
+A friend invite is a letter, not a growth hack. The page or sheet it opens shows the mascot
+medallion, "{Name} invited you to Aaru." in the serif display face, their handle, and, when the
+invite carries a title, its poster with "Watch Arrival with me." and a switch to add it to Plan
+to watch (on by default; the friend's tap is the consent). One ink button: Join Aaru when signed
+out, Add {Name} as a friend when signed in. One line under it: your library stays private,
+only friends see it. A spent, expired or revoked link says so plainly, with no detail about why.
+
+The sender invites from Friends: "Invite a friend", or "Invite to watch something together"
+through the title picker. The link opens the share sheet (copied to the clipboard on desktop
+web), and open invites list what they say, the days left, and Revoke.
 
 ### Groups (GRP-004/005, pulled forward 2026-10-20)
 

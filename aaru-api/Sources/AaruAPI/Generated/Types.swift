@@ -107,6 +107,31 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/social/blocks/{userId}`.
     /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)`.
     func unblockUser(_ input: Operations.UnblockUser.Input) async throws -> Operations.UnblockUser.Output
+    /// Your invite links that are still open, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/invites`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/get(listFriendInvites)`.
+    func listFriendInvites(_ input: Operations.ListFriendInvites.Input) async throws -> Operations.ListFriendInvites.Output
+    /// Make a one-use invite link, live for 14 days, optionally carrying a title to watch together. Needs your own handle; at most 20 open at once.
+    ///
+    /// - Remark: HTTP `POST /v1/social/invites`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/post(createFriendInvite)`.
+    func createFriendInvite(_ input: Operations.CreateFriendInvite.Input) async throws -> Operations.CreateFriendInvite.Output
+    /// Revoke one of your open invite links. Anyone opening it afterwards sees an invalid invite.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/invites/{code}`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/{code}/delete(revokeFriendInvite)`.
+    func revokeFriendInvite(_ input: Operations.RevokeFriendInvite.Input) async throws -> Operations.RevokeFriendInvite.Output
+    /// Accept an invite. You and the inviter become friends and the link is spent; already friends leaves it unspent. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/invites/{code}/redeem`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/{code}/redeem/post(redeemFriendInvite)`.
+    func redeemFriendInvite(_ input: Operations.RedeemFriendInvite.Input) async throws -> Operations.RedeemFriendInvite.Output
+    /// What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/invites/{code}`.
+    /// - Remark: Generated from `#/paths//v1/invites/{code}/get(getInvitePreview)`.
+    func getInvitePreview(_ input: Operations.GetInvitePreview.Input) async throws -> Operations.GetInvitePreview.Output
     /// Report a user to Aaru. The user is not told.
     ///
     /// - Remark: HTTP `POST /v1/social/reports`.
@@ -578,6 +603,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/{id}/apply`.
     /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)`.
     func applyImport(_ input: Operations.ApplyImport.Input) async throws -> Operations.ApplyImport.Output
+    /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/resolve`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)`.
+    func resolveImportRow(_ input: Operations.ResolveImportRow.Input) async throws -> Operations.ResolveImportRow.Output
     /// - Remark: HTTP `GET /v1/shelves`.
     /// - Remark: Generated from `#/paths//v1/shelves/get(listShelves)`.
     func listShelves(_ input: Operations.ListShelves.Input) async throws -> Operations.ListShelves.Output
@@ -819,6 +849,67 @@ extension APIProtocol {
         headers: Operations.UnblockUser.Input.Headers = .init()
     ) async throws -> Operations.UnblockUser.Output {
         try await unblockUser(Operations.UnblockUser.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Your invite links that are still open, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/invites`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/get(listFriendInvites)`.
+    public func listFriendInvites(headers: Operations.ListFriendInvites.Input.Headers = .init()) async throws -> Operations.ListFriendInvites.Output {
+        try await listFriendInvites(Operations.ListFriendInvites.Input(headers: headers))
+    }
+    /// Make a one-use invite link, live for 14 days, optionally carrying a title to watch together. Needs your own handle; at most 20 open at once.
+    ///
+    /// - Remark: HTTP `POST /v1/social/invites`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/post(createFriendInvite)`.
+    public func createFriendInvite(
+        headers: Operations.CreateFriendInvite.Input.Headers = .init(),
+        body: Operations.CreateFriendInvite.Input.Body
+    ) async throws -> Operations.CreateFriendInvite.Output {
+        try await createFriendInvite(Operations.CreateFriendInvite.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Revoke one of your open invite links. Anyone opening it afterwards sees an invalid invite.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/invites/{code}`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/{code}/delete(revokeFriendInvite)`.
+    public func revokeFriendInvite(
+        path: Operations.RevokeFriendInvite.Input.Path,
+        headers: Operations.RevokeFriendInvite.Input.Headers = .init()
+    ) async throws -> Operations.RevokeFriendInvite.Output {
+        try await revokeFriendInvite(Operations.RevokeFriendInvite.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Accept an invite. You and the inviter become friends and the link is spent; already friends leaves it unspent. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/invites/{code}/redeem`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/{code}/redeem/post(redeemFriendInvite)`.
+    public func redeemFriendInvite(
+        path: Operations.RedeemFriendInvite.Input.Path,
+        headers: Operations.RedeemFriendInvite.Input.Headers = .init(),
+        body: Operations.RedeemFriendInvite.Input.Body
+    ) async throws -> Operations.RedeemFriendInvite.Output {
+        try await redeemFriendInvite(Operations.RedeemFriendInvite.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/invites/{code}`.
+    /// - Remark: Generated from `#/paths//v1/invites/{code}/get(getInvitePreview)`.
+    public func getInvitePreview(
+        path: Operations.GetInvitePreview.Input.Path,
+        headers: Operations.GetInvitePreview.Input.Headers = .init()
+    ) async throws -> Operations.GetInvitePreview.Output {
+        try await getInvitePreview(Operations.GetInvitePreview.Input(
             path: path,
             headers: headers
         ))
@@ -2034,6 +2125,21 @@ extension APIProtocol {
         try await applyImport(Operations.ApplyImport.Input(
             path: path,
             headers: headers
+        ))
+    }
+    /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/resolve`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)`.
+    public func resolveImportRow(
+        path: Operations.ResolveImportRow.Input.Path,
+        headers: Operations.ResolveImportRow.Input.Headers = .init(),
+        body: Operations.ResolveImportRow.Input.Body
+    ) async throws -> Operations.ResolveImportRow.Output {
+        try await resolveImportRow(Operations.ResolveImportRow.Input(
+            path: path,
+            headers: headers,
+            body: body
         ))
     }
     /// - Remark: HTTP `GET /v1/shelves`.
@@ -3887,6 +3993,166 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendInvite`.
+        public struct FriendInvite: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendInvite/code`.
+            public var code: Swift.String
+            /// The link to share: https://aaruapp.com/i/{code}.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendInvite/url`.
+            public var url: Swift.String
+            /// - Remark: Generated from `#/components/schemas/FriendInvite/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/FriendInvite/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/FriendInvite/title`.
+            public var title: Components.Schemas.TitleSummary?
+            /// Creates a new `FriendInvite`.
+            ///
+            /// - Parameters:
+            ///   - code:
+            ///   - url: The link to share: https://aaruapp.com/i/{code}.
+            ///   - createdAt:
+            ///   - expiresAt:
+            ///   - title:
+            public init(
+                code: Swift.String,
+                url: Swift.String,
+                createdAt: Foundation.Date,
+                expiresAt: Foundation.Date,
+                title: Components.Schemas.TitleSummary? = nil
+            ) {
+                self.code = code
+                self.url = url
+                self.createdAt = createdAt
+                self.expiresAt = expiresAt
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case code
+                case url
+                case createdAt
+                case expiresAt
+                case title
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendInviteList`.
+        public struct FriendInviteList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendInviteList/items`.
+            public var items: [Components.Schemas.FriendInvite]
+            /// Creates a new `FriendInviteList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.FriendInvite]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendInviteCreate`.
+        public struct FriendInviteCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendInviteCreate/title`.
+            public var title: Components.Schemas.MediaRef?
+            /// Creates a new `FriendInviteCreate`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            public init(title: Components.Schemas.MediaRef? = nil) {
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/InvitePreview`.
+        public struct InvitePreview: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/InvitePreview/inviter`.
+            public var inviter: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/InvitePreview/title`.
+            public var title: Components.Schemas.TitleSummary?
+            /// - Remark: Generated from `#/components/schemas/InvitePreview/expiresAt`.
+            public var expiresAt: Foundation.Date
+            /// Where you stand with the inviter. Absent when signed out.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InvitePreview/relationship`.
+            @frozen public enum RelationshipPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case none = "none"
+                case friend = "friend"
+                case outgoing = "outgoing"
+                case incoming = "incoming"
+                case _self = "self"
+            }
+            /// Where you stand with the inviter. Absent when signed out.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InvitePreview/relationship`.
+            public var relationship: Components.Schemas.InvitePreview.RelationshipPayload?
+            /// Creates a new `InvitePreview`.
+            ///
+            /// - Parameters:
+            ///   - inviter:
+            ///   - title:
+            ///   - expiresAt:
+            ///   - relationship: Where you stand with the inviter. Absent when signed out.
+            public init(
+                inviter: Components.Schemas.SocialUser,
+                title: Components.Schemas.TitleSummary? = nil,
+                expiresAt: Foundation.Date,
+                relationship: Components.Schemas.InvitePreview.RelationshipPayload? = nil
+            ) {
+                self.inviter = inviter
+                self.title = title
+                self.expiresAt = expiresAt
+                self.relationship = relationship
+            }
+            public enum CodingKeys: String, CodingKey {
+                case inviter
+                case title
+                case expiresAt
+                case relationship
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/InviteRedeem`.
+        public struct InviteRedeem: Codable, Hashable, Sendable {
+            /// Also put the invite's title on your Plan to watch. A title you already have is left alone.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InviteRedeem/addTitle`.
+            public var addTitle: Swift.Bool
+            /// Creates a new `InviteRedeem`.
+            ///
+            /// - Parameters:
+            ///   - addTitle: Also put the invite's title on your Plan to watch. A title you already have is left alone.
+            public init(addTitle: Swift.Bool) {
+                self.addTitle = addTitle
+            }
+            public enum CodingKeys: String, CodingKey {
+                case addTitle
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/InviteRedemption`.
+        public struct InviteRedemption: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/InviteRedemption/friend`.
+            public var friend: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/InviteRedemption/titleAdded`.
+            public var titleAdded: Swift.Bool
+            /// Creates a new `InviteRedemption`.
+            ///
+            /// - Parameters:
+            ///   - friend:
+            ///   - titleAdded:
+            public init(
+                friend: Components.Schemas.SocialUser,
+                titleAdded: Swift.Bool
+            ) {
+                self.friend = friend
+                self.titleAdded = titleAdded
+            }
+            public enum CodingKeys: String, CodingKey {
+                case friend
+                case titleAdded
             }
         }
         /// - Remark: Generated from `#/components/schemas/FriendRequest`.
@@ -11124,6 +11390,709 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/social/blocks/{userId}/delete(unblockUser)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your invite links that are still open, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/social/invites`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/get(listFriendInvites)`.
+    public enum ListFriendInvites {
+        public static let id: Swift.String = "listFriendInvites"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/invites/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriendInvites.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriendInvites.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListFriendInvites.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListFriendInvites.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/invites/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/invites/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.FriendInviteList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.FriendInviteList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListFriendInvites.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListFriendInvites.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/get(listFriendInvites)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListFriendInvites.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListFriendInvites.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/get(listFriendInvites)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Make a one-use invite link, live for 14 days, optionally carrying a title to watch together. Needs your own handle; at most 20 open at once.
+    ///
+    /// - Remark: HTTP `POST /v1/social/invites`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/post(createFriendInvite)`.
+    public enum CreateFriendInvite {
+        public static let id: Swift.String = "createFriendInvite"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/invites/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateFriendInvite.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateFriendInvite.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateFriendInvite.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/social/invites/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/invites/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.FriendInviteCreate)
+            }
+            public var body: Operations.CreateFriendInvite.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateFriendInvite.Input.Headers = .init(),
+                body: Operations.CreateFriendInvite.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/invites/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/invites/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.FriendInvite)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.FriendInvite {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateFriendInvite.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateFriendInvite.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The new link.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/post(createFriendInvite)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.CreateFriendInvite.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.CreateFriendInvite.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/post(createFriendInvite)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Revoke one of your open invite links. Anyone opening it afterwards sees an invalid invite.
+    ///
+    /// - Remark: HTTP `DELETE /v1/social/invites/{code}`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/{code}/delete(revokeFriendInvite)`.
+    public enum RevokeFriendInvite {
+        public static let id: Swift.String = "revokeFriendInvite"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/invites/{code}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/invites/{code}/DELETE/path/code`.
+                public var code: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - code:
+                public init(code: Swift.String) {
+                    self.code = code
+                }
+            }
+            public var path: Operations.RevokeFriendInvite.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/invites/{code}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RevokeFriendInvite.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RevokeFriendInvite.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RevokeFriendInvite.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RevokeFriendInvite.Input.Path,
+                headers: Operations.RevokeFriendInvite.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Revoked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/{code}/delete(revokeFriendInvite)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RevokeFriendInvite.Output.NoContent)
+            /// Revoked.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/{code}/delete(revokeFriendInvite)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RevokeFriendInvite.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/{code}/delete(revokeFriendInvite)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Accept an invite. You and the inviter become friends and the link is spent; already friends leaves it unspent. Needs your own handle.
+    ///
+    /// - Remark: HTTP `POST /v1/social/invites/{code}/redeem`.
+    /// - Remark: Generated from `#/paths//v1/social/invites/{code}/redeem/post(redeemFriendInvite)`.
+    public enum RedeemFriendInvite {
+        public static let id: Swift.String = "redeemFriendInvite"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/invites/{code}/redeem/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/invites/{code}/redeem/POST/path/code`.
+                public var code: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - code:
+                public init(code: Swift.String) {
+                    self.code = code
+                }
+            }
+            public var path: Operations.RedeemFriendInvite.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/invites/{code}/redeem/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RedeemFriendInvite.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RedeemFriendInvite.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RedeemFriendInvite.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/social/invites/{code}/redeem/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/invites/{code}/redeem/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.InviteRedeem)
+            }
+            public var body: Operations.RedeemFriendInvite.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.RedeemFriendInvite.Input.Path,
+                headers: Operations.RedeemFriendInvite.Input.Headers = .init(),
+                body: Operations.RedeemFriendInvite.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/invites/{code}/redeem/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/invites/{code}/redeem/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.InviteRedemption)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.InviteRedemption {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.RedeemFriendInvite.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.RedeemFriendInvite.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The new friend.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/{code}/redeem/post(redeemFriendInvite)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.RedeemFriendInvite.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.RedeemFriendInvite.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/invites/{code}/redeem/post(redeemFriendInvite)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked.
+    ///
+    /// - Remark: HTTP `GET /v1/invites/{code}`.
+    /// - Remark: Generated from `#/paths//v1/invites/{code}/get(getInvitePreview)`.
+    public enum GetInvitePreview {
+        public static let id: Swift.String = "getInvitePreview"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/invites/{code}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/invites/{code}/GET/path/code`.
+                public var code: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - code:
+                public init(code: Swift.String) {
+                    self.code = code
+                }
+            }
+            public var path: Operations.GetInvitePreview.Input.Path
+            /// - Remark: Generated from `#/paths/v1/invites/{code}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetInvitePreview.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetInvitePreview.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetInvitePreview.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetInvitePreview.Input.Path,
+                headers: Operations.GetInvitePreview.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/invites/{code}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/invites/{code}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.InvitePreview)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.InvitePreview {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetInvitePreview.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetInvitePreview.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Who sent it and the title it carries.
+            ///
+            /// - Remark: Generated from `#/paths//v1/invites/{code}/get(getInvitePreview)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetInvitePreview.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetInvitePreview.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/invites/{code}/get(getInvitePreview)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
@@ -25744,6 +26713,207 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/resolve`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)`.
+    public enum ResolveImportRow {
+        public static let id: Swift.String = "resolveImportRow"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/path/id`.
+                public var id: Swift.String
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/path/index`.
+                public var index: Swift.Int
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                ///   - index:
+                public init(
+                    id: Swift.String,
+                    index: Swift.Int
+                ) {
+                    self.id = id
+                    self.index = index
+                }
+            }
+            public var path: Operations.ResolveImportRow.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveImportRow.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveImportRow.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ResolveImportRow.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/requestBody/json/mediaRef`.
+                    public var mediaRef: Components.Schemas.MediaRef
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - mediaRef:
+                    public init(mediaRef: Components.Schemas.MediaRef) {
+                        self.mediaRef = mediaRef
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case mediaRef
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/requestBody/content/application\/json`.
+                case json(Operations.ResolveImportRow.Input.Body.JsonPayload)
+            }
+            public var body: Operations.ResolveImportRow.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.ResolveImportRow.Input.Path,
+                headers: Operations.ResolveImportRow.Input.Headers = .init(),
+                body: Operations.ResolveImportRow.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content/json`.
+                    public struct JsonPayload: Codable, Hashable, Sendable {
+                        /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content/json/job`.
+                        public var job: Components.Schemas.ImportJob
+                        /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content/json/row`.
+                        public var row: Components.Schemas.ImportRow
+                        /// Creates a new `JsonPayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - job:
+                        ///   - row:
+                        public init(
+                            job: Components.Schemas.ImportJob,
+                            row: Components.Schemas.ImportRow
+                        ) {
+                            self.job = job
+                            self.row = row
+                        }
+                        public enum CodingKeys: String, CodingKey {
+                            case job
+                            case row
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/resolve/POST/responses/200/content/application\/json`.
+                    case json(Operations.ResolveImportRow.Output.Ok.Body.JsonPayload)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Operations.ResolveImportRow.Output.Ok.Body.JsonPayload {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ResolveImportRow.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ResolveImportRow.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Matched. The job's counts and the row as it now stands.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ResolveImportRow.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ResolveImportRow.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/resolve/post(resolveImportRow)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

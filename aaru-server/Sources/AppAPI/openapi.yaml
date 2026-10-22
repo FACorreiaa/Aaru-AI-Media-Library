@@ -288,6 +288,79 @@ paths:
           description: Unblocked. Friendship does not come back.
         default:
           $ref: '#/components/responses/Error'
+  /v1/social/invites:
+    get:
+      operationId: listFriendInvites
+      summary: Your invite links that are still open, newest first.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FriendInviteList'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createFriendInvite
+      summary: Make a one-use invite link, live for 14 days, optionally carrying a title to watch together. Needs your own handle; at most 20 open at once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FriendInviteCreate'}
+      responses:
+        '200':
+          description: The new link.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FriendInvite'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/invites/{code}:
+    delete:
+      operationId: revokeFriendInvite
+      summary: Revoke one of your open invite links. Anyone opening it afterwards sees an invalid invite.
+      parameters:
+        - {name: code, in: path, required: true, schema: {type: string}}
+      responses:
+        '204':
+          description: Revoked.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/invites/{code}/redeem:
+    post:
+      operationId: redeemFriendInvite
+      summary: Accept an invite. You and the inviter become friends and the link is spent; already friends leaves it unspent. Needs your own handle.
+      parameters:
+        - {name: code, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/InviteRedeem'}
+      responses:
+        '200':
+          description: The new friend.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InviteRedemption'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/invites/{code}:
+    get:
+      operationId: getInvitePreview
+      summary: What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked.
+      security: []
+      parameters:
+        - {name: code, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: Who sent it and the title it carries.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvitePreview'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/social/reports:
     post:
       operationId: reportUser
@@ -1950,6 +2023,39 @@ paths:
               schema: {$ref: '#/components/schemas/ImportJob'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/imports/{id}/rows/{index}/resolve:
+    post:
+      operationId: resolveImportRow
+      summary: >-
+        Match one unmatched row by hand (IMP-011), with a title the person picked from a search.
+        Before the plan is approved the pick joins the plan; after it, the row is written at once
+        as its own undoable action. The source's status, rating and ticks come with it, merged
+        like any import row.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: index, in: path, required: true, schema: {type: integer}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaRef]
+              properties:
+                mediaRef: {$ref: '#/components/schemas/MediaRef'}
+      responses:
+        '200':
+          description: Matched. The job's counts and the row as it now stands.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [job, row]
+                properties:
+                  job: {$ref: '#/components/schemas/ImportJob'}
+                  row: {$ref: '#/components/schemas/ImportRow'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/shelves:
     get:
       operationId: listShelves
@@ -2579,6 +2685,50 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/SocialUser'}
+    FriendInvite:
+      type: object
+      required: [code, url, createdAt, expiresAt]
+      properties:
+        code: {type: string}
+        url: {type: string, description: 'The link to share: https://aaruapp.com/i/{code}.'}
+        createdAt: {type: string, format: date-time}
+        expiresAt: {type: string, format: date-time}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+    FriendInviteList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/FriendInvite'}
+    FriendInviteCreate:
+      type: object
+      properties:
+        title: {$ref: '#/components/schemas/MediaRef'}
+    InvitePreview:
+      type: object
+      required: [inviter, expiresAt]
+      properties:
+        inviter: {$ref: '#/components/schemas/SocialUser'}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        expiresAt: {type: string, format: date-time}
+        relationship:
+          type: string
+          description: Where you stand with the inviter. Absent when signed out.
+          enum: [none, friend, outgoing, incoming, self]
+    InviteRedeem:
+      type: object
+      required: [addTitle]
+      properties:
+        addTitle:
+          type: boolean
+          description: Also put the invite's title on your Plan to watch. A title you already have is left alone.
+    InviteRedemption:
+      type: object
+      required: [friend, titleAdded]
+      properties:
+        friend: {$ref: '#/components/schemas/SocialUser'}
+        titleAdded: {type: boolean}
     FriendRequest:
       type: object
       required: [id, user, createdAt]

@@ -84,6 +84,6 @@ protocol ScheduleStore: Sendable {
     /// Every dropped item, and in-progress items last changed before `stalledBefore` that are not
     /// in Continue watching (a show with an aired, unwatched episode). Newest change first.
     func unfinished(userID: UserID, stalledBefore: Date, now: Date, limit: Int) async throws -> [UnfinishedEntry]
-    /// Tracked shows whose episodes were never fetched.
+    /// Tracked shows whose episodes were never fetched and not attempted in the last hour.
     func unhydratedTrackedShows(userID: UserID, limit: Int) async throws -> [TitleID]
 }

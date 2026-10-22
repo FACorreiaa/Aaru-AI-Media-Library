@@ -298,6 +298,75 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/social/invites': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your invite links that are still open, newest first. */
+    get: operations['listFriendInvites']
+    put?: never
+    /** Make a one-use invite link, live for 14 days, optionally carrying a title to watch together. Needs your own handle; at most 20 open at once. */
+    post: operations['createFriendInvite']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/invites/{code}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Revoke one of your open invite links. Anyone opening it afterwards sees an invalid invite. */
+    delete: operations['revokeFriendInvite']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/invites/{code}/redeem': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Accept an invite. You and the inviter become friends and the link is spent; already friends leaves it unspent. Needs your own handle. */
+    post: operations['redeemFriendInvite']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/invites/{code}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked. */
+    get: operations['getInvitePreview']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/reports': {
     parameters: {
       query?: never
@@ -1654,6 +1723,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/{id}/rows/{index}/resolve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row. */
+    post: operations['resolveImportRow']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/shelves': {
     parameters: {
       query?: never
@@ -2145,6 +2231,41 @@ export interface components {
     }
     SocialUserList: {
       items: components['schemas']['SocialUser'][]
+    }
+    FriendInvite: {
+      code: string
+      /** @description The link to share: https://aaruapp.com/i/{code}. */
+      url: string
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      expiresAt: string
+      title?: components['schemas']['TitleSummary']
+    }
+    FriendInviteList: {
+      items: components['schemas']['FriendInvite'][]
+    }
+    FriendInviteCreate: {
+      title?: components['schemas']['MediaRef']
+    }
+    InvitePreview: {
+      inviter: components['schemas']['SocialUser']
+      title?: components['schemas']['TitleSummary']
+      /** Format: date-time */
+      expiresAt: string
+      /**
+       * @description Where you stand with the inviter. Absent when signed out.
+       * @enum {string}
+       */
+      relationship?: 'none' | 'friend' | 'outgoing' | 'incoming' | 'self'
+    }
+    InviteRedeem: {
+      /** @description Also put the invite's title on your Plan to watch. A title you already have is left alone. */
+      addTitle: boolean
+    }
+    InviteRedemption: {
+      friend: components['schemas']['SocialUser']
+      titleAdded: boolean
     }
     FriendRequest: {
       /** Format: uuid */
@@ -3602,6 +3723,123 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listFriendInvites: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FriendInviteList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createFriendInvite: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FriendInviteCreate']
+      }
+    }
+    responses: {
+      /** @description The new link. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FriendInvite']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  revokeFriendInvite: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        code: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Revoked. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  redeemFriendInvite: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        code: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['InviteRedeem']
+      }
+    }
+    responses: {
+      /** @description The new friend. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['InviteRedemption']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getInvitePreview: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        code: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Who sent it and the title it carries. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['InvitePreview']
+        }
       }
       default: components['responses']['Error']
     }
@@ -6029,6 +6267,39 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  resolveImportRow: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+        index: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          mediaRef: components['schemas']['MediaRef']
+        }
+      }
+    }
+    responses: {
+      /** @description Matched. The job's counts and the row as it now stands. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            job: components['schemas']['ImportJob']
+            row: components['schemas']['ImportRow']
+          }
         }
       }
       default: components['responses']['Error']
