@@ -2,16 +2,10 @@ import type { components } from '../api/schema'
 import { airingBadge } from '../home/model'
 import { idKeys, kindOf, toRow } from '../library/model'
 import type { CatalogHit, LibraryStatus, MediaKind } from '../library/model'
+import { episodeCode, showStatusLabel } from '../title/model'
 
 export type ListItem = components['schemas']['ListItem']
 export type ShowStatus = NonNullable<ListItem['showStatus']>
-
-const SHOW_STATUS_LABELS: Record<ShowStatus, string> = {
-  upcoming: 'Upcoming',
-  returning: 'Returning',
-  ended: 'Ended',
-  canceled: 'Canceled',
-}
 
 /** One list member, ready to draw (LST-003). Same shape as the Apple apps' `ListItemRow`. */
 export interface ListRow {
@@ -28,8 +22,10 @@ export interface ListRow {
   status?: LibraryStatus
   detail?: string
   showStatus?: string
-  /** "S2E3 · Tomorrow"; just "S2E3" until the page knows the time. */
+  /** "S2 · E3 · Tomorrow"; just "S2 · E3" until the page knows the time. */
   airing?: string
+  /** Set when the title is not in the library: what its Add control adds (UX-072). */
+  hit?: CatalogHit
 }
 
 export function toListRow(item: ListItem, now: Date | null): ListRow {
@@ -37,7 +33,7 @@ export function toListRow(item: ListItem, now: Date | null): ListRow {
   const next = item.nextAiring
   let airing: string | undefined
   if (next) {
-    const episode = `S${next.season}E${next.number}`
+    const episode = episodeCode(next.season, next.number)
     const when = now ? airingBadge(next, now) : null
     airing = when ? `${episode} · ${when}` : episode
   }
@@ -52,8 +48,19 @@ export function toListRow(item: ListItem, now: Date | null): ListRow {
     network: item.title.network,
     status: library?.status,
     detail: library?.detail,
-    showStatus: item.showStatus && SHOW_STATUS_LABELS[item.showStatus],
+    showStatus: showStatusLabel(item.showStatus),
     airing,
+    hit: item.entry
+      ? undefined
+      : {
+          type: item.title.type,
+          title: item.title.title,
+          year: item.title.year,
+          posterUrl: item.title.posterUrl,
+          byline: item.title.byline,
+          isAnime: item.title.isAnime,
+          ids: item.title.ids,
+        },
   }
 }
 

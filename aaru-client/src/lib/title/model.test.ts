@@ -8,6 +8,8 @@ import {
   nextRating,
   ratingLabel,
   orderedSeasons,
+  episodeCode,
+  showStatusLabel,
 } from './model'
 import type { TitleDetail } from './model'
 
@@ -89,5 +91,20 @@ describe('title model', () => {
     expect(neighbours(title, 1, 2).next?.number).toBe(3)
     expect(neighbours(title, 1, 3).next?.season).toBe(0)
     expect(neighbours(title, 9, 9)).toEqual({})
+  })
+})
+
+describe('showStatusLabel', () => {
+  it('names each status as the Apple apps do', () => {
+    expect(showStatusLabel('returning')).toBe('Returning')
+    expect(showStatusLabel('canceled')).toBe('Canceled')
+    expect(showStatusLabel(undefined)).toBeUndefined()
+  })
+})
+
+describe('episodeCode', () => {
+  it('reads S1 · E8, and Special for season 0', () => {
+    expect(episodeCode(1, 8)).toBe('S1 · E8')
+    expect(episodeCode(0, 2)).toBe('Special 2')
   })
 })

@@ -1,6 +1,20 @@
-import { Link, createFileRoute } from '@tanstack/solid-router'
-import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js'
-import { Button } from '~/components/ui'
+import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
+import {
+  For,
+  Show,
+  createMemo,
+  createSignal,
+  onCleanup,
+  onMount,
+} from 'solid-js'
+import {
+  Button,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+  cardClass,
+} from '~/components/ui'
+import { cn } from '~/lib/utils'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import {
   createList,
@@ -10,10 +24,15 @@ import {
 } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
+import { optionalEnum } from '../lib/search-params'
 
 // APP-006 on the web: every list, with create, rename and delete.
 export const Route = createFileRoute('/_shell/app_/lists/')({
   head: () => ({ meta: [{ title: 'Lists · Aaru' }] }),
+  // UX-080: Home's "New list" lands here with `?new=1`, on the name field.
+  validateSearch: (search): { new?: '1' } => ({
+    new: optionalEnum(String(search.new ?? ''), ['1']),
+  }),
   loader: () => getLists(),
   component: Lists,
 })
@@ -31,7 +50,22 @@ function Lists() {
     (last) => pending() ?? last,
     null,
   )
-  let shelf: HTMLUListElement | undefined
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  let grid: HTMLUListElement | undefined
+  let nameField: HTMLInputElement | undefined
+  onMount(() => {
+    if (search().new !== '1') return
+    nameField?.focus()
+    // Back or a reload does not focus it again.
+    void navigate({ search: {}, replace: true })
+  })
+  /** Focuses a row's rename field once it is on the page. */
+  const focusOnMount = (el: HTMLInputElement) =>
+    queueMicrotask(() => {
+      el.focus()
+      el.select()
+    })
   // Each row's element, so a delete can play its exit before it leaves the DOM.
   const rowEls = new Map<string, HTMLLIElement>()
 
@@ -40,7 +74,7 @@ function Lists() {
     const el = rowEls.get(id)
     if (el) await leave(el)
     const mutate = () => setLists(lists().filter((l) => l.id !== id))
-    if (shelf) await flip(shelf, mutate)
+    if (grid) await flip(grid, mutate)
     else mutate()
   }
 
@@ -76,7 +110,7 @@ function Lists() {
           Lists
         </h1>
         <form
-          class="mt-6 flex gap-2"
+          class="mt-6 flex max-w-xl gap-2"
           onSubmit={(e) => {
             e.preventDefault()
             void run(async () => {
@@ -86,16 +120,14 @@ function Lists() {
             })
           }}
         >
-          <label for="list-name" class="sr-only">
-            New list name
-          </label>
-          <input
-            id="list-name"
-            placeholder="Name a new list"
-            value={name()}
-            onInput={(e) => setName(e.currentTarget.value)}
-            class="min-h-11 flex-1 rounded-full border-0 bg-surface px-5 text-base focus:ring-2 focus:ring-accent"
-          />
+          <TextField class="flex-1" value={name()} onChange={setName}>
+            <TextFieldLabel class="sr-only">New list name</TextFieldLabel>
+            <TextFieldInput
+              ref={nameField}
+              placeholder="Name a new list"
+              class="min-h-11 rounded-full border-0 bg-surface px-5 text-base md:text-base"
+            />
+          </TextField>
           <Button type="submit" variant="default" disabled={!name().trim()}>
             Create
           </Button>
@@ -115,7 +147,11 @@ function Lists() {
             </p>
           }
         >
-          <ul ref={shelf} class="mt-8 divide-y divide-line">
+          {/* WEB-006: as many columns as the width holds. */}
+          <ul
+            ref={grid}
+            class="mt-8 grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-3"
+          >
             <For each={lists()}>
               {(list) => (
                 <li
@@ -123,7 +159,7 @@ function Lists() {
                     rowEls.set(list.id, el)
                     onCleanup(() => rowEls.delete(list.id))
                   }}
-                  class="flex items-center gap-4 py-4"
+                  class={cn(cardClass, 'flex items-center gap-3 p-4')}
                 >
                   <Show
                     when={editing() === list.id}
@@ -165,37 +201,47 @@ function Lists() {
                         })
                       }}
                     >
-                      <input
+                      <TextField
+                        class="flex-1"
                         name="name"
-                        aria-label="List name"
-                        value={list.name}
-                        autofocus
-                        class="min-h-10 flex-1 rounded-full border-0 bg-surface px-4 focus:ring-2 focus:ring-accent"
-                      />
-                      <button
+                        defaultValue={list.name}
+                      >
+                        <TextFieldLabel class="sr-only">
+                          List name
+                        </TextFieldLabel>
+                        <TextFieldInput
+                          ref={focusOnMount}
+                          class="min-h-10 rounded-full border-0 bg-paper px-4"
+                        />
+                      </TextField>
+                      <Button
                         type="submit"
+                        variant="link"
+                        size="bare"
                         class="text-sm font-semibold text-accent"
                       >
                         Save
-                      </button>
+                      </Button>
                     </form>
                   </Show>
-                  <button
-                    type="button"
-                    class="text-sm text-muted hover:text-ink"
+                  <Button
+                    variant="ghost"
+                    size="bare"
+                    class="min-h-9 px-1.5 text-sm"
                     onClick={() =>
                       setEditing(editing() === list.id ? null : list.id)
                     }
                   >
                     {editing() === list.id ? 'Cancel' : 'Rename'}
-                  </button>
-                  <button
-                    type="button"
-                    class="text-sm text-muted hover:text-danger"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="bare"
+                    class="min-h-9 px-1.5 text-sm hover:text-danger"
                     onClick={() => setPending(list)}
                   >
                     Delete
-                  </button>
+                  </Button>
                 </li>
               )}
             </For>

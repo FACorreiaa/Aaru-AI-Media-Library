@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/solid-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import { BackLink } from '../components/shell/BackLink'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { Button } from '~/components/ui'
@@ -20,12 +20,25 @@ import type { ImportDetail } from '../lib/imports/server'
 // APP-007 on the web: one import. A ledger of steps while it is matched (IMP-017), then the
 // plan to approve.
 export const Route = createFileRoute('/_shell/app_/imports/$id')({
-  head: () => ({ meta: [{ title: 'Import · Aaru' }] }),
   loader: ({ params }) => getImport({ data: { id: params.id } }),
+  // UX-013: the tab names the import.
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData
+          ? `${loaderData.job.filename ?? sourceLabel(loaderData.job)} · Import · Aaru`
+          : 'Import · Aaru',
+      },
+    ],
+  }),
   component: ImportPage,
 })
 
 type Outcome = ImportDetail['rows'][number]['outcome']
+
+/** Rows drawn per section; the rest are counted (UX-078). */
+const SHOWN = 200
+const count = new Intl.NumberFormat('en')
 
 function ImportPage() {
   const loaded = Route.useLoaderData()
@@ -104,22 +117,29 @@ function ImportPage() {
         </p>
         <Show when={importSteps(job()).length > 0}>
           <Ledger steps={importSteps(job())} />
-          <p class="mt-6 text-sm text-muted">
-            You can leave this page: the plan waits under Settings → Imports,
-            and nothing reaches your shelf until you approve it.
+          <p class="mt-6 max-w-prose text-sm text-muted">
+            You can leave this page: the plan waits under Settings → Import, and
+            nothing reaches your library until you approve it.
           </p>
           <Show when={job().state === 'queued'}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="bare"
               onClick={discard}
-              class="mt-3 text-sm text-muted hover:text-danger"
+              class="mt-3 min-h-9 text-sm hover:text-danger"
             >
               Cancel this import
-            </button>
+            </Button>
           </Show>
         </Show>
-        <Show when={job().state === 'failed' && job().errorSummary}>
-          <p class="mt-3 text-sm text-danger">{job().errorSummary}</p>
+        <Show when={job().state === 'failed'}>
+          <Show when={job().errorSummary}>
+            <p class="mt-3 text-sm text-danger">{job().errorSummary}</p>
+          </Show>
+          {/* UX-078: a failed import is not kept forever. */}
+          <Button variant="outline" size="sm" class="mt-4" onClick={discard}>
+            Remove this import
+          </Button>
         </Show>
         <Show when={problem()}>
           {(message) => (
@@ -130,9 +150,9 @@ function ImportPage() {
         </Show>
 
         <Show when={!isWorking(job()) && job().state !== 'failed'}>
-          <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="mt-6 grid max-w-[56rem] grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
             {stat(
-              planned() ? 'New on your shelf' : 'Added',
+              planned() ? 'New in your library' : 'Added',
               job().stats.created,
             )}
             {stat(planned() ? 'Filled in' : 'Updated', job().stats.updated)}
@@ -151,17 +171,31 @@ function ImportPage() {
             >
               {applying() ? 'Importing…' : 'Approve and import'}
             </Button>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="bare"
               onClick={discard}
-              class="text-sm text-muted hover:text-danger"
+              class="min-h-9 text-sm hover:text-danger"
             >
               Discard
-            </button>
+            </Button>
             <span class="text-sm text-muted">
               Lands in your history as one action you can undo.
             </span>
           </div>
+        </Show>
+        {/* UX-060: an applied import is one action in History, undone from there. */}
+        <Show when={job().state === 'succeeded' || job().state === 'partial'}>
+          <p class="mt-6 text-sm text-muted">
+            This import is one action in your history.{' '}
+            <Link
+              to="/app/settings/data"
+              hash="history"
+              class="font-medium text-accent hover:underline"
+            >
+              Undo it from History
+            </Link>
+          </p>
         </Show>
 
         <For
@@ -179,8 +213,8 @@ function ImportPage() {
                 <h2 class="font-display text-xl font-medium">
                   {title} ({rows(outcome).length})
                 </h2>
-                <ul class="mt-3 divide-y divide-line">
-                  <For each={rows(outcome).slice(0, 200)}>
+                <ul class="mt-3 max-w-[56rem] divide-y divide-line">
+                  <For each={rows(outcome).slice(0, SHOWN)}>
                     {(row) => (
                       <li class="py-2.5">
                         <p class="font-medium">
@@ -194,6 +228,12 @@ function ImportPage() {
                     )}
                   </For>
                 </ul>
+                <Show when={rows(outcome).length > SHOWN}>
+                  <p class="mt-3 text-sm text-muted tabular-nums">
+                    Showing {count.format(SHOWN)} of{' '}
+                    {count.format(rows(outcome).length)}
+                  </p>
+                </Show>
               </section>
             </Show>
           )}

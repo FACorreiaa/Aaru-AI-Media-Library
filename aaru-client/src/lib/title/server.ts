@@ -126,3 +126,16 @@ export const updateItem = createServerFn({ method: 'POST' })
       throw new Error(errorMessage(error, 'That change was not saved.'))
     return entry
   })
+
+/** UX-061: takes the title out of the library. The server journals it, so History can undo it. */
+export const removeItem = createServerFn({ method: 'POST' })
+  .validator(z.object({ id: itemId }))
+  .handler(async ({ data }): Promise<void> => {
+    const { error, response } = await api(sessionToken()).DELETE(
+      '/v1/library/items/{id}',
+      { params: { path: { id: data.id } } },
+    )
+    if (response.status === 401) sessionRejected()
+    if (!response.ok)
+      throw new Error(errorMessage(error, 'The title was not removed.'))
+  })

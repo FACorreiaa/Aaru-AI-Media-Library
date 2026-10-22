@@ -11,10 +11,13 @@ import {
   onMount,
 } from 'solid-js'
 import type { JSX } from 'solid-js'
+import { AddControl } from '../components/AddControl'
 import { Poster } from '../components/Poster'
 import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { KINDS, statusLabel } from '../lib/library/model'
+import type { CatalogHit, LibraryStatus } from '../lib/library/model'
+import { addToLibrary } from '../lib/library/server'
 import { toListRow } from '../lib/lists/model'
 import type { ListRow } from '../lib/lists/model'
 import { getList, removeFromList, reorderList } from '../lib/lists/server'
@@ -29,8 +32,11 @@ const SearchPanel = lazy(() =>
 )
 
 export const Route = createFileRoute('/_shell/app_/lists/$id')({
-  head: () => ({ meta: [{ title: 'List · Aaru' }] }),
   loader: ({ params }) => getList({ data: { id: params.id } }),
+  // UX-013: the tab names the list.
+  head: ({ loaderData }) => ({
+    meta: [{ title: `${loaderData?.name ?? 'List'} · Lists · Aaru` }],
+  }),
   component: ListPage,
 })
 
@@ -46,6 +52,8 @@ function ListPage() {
   // The last row asked about, so the dialog keeps its title while it fades out.
   const asked = createMemo<ListRow | null>((last) => pending() ?? last, null)
   const [searchOpen, setSearchOpen] = createSignal(false)
+  // Members being added to the library right now, by title id.
+  const [adding, setAdding] = createSignal<ReadonlySet<string>>(new Set())
   let list: HTMLOListElement | undefined
   // Each row's element, so a removal can play its exit before it leaves the DOM.
   const rowEls = new Map<string, HTMLLIElement>()
@@ -90,6 +98,45 @@ function ListPage() {
       setProblem(
         error instanceof Error ? error.message : 'The new order was not saved.',
       )
+    }
+  }
+
+  /** UX-072: a member only on the list joins the library from its row, as on Discover. */
+  async function addMember(
+    titleId: string,
+    hit: CatalogHit,
+    status: LibraryStatus,
+  ) {
+    if (adding().has(titleId)) return
+    setAdding(new Set([...adding(), titleId]))
+    setProblem(null)
+    try {
+      const entry = await addToLibrary({
+        data: {
+          type: hit.type,
+          ids: hit.ids,
+          title: hit.title,
+          year: hit.year,
+          status,
+        },
+      })
+      const current = detail()
+      setDetail({
+        ...current,
+        items: current.items.map((item) =>
+          item.title.id === titleId ? { ...item, entry } : item,
+        ),
+      })
+    } catch (error) {
+      setProblem(
+        error instanceof Error
+          ? error.message
+          : `${hit.title} could not be added.`,
+      )
+    } finally {
+      const rest = new Set(adding())
+      rest.delete(titleId)
+      setAdding(rest)
     }
   }
 
@@ -156,7 +203,8 @@ function ListPage() {
             </div>
           }
         >
-          <ol ref={list} class="mt-8 divide-y divide-line">
+          {/* An ordered list reads top to bottom: one column, at a width rows can be read. */}
+          <ol ref={list} class="mt-8 max-w-[56rem] divide-y divide-line">
             <For each={ids()}>
               {(id, index) => {
                 // The last known row: it stays drawn while a removed one is torn down.
@@ -225,6 +273,20 @@ function ListPage() {
                       </div>
                     </RowLink>
                     <div class="flex items-center gap-1 text-sm">
+                      <Show when={row().hit}>
+                        {(hit) => (
+                          <div class="mr-2">
+                            <AddControl
+                              hit={hit()}
+                              adding={adding().has(id)}
+                              idPrefix="list"
+                              onAdd={(status) =>
+                                void addMember(id, hit(), status)
+                              }
+                            />
+                          </div>
+                        )}
+                      </Show>
                       <Button
                         variant="soft"
                         size="bare"
@@ -245,13 +307,14 @@ function ListPage() {
                       >
                         ↓
                       </Button>
-                      <button
-                        type="button"
-                        class="ml-2 text-muted hover:text-danger"
+                      <Button
+                        variant="ghost"
+                        size="bare"
+                        class="ml-2 min-h-9 px-1.5 text-sm hover:text-danger"
                         onClick={() => setPending(row())}
                       >
                         Remove
-                      </button>
+                      </Button>
                     </div>
                   </li>
                 )

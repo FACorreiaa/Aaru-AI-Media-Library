@@ -5,6 +5,25 @@ export type Season = components['schemas']['Season']
 export type Episode = components['schemas']['Episode']
 export type LibraryItemPatch = components['schemas']['LibraryItemPatch']
 
+const SHOW_STATUS: Record<NonNullable<TitleDetail['status']>, string> = {
+  upcoming: 'Upcoming',
+  returning: 'Returning',
+  ended: 'Ended',
+  canceled: 'Canceled',
+}
+
+/** UX-047: the catalog's show status in the words the Apple apps use ("Returning", "Ended"). */
+export function showStatusLabel(
+  status: TitleDetail['status'] | undefined,
+): string | undefined {
+  return status ? SHOW_STATUS[status] : undefined
+}
+
+/** "S1 · E8", the one way an episode is named (UX-045); specials read "Special 2". */
+export function episodeCode(season: number, number: number): string {
+  return season === 0 ? `Special ${number}` : `S${season} · E${number}`
+}
+
 /** "season:number", the key a tick is stored under. */
 export const episodeKey = (season: number, number: number) =>
   `${season}:${number}`

@@ -37,7 +37,7 @@ describe('list model', () => {
     expect(row.status).toBeUndefined()
     expect(row.showStatus).toBe('Returning')
     expect(row.network).toBe('Apple TV+')
-    expect(row.airing).toBe('S2E3 · Tomorrow')
+    expect(row.airing).toBe('S2 · E3 · Tomorrow')
   })
 
   it('names only the episode until the page knows the time', () => {
@@ -52,7 +52,7 @@ describe('list model', () => {
       }),
       null,
     )
-    expect(row.airing).toBe('S1E1')
+    expect(row.airing).toBe('S1 · E1')
   })
 
   it('carries the library status and progress, and links by library item', () => {

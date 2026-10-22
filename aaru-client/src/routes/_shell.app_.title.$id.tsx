@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from '@tanstack/solid-router'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/solid-router'
 import { BackLink } from '../components/shell/BackLink'
 import {
   For,
@@ -11,44 +11,64 @@ import {
   onMount,
 } from 'solid-js'
 import { AddToListDialog } from '../components/AddToListDialog'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
+import { Segmented } from '../components/Segmented'
 import {
   Button,
   Card,
-  cardClass,
-  ToggleGroup,
-  ToggleGroupItem,
+  Checkbox,
+  CheckboxControl,
+  CheckboxInput,
+  CheckboxLabel,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuTrigger,
+  RadioGroup,
+  RadioGroupItem,
+  RadioGroupItemInput,
+  RadioGroupItemLabel,
+  RadioGroupLabel,
   Switch,
   SwitchControl,
   SwitchInput,
   SwitchLabel,
   SwitchThumb,
-  Toaster,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+  TextFieldTextArea,
+  cardClass,
   toast,
 } from '~/components/ui'
+import { lastShown } from '../lib/presence'
 import { cn } from '~/lib/utils'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
 import type { LibraryEntry, LibraryStatus } from '../lib/library/model'
 import {
   getTitlePage,
   markSeason,
+  removeItem,
   setEpisode,
   updateItem,
 } from '../lib/title/server'
 import {
   airLabel,
   airedKeys,
+  episodeCode,
   episodeKey,
   hasAired,
   neighbours,
   nextEpisode,
-  nextRating,
-  ratingLabel,
   orderedSeasons,
+  ratingLabel,
+  showStatusLabel,
 } from '../lib/title/model'
 import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
 
@@ -56,8 +76,11 @@ import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
 // (MUS-001) is a big square cover, its artist and genres, then the usual controls and its
 // tracklist: no progress, no episodes.
 export const Route = createFileRoute('/_shell/app_/title/$id')({
-  head: () => ({ meta: [{ title: 'Title · Aaru' }] }),
   loader: ({ params }) => getTitlePage({ data: { id: params.id } }),
+  // UX-013: the tab names the title.
+  head: ({ loaderData }) => ({
+    meta: [{ title: `${loaderData?.entry.title.title ?? 'Title'} · Aaru` }],
+  }),
   component: TitleRoom,
 })
 
@@ -79,12 +102,21 @@ const watchedSet = (entry: LibraryEntry) =>
 function TitleRoom() {
   const page = Route.useLoaderData()
   const router = useRouter()
+  const navigate = useNavigate()
   const title = () => page().title ?? undefined
   const [entry, setEntry] = createSignal<LibraryEntry>(page().entry)
   const [watched, setWatched] = createSignal(watchedSet(page().entry))
   const [pending, setPending] = createSignal<Set<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
   const [picking, setPicking] = createSignal(false)
+  // Mounted on first open, then kept, so closing plays the exit (WEB-011).
+  const [pickedOnce, setPickedOnce] = createSignal(false)
+  const pick = () => {
+    setPickedOnce(true)
+    setPicking(true)
+  }
+  const [removing, setRemoving] = createSignal(false)
+  const [removeBusy, setRemoveBusy] = createSignal(false)
   const [notes, setNotes] = createSignal(page().entry.notes ?? '')
   const [pageNumber, setPageNumber] = createSignal(
     page().entry.bookProgress?.page?.toString() ?? '',
@@ -98,6 +130,7 @@ function TitleRoom() {
   })
 
   const [opened, setOpened] = createSignal<Episode | null>(null)
+  const shownEpisode = lastShown(opened)
   const [retrying, setRetrying] = createSignal(false)
 
   const kind = () => kindOf(entry().title.type, entry().title.isAnime)
@@ -145,7 +178,7 @@ function TitleRoom() {
       setProblem(
         error instanceof Error
           ? error.message
-          : `S${season} E${number} was not saved.`,
+          : `${episodeCode(season, number)} was not saved.`,
       )
     } finally {
       const rest = new Set(pending())
@@ -194,6 +227,33 @@ function TitleRoom() {
     }
   }
 
+  // UX-061: out of the library, journaled on the server, so History can undo it.
+  async function remove() {
+    setRemoveBusy(true)
+    try {
+      await removeItem({ data: { id: entry().id } })
+      setRemoving(false)
+      toast('Removed from your library', {
+        action: {
+          label: 'History',
+          onClick: () =>
+            void navigate({ to: '/app/settings/data', hash: 'history' }),
+        },
+      })
+      if (window.history.length > 1) router.history.back()
+      else await navigate({ to: '/app/library' })
+    } catch (error) {
+      setRemoving(false)
+      setProblem(
+        error instanceof Error
+          ? error.message
+          : `${entry().title.title} was not removed.`,
+      )
+    } finally {
+      setRemoveBusy(false)
+    }
+  }
+
   // A failed save shows as a toast until the next change starts or it is closed.
   let problemToast: string | number | undefined
   const dismissProblem = () => {
@@ -213,9 +273,7 @@ function TitleRoom() {
       entry().title.year,
       KINDS.find((k) => k.kind === kind())?.label,
       title()?.runtimeMinutes ? `${title()?.runtimeMinutes} min` : undefined,
-      title()?.status
-        ? title()!.status!.charAt(0).toUpperCase() + title()!.status!.slice(1)
-        : undefined,
+      showStatusLabel(title()?.status),
     ]
       .filter(Boolean)
       .join(' · ')
@@ -302,12 +360,7 @@ function TitleRoom() {
             year={entry().title.year}
             genres={title()?.genres}
           >
-            <Button
-              variant="outline"
-              size="sm"
-              class="mt-4"
-              onClick={() => setPicking(true)}
-            >
+            <Button variant="outline" size="sm" class="mt-4" onClick={pick}>
               Add to list
             </Button>
             <DiscussButton
@@ -318,8 +371,8 @@ function TitleRoom() {
           </AlbumHeader>
         </Show>
 
-        {/* What a visit is usually for, in one row: the next episode, where it stands on
-            the shelf, and the two ways to take it elsewhere. */}
+        {/* What a visit is usually for, in one row: the next episode, where it stands in
+            the library, the ways to take it elsewhere, and More. */}
         <div class="mt-6 flex flex-wrap items-center gap-2">
           <Show when={nextUp()}>
             {(episode) => (
@@ -330,35 +383,25 @@ function TitleRoom() {
                 )}
                 onClick={() => void toggle(episode().season, episode().number)}
               >
-                Mark S{episode().season} · E{episode().number} watched
+                Mark {episodeCode(episode().season, episode().number)} watched
               </Button>
             )}
           </Show>
-          <ToggleGroup
-            class="flex flex-wrap gap-1.5"
-            aria-label="Status"
+          <Segmented
+            variant="chip"
+            label="Status"
             value={entry().status}
-            onChange={(next: string | null) => {
-              if (!next) return
-              const status = next as LibraryStatus
+            options={statusOptions(kind()).map((option) => ({
+              value: option.status,
+              label: option.label,
+            }))}
+            itemClass="min-h-11 px-4 text-sm"
+            onChange={(status: LibraryStatus) =>
               void update({ status }, { status })
-            }}
-          >
-            <For each={statusOptions(kind())}>
-              {(option) => (
-                <ToggleGroupItem
-                  size="bare"
-                  value={option.status}
-                  variant="chip"
-                  class="min-h-11 px-4 text-sm"
-                >
-                  {option.label}
-                </ToggleGroupItem>
-              )}
-            </For>
-          </ToggleGroup>
+            }
+          />
           <Show when={!isAlbum()}>
-            <Button variant="quiet" onClick={() => setPicking(true)}>
+            <Button variant="quiet" onClick={pick}>
               Add to list
             </Button>
             <DiscussButton
@@ -367,6 +410,38 @@ function TitleRoom() {
               name={entry().title.title}
             />
           </Show>
+          <DropdownMenu placement="bottom-end">
+            <DropdownMenuTrigger
+              as={Button}
+              variant="ghost"
+              size="icon"
+              aria-label={`More for ${entry().title.title}`}
+              class="text-ink"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+                class="size-5"
+              >
+                <circle cx="5.5" cy="12" r="1.6" />
+                <circle cx="12" cy="12" r="1.6" />
+                <circle cx="18.5" cy="12" r="1.6" />
+              </svg>
+            </DropdownMenuTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuContent class="min-w-52 rounded-panel border-line bg-paper p-1">
+                <DropdownMenuItem
+                  variant="destructive"
+                  class="min-h-10 rounded-[10px] px-3"
+                  onSelect={() => setRemoving(true)}
+                >
+                  Remove from library…
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenuPortal>
+          </DropdownMenu>
         </div>
 
         <div class="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -374,7 +449,7 @@ function TitleRoom() {
             <Show when={entry().title.type !== 'show' && title()?.synopsis}>
               <section>
                 <h2 class="eyebrow">About</h2>
-                <p class="mt-3 max-w-[65ch] text-lg leading-relaxed">
+                <p class="mt-3 max-w-prose text-lg leading-relaxed">
                   {title()?.synopsis}
                 </p>
               </section>
@@ -443,38 +518,57 @@ function TitleRoom() {
 
           <aside class="flex flex-col gap-8" aria-label="Your notes">
             <Card class="flex flex-col gap-4 p-5">
-              <div class="flex items-center justify-between gap-4 text-sm font-medium">
-                Rating
-                {/* The group carries the value; only the star equal to it is pressed, and
-                    pressing that one again clears the rating. */}
-                <div
-                  class="-my-2 flex"
-                  role="group"
-                  aria-label={ratingLabel(entry().rating)}
-                >
+              {/* WEB-012: five stars as one radio group ("Rating, 4 of 5"); arrows move the
+                  rating, Clear takes it off. Ratings are stored out of ten. */}
+              <RadioGroup
+                class="flex items-center justify-between gap-4"
+                value={
+                  entry().rating !== undefined && entry().rating! % 2 === 0
+                    ? String(entry().rating! / 2)
+                    : ''
+                }
+                onChange={(value: string) => {
+                  const rating = Number(value) * 2
+                  void update({ rating }, { rating })
+                }}
+              >
+                <RadioGroupLabel class="text-sm font-medium">
+                  Rating
+                  <span class="sr-only">
+                    , {ratingLabel(entry().rating).replace('Rating, ', '')}
+                  </span>
+                </RadioGroupLabel>
+                <div class="-my-2 flex items-center">
                   <For each={[1, 2, 3, 4, 5]}>
                     {(star) => (
-                      <button
-                        type="button"
-                        aria-label={`${star} star${star === 1 ? '' : 's'}`}
-                        aria-pressed={entry().rating === star * 2}
-                        class="grid min-h-11 min-w-8 place-items-center rounded-full text-xl leading-none text-gold"
-                        onClick={() => {
-                          const rating = nextRating(entry().rating, star)
-                          void (rating === null
-                            ? update(
-                                { clear: ['rating'] },
-                                { rating: undefined },
-                              )
-                            : update({ rating }, { rating }))
-                        }}
-                      >
-                        {(entry().rating ?? 0) >= star * 2 ? '★' : '☆'}
-                      </button>
+                      <RadioGroupItem value={String(star)} class="gap-0">
+                        <RadioGroupItemInput />
+                        <RadioGroupItemLabel class="grid min-h-11 min-w-8 cursor-pointer place-items-center rounded-full text-xl leading-none font-normal text-gold peer-focus-visible/radio-group:outline-2 peer-focus-visible/radio-group:outline-offset-2 peer-focus-visible/radio-group:outline-ring">
+                          <span class="sr-only">{star} of 5</span>
+                          <span aria-hidden="true">
+                            {(entry().rating ?? 0) >= star * 2 ? '★' : '☆'}
+                          </span>
+                        </RadioGroupItemLabel>
+                      </RadioGroupItem>
                     )}
                   </For>
+                  <Show when={entry().rating !== undefined}>
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      class="ml-1"
+                      onClick={() =>
+                        void update(
+                          { clear: ['rating'] },
+                          { rating: undefined },
+                        )
+                      }
+                    >
+                      Clear
+                    </Button>
+                  </Show>
                 </div>
-              </div>
+              </RadioGroup>
               <Switch
                 class="flex items-center justify-between gap-4 text-sm font-medium"
                 checked={entry().isOwned}
@@ -500,30 +594,30 @@ function TitleRoom() {
                     }
                   }}
                 >
-                  <label for="page">Page</label>
-                  <input
-                    id="page"
-                    inputmode="numeric"
-                    class="w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm focus:ring-2 focus:ring-accent"
+                  <TextField
+                    class="flex w-auto flex-row items-center justify-between gap-4"
                     value={pageNumber()}
-                    onInput={(e) => setPageNumber(e.currentTarget.value)}
-                  />
+                    onChange={setPageNumber}
+                  >
+                    <TextFieldLabel>Page</TextFieldLabel>
+                    <TextFieldInput
+                      inputmode="numeric"
+                      class="min-h-9 w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm"
+                    />
+                  </TextField>
                 </form>
               </Show>
             </Card>
             <section>
-              <label for="notes" class="eyebrow">
-                Notes
-              </label>
-              <textarea
-                ref={notesField}
-                id="notes"
-                rows="3"
-                placeholder="Anything worth remembering"
-                class="mt-3 w-full rounded-panel border-0 bg-surface px-4 py-3 text-base focus:ring-2 focus:ring-accent"
-                value={notes()}
-                onInput={(e) => setNotes(e.currentTarget.value)}
-              />
+              <TextField value={notes()} onChange={setNotes} class="gap-0">
+                <TextFieldLabel class="eyebrow">Notes</TextFieldLabel>
+                <TextFieldTextArea
+                  ref={notesField}
+                  rows="3"
+                  placeholder="Anything worth remembering"
+                  class="mt-3 w-full rounded-panel border-0 bg-surface px-4 py-3 text-base md:text-base"
+                />
+              </TextField>
               <Show when={notes() !== (entry().notes ?? '')}>
                 <Button
                   variant="outline"
@@ -551,9 +645,10 @@ function TitleRoom() {
             </Show>
           </aside>
         </div>
-        <Show when={opened()}>
+        <Show when={shownEpisode()}>
           {(episode) => (
             <EpisodeSheet
+              open={opened() !== null}
               showTitle={entry().title.title}
               episode={episode()}
               {...neighbours(title(), episode().season, episode().number)}
@@ -565,15 +660,25 @@ function TitleRoom() {
             />
           )}
         </Show>
-        <Show when={picking()}>
+        <Show when={pickedOnce()}>
           <AddToListDialog
+            open={picking()}
             mediaRef={{ titleId: entry().title.id, type: entry().title.type }}
             titleName={entry().title.title}
             onClose={() => setPicking(false)}
           />
         </Show>
+        <ConfirmDialog
+          open={removing()}
+          title={`Remove ${entry().title.title} from your library?`}
+          description="Its status, rating, notes and ticks go. You can undo it from History."
+          confirmLabel="Remove"
+          cancelLabel="Keep it"
+          busy={removeBusy()}
+          onConfirm={() => void remove()}
+          onCancel={() => setRemoving(false)}
+        />
       </div>
-      <Toaster />
     </div>
   )
 }
@@ -598,13 +703,14 @@ function SeasonBlock(props: {
     // first in the DOM so the tab order stays next to the summary, before the episodes.
     <div class={cn(cardClass, 'relative')}>
       <Show when={props.season.number > 0 && props.canMarkAll}>
-        <button
-          type="button"
-          class="absolute top-[15px] z-10 right-5 rounded-full border border-ink/25 px-3 py-1 text-xs font-semibold hover:bg-paper"
+        <Button
+          variant="outline"
+          size="xs"
+          class="absolute top-[15px] right-5 z-10 hover:bg-paper"
           onClick={() => props.onMarkAll(props.season.number)}
         >
           Mark watched
-        </button>
+        </Button>
       </Show>
       <details open={props.open}>
         <summary class="flex h-14 cursor-pointer list-none items-center gap-4 px-5 [&::-webkit-details-marker]:hidden">
@@ -628,10 +734,8 @@ function SeasonBlock(props: {
                   class="flex items-center gap-3 rounded-[12px] px-3 py-2 hover:bg-paper/60"
                   classList={{ 'opacity-60': !aired && !isWatched() }}
                 >
-                  <input
-                    type="checkbox"
-                    class="h-5 w-5 shrink-0 accent-accent disabled:cursor-not-allowed"
-                    aria-label={`Episode ${episode.number} watched`}
+                  <Checkbox
+                    class="shrink-0"
                     checked={isWatched()}
                     disabled={
                       (!aired && !isWatched()) || props.pending.has(key())
@@ -639,10 +743,17 @@ function SeasonBlock(props: {
                     onChange={() =>
                       props.onToggle(episode.season, episode.number)
                     }
-                  />
-                  <button
-                    type="button"
-                    class="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
+                    <CheckboxInput />
+                    <CheckboxControl class="size-5 rounded-[6px] border-ink/30 bg-paper data-[checked]:border-accent data-[checked]:bg-accent data-[checked]:text-on-accent" />
+                    <CheckboxLabel class="sr-only">
+                      Episode {episode.number} watched
+                    </CheckboxLabel>
+                  </Checkbox>
+                  <Button
+                    variant="ghost"
+                    size="bare"
+                    class="min-w-0 flex-1 justify-start gap-3 rounded-[10px] text-left font-normal text-ink hover:text-ink motion-safe:active:scale-100"
                     onClick={() => props.onOpen(episode)}
                   >
                     <Show
@@ -680,7 +791,7 @@ function SeasonBlock(props: {
                         </span>
                       </Show>
                     </span>
-                  </button>
+                  </Button>
                 </li>
               )
             }}

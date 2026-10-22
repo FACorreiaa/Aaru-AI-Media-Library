@@ -1,5 +1,6 @@
-import { Link, createFileRoute } from '@tanstack/solid-router'
+import { createFileRoute } from '@tanstack/solid-router'
 import { PlanCard } from '../components/PlanCard'
+import { BackLink } from '../components/shell/BackLink'
 import { getPlan } from '../lib/plans/server'
 
 // OUT-004: one agent request, where its push notification opens.
@@ -14,10 +15,9 @@ function PlanPage() {
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
-        <Link to="/app" class="mt-6 inline-block text-sm text-accent">
-          ← Home
-        </Link>
-        <div class="mt-4">
+        <BackLink to="/app" label="Home" class="-ml-1" />
+        {/* A request reads as one card; it does not stretch across a wide screen. */}
+        <div class="mt-4 max-w-2xl">
           <PlanCard plan={plan()} />
         </div>
       </div>

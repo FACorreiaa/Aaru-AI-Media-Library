@@ -1,12 +1,15 @@
 import { Show } from 'solid-js'
-import { airLabel, episodeKey, hasAired } from '../lib/title/model'
+import { airLabel, episodeCode, episodeKey, hasAired } from '../lib/title/model'
 import type { Episode } from '../lib/title/model'
 import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
 
-/** One episode up close: still, synopsis, air date and the same tick as the list. */
+/** One episode up close: still, synopsis, air date and the same tick as the list. `open`
+ * (default true) lets the caller keep it mounted on its last episode, so closing plays the
+ * exit (WEB-011). */
 export function EpisodeSheet(props: {
   showTitle: string
   episode: Episode
+  open?: boolean
   previous?: Episode
   next?: Episode
   watched: Set<string>
@@ -19,14 +22,11 @@ export function EpisodeSheet(props: {
   const isWatched = () => props.watched.has(key())
   const aired = () => hasAired(props.episode)
   const name = () => props.episode.name ?? `Episode ${props.episode.number}`
-  const code = () =>
-    props.episode.season === 0
-      ? `Special ${props.episode.number}`
-      : `S${props.episode.season} · E${props.episode.number}`
+  const code = () => episodeCode(props.episode.season, props.episode.number)
 
   return (
     <Dialog
-      open
+      open={props.open ?? true}
       onOpenChange={(open) => {
         if (!open) props.onClose()
       }}
@@ -90,13 +90,10 @@ export function EpisodeSheet(props: {
               </p>
             </Show>
             <div class="mt-5 flex items-center gap-2">
-              <button
-                type="button"
-                class="rounded-full px-4 py-1.5 text-sm font-semibold disabled:opacity-40"
-                classList={{
-                  'bg-accent text-on-accent': isWatched(),
-                  'border border-ink/25': !isWatched(),
-                }}
+              <Button
+                variant={isWatched() ? 'default' : 'outline'}
+                size="sm"
+                class="font-semibold disabled:opacity-40"
                 aria-pressed={isWatched()}
                 disabled={
                   (!aired() && !isWatched()) || props.pending.has(key())
@@ -110,7 +107,7 @@ export function EpisodeSheet(props: {
                   : aired()
                     ? 'Mark watched'
                     : 'Not aired yet'}
-              </button>
+              </Button>
               <span class="ml-auto flex gap-1">
                 <Button
                   variant="outline"

@@ -1,26 +1,28 @@
 import { For, Show } from 'solid-js'
-import {
-  hitKey,
-  kindOf,
-  statusLabel,
-  statusOptions,
-} from '../lib/library/model'
+import { kindOf, statusLabel, statusOptions } from '../lib/library/model'
 import type { CatalogHit, LibraryStatus } from '../lib/library/model'
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuTrigger,
+} from '~/components/ui'
 
 /**
  * Add to the library: the button adds as planned, the "As…" menu beside it adds with another
  * status, worded for the title's kind ("Plan to watch", "Plan to read"). Shared by Search,
- * Discover and Home's Discover rows. While `adding`, it shows "Adding…" so a second click
- * waits instead of adding twice.
+ * Discover, Home's Discover rows and a list's members (UX-072). While `adding`, it shows
+ * "Adding…" so a second click waits instead of adding twice.
  */
 export function AddControl(props: {
   hit: CatalogHit
   adding: boolean
   onAdd: (status: LibraryStatus) => void
-  /** Id prefix, so one title shown twice on a page keeps unique ids. */
+  /** Kept for callers that render one title twice; the menu needs no ids of its own. */
   idPrefix?: string
 }) {
-  const id = () => `${props.idPrefix ?? 'status'}-${hitKey(props.hit)}`
   const kind = () => kindOf(props.hit.type, props.hit.isAnime)
   return (
     <Show
@@ -28,35 +30,44 @@ export function AddControl(props: {
       fallback={<span class="text-sm text-muted">Adding…</span>}
     >
       <div class="flex items-center overflow-hidden rounded-full border border-ink/25">
-        <button
-          type="button"
-          class="px-4 py-1.5 text-sm font-semibold hover:bg-surface"
+        <Button
+          variant="soft"
+          size="bare"
+          class="rounded-none px-4 py-1.5 text-sm font-semibold"
           aria-label={`Add ${props.hit.title}: ${statusLabel('wishlist', kind())}`}
           onClick={() => props.onAdd('wishlist')}
         >
           Add
-        </button>
-        <label class="sr-only" for={id()}>
-          Add {props.hit.title} with status
-        </label>
-        <select
-          id={id()}
-          class="border-0 border-l border-ink/25 bg-transparent py-1.5 pr-7 pl-2 text-sm text-muted focus:ring-0"
-          onChange={(e) => {
-            const status = e.currentTarget.value
-            e.currentTarget.value = ''
-            if (status) props.onAdd(status as LibraryStatus)
-          }}
-        >
-          <option value="" disabled selected>
-            As…
-          </option>
-          <For
-            each={statusOptions(kind()).filter((s) => s.status !== 'dropped')}
+        </Button>
+        <DropdownMenu placement="bottom-end">
+          <DropdownMenuTrigger
+            as={Button}
+            variant="soft"
+            size="bare"
+            class="rounded-none border-l border-ink/25 py-1.5 pr-3 pl-2.5 text-sm text-muted"
+            aria-label={`Add ${props.hit.title} with status`}
           >
-            {(s) => <option value={s.status}>{s.label}</option>}
-          </For>
-        </select>
+            As…
+          </DropdownMenuTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuContent class="min-w-44 rounded-panel border-line bg-paper p-1">
+              <For
+                each={statusOptions(kind()).filter(
+                  (s) => s.status !== 'dropped',
+                )}
+              >
+                {(s) => (
+                  <DropdownMenuItem
+                    class="min-h-10 rounded-[10px] px-3"
+                    onSelect={() => props.onAdd(s.status)}
+                  >
+                    {s.label}
+                  </DropdownMenuItem>
+                )}
+              </For>
+            </DropdownMenuContent>
+          </DropdownMenuPortal>
+        </DropdownMenu>
       </div>
     </Show>
   )

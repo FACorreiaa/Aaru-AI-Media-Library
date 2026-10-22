@@ -1,7 +1,15 @@
-import { For, Show, createSignal, onMount } from 'solid-js'
+import { For, Show, createEffect, createSignal, on } from 'solid-js'
 import { addToList, createList, getLists } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
-import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogPortal,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui'
 import type { MediaType } from '../lib/media'
 
 export interface MediaRefInput {
@@ -12,30 +20,38 @@ export interface MediaRefInput {
   year?: number
 }
 
-/** Picks lists for one title: click to add; a new list can be made on the spot (APP-006). */
+/** Picks lists for one title: click to add; a new list can be made on the spot (APP-006).
+ * `open` (default true) lets a caller keep it mounted, so closing plays the exit (WEB-011); the
+ * lists reload each time it opens. */
 export function AddToListDialog(props: {
   mediaRef: MediaRefInput
   titleName: string
+  open?: boolean
   onClose: () => void
 }) {
+  const open = () => props.open ?? true
   const [lists, setLists] = createSignal<ListSummary[] | null>(null)
   const [added, setAdded] = createSignal<Set<string>>(new Set())
   const [working, setWorking] = createSignal<string | null>(null)
   const [newName, setNewName] = createSignal('')
   const [problem, setProblem] = createSignal<string | null>(null)
 
-  onMount(async () => {
-    try {
-      setLists(await getLists())
-    } catch (error) {
-      setLists([])
-      setProblem(
-        error instanceof Error
-          ? error.message
-          : 'Your lists could not be loaded.',
-      )
-    }
-  })
+  createEffect(
+    on(open, async (isOpen) => {
+      if (!isOpen) return
+      setProblem(null)
+      try {
+        setLists(await getLists())
+      } catch (error) {
+        setLists([])
+        setProblem(
+          error instanceof Error
+            ? error.message
+            : 'Your lists could not be loaded.',
+        )
+      }
+    }),
+  )
 
   async function add(id: string) {
     if (working() || added().has(id)) return
@@ -85,9 +101,9 @@ export function AddToListDialog(props: {
 
   return (
     <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) props.onClose()
+      open={open()}
+      onOpenChange={(next) => {
+        if (!next) props.onClose()
       }}
     >
       <DialogPortal>
@@ -110,16 +126,13 @@ export function AddToListDialog(props: {
             </Button>
           </div>
           <form class="flex gap-2 px-5 pt-4" onSubmit={create}>
-            <label for="new-list" class="sr-only">
-              New list name
-            </label>
-            <input
-              id="new-list"
-              placeholder="New list"
-              value={newName()}
-              onInput={(e) => setNewName(e.currentTarget.value)}
-              class="min-h-10 flex-1 rounded-full border-0 bg-surface px-4 text-sm focus:ring-2 focus:ring-accent"
-            />
+            <TextField class="flex-1" value={newName()} onChange={setNewName}>
+              <TextFieldLabel class="sr-only">New list name</TextFieldLabel>
+              <TextFieldInput
+                placeholder="New list"
+                class="min-h-10 rounded-full border-0 bg-surface px-4 text-sm"
+              />
+            </TextField>
             <Button
               variant="outline"
               type="submit"
@@ -148,9 +161,10 @@ export function AddToListDialog(props: {
             <For each={lists() ?? []}>
               {(list) => (
                 <li>
-                  <button
-                    type="button"
-                    class="flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left hover:bg-surface disabled:hover:bg-transparent"
+                  <Button
+                    variant="soft"
+                    size="bare"
+                    class="w-full justify-between rounded-[12px] px-3 py-2.5 text-left text-base disabled:opacity-100 disabled:hover:bg-transparent"
                     disabled={added().has(list.id)}
                     onClick={() => add(list.id)}
                   >
@@ -162,7 +176,7 @@ export function AddToListDialog(props: {
                           ? 'Added'
                           : ''}
                     </span>
-                  </button>
+                  </Button>
                 </li>
               )}
             </For>
