@@ -105,6 +105,7 @@ platform :ios do
       installer_cert_name: macos ? "3rd Party Mac Developer Installer" : nil,
       output_directory: "fastlane/build/#{platform}"
     )
+    upload_dsyms
 
     next if options[:testflight] == false
 
@@ -116,6 +117,23 @@ platform :ios do
       skip_waiting_for_build_processing: macos, # wait once, on the iOS upload
       distribute_external: false
     )
+  end
+
+  # Crash symbols for Sentry (aaru-ios), only when CI has SENTRY_AUTH_TOKEN. A failed upload
+  # never fails the build: the crash still arrives, just unsymbolicated.
+  private_lane :upload_dsyms do
+    next if ENV["SENTRY_AUTH_TOKEN"].to_s.empty?
+
+    begin
+      sentry_debug_files_upload(
+        auth_token: ENV["SENTRY_AUTH_TOKEN"],
+        org_slug: ENV.fetch("SENTRY_ORG", "fernando-lda"),
+        project_slug: ENV.fetch("SENTRY_PROJECT", "aaru-ios"),
+        path: lane_context[SharedValues::DSYM_OUTPUT_PATH]
+      )
+    rescue StandardError => e
+      UI.important("Sentry dSYM upload failed: #{e.message}")
+    end
   end
 
   # Local development uses automatic signing; archives pin the match profile for
