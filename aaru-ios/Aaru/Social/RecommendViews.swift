@@ -14,7 +14,7 @@ struct RecommendationRow: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("\(item.from.inviteName) recommends **\(item.title.title)**")
                 if let note = item.note {
-                    Text("“\(note)”").font(.system(.body, design: .serif)).italic()
+                    Text("“\(note)”").font(.aaruDisplay(.body, weight: .regular, italic: true))
                 }
                 HStack(spacing: 8) {
                     Button("Add to \(LibraryStatus.wishlist.label(for: kind))") { onAnswer(true) }
@@ -60,7 +60,12 @@ struct RecommendSheet: View {
                 }
                 if friend == nil {
                     Section("To") {
-                        if model.friends.isEmpty {
+                        if let failure = model.loadProblem {
+                            Text(failure).foregroundStyle(Color(.danger))
+                            Button("Try again") { Task { await model.load() } }
+                        } else if !model.hasLoaded {
+                            ProgressView().frame(maxWidth: .infinity)
+                        } else if model.friends.isEmpty {
                             Text("No friends yet. Send someone an invite.").foregroundStyle(Color(.muted))
                         }
                         ForEach(model.friends, id: \.userId) { person in
@@ -89,7 +94,7 @@ struct RecommendSheet: View {
                     if sent {
                         Text("Sent. It waits at the top of their Friends.")
                     } else if let problem = model.problem {
-                        Text(problem).foregroundStyle(.red)
+                        Text(problem).foregroundStyle(Color(.danger))
                     }
                 }
             }
@@ -118,7 +123,7 @@ struct RecommendSheet: View {
             picked = title
             if let friend {
                 chosen = [friend.userId]
-            } else if model.friends.isEmpty {
+            } else if !model.hasLoaded {
                 await model.load()
             }
         }
@@ -143,6 +148,8 @@ struct GroupInviteSheet: View {
     @State private var groups: [Components.Schemas.GroupSummary]?
     @State private var invited: Set<String> = []
     @State private var problem: String?
+    /// The groups did not load: Try again, never "No groups yet" (UX-063).
+    @State private var loadFailed = false
 
     var body: some View {
         NavigationStack {
@@ -164,11 +171,15 @@ struct GroupInviteSheet: View {
                     }
                 }
                 if let problem {
-                    Text(problem).foregroundStyle(.red)
+                    Text(problem).foregroundStyle(Color(.danger))
                 }
             }
             .overlay {
-                if groups == nil {
+                if loadFailed {
+                    LoadFailedView(title: "Your groups didn't load", message: "Aaru could not reach the server.") {
+                        await load()
+                    }
+                } else if groups == nil {
                     ProgressView()
                 }
             }
@@ -187,15 +198,15 @@ struct GroupInviteSheet: View {
 
     private func load() async {
         guard let api else { return }
+        loadFailed = false
         do {
             if case let .ok(response) = try await api.listGroups() {
                 groups = try response.body.json.items
             } else {
-                groups = []
+                loadFailed = true
             }
         } catch {
-            groups = []
-            problem = "Your groups could not be loaded."
+            loadFailed = true
         }
     }
 

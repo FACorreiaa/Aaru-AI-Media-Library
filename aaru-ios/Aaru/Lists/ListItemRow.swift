@@ -33,10 +33,13 @@ struct ListItemRow: View {
                         }
                         if let next = item.nextAiring {
                             TimelineView(.everyMinute) { context in
-                                Text("S\(next.season)E\(next.number) · " + HomeModel.airingLabel(
-                                    airsAt: next.airsAt, airTimeKnown: next.airTimeKnown, now: context.date,
-                                    calendar: .aaru
-                                ))
+                                Text(EpisodeCode.short(season: next.season, number: next.number) + " · " + HomeModel
+                                    .airingLabel(
+                                        airsAt: next.airsAt,
+                                        airTimeKnown: next.airTimeKnown,
+                                        now: context.date,
+                                        calendar: .aaru
+                                    ))
                             }
                             .font(.footnote)
                             .foregroundStyle(.tint)
@@ -54,22 +57,11 @@ struct ListItemRow: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// "2022 · Shows · Apple TV+", or the artist and year for an album.
+    /// "2022 · Show · Apple TV+", or the artist and year for an album.
     private var metaLine: String {
         let year = item.title.year.map(String.init)
-        let parts = kind == .music ? [item.title.byline, year] : [year, kind.label, item.title.network]
+        let parts = kind == .music ? [item.title.byline, year] : [year, kind.noun, item.title.network]
         return parts.compactMap(\.self).joined(separator: " · ")
-    }
-}
-
-extension Components.Schemas.ListItem.ShowStatusPayload {
-    var label: String {
-        switch self {
-        case .upcoming: "Upcoming"
-        case .returning: "Returning"
-        case .ended: "Ended"
-        case .canceled: "Canceled"
-        }
     }
 }
 

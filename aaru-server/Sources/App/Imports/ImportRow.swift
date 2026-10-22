@@ -29,7 +29,8 @@ struct ImportRow: Codable, Sendable, Equatable {
     /// `watched` once it has the show's episode list, then clears it.
     var stremioWatched: String?
     /// Pogdesign CAT gives a show's name and nothing else: matched by exact name across every
-    /// year, still only when exactly one show has it (IMP-009).
+    /// year, still only when exactly one show has it (IMP-009). On a row with ids (TV Time,
+    /// IMP-012), the same exact-name match is tried only when no provider knows the ids.
     var nameOnly: Bool?
     /// One episode CAT's calendar says this show airs. When several shows share the name, the
     /// one that airs that episode that day is the match (IMP-010).

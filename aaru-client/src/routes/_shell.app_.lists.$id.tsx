@@ -22,6 +22,7 @@ import { toListRow } from '../lib/lists/model'
 import type { ListRow } from '../lib/lists/model'
 import { removeFromList, reorderList } from '../lib/lists/server'
 import type { ListDetail } from '../lib/lists/server'
+import { createFocusReturn, focusFieldOnOpen } from '../lib/dialog-focus'
 import { flip, leave } from '../lib/motion'
 import { listQuery } from '../lib/queries'
 
@@ -77,7 +78,9 @@ function ListPage() {
     else mutate()
   }
 
-  function openSearch() {
+  const focusReturn = createFocusReturn()
+  function openSearch(event: MouseEvent) {
+    focusReturn.remember(event.currentTarget as Element)
     setSearchOpened(true)
     setSearchOpen(true)
   }
@@ -342,6 +345,8 @@ function ListPage() {
           <DialogContent
             showCloseButton={false}
             aria-label={`Add to ${detail().name}`}
+            onOpenAutoFocus={focusFieldOnOpen}
+            onCloseAutoFocus={focusReturn.restore}
             class="block gap-0 p-0 w-[min(40rem,calc(100vw-2rem))]"
           >
             <Show when={searchOpened()}>

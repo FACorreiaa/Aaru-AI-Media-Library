@@ -1,4 +1,3 @@
-import MapKit
 import SwiftUI
 
 /// Discover's Concerts view (MUS-003): "Your artists on tour", then concerts near the saved
@@ -56,7 +55,7 @@ private struct ArtistsOnTourSection: View {
             ConcertsHeader(title: "Your artists on tour")
             if let artists = model.artists {
                 if artists.unavailable, artists.items.isEmpty {
-                    QuietNote("Ticketmaster isn't answering right now.")
+                    QuietNote("Concert listings aren't answering right now.")
                 } else if artists.items.isEmpty {
                     QuietNote(emptyText(artists))
                 } else {
@@ -95,7 +94,7 @@ private struct ArtistsOnTourSection: View {
             return "Checking \(Self.artistCount(artists.pending, more: false)) — back within the hour"
         }
         if artists.matched == 0 {
-            return "When an artist of an album on your shelf tours, the dates show here."
+            return "When an artist of an album in your library tours, the dates show here."
         }
         return "None of your artists has a date announced."
     }
@@ -197,7 +196,7 @@ private struct NearHeader: View {
     }
 }
 
-/// The Near list once loaded: Ticketmaster's silence, nothing in range, or the concerts (under
+/// The Near list once loaded: the listings' silence, nothing in range, or the concerts (under
 /// the map when Map is on), with Show more.
 private struct NearResults: View {
     let model: ConcertsModel
@@ -206,7 +205,8 @@ private struct NearResults: View {
         let items = model.nearItems
         if model.nearUnavailable {
             ContentUnavailableView {
-                Label("Ticketmaster isn't answering right now", systemImage: "wifi.exclamationmark")
+                // The vendor is named in the credit, not as the error's subject (UX-050).
+                Label("Concert listings aren't answering", systemImage: "wifi.exclamationmark")
             } description: {
                 Text("Try again in a few minutes.")
             } actions: {
@@ -243,121 +243,6 @@ private struct NearResults: View {
 
     private func loadMore() {
         Task { await model.loadMore() }
-    }
-}
-
-// MARK: Map
-
-/// The searched area: its centre and the radius as a circle. Ticketmaster gives no venue
-/// positions, so the concerts are listed under it rather than pinned on it.
-private struct ConcertsMap: View {
-    let name: String
-    let point: ConcertPoint
-    let radiusKm: Int
-
-    @ScaledMetric(relativeTo: .body) private var height = 240
-
-    private var coordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
-    }
-
-    private var region: MKCoordinateRegion {
-        let span = CLLocationDistance(radiusKm) * 1000 * 2.4
-        return MKCoordinateRegion(center: coordinate, latitudinalMeters: span, longitudinalMeters: span)
-    }
-
-    var body: some View {
-        Map(initialPosition: .region(region), interactionModes: []) {
-            MapCircle(center: coordinate, radius: CLLocationDistance(radiusKm) * 1000)
-                .foregroundStyle(Color.accentColor.opacity(0.15))
-                .stroke(Color.accentColor, lineWidth: 2)
-            Marker(name, systemImage: "music.note", coordinate: coordinate)
-                .tint(Color.accentColor)
-        }
-        .frame(height: height)
-        .clipShape(.rect(cornerRadius: 10))
-        // A new centre or radius frames the map again.
-        .id([point.latitude, point.longitude, Double(radiusKm)])
-        .accessibilityElement()
-        .accessibilityLabel("Map of the \(radiusKm) kilometre area around \(name)")
-    }
-}
-
-// MARK: Pieces
-
-/// A section's title, in the display serif like Home's rows.
-private struct ConcertsHeader: View {
-    let title: String
-
-    var body: some View {
-        Text(title)
-            .font(.aaruDisplay(.title3, weight: .semibold))
-            .foregroundStyle(Color(.ink))
-            .accessibilityAddTraits(.isHeader)
-    }
-}
-
-private struct QuietNote: View {
-    let text: String
-
-    init(_ text: String) {
-        self.text = text
-    }
-
-    var body: some View {
-        Text(text)
-            .font(.subheadline)
-            .foregroundStyle(Color(.muted))
-    }
-}
-
-/// Still placeholder rows while concerts load: redacted, nothing shimmers.
-private struct PlaceholderRows: View {
-    let count: Int
-    let label: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(ConcertRow.placeholders.prefix(count), id: \.id) { concert in
-                ConcertRow(concert: concert)
-            }
-        }
-        .redacted(reason: .placeholder)
-        .allowsHitTesting(false)
-        .accessibilityElement()
-        .accessibilityLabel(label)
-    }
-}
-
-private struct RadiusPicker: View {
-    @Binding var radius: ConcertRadius
-
-    var body: some View {
-        Picker("Radius", selection: $radius) {
-            ForEach(ConcertRadius.allCases, id: \.self) { radius in
-                Text(radius.label)
-                    .accessibilityLabel(radius.spoken)
-                    .tag(radius)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-    }
-}
-
-private struct LayoutPicker: View {
-    @Binding var layout: ConcertsModel.Layout
-
-    var body: some View {
-        Picker("Show as", selection: $layout) {
-            ForEach(ConcertsModel.Layout.allCases) { layout in
-                Label(layout.label, systemImage: layout.systemImage)
-                    .labelStyle(.iconOnly)
-                    .tag(layout)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
     }
 }
 

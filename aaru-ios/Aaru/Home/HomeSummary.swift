@@ -21,6 +21,7 @@ extension LibraryCounts {
 /// finished · active days. Shown at zero too. Opens Insights on the same window.
 struct WeekStrip: View {
     let stats: Stats
+    @Environment(\.dynamicTypeSize) private var dynamicType
 
     private var totals: Components.Schemas.StatsTotals {
         stats.totals
@@ -40,7 +41,15 @@ struct WeekStrip: View {
                     .foregroundStyle(Color(.muted))
                     .accessibilityHidden(true)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
+            // Four across, or two by two at the accessibility sizes so the figures stay whole.
+            LazyVGrid(
+                columns: Array(
+                    repeating: GridItem(.flexible(), spacing: 8, alignment: .leading),
+                    count: dynamicType.isAccessibilitySize ? 2 : 4
+                ),
+                alignment: .leading,
+                spacing: 10
+            ) {
                 figure(totals.episodesWatched.formatted(), totals.episodesWatched == 1 ? "episode" : "episodes")
                 figure(hoursValue(minutes: totals.minutesWatched), "hours")
                 figure(totals.finished.formatted(), "finished")
@@ -89,7 +98,7 @@ private struct WeekBars: View {
     }
 }
 
-/// The shelf by status, in neutral words. A tap opens Library filtered to that status.
+/// The library by status, in neutral words. A tap opens Library filtered to that status.
 struct CountChips: View {
     let counts: LibraryCounts
     let onSelect: (LibraryStatus) -> Void
@@ -109,7 +118,9 @@ struct CountChips: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
                         .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.18)))
-                        .contentShape(Capsule())
+                        // The chip stays slim; the tap target is 44pt tall.
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Shows these in Library")
@@ -129,7 +140,7 @@ struct UnfinishedCard: View {
     let width: CGFloat
 
     private var resume: String? {
-        entry.next.map { "Resume at S\($0.season) · E\($0.number)" }
+        entry.next.map { "Resume at \(EpisodeCode.short(season: $0.season, number: $0.number))" }
     }
 
     var body: some View {

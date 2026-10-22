@@ -174,7 +174,10 @@ struct ProfileButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Your profile")
-        .task { account = await AccountSettings.load(api) ?? account }
+        .task {
+            guard let api, case let .ok(response)? = try? await api.getMe() else { return }
+            account = (try? response.body.json) ?? account
+        }
     }
 }
 

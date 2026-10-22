@@ -127,7 +127,7 @@ struct CountdownView: View {
                 when(state)
             case .accessoryCircular:
                 VStack(spacing: 0) {
-                    Text(state.airing.episodeCode)
+                    Text(state.airing.shortCode)
                         .font(.system(size: 10, weight: .semibold))
                     when(state)
                         .font(.system(size: 11))
@@ -137,7 +137,7 @@ struct CountdownView: View {
             case .accessoryRectangular:
                 VStack(alignment: .leading, spacing: 1) {
                     Text(state.airing.title).font(.headline).lineLimit(1)
-                    Text(state.airing.episodeCode).font(.caption)
+                    Text(state.airing.shortCode).font(.caption)
                     when(state).font(.caption)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -151,7 +151,7 @@ struct CountdownView: View {
                     .font(.widgetDisplay)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2)
-                Text(state.airing.episodeCode + (state.airing.episodeName.map { " · \($0)" } ?? ""))
+                Text(state.airing.shortCode + (state.airing.episodeName.map { " · \($0)" } ?? ""))
                     .font(.caption)
                     .foregroundStyle(Palette.muted)
                     .lineLimit(1)

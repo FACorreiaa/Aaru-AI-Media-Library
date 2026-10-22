@@ -61,6 +61,9 @@ library layer stay separate, external IDs stored whenever known, no second backe
   (SOC-006), comparing libraries on a profile, and inviting a friend to a group. No DMs (P6).
   The rule against group invite links stands: these are friend invites only.
 
+- **TV Time built, Bingers not (owner's ask, 2026-10-21).** IMP-012 is built from the documented
+  export layouts, ahead of a real export. Bingers has no file export and its API is beta and only
+  for paid Legend/Icon subscribers, so it waits for the owner's call (IMP-019).
 - **AniList outage: TMDB stands in (CAT-021).** AniList disabled its whole public API on
   2026-10-21 ("temporarily disabled due to severe stability issues", HTTP 403 behind
   Cloudflare). Aaru logged that as `unauthorized`, so the anime rows went empty. Now it reads as
@@ -451,12 +454,13 @@ account or a stranger that has not happened yet.
 | IMP-009 | Built, unverified | `feat/cat-import`; CATImport.swift, CATImportTests | Stub catalog and synthetic lists only; no real CAT profile paste yet |
 | IMP-010 | Built, unverified | `feat/cat-import`; CATCalendarParser, CATCalendarFeed | SUMMARY format confirmed on a real export (`Show S01E02 - \nTitle`, 45 shows); a same-name tie breaks on the episode's air date; link not yet run live |
 | IMP-011 | Built, unverified | `POST /v1/imports/{id}/rows/{index}/resolve`; ImportService+Resolve.swift, ImportResolveTests; "Find it" on web + Apple import detail | Not run on a real import yet |
-| IMP-012 | Deferred | BACKLOG "Parked 2026-10-16 by the owner" | Needs a real export |
+| IMP-012 | Built, unverified | `feat/import-tvtime-bingers`; TVTimeCSVParser, TVTimeImportTests | Fixtures written from documented column shapes; no real export run yet |
 | IMP-013 | Done | #28 b70e9bd; AnimeListImportTests | Fixtures only, no real 300-entry export |
 | IMP-014 | Done | #28, #41; `/v1/imports/anilist` | |
 | IMP-016 | Built, unverified | #46 62dfe1d; Imports/Stremio/*, StremioImportTests | Not deployed; no real account library |
 | IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Live 2026-10-21 (API c8b19e7, LuminaVaultInfra#405; web prod); Apple ledger not run on a device |
 | IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
+| IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -1777,6 +1781,17 @@ listed, and re-running it creates nothing new.
 parser. **Parked 2026-10-16 by the owner** (never used TV Time, no export to build from): build it
 only when a user who has an export asks.
 
+**Progress 2026-10-21 (owner's ask):** built without a real export, from the column layouts public
+converters pin against anonymised real exports (Trakt's importer fixtures in `trakt/trakt-web`,
+`lukearran/TvTimeToTrakt`, `gulian/rewatch`'s format notes). `source=tvtime` (and `auto`, by
+columns) takes one CSV at a time; the user unzips the export. *Export my data* (2026):
+`tvtime-series-episodes.csv`, `tvtime-series.csv`, `tvtime-movies.csv`. GDPR export:
+`tracking-prod-records-v2.csv` (episodes by show TVDB id, follow / watch-later / archived flags),
+`tracking-prod-records.csv` (movies only, by name + release year), `followed_tv_show.csv`,
+`seen_episode.csv` (episodes by show name). Shows go TVDB id → TMDB, then IMDb; an old TVDB id
+TMDB does not know falls back to the exact-name rule (2026-10-21 decision). Not read: custom
+lists, ratings (`tv_show_rate.csv`, `ratings-live-votes.csv`), the JSON copies, a zip.
+
 ### IMP-013 · MyAnimeList XML import · M
 **Needs:** IMP-005, CAT-009.
 MAL's list export (XML): `series_animedb_id`, watched episodes, status, score. `mal` id is a hard
@@ -1798,6 +1813,26 @@ MAL → AniList. `CLAUDE.md` and `ARCHITECTURE.md` carry the same order.
 
 **Progress 2026-10-20:** MAL rows also resolve through the anime mapping (by MAL id), so MAL after
 a Trakt import lands on the same TMDB show (IMP-004's 2026-10-20 note).
+
+### IMP-019 · Bingers import · M · OPEN
+**Needs:** IMP-001, IMP-016.
+Bingers (bingers.app, by TV Time's founder, July 2026) has no file export: its privacy page offers
+a copy of your data by email to privacy@bingers.app. Its one official path is a **beta API**
+(`api.bingers.app/v1`, OpenAPI 3.1, "change feeds, for mirrors and sync tools": `/v1/follows`,
+`/v1/entries`, `include=titles` for IMDb/TMDB/TVDB ids), reached by OAuth 2.1 with a device flow
+(a client metadata JSON Aaru would host as its `client_id`) or a personal token.
+
+**OPEN (owner):** not built 2026-10-21, because (1) the API answers 403 unless the Bingers user pays
+for the Legend or Icon plan; (2) `/v1/entries` rows name episodes by Bingers UUID only, and the
+episodes endpoint that would number them has no response schema in the contract; (3) it is beta
+and broke `/v1/library` on 2026-10-14; (4) nothing can be checked without a paid account. If the
+owner wants it: Stremio's link-code shape (device code → approve on bingers.app/activate → one
+read of `/v1/follows` + `/v1/library` → token dropped), statuses from `/v1/library`
+(`not_started`/`watch_later` → wishlist, `stopped` → dropped, `completed` → finished, else in
+progress), films from `/v1/entries`. Merge order: after TV Time, before MyAnimeList.
+
+**Done when:** a paid test account's library imports with episode ticks, and running it again
+plans only skips.
 
 ### IMP-016 · Stremio history import · M
 **Needs:** IMP-001, SCR-003.

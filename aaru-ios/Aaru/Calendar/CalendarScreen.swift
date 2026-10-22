@@ -33,7 +33,20 @@ struct CalendarScreen: View {
     @State private var feed: CalendarFeed
     @State private var week: WeekModel
     @State private var month: MonthModel
-    @State private var showsSearch = false
+    @Environment(AppRouter.self) private var router
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
+
+    /// A phone's bar has no room for the switch beside Week's arrows and the filter menu, so it
+    /// sits under the bar there; wider windows keep it in the bar's centre.
+    private var switchUnderBar: Bool {
+        #if os(iOS)
+            sizeClass == .compact
+        #else
+            false
+        #endif
+    }
 
     init(api: Client?, library: LibraryModel, lists: ListsModel, feed: CalendarFeed? = nil, today: Date = .now) {
         self.api = api
@@ -49,9 +62,14 @@ struct CalendarScreen: View {
         NavigationStack(path: $path) {
             Group {
                 switch mode {
-                case .week: WeekView(model: week) { showsSearch = true }
-                case .month: MonthView(model: month) { showsSearch = true }
-                case .missed: CatchUpView(feed: feed) { showsSearch = true }
+                case .week:
+                    WeekView(model: week, onSearch: search, onClearFilters: clearFilters)
+                case .month:
+                    MonthView(model: month, onSearch: search, onClearFilters: clearFilters) { path.append($0) }
+                case .missed:
+                    CatchUpView(feed: feed, window: missedWindow, onClearFilters: clearFilters) {
+                        await feed.fetch(missedWindow)
+                    }
                 }
             }
             .navigationTitle("Calendar")
@@ -59,17 +77,21 @@ struct CalendarScreen: View {
                 .navigationBarTitleDisplayMode(.inline)
             #endif
                 .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        Picker("View", selection: $mode) {
-                            ForEach(Mode.allCases) { Text($0.label).tag($0) }
-                        }
-                        .pickerStyle(.segmented)
-                        .fixedSize()
+                    if !switchUnderBar {
+                        ToolbarItem(placement: .principal) { modePicker.fixedSize() }
                     }
                     ToolbarItem(placement: .secondaryAction) { filterMenu }
                 }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if switchUnderBar {
+                        modePicker
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                    }
+                }
+                // A Month day sheet presents its own episode sheet (UX-068).
                 .sheet(isPresented: Binding(
-                    get: { feed.openedID != nil }, set: {
+                    get: { feed.openedID != nil && !feed.isDaySheetOpen }, set: {
                         if !$0 {
                             feed.openedID = nil
                         }
@@ -80,17 +102,22 @@ struct CalendarScreen: View {
                 .onChange(of: currentFilter, initial: true) { feed.filter = currentFilter }
                 .task(id: mode) { await loadIfNeeded() }
                 .refreshable { await reload() }
+                .refreshesOnCommand(.calendar) { await reload() }
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
-                }
-                .sheet(isPresented: $showsSearch) {
-                    SearchView(api: api, library: library, lists: lists)
                 }
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: feed.problem) { feed.problem = nil }
                 }
                 .background(Color(.paper))
         }
+    }
+
+    private var modePicker: some View {
+        Picker("View", selection: $mode) {
+            ForEach(Mode.allCases) { Text($0.label).tag($0) }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var currentFilter: CalendarFilter {
@@ -122,10 +149,27 @@ struct CalendarScreen: View {
         }
     }
 
+    private func search() {
+        router.showsSearch = true
+    }
+
+    /// Empty states offer it only while a filter hides something (UX-067).
+    private var clearFilters: (() -> Void)? {
+        guard currentFilter.isActive else { return nil }
+        return {
+            hideWatched = false
+            only = .all
+            kind = .all
+        }
+    }
+
+    /// The last four weeks to the end of today: whole days, so a load stays "covered" as the
+    /// clock moves on. Missed keeps only what has aired.
     private var missedWindow: Range<Date> {
         let today = feed.calendar.startOfDay(for: .now)
         let start = feed.calendar.date(byAdding: .day, value: -CatchUpView.days, to: today) ?? today
-        return start ..< Date.now
+        let end = feed.calendar.date(byAdding: .day, value: 1, to: today) ?? .now
+        return start ..< end
     }
 
     private func loadIfNeeded() async {
@@ -150,29 +194,34 @@ struct CalendarScreen: View {
 #Preview("Mac · month", traits: .fixedLayout(width: 1280, height: 800)) {
     CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
         .defaultAppStorage(.preview(mode: .month))
+        .environment(AppRouter())
 }
 
 #Preview("Mac · month · dark", traits: .fixedLayout(width: 1280, height: 800)) {
     CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
         .defaultAppStorage(.preview(mode: .month))
+        .environment(AppRouter())
         .preferredColorScheme(.dark)
 }
 
 #Preview("Mac · week", traits: .fixedLayout(width: 1280, height: 720)) {
     CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
         .defaultAppStorage(.preview(mode: .week))
+        .environment(AppRouter())
 }
 
 #if os(iOS)
     #Preview("iPhone · month") {
         CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
             .defaultAppStorage(.preview(mode: .month))
+            .environment(AppRouter())
             .environment(\.horizontalSizeClass, .compact)
     }
 
     #Preview("iPhone · week · dark") {
         CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
             .defaultAppStorage(.preview(mode: .week))
+            .environment(AppRouter())
             .environment(\.horizontalSizeClass, .compact)
             .preferredColorScheme(.dark)
     }
@@ -182,6 +231,7 @@ struct CalendarScreen: View {
     CalendarScreen(
         api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: CalendarFeed(preview: [])
     )
+    .environment(AppRouter())
 }
 
 private extension UserDefaults {

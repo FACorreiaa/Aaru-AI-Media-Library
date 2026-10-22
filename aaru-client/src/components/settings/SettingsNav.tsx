@@ -151,6 +151,7 @@ export function SettingsPageTitle(props: {
         Settings
       </Link>
       <h2 class="font-display text-2xl font-medium md:mt-1">{props.title}</h2>
+      {/* eslint-disable-next-line no-restricted-syntax -- a string, not a JSX slot */}
       <Show when={props.description}>
         <p class="mt-1 max-w-prose text-sm text-muted">{props.description}</p>
       </Show>

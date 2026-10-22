@@ -297,6 +297,17 @@ final class TitleDetailModel {
         }
     }
 
+    /// Removes the item from the library (UX-061). The server journals it, so History can undo
+    /// it. False, with `problem` set, when the server said no.
+    func remove() async -> Bool {
+        problem = nil
+        if let failure = await library.remove(entry.id, api: api) {
+            problem = failure
+            return false
+        }
+        return true
+    }
+
     // MARK: Reconcile
 
     /// The server's answer is the truth: it replaces the optimistic state and the shelf's row.
@@ -320,7 +331,7 @@ final class TitleDetailModel {
         } else {
             watched.remove(key)
         }
-        problem = message
-            ?? "S\(key.season) E\(key.number) was not saved. Aaru could not reach the server."
+        let code = EpisodeCode.short(season: key.season, number: key.number)
+        problem = message ?? "\(code) was not saved. Aaru could not reach the server."
     }
 }

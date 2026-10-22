@@ -170,6 +170,7 @@ export function ImportsPage(props: {
           <FileTile source="goodreads" />
           <CatImport onImported={(job) => void open(job)} />
           <FileTile source="netflix" />
+          <FileTile source="tvtime" />
           <FileTile source="mal" />
           <form class={`${tile} gap-2 sm:col-span-2`} onSubmit={importAniList}>
             <TextField

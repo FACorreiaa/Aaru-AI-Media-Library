@@ -14,11 +14,14 @@ struct TitleDetailView: View {
     @State private var showsListPicker = false
     @State private var discusses = false
     @State private var recommends = false
+    @State private var confirmsRemoval = false
     /// Nil in previews and outside the signed-in app.
     @Environment(GroupsModel.self) private var groups: GroupsModel?
     @Environment(ToastCenter.self) private var toasts: ToastCenter?
     @State private var openEpisode: EpisodeKey?
     @State private var expandedSeasons: Set<Int> = []
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     private let lists: ListsModel
 
     #if os(iOS)
@@ -56,7 +59,7 @@ struct TitleDetailView: View {
                         coverURL: entry.title.posterURL
                     )
                 } else {
-                    hero
+                    TitleHero(entry: entry, kind: kind, meta: meta, compact: compact)
                 }
                 actions
                 if compact {
@@ -84,14 +87,23 @@ struct TitleDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button("Add to list", systemImage: "text.badge.plus") { showsListPicker = true }
             }
-            ToolbarItem(placement: .secondaryAction) {
-                Button("Recommend to friends…", systemImage: "hand.thumbsup") { recommends = true }
-            }
-            if groups?.managedGroups.isEmpty == false {
-                ToolbarItem(placement: .secondaryAction) {
-                    Button("Discuss in a group…", systemImage: "bubble.left.and.bubble.right") { discusses = true }
+            ToolbarItem(placement: .secondaryAction) { moreMenu }
+        }
+        // Outside the menu: a dialog attached inside one closes with it.
+        .confirmationDialog(
+            "Remove “\(entry.title.title)” from your library?",
+            isPresented: $confirmsRemoval,
+            titleVisibility: .visible
+        ) {
+            Button("Remove from library", role: .destructive) {
+                Task {
+                    if await model.remove() {
+                        dismiss()
+                    }
                 }
             }
+        } message: {
+            Text(TitleRemoval.message)
         }
         .sheet(isPresented: $recommends) {
             RecommendSheet(
@@ -127,22 +139,10 @@ struct TitleDetailView: View {
             }
     }
 
-    private func expansion(of season: Int) -> Binding<Bool> {
-        Binding(get: { expandedSeasons.contains(season) }, set: { isExpanded in
-            if isExpanded {
-                expandedSeasons.insert(season)
-            } else {
-                expandedSeasons.remove(season)
-            }
-        })
-    }
-
     private func load() async {
         await model.load()
         expandedSeasons = Set(model.nextEpisode.map { [$0.season] } ?? [])
     }
-
-    // MARK: Writes
 
     private var statusBinding: Binding<LibraryStatus> {
         Binding(get: { entry.status }, set: { status in
@@ -151,104 +151,48 @@ struct TitleDetailView: View {
             }
         })
     }
-
-    private var ownedBinding: Binding<Bool> {
-        Binding(get: { entry.isOwned }, set: { owned in
-            Task {
-                await model.update(.init(isOwned: owned)) { $0.isOwned = owned }
-            }
-        })
-    }
-
-    private func setRating(_ rating: Double?) async {
-        if let rating {
-            await model.update(.init(rating: rating)) { $0.rating = rating }
-        } else {
-            await model.update(.init(clear: [.rating])) { $0.rating = nil }
-        }
-    }
-
-    private func saveNotes() async {
-        let text = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        if text.isEmpty {
-            await model.update(.init(clear: [.notes])) { $0.notes = nil }
-        } else {
-            await model.update(.init(notes: text)) { $0.notes = text }
-        }
-        notes = entry.notes ?? ""
-    }
-
-    private func savePage() async {
-        guard let number = Int(page.filter(\.isNumber)) else { return }
-        await model.update(.init(bookPage: number)) { $0.bookProgress = .init(page: number) }
-        page = entry.bookProgress?.page.map(String.init) ?? page
-    }
 }
 
 // MARK: The room's sections
 
 extension TitleDetailView {
-    // MARK: Hero
-
-    /// The backdrop under a veil of Paper, the poster standing over its lower edge, the name.
-    private var hero: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HeroBackdrop(url: entry.title.backdropUrl.flatMap(URL.init(string:)), seed: entry.title.id)
-                .frame(height: compact ? 200 : 300)
-                .clipShape(.rect(cornerRadius: 20, style: .continuous))
-            HStack(alignment: .top, spacing: 16) {
-                PosterView(url: entry.title.posterUrl.flatMap(URL.init(string:)), kind: kind)
-                    .frame(width: compact ? 96 : 140)
-                    .edgeLit(cornerRadius: 10)
-                    .shadow(color: Color(.ink).opacity(0.18), radius: 12, y: 6)
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(entry.title.title)
-                        .font(.aaruDisplay(.title, weight: .semibold))
-                        .foregroundStyle(Color(.ink))
-                        .lineLimit(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.isHeader)
-                    Text(meta)
-                        .font(.subheadline)
-                        .monospacedDigit()
-                        .foregroundStyle(Color(.muted))
-                    if let progress = entry.progress, progress.airedCount > 0 {
-                        ProgressView(value: Double(progress.watchedCount), total: Double(progress.airedCount)) {
-                            Text("\(progress.watchedCount) of \(progress.airedCount) episodes")
-                                .font(.footnote)
-                                .monospacedDigit()
-                                .foregroundStyle(Color(.muted))
-                        }
-                        .tint(Color(.accent))
-                    }
-                }
-                .padding(.top, compact ? 56 : 72)
+    /// "Discuss in a group…" for anyone in a group (UX-083); "Remove from library…", confirmed
+    /// and journaled, so History can undo it (UX-061).
+    private var moreMenu: some View {
+        Menu("More", systemImage: "ellipsis.circle") {
+            if groups?.groups.isEmpty == false {
+                Button("Discuss in a group…", systemImage: "bubble.left.and.bubble.right") { discusses = true }
             }
-            .padding(.horizontal, compact ? 12 : 24)
-            .padding(.top, compact ? -48 : -64)
+            Button("Recommend to friends…", systemImage: "hand.thumbsup") { recommends = true }
+            Button("Remove from library…", systemImage: "trash", role: .destructive) { confirmsRemoval = true }
         }
     }
 
+    /// One item, one kind: "2022 · Show · 48 min · Returning series" (UX-046, UX-047).
     private var meta: String {
         let runtime = model.title?.runtimeMinutes.map { "\($0) min" }
-        let status = model.title?.status.map { $0.rawValue.capitalized }
-        return [entry.title.year.map(String.init), kind.label, runtime, status]
+        let status = model.title?.status.map(\.label)
+        return [entry.title.year.map(String.init), kind.noun, runtime, status]
             .compactMap(\.self).joined(separator: " · ")
     }
 
-    // MARK: Actions
-
     /// The next step: the next episode to mark, for a show with one aired and unwatched; then
     /// the status, in this kind's words, and "Caught up" beside it once a running show has
-    /// nothing aired left (PROG-005).
+    /// nothing aired left (PROG-005). Stacked at accessibility sizes.
     private var actions: some View {
-        HStack(spacing: 12) {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 12))
+        return layout {
             if model.isShow, let next = model.nextEpisode {
                 Button {
                     Task { await model.toggle(next) }
                 } label: {
-                    Label("Mark S\(next.season) · E\(next.number) watched", systemImage: "checkmark")
-                        .monospacedDigit()
+                    Label(
+                        "Mark \(EpisodeCode.short(season: next.season, number: next.number)) watched",
+                        systemImage: "checkmark"
+                    )
+                    .monospacedDigit()
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(model.pending.contains(next))
@@ -268,55 +212,16 @@ extension TitleDetailView {
         .controlSize(.large)
     }
 
-    // MARK: The user's layer
-
     @ViewBuilder private var yours: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            LabeledContent("Rating") {
-                RatingStars(rating: entry.rating) { rating in
-                    Task { await setRating(rating) }
-                }
-            }
-            Divider()
-            Toggle("Owned", isOn: ownedBinding)
-                .tint(Color(.accent))
-            if entry.title._type == .book {
-                Divider()
-                LabeledContent("Page") {
-                    TextField("Page", text: $page)
-                        .multilineTextAlignment(.trailing)
-                        .monospacedDigit()
-                    #if os(iOS)
-                        .keyboardType(.numberPad)
-                    #endif
-                        .onSubmit { Task { await savePage() } }
-                }
-            }
-        }
-        .panel()
-
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Notes").eyebrow()
-                .accessibilityAddTraits(.isHeader)
-            TextField("Anything worth remembering", text: $notes, axis: .vertical)
-                .lineLimit(3 ... 8)
-            if notes != (entry.notes ?? "") {
-                Button("Save note") { Task { await saveNotes() } }
-                    .buttonStyle(.bordered)
-            }
-        }
-        .panel()
-
+        TitleYourLayer(model: model, notes: $notes, page: $page)
         if model.isShow {
-            about
+            TitleAbout(synopsis: model.title?.synopsis)
         }
     }
 
-    // MARK: The title's layer
-
     @ViewBuilder private var titleLayer: some View {
         if !model.isShow {
-            about
+            TitleAbout(synopsis: model.title?.synopsis)
         }
         if kind == .music {
             VStack(alignment: .leading, spacing: 8) {
@@ -327,53 +232,7 @@ extension TitleDetailView {
             .panel()
         }
         if model.isShow {
-            seasons
-        }
-    }
-
-    @ViewBuilder private var about: some View {
-        if let synopsis = model.title?.synopsis, !synopsis.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("About").eyebrow()
-                    .accessibilityAddTraits(.isHeader)
-                Text(synopsis)
-                    .font(.callout)
-                    .foregroundStyle(Color(.ink).opacity(0.85))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .panel()
-        }
-    }
-
-    // MARK: Seasons
-
-    @ViewBuilder private var seasons: some View {
-        if model.title != nil {
-            if !model.orderedSeasons.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Episodes").eyebrow()
-                        .accessibilityAddTraits(.isHeader)
-                    SeasonMap(model: model) { openEpisode = $0 }
-                        .panel()
-                    ForEach(model.orderedSeasons, id: \.number) { season in
-                        SeasonSection(season: season, model: model, isExpanded: expansion(of: season.number)) {
-                            openEpisode = $0
-                        }
-                    }
-                }
-            }
-        } else if model.loadFailed {
-            ContentUnavailableView {
-                Label("Episodes did not load", systemImage: "exclamationmark.arrow.circlepath")
-            } description: {
-                Text("Aaru could not reach the server.")
-            } actions: {
-                Button("Retry") { Task { await load() } }
-                    .buttonStyle(.borderedProminent)
-            }
-            .panel()
-        } else {
-            ProgressView().frame(maxWidth: .infinity).panel()
+            TitleSeasons(model: model, expanded: $expandedSeasons, onOpen: { openEpisode = $0 }, retry: load)
         }
     }
 }

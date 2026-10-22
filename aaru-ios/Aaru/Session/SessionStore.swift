@@ -6,6 +6,8 @@ import Observation
 @Observable
 final class SessionStore {
     private(set) var token: String?
+    /// The server ended the session (a 401), not the user: Welcome says so (UX-090).
+    private(set) var wasSignedOutByServer = false
     @ObservationIgnored private let keychain: SessionKeychain
 
     init(keychain: SessionKeychain = SessionKeychain()) {
@@ -25,6 +27,7 @@ final class SessionStore {
 
     func signIn(token: String) {
         self.token = token
+        wasSignedOutByServer = false
         keychain.save(token)
     }
 
@@ -35,6 +38,8 @@ final class SessionStore {
 
     /// The server refused the session (a 401): back to the welcome screen, once.
     func sessionWasRejected() {
+        guard token != nil else { return }
         signOut()
+        wasSignedOutByServer = true
     }
 }

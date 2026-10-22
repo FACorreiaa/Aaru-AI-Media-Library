@@ -27,7 +27,7 @@ struct SeasonSection: View {
                         .foregroundStyle(Color(.muted))
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
-                .frame(minHeight: 28)
+                .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -68,7 +68,7 @@ struct EpisodeRow: View {
                             .foregroundStyle(isWatched ? Color(.accent) : Color(.muted))
                     }
                 }
-                .frame(width: 26)
+                .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -100,7 +100,8 @@ struct EpisodeRow: View {
         #if os(iOS)
         .contextMenu {
             if model.hasAired(episode), !isWatched {
-                Button("Start watching", systemImage: "play.circle") {
+                // Starts the Live Activity; "Start watching" is Home's row (UX-052).
+                Button("Watching now…", systemImage: "play.circle") {
                     Task { await model.startWatching(episode) }
                 }
             }

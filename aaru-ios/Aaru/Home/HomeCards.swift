@@ -51,7 +51,7 @@ struct ContinueCard: View {
     }
 
     private var episodeCode: String {
-        "S\(entry.next.season) · E\(entry.next.number)"
+        EpisodeCode.short(season: entry.next.season, number: entry.next.number)
     }
 
     /// "S1 · E8 · Episode name".
@@ -159,9 +159,11 @@ struct AiringCard: View {
     let entry: CalendarEntry
     let when: String
     let width: CGFloat
+    /// Opens the episode's sheet, as the calendar does (UX-092).
+    let onOpen: () -> Void
 
     var body: some View {
-        NavigationLink(value: entry.libraryItemId) {
+        Button(action: onOpen) {
             VStack(alignment: .leading, spacing: 6) {
                 HomeArt(
                     url: (entry.title.backdropUrl ?? entry.title.posterUrl).flatMap(URL.init(string:)),
@@ -186,7 +188,8 @@ struct AiringCard: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color(.accent))
                         .lineLimit(1)
-                    Text([entry.code, entry.episodeName].compactMap(\.self).joined(separator: " · "))
+                    Text([EpisodeCode.short(season: entry.season, number: entry.number), entry.episodeName]
+                        .compactMap(\.self).joined(separator: " · "))
                         .font(.caption2)
                         .lineLimit(1)
                     if let detail = entry.whereAndWhen {
@@ -201,7 +204,9 @@ struct AiringCard: View {
         }
         .buttonStyle(.plain)
         .modifier(HoverLift())
-        .accessibilityLabel([entry.title.title, entry.code, when].joined(separator: ", "))
+        .accessibilityLabel([entry.title.title, EpisodeCode.short(season: entry.season, number: entry.number), when]
+            .joined(separator: ", "))
+        .accessibilityHint("Shows the episode")
     }
 
     /// Today's and the next few hours' airings get the accent.

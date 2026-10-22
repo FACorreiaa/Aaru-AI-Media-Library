@@ -77,15 +77,17 @@ struct TonightCard: View {
     private var actions: some View {
         HStack(spacing: 12) {
             if case let .continuing(entry) = tonight.primary {
+                let code = EpisodeCode.short(season: entry.next.season, number: entry.next.number)
                 Button {
                     onMarkWatched(entry)
                 } label: {
-                    Label("Mark watched", systemImage: "checkmark")
+                    // One phrasing for the tick wherever the episode is named (UX-044).
+                    Label("Mark \(code) watched", systemImage: "checkmark")
                         .frame(minHeight: 32)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isPending)
-                .accessibilityLabel("Mark \(entry.title.title) \(tonight.primary.episodeLine) watched")
+                .accessibilityLabel("Mark \(entry.title.title) \(code) watched")
             }
             NavigationLink(value: tonight.primary.libraryItemId) {
                 Text("Open").frame(minHeight: 32)

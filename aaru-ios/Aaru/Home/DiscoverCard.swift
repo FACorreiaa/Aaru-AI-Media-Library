@@ -142,30 +142,64 @@ struct DiscoverCard: View {
     }
 }
 
-/// The empty-library header above Discover: what Home becomes once something is tracked.
+/// The empty-library header above Discover: what Home becomes once something is tracked. The
+/// same headline as Home's empty state (UX-075), with the two ways in: search, or an import.
 struct HomeWelcome: View {
     let onSearch: () -> Void
+    let onImport: () -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: "sparkles.tv")
-                .font(.title2)
-                .foregroundStyle(Color(.accent))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Add a show to see what's next")
-                    .font(.subheadline.weight(.semibold))
-                Text("Pick from the rows below or search. What you watch and what airs next land here.")
-                    .font(.caption)
-                    .foregroundStyle(Color(.muted))
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 14) {
+                symbol
+                copy
+                Spacer(minLength: 8)
+                actions
             }
-            Spacer(minLength: 8)
-            Button("Search", action: onSearch)
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 14) {
+                    symbol
+                    copy
+                }
+                actions
+            }
         }
         .padding(14)
         .background(Color(.medallion).opacity(0.35), in: RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .contain)
     }
+
+    private var symbol: some View {
+        Image(systemName: "sparkles.tv")
+            .font(.title2)
+            .foregroundStyle(Color(.accent))
+            .accessibilityHidden(true)
+    }
+
+    private var copy: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(HomeEmptyCopy.headline)
+                .font(.subheadline.weight(.semibold))
+                .accessibilityAddTraits(.isHeader)
+            Text("Pick from the rows below, search, or bring your history from another app.")
+                .font(.caption)
+                .foregroundStyle(Color(.muted))
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var actions: some View {
+        HStack(spacing: 8) {
+            Button("Search", action: onSearch)
+                .buttonStyle(.borderedProminent)
+            Button(HomeEmptyCopy.importAction, action: onImport)
+                .buttonStyle(.bordered)
+        }
+    }
+}
+
+/// Home's one empty headline and import action, shared by the empty state and the welcome card.
+enum HomeEmptyCopy {
+    static let headline = "Add something to see what's next"
+    static let importAction = "Bring your history"
 }

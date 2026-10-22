@@ -30,6 +30,12 @@ export const FILE_SOURCES = [
     accept: '.csv,text/csv,text/plain',
   },
   {
+    source: 'tvtime',
+    label: 'TV Time',
+    hint: 'Unzip your TV Time export, then upload one CSV at a time: tvtime-series-episodes.csv, tvtime-series.csv and tvtime-movies.csv, or from a GDPR export tracking-prod-records-v2.csv and tracking-prod-records.csv.',
+    accept: '.csv,text/csv,text/plain',
+  },
+  {
     source: 'mal',
     label: 'MyAnimeList',
     hint: 'MAL → Profile → Export → Anime list. The .xml.gz file as downloaded.',
@@ -53,6 +59,7 @@ const SOURCE_LABELS: Record<ImportJob['source'], string> = {
   cat_list: 'Pogdesign CAT',
   cat_ics: 'Pogdesign CAT',
   netflix_csv: 'Netflix',
+  tvtime_csv: 'TV Time',
   mal_xml: 'MyAnimeList',
   anilist: 'AniList',
   csv: 'CSV',

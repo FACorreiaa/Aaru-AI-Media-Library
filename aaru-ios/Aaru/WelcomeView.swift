@@ -5,6 +5,8 @@ import SwiftUI
 /// The signed-out landing screen (DESIGN.md §0).
 struct WelcomeView: View {
     let api: Client?
+    /// The server ended the last session (a 401): say so instead of a silent sign-out (UX-090).
+    var signedOutByServer = false
     /// Apple's authorization and the raw nonce whose hash it carries.
     var onAppleAuthorization: (ASAuthorization, String) -> Void
     var onAppleError: (any Error) -> Void
@@ -73,15 +75,15 @@ struct WelcomeView: View {
                 .scaledToFit()
                 .frame(height: 34)
                 .accessibilityLabel("Aaru")
-            Text("Everything you watch and read, on one shelf.")
+            Text("Everything you watch, read and listen to, in one library.")
                 .font(.aaruDisplay(.largeTitle))
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Films, shows, anime and books in one calm library.")
+            Text("Films, shows, anime, books and albums, private by default.")
                 .font(.title3)
                 .foregroundStyle(Color(.muted))
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 14) {
-                Pillar(symbol: "square.stack.3d.up", text: "One shelf, four plain statuses")
+                Pillar(symbol: "square.stack.3d.up", text: "One library, four plain statuses")
                 Pillar(symbol: "lock", text: "Private by default. No public profile, no ads")
                 Pillar(symbol: "arrow.down.doc", text: "Bring your history from Trakt, IMDb, Letterboxd and Goodreads")
             }
@@ -91,6 +93,12 @@ struct WelcomeView: View {
 
     private var actions: some View {
         VStack(spacing: 12) {
+            if signedOutByServer {
+                Label("You were signed out. Sign in again.", systemImage: "person.crop.circle.badge.exclamationmark")
+                    .font(.callout)
+                    .foregroundStyle(Color(.ink))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             SignInWithAppleButton(.signIn) { request in
                 nonce = SignInNonce.make()
                 request.requestedScopes = [.fullName, .email]
@@ -156,6 +164,8 @@ private struct Pillar: View {
 
 /// Full-width outlined capsule, the quiet partner of the Sign in with Apple button.
 struct OutlineCapsuleButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
@@ -164,7 +174,7 @@ struct OutlineCapsuleButtonStyle: ButtonStyle {
             .overlay { Capsule().strokeBorder(Color(.ink).opacity(0.25), lineWidth: 1) }
             .contentShape(Capsule())
             .opacity(configuration.isPressed ? 0.75 : 1)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
             .animation(.snappy(duration: 0.15), value: configuration.isPressed)
     }
 }

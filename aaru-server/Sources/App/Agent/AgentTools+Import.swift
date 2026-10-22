@@ -44,15 +44,18 @@ extension AgentTools {
         return ImportQueued(importId: job.id.description, source: source.rawValue)
     }
 
+    /// File sources the tool names directly.
+    static let namedSources: [String: ImportSource] = [
+        "imdb": .imdbCSV, "letterboxd": .letterboxdCSV, "netflix": .netflixCSV, "tvtime": .tvTimeCSV,
+        "goodreads": .goodreadsCSV, "mal": .malXML, "csv": .genericCSV,
+    ]
+
     /// The tool's `source` argument as an import source; `auto` and `cat` look at the text.
     static func importSource(_ name: String, text: String) throws -> ImportSource {
+        if let source = namedSources[name] {
+            return source
+        }
         switch name {
-        case "imdb": return .imdbCSV
-        case "letterboxd": return .letterboxdCSV
-        case "netflix": return .netflixCSV
-        case "goodreads": return .goodreadsCSV
-        case "mal": return .malXML
-        case "csv": return .genericCSV
         case "cat": return CATCalendarParser.isCalendar(text) ? .catICS : .catList
         case "auto":
             do {
@@ -61,7 +64,9 @@ extension AgentTools {
                 throw AgentToolError(message: error.message)
             }
         default:
-            throw AgentToolError(message: "source must be auto, imdb, letterboxd, netflix, goodreads, mal, csv or cat.")
+            throw AgentToolError(
+                message: "source must be auto, imdb, letterboxd, netflix, tvtime, goodreads, mal, csv or cat."
+            )
         }
     }
 }

@@ -14,7 +14,8 @@ declare const process: { env: Record<string, string | undefined> }
 
 // Error reporting (docs/privacy.md). The browser's DSN and channel come from the same
 // wrangler.jsonc vars the Worker reads at runtime (`SENTRY_DSN`, `CHANNEL`), for the
-// environment being built (`CLOUDFLARE_ENV`). The release is the commit CI builds.
+// environment being built (`CLOUDFLARE_ENV`), and only into a build: `npm run dev` reports
+// nothing. The release is the commit CI builds.
 const workerVars = unstable_readConfig({
   config: 'wrangler.jsonc',
   env: process.env.CLOUDFLARE_ENV || undefined,
@@ -26,7 +27,7 @@ const release = process.env.SENTRY_RELEASE || process.env.GITHUB_SHA || ''
 // output after the upload so they are never served or deployed.
 const uploadSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN)
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   resolve: { tsconfigPaths: true },
   // The legal pages render the repo's own docs (docs/privacy.md) at build time.
   server: {
@@ -34,7 +35,7 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(
-      text(workerVars.SENTRY_DSN),
+      command === 'build' ? text(workerVars.SENTRY_DSN) : '',
     ),
     'import.meta.env.VITE_SENTRY_ENVIRONMENT': JSON.stringify(
       text(workerVars.CHANNEL),
@@ -59,4 +60,4 @@ export default defineConfig({
         sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
       }),
   ],
-})
+}))

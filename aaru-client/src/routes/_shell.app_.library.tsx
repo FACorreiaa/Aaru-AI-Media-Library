@@ -18,6 +18,7 @@ import {
 } from '~/components/ui'
 import { NowSection } from '../components/library/NowSection'
 import { lastShown } from '../lib/presence'
+import { prefersReducedMotion } from '../lib/reduced-motion'
 import {
   KINDS,
   shelf,
@@ -37,6 +38,8 @@ import type { MarkTarget } from '../lib/title/model'
 // opens Search on arrival; `?status=` and `?kind=` open it filtered (Home's count chips link
 // there, and back or a reload keeps the filter, UX-088). Every card has a menu (right-click, a
 // long press, or its "⋯") to mark it watched or open it.
+// Order (2026-10-22): the title, the filters, Now (capped, hidden while a status is chosen), then
+// the shelf under a heading that names the filter. Arriving filtered scrolls to that heading.
 // Search loads only when it is first opened: it is not part of the page's first paint.
 
 const STATUSES = ['wishlist', 'in_progress', 'finished', 'dropped'] as const
@@ -112,8 +115,20 @@ function Library() {
     setListTarget(entries().find((e) => e.id === libraryItemId) ?? null)
   }
 
+  let shelfHeading: HTMLHeadingElement | undefined
   onMount(() => {
     setLayout(readLayout())
+    // A link that opens the library filtered (Home's count chips) means the shelf, not Now.
+    if ((search().status || search().kind) && shelfHeading) {
+      const heading = shelfHeading
+      requestAnimationFrame(() => {
+        if (heading.getBoundingClientRect().top > window.innerHeight / 2)
+          heading.scrollIntoView({
+            block: 'start',
+            behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+          })
+      })
+    }
     if (search().search) {
       openSearch()
       // Back does not reopen it.
@@ -147,6 +162,15 @@ function Library() {
       // The undo landed; the shelf catches up on the next visit.
     }
   }
+
+  /** "Shows · Watching", "Books", "Plan to watch", or "All titles". */
+  const shelfTitle = () => {
+    const parts = [
+      KINDS.find((k) => k.kind === kind())?.label,
+      status() ? statusLabel(status()!, kind()) : undefined,
+    ].filter(Boolean)
+    return parts.length > 0 ? parts.join(' · ') : 'All titles'
+  }
   const statusChoices = createMemo<StatusChoice[]>(() => [
     { value: 'any', label: 'Any status' },
     ...statusOptions(kind()).map((s) => ({ value: s.status, label: s.label })),
@@ -169,12 +193,6 @@ function Library() {
         <h1 class="font-display text-4xl font-medium tracking-tight">
           Library
         </h1>
-
-        <NowSection
-          entries={entries()}
-          kind={kind()}
-          onEntry={(entry) => setEntries((list) => upsert(list, entry))}
-        />
 
         <div class="mt-6 flex flex-wrap items-center gap-2">
           <Segmented
@@ -228,6 +246,15 @@ function Library() {
           />
         </div>
 
+        {/* A chosen status is the shelf's own question; Now would only repeat part of it. */}
+        <Show when={!status()}>
+          <NowSection
+            entries={entries()}
+            kind={kind()}
+            onEntry={(entry) => setEntries((list) => upsert(list, entry))}
+          />
+        </Show>
+
         <Show
           when={rows().length > 0}
           fallback={
@@ -274,10 +301,19 @@ function Library() {
             </div>
           }
         >
+          <div class="mt-10 flex items-baseline justify-between gap-4">
+            <h2
+              ref={shelfHeading}
+              class="scroll-mt-20 font-display text-2xl font-medium tracking-tight"
+            >
+              {shelfTitle()}
+            </h2>
+            <span class="text-sm text-muted">{rows().length}</span>
+          </div>
           <Show
             when={layout() === 'grid'}
             fallback={
-              <ul class="mt-8 divide-y divide-line">
+              <ul class="mt-3 divide-y divide-line">
                 <For each={rows()}>
                   {(row) => (
                     <li>
@@ -336,7 +372,7 @@ function Library() {
               </ul>
             }
           >
-            <ul class="mt-8 grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-x-4 gap-y-6">
+            <ul class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-x-4 gap-y-6">
               <For each={rows()}>
                 {(row) => (
                   <li>

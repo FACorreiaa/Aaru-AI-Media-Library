@@ -36,7 +36,7 @@ struct SeasonBrowser: View {
                     .buttonStyle(.bordered)
                     .disabled(model.isLoading)
                 }
-                Label("Lists from \(model.kind.provider)", systemImage: "info.circle")
+                Label("Rows from \(model.kind.provider)", systemImage: "info.circle")
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
             }
@@ -127,7 +127,8 @@ struct SeasonBrowser: View {
         if let first = model.first {
             if first.unavailable {
                 ContentUnavailableView {
-                    Label("\(model.kind.provider) isn't answering", systemImage: "wifi.exclamationmark")
+                    // The vendor is named in the credit, not as the error's subject (UX-050).
+                    Label("This season's list isn't answering", systemImage: "wifi.exclamationmark")
                 } description: {
                     Text("Try \(model.key.title) again in a few minutes.")
                 } actions: {

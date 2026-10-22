@@ -1,4 +1,4 @@
-import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
+import { For, Show, children, createSignal, onCleanup, onMount } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { Link } from '@tanstack/solid-router'
 import {
@@ -60,6 +60,8 @@ function Frame(props: {
   onClose: () => void
   children: JSX.Element
 }) {
+  // Resolved once: tested in `when` and shown in the body (see SettingsSection).
+  const description = children(() => props.description)
   return (
     <Dialog
       open={props.open}
@@ -74,10 +76,8 @@ function Frame(props: {
           class="block w-[min(28rem,calc(100vw-2rem))] gap-0 p-5 sm:max-w-none"
         >
           <DialogTitle class="text-2xl">{props.title}</DialogTitle>
-          <Show when={props.description}>
-            <DialogDescription class="mt-2">
-              {props.description}
-            </DialogDescription>
+          <Show when={description()}>
+            <DialogDescription class="mt-2">{description()}</DialogDescription>
           </Show>
           {props.children}
         </DialogContent>

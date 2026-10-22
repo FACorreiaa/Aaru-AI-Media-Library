@@ -19,15 +19,15 @@ struct AaruApp: App {
     var body: some Scene {
         mainWindow
         #if os(macOS)
-            // Cmd-, opens the same Settings the tab shows.
+            // ⌘, and the app menu: the only Settings on the Mac (DESIGN.md §18).
             Settings {
-                SettingsWindow(
-                    api: services.api, imports: services.imports, library: services.library, lists: services.lists
-                )
-                .environment(services.session)
-                .tint(Color(.accent))
-                .appliesAppearance()
+                SettingsWindow(context: services.settingsContext)
+                    .environment(services.session)
+                    .environment(services.router)
+                    .tint(Color(.accent))
+                    .appliesAppearance()
             }
+            .windowResizability(.contentSize)
         #endif
     }
 
@@ -35,15 +35,19 @@ struct AaruApp: App {
         let scene = WindowGroup {
             RootView(
                 api: services.api, library: services.library, lists: services.lists, imports: services.imports,
-                groups: services.groups, realtime: services.realtime
+                settings: services.settings, groups: services.groups, realtime: services.realtime
             )
             .environment(services.session)
+            .environment(services.router)
             // The asset catalog's global accent (NSAccentColorName) does not reach SwiftUI on
             // iOS 26, so the brand teal is set here. Views use `Color(.accent)`, never
             // `Color.accentColor`.
             .tint(Color(.accent))
             .appliesAppearance()
             .task { WidgetCenter.shared.reloadAllTimelines() }
+        }
+        .commands {
+            AaruCommands(router: services.router, session: services.session)
         }
         #if os(iOS)
             return scene
@@ -60,6 +64,8 @@ struct AaruApp: App {
                 }
         #else
             return scene
+                .defaultSize(width: 1180, height: 780)
+                .windowResizability(.contentMinSize)
         #endif
     }
 }

@@ -4,17 +4,36 @@ import SwiftUI
 typealias AgentPlan = Components.Schemas.AgentPlan
 
 /// DESIGN §12: an outside agent's request. Who asked leads, then what changes, then the two
-/// answers. Nothing is written until Approve; approval is one action the history can undo.
+/// answers. Nothing is written until Approve; approval is one action History can undo, and an
+/// applied request links there (UX-060).
 struct PlanCardView: View {
-    let api: Client
-    @State var plan: AgentPlan
     /// Called once the user decided, with the plan as the server left it.
-    var onDecided: (AgentPlan) -> Void = { _ in }
+    var onDecided: (AgentPlan) -> Void
+    /// Opens History. Nil: the router's, from where the card is; a sheet passes its own, which
+    /// closes the sheet first.
+    var onShowHistory: (() -> Void)?
 
-    @State private var working = false
-    @State private var problem: String?
+    @State private var model: PlanModel
+    @Environment(AppRouter.self) private var router
+
+    init(
+        api: Client,
+        plan: AgentPlan,
+        onShowHistory: (() -> Void)? = nil,
+        onDecided: @escaping (AgentPlan) -> Void = { _ in }
+    ) {
+        self.onDecided = onDecided
+        self.onShowHistory = onShowHistory
+        _model = State(initialValue: PlanModel(api: api, plan: plan))
+    }
 
     var body: some View {
+        if let plan = model.plan {
+            card(plan)
+        }
+    }
+
+    private func card(_ plan: AgentPlan) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("\(plan.agentName) asks")
                 .font(.caption.weight(.semibold))
@@ -33,17 +52,27 @@ struct PlanCardView: View {
             }
             if let decided = Self.decided(plan) {
                 Text(decided).font(.callout.weight(.medium))
+                if plan.status == .applied {
+                    Button("Open History", systemImage: "clock.arrow.circlepath") {
+                        if let onShowHistory {
+                            onShowHistory()
+                        } else {
+                            router.openHistory()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                }
             } else {
                 HStack {
-                    Button("Approve") { Task { await decide(approve: true) } }
+                    Button("Approve") { decide(approve: true) }
                         .buttonStyle(.borderedProminent)
-                    Button("Not this") { Task { await decide(approve: false) } }
+                    Button("Not this") { decide(approve: false) }
                         .buttonStyle(.bordered)
                 }
-                .disabled(working)
+                .disabled(model.working)
             }
-            if let problem {
-                Text(problem).font(.footnote).foregroundStyle(.red)
+            if let problem = model.problem {
+                Text(problem).font(.footnote).foregroundStyle(Color(.danger))
             }
         }
         .padding(16)
@@ -51,31 +80,11 @@ struct PlanCardView: View {
         .background(Color(.surface), in: RoundedRectangle(cornerRadius: 20))
     }
 
-    private func decide(approve: Bool) async {
-        working = true
-        problem = nil
-        defer { working = false }
-        let path = Operations.ApprovePlan.Input.Path(id: plan.id)
-        do {
-            if approve {
-                switch try await api.approvePlan(path: path) {
-                case let .ok(response):
-                    plan = try response.body.json.plan
-                    onDecided(plan)
-                case let .default(_, error):
-                    problem = (try? error.body.json.message) ?? "Nothing was changed."
-                }
-            } else {
-                switch try await api.denyPlan(path: .init(id: plan.id)) {
-                case let .ok(response):
-                    plan = try response.body.json
-                    onDecided(plan)
-                case let .default(_, error):
-                    problem = (try? error.body.json.message) ?? "Nothing was changed."
-                }
+    private func decide(approve: Bool) {
+        Task {
+            if let decided = await model.decide(approve: approve) {
+                onDecided(decided)
             }
-        } catch {
-            problem = "Aaru could not reach the server. Nothing was changed."
         }
     }
 
@@ -95,7 +104,7 @@ struct PlanCardView: View {
     static func decided(_ plan: AgentPlan) -> String? {
         switch plan.status {
         case .pending: nil
-        case .applied: "Applied. You can undo it from your history."
+        case .applied: "Applied. You can undo it from History."
         case .denied: "You said no. Nothing changed."
         case .stale: "Your library changed since, so nothing was applied."
         case .expired: "Expired. Nothing changed."
@@ -109,15 +118,24 @@ struct PlanSheet: View {
     let id: String
     var onDone: () -> Void
 
-    @State private var plan: AgentPlan?
-    @State private var problem: String?
+    @State private var model: PlanModel
+    @Environment(AppRouter.self) private var router
+
+    init(api: Client, id: String, onDone: @escaping () -> Void) {
+        self.api = api
+        self.id = id
+        self.onDone = onDone
+        _model = State(initialValue: PlanModel(api: api))
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                if let plan {
-                    ScrollView { PlanCardView(api: api, plan: plan).padding(16) }
-                } else if let problem {
+                if let plan = model.plan {
+                    ScrollView {
+                        PlanCardView(api: api, plan: plan, onShowHistory: showHistory).padding(16)
+                    }
+                } else if let problem = model.problem {
                     ContentUnavailableView(
                         "Request unavailable",
                         systemImage: "questionmark",
@@ -131,20 +149,16 @@ struct PlanSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done", action: onDone) }
             }
-            .task { await load() }
+            .task { await model.load(id: id) }
         }
     }
 
-    private func load() async {
-        do {
-            switch try await api.getPlan(path: .init(id: id)) {
-            case let .ok(response):
-                plan = try response.body.json
-            case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "This request could not be loaded."
-            }
-        } catch {
-            problem = "Aaru could not reach the server."
+    /// Closes this sheet, then opens History once it is gone: on iPhone History is in a sheet too.
+    private func showHistory() {
+        onDone()
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            router.openHistory()
         }
     }
 }
