@@ -154,6 +154,7 @@
 - `create` calls `SocialService(stores:).requireHandle(viewer)` first, so posting without a handle is a 422 `handle_required`.
 - `rating` without `title` → 422 `details["rating"]`. A bad rating → 422 through `Rating(_:)`. A title that does not resolve → the existing `ResolutionError` mapping.
 - Visibility: the author, or `stores.social.areFriends(viewer, author) && !stores.social.isBlocked(viewer, author)`. Anything else is `noSuchPost`. A malformed `postId` is also `noSuchPost`.
+- Reports: `social_reports` targets users only. "Report post" in clients calls the existing `reportUser` with the post author, and the note is prefixed with `post:<id>`. No new route.
 - Only the author edits or deletes. Anyone else gets `noSuchPost` if they can't see the post, and `GroupService.forbidden("Only the author can change this post.")` if they can.
 
 - [ ] **Step 1: Write the failing HTTP tests** in `BoardTests.swift` with `LibraryHarness.run`. Reuse `claimHandle(env)` and `friend(env, of:)` from `GroupTests.swift`; move them to a shared `TestSupport+Social.swift` if they are `private`.
