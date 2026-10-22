@@ -23,6 +23,8 @@ struct StremioService: Sendable {
     let schedule: ScheduleService
     let catalog: CatalogService
     let scrobble: ScrobbleService
+    /// Puts Stremio's episode numbers on the TMDB show; nil keeps them as they come.
+    var episodeMap: StremioEpisodeMap?
     var now: @Sendable () -> Date = { Date() }
 
     // MARK: Manifest
@@ -154,10 +156,16 @@ struct StremioService: Sendable {
         if mediaType == .show, id.episode == nil {
             return .ignored
         }
-        let ref = id.mediaRef
+        var ref = id.mediaRef
+        var episode = mediaType == .show ? id.episode : nil
+        if let key = episode, let mapped = try await onShow([key], of: id) {
+            guard let first = mapped.episodes.first else { return .ignored }
+            ref = (titleID: mapped.title.id, ids: ref.ids)
+            episode = first
+        }
         try await scrobble.report(PlaybackReport(
             source: .stremio, externalRef: videoID, type: mediaType, ids: ref.ids, titleID: ref.titleID,
-            episode: mediaType == .show ? id.episode : nil, action: action,
+            episode: episode, action: action,
             positionMs: Int64(extra["currentTime"] ?? "") ?? 0, durationMs: Int64(extra["duration"] ?? "") ?? 0
         ), from: caller)
         return .accepted
@@ -171,12 +179,14 @@ struct StremioService: Sendable {
     {
         guard let mediaType = Self.mediaType(type), let id = StremioID(metaID), let action = extra["action"]
         else { return .ignored }
-        let episodes = (extra["videoId"] ?? "").split(separator: ",")
+        let named = (extra["videoId"] ?? "").split(separator: ",")
             .compactMap { StremioID(String($0)) }
             .filter { $0.base == id.base }
             .compactMap(\.episode)
         let ref = id.mediaRef
-        let mediaRef = MediaRef(titleID: ref.titleID, type: mediaType, ids: ref.ids)
+        let (mediaRef, episodes) = try await placed(
+            named, ref: MediaRef(titleID: ref.titleID, type: mediaType, ids: ref.ids), of: id
+        )
         switch action {
         case "watched":
             guard caller.has(.scrobbleWrite) else { return .forbidden }
@@ -195,6 +205,34 @@ struct StremioService: Sendable {
         default:
             return .ignored
         }
+    }
+
+    /// What a library event acts on, with Stremio's numbers put on the show. Episodes it cannot
+    /// place drop out; with none left, the event is ignored.
+    private func placed(_ episodes: [EpisodeKey], ref: MediaRef, of id: StremioID) async throws
+        -> (MediaRef, [EpisodeKey])
+    {
+        guard ref.type == .show, let mapped = try await onShow(episodes, of: id) else { return (ref, episodes) }
+        return (MediaRef(titleID: mapped.title.id, type: .show, ids: ref.ids), mapped.episodes)
+    }
+
+    /// Stremio's episodes of IMDb series `id` as the matched show numbers them, leaving out any it
+    /// cannot place. Nil when there is nothing to translate: no map, an Aaru id, or no such show.
+    private func onShow(_ keys: [EpisodeKey], of id: StremioID) async throws
+        -> (title: Title, episodes: [EpisodeKey])?
+    {
+        guard let episodeMap, case let .imdb(imdb) = id.base, !keys.isEmpty,
+              let title = try await scrobble.resolve(MediaRef(type: .show, ids: id.mediaRef.ids)),
+              title.type == .show
+        else { return nil }
+        let known = try await catalog.detail(title.id).episodes ?? []
+        var episodes: [EpisodeKey] = []
+        for key in keys {
+            if let mapped = await episodeMap.episode(key, imdb: imdb, title: title, episodes: known) {
+                episodes.append(mapped)
+            }
+        }
+        return (title, episodes)
     }
 
     private func unwatch(_ ref: MediaRef, episodes: [EpisodeKey], caller: AgentCaller) async throws -> EventResult {
