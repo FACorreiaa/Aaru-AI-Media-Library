@@ -35,6 +35,7 @@ import {
   Toaster,
   useSidebar,
 } from '~/components/ui'
+import { createFocusReturn, focusFieldOnOpen } from '../../lib/dialog-focus'
 import { listGroups } from '../../lib/groups/server'
 import { upsert } from '../../lib/library/model'
 import type { LibraryEntry } from '../../lib/library/model'
@@ -143,6 +144,8 @@ export function AppShell(props: {
   const [ownEntries, setOwnEntries] = createSignal<LibraryEntry[]>([])
   const [previous, setPrevious] = createSignal<Previous | null>(null)
   const [mentions, setMentions] = createSignal(0)
+  // Esc or Done returns focus to the control that opened Search.
+  const focusReturn = createFocusReturn()
   let ownRequested = false
 
   function loadOwnLibrary() {
@@ -158,7 +161,8 @@ export function AppShell(props: {
       })
   }
 
-  function openSearch(next?: Scope) {
+  function openSearch(next?: Scope, from?: Element) {
+    if (!searchOpen()) focusReturn.remember(from)
     if (next !== undefined || scope() !== undefined) {
       setScope(next)
       setSearchKey((k) => k + 1)
@@ -230,10 +234,10 @@ export function AppShell(props: {
         <AppSidebar
           session={props.session}
           mentions={mentions()}
-          onSearch={() => openSearch()}
+          onSearch={(from) => openSearch(undefined, from)}
         />
         <SidebarInset class="min-w-0">
-          <TopBar onSearch={() => openSearch()} />
+          <TopBar onSearch={(from) => openSearch(undefined, from)} />
           <div
             id="content"
             tabIndex={-1}
@@ -249,6 +253,8 @@ export function AppShell(props: {
           <DialogContent
             showCloseButton={false}
             aria-label="Search"
+            onOpenAutoFocus={focusFieldOnOpen}
+            onCloseAutoFocus={focusReturn.restore}
             class="block w-[min(40rem,calc(100vw-2rem))] gap-0 p-0 sm:max-w-none"
           >
             <Show when={searchMounted()}>
@@ -314,7 +320,7 @@ function NavRow(props: { d: Destination; badge?: number }) {
 function AppSidebar(props: {
   session: ShellSession
   mentions: number
-  onSearch: () => void
+  onSearch: (from: Element) => void
 }) {
   const sidebar = useSidebar()
   const location = useLocation()
@@ -346,7 +352,9 @@ function AppSidebar(props: {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => props.onSearch()}
+              onClick={(event: MouseEvent) =>
+                props.onSearch(event.currentTarget as Element)
+              }
               tooltip="Search (⌘K)"
               aria-keyshortcuts="Meta+K Control+K"
               size="lg"
@@ -418,7 +426,7 @@ function AppSidebar(props: {
 }
 
 /** Below 1024px: the wordmark, Search and the menu that opens the sidebar as a sheet. */
-function TopBar(props: { onSearch: () => void }) {
+function TopBar(props: { onSearch: (from: Element) => void }) {
   const sidebar = useSidebar()
   return (
     <header class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-paper/95 px-4 backdrop-blur-sm lg:hidden">
@@ -428,7 +436,7 @@ function TopBar(props: { onSearch: () => void }) {
           variant="ghost"
           size="icon"
           aria-label="Search"
-          onClick={() => props.onSearch()}
+          onClick={(event) => props.onSearch(event.currentTarget)}
           class="text-ink"
         >
           <SearchIcon class="size-5" />

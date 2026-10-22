@@ -24,6 +24,7 @@ import type {
   MediaKind,
 } from '../lib/library/model'
 import { AddControl } from './AddControl'
+import { ListAddIcon } from './shell/icons'
 import { Poster } from './Poster'
 import { AddToListDialog } from './AddToListDialog'
 import {
@@ -279,14 +280,19 @@ export function SearchPanel(props: {
                   <Show
                     when={props.list}
                     fallback={
-                      <>
+                      // shrink-0: the title wraps, never the actions. Below sm the list button
+                      // is its icon, named for screen readers by aria-label.
+                      <div class="flex shrink-0 items-center gap-1 sm:gap-2">
                         <Button
                           variant="ghost"
                           size="bare"
-                          class="text-sm"
+                          class="min-h-9 gap-1.5 px-1.5 text-sm"
+                          aria-label={`Add ${hit.title} to a list`}
+                          title="Add to a list"
                           onClick={() => setListTarget(hit)}
                         >
-                          List…
+                          <ListAddIcon class="size-4.5" />
+                          <span class="hidden sm:inline">List</span>
                         </Button>
                         <Show
                           when={!isOnShelf(hit, props.entries ?? [])}
@@ -302,7 +308,7 @@ export function SearchPanel(props: {
                             onAdd={(status) => void add(hit, status)}
                           />
                         </Show>
-                      </>
+                      </div>
                     }
                   >
                     {(list) => (

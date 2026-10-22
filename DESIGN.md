@@ -182,9 +182,12 @@ spreadsheet.
 backdrop with the title on it; a book card is its cover. Each shows how far along it is ("4 of
 10 episodes" with a bar, "35%", "Page 120") and the one next step: **Mark S1 · E5 watched**
 ticks the next aired episode, **Update page** moves a book, **Mark read** / **Mark watched**
-closes it (wording aligned 2026-10-21, UX-043/044). A
-kind chip narrows Now with the shelf; another status hides it. Cards scroll sideways on phones
-and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
+closes it (wording aligned 2026-10-21, UX-043/044). The filters sit under the page title,
+above Now (2026-10-22). A kind chip narrows Now with the shelf; choosing any status hides it,
+since the shelf is then that list. Each group shows its newest six, with "Show all N" to open
+the rest in place. Below Now the shelf has its own heading, naming the filter ("Shows ·
+Watching", "All titles") with a count; arriving with `?status=` or `?kind=` scrolls to it.
+Cards scroll sideways on phones and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
 carry Open Library's page count, so a page reads "Page 120 of 412" with its bar.
 
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
@@ -309,7 +312,7 @@ rows of wide cards, one job per row.
   the catalogs: Trending shows, this season's anime ("Fall 2026 anime"), Trending movies, On
   the air, Trending anime, New shows, In theaters, Trending books, then New albums and Coming
   soon (MUS-002, square covers; an upcoming album wears its release day, "Tomorrow", "Oct 30"). A card not on the shelf is
-  an add (tap: wishlist; hold or "As…": a status or a list); a card on the shelf wears a check
+  an add (tap: wishlist; hold or the chevron beside Add: a status or a list); a card on the shelf wears a check
   and opens the item. A new account sees a slim "Add a show to see what's next" header above
   them instead of an empty screen. The same rows for everyone; never "because you watched".
 

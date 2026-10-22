@@ -106,3 +106,16 @@ export const BackIcon = (p: IconProps) => (
     <path d="m14.5 6-6 6 6 6" />
   </Icon>
 )
+
+export const ChevronDownIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="m6 9.5 6 6 6-6" />
+  </Icon>
+)
+
+/** The list lines with a plus: "add to a list". */
+export const ListAddIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="M4 6.5h12M4 12h12M4 17.5h7M17 15v6M14 18h6" />
+  </Icon>
+)

@@ -1,5 +1,5 @@
 import type { ComponentProps, ValidComponent } from 'solid-js'
-import { For, Match, Switch, splitProps } from 'solid-js'
+import { For, Match, Switch, children, splitProps } from 'solid-js'
 import { TextField as TextFieldPrimitive } from '@kobalte/core/text-field'
 
 import { cx } from '~/lib/cva'
@@ -106,6 +106,9 @@ export const TextFieldErrorMessage = <T extends ValidComponent = 'div'>(
     'children',
   ])
 
+  // Aaru: resolved once; reading props.children in `when` and again in the body makes it twice.
+  const content = children(() => props.children)
+
   const uniqueErrors = () => [
     ...new Map(props.errors?.map((error) => [error?.message, error])).values(),
   ]
@@ -125,7 +128,7 @@ export const TextFieldErrorMessage = <T extends ValidComponent = 'div'>(
           </ul>
         }
       >
-        <Match when={props.children}>{props.children}</Match>
+        <Match when={content()}>{content()}</Match>
         <Match when={!props.errors?.length}>{null}</Match>
         <Match when={uniqueErrors().length == 1}>
           {uniqueErrors()[0]?.message}
