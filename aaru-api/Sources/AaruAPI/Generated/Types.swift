@@ -94,6 +94,24 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/social/friends/{userId}`.
     /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)`.
     func removeFriend(_ input: Operations.RemoveFriend.Input) async throws -> Operations.RemoveFriend.Output
+    /// What your friends may see. Strangers never see anything, whatever is set here.
+    ///
+    /// - Remark: HTTP `GET /v1/me/social-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/social-settings/get(getSocialSettings)`.
+    func getSocialSettings(_ input: Operations.GetSocialSettings.Input) async throws -> Operations.GetSocialSettings.Output
+    /// - Remark: HTTP `PUT /v1/me/social-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/social-settings/put(updateSocialSettings)`.
+    func updateSocialSettings(_ input: Operations.UpdateSocialSettings.Input) async throws -> Operations.UpdateSocialSettings.Output
+    /// A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false).
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends/{userId}/profile`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/profile/get(getFriendProfile)`.
+    func getFriendProfile(_ input: Operations.GetFriendProfile.Input) async throws -> Operations.GetFriendProfile.Output
+    /// Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out.
+    ///
+    /// - Remark: HTTP `GET /v1/activity`.
+    /// - Remark: Generated from `#/paths//v1/activity/get(listFriendActivity)`.
+    func listFriendActivity(_ input: Operations.ListFriendActivity.Input) async throws -> Operations.ListFriendActivity.Output
     /// People you blocked.
     ///
     /// - Remark: HTTP `GET /v1/social/blocks`.
@@ -819,6 +837,50 @@ extension APIProtocol {
     ) async throws -> Operations.RemoveFriend.Output {
         try await removeFriend(Operations.RemoveFriend.Input(
             path: path,
+            headers: headers
+        ))
+    }
+    /// What your friends may see. Strangers never see anything, whatever is set here.
+    ///
+    /// - Remark: HTTP `GET /v1/me/social-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/social-settings/get(getSocialSettings)`.
+    public func getSocialSettings(headers: Operations.GetSocialSettings.Input.Headers = .init()) async throws -> Operations.GetSocialSettings.Output {
+        try await getSocialSettings(Operations.GetSocialSettings.Input(headers: headers))
+    }
+    /// - Remark: HTTP `PUT /v1/me/social-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/social-settings/put(updateSocialSettings)`.
+    public func updateSocialSettings(
+        headers: Operations.UpdateSocialSettings.Input.Headers = .init(),
+        body: Operations.UpdateSocialSettings.Input.Body
+    ) async throws -> Operations.UpdateSocialSettings.Output {
+        try await updateSocialSettings(Operations.UpdateSocialSettings.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false).
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends/{userId}/profile`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/profile/get(getFriendProfile)`.
+    public func getFriendProfile(
+        path: Operations.GetFriendProfile.Input.Path,
+        headers: Operations.GetFriendProfile.Input.Headers = .init()
+    ) async throws -> Operations.GetFriendProfile.Output {
+        try await getFriendProfile(Operations.GetFriendProfile.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out.
+    ///
+    /// - Remark: HTTP `GET /v1/activity`.
+    /// - Remark: Generated from `#/paths//v1/activity/get(listFriendActivity)`.
+    public func listFriendActivity(
+        query: Operations.ListFriendActivity.Input.Query = .init(),
+        headers: Operations.ListFriendActivity.Input.Headers = .init()
+    ) async throws -> Operations.ListFriendActivity.Output {
+        try await listFriendActivity(Operations.ListFriendActivity.Input(
+            query: query,
             headers: headers
         ))
     }
@@ -3993,6 +4055,317 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SocialSettings`.
+        public struct SocialSettings: Codable, Hashable, Sendable {
+            /// Friends see your shelves, activity and what you share. On by default.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SocialSettings/shareLibraryWithFriends`.
+            public var shareLibraryWithFriends: Swift.Bool
+            /// Creates a new `SocialSettings`.
+            ///
+            /// - Parameters:
+            ///   - shareLibraryWithFriends: Friends see your shelves, activity and what you share. On by default.
+            public init(shareLibraryWithFriends: Swift.Bool) {
+                self.shareLibraryWithFriends = shareLibraryWithFriends
+            }
+            public enum CodingKeys: String, CodingKey {
+                case shareLibraryWithFriends
+            }
+        }
+        /// One title on a friend's shelf. Never their notes.
+        ///
+        /// - Remark: Generated from `#/components/schemas/FriendItem`.
+        public struct FriendItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendItem/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// - Remark: Generated from `#/components/schemas/FriendItem/status`.
+            public var status: Components.Schemas.LibraryStatus
+            /// - Remark: Generated from `#/components/schemas/FriendItem/rating`.
+            public var rating: Swift.Double?
+            /// Shows. The last episode they ticked.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendItem/lastSeason`.
+            public var lastSeason: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/FriendItem/lastEpisode`.
+            public var lastEpisode: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/FriendItem/bookPage`.
+            public var bookPage: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/FriendItem/finishedAt`.
+            public var finishedAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/FriendItem/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `FriendItem`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - status:
+            ///   - rating:
+            ///   - lastSeason: Shows. The last episode they ticked.
+            ///   - lastEpisode:
+            ///   - bookPage:
+            ///   - finishedAt:
+            ///   - updatedAt:
+            public init(
+                title: Components.Schemas.TitleSummary,
+                status: Components.Schemas.LibraryStatus,
+                rating: Swift.Double? = nil,
+                lastSeason: Swift.Int? = nil,
+                lastEpisode: Swift.Int? = nil,
+                bookPage: Swift.Int? = nil,
+                finishedAt: Foundation.Date? = nil,
+                updatedAt: Foundation.Date
+            ) {
+                self.title = title
+                self.status = status
+                self.rating = rating
+                self.lastSeason = lastSeason
+                self.lastEpisode = lastEpisode
+                self.bookPage = bookPage
+                self.finishedAt = finishedAt
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case status
+                case rating
+                case lastSeason
+                case lastEpisode
+                case bookPage
+                case finishedAt
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/KindCounts`.
+        public struct KindCounts: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/KindCounts/movie`.
+            public var movie: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/KindCounts/show`.
+            public var show: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/KindCounts/anime`.
+            public var anime: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/KindCounts/book`.
+            public var book: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/KindCounts/album`.
+            public var album: Swift.Int
+            /// Creates a new `KindCounts`.
+            ///
+            /// - Parameters:
+            ///   - movie:
+            ///   - show:
+            ///   - anime:
+            ///   - book:
+            ///   - album:
+            public init(
+                movie: Swift.Int,
+                show: Swift.Int,
+                anime: Swift.Int,
+                book: Swift.Int,
+                album: Swift.Int
+            ) {
+                self.movie = movie
+                self.show = show
+                self.anime = anime
+                self.book = book
+                self.album = album
+            }
+            public enum CodingKeys: String, CodingKey {
+                case movie
+                case show
+                case anime
+                case book
+                case album
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendCompare`.
+        public struct FriendCompare: Codable, Hashable, Sendable {
+            /// Titles you both plan to watch or read.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendCompare/bothWant`.
+            public var bothWant: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/FriendCompare/bothFinished`.
+            public var bothFinished: Swift.Int
+            /// Titles they rated 8 or more that you don't have.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendCompare/theyLoved`.
+            public var theyLoved: [Components.Schemas.TitleSummary]
+            /// Creates a new `FriendCompare`.
+            ///
+            /// - Parameters:
+            ///   - bothWant: Titles you both plan to watch or read.
+            ///   - bothFinished:
+            ///   - theyLoved: Titles they rated 8 or more that you don't have.
+            public init(
+                bothWant: [Components.Schemas.TitleSummary],
+                bothFinished: Swift.Int,
+                theyLoved: [Components.Schemas.TitleSummary]
+            ) {
+                self.bothWant = bothWant
+                self.bothFinished = bothFinished
+                self.theyLoved = theyLoved
+            }
+            public enum CodingKeys: String, CodingKey {
+                case bothWant
+                case bothFinished
+                case theyLoved
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FriendProfile`.
+        public struct FriendProfile: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/friendsSince`.
+            public var friendsSince: Foundation.Date
+            /// False when they hide their library; nothing below is sent then.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/sharing`.
+            public var sharing: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/counts`.
+            public var counts: Components.Schemas.KindCounts?
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/watching`.
+            public var watching: [Components.Schemas.FriendItem]?
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/recentlyFinished`.
+            public var recentlyFinished: [Components.Schemas.FriendItem]?
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/compare`.
+            public var compare: Components.Schemas.FriendCompare?
+            /// Creates a new `FriendProfile`.
+            ///
+            /// - Parameters:
+            ///   - user:
+            ///   - friendsSince:
+            ///   - sharing: False when they hide their library; nothing below is sent then.
+            ///   - counts:
+            ///   - watching:
+            ///   - recentlyFinished:
+            ///   - compare:
+            public init(
+                user: Components.Schemas.SocialUser,
+                friendsSince: Foundation.Date,
+                sharing: Swift.Bool,
+                counts: Components.Schemas.KindCounts? = nil,
+                watching: [Components.Schemas.FriendItem]? = nil,
+                recentlyFinished: [Components.Schemas.FriendItem]? = nil,
+                compare: Components.Schemas.FriendCompare? = nil
+            ) {
+                self.user = user
+                self.friendsSince = friendsSince
+                self.sharing = sharing
+                self.counts = counts
+                self.watching = watching
+                self.recentlyFinished = recentlyFinished
+                self.compare = compare
+            }
+            public enum CodingKeys: String, CodingKey {
+                case user
+                case friendsSince
+                case sharing
+                case counts
+                case watching
+                case recentlyFinished
+                case compare
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ActivityItem`.
+        public struct ActivityItem: Codable, Hashable, Sendable {
+            /// Stable per friend, title and day.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/title`.
+            public var title: Components.Schemas.TitleSummary
+            /// The UTC day.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/day`.
+            public var day: Swift.String
+            /// Episodes ticked that day.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/episodes`.
+            public var episodes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/lastSeason`.
+            public var lastSeason: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/lastEpisode`.
+            public var lastEpisode: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/finished`.
+            public var finished: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/rating`.
+            public var rating: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ActivityItem/at`.
+            public var at: Foundation.Date
+            /// Creates a new `ActivityItem`.
+            ///
+            /// - Parameters:
+            ///   - id: Stable per friend, title and day.
+            ///   - user:
+            ///   - title:
+            ///   - day: The UTC day.
+            ///   - episodes: Episodes ticked that day.
+            ///   - lastSeason:
+            ///   - lastEpisode:
+            ///   - finished:
+            ///   - rating:
+            ///   - at:
+            public init(
+                id: Swift.String,
+                user: Components.Schemas.SocialUser,
+                title: Components.Schemas.TitleSummary,
+                day: Swift.String,
+                episodes: Swift.Int,
+                lastSeason: Swift.Int? = nil,
+                lastEpisode: Swift.Int? = nil,
+                finished: Swift.Bool,
+                rating: Swift.Double? = nil,
+                at: Foundation.Date
+            ) {
+                self.id = id
+                self.user = user
+                self.title = title
+                self.day = day
+                self.episodes = episodes
+                self.lastSeason = lastSeason
+                self.lastEpisode = lastEpisode
+                self.finished = finished
+                self.rating = rating
+                self.at = at
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case user
+                case title
+                case day
+                case episodes
+                case lastSeason
+                case lastEpisode
+                case finished
+                case rating
+                case at
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ActivityPage`.
+        public struct ActivityPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ActivityPage/items`.
+            public var items: [Components.Schemas.ActivityItem]
+            /// Pass as `before` for the next page; absent on the last one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ActivityPage/nextBefore`.
+            public var nextBefore: Foundation.Date?
+            /// Creates a new `ActivityPage`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - nextBefore: Pass as `before` for the next page; absent on the last one.
+            public init(
+                items: [Components.Schemas.ActivityItem],
+                nextBefore: Foundation.Date? = nil
+            ) {
+                self.items = items
+                self.nextBefore = nextBefore
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case nextBefore
             }
         }
         /// - Remark: Generated from `#/components/schemas/FriendInvite`.
@@ -11001,6 +11374,569 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/delete(removeFriend)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// What your friends may see. Strangers never see anything, whatever is set here.
+    ///
+    /// - Remark: HTTP `GET /v1/me/social-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/social-settings/get(getSocialSettings)`.
+    public enum GetSocialSettings {
+        public static let id: Swift.String = "getSocialSettings"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/social-settings/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSocialSettings.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSocialSettings.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSocialSettings.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetSocialSettings.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/social-settings/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/social-settings/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialSettings)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialSettings {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSocialSettings.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSocialSettings.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Your settings.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/social-settings/get(getSocialSettings)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSocialSettings.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSocialSettings.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/social-settings/get(getSocialSettings)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `PUT /v1/me/social-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/social-settings/put(updateSocialSettings)`.
+    public enum UpdateSocialSettings {
+        public static let id: Swift.String = "updateSocialSettings"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/social-settings/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateSocialSettings.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateSocialSettings.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateSocialSettings.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/social-settings/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/social-settings/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.SocialSettings)
+            }
+            public var body: Operations.UpdateSocialSettings.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.UpdateSocialSettings.Input.Headers = .init(),
+                body: Operations.UpdateSocialSettings.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/social-settings/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/social-settings/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SocialSettings)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SocialSettings {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateSocialSettings.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateSocialSettings.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/social-settings/put(updateSocialSettings)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateSocialSettings.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateSocialSettings.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/social-settings/put(updateSocialSettings)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false).
+    ///
+    /// - Remark: HTTP `GET /v1/social/friends/{userId}/profile`.
+    /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/profile/get(getFriendProfile)`.
+    public enum GetFriendProfile {
+        public static let id: Swift.String = "getFriendProfile"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/profile/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/profile/GET/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - userId:
+                public init(userId: Swift.String) {
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.GetFriendProfile.Input.Path
+            /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/profile/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetFriendProfile.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetFriendProfile.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetFriendProfile.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetFriendProfile.Input.Path,
+                headers: Operations.GetFriendProfile.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/profile/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/social/friends/{userId}/profile/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.FriendProfile)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.FriendProfile {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetFriendProfile.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetFriendProfile.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The profile.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/profile/get(getFriendProfile)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetFriendProfile.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetFriendProfile.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/social/friends/{userId}/profile/get(getFriendProfile)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out.
+    ///
+    /// - Remark: HTTP `GET /v1/activity`.
+    /// - Remark: Generated from `#/paths//v1/activity/get(listFriendActivity)`.
+    public enum ListFriendActivity {
+        public static let id: Swift.String = "listFriendActivity"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/activity/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// The `nextBefore` of the previous page.
+                ///
+                /// - Remark: Generated from `#/paths/v1/activity/GET/query/before`.
+                public var before: Foundation.Date?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - before: The `nextBefore` of the previous page.
+                public init(before: Foundation.Date? = nil) {
+                    self.before = before
+                }
+            }
+            public var query: Operations.ListFriendActivity.Input.Query
+            /// - Remark: Generated from `#/paths/v1/activity/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriendActivity.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListFriendActivity.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListFriendActivity.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListFriendActivity.Input.Query = .init(),
+                headers: Operations.ListFriendActivity.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/activity/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/activity/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ActivityPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ActivityPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListFriendActivity.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListFriendActivity.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// One page.
+            ///
+            /// - Remark: Generated from `#/paths//v1/activity/get(listFriendActivity)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListFriendActivity.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListFriendActivity.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/activity/get(listFriendActivity)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

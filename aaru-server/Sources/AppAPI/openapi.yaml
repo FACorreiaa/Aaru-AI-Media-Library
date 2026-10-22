@@ -258,6 +258,64 @@ paths:
           description: No longer friends.
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/social-settings:
+    get:
+      operationId: getSocialSettings
+      summary: What your friends may see. Strangers never see anything, whatever is set here.
+      responses:
+        '200':
+          description: Your settings.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialSettings'}
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: updateSocialSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SocialSettings'}
+      responses:
+        '200':
+          description: Saved.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialSettings'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/friends/{userId}/profile:
+    get:
+      operationId: getFriendProfile
+      summary: A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false).
+      parameters:
+        - {name: userId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The profile.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FriendProfile'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/activity:
+    get:
+      operationId: listFriendActivity
+      summary: Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out.
+      parameters:
+        - name: before
+          in: query
+          description: The `nextBefore` of the previous page.
+          schema: {type: string, format: date-time}
+      responses:
+        '200':
+          description: One page.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ActivityPage'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/social/blocks:
     get:
       operationId: listBlocks
@@ -2685,6 +2743,90 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/SocialUser'}
+    SocialSettings:
+      type: object
+      required: [shareLibraryWithFriends]
+      properties:
+        shareLibraryWithFriends:
+          type: boolean
+          description: Friends see your shelves, activity and what you share. On by default.
+    FriendItem:
+      type: object
+      required: [title, status, updatedAt]
+      description: One title on a friend's shelf. Never their notes.
+      properties:
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+        rating: {type: number}
+        lastSeason: {type: integer, description: Shows. The last episode they ticked.}
+        lastEpisode: {type: integer}
+        bookPage: {type: integer}
+        finishedAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    KindCounts:
+      type: object
+      required: [movie, show, anime, book, album]
+      properties:
+        movie: {type: integer}
+        show: {type: integer}
+        anime: {type: integer}
+        book: {type: integer}
+        album: {type: integer}
+    FriendCompare:
+      type: object
+      required: [bothWant, bothFinished, theyLoved]
+      properties:
+        bothWant:
+          type: array
+          description: Titles you both plan to watch or read.
+          items: {$ref: '#/components/schemas/TitleSummary'}
+        bothFinished: {type: integer}
+        theyLoved:
+          type: array
+          description: Titles they rated 8 or more that you don't have.
+          items: {$ref: '#/components/schemas/TitleSummary'}
+    FriendProfile:
+      type: object
+      required: [user, friendsSince, sharing]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        friendsSince: {type: string, format: date-time}
+        sharing:
+          type: boolean
+          description: False when they hide their library; nothing below is sent then.
+        counts: {$ref: '#/components/schemas/KindCounts'}
+        watching:
+          type: array
+          items: {$ref: '#/components/schemas/FriendItem'}
+        recentlyFinished:
+          type: array
+          items: {$ref: '#/components/schemas/FriendItem'}
+        compare: {$ref: '#/components/schemas/FriendCompare'}
+    ActivityItem:
+      type: object
+      required: [id, user, title, day, episodes, finished, at]
+      properties:
+        id: {type: string, description: 'Stable per friend, title and day.'}
+        user: {$ref: '#/components/schemas/SocialUser'}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        day: {type: string, format: date, description: The UTC day.}
+        episodes: {type: integer, description: Episodes ticked that day.}
+        lastSeason: {type: integer}
+        lastEpisode: {type: integer}
+        finished: {type: boolean}
+        rating: {type: number}
+        at: {type: string, format: date-time}
+    ActivityPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ActivityItem'}
+        nextBefore:
+          type: string
+          format: date-time
+          description: Pass as `before` for the next page; absent on the last one.
     FriendInvite:
       type: object
       required: [code, url, createdAt, expiresAt]

@@ -1,7 +1,7 @@
 import AaruAPI
 import SwiftUI
 
-/// The Settings row for friends: your handle, and the way into the friends screen.
+/// The Settings rows for friends: your handle, and whether friends see your library (SOC-001).
 struct FriendsSection: View {
     @State private var model: SocialModel
 
@@ -17,22 +17,18 @@ struct FriendsSection: View {
                 LabeledContent("Handle", value: model.handle.map { "@\($0)" } ?? "Choose one")
             }
             if model.handle != nil {
-                NavigationLink {
-                    FriendsView(model: model)
-                } label: {
-                    LabeledContent("Friends") {
-                        if model.incoming.isEmpty {
-                            Text("\(model.friends.count)")
-                        } else {
-                            Text("\(model.incoming.count) asking").foregroundStyle(Color(.accent))
-                        }
-                    }
-                }
+                Toggle(
+                    "Show my library to friends",
+                    isOn: Binding(get: { model.shareLibrary }, set: { share in
+                        Task { await model.setShareLibrary(share) }
+                    })
+                )
+                .tint(Color(.accent))
             }
         } header: {
             Text("Profile and friends")
         } footer: {
-            Text("Friends join by your invite link or your exact handle. Nobody can search or browse for you.")
+            Text("Friends see what you're watching and finished. Nobody else ever does. Invites live in Friends.")
         }
         .task { await model.load() }
     }
@@ -109,6 +105,16 @@ struct FriendsView: View {
 
     var body: some View {
         List {
+            if !model.activity.isEmpty {
+                Section("Lately") {
+                    ForEach(model.activity, id: \.id) { item in
+                        NavigationLink(value: item.user) { ActivityRow(item: item) }
+                    }
+                    if model.activityNext != nil {
+                        Button("Earlier") { Task { await model.loadEarlierActivity() } }
+                    }
+                }
+            }
             Section {
                 Button {
                     makeInvite()
@@ -186,7 +192,7 @@ struct FriendsView: View {
                         .foregroundStyle(Color(.muted))
                 }
                 ForEach(model.friends, id: \.userId) { friend in
-                    PersonRow(user: friend) { EmptyView() }
+                    NavigationLink(value: friend) { PersonRow(user: friend) { EmptyView() } }
                         .swipeActions {
                             Button("Block", role: .destructive) { blocking = friend }
                             Button("Remove") { Task { await model.remove(friend) } }

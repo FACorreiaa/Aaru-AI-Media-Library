@@ -28,6 +28,8 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
+import { Route as AppFriendsIndexRouteImport } from './routes/app_.friends.index'
+import { Route as AppFriendsHandleRouteImport } from './routes/app_.friends.$handle'
 import { Route as AppGroupsIndexRouteImport } from './routes/app_.groups.index'
 import { Route as AppGroupsGroupIdRouteImport } from './routes/app_.groups.$groupId'
 import { Route as AppImportsIdRouteImport } from './routes/app_.imports.$id'
@@ -140,6 +142,16 @@ const OauthConsentRoute = OauthConsentRouteImport.update({
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppFriendsIndexRoute = AppFriendsIndexRouteImport.update({
+  id: '/app_/friends/',
+  path: '/app/friends/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppFriendsHandleRoute = AppFriendsHandleRouteImport.update({
+  id: '/app_/friends/$handle',
+  path: '/app/friends/$handle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppGroupsIndexRoute = AppGroupsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -237,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/app/friends/$handle': typeof AppFriendsHandleRoute
   '/app/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
@@ -247,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/app/settings/imports': typeof AppSettingsImportsRoute
   '/app/settings/recaps': typeof AppSettingsRecapsRoute
   '/app/title/$id': typeof AppTitleIdRoute
+  '/app/friends/': typeof AppFriendsIndexRoute
   '/app/groups/': typeof AppGroupsIndexRoute
   '/app/lists/': typeof AppListsIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
@@ -271,6 +285,7 @@ export interface FileRoutesByTo {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/app/friends/$handle': typeof AppFriendsHandleRoute
   '/app/imports/$id': typeof AppImportsIdRoute
   '/app/lists/$id': typeof AppListsIdRoute
   '/app/plans/$id': typeof AppPlansIdRoute
@@ -280,6 +295,7 @@ export interface FileRoutesByTo {
   '/app/settings/imports': typeof AppSettingsImportsRoute
   '/app/settings/recaps': typeof AppSettingsRecapsRoute
   '/app/title/$id': typeof AppTitleIdRoute
+  '/app/friends': typeof AppFriendsIndexRoute
   '/app/groups': typeof AppGroupsIndexRoute
   '/app/lists': typeof AppListsIndexRoute
   '/app/settings': typeof AppSettingsIndexRoute
@@ -307,6 +323,7 @@ export interface FileRoutesById {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/app_/friends/$handle': typeof AppFriendsHandleRoute
   '/app_/groups/$groupId': typeof AppGroupsGroupIdRouteWithChildren
   '/app_/imports/$id': typeof AppImportsIdRoute
   '/app_/lists/$id': typeof AppListsIdRoute
@@ -317,6 +334,7 @@ export interface FileRoutesById {
   '/app_/settings/imports': typeof AppSettingsImportsRoute
   '/app_/settings/recaps': typeof AppSettingsRecapsRoute
   '/app_/title/$id': typeof AppTitleIdRoute
+  '/app_/friends/': typeof AppFriendsIndexRoute
   '/app_/groups/': typeof AppGroupsIndexRoute
   '/app_/lists/': typeof AppListsIndexRoute
   '/app_/settings/': typeof AppSettingsIndexRoute
@@ -345,6 +363,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/app/friends/$handle'
     | '/app/groups/$groupId'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -355,6 +374,7 @@ export interface FileRouteTypes {
     | '/app/settings/imports'
     | '/app/settings/recaps'
     | '/app/title/$id'
+    | '/app/friends/'
     | '/app/groups/'
     | '/app/lists/'
     | '/app/settings/'
@@ -379,6 +399,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/app/friends/$handle'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/plans/$id'
@@ -388,6 +409,7 @@ export interface FileRouteTypes {
     | '/app/settings/imports'
     | '/app/settings/recaps'
     | '/app/title/$id'
+    | '/app/friends'
     | '/app/groups'
     | '/app/lists'
     | '/app/settings'
@@ -414,6 +436,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/app_/friends/$handle'
     | '/app_/groups/$groupId'
     | '/app_/imports/$id'
     | '/app_/lists/$id'
@@ -424,6 +447,7 @@ export interface FileRouteTypes {
     | '/app_/settings/imports'
     | '/app_/settings/recaps'
     | '/app_/title/$id'
+    | '/app_/friends/'
     | '/app_/groups/'
     | '/app_/lists/'
     | '/app_/settings/'
@@ -451,10 +475,12 @@ export interface RootRouteChildren {
   ConnectExtensionRoute: typeof ConnectExtensionRoute
   ICodeRoute: typeof ICodeRoute
   OauthConsentRoute: typeof OauthConsentRoute
+  AppFriendsHandleRoute: typeof AppFriendsHandleRoute
   AppImportsIdRoute: typeof AppImportsIdRoute
   AppListsIdRoute: typeof AppListsIdRoute
   AppPlansIdRoute: typeof AppPlansIdRoute
   AppTitleIdRoute: typeof AppTitleIdRoute
+  AppFriendsIndexRoute: typeof AppFriendsIndexRoute
   AppListsIndexRoute: typeof AppListsIndexRoute
 }
 
@@ -591,6 +617,20 @@ declare module '@tanstack/solid-router' {
       path: '/oauth/consent'
       fullPath: '/oauth/consent'
       preLoaderRoute: typeof OauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/friends/': {
+      id: '/app_/friends/'
+      path: '/app/friends'
+      fullPath: '/app/friends/'
+      preLoaderRoute: typeof AppFriendsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/friends/$handle': {
+      id: '/app_/friends/$handle'
+      path: '/app/friends/$handle'
+      fullPath: '/app/friends/$handle'
+      preLoaderRoute: typeof AppFriendsHandleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app_/groups/': {
@@ -771,10 +811,12 @@ const rootRouteChildren: RootRouteChildren = {
   ConnectExtensionRoute: ConnectExtensionRoute,
   ICodeRoute: ICodeRoute,
   OauthConsentRoute: OauthConsentRoute,
+  AppFriendsHandleRoute: AppFriendsHandleRoute,
   AppImportsIdRoute: AppImportsIdRoute,
   AppListsIdRoute: AppListsIdRoute,
   AppPlansIdRoute: AppPlansIdRoute,
   AppTitleIdRoute: AppTitleIdRoute,
+  AppFriendsIndexRoute: AppFriendsIndexRoute,
   AppListsIndexRoute: AppListsIndexRoute,
 }
 export const routeTree = rootRouteImport
