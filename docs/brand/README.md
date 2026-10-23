@@ -9,6 +9,7 @@
 | `source/a-mark-small.svg` | Legs as fitted geometry (no swooshes), thicker, and a bigger star: for 40 px and below | Master for the small icon |
 | `source/app-icon.svg` | The A-mark at 64% on a navy gradient with the hologram's blue glow (owner approved 2026-10-22) | iOS 1024, macOS 128–512 pt, PWA, `apple-touch-icon`, extension 96/128, landing `app-icon.webp` |
 | `source/app-icon-small.svg` | `a-mark-small` at 80% on flat navy | macOS 16/32 pt, favicons, extension 16/32/48 |
+| `out/owl/app-icon-dark.svg`, `app-icon-tinted.svg` | `owl_icon_appearances.py` (BRD-010): the A-mark on flat navy without the glow, and the mark alone in grey on transparent | iOS 18 dark and tinted Home Screen icons: `icon-1024-dark.png`, `icon-1024-tinted.png` in both `AppIcon*` sets (`uv run --python 3.12 --with pillow --with numpy --with scipy python owl_icon_appearances.py`; falls back to Quick Look when librsvg is broken) |
 | `source/wordmark.svg` | The poster's "Aaru", traced, `fill="currentColor"` | `Wordmark` image set (template, vector), web `wordmark.svg` as a CSS mask over the text colour |
 | `out/owl/web/og.jpg` | The poster cropped to 1200x630 | `aaru-client/public/og.jpg` |
 | `source/poses/{curious,sleeping,celebrating}.png` | `owl_poses.py`: generated from the owl master on night navy with FLUX.1 Kontext [dev] (prompts and seeds in the script), approved by the owner 2026-10-23; cut out by keying the edge-connected navy | `OwlCurious`, `OwlSleeping`, `OwlCelebrating` image sets and web `owl-{pose}*.webp` (360/720 wide) |

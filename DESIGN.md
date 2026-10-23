@@ -1068,7 +1068,7 @@ AI" UI.
   text, never glass by default.
 - **Appearance.** System, Light or Dark, per device. The web keeps it in the `aaru_appearance`
   cookie and renders `<html data-theme>` on the server, so nothing flashes; Apple keeps it in
-  `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system.
+  `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system. The PWA manifest's two colours are the dark paper (an installed app's splash is one colour, so it is dark-first in both appearances); the browser's `theme-color` follows the paper.
 - **Type.** The system sans. Titles and headings use `--font-display` on the web and
   `Font.aaruDisplay(_:)` on Apple (relative to a text style, so Dynamic Type scales it); widgets
   use `Font.widgetDisplay` for their one heading. Small uppercase eyebrows (tracked 1.5) over
