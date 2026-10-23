@@ -1,7 +1,7 @@
 import AaruCore
 import Foundation
 
-// BRD-001: comments under a Board post.
+// BOARD-001: comments under a Board post.
 
 extension BoardService {
     static let defaultCommentPageSize = 50

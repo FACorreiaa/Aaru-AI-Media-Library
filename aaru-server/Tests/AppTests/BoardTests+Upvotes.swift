@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import aaru
 
-@Suite("Board upvotes (BRD-001)", .serialized)
+@Suite("Board upvotes (BOARD-001)", .serialized)
 struct BoardUpvoteTests {
     private func createPost(_ env: LibraryHarness, _ body: String, token: String? = nil) async throws -> String {
         let reply = try await env.send(.post, "/v1/board/posts", json: ["body": body], token: token)
@@ -14,7 +14,7 @@ struct BoardUpvoteTests {
         try await env.send(.get, "/v1/board/posts/\(post)").json()["upvotes"] as? Int ?? -1
     }
 
-    @Test("BRD-001: upvote twice counts once; removing twice is fine")
+    @Test("BOARD-001: upvote twice counts once; removing twice is fine")
     func idempotent() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -34,7 +34,7 @@ struct BoardUpvoteTests {
         }
     }
 
-    @Test("BRD-001: upvoting a hidden or deleted post is the missing 404")
+    @Test("BOARD-001: upvoting a hidden or deleted post is the missing 404")
     func hidden() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -56,7 +56,7 @@ struct BoardUpvoteTests {
         }
     }
 
-    @Test("BRD-001: upvoters list hides blocked people")
+    @Test("BOARD-001: upvoters list hides blocked people")
     func upvotersHideBlocked() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)

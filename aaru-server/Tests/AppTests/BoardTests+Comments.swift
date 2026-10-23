@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import aaru
 
-@Suite("Board comments (BRD-001)", .serialized)
+@Suite("Board comments (BOARD-001)", .serialized)
 struct BoardCommentTests {
     private func createPost(_ env: LibraryHarness, _ body: String, token: String? = nil) async throws -> String {
         let reply = try await env.send(.post, "/v1/board/posts", json: ["body": body], token: token)
@@ -28,7 +28,7 @@ struct BoardCommentTests {
         return try #require(reply.json()["items"] as? [[String: Any]])
     }
 
-    @Test("BRD-001: comments are visible to everyone who sees the post")
+    @Test("BOARD-001: comments are visible to everyone who sees the post")
     func visibleToAudience() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -44,7 +44,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: a reply to a reply hangs off the top-level comment")
+    @Test("BOARD-001: a reply to a reply hangs off the top-level comment")
     func nestingStaysOneLevel() async throws {
         try await LibraryHarness.run { env in
             _ = try await claimHandle(env)
@@ -64,7 +64,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: blocks hide comments both ways")
+    @Test("BOARD-001: blocks hide comments both ways")
     func blocksHide() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -84,7 +84,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: an author who blocked the viewer is the missing 404, and off the feed")
+    @Test("BOARD-001: an author who blocked the viewer is the missing 404, and off the feed")
     func authorBlocksViewer() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -104,7 +104,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: mentions reach the post's audience, not the commenter's friends")
+    @Test("BOARD-001: mentions reach the post's audience, not the commenter's friends")
     func mentionAudience() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -129,7 +129,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: a blocked friend of a friend is the missing 404")
+    @Test("BOARD-001: a blocked friend of a friend is the missing 404")
     func blockedPostIs404() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -140,7 +140,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: post author can delete any comment, others only their own")
+    @Test("BOARD-001: post author can delete any comment, others only their own")
     func deleting() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -158,7 +158,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: a deleted comment with replies stays as an empty row")
+    @Test("BOARD-001: a deleted comment with replies stays as an empty row")
     func deletedWithReplies() async throws {
         try await LibraryHarness.run { env in
             _ = try await claimHandle(env)
@@ -178,7 +178,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: commenting on a deleted post is the missing 404")
+    @Test("BOARD-001: commenting on a deleted post is the missing 404")
     func deletedPost() async throws {
         try await LibraryHarness.run { env in
             _ = try await claimHandle(env)
@@ -190,7 +190,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: @aaru in a comment is recorded, not answered")
+    @Test("BOARD-001: @aaru in a comment is recorded, not answered")
     func aaruRecorded() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -205,7 +205,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: comment bodies are validated")
+    @Test("BOARD-001: comment bodies are validated")
     func validation() async throws {
         try await LibraryHarness.run { env in
             _ = try await claimHandle(env)
@@ -217,7 +217,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: an all-filtered page still carries a cursor")
+    @Test("BOARD-001: an all-filtered page still carries a cursor")
     func filteredPageCursor() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -240,7 +240,7 @@ struct BoardCommentTests {
         }
     }
 
-    @Test("BRD-001: a hidden comment is not found to delete or reply to")
+    @Test("BOARD-001: a hidden comment is not found to delete or reply to")
     func hiddenCommentIsMissing() async throws {
         try await LibraryHarness.run { env in
             let carl = try await claimHandle(env)

@@ -1,6 +1,6 @@
 import FluentSQL
 
-/// BRD-001 Board: posts, comments, upvotes. Friends-only; visibility lives in BoardService.
+/// BOARD-001 Board: posts, comments, upvotes. Friends-only; visibility lives in BoardService.
 struct CreateBoards: SQLMigration {
     let forward = [
         """

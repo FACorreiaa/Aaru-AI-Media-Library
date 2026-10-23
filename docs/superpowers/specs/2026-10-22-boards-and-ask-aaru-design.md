@@ -41,7 +41,7 @@ The owner wants both to look good on web and on iPhone/Mac. P2 gate is not met; 
 - **Upvote**: one per user per post.
 - **Chat** / **Chat turn**: a one-to-one thread with Aaru, and one user or Aaru entry in it. **Never "Conversation" or "Message"**: those are the E2E DM terms.
 
-## Part 1 — Boards (BRD-*)
+## Part 1 — Boards (BOARD-*)
 
 **Server** (`aaru-server`, order: tables → DTO/openapi → service → handlers)
 - Migration `CreateBoards`:
@@ -141,9 +141,9 @@ Copy this design to `docs/superpowers/specs/2026-10-22-boards-and-ask-aaru-desig
 
 ## Build order (one PR per step)
 
-1. BRD-001 server: tables, service, endpoints, tests.
-2. BRD-002 web Board + Social tab. BRD-003 iOS Board + Social tab.
-3. BRD-004 `@aaru` on Boards (worker reuse) + push.
+1. BOARD-001 server: tables, service, endpoints, tests.
+2. BOARD-002 web Board + Social tab. BOARD-003 iOS Board + Social tab.
+3. BOARD-004 `@aaru` on Boards (worker reuse) + push.
 4. ASK-001 engine: streaming provider, scope gate, metering columns, chat tables and endpoints.
 5. ASK-002 web chat. ASK-003 iOS chat.
 6. ASK-004 web search + citations. ASK-005 writes via tap/plan.
@@ -154,7 +154,7 @@ Copy this design to `docs/superpowers/specs/2026-10-22-boards-and-ask-aaru-desig
 - `CLAUDE.md`: domain terms; Stack row for chat, web search and voice.
 - `ARCHITECTURE.md`: Board and chat boundaries.
 - `DESIGN.md` and `VIEWS.md`: Social tab, Board and Ask Aaru surfaces; new app-chrome components (`PostCard`, `CommentThread`, `ChatThread`), noted as never agent-emitted.
-- `BACKLOG.md`: BRD-*, ASK-* rows, and the owner decisions above.
+- `BACKLOG.md`: BOARD-*, ASK-* rows, and the owner decisions above.
 - `docs/privacy.md`.
 
 ## Non-goals and anti-goals

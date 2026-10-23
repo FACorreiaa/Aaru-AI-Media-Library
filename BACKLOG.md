@@ -89,8 +89,10 @@ library layer stay separate, external IDs stored whenever known, no second backe
   board (calls made in the design; the owner can reverse them).
 
 - **Boards and Ask Aaru (owner, 2026-10-22).** Two pulled-forward features, designed in
-  `docs/superpowers/specs/2026-10-22-boards-and-ask-aaru-design.md`. Items BRD-001…004 and
+  `docs/superpowers/specs/2026-10-22-boards-and-ask-aaru-design.md`. Items BOARD-001…004 and
   ASK-001…008 below.
+  IDs renamed from BRD-* to BOARD-* on 2026-10-23 (brand work owns BRD-*); commit messages before
+  the rename say BRD-00x.
 
   | Topic | Decision |
   | --- | --- |
@@ -99,7 +101,7 @@ library layer stay separate, external IDs stored whenever known, no second backe
   | Upvote | One per user per post. Count plus who upvoted. Sort: Recent (default) or Top this week |
   | Comments | Everyone who can see the post sees every comment and handle. Blocks hide both ways (X-011: 404, never 403) |
   | Board placement | The Groups tab becomes Social, with a `Board \| Groups` switch; Board is the default |
-  | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating (a still-airing show lands as `in_progress` with aired episodes ticked, PROG-005, so BRD-002's composer preview must say so); a title already there keeps its status and gets the rating |
+  | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating (a still-airing show lands as `in_progress` with aired episodes ticked, PROG-005, so BOARD-002's composer preview must say so); a title already there keeps its status and gets the rating |
   | Chat writes | Like a tap: one item applies at once, journaled and undoable; anything bigger is a `PlanCard` approved in Aaru (X-009) |
   | Web search | Media topics only (films, shows, anime, books, music, sport). Off-topic is refused before any search |
   | Suggestions | Owner exception: personal suggestions in chat only, when asked. No "because you watched" rows anywhere else |
@@ -107,7 +109,7 @@ library layer stay separate, external IDs stored whenever known, no second backe
   | Chat v1 | History and streaming, voice input (cluster Whisper), image upload, Share to Board |
   | LLM budget | The shared `haiku-trial` workspace ($20 cap). No fallback model; out of credit shows "resting" |
 
-- **BRD-001 as built (2026-10-22).** A review of a new title writes two journal rows (add, then
+- **BOARD-001 as built (2026-10-22).** A review of a new title writes two journal rows (add, then
   the rating update), so undo is per row. "Report post" reuses `reportUser` on the post author
   with the note prefixed `post:<id>`; there is no new route. Comment list pages carry a nullable
   `next` cursor, and a page can be short or empty after deleted and blocked rows are filtered.
@@ -530,7 +532,7 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
-| BRD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
+| BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -2758,7 +2760,7 @@ Friends post, upvote and comment, like a small X. Design:
 `docs/superpowers/specs/2026-10-22-boards-and-ask-aaru-design.md`. Visibility lives in
 `BoardService` (X-011).
 
-### BRD-001 · Board server: posts, upvotes, comments · L · owner, 2026-10-22
+### BOARD-001 · Board server: posts, upvotes, comments · L · owner, 2026-10-22
 **Needs:** SOC-001, SOC-002, GRP-007.
 Tables `board_posts`, `board_upvotes`, `board_comments` (migration `CreateBoards`). Endpoints
 `/v1/board`, `/v1/board/posts[/{id}]`, `…/upvote` (PUT, DELETE), `…/comments[/{cid}]` and
@@ -2766,7 +2768,7 @@ Tables `board_posts`, `board_upvotes`, `board_comments` (migration `CreateBoards
 either side blocked the other; anything else is the same 404 as a missing post. A rating on a
 post writes the library through `LibraryService`: a new title is added as finished, then rated,
 as two journal rows (undo is per row); an existing title keeps its status. A still-airing show
-lands as `in_progress` with its aired episodes ticked (PROG-005), so BRD-002's composer preview
+lands as `in_progress` with its aired episodes ticked (PROG-005), so BOARD-002's composer preview
 must say so. The spoiler veil
 reuses the title-channel stamp. Comment lists page by cursor (`next`, nullable; a page can be
 short or empty after filtering). Reports use `reportUser` with the note `post:<id>`.
@@ -2776,17 +2778,17 @@ and a review of a new title adds it as Watched with the rating, all on TestFligh
 **Built 2026-10-22:** server only. **Known gaps:** upvote and comment counts include rows from
 users the viewer blocked.
 
-### BRD-002 · Board on the web, and the Social tab · L
-**Needs:** BRD-001.
+### BOARD-002 · Board on the web, and the Social tab · L
+**Needs:** BOARD-001.
 Groups becomes Social with a `Board | Groups` switch. Feed, composer, comment thread, upvote,
 "Top this week" rail, and "From friends" on the title page. Surfaces in `DESIGN.md` and `VIEWS.md`.
 
-### BRD-003 · Board on iOS and Mac · L
-**Needs:** BRD-001.
-The same surfaces as BRD-002 in SwiftUI.
+### BOARD-003 · Board on iOS and Mac · L
+**Needs:** BOARD-001.
+The same surfaces as BOARD-002 in SwiftUI.
 
-### BRD-004 · `@aaru` on the Board, and push · M
-**Needs:** BRD-001, GRP-011, GRP-012.
+### BOARD-004 · `@aaru` on the Board, and push · M
+**Needs:** BOARD-001, GRP-011, GRP-012.
 `@aaru` in a post or comment enqueues an agent reply (caps shared with group mentions, 30 per
 user per day); `@handle` mentions and comments on your post push without text. Notification
 filters follow post visibility, not the commenter's friends.
@@ -2819,7 +2821,7 @@ search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
 **Needs:** ASK-001. 5 MB, kept 30 days; `docs/privacy.md`.
 
 ### ASK-008 · Share to Board · S
-**Needs:** ASK-001, BRD-002. A client tap that opens the composer prefilled; no agent write path.
+**Needs:** ASK-001, BOARD-002. A client tap that opens the composer prefilled; no agent write path.
 
 ---
 

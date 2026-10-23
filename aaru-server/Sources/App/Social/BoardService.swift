@@ -1,7 +1,7 @@
 import AaruCore
 import Foundation
 
-/// BRD-001: the friends-only Board. A post is visible to its author and to the author's
+/// BOARD-001: the friends-only Board. A post is visible to its author and to the author's
 /// friends, unless either side blocked the other.
 /// A class, not a struct: it holds a whole `Stores` and a `LibraryService`, and inline in `Services`
 /// it pushed the router's setup past the test threads' stack in debug builds.

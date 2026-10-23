@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import aaru
 
-@Suite("Board reviews and spoilers (BRD-001)", .serialized)
+@Suite("Board reviews and spoilers (BOARD-001)", .serialized)
 struct BoardReviewTests {
     private func review(
         _ env: LibraryHarness, type: String, tmdb: String, rating: Double?, token: String? = nil
@@ -19,7 +19,7 @@ struct BoardReviewTests {
         try await env.send(.get, "/v1/library/items/\(id)").json()
     }
 
-    @Test("BRD-001: a review of a new title adds it as Watched with the rating")
+    @Test("BOARD-001: a review of a new title adds it as Watched with the rating")
     func newTitle() async throws {
         try await LibraryHarness.run { env in
             _ = try await claimHandle(env)
@@ -39,7 +39,7 @@ struct BoardReviewTests {
         }
     }
 
-    @Test("BRD-001: a review of a title in progress keeps its status")
+    @Test("BOARD-001: a review of a title in progress keeps its status")
     func keepsStatus() async throws {
         try await LibraryHarness.run { env in
             _ = try await claimHandle(env)
@@ -52,7 +52,7 @@ struct BoardReviewTests {
         }
     }
 
-    @Test("BRD-001: no rating means no library write; a bad rating fails")
+    @Test("BOARD-001: no rating means no library write; a bad rating fails")
     func noWrite() async throws {
         try await LibraryHarness.run { env in
             _ = try await claimHandle(env)
@@ -64,7 +64,7 @@ struct BoardReviewTests {
         }
     }
 
-    @Test("BRD-001: spoilers veil friends who are behind")
+    @Test("BOARD-001: spoilers veil friends who are behind")
     func veil() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)

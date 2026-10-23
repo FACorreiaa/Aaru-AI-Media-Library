@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import aaru
 
-@Suite("Board posts over HTTP (BRD-001)", .serialized)
+@Suite("Board posts over HTTP (BOARD-001)", .serialized)
 struct BoardTests {
     private func createPost(
         _ env: LibraryHarness, _ body: String, token: String? = nil
@@ -17,7 +17,7 @@ struct BoardTests {
         try (reply.json()["items"] as? [[String: Any]] ?? []).compactMap { $0["id"] as? String }
     }
 
-    @Test("BRD-001: friends see posts, strangers and ex-friends get the missing 404")
+    @Test("BOARD-001: friends see posts, strangers and ex-friends get the missing 404")
     func visibility() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -43,7 +43,7 @@ struct BoardTests {
         }
     }
 
-    @Test("BRD-001: a blocked author's posts vanish")
+    @Test("BOARD-001: a blocked author's posts vanish")
     func blocked() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -55,7 +55,7 @@ struct BoardTests {
         }
     }
 
-    @Test("BRD-001: post validation")
+    @Test("BOARD-001: post validation")
     func validation() async throws {
         try await LibraryHarness.run { env in
             let noHandle = try await env.send(.post, "/v1/board/posts", json: ["body": "hi"])
@@ -82,7 +82,7 @@ struct BoardTests {
         }
     }
 
-    @Test("BRD-001: only the author edits or deletes")
+    @Test("BOARD-001: only the author edits or deletes")
     func authorOnly() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)
@@ -107,7 +107,7 @@ struct BoardTests {
         }
     }
 
-    @Test("BRD-001: top this week")
+    @Test("BOARD-001: top this week")
     func top() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)

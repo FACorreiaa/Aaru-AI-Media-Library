@@ -17,7 +17,7 @@ struct BoardStoreTests {
         BoardPost(id: UUID(), author: author, titleID: nil, rating: nil, body: body, spoiler: nil, createdAt: date)
     }
 
-    @Test("BRD-001: feed is newest first and pages by before")
+    @Test("BOARD-001: feed is newest first and pages by before")
     func feedPages() async throws {
         try await withMigratedStores { stores in
             let alice = try await author(stores)
@@ -33,7 +33,7 @@ struct BoardStoreTests {
         }
     }
 
-    @Test("BRD-001: upvotes are idempotent and counted")
+    @Test("BOARD-001: upvotes are idempotent and counted")
     func upvotes() async throws {
         try await withMigratedStores { stores in
             let alice = try await author(stores)
@@ -54,7 +54,7 @@ struct BoardStoreTests {
         }
     }
 
-    @Test("BRD-001: top orders by upvotes inside the window")
+    @Test("BOARD-001: top orders by upvotes inside the window")
     func topWindow() async throws {
         try await withMigratedStores { stores in
             let alice = try await author(stores)
@@ -75,7 +75,7 @@ struct BoardStoreTests {
         }
     }
 
-    @Test("BRD-001: deleted posts vanish")
+    @Test("BOARD-001: deleted posts vanish")
     func deletedPosts() async throws {
         try await withMigratedStores { stores in
             let alice = try await author(stores)
@@ -87,7 +87,7 @@ struct BoardStoreTests {
         }
     }
 
-    @Test("BRD-001: title posts carry rating and spoiler, comments keep deleted rows")
+    @Test("BOARD-001: title posts carry rating and spoiler, comments keep deleted rows")
     func titlePostAndComments() async throws {
         try await withMigratedStores { stores in
             let alice = try await author(stores)
@@ -124,7 +124,7 @@ struct BoardStoreTests {
         }
     }
 
-    @Test("BRD-001: account deletion leaves no board rows")
+    @Test("BOARD-001: account deletion leaves no board rows")
     func accountDeletion() async throws {
         try await withMigratedStores { stores in
             let alice = try await author(stores)
@@ -139,7 +139,7 @@ struct BoardStoreTests {
         }
     }
 
-    @Test("BRD-001: deleting an account keeps other people's replies to its comments")
+    @Test("BOARD-001: deleting an account keeps other people's replies to its comments")
     func replySurvivesParentAccountDeletion() async throws {
         try await withMigratedStores { stores in
             let ana = try await author(stores)

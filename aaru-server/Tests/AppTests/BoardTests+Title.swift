@@ -3,9 +3,9 @@ import Foundation
 import Testing
 @testable import aaru
 
-@Suite("Board posts on a title (BRD-001)", .serialized)
+@Suite("Board posts on a title (BOARD-001)", .serialized)
 struct BoardTitleTests {
-    @Test("BRD-001: a title page lists friends' posts about it, newest first")
+    @Test("BOARD-001: a title page lists friends' posts about it, newest first")
     func titlePosts() async throws {
         try await LibraryHarness.run { env in
             let mine = try await claimHandle(env)

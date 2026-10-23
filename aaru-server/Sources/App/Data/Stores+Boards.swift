@@ -1,7 +1,7 @@
 import AaruCore
 import Foundation
 
-// BRD-001 Board half of the data layer boundary.
+// BOARD-001 Board half of the data layer boundary.
 
 /// One post on the Board. `rating` needs a title. Counts and `upvotedByViewer` are read-time values.
 struct BoardPost: Sendable, Equatable {
