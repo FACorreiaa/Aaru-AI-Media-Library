@@ -11,7 +11,11 @@ import {
 } from './model'
 import type { BoardComment, BoardPost } from './model'
 
-const comment = (id: string, replyTo?: string): BoardComment => ({
+const comment = (
+  id: string,
+  replyTo?: string,
+  over: Partial<BoardComment> = {},
+): BoardComment => ({
   id,
   postId: 'p1',
   body: id,
@@ -21,6 +25,7 @@ const comment = (id: string, replyTo?: string): BoardComment => ({
   createdAt: '2026-10-23T10:00:00Z',
   fromAgent: false,
   replyTo,
+  ...over,
 })
 
 describe('board model', () => {
@@ -70,6 +75,25 @@ describe('board model', () => {
     expect(threadComments([orphan])).toEqual([{ comment: orphan, replies: [] }])
   })
 
+  it('flattens a reply to a reply onto its root', () => {
+    const [c1, r1, r1a] = [
+      comment('C1'),
+      comment('R1', 'C1'),
+      comment('R1a', 'R1'),
+    ]
+    expect(threadComments([c1, r1, r1a])).toEqual([
+      { comment: c1, replies: [r1, r1a] },
+    ])
+  })
+
+  it('keeps replies under a deleted parent', () => {
+    const c1 = comment('C1', undefined, { deleted: true, body: '' })
+    const [r1, r2] = [comment('R1', 'C1'), comment('R2', 'C1')]
+    expect(threadComments([c1, r1, r2])).toEqual([
+      { comment: c1, replies: [r1, r2] },
+    ])
+  })
+
   it('merges comment pages without duplicates', () => {
     const a = comment('a')
     const b = comment('b')
@@ -91,6 +115,13 @@ describe('board model', () => {
     const on = toggleUpvote({ upvotes: 3, upvotedByMe: false })
     expect(on).toEqual({ upvotes: 4, upvotedByMe: true })
     expect(toggleUpvote(on)).toEqual({ upvotes: 3, upvotedByMe: false })
+  })
+
+  it('clamps upvotes at zero', () => {
+    expect(toggleUpvote({ upvotes: 0, upvotedByMe: true })).toEqual({
+      upvotes: 0,
+      upvotedByMe: false,
+    })
   })
 
   it('tells an empty board from a quiet one', () => {

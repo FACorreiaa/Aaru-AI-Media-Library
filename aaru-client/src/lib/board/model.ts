@@ -1,4 +1,5 @@
 import type { components } from '../api/schema'
+import { kindOf, statusLabel } from '../library/model'
 
 // BOARD-002: how the friends-only Board reads on the web. Pure display rules; every rule about
 // who sees what is the server's.
@@ -27,13 +28,6 @@ export function spoilerLabel(stamp: SpoilerStamp | undefined): string | null {
   return null
 }
 
-const DONE: Record<MediaType, string> = {
-  movie: 'Watched',
-  show: 'Watched',
-  book: 'Read',
-  album: 'Listened',
-}
-
 /** What posting a review does to the library, in words. Null without a rating: it changes nothing. */
 export function reviewEffect(
   hit: { title: string; type: MediaType; libraryItemId?: string },
@@ -41,28 +35,42 @@ export function reviewEffect(
 ): string | null {
   if (rating == null) return null
   const stars = starsLabel(rating)
+  const done = statusLabel('finished', kindOf(hit.type, false))
   if (hit.libraryItemId)
     return `Updates your rating to ${stars}. Its status stays.`
   if (hit.type === 'show') {
-    return `Adds ${hit.title} to ${DONE.show}, or Watching if it's still airing, ${stars}`
+    return `Adds ${hit.title} to ${done}, or ${statusLabel('in_progress', 'show')} if it's still airing, ${stars}`
   }
-  return `Adds ${hit.title} to ${DONE[hit.type]}, ${stars}`
+  return `Adds ${hit.title} to ${done}, ${stars}`
 }
 
 export type Thread = { comment: BoardComment; replies: BoardComment[] }
 
 export function threadComments(items: BoardComment[]): Thread[] {
-  const ids = new Set(items.map((c) => c.id))
+  const byId = new Map(items.map((c) => [c.id, c]))
+  // A reply to a reply goes to its root; a missing or cyclic parent makes it top-level.
+  const rootOf = (c: BoardComment): BoardComment | null => {
+    const seen = new Set([c.id])
+    let cur = c
+    while (cur.replyTo) {
+      const parent = byId.get(cur.replyTo)
+      if (!parent || seen.has(parent.id)) return cur === c ? null : cur
+      seen.add(parent.id)
+      cur = parent
+    }
+    return cur === c ? null : cur
+  }
   const threads = new Map<string, Thread>()
   const order: Thread[] = []
-  for (const c of items) {
-    if (c.replyTo && ids.has(c.replyTo)) continue
+  const roots = items.map((c) => ({ c, root: rootOf(c) }))
+  for (const { c, root } of roots) {
+    if (root) continue
     const t = { comment: c, replies: [] }
     threads.set(c.id, t)
     order.push(t)
   }
-  for (const c of items) {
-    if (c.replyTo) threads.get(c.replyTo)?.replies.push(c)
+  for (const { c, root } of roots) {
+    if (root) threads.get(root.id)?.replies.push(c)
   }
   return order
 }
