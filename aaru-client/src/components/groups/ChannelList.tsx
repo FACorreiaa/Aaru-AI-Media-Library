@@ -110,7 +110,7 @@ export function ChannelList(props: { class?: string }) {
               </svg>
             </>
           }
-          triggerClass="flex h-14 min-w-0 flex-1 items-center justify-between gap-2 px-4 text-left outline-none hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+          triggerClass="flex h-14 min-w-0 flex-1 items-center justify-between gap-2 px-4 text-left hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2"
           class="w-56"
         >
           <MenuItem onSelect={() => scope.openInvite()}>

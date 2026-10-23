@@ -119,7 +119,7 @@ function SignIn() {
     })
 
   const field =
-    'min-h-12 rounded-panel border-transparent bg-surface px-4 text-base placeholder:text-muted/70'
+    'min-h-12 rounded-panel border-transparent bg-surface px-4 text-base placeholder:text-muted'
   // As tall as the Apple button above it.
   const tall = 'min-h-13 w-full text-base'
 

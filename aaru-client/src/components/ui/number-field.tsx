@@ -31,7 +31,7 @@ export const NumberFieldGroup = (props: NumberFieldGroupProps) => {
     <div
       data-slot="number-field-group"
       class={cx(
-        'focus-within:border-ring focus-within:ring-ring/50 border-input has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive relative rounded-md border transition-shadow focus-within:ring-[3px]',
+        'focus-within:border-ring focus-within:outline-accent border-input has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive relative rounded-md border transition-shadow focus-within:outline-2 focus-within:outline-offset-2',
         props.class,
       )}
       {...rest}

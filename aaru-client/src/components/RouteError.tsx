@@ -8,7 +8,7 @@ import { MascotMedallion, Wordmark } from './Brand'
 // primary button's look instead of importing Button: that would put Kobalte and tailwind-merge
 // (~13 KB gzip) into every page's first load for a page that is almost never seen.
 const primary =
-  'mt-8 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground outline-none transition-[transform,background-color] hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:active:scale-[0.98]'
+  'mt-8 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-[transform,background-color] hover:bg-primary/90 motion-safe:active:scale-[0.98]'
 
 /** The branded fallback when a page cannot load: the message, and a way to try again. */
 export function RouteError(props: { error: unknown }) {

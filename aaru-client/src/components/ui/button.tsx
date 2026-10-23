@@ -10,10 +10,10 @@ import { cva } from '~/lib/cva'
 // names keep shadcn's meaning: `default` is the filled accent, `destructive` the filled danger.
 export const buttonVariants = cva({
   base: [
-    'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-[transform,background-color,color,box-shadow] [&_svg:not([class*=size-])]:size-4 outline-none motion-safe:active:scale-[0.98]',
+    'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-[transform,background-color,color,box-shadow] [&_svg:not([class*=size-])]:size-4 motion-safe:active:scale-[0.98]',
     'disabled:pointer-events-none disabled:opacity-50',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
-    'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+    'focus-visible:border-ring',
     'aria-[invalid]:ring-destructive/20 aria-[invalid]:dark:ring-destructive/40 aria-[invalid]:border-destructive',
   ],
 

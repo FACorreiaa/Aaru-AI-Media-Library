@@ -43,7 +43,7 @@ export const FileFieldDropzone = <T extends ValidComponent = 'div'>(
       data-slot="file-field-dropzone"
       class={cx(
         'text-muted-foreground flex size-full min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed outline-none',
-        'focus-visible:border-ring focus-visible:ring-ring/50 transition-[color,box-shadow] focus-visible:ring-[3px]',
+        'focus-visible:border-ring transition-[color,box-shadow]',
         'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
         'group-[[data-invalid]]/file-field:ring-destructive/20 dark:group-[[data-invalid]]/file-field:ring-destructive/40 group-[[data-invalid]]/file-field:border-destructive',
         props.class,
@@ -189,7 +189,7 @@ export const FileFieldItemDeleteTrigger = <T extends ValidComponent = 'button'>(
     <FileFieldPrimitive.ItemDeleteTrigger
       data-slot="file-field-item-delete-trigger"
       class={cx(
-        "focus-visible:ring-destructive/50 cursor-pointer self-center rounded-sm p-0.5 transition-[color,box-shadow] outline-none [grid-area:delete] focus-visible:ring-[1.5px] [&_svg:not([class*='size-'])]:size-4",
+        "cursor-pointer self-center rounded-sm p-0.5 transition-[color,box-shadow] [grid-area:delete] [&_svg:not([class*='size-'])]:size-4",
         props.class,
       )}
       {...rest}

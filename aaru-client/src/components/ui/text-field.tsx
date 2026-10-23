@@ -38,7 +38,7 @@ export const TextFieldInput = <T extends ValidComponent = 'input'>(
       data-slot="text-field-input"
       class={cx(
         'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-line flex min-h-11 rounded-[14px] border bg-paper px-3 py-1 text-base transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-        'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+        'focus-visible:border-ring',
         'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
         'file:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium',
         props.class,
@@ -61,7 +61,7 @@ export const TextFieldTextArea = <T extends ValidComponent = 'textarea'>(
       data-slot="text-field-textarea"
       class={cx(
         'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-line flex min-h-16 rounded-[14px] border bg-paper px-3 py-2 text-base transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-        'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+        'focus-visible:border-ring',
         'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
         props.class,
       )}

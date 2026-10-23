@@ -85,7 +85,7 @@ export function Row(props: {
         role="region"
         aria-labelledby={id}
         tabindex="0"
-        class="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent md:mx-0 md:scroll-px-0 md:px-0"
+        class="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-3 focus-visible:outline-2 focus-visible:-outline-offset-2 md:mx-0 md:scroll-px-0 md:px-0"
       >
         {props.children}
       </div>

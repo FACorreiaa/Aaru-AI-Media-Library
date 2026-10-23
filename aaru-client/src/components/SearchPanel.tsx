@@ -208,7 +208,7 @@ export function SearchPanel(props: {
             autofocus
             autocomplete="off"
             placeholder={PLACEHOLDERS[kind()] ?? 'Title'}
-            class="min-h-12 rounded-panel border-transparent bg-surface px-4 text-base placeholder:text-muted/70"
+            class="min-h-12 rounded-panel border-transparent bg-surface px-4 text-base placeholder:text-muted"
           />
         </TextField>
         <TabsList

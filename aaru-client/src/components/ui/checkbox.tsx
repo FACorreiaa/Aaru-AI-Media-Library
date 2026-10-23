@@ -67,7 +67,7 @@ export const CheckboxInput = <T extends ValidComponent = 'input'>(
     <CheckboxPrimitive.Input
       data-slot="checkbox-input"
       class={cx(
-        '[&:focus-visible+div]:ring-ring/50 peer [&:focus-visible+div]:ring-[3px]',
+        '[&:focus-visible+div]:outline-accent peer [&:focus-visible+div]:outline-2 div]:outline-offset-2',
         props.class,
       )}
       {...rest}
