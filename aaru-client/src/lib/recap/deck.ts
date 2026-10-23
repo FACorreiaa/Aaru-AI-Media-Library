@@ -164,6 +164,7 @@ export function cards(stats: Stats): RecapCard[] {
       { kind: 'anime', count: t.animeFinished },
       { kind: 'book', count: t.booksFinished },
       { kind: 'album', count: t.albumsFinished },
+      { kind: 'manga', count: t.mangaFinished ?? 0 },
     ] as const
   ).filter((part) => part.count > 0)
   if (parts.length > 0) deck.push({ kind: 'finished', parts: [...parts] })
@@ -201,6 +202,7 @@ const STATS_KINDS: Record<Stats['byKind'][number]['kind'], MediaKind> = {
   anime: 'anime',
   book: 'book',
   album: 'album',
+  manga: 'manga',
 }
 
 /** Kinds with time, biggest share first. Books and albums have no minutes, so never show here. */
@@ -227,6 +229,7 @@ const KIND_WORDS: Record<MediaKind, [string, string]> = {
   anime: ['anime', 'anime'],
   book: ['book', 'books'],
   album: ['album', 'albums'],
+  manga: ['manga', 'manga'],
 }
 
 export function countLabel(kind: MediaKind, count: number): string {
@@ -251,6 +254,7 @@ export function shareLines(stats: Stats): string[] {
     countLabel('show', t.showsFinished),
     countLabel('anime', t.animeFinished),
     countLabel('book', t.booksFinished),
+    countLabel('manga', t.mangaFinished ?? 0),
   ].filter((label) => !label.startsWith('0 '))
   if (finished.length > 0) lines.push(`Finished ${finished.join(', ')}`)
   if (t.albumsFinished > 0)

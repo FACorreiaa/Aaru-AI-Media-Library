@@ -144,6 +144,16 @@ export function NowSection(props: {
                             }),
                           )
                         }
+                        onChapter={(chapter) =>
+                          run(item.entry.id, () =>
+                            updateItem({
+                              data: {
+                                id: item.entry.id,
+                                patch: { mangaChapter: chapter },
+                              },
+                            }),
+                          )
+                        }
                         onFinish={() =>
                           run(item.entry.id, () =>
                             updateItem({
@@ -172,13 +182,17 @@ function NowCard(props: {
   pending: boolean
   onTickNext: (next: { season: number; number: number }) => void
   onPage: (page: number) => void
+  onChapter: (chapter: number) => void
   onFinish: () => void
 }) {
   const e = () => props.item.entry
   const isBook = () => props.item.kind === 'book'
+  const isManga = () => props.item.kind === 'manga'
   const isAlbum = () => props.item.kind === 'album'
-  /** Books and albums lead with their cover; video with its backdrop. */
-  const hasCover = () => isBook() || isAlbum()
+  /** Books, manga and albums lead with their cover; video with its backdrop. */
+  const hasCover = () => isBook() || isManga() || isAlbum()
+  /** The chapter one tap logs: the one after the last read. */
+  const nextChapter = () => (e().mangaProgress?.chapter ?? 0) + 1
   const art = () => e().title.backdropUrl ?? e().title.posterUrl
   const [editing, setEditing] = createSignal(false)
   return (
@@ -291,6 +305,20 @@ function NowCard(props: {
                   Update page
                 </Button>
               </Show>
+              <Show when={isManga()}>
+                <Button
+                  variant="default"
+                  size="sm"
+                  class="min-h-11"
+                  disabled={props.pending}
+                  onClick={(event) => {
+                    void pop(event.currentTarget)
+                    props.onChapter(nextChapter())
+                  }}
+                >
+                  ✓ Read ch. {nextChapter()}
+                </Button>
+              </Show>
               <Show when={!props.item.next}>
                 <Button
                   variant="outline"
@@ -299,7 +327,7 @@ function NowCard(props: {
                   disabled={props.pending}
                   onClick={() => props.onFinish()}
                 >
-                  {isBook()
+                  {isBook() || isManga()
                     ? 'Mark read'
                     : isAlbum()
                       ? 'Mark listened'

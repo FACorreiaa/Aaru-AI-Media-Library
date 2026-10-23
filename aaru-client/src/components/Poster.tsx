@@ -7,6 +7,7 @@ const glyph: Record<MediaKind, string> = {
   film: 'Film',
   show: 'TV',
   anime: 'Anime',
+  manga: 'Manga',
   book: 'Book',
   album: 'Album',
 }

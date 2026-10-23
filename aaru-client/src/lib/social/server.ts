@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/solid-start'
 import { getCookie } from '@tanstack/solid-start/server'
 import { z } from 'zod'
 import { api } from '../api/client'
+import { MEDIA_TYPES } from '../media'
 import { errorMessage } from '../api/errors'
 import { SESSION_COOKIE } from '../session/cookie'
 import { sessionRejected, sessionToken } from '../session/guard'
@@ -154,7 +155,7 @@ export const loadInvites = createServerFn({ method: 'GET' }).handler(
 
 const mediaRef = z.object({
   titleId: z.string().uuid().optional(),
-  type: z.enum(['movie', 'show', 'book', 'album']),
+  type: z.enum(MEDIA_TYPES),
   ids: z.record(z.string(), z.string()).optional(),
   title: z.string().optional(),
   year: z.number().int().optional(),
