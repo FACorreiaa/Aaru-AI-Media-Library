@@ -25,6 +25,7 @@ The owner wants both to look good on web and on iPhone/Mac. P2 gate is not met; 
 | Chat entry | An **Ask Aaru page** (history list + thread), opened by a separate **sparkle "Ask" button** beside the medallion (web header in `components/shell/AppShell.tsx` on main, iOS toolbar). The medallion stays Profile and stats. Title pages get "Ask Aaru about this". |
 | Chat v1 | History + streaming, voice input (cluster Whisper), image upload, Share to Board. |
 | Review of a title not in your library | Allowed. Posting a review with a rating **adds the title as finished (Watched/Read) with that rating**. That is one journaled, undoable action, previewed in the composer ("Adds Severance to Watched, ★4½"). For a title already in the library, the rating updates and the status is untouched. |
+| Amended 2026-10-23 | **Board placement above is replaced:** the Board lives on Friends (`Board \| Lately`), not in a Social tab; comments open on a post page; the composer is inline. See "Board on Friends, post page, inline composer" in `BACKLOG.md` decisions. BOARD-003 follows: Board inside Friends, reached on iPhone from Groups' Friends button. |
 | LLM budget | **The shared `haiku-trial` workspace ($20 cap)**, the same key and budget as the other four apps. Aaru has no fallback model. On out-of-credit (`ModelProviderError.outOfCredit`), chat shows "Aaru is resting — try again later" and Board `@aaru` posts the resting note. Per-user caps are kept tight (below). |
 
 **Calls I made (check these):**

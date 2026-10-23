@@ -146,6 +146,15 @@ library layer stay separate, external IDs stored whenever known, no second backe
   | Chat v1 | History and streaming, voice input (cluster Whisper), image upload, Share to Board |
   | LLM budget | The shared `haiku-trial` workspace ($20 cap). No fallback model; out of credit shows "resting" |
 
+- **Board on Friends, post page, inline composer (owner, 2026-10-23, BOARD-002).** The spec's
+  Social tab (Groups becoming Social with `Board | Groups`) is dropped. The Board lives on
+  Friends: `/app/friends` opens on Board and `Board | Lately` is a segmented control, with no nav
+  rename and Groups untouched. Comments open on a post page, `/app/friends/posts/$postId`. The
+  composer is an inline box at the top of Board, with no floating button or dialog. The poster
+  in a post row is not a link, because title pages are library items; friends' posts carry "Add
+  to my library". BOARD-003 follows: Board inside Friends, reached on iPhone from Groups'
+  Friends button.
+
 - **BOARD-001 as built (2026-10-22).** A review of a new title writes two journal rows (add, then
   the rating update), so undo is per row. "Report post" reuses `reportUser` on the post author
   with the note prefixed `post:<id>`; there is no new route. Comment list pages carry a nullable
@@ -575,6 +584,7 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
+| BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
 | BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
@@ -2930,14 +2940,16 @@ and a review of a new title adds it as Watched with the rating, all on TestFligh
 **Built 2026-10-22:** server only. **Known gaps:** upvote and comment counts include rows from
 users the viewer blocked.
 
-### BOARD-002 · Board on the web, and the Social tab · L
+### BOARD-002 · Board on the web (on Friends) · L
 **Needs:** BOARD-001.
-Groups becomes Social with a `Board | Groups` switch. Feed, composer, comment thread, upvote,
-"Top this week" rail, and "From friends" on the title page. Surfaces in `DESIGN.md` and `VIEWS.md`.
+Friends opens on Board, with a `Board | Lately` control (owner, 2026-10-23; no Social tab).
+Inline composer, post rows (Recent / Top this week), the post page with its comment thread and
+upvoter names, upvote, and "From friends" on the title page. Surfaces in `DESIGN.md` and `VIEWS.md`.
+**Built 2026-10-23:** web only, unverified.
 
 ### BOARD-003 · Board on iOS and Mac · L
 **Needs:** BOARD-001.
-The same surfaces as BOARD-002 in SwiftUI.
+The same surfaces as BOARD-002 in SwiftUI: Board inside Friends, reached on iPhone from Groups' Friends button.
 
 ### BOARD-004 · `@aaru` on the Board, and push · M
 **Needs:** BOARD-001, GRP-011, GRP-012.

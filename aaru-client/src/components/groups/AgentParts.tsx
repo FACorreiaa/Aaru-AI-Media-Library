@@ -1,9 +1,7 @@
-import { Link } from '@tanstack/solid-router'
-import { For, Show, createSignal } from 'solid-js'
-import { Button } from '~/components/ui'
+import { For, Show } from 'solid-js'
 import type { MessageComponent } from '../../lib/groups/agent'
-import { addTitleToLibrary } from '../../lib/groups/kinds-server'
-import { kindName, kindOf, statusLabel } from '../../lib/library/model'
+import { kindName, kindOf } from '../../lib/library/model'
+import { AddToLibrary } from '../AddToLibrary'
 import { OwlMark } from '../Brand'
 import { Poster } from '../Poster'
 
@@ -60,31 +58,6 @@ export function ThinkingRow() {
  * journaled add as anywhere else in Aaru; Aaru itself never adds anything.
  */
 export function AgentCards(props: { cards: MessageComponent[] }) {
-  const [added, setAdded] = createSignal<Record<string, string>>({})
-  const [busy, setBusy] = createSignal<string | null>(null)
-  const [failed, setFailed] = createSignal<string | null>(null)
-
-  async function add(card: MessageComponent) {
-    setBusy(card.title.id)
-    setFailed(null)
-    try {
-      const entry = await addTitleToLibrary({
-        data: { titleId: card.title.id, type: card.title.type },
-      })
-      setAdded({
-        ...added(),
-        [card.title.id]: statusLabel(
-          entry.status,
-          kindOf(card.title.type, card.title.isAnime),
-        ),
-      })
-    } catch {
-      setFailed(card.title.id)
-    } finally {
-      setBusy(null)
-    }
-  }
-
   return (
     <ul class="mt-2 grid max-w-xl gap-2 sm:grid-cols-2">
       <For each={props.cards}>
@@ -92,21 +65,11 @@ export function AgentCards(props: { cards: MessageComponent[] }) {
           const kind = () => kindOf(card.title.type, card.title.isAnime)
           return (
             <li class="flex gap-3 rounded-xl border border-line bg-paper p-2">
-              <Link
-                to="/app/title/$id"
-                params={{ id: card.title.id }}
-                class="w-12 shrink-0"
-              >
+              <div class="w-12 shrink-0">
                 <Poster url={card.title.posterUrl} kind={kind()} class="w-12" />
-              </Link>
+              </div>
               <div class="flex min-w-0 flex-1 flex-col">
-                <Link
-                  to="/app/title/$id"
-                  params={{ id: card.title.id }}
-                  class="truncate text-sm font-semibold hover:underline"
-                >
-                  {card.title.title}
-                </Link>
+                <p class="truncate text-sm font-semibold">{card.title.title}</p>
                 <p class="truncate text-xs text-muted">
                   {[
                     kind() === 'album' ? card.title.byline : undefined,
@@ -117,28 +80,11 @@ export function AgentCards(props: { cards: MessageComponent[] }) {
                     .join(' · ')}
                 </p>
                 <div class="mt-auto pt-1.5">
-                  <Show
-                    when={added()[card.title.id]}
-                    fallback={
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        disabled={busy() === card.title.id}
-                        onClick={() => void add(card)}
-                        class="px-2.5 py-0.5"
-                      >
-                        {failed() === card.title.id
-                          ? 'Not added · Retry'
-                          : 'Add to my library'}
-                      </Button>
-                    }
-                  >
-                    {(status) => (
-                      <span class="rounded-full bg-accent/12 px-2.5 py-0.5 text-xs font-medium text-accent">
-                        Added · {status()}
-                      </span>
-                    )}
-                  </Show>
+                  <AddToLibrary
+                    title={card.title}
+                    name={card.title.title}
+                    look="card"
+                  />
                 </div>
               </div>
             </li>

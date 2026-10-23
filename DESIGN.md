@@ -611,7 +611,7 @@ The feeling to protect: **social is a room you invite people into, not a feed yo
 Friends is its own page on the web and its own sidebar destination on iPad and Mac, between
 Lists and Groups. On iPhone the five tabs are full (§18), so Groups opens it from a Friends
 button in its toolbar, and Settings → Friends & privacy links to it (Apple audit, 2026-10-22,
-APL-043). It opens on "Lately": one quiet row
+APL-043). It opens on Board; Lately is its second view (BOARD-002, below). Lately is one quiet row
 per friend, title and day ("Ana watched 3 episodes, up to S1 · E3 Severance", "Today"), with the
 poster, and Earlier for more. No unread badge and no push: you visit it. Below come Invite,
 requests, friends and blocks.
@@ -641,6 +641,35 @@ only friends see it. A spent, expired or revoked link says so plainly, with no d
 The sender invites from Friends: "Invite a friend", or "Invite to watch something together"
 through the title picker. The link opens the share sheet (copied to the clipboard on desktop
 web), and open invites list what they say, the days left, and Revoke.
+
+### Board (BOARD-002, 2026-10-23)
+
+The Board lives on Friends, not in a Social tab (owner, 2026-10-23; the spec's tab is dropped).
+Friends opens on **Board**; a `Board | Lately` segmented control holds Lately (For you from
+friends, activity, leaderboard, Invite, requests, friends). No nav rename, Groups untouched.
+
+- **Composer.** An inline box at the top of Board that grows on focus: no floating button, no
+  dialog. It offers + Title, half stars, the spoiler choice, and, once a title is chosen, a
+  one-line review effect ("Adds Severance to Watched, ★4½"; "Watched, or Watching if it's still
+  airing" for a show; "Updates your rating. Its status stays." for a title already in the
+  library). `@` suggests your friends; there is no `@aaru` until BOARD-004. It also starts
+  with a title from `/app/friends?title=<library item id>`, which is where "Write about this" goes.
+- **Post rows.** Author, day, words, the attached title with its stars, Upvote and the comment
+  count. The poster is not a link: title pages are library items and a friend's title is
+  usually not yours, so friends' posts carry "Add to my library" instead. A spoiler sits behind
+  `SpoilerVeil`; the author never sees a veil.
+- **Recent / Top this week.** Recent is the default and pages with "Show older"; Top this week is
+  one ranked page.
+- **Empty.** The owl: no friends points to Invite (in Lately); friends with no posts says it is
+  quiet. The composer stays either way.
+- **Post page** (`/app/friends/posts/$postId`). The post, the upvoters' names beside the Upvote
+  button, then the thread: comments with one level of replies. Reply is a visible button; when
+  answering a reply it prefills `@name`. A deleted comment with replies reads "Comment deleted"
+  in muted text with its replies still under it. Menus: Edit, Delete and Report on a post;
+  Delete sits in a comment's ⋯ menu.
+- **From friends on a title.** After the notes on a title page: up to five post rows about this
+  title and "Write about this" (to Friends with the title in the composer). Hidden when there
+  are no posts and no friends.
 
 ### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
 
@@ -798,8 +827,9 @@ bottom, Insights and Settings.
 - **Web.** One shell for every `/app` page. At 1024px and up a persistent left sidebar
   (collapsible to icons): the wordmark, Search (⌘K; opens in place on every page), the six
   destinations with Friends between Lists and Groups (its own page since SOC-003, owner
-  2026-10-21), a gap, Insights, Settings, and last the account row (name and @handle, opens
-  Settings → Account). Groups carries the mention count. Below 1024px a top bar (wordmark,
+  2026-10-21; it opens on Board, and Lately is its second view), a gap, Insights, Settings,
+  and last the account row (name and @handle, opens Settings → Account). Groups carries the
+  mention count. Below 1024px a top bar (wordmark,
   Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
   names where you came from. Sign out lives on Account only.
