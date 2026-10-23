@@ -6,6 +6,7 @@ import { cx } from '~/lib/cva'
 // Aaru: `cardClass` lives in its own module so a page that only borrows the class (the
 // landing page) does not load `cx` and tailwind-merge with it.
 import { cardClass } from './card-class'
+
 export { cardClass }
 
 export type CardProps = ComponentProps<'div'>
