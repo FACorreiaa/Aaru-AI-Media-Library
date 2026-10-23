@@ -49,11 +49,11 @@ extension ImportService {
             return try await fail("AniList import is not available right now.")
         }
         do {
-            let rows = try await reader.animeRows(userName: name)
-            return rows.isEmpty ? try await fail("\(name)'s AniList anime list is empty.") : rows
+            let rows = try await reader.listRows(userName: name)
+            return rows.isEmpty ? try await fail("\(name)'s AniList anime and manga lists are empty.") : rows
         } catch let error as ProviderError where error.kind == .notFound {
             return try await fail(
-                "AniList has no public anime list for “\(name)”. Check the username, or make the list public "
+                "AniList has no public list for “\(name)”. Check the username, or make the list public "
                     + "in AniList's settings, then import again."
             )
         }

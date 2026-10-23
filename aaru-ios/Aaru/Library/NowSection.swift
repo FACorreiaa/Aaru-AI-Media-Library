@@ -244,7 +244,7 @@ private struct NowCard: View {
                         item.kind == .book || item.kind == .manga
                             ? "Mark read" : item.kind == .music ? "Mark listened" : "Mark watched"
                     )
-                        .frame(minHeight: 30)
+                    .frame(minHeight: 30)
                 }
                 .buttonStyle(.bordered)
             }

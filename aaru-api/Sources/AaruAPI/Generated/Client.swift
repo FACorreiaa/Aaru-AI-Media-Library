@@ -11603,7 +11603,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+    /// Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
     /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.

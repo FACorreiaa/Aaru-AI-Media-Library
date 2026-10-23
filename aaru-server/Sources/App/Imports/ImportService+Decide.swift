@@ -18,10 +18,12 @@ extension ImportService {
     /// `item` is the user's item for the title as `importStates` read it, nil when they have none.
     static func decide(_ row: ImportRow, item: ImportItemState?) -> Decision {
         guard let item else {
-            let status = row.status ?? (row.watched?.isEmpty == false ? .inProgress : .wishlist)
+            let status = row.status ?? (row.hasProgress ? .inProgress : .wishlist)
+            let isManga = row.type == .manga
             let fields = ItemFields(
                 status: status, rating: Self.rating(row.rating), notes: nil, isOwned: false,
-                finishedAt: status == .finished ? row.finishedAt : nil, bookPage: nil, bookPercent: nil
+                finishedAt: status == .finished ? row.finishedAt : nil, bookPage: nil, bookPercent: nil,
+                mangaChapter: isManga ? row.mangaChapter : nil, mangaVolume: isManga ? row.mangaVolume : nil
             )
             return Decision(outcome: .create, fields: fields, watch: row.watched ?? [])
         }
@@ -35,6 +37,17 @@ extension ImportService {
         if fields.finishedAt == nil, fields.status == .finished, let finished = row.finishedAt {
             fields.finishedAt = finished
             filled.append("finish date")
+        }
+        if row.type == .manga {
+            // A reading position only moves forward, like ticks are only added.
+            if let chapter = row.mangaChapter, chapter > fields.mangaChapter ?? 0 {
+                fields.mangaChapter = chapter
+                filled.append("chapter \(chapter)")
+            }
+            if let volume = row.mangaVolume, volume > fields.mangaVolume ?? 0 {
+                fields.mangaVolume = volume
+                filled.append("volume \(volume)")
+            }
         }
         let fieldsChanged = moved != nil || !filled.isEmpty
         let missing = (row.watched ?? []).filter { !item.watched.contains($0) }.sorted()
@@ -52,7 +65,7 @@ extension ImportService {
 
     /// Moves the status forward when the row is further along. Returns the new status, if any.
     private static func promote(_ fields: inout ItemFields, by row: ImportRow, byHand: Bool) -> LibraryStatus? {
-        let incoming = row.status ?? (row.watched?.isEmpty == false ? .inProgress : nil)
+        let incoming = row.status ?? (row.hasProgress ? .inProgress : nil)
         guard let incoming, fields.status != .dropped, incoming.importRank > fields.status.importRank, !byHand
         else { return nil }
         fields.status = incoming
