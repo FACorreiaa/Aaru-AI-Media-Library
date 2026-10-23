@@ -4,17 +4,20 @@ import SwiftUI
 // MARK: The Field's sections
 
 extension HomeScreen {
-    /// "The Field", and when it is: "Tuesday evening · 3 in progress · 2 airing today".
+    /// The owl beside "The Field", and when it is: "Tuesday evening · 3 in progress · 2 airing today".
     var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("The Field")
-                .font(.aaruDisplay(.largeTitle, weight: .semibold))
-                .foregroundStyle(Color(.ink))
-                .accessibilityAddTraits(.isHeader)
-            Text(model.fieldLine)
-                .font(.subheadline)
-                .monospacedDigit()
-                .foregroundStyle(Color(.muted))
+        HStack(spacing: 14) {
+            OwlHead(size: 48, idle: true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("The Field")
+                    .font(.aaruDisplay(.largeTitle, weight: .semibold))
+                    .foregroundStyle(Color(.ink))
+                    .accessibilityAddTraits(.isHeader)
+                Text(model.fieldLine)
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .foregroundStyle(Color(.muted))
+            }
         }
         .padding(.horizontal, 20)
     }

@@ -30,11 +30,10 @@ struct FriendsContent: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .navigationTitle("Friends")
             } else if model.handle == nil {
-                ContentUnavailableView {
-                    Label("Choose a handle", systemImage: "at")
-                } description: {
-                    Text("Friends see who you are by your handle. Nobody can search or browse for you.")
-                } actions: {
+                OwlUnavailableView(
+                    title: "Choose a handle",
+                    message: "Friends see who you are by your handle. Nobody can search or browse for you."
+                ) {
                     NavigationLink("Choose a handle") { ProfileEditor(model: model) }
                         .buttonStyle(.borderedProminent)
                 }

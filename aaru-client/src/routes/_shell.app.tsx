@@ -10,6 +10,7 @@ import {
   onCleanup,
   onMount,
 } from 'solid-js'
+import { OwlMark } from '../components/Brand'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { LastImportCard } from '../components/LastImportCard'
 import { Medallion } from '../components/Medallion'
@@ -513,9 +514,13 @@ function Home() {
     <div class="atmos flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <div class="mt-6 flex items-start justify-between gap-4">
-          <h1 class="font-display text-4xl font-medium tracking-tight md:text-5xl">
-            The Field
-          </h1>
+          {/* Aaru at rest beside the page's name (owner, 2026-10-23): idle, never "working". */}
+          <div class="flex min-w-0 items-center gap-3 md:gap-4">
+            <OwlMark idle class="size-12 md:size-14" />
+            <h1 class="font-display text-4xl font-medium tracking-tight md:text-5xl">
+              The Field
+            </h1>
+          </div>
           {/* The way to the profile, as on the Apple apps' Home (owner, 2026-10-22). */}
           <Link
             to="/app/profile"

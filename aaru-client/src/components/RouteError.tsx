@@ -2,7 +2,7 @@ import { useRouter } from '@tanstack/solid-router'
 import { Show, onMount } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { reportBrowserError } from '../lib/observability/browser'
-import { Wordmark } from './Brand'
+import { MascotMedallion, Wordmark } from './Brand'
 
 // These two are the router's defaults, so they load with every page. They spell out the
 // primary button's look instead of importing Button: that would put Kobalte and tailwind-merge
@@ -33,6 +33,7 @@ export function RouteError(props: { error: unknown }) {
       <Show when={!inApp}>
         <Wordmark class="mb-10 h-9 w-auto" to={home} />
       </Show>
+      <MascotMedallion idle decorative class="mb-8 w-28" />
       <h1 class="font-display text-3xl font-medium">This page did not load</h1>
       <p class="mt-3 text-muted">{message()}</p>
       {/* eslint-disable-next-line no-restricted-syntax -- see `primary` above */}
@@ -55,9 +56,8 @@ export function NotFound() {
   return (
     <main class="mx-auto flex min-h-[100dvh] max-w-md flex-col items-center justify-center px-5 text-center">
       <Wordmark class="h-9 w-auto" to={home} />
-      <h1 class="mt-10 font-display text-3xl font-medium">
-        Nothing lives here
-      </h1>
+      <MascotMedallion idle decorative class="mt-10 w-28" />
+      <h1 class="mt-8 font-display text-3xl font-medium">Nothing lives here</h1>
       <p class="mt-3 text-muted">This page does not exist, or it moved.</p>
       <a href={home} class={primary}>
         Go home

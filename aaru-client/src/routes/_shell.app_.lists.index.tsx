@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import {
   For,
@@ -138,9 +139,11 @@ function Lists() {
         <Show
           when={lists().length > 0}
           fallback={
-            <p class="mt-16 text-center text-muted">
-              No lists yet. Make one for a theme, a marathon or a book club.
-            </p>
+            <OwlEmpty
+              class="mt-8"
+              title="No lists yet"
+              body="Make one for a theme, a marathon or a book club."
+            />
           }
         >
           {/* WEB-006: as many columns as the width holds. */}

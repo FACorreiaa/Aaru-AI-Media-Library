@@ -99,11 +99,7 @@ struct ListsView: View {
             } else if !lists.hasLoaded {
                 ProgressView()
             } else {
-                ContentUnavailableView {
-                    Label("No lists yet", systemImage: "list.bullet.rectangle")
-                } description: {
-                    Text("Make one for a theme, a marathon or a book club.")
-                } actions: {
+                OwlUnavailableView(title: "No lists yet", message: "Make one for a theme, a marathon or a book club.") {
                     Button("New list") { naming = .new }.buttonStyle(.borderedProminent)
                 }
             }

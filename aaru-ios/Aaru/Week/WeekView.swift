@@ -169,11 +169,7 @@ struct CalendarEmptyState: View {
                     .buttonStyle(.borderedProminent)
             }
         } else {
-            ContentUnavailableView {
-                Label(title, systemImage: "calendar")
-            } description: {
-                Text(detail)
-            } actions: {
+            OwlUnavailableView(title: title, message: detail) {
                 if let onSearch {
                     Button("Search", action: onSearch)
                         .buttonStyle(.borderedProminent)

@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import { Button, buttonVariants } from '~/components/ui'
@@ -117,45 +118,39 @@ function GroupsHome() {
         <Show
           when={hasHandle()}
           fallback={
-            <div class="rise mt-12 text-center">
-              <p class="font-display text-2xl">
-                Make a place to talk with friends.
-              </p>
-              <p class="mt-2 text-balance text-muted">
-                Choose a handle first, so friends can see who is talking.
-              </p>
-              <Link
-                to="/app/settings/account"
-                class={`${buttonVariants()} mt-6`}
-              >
-                Choose a handle
-              </Link>
-            </div>
+            <OwlEmpty
+              class="rise mt-6"
+              title="Make a place to talk with friends."
+              body="Choose a handle first, so friends can see who is talking."
+              action={
+                <Link to="/app/settings/account" class={buttonVariants()}>
+                  Choose a handle
+                </Link>
+              }
+            />
           }
         >
           <Show
             when={shell.groups().length > 0}
             fallback={
-              <div class="rise mt-12 text-center">
-                <p class="font-display text-2xl">
-                  Make a place to talk with friends.
-                </p>
-                <p class="mt-2 text-balance text-muted">
-                  A group starts with #general. Only friends you invite can
-                  join, and nobody can find it otherwise.
-                </p>
-                <div class="mt-6 flex flex-wrap justify-center gap-3">
-                  <Button onClick={() => shell.openCreate()}>
-                    Create a group
-                  </Button>
-                  <Link
-                    to="/app/settings/friends"
-                    class={buttonVariants({ variant: 'outline' })}
-                  >
-                    Add friends
-                  </Link>
-                </div>
-              </div>
+              <OwlEmpty
+                class="rise mt-6"
+                title="Make a place to talk with friends."
+                body="A group starts with #general. Only friends you invite can join, and nobody can find it otherwise."
+                action={
+                  <div class="flex flex-wrap justify-center gap-3">
+                    <Button onClick={() => shell.openCreate()}>
+                      Create a group
+                    </Button>
+                    <Link
+                      to="/app/settings/friends"
+                      class={buttonVariants({ variant: 'outline' })}
+                    >
+                      Add friends
+                    </Link>
+                  </div>
+                }
+              />
             }
           >
             <section class="mt-8 lg:hidden" aria-label="Your groups">

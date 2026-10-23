@@ -351,6 +351,48 @@ body {
       opacity: 1;
     }
   }
+
+  /* The owl at rest (Brand.tsx `idle`): a slow float and an amber glow behind it, on two
+     periods so they never line up. Calmer than `aaru-breathe`, which means "working"; the two
+     never share an element. Under reduced motion there is no glow and nothing moves. */
+  .owl-idle {
+    position: relative;
+    isolation: isolate;
+    animation: owl-float 6s ease-in-out infinite;
+  }
+  .owl-idle::before {
+    content: '';
+    position: absolute;
+    inset: -22%;
+    z-index: -1;
+    border-radius: 9999px;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--gold) 35%, transparent),
+      transparent 70%
+    );
+    opacity: 0.25;
+    pointer-events: none;
+    animation: owl-glow 4s ease-in-out -1.3s infinite;
+  }
+  @keyframes owl-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+  @keyframes owl-glow {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
 }
 
 /* The mindspace layer (DESIGN.md "Brand"). Only the Field and the Title room stand in it;

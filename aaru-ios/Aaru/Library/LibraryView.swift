@@ -152,11 +152,10 @@ struct LibraryView: View {
         } else if library.rows.isEmpty, !library.hasSynced {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if library.rows.isEmpty {
-            ContentUnavailableView {
-                Label("Your library is empty", systemImage: "books.vertical")
-            } description: {
-                Text("Search for a film, show, anime, book or album, or bring your history from another app.")
-            } actions: {
+            OwlUnavailableView(
+                title: "Your library is empty",
+                message: "Search for a film, show, anime, book or album, or bring your history from another app."
+            ) {
                 Button("Search") { router.showsSearch = true }
                     .buttonStyle(.borderedProminent)
                 Button("Bring your history") { router.openSettings(.imports) }
