@@ -8,6 +8,7 @@
    as the Apple apps' asset catalog (DESIGN.md "Brand"). Light follows the system unless
    <html data-theme> pins it (lib/appearance.ts). */
 @import './tokens.css';
+@import './tokens.theme.css';
 
 /* `dark:` follows Aaru's appearance, not Kobalte's `data-kb-theme`: the system scheme unless
    <html data-theme> pins one. */
@@ -41,12 +42,8 @@
   --color-line-strong: var(--line-strong);
   --color-scrim: var(--scrim);
   --color-on-scrim: var(--on-scrim);
-  /* Corner radii: cards, panels (callouts, inner boxes), fields. */
-  --radius-card: 20px;
-  --radius-panel: 14px;
-  --radius-field: 10px;
-  /* Poster thumbnails inside a cell: calendar days, agenda rows. */
-  --radius-thumb: 6px;
+  /* Corner radii (rounded-card, -panel, -field, -row, -thumb, -pill; sm…xl are the same four)
+     and the easing (ease-aaru) come from tokens.theme.css, generated with the colours. */
   /* The display face is the system sans, as in the brand poster (DESIGN.md "Brand"); headings
      differ from body text by weight and size, not by family. */
   --font-display:
@@ -65,10 +62,6 @@
      - `accent` is Aaru's ice blue. shadcn's highlight (`bg-accent` on a focused menu item, a
        pressed toggle) is therefore accent with `accent-foreground` (on-accent) text, the way a
        system menu highlights in the accent colour. */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -104,7 +97,6 @@
 /* shadcn's variables on Aaru's tokens. No dark block: the tokens they point at already switch
    with the appearance (tokens.css). `--muted` and `--accent` are Aaru's (see above). */
 :root {
-  --radius: 10px;
   --background: var(--paper);
   --foreground: var(--ink);
   --card: var(--surface);

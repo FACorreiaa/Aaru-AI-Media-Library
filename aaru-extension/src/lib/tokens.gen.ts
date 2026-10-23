@@ -16,3 +16,30 @@ export const COLORS = {
   onScrim: { light: '#f4f6fa', dark: '#e7ebf1' },
   night: { light: '#16233a', dark: '#16233a' },
 } as const
+
+/** Corner radii in px. */
+export const RADIUS = {
+  card: 20,
+  panel: 14,
+  field: 10,
+  row: 8,
+  thumb: 6,
+  pill: 999,
+} as const
+
+/** Tint steps of a token over a surface. */
+export const ALPHA = {
+  tint: 0.08,
+  wash: 0.15,
+  ghost: 0.25,
+  half: 0.5,
+} as const
+
+/** Durations in ms and the one ease-out curve, for motion/mini. */
+export const MOTION = {
+  fast: 150,
+  base: 240,
+  slow: 420,
+  ease: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
+  easeBezier: [0.2, 0.7, 0.2, 1],
+} as const

@@ -487,6 +487,7 @@ account or a stranger that has not happened yet.
 | BRD-005 | Built | #158; `generate-tokens.mjs --check` covers the manifest and translucent pairs | Theme audit 2026-10-23: contract fixes. BRD-006…010 follow |
 | BRD-006 | Built | #159 | Web contrast P1s: one focus form, placeholders, menu rows, toasts |
 | BRD-007 | Built | this PR; `Design/Surfaces.swift` | Apple contrast P1s + launch screen in Paper. Owner checks a sheet and a cold launch in dark on TestFlight |
+| BRD-008 | Built | this PR; `Tokens.gen.swift`, `tokens.theme.css` | Radius, alpha, motion and space scales in `tokens.json`; adoption on each client follows in BRD-008's web and Apple PRs |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -907,6 +908,21 @@ dict), so a dark cold start no longer flashes white.
 
 **Done when:** `xcodebuild build` passes; every sheet in the list sits on Paper in dark; a cold
 launch in dark shows navy, not white; the mention badge reads on the accent.
+### BRD-008 · One scale source: radius, alpha, motion, space · M · owner, 2026-10-23
+`design/tokens.json` held colours only, so each client invented the rest: the web kept four
+radii in `styles.css` and shadcn's `--radius` remap, Apple used ten radii (72 of 83 not
+`.continuous`), about fifty token×alpha combinations, 24 padding values and four tracking
+values; motion had no shared duration or curve. The file now holds the radii (card 20,
+panel 14, field 10, row 8, thumb 6, pill), the tint steps (0.08, 0.15, 0.25, 0.5), the motion
+(150, 240, 420 ms and the one ease-out curve) and the 4 pt spacing grid. The generator emits
+`aaru-client/src/tokens.theme.css` (Tailwind `rounded-*` and `ease-aaru`), `--motion-*` /
+`--alpha-*` variables, `RADIUS`/`ALPHA`/`MOTION` in `tokens.gen.ts`, and `Tokens.gen.swift`
+(`AaruRadius`, `AaruAlpha`, `AaruMotion`, `AaruSpace`) for the app and the widget extension.
+This PR is the source and the generator; the two adoption PRs (web surfaces + type/motion,
+Apple surfaces + spacing + type) follow under the same id.
+
+**Done when:** `generate-tokens.mjs --check` covers the new files; `rounded-lg`/`-xl` keep
+their pixel values (10/14) so nothing moves in this PR; both targets build with the enums.
 
 ## P0 · M1 — Server foundation
 

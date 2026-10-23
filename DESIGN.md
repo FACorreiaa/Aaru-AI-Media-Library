@@ -1051,6 +1051,21 @@ AI" UI.
   owl's glow while Aaru works and the dot on a plan card. It never fills a surface and never
   carries text. Text on an accent fill is **on-accent**, never white (2.4:1 on the dark
   accent). No pure black.
+- **One scale source (2026-10-23).** The same file holds the radii (card 20, panel 14, field
+  10, row 8, thumb 6, pill), the tint steps (tint 0.08, wash 0.15, ghost 0.25, half 0.5),
+  the motion (fast 150, base 240, slow 420 ms; one ease-out curve, `cubic-bezier(0.2, 0.7,
+  0.2, 1)`) and the 4 pt spacing grid (4, 8, 12, 16, 20, 24, 32, 40, 48). The generator
+  writes them as `aaru-client/src/tokens.theme.css` (`rounded-card` … `rounded-pill`,
+  Tailwind's `sm`…`xl` remapped to thumb/row/field/panel, `ease-aaru`), `--motion-*` and
+  `--alpha-*` variables, `RADIUS`/`ALPHA`/`MOTION` in `tokens.gen.ts`, and
+  `AaruRadius`/`AaruAlpha`/`AaruMotion`/`AaruSpace` in `Tokens.gen.swift` for the app and the
+  widgets. A radius, tint, duration or padding outside the scale is a review comment. Apple
+  corners are always `.continuous`. Web spacing is Tailwind's 4 px scale.
+- **Elevation.** Flat: Paper, Surface and Stone separate by tint and hairline, never by
+  shadow. One `lift` (a line-strong ring and a soft navy shadow) belongs to layers that float:
+  menus, popovers, dialogs, drawers, toasts, a dragged card. Gradients exist only as a glow
+  (accent or gold, radial, fading to transparent) or a scrim. Never a gradient fill or gradient
+  text, never glass by default.
 - **Appearance.** System, Light or Dark, per device. The web keeps it in the `aaru_appearance`
   cookie and renders `<html data-theme>` on the server, so nothing flashes; Apple keeps it in
   `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system.
