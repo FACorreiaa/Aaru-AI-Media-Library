@@ -530,6 +530,7 @@ account or a stranger that has not happened yet.
 | PROG-003 | Done | #2; LibraryTests nextEpisode | |
 | PROG-004 | Done | #2; ValidationTests percent | |
 | PROG-005 | Done | ShowWatchedTests | Pulled forward 2026-10-22; not yet run on TestFlight |
+| PROG-006 | Built, unverified | `lib/home/tonight.test.ts`; `TonightStrip.tsx`, `Home/TonightCard.swift` | Client-only (owner, 2026-10-23); not yet run on TestFlight |
 | LST-001 | Done | #2; ListShelfTests visibility | |
 | LST-002 | Done | #2; `/v1/lists/{id}/items`, `/order` | |
 | LST-003 | Built, unverified | ListShelfTests LST-003, CatalogRefreshTests | iOS not checked on TestFlight yet |
@@ -1330,6 +1331,19 @@ the status select. Both show "Marked N episodes · Undo".
 
 **Done when:** one request ticks a 60-episode show in one undoable action, unaired episodes stay
 unticked, and this week's Insights does not move.
+
+### PROG-006 · Season watched from Tonight · S · owner, 2026-10-23
+**Needs:** PROG-003, AG-005.
+Tonight's card has a second visible button, "Season N watched", beside "Mark watched", for a
+user who has already seen the rest of the season. It is the title page's season tick
+(`POST /v1/library/items/{id}/seasons/{season}/watched`): every aired episode of the next
+episode's season, as one action; no API change. It shows only when episodes after the next one
+remain in that season (not at the finale, not with one left). Nothing moves until the server
+answers; then Tonight and Up Next load again. Season only: the whole show stays on the title
+page and the card menus (PROG-005). Like the title page's, the ticks are dated today.
+
+**Done when:** a pick mid-season marks the season in one tap on web, iPhone and Mac, Tonight moves
+to the next season's first episode (or on), and a finale pick shows no season button.
 
 ---
 

@@ -29,6 +29,7 @@ extension HomeScreen {
                 isPending: model.pending.contains(tonight.primary.libraryItemId),
                 wide: !compact,
                 onSetAside: { pick, verdict in Task { await model.setAside(pick, verdict: verdict) } },
+                onMarkSeasonWatched: { entry in Task { await model.markSeasonWatched(entry) } },
                 onMarkWatched: { entry in Task { await model.markNextWatched(entry) } }
             )
             .padding(.horizontal, 20)

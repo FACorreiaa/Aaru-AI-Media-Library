@@ -2,7 +2,12 @@ import { Link } from '@tanstack/solid-router'
 import { Show } from 'solid-js'
 import { shortCode } from '../lib/calendar/model'
 import type { ContinueEntry } from '../lib/home/model'
-import { pickEpisode, pickMarkable, pickReason } from '../lib/home/tonight'
+import {
+  pickEpisode,
+  pickMarkable,
+  pickReason,
+  pickSeasonMarkable,
+} from '../lib/home/tonight'
 import type { Tonight, TonightPick, TonightVerdict } from '../lib/home/tonight'
 import { Art } from './HomeRows'
 import { Button, buttonVariants } from '~/components/ui'
@@ -10,17 +15,20 @@ import { Button, buttonVariants } from '~/components/ui'
 // VIEWS.md `TonightStrip`: the Field's focal piece. One thing to watch now, lit and large, and
 // one more on a line under it. Ranked by the server, composed in the browser when there is no
 // answer for today (lib/home/tonight.ts); a mark-watched here is the same write as Continue
-// watching's check. "Not tonight" sets the pick aside for the day, "Not for me" for longer.
+// watching's check, and the season tick the title page's. "Not tonight" sets the pick aside for
+// the day, "Not for me" for longer.
 export function TonightStrip(props: {
   tonight: Tonight
   busy: boolean
   onWatched: (entry: ContinueEntry) => void
+  onSeasonWatched: (entry: ContinueEntry) => void
   onSetAside: (pick: TonightPick, verdict: TonightVerdict) => void
   timeZone?: string
 }) {
   const primary = () => props.tonight.primary
   const title = () => primary().entry.title
   const continuing = () => pickMarkable(primary())
+  const season = () => pickSeasonMarkable(primary())
   return (
     <section class="mt-8" aria-labelledby="tonight">
       <h2 id="tonight" class="eyebrow">
@@ -71,6 +79,18 @@ export function TonightStrip(props: {
                   aria-label={`Mark ${entry().title.title} ${shortCode(entry().next.season, entry().next.number)} watched`}
                 >
                   Mark watched
+                </Button>
+              )}
+            </Show>
+            <Show when={season()}>
+              {(entry) => (
+                <Button
+                  variant="outline"
+                  disabled={props.busy}
+                  onClick={() => props.onSeasonWatched(entry())}
+                  aria-label={`Mark ${entry().title.title} season ${entry().next.season} watched`}
+                >
+                  Season {entry().next.season} watched
                 </Button>
               )}
             </Show>
