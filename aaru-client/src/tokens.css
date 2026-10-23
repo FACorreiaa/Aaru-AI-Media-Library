@@ -15,6 +15,14 @@
   --night: #16233a;
   --line: rgb(18 26 40 / 0.12);
   --line-strong: rgb(18 26 40 / 0.22);
+  --motion-fast: 150ms;
+  --motion-base: 240ms;
+  --motion-slow: 420ms;
+  --motion-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --alpha-tint: 0.08;
+  --alpha-wash: 0.15;
+  --alpha-ghost: 0.25;
+  --alpha-half: 0.5;
   color-scheme: light;
 }
 
