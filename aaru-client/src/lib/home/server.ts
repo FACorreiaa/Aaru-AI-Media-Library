@@ -5,6 +5,7 @@ import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { SeasonPage } from '../discover/season'
 import type { DiscoverRow, UpNext } from './model'
+import type { RankedTonight } from './tonight'
 
 // APP-009 on the web: Continue watching and Start watching in one call, as the Apple apps'
 // Home gets them.
@@ -54,4 +55,43 @@ export const getDiscoverSeason = createServerFn({ method: 'GET' })
     if (!page)
       throw new Error(errorMessage(error, 'This season could not be loaded.'))
     return page
+  })
+
+/** AG-005: Tonight as the server ranks it, for the viewer's local day. */
+export const getTonight = createServerFn({ method: 'GET' })
+  .validator(z.object({ tz: z.string().min(1).max(64) }))
+  .handler(async ({ data }): Promise<RankedTonight> => {
+    const {
+      data: tonight,
+      error,
+      response,
+    } = await api(sessionToken()).GET('/v1/tonight', {
+      params: { query: { tz: data.tz } },
+    })
+    if (response.status === 401) sessionRejected()
+    if (!tonight)
+      throw new Error(errorMessage(error, 'Tonight could not be loaded.'))
+    return tonight
+  })
+
+/** "Not tonight" hides a pick until the local day ends; "rejected" (not for me) for longer. */
+export const sendTonightFeedback = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      id: z.string().uuid(),
+      verdict: z.enum(['rejected', 'not_tonight']),
+      tz: z.string().min(1).max(64),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { error, response } = await api(sessionToken()).POST(
+      '/v1/tonight/{id}/feedback',
+      {
+        params: { path: { id: data.id }, query: { tz: data.tz } },
+        body: { verdict: data.verdict },
+      },
+    )
+    if (response.status === 401) sessionRejected()
+    if (!response.ok)
+      throw new Error(errorMessage(error, 'That could not be set aside.'))
   })

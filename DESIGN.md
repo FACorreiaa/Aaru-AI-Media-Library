@@ -162,6 +162,15 @@ Mark watched (the same write as the Continue card) and Open; no reject and no "n
 until the agent composes it. Same rule on the web (`lib/home/tonight.ts`) and Apple
 (`Home/Tonight.swift`).
 
+**Server-composed, client fallback (2026-10-23, AG-005):** the Field now shows
+`GET /v1/tonight` for the viewer's local day: shows in progress, today's airings, books in
+progress and wishlist films, ranked on the server with template reasons. The last answer is
+kept (Home's cache on Apple, `localStorage` on the web, cleared on sign-out), so Tonight opens
+offline. The device composes it as above only when no answer for today exists. Each pick has
+"Not tonight" (gone for the day) and "Not for me" (ranked lower for 14 days): buttons on the
+web, a "…" menu and a context menu on Apple. The card moves on at once, then Tonight loads
+again. Mark watched shows only when the pick is a show's next episode.
+
 ## 6. The shelf (library as query, not as app section)
 
 Library is a **saved question**.

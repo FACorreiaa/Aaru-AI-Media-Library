@@ -1,5 +1,18 @@
-import { describe, expect, it } from 'vitest'
-import { composeTonight, fieldLine, pickEpisode, pickReason } from './tonight'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  composeTonight,
+  fieldLine,
+  pickEpisode,
+  pickMarkable,
+  pickReason,
+  rankedTonight,
+} from './tonight'
+import {
+  forgetTonight,
+  recalledTonight,
+  rememberTonight,
+} from './tonight-cache'
+import type { RankedPick, RankedTonight } from './tonight'
 import type { ContinueEntry } from './model'
 import type { CalendarEntry } from '../calendar/model'
 
@@ -132,5 +145,124 @@ describe('fieldLine', () => {
     )
     expect(fieldLine('Tuesday', 0, 1)).toBe('Tuesday · 1 airing today')
     expect(fieldLine('Tuesday night', 0, 0)).toBe('Tuesday night')
+  })
+})
+
+function ranked(n: number, overrides: Partial<RankedPick> = {}) {
+  return {
+    libraryItemId: `item-${n}`,
+    title: show(n),
+    kind: 'continue',
+    episode: { season: 4, number: 3 },
+    episodeName: 'Hello',
+    minutes: 52,
+    airTimeKnown: false,
+    reason: '52 min · 3 left',
+    ...overrides,
+  } satisfies RankedPick
+}
+
+describe('rankedTonight', () => {
+  const answer = (picks: RankedPick[]): RankedTonight => ({
+    day: '2026-10-21',
+    picks,
+  })
+
+  it('keeps the server order and gives a show its Continue watching card', () => {
+    const tonight = rankedTonight(
+      answer([ranked(2), ranked(1, { kind: 'start', episode: undefined })]),
+      [continuing(1), continuing(2)],
+      new Set(),
+    )
+    expect(tonight?.primary).toEqual({
+      kind: 'ranked',
+      entry: ranked(2),
+      next: continuing(2),
+    })
+    expect(tonight?.also?.kind).toBe('ranked')
+    // A film is never ticked from Tonight, even with a card of the same id.
+    expect(tonight?.also && pickMarkable(tonight.also)).toBeNull()
+  })
+
+  it('leaves out what is hidden, and is null when nothing is left', () => {
+    const tonight = rankedTonight(
+      answer([ranked(1), ranked(2)]),
+      [],
+      new Set(['item-1']),
+    )
+    expect(tonight?.primary.entry.libraryItemId).toBe('item-2')
+    expect(tonight?.also).toBeNull()
+    expect(
+      rankedTonight(answer([ranked(1)]), [], new Set(['item-1'])),
+    ).toBeNull()
+  })
+
+  it("says the server's reason, and the card's episode once it moves on", () => {
+    const pick = rankedTonight(answer([ranked(1)]), [], new Set())?.primary
+    expect(pick && pickEpisode(pick)).toBe('S4 · E3 · Hello')
+    expect(pick && pickReason(pick)).toBe('52 min · 3 left')
+    const moved = rankedTonight(
+      answer([ranked(1)]),
+      [continuing(1, { next: { season: 4, number: 4 }, nextName: undefined })],
+      new Set(),
+    )?.primary
+    expect(moved && pickEpisode(moved)).toBe('S4 · E4')
+  })
+
+  it('names no episode for a book', () => {
+    const book = rankedTonight(
+      answer([
+        ranked(1, {
+          kind: 'reading',
+          episode: undefined,
+          episodeName: undefined,
+        }),
+      ]),
+      [],
+      new Set(),
+    )?.primary
+    expect(book && pickEpisode(book)).toBe('')
+  })
+})
+
+describe('the cached answer', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  function stubStorage() {
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+    })
+  }
+
+  it('comes back only for its own day, and not after sign-out', () => {
+    stubStorage()
+    const answer = { day: '2026-10-21', picks: [ranked(1)] }
+    rememberTonight(answer)
+    expect(recalledTonight('2026-10-21')).toEqual(answer)
+    expect(recalledTonight('2026-10-22')).toBeNull()
+    forgetTonight()
+    expect(recalledTonight('2026-10-21')).toBeNull()
+  })
+
+  it('survives blocked storage', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => {
+        throw new Error('blocked')
+      },
+      setItem: () => {
+        throw new Error('blocked')
+      },
+      removeItem: () => {
+        throw new Error('blocked')
+      },
+    })
+    expect(() => rememberTonight({ day: 'x', picks: [] })).not.toThrow()
+    expect(recalledTonight('x')).toBeNull()
+    expect(() => forgetTonight()).not.toThrow()
   })
 })
