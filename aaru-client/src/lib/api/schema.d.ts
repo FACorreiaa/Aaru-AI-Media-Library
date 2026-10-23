@@ -2927,6 +2927,11 @@ export interface components {
     }
     BoardCommentPage: {
       items: components['schemas']['BoardComment'][]
+      /**
+       * Format: uuid
+       * @description Pass as `after` for the next page. Null on the last page. A page can be empty or short with a `next` still set, because deleted and blocked rows are skipped after the page is cut; keep following it.
+       */
+      next?: string | null
     }
     BoardPost: {
       /** Format: uuid */

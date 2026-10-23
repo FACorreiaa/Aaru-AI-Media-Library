@@ -168,4 +168,48 @@ struct BoardCommentTests {
             #expect(try await env.send(.post, path, json: ["body": long]).status.code == 422)
         }
     }
+
+    @Test("BRD-001: an all-filtered page still carries a cursor")
+    func filteredPageCursor() async throws {
+        try await LibraryHarness.run { env in
+            let mine = try await claimHandle(env)
+            let ana = try await friend(env, of: mine)
+            let post = try await createPost(env, "hello")
+            for index in 0 ..< 3 {
+                let id = try #require(try await comment(env, post, "gone \(index)", token: ana.token)["id"] as? String)
+                let path = "/v1/board/posts/\(post)/comments/\(id)"
+                #expect(try await env.send(.delete, path, token: ana.token).status == .noContent)
+            }
+            _ = try await comment(env, post, "visible")
+
+            let first = try await env.send(.get, "/v1/board/posts/\(post)/comments?limit=3")
+            let page = try first.json()
+            #expect((page["items"] as? [Any])?.isEmpty == true)
+            let next = try #require(page["next"] as? String)
+            let second = try await env.send(.get, "/v1/board/posts/\(post)/comments?limit=3&after=\(next)").json()
+            #expect((second["items"] as? [[String: Any]])?.map { $0["body"] as? String } == ["visible"])
+            #expect(second["next"] is NSNull || second["next"] == nil)
+        }
+    }
+
+    @Test("BRD-001: a hidden comment is not found to delete or reply to")
+    func hiddenCommentIsMissing() async throws {
+        try await LibraryHarness.run { env in
+            let carl = try await claimHandle(env)
+            let ana = try await friend(env, of: carl)
+            let ben = try await friend(env, of: carl)
+            let post = try await createPost(env, "carl's")
+            let byBen = try #require(try await comment(env, post, "ben", token: ben.token)["id"] as? String)
+            #expect(try await env.send(.put, "/v1/social/blocks/\(ben.id)", token: ana.token).status.code < 300)
+
+            let path = "/v1/board/posts/\(post)/comments"
+            let gone = try await env.send(.delete, "\(path)/\(byBen)", token: ana.token)
+            let unknown = try await env.send(.delete, "\(path)/\(UUID())", token: ana.token)
+            #expect(gone.status == .notFound)
+            #expect(gone.text == unknown.text)
+            let reply = try await env.send(.post, path, json: ["body": "hi", "replyTo": byBen], token: ana.token)
+            #expect(reply.status.code == 422)
+            #expect(reply.text.contains("replyTo"))
+        }
+    }
 }

@@ -74,11 +74,14 @@ extension APIImplementation {
         -> Operations.ListBoardComments.Output
     {
         let viewer = try currentUser()
-        let comments = try await services.board.comments(
+        let page = try await services.board.comments(
             postID(input.path.postId), after: input.query.after.flatMap(UUID.init(uuidString:)),
             limit: input.query.limit, viewer: viewer
         )
-        return .ok(.init(body: .json(.init(items: comments.map { .init($0, viewer: viewer) }))))
+        return .ok(.init(body: .json(.init(
+            items: page.items.map { .init($0, viewer: viewer) },
+            next: page.next?.uuidString
+        ))))
     }
 
     func createBoardComment(_ input: Operations.CreateBoardComment.Input) async throws

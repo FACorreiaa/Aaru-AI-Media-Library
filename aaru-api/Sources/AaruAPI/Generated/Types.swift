@@ -6015,15 +6015,25 @@ public enum Components {
         public struct BoardCommentPage: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/BoardCommentPage/items`.
             public var items: [Components.Schemas.BoardComment]
+            /// Pass as `after` for the next page. Null on the last page. A page can be empty or short with a `next` still set, because deleted and blocked rows are skipped after the page is cut; keep following it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BoardCommentPage/next`.
+            public var next: Swift.String?
             /// Creates a new `BoardCommentPage`.
             ///
             /// - Parameters:
             ///   - items:
-            public init(items: [Components.Schemas.BoardComment]) {
+            ///   - next: Pass as `after` for the next page. Null on the last page. A page can be empty or short with a `next` still set, because deleted and blocked rows are skipped after the page is cut; keep following it.
+            public init(
+                items: [Components.Schemas.BoardComment],
+                next: Swift.String? = nil
+            ) {
                 self.items = items
+                self.next = next
             }
             public enum CodingKeys: String, CodingKey {
                 case items
+                case next
             }
         }
         /// - Remark: Generated from `#/components/schemas/BoardPost`.
