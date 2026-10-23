@@ -488,6 +488,7 @@ account or a stranger that has not happened yet.
 | BRD-006 | Built | #159 | Web contrast P1s: one focus form, placeholders, menu rows, toasts |
 | BRD-007 | Built | this PR; `Design/Surfaces.swift` | Apple contrast P1s + launch screen in Paper. Owner checks a sheet and a cold launch in dark on TestFlight |
 | BRD-008 | Built | #161 (source + generator); #162 (web surfaces: lift, scrim, hairline cards, radii, skeleton, tooltip, inputs, disabled, selection); this PR (web type + motion: one eyebrow, named sizes, motion tokens, reduced-motion blanket, no app-shell choreography, fixed share colours); the Apple adoption follows | Owner checks a menu, a dialog, the drawer, a card and the recap in both appearances on beta web, once with Reduce Motion |
+| BRD-010 | Built | this PR; `docs/brand/owl_icon_appearances.py` | Dark + tinted app icon (iOS 18), extension popup on the tokens, PWA manifest rule. Owner checks the icon in all three Home Screen modes |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -923,6 +924,11 @@ Apple surfaces + spacing + type) follow under the same id.
 
 **Done when:** `generate-tokens.mjs --check` covers the new files; `rounded-lg`/`-xl` keep
 their pixel values (10/14) so nothing moves in this PR; both targets build with the enums.
+
+### BRD-010 · Shell polish: icon appearances, extension popup, PWA manifest · S · owner, 2026-10-23
+The app icon had one appearance; iOS 18 asks for dark and tinted. `docs/brand/owl_icon_appearances.py` renders both from the traced A-mark: dark is the mark on flat night navy without the hologram glow, tinted is the mark alone in grey on transparent for the system to tint; the Beta set keeps its band. The extension popup takes the web's eyebrow (12 px, 0.12 em), the pill radius and the motion tokens instead of its own values. The PWA manifest's two colours are the dark paper by design (one splash for both appearances), written by the generator and documented in DESIGN.md.
+
+**Done when:** both `AppIcon*` sets carry `dark` and `tinted` 1024 images and the catalog compiles; the owner has seen the icon in default, dark and tinted modes on an iOS 18 Home Screen.
 
 ## P0 · M1 — Server foundation
 
