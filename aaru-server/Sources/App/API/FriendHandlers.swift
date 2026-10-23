@@ -99,7 +99,8 @@ extension Components.Schemas.FriendProfile {
                     level: $0.level,
                     badges: $0.badges.compactMap { Components.Schemas.BadgeAward($0, reveal: false) }
                 )
-            }
+            },
+            favorites: profile.favorites.map(Components.Schemas.Favorites.init)
         )
     }
 }

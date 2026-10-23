@@ -118,6 +118,15 @@ struct FriendProfileView: View {
                 Cover(title: $0.title, caption: $0.rating.map { "★ \(ActivityWords.rating($0))" })
             }
         )
+        // FAV-001: their top 10s, one row per kind they filled. Sent only while they share.
+        if let favorites = profile.favorites, !favorites.filledKinds.isEmpty {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Favorites").font(.aaruDisplay(.title3))
+                ForEach(favorites.filledKinds) { kind in
+                    CoverShelf(title: kind.label, small: true, covers: favorites[kind].map { Cover(title: $0) })
+                }
+            }
+        }
     }
 
     static func bothFinished(_ count: Int) -> String {

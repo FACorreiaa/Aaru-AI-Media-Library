@@ -603,7 +603,7 @@ account or a stranger that has not happened yet.
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
 | MNG-001 | Built, unverified | `feat/mng-001-manga`; MangaTests, AniListMangaAdapterTests | Not deployed; not run on a device |
 | MNG-002 | Built, unverified | `feat/mng-001-manga`; MangaImportTests, AnimeListImportTests | Not deployed; no real MAL manga export or AniList manga list run yet |
-| FAV-001 | Not started | — | Builds on MNG-001 |
+| FAV-001 | Built, unverified | `feat/fav-001-favorites`; FavoritesTests, favorites model tests | Not deployed; not run on a device |
 | BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
 | BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |

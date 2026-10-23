@@ -209,6 +209,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/favorites': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library. */
+    get: operations['getMyFavorites']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/favorites/{kind}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled. */
+    put: operations['setMyFavorites']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/users/{handle}': {
     parameters: {
       query?: never
@@ -2879,6 +2913,26 @@ export interface components {
       recentlyFinished?: components['schemas']['FriendItem'][]
       compare?: components['schemas']['FriendCompare']
       achievements?: components['schemas']['FriendAchievements']
+      /** @description Their top 10s (FAV-001). Sent only while they share their library. */
+      favorites?: components['schemas']['Favorites']
+    }
+    /**
+     * @description A favorites kind. Anime is any anime, film or series.
+     * @enum {string}
+     */
+    FavoriteKind: 'film' | 'show' | 'anime' | 'manga' | 'book' | 'album'
+    /** @description An ordered top 10 per kind (FAV-001), first is the favorite. */
+    Favorites: {
+      film: components['schemas']['TitleSummary'][]
+      show: components['schemas']['TitleSummary'][]
+      anime: components['schemas']['TitleSummary'][]
+      manga: components['schemas']['TitleSummary'][]
+      book: components['schemas']['TitleSummary'][]
+      album: components['schemas']['TitleSummary'][]
+    }
+    FavoritesUpdate: {
+      /** @description The whole kind, in order. Empty clears it. More than 10 is a 422. */
+      items: components['schemas']['MediaRef'][]
     }
     /** @description Absent when the friend turned off showing their badges and level. */
     FriendAchievements: {
@@ -3809,6 +3863,7 @@ export interface components {
       }[]
       /** @description Every listen in your listening log, newest first (MUS-005). */
       listens?: components['schemas']['Listen'][]
+      favorites?: components['schemas']['Favorites']
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]
@@ -4574,6 +4629,54 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SocialUser']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getMyFavorites: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Every kind, each in your order; an empty list for a kind with none. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Favorites']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  setMyFavorites: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['FavoriteKind']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FavoritesUpdate']
+      }
+    }
+    responses: {
+      /** @description All your favorites after the change. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Favorites']
         }
       }
       default: components['responses']['Error']

@@ -3,7 +3,8 @@ import Charts
 import SwiftUI
 
 // The profile's sections below the header (GAM-006b): time watched, the count tiles, where the
-// time went, genres, most watched and where you watch. Drawn at their final values, never grown.
+// time went, genres, most watched and where you watch, then favorites (FAV-001). Drawn at their
+// final values, never grown.
 
 // MARK: Time
 
@@ -285,5 +286,86 @@ struct ProfileNetworkChips: View {
             }
         }
         .scrollIndicators(.hidden)
+    }
+}
+
+// MARK: Favorites
+
+/// FAV-001: a cover row per kind that has favorites, in order, and Edit to the editor. With none
+/// yet, one line and the way to choose some.
+struct ProfileFavorites: View {
+    let model: FavoritesModel
+    let library: LibraryModel
+
+    var body: some View {
+        let favorites = model.favorites ?? .empty
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Favorites")
+                    .font(.aaruDisplay(.title3, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: AaruSpace.small)
+                NavigationLink("Edit") { FavoritesEditor(model: model) }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color(.accent))
+                    .accessibilityHint("Opens your favorites")
+            }
+            if model.favorites != nil, favorites.filledKinds.isEmpty {
+                Text("Pick up to 10 films, shows, anime, manga, books and albums.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(.muted))
+            }
+            ForEach(favorites.filledKinds) { kind in
+                FavoriteCoverRow(title: kind.label, titles: favorites[kind], library: library)
+            }
+        }
+    }
+}
+
+/// One kind's favorites as a sideways row of covers, each opening its title when it is on the
+/// shelf. Most watched's look: cover, title, and a muted line.
+private struct FavoriteCoverRow: View {
+    let title: String
+    let titles: [TitleSummary]
+    let library: LibraryModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AaruSpace.small) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color(.ink))
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: AaruSpace.large) {
+                    ForEach(titles, id: \.id) { title in
+                        if let id = library.entry(forTitle: title.id)?.id {
+                            NavigationLink(value: id) { cover(title) }
+                                .buttonStyle(.plain)
+                        } else {
+                            cover(title)
+                        }
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+
+    private func cover(_ title: TitleSummary) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            PosterView(url: title.posterURL, kind: title.mediaKind)
+            Text(title.title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color(.ink))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+            if let line = favoriteLine(title) {
+                Text(line)
+                    .font(.caption2)
+                    .foregroundStyle(Color(.muted))
+                    .lineLimit(1)
+            }
+        }
+        .frame(width: 104, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }

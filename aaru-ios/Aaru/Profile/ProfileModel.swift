@@ -6,12 +6,14 @@ typealias ProfileStats = Components.Schemas.ProfileStats
 
 /// GAM-006b, pulled forward without badges or points (2026-10-22): the profile's all-time
 /// numbers from `/v1/me/profile/stats`, and who is signed in from `/v1/me`. All-time means the
-/// library as it is, so undated and imported ticks count here and not in Insights.
+/// library as it is, so undated and imported ticks count here and not in Insights. Favorites
+/// (FAV-001) load alongside, and the editor shares the same model so the profile follows it.
 @MainActor
 @Observable
 final class ProfileModel {
     private(set) var stats: ProfileStats?
     private(set) var account: Components.Schemas.Me?
+    let favorites: FavoritesModel
     private(set) var isLoading = false
     /// The last load failed and there is nothing to show.
     private(set) var failed = false
@@ -19,14 +21,17 @@ final class ProfileModel {
     @ObservationIgnored private let api: Client?
 
     /// `account` is what Home already has, so the header shows at once.
-    init(api: Client?, account: Components.Schemas.Me? = nil) {
+    init(api: Client?, account: Components.Schemas.Me? = nil, favorites: Favorites? = nil) {
         self.api = api
         self.account = account
+        self.favorites = FavoritesModel(api: api, favorites: favorites)
     }
 
     /// For previews: the numbers already in place.
-    convenience init(preview stats: ProfileStats, account: Components.Schemas.Me? = nil) {
-        self.init(api: nil, account: account)
+    convenience init(
+        preview stats: ProfileStats, account: Components.Schemas.Me? = nil, favorites: Favorites? = nil
+    ) {
+        self.init(api: nil, account: account, favorites: favorites)
         self.stats = stats
     }
 
@@ -36,6 +41,7 @@ final class ProfileModel {
         defer { isLoading = false }
         async let meCall = api.getMe()
         async let statsCall = api.getProfileStats()
+        async let favoritesLoad: Void = favorites.load()
         if case let .ok(response)? = try? await meCall, let signedIn = try? response.body.json {
             account = signedIn
         }
@@ -45,6 +51,7 @@ final class ProfileModel {
         } else {
             failed = stats == nil
         }
+        await favoritesLoad
     }
 
     /// Nothing watched, read or on the shelf yet: the empty state instead of a page of zeros.

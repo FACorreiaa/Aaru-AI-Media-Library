@@ -4,8 +4,8 @@ import SwiftUI
 /// The profile (GAM-006b, pulled forward 2026-10-22): who you are and everything the library adds
 /// up to, all time. Opens as a sheet from the medallion in Home's toolbar. Top to bottom: the
 /// header, the time watched, four count tiles that open Library, where the time went, genres,
-/// most watched, where you watch, ratings, and the way to Insights and the Recap. Static, like
-/// Insights (DESIGN.md §13b): numbers and bars appear at their final value.
+/// most watched, where you watch, ratings, favorites, and the way to Insights and the Recap. Static,
+/// like Insights (DESIGN.md §13b): numbers and bars appear at their final value.
 struct ProfileView: View {
     let api: Client?
     let library: LibraryModel
@@ -68,8 +68,10 @@ struct ProfileView: View {
                         )
                         .foregroundStyle(Color(.muted))
                         .panel()
+                        ProfileFavorites(model: model.favorites, library: library)
                     } else {
                         sections(stats)
+                        ProfileFavorites(model: model.favorites, library: library)
                         footer
                     }
                 }
