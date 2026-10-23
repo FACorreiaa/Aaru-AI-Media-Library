@@ -220,10 +220,10 @@ struct AgentTests {
             let (group, general) = try await groups.createGroup(env)
             let channel = "/v1/groups/\(group)/channels/\(general)"
             _ = try await groups.post(env, channel, "@aaru hello?")
-            var replies = try #require(env.services.agentReplies)
+            let base = try #require(env.services.agentReplies)
             // Each retry waits; a clock that jumps ahead lets the next attempt claim it.
             let clock = TestClock(Date())
-            replies.now = { clock.now }
+            let replies = base.with(now: { clock.now })
             for _ in 1 ... AgentReplyService.maxAttempts {
                 #expect(try await replies.runNext())
                 clock.advance(by: 600)

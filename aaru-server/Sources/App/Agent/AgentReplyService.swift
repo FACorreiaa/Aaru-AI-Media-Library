@@ -7,14 +7,43 @@ import Foundation
 /// read-only tool, **the tagger's own** library and nobody else's. Every tool reads; none writes
 /// (X-009). The reply is a group message with catalog cards only, and its card buttons are
 /// whoever taps them, through the normal library routes.
-struct AgentReplyService: Sendable {
+///
+/// A class, not a struct: it holds a `Stores` and four services, and inline in `Services` it
+/// pushed the router's setup past the test threads' stack in debug builds.
+final class AgentReplyService: Sendable {
     let stores: Stores
     let groups: GroupService
     let catalog: CatalogService
     let resolver: TitleResolver
     let library: LibraryService
     let model: any ModelProviding
-    var now: @Sendable () -> Date = { Date() }
+    let now: @Sendable () -> Date
+
+    init(
+        stores: Stores,
+        groups: GroupService,
+        catalog: CatalogService,
+        resolver: TitleResolver,
+        library: LibraryService,
+        model: any ModelProviding,
+        now: @escaping @Sendable () -> Date = { Date() }
+    ) {
+        self.stores = stores
+        self.groups = groups
+        self.catalog = catalog
+        self.resolver = resolver
+        self.library = library
+        self.model = model
+        self.now = now
+    }
+
+    /// The same service on another clock, for tests that jump past a retry's wait.
+    func with(now: @escaping @Sendable () -> Date) -> AgentReplyService {
+        AgentReplyService(
+            stores: stores, groups: groups, catalog: catalog, resolver: resolver, library: library,
+            model: model, now: now
+        )
+    }
 
     static let contextMessages = 30
     static let maxRounds = 4
