@@ -12,6 +12,8 @@ final class PushInbox {
     var libraryItemID: String?
     /// The agent request to open, from the alert's `planId` (OUT-004).
     var planID: String?
+    /// The capture to review, from the alert's `importId` (AG-006).
+    var importID: String?
     /// The group channel or invites to open, from the alert's `url` (GRP-012).
     var groupLink: URL?
 }

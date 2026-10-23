@@ -62,8 +62,16 @@ progress · 2 airing today"). **Tonight** (§5) leads, then the user's rows, the
 wide screen (web ≥1024px, iPad and Mac at regular width) a side column holds what Aaru is doing
 for the user: requests waiting for an answer, the **last import** (collapsed `JobLedger`, the
 owl while it matches, opens the import), the last 7 days, status counts, the recap banner and
-the user's lists. On a phone the same blocks follow the rows. The composer is still M13; the
-nav label stays "Home".
+the user's lists. On a phone the same blocks follow the rows. The nav label stays "Home".
+
+**The composer, 2026-10-23 (AG-006, capture only):** one field under the heading, above Now
+playing and Tonight: "Paste titles, a link or a screenshot", a picture button (the photo picker
+on Apple, a file picker, paste or drop on the web) and Send, with "Nothing is added until you
+approve what Aaru found." under it. Sending opens the capture's review; until it is approved or
+dropped, it waits as a "Your capture" card at the top of "Waiting for you" (the owl while Aaru
+reads it, then "Add 7 · 2 need a pick"). Past the free month's captures it says so (an alert on
+Apple until the Plus paywall, a line on the web: Plus is bought in the Apple apps). It is not
+yet a chat with the agent (AG-004).
 
 **Now playing and the week, 2026-10-21 (owner, SCR-008):** while a player plays, the
 `NowPlayingCard` (§15) runs across the full width between the heading and Tonight, and Tonight
@@ -296,6 +304,11 @@ for free and adds no new furniture.
 
 The feeling to protect: **it never writes what it guessed without showing you the guess.**
 Extraction from a screenshot is a guess. One row or ninety, the `MatchTable` comes first.
+
+**Built 2026-10-23:** the review is the import's own page, titled "Your capture", headed "Add 7 ·
+2 need a pick", with **Approve** and **Not this**, "Find it" on unmatched rows, and the Undo toast
+after Approve. Its back link and "Not this" return to Home. The "ready" notification opens it.
+The Share Extension is not built yet.
 
 ## 12. Approvals (a plan from somewhere else)
 

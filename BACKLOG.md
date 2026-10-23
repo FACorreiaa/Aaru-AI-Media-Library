@@ -596,7 +596,7 @@ account or a stranger that has not happened yet.
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
 | AG-005 | Built, unverified | Tonight/TonightService.swift, `/v1/tonight`; `Home/Tonight.swift`, `lib/home/tonight.ts` | Not seen on a device; reject never checked across a night |
-| AG-006 | Built, unverified | Imports/ImportService+Capture.swift, Capture/, `/v1/imports/capture` | Server only; composer, review screen and Share Extension next. No library-reading tools for text yet |
+| AG-006 | Built, unverified | Imports/ImportService+Capture.swift, Capture/, `/v1/imports/capture`; `aaru-ios/Aaru/Capture`, `CaptureComposer.tsx` | Composer and review on web and Apple; no Share Extension yet; no library-reading tools for text. Not tried on a device |
 | AG-007 | Partial | Agent/ModelProviding.swift, `agent_usage.cost_micros` | Monthly spend metered per user; no own key yet |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
