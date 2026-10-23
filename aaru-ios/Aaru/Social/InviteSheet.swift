@@ -234,7 +234,7 @@ private struct InviteHandleField: View {
 enum InviteWords {
     static func plea(_ title: String, kind: MediaKind) -> String {
         switch kind {
-        case .book: "Read \(title) with me."
+        case .book, .manga: "Read \(title) with me."
         case .music: "Listen to \(title) with me."
         case .film, .show, .anime: "Watch \(title) with me."
         }

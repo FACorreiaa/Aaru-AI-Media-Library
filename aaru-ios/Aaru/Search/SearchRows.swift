@@ -99,7 +99,7 @@ struct SearchElsewhereRow: View {
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
             }
-            ForEach([SearchScope.book, .music]) { scope in
+            ForEach([SearchScope.manga, .book, .music]) { scope in
                 if let kind = scope.kind {
                     Button {
                         onSearch(scope)

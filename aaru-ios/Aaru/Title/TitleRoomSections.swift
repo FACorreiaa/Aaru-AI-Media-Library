@@ -62,10 +62,13 @@ struct TitleYourLayer: View {
     @Binding var page: String
 
     private enum Field {
-        case page, notes
+        case page, chapter, volume, notes
     }
 
     @FocusState private var focus: Field?
+    /// Manga only (MNG-001): the last chapter and volume read, as typed.
+    @State private var chapter = ""
+    @State private var volume = ""
 
     private var entry: LibraryEntry {
         model.entry
@@ -94,12 +97,23 @@ struct TitleYourLayer: View {
                         .onSubmit { Task { await savePage() } }
                 }
             }
+            if entry.title._type == .manga {
+                Divider()
+                countField("Chapter", text: $chapter, total: entry.title.chapterCount, field: .chapter)
+                countField("Volume", text: $volume, total: entry.title.volumeCount, field: .volume)
+            }
         }
         .panel()
+        .onAppear {
+            chapter = entry.mangaProgress?.chapter.map(String.init) ?? ""
+            volume = entry.mangaProgress?.volume.map(String.init) ?? ""
+        }
         // The number pad has no Return: the page saves when the field lets go (UX-070).
         .onChange(of: focus) { old, _ in
-            if old == .page {
-                Task { await savePage() }
+            switch old {
+            case .page: Task { await savePage() }
+            case .chapter, .volume: Task { await saveMangaProgress() }
+            default: break
             }
         }
         #if os(iOS)
@@ -123,6 +137,24 @@ struct TitleYourLayer: View {
             }
         }
         .panel()
+    }
+
+    private func countField(_ label: String, text: Binding<String>, total: Int?, field: Field) -> some View {
+        LabeledContent {
+            TextField(label, text: text)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
+                .focused($focus, equals: field)
+            #if os(iOS)
+                .keyboardType(.numberPad)
+            #endif
+                .onSubmit { Task { await saveMangaProgress() } }
+        } label: {
+            Text(label)
+            if let total {
+                Text("of \(total)")
+            }
+        }
     }
 
     private var ownedBinding: Binding<Bool> {
@@ -149,6 +181,23 @@ struct TitleYourLayer: View {
             await model.update(.init(notes: text)) { $0.notes = text }
         }
         notes = entry.notes ?? ""
+    }
+
+    /// Saves a changed chapter or volume; an emptied field leaves its number as it was.
+    private func saveMangaProgress() async {
+        let current = entry.mangaProgress
+        let newChapter = Int(chapter.filter(\.isNumber)).flatMap { $0 == current?.chapter ? nil : $0 }
+        let newVolume = Int(volume.filter(\.isNumber)).flatMap { $0 == current?.volume ? nil : $0 }
+        if newChapter != nil || newVolume != nil {
+            await model.update(.init(mangaChapter: newChapter, mangaVolume: newVolume)) { entry in
+                entry.mangaProgress = .init(
+                    chapter: newChapter ?? current?.chapter,
+                    volume: newVolume ?? current?.volume
+                )
+            }
+        }
+        chapter = entry.mangaProgress?.chapter.map(String.init) ?? ""
+        volume = entry.mangaProgress?.volume.map(String.init) ?? ""
     }
 
     /// Saves only a changed number; an unchanged or emptied field leaves the page as it was.

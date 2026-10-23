@@ -22,6 +22,11 @@ struct NowItem: Identifiable {
             done = min(1, Double(progress.watchedCount) / Double(progress.airedCount))
             label = "\(progress.watchedCount) of \(progress.airedCount) episodes"
             next = progress.nextEpisode
+        } else if kind == .manga {
+            let chapter = entry.mangaProgress?.chapter
+            done = chapter.flatMap { read in entry.title.chapterCount.map { min(1, Double(read) / Double($0)) } }
+            label = entry.mangaProgressLabel ?? "Just started"
+            next = nil
         } else if let percent = entry.bookProgress?.percent {
             done = min(1, percent / 100)
             label = "\(Int(percent.rounded()))%"
@@ -59,8 +64,8 @@ extension LibraryModel {
     func nowGroups(kind: MediaKind?) -> [NowGroup] {
         let items = inProgress.map(NowItem.init).filter { kind == nil || $0.kind == kind }
         return [
-            NowGroup(title: "Watching", items: items.filter { $0.kind != .book && $0.kind != .music }),
-            NowGroup(title: "Reading", items: items.filter { $0.kind == .book }),
+            NowGroup(title: "Watching", items: items.filter { ![.book, .manga, .music].contains($0.kind) }),
+            NowGroup(title: "Reading", items: items.filter { $0.kind == .book || $0.kind == .manga }),
             NowGroup(title: "Listening", items: items.filter { $0.kind == .music }),
         ].filter { !$0.items.isEmpty }
     }
@@ -84,6 +89,10 @@ extension LibraryModel {
 
     func setPage(_ page: Int, of item: NowItem, api: Client?) async -> String? {
         await patch(item, .init(bookPage: page), api: api)
+    }
+
+    func setChapter(_ chapter: Int, of item: NowItem, api: Client?) async -> String? {
+        await patch(item, .init(mangaChapter: chapter), api: api)
     }
 
     func finish(_ item: NowItem, api: Client?) async -> String? {

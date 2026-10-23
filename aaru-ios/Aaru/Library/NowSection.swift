@@ -60,6 +60,7 @@ struct NowSection: View {
                     let problem: String? = switch action {
                     case .tickNext: await library.tickNext(item, api: api)
                     case let .page(page): await library.setPage(page, of: item, api: api)
+                    case let .chapter(chapter): await library.setChapter(chapter, of: item, api: api)
                     case .finish: await library.finish(item, api: api)
                     }
                     if let problem {
@@ -91,7 +92,7 @@ private struct NowCardWidth: ViewModifier {
 
 private struct NowCard: View {
     enum Action {
-        case tickNext, page(Int), finish
+        case tickNext, page(Int), chapter(Int), finish
     }
 
     let item: NowItem
@@ -137,7 +138,7 @@ private struct NowCard: View {
     }
 
     @ViewBuilder private var art: some View {
-        if item.kind == .book || item.kind == .music {
+        if item.kind == .book || item.kind == .manga || item.kind == .music {
             HStack(alignment: .top, spacing: 14) {
                 PosterView(url: title.posterUrl.flatMap(URL.init(string:)), kind: item.kind)
                     .frame(width: 76)
@@ -229,10 +230,20 @@ private struct NowCard: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color(.accent))
+            } else if item.kind == .manga {
+                let chapter = (item.entry.mangaProgress?.chapter ?? 0) + 1
+                Button { perform(.chapter(chapter)) } label: {
+                    Label("Read ch. \(chapter)", systemImage: "checkmark").frame(minHeight: 30)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(.accent))
             }
             if item.next == nil {
                 Button { perform(.finish) } label: {
-                    Text(item.kind == .book ? "Mark read" : item.kind == .music ? "Mark listened" : "Mark watched")
+                    Text(
+                        item.kind == .book || item.kind == .manga
+                            ? "Mark read" : item.kind == .music ? "Mark listened" : "Mark watched"
+                    )
                         .frame(minHeight: 30)
                 }
                 .buttonStyle(.bordered)
