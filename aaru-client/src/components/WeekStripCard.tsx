@@ -46,7 +46,7 @@ export function WeekStripCard(props: { week: WeekStrip }) {
               <span class="flex flex-1 flex-col items-center gap-1">
                 <span class="flex h-12 w-full items-end text-accent">
                   <span
-                    class="w-full rounded-[3px]"
+                    class="w-full rounded-xs"
                     classList={{
                       'bg-current': height > 0,
                       'bg-line': height === 0,

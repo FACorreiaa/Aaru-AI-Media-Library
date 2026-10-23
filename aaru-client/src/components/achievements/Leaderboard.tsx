@@ -75,7 +75,7 @@ export function Leaderboard(props: {
           <For each={props.board.entries}>
             {(entry) => (
               <li
-                class="flex items-center gap-3 rounded-[14px] px-3 py-2.5"
+                class="flex items-center gap-3 rounded-panel px-3 py-2.5"
                 classList={{ 'bg-surface': entry.you }}
                 aria-current={entry.you ? 'true' : undefined}
               >

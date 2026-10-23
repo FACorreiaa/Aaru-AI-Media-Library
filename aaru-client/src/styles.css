@@ -42,6 +42,9 @@
   --color-line-strong: var(--line-strong);
   --color-scrim: var(--scrim);
   --color-on-scrim: var(--on-scrim);
+  /* The one elevation (DESIGN.md "Elevation"): a line-strong ring and a soft shadow in the
+     shadow token, for layers that float. Cards and panels are flat: tint and hairline. */
+  --shadow-lift: 0 0 0 1px var(--line-strong), 0 12px 32px -16px var(--shadow);
   /* Corner radii (rounded-card, -panel, -field, -row, -thumb, -pill; sm…xl are the same four)
      and the easing (ease-aaru) come from tokens.theme.css, generated with the colours. */
   /* The display face is the system sans, as in the brand poster (DESIGN.md "Brand"); headings
@@ -158,6 +161,14 @@ body {
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+  /* Selection and native controls (checkboxes, progress, date pickers) in the accent too. */
+  :root {
+    accent-color: var(--accent);
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
   }
 }
 

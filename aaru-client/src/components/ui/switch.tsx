@@ -51,7 +51,7 @@ export const SwitchThumb = <T extends ValidComponent = 'div'>(
       data-slot="switch-thumb"
       class={cx(
         // Aaru: the medallion thumb in both schemes.
-        'bg-medallion pointer-events-none size-5 rounded-full shadow transition-transform data-[checked]:translate-x-5',
+        'bg-medallion pointer-events-none size-5 rounded-full transition-transform data-[checked]:translate-x-5',
         props.class,
       )}
       {...rest}

@@ -368,7 +368,7 @@ function TitleRoom() {
                 <div class="veil absolute inset-0" />
               </div>
               {/* On a phone only the poster steps into the art and the name sits under it, so a
-                  long title never lies across the picture. */}
+ long title never lies across the picture. */}
               <div class="relative -mt-12 flex items-start gap-5 px-1 md:-mt-28 md:items-end md:gap-7 md:px-6">
                 <Poster
                   url={entry().title.posterUrl}
@@ -426,7 +426,7 @@ function TitleRoom() {
         </Show>
 
         {/* What a visit is usually for, in one row: the next episode, where it stands in
-            the library, the ways to take it elsewhere, and More. */}
+ the library, the ways to take it elsewhere, and More. */}
         <div class="mt-6 flex flex-wrap items-center gap-2">
           <Show when={nextUp()}>
             {(episode) => (
@@ -500,7 +500,7 @@ function TitleRoom() {
               <DropdownMenuContent class="min-w-52 rounded-panel border-line bg-paper p-1">
                 <DropdownMenuItem
                   variant="destructive"
-                  class="min-h-10 rounded-[10px] px-3"
+                  class="min-h-10 rounded-field px-3"
                   onSelect={() => setRemoving(true)}
                 >
                   Remove from library…
@@ -585,7 +585,7 @@ function TitleRoom() {
           <aside class="flex flex-col gap-8" aria-label="Your notes">
             <Card class="flex flex-col gap-4 p-5">
               {/* WEB-012: five stars as one radio group ("Rating, 4 of 5"); arrows move the
-                  rating, Clear takes it off. Ratings are stored out of ten. */}
+ rating, Clear takes it off. Ratings are stored out of ten. */}
               <RadioGroup
                 class="flex items-center justify-between gap-4"
                 value={
@@ -809,7 +809,7 @@ function SeasonBlock(props: {
               const aired = hasAired(episode)
               return (
                 <li
-                  class="flex items-center gap-3 rounded-[12px] px-3 py-2 hover:bg-paper/60"
+                  class="flex items-center gap-3 rounded-panel px-3 py-2 hover:bg-paper/60"
                   classList={{ 'opacity-60': !aired && !isWatched() }}
                 >
                   <Checkbox
@@ -823,7 +823,7 @@ function SeasonBlock(props: {
                     }
                   >
                     <CheckboxInput />
-                    <CheckboxControl class="size-5 rounded-[6px] border-ink/30 bg-paper data-[checked]:border-accent data-[checked]:bg-accent data-[checked]:text-on-accent" />
+                    <CheckboxControl class="size-5 rounded-thumb border-ink/30 bg-paper data-[checked]:border-accent data-[checked]:bg-accent data-[checked]:text-on-accent" />
                     <CheckboxLabel class="sr-only">
                       Episode {episode.number} watched
                     </CheckboxLabel>
@@ -831,14 +831,14 @@ function SeasonBlock(props: {
                   <Button
                     variant="ghost"
                     size="bare"
-                    class="min-w-0 flex-1 justify-start gap-3 rounded-[10px] text-left font-normal text-ink hover:text-ink motion-safe:active:scale-100"
+                    class="min-w-0 flex-1 justify-start gap-3 rounded-field text-left font-normal text-ink hover:text-ink motion-safe:active:scale-100"
                     onClick={() => props.onOpen(episode)}
                   >
                     <Show
                       when={episode.stillUrl}
                       fallback={
                         <span
-                          class="hidden aspect-video w-20 shrink-0 rounded-[8px] bg-paper sm:block"
+                          class="hidden aspect-video w-20 shrink-0 rounded-row bg-paper sm:block"
                           aria-hidden="true"
                         />
                       }
@@ -848,7 +848,7 @@ function SeasonBlock(props: {
                           src={url()}
                           alt=""
                           loading="lazy"
-                          class="aspect-video w-20 shrink-0 rounded-[8px] bg-paper object-cover"
+                          class="aspect-video w-20 shrink-0 rounded-row bg-paper object-cover"
                         />
                       )}
                     </Show>

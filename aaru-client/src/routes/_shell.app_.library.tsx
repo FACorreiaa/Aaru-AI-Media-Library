@@ -391,7 +391,7 @@ function Library() {
                         class="block"
                       >
                         {/* Among posters a square cover keeps their baseline; in the Music
-                          filter every cover is square and needs no slot. */}
+ filter every cover is square and needs no slot. */}
                         <Poster
                           url={row.posterUrl}
                           kind={row.kind}

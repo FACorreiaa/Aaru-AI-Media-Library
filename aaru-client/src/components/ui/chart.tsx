@@ -300,7 +300,7 @@ export const ChartTooltipContent = <T, C extends ChartConfig = ChartConfig>(
                 <Show when={!item.icon && !merge.hideIndicator}>
                   <div
                     class={cx(
-                      'shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)',
+                      'shrink-0 rounded-xs border-(--color-border) bg-(--color-bg)',
                       {
                         'size-2.5': merge.indicator === 'dot',
                         'w-1': merge.indicator === 'line',

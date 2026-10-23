@@ -150,7 +150,7 @@ function Profile() {
 
                   <Show when={friend().compare}>
                     {(compare) => (
-                      <section class="mt-10 rounded-[20px] bg-surface p-5">
+                      <section class="mt-10 rounded-card bg-surface p-5">
                         <h2 class="font-display text-xl font-medium">
                           You both
                         </h2>

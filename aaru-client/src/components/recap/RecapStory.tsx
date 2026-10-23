@@ -112,7 +112,7 @@ export function RecapStory(props: {
           class="block gap-0 p-0"
         >
           {/* Focus starts here, not on Close, so Space and the arrows work at once; a tap on the
-          story keeps it here. */}
+ story keeps it here. */}
           <div
             autofocus
             tabindex={-1}
@@ -163,7 +163,7 @@ export function RecapStory(props: {
                           <Button
                             variant="soft"
                             size="bare"
-                            class="rounded-full border-2 border-current px-6 py-3 font-medium hover:bg-current/10 disabled:opacity-60"
+                            class="rounded-full border-2 border-current px-6 py-3 font-medium hover:bg-current/10 disabled:opacity-50"
                             disabled={sharing()}
                             onClick={share}
                           >
@@ -172,7 +172,7 @@ export function RecapStory(props: {
                               : 'Share as an image'}
                           </Button>
                           {/* Always present, so the note is announced when it appears: a toast
-                          region outside this modal would be inert while it is open. */}
+ region outside this modal would be inert while it is open. */}
                           <p
                             role="status"
                             class="text-sm opacity-80"

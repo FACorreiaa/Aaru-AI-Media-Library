@@ -43,7 +43,7 @@ const stores: Store[] = [
 ]
 
 const base =
-  'inline-flex min-w-40 items-center justify-center gap-2.5 rounded-[12px] px-6 py-3 text-[15px] font-semibold whitespace-nowrap'
+  'inline-flex min-w-40 items-center justify-center gap-2.5 rounded-panel px-6 py-3 text-[15px] font-semibold whitespace-nowrap'
 
 /**
  * App Store and Google Play, at equal weight. Until a listing exists the button is plain

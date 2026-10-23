@@ -176,7 +176,7 @@ export function ChannelList(props: { class?: string }) {
                     params={{ groupId: group().id, channelId: channel.id }}
                     onClick={() => shell.setDrawer(false)}
                     aria-current={active() ? 'page' : undefined}
-                    class={`flex min-h-10 items-center gap-2 rounded-lg px-2 md:min-h-8 ${active() ? 'bg-paper text-ink shadow-sm' : channel.unread > 0 ? 'font-semibold text-ink hover:bg-paper/60' : 'text-muted hover:bg-paper/60 hover:text-ink'}`}
+                    class={`flex min-h-10 items-center gap-2 rounded-lg px-2 md:min-h-8 ${active() ? 'bg-paper text-ink ' : channel.unread > 0 ? 'font-semibold text-ink hover:bg-paper/60' : 'text-muted hover:bg-paper/60 hover:text-ink'}`}
                   >
                     <ChannelGlyph channel={channel} />
                     <span class="min-w-0 flex-1 truncate">{channel.name}</span>

@@ -75,7 +75,7 @@ function GroupsHome() {
             >
               Invites
             </h2>
-            <ul class="mt-2 divide-y divide-line rounded-[20px] bg-surface px-4">
+            <ul class="mt-2 divide-y divide-line rounded-card bg-surface px-4">
               <For each={shell.invites()}>
                 {(invite) => (
                   <li class="flex flex-wrap items-center justify-between gap-3 py-3.5">

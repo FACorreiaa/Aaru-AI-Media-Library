@@ -81,7 +81,7 @@ export function SpoilerControl(props: {
       <PopoverPortal>
         <PopoverContent
           aria-label="Spoiler mark"
-          class="w-64 overflow-hidden rounded-2xl border-line bg-paper p-0 py-1 text-sm text-ink shadow-xl"
+          class="w-64 overflow-hidden rounded-panel border-line bg-paper p-0 py-1 text-sm text-ink shadow-lift"
         >
           <Choice onSelect={() => choose({ mode: 'auto' })}>
             <span class="block font-medium">Mark at my progress</span>

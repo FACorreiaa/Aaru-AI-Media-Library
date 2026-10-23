@@ -35,7 +35,7 @@ export function WeekGrid(props: WeekGridProps) {
   return (
     <>
       {/* Phones: a 7-day strip and the chosen day's rows. Tabs are keyed by position, not date,
-          so paging the week relabels the same buttons and keyboard focus stays put. */}
+ so paging the week relabels the same buttons and keyboard focus stays put. */}
       <Tabs
         class="block sm:hidden"
         value={String(props.days.indexOf(props.selected))}
@@ -183,7 +183,7 @@ function EpisodeCell(props: {
   const meta = () => metaLine(e())
   return (
     <article
-      class="relative overflow-hidden rounded-field bg-paper ring-1 transition-[opacity,box-shadow] hover:shadow-md"
+      class="relative overflow-hidden rounded-field bg-paper ring-1 transition-[opacity,box-shadow]"
       classList={{
         'opacity-55': e().watched,
         'ring-accent': e().kind === 'premiere',

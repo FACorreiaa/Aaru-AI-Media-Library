@@ -53,9 +53,9 @@ export const DrawerContent = <T extends ValidComponent = 'div'>(
     <>
       <DrawerPrimitive.Overlay
         data-slot="drawer-overlay"
-        class="fixed inset-0 z-50 bg-black/50 data-[transitioning]:transition-colors data-[transitioning]:duration-500 data-[transitioning]:ease-[cubic-bezier(0.32,0.72,0,1)]"
+        class="fixed inset-0 z-50 bg-scrim data-[transitioning]:transition-colors data-[transitioning]:duration-500 data-[transitioning]:ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
-          'background-color': `rgb(0 0 0 / ${0.5 * context.openPercentage()}`,
+          'background-color': `color-mix(in srgb, var(--scrim) ${Math.round(context.openPercentage() * 100)}%, transparent)`,
         }}
       />
       <DrawerPrimitive.Content

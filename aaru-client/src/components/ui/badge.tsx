@@ -23,7 +23,7 @@ export const badgeVariants = cva({
       // Aaru
       ink: 'border-transparent bg-ink text-paper',
       /** On top of artwork, where the page's colours would not read. */
-      scrim: 'border-transparent bg-black/65 text-white',
+      scrim: 'border-transparent bg-scrim text-on-scrim',
       /** Quiet: a count or a filter on the page's own colours. */
       soft: 'border-transparent bg-ink/10 text-ink',
     },
