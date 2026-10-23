@@ -9,7 +9,7 @@ import { Poster } from './Poster'
  * FAV-001: a person's top 10s, one numbered row of covers per kind they filled. On your own
  * profile it links to Settings to edit them; on a friend's it only shows them.
  */
-export function FavoritesRows(props: {
+export function FavoritesRow(props: {
   favorites: Favorites | undefined
   /** Your own profile: an Edit link, and a line inviting you to pick some when there are none. */
   own?: boolean

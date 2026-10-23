@@ -15,7 +15,7 @@ import {
 import type { ProfileStats, TimeShare } from '../lib/profile/model'
 import type { Favorites } from '../lib/favorites/model'
 import { cn } from '~/lib/utils'
-import { FavoritesRows } from './FavoritesRow'
+import { FavoritesRow } from './FavoritesRow'
 import { Poster } from './Poster'
 import { RatingsHistogram } from './StatsPanel'
 import { cardClass } from '~/components/ui'
@@ -268,7 +268,7 @@ export function ProfilePanel(props: {
       </Show>
 
       <Show when={props.favorites}>
-        {(favorites) => <FavoritesRows favorites={favorites()} own />}
+        {(favorites) => <FavoritesRow favorites={favorites()} own />}
       </Show>
 
       <footer class="mt-12 flex flex-col gap-3 text-sm">
