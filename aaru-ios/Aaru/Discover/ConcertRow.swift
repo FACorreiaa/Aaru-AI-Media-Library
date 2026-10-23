@@ -185,7 +185,7 @@ private struct ConcertDateStub: View {
         }
         .frame(width: width)
         .padding(.vertical, 8)
-        .background(Color(.surface), in: .rect(cornerRadius: 10))
+        .background(Color(.surface), in: .rect(cornerRadius: AaruRadius.field, style: .continuous))
     }
 }
 

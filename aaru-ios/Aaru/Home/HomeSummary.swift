@@ -28,8 +28,8 @@ struct WeekStrip: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
+            HStack(spacing: AaruSpace.small) {
                 WeekBars(buckets: stats.buckets)
                     .frame(width: 64, height: 24)
                     .accessibilityHidden(true)
@@ -48,7 +48,7 @@ struct WeekStrip: View {
                     count: dynamicType.isAccessibilitySize ? 2 : 4
                 ),
                 alignment: .leading,
-                spacing: 10
+                spacing: AaruSpace.medium
             ) {
                 figure(totals.episodesWatched.formatted(), totals.episodesWatched == 1 ? "episode" : "episodes")
                 figure(hoursValue(minutes: totals.minutesWatched), "hours")
@@ -56,9 +56,8 @@ struct WeekStrip: View {
                 figure(totals.activeDays.formatted(), totals.activeDays == 1 ? "active day" : "active days")
             }
         }
-        .padding(14)
-        .background(Color(.surface), in: RoundedRectangle(cornerRadius: 14))
-        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .panel()
+        .contentShape(.rect(cornerRadius: AaruRadius.panel, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityHint("Opens Insights")
     }
@@ -89,7 +88,7 @@ private struct WeekBars: View {
                 x: .value("Day", bucket.start),
                 y: .value("Time", bucket.minutes == 0 ? 0.06 : max(0.15, Double(bucket.minutes) / tallest))
             )
-            .foregroundStyle(bucket.minutes == 0 ? Color(.muted).opacity(0.3) : Color(.accent))
+            .foregroundStyle(bucket.minutes == 0 ? Color(.muted).opacity(AaruAlpha.ghost) : Color(.accent))
             .cornerRadius(2)
         }
         .chartXAxis(.hidden)
@@ -115,8 +114,8 @@ struct CountChips: View {
                                 .monospacedDigit()
                         }
                         .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 7)
+                        .padding(.horizontal, AaruSpace.medium)
+                        .padding(.vertical, AaruSpace.small)
                         .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                         // The chip stays slim; the tap target is 44pt tall.
                         .frame(minHeight: 44)
@@ -150,7 +149,7 @@ struct UnfinishedCard: View {
                     .overlay(alignment: .bottomLeading) {
                         HomeChip(text: reason).padding(6)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
                 Text(entry.title.title)
                     .font(.caption.weight(.semibold))
                     .lineLimit(2)
@@ -186,7 +185,7 @@ struct ListChip: View {
                 .foregroundStyle(Color(.muted))
                 .monospacedDigit()
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AaruSpace.large)
         .padding(.vertical, 10)
         .background(Color(.surface), in: Capsule())
         .accessibilityElement(children: .combine)

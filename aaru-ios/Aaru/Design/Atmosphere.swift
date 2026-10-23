@@ -50,7 +50,11 @@ struct FieldBackground: View {
                 LinearGradient(colors: [wash, .clear], startPoint: .top, endPoint: .center)
                 ReedCode(seed: seed)
                     .frame(height: 160)
-                    .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
+                    .mask(LinearGradient(
+                        colors: [.black, .clear], // brand-guard: allow
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ))
             }
         }
         .ignoresSafeArea()
@@ -115,17 +119,17 @@ private struct EdgeLit: ViewModifier {
 
 extension View {
     /// A hairline border lit gold along the top edge, for the one or two focal pieces on a page.
-    func edgeLit(cornerRadius: CGFloat = 14) -> some View {
+    func edgeLit(cornerRadius: CGFloat = AaruRadius.panel) -> some View {
         modifier(EdgeLit(cornerRadius: cornerRadius))
     }
 
     /// A raised panel: Surface, a hairline, the panel radius.
-    func panel(padding: CGFloat = 16) -> some View {
+    func panel(padding: CGFloat = AaruSpace.large) -> some View {
         self.padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.surface), in: .rect(cornerRadius: 14, style: .continuous))
+            .background(Color(.surface), in: .rect(cornerRadius: AaruRadius.panel, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: AaruRadius.panel, style: .continuous)
                     .strokeBorder(Color(.line), lineWidth: 1)
             }
     }

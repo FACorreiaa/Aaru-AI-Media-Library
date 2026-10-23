@@ -119,7 +119,7 @@ struct ProfileView: View {
 
     private var footer: some View {
         let year = Calendar.current.component(.year, from: .now)
-        return VStack(alignment: .leading, spacing: 14) {
+        return VStack(alignment: .leading, spacing: AaruSpace.large) {
             Divider()
             NavigationLink {
                 InsightsView(api: api, library: library, model: InsightsModel(api: api, span: .all))
@@ -156,8 +156,8 @@ struct ProfileMedallion: View {
         }
         .foregroundStyle(Color(.ink))
         .frame(width: size, height: size)
-        .background(Color(.medallion).opacity(0.25), in: .circle)
-        .overlay { Circle().strokeBorder(Color(.medallion).opacity(0.6), lineWidth: 1) }
+        .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
+        .overlay { Circle().strokeBorder(Color(.medallion).opacity(AaruAlpha.half), lineWidth: 1) }
     }
 }
 

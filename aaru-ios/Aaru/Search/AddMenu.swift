@@ -17,7 +17,7 @@ struct AddMenu: View {
         } label: {
             Text("Add")
                 .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AaruSpace.large)
                 .padding(.vertical, 6)
                 .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                 // The capsule stays slim; the tap target is 44pt.

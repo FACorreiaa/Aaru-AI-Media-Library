@@ -42,17 +42,15 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// The tinted square behind the symbol, as in the system Settings.
+    /// The tinted square behind the symbol, as in the system Settings, in Aaru's own four: the
+    /// accent for the account, gold for what brings titles in, danger for what removes them,
+    /// muted for the rest. The glyph on every one is `onAccent`.
     var tint: Color {
         switch self {
         case .account: Color(.accent)
-        case .friends: .blue
-        case .notifications: .red
-        case .imports: .indigo
-        case .connections: .green
-        case .data: .orange
-        case .about: .gray
+        case .imports, .connections: Color(.gold)
         case .delete: Color(.danger)
+        case .friends, .notifications, .data, .about: Color(.muted)
         }
     }
 

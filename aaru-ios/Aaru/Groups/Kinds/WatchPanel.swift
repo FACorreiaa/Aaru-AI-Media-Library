@@ -27,7 +27,7 @@ struct WatchPanel: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             if !model.hasLoaded, let problem = model.problem {
                 // The first load failed: say so, never "No watch party yet" (UX-063).
                 PanelLoadFailed(message: problem) { await model.load() }
@@ -54,7 +54,7 @@ struct WatchPanel: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(.surface).opacity(0.6))
+        .background(Color(.surface).opacity(AaruAlpha.half))
         .overlay(alignment: .bottom) { Rectangle().fill(Color(.line)).frame(height: 0.5) }
         .overlay(alignment: .topTrailing) { floatingReactions }
         .task { await model.load() }
@@ -78,7 +78,7 @@ struct WatchPanel: View {
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
-                .background(Color(.medallion).opacity(0.2), in: .capsule)
+                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .capsule)
         }
     }
 
@@ -123,9 +123,9 @@ struct WatchPanel: View {
 
     private func countdown(_ party: WatchParty, at date: Date) -> some View {
         let remaining = max(0, (party.startsAt ?? date).timeIntervalSince(model.serverNow(date)))
-        return HStack(alignment: .firstTextBaseline, spacing: 10) {
+        return HStack(alignment: .firstTextBaseline, spacing: AaruSpace.small) {
             Text("\(Int(remaining.rounded(.up)))")
-                .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                .font(.aaruDisplay(.largeTitle, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText(countsDown: true))
             Text("Press play when it reaches zero.").font(.callout).foregroundStyle(Color(.muted))

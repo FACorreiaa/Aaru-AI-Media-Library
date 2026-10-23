@@ -76,8 +76,8 @@ private struct WeekColumn: View {
         .padding(6)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(
-            model.isToday(day) ? Color(.accent).opacity(0.08) : Color(.ink).opacity(0.03),
-            in: RoundedRectangle(cornerRadius: 12)
+            model.isToday(day) ? Color(.accent).opacity(AaruAlpha.tint) : Color(.ink).opacity(AaruAlpha.tint),
+            in: RoundedRectangle(cornerRadius: AaruRadius.panel, style: .continuous)
         )
     }
 }
@@ -90,7 +90,7 @@ struct WeekDayHeader: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(date.formatted(.dateTime.day()))
-                .font(.system(.title, design: .rounded, weight: .bold))
+                .font(.aaruDisplay(.title, weight: .bold))
                 .monospacedDigit()
             Text(date.formatted(.dateTime.weekday(.abbreviated)))
                 .font(.subheadline.weight(.semibold))
@@ -100,7 +100,10 @@ struct WeekDayHeader: View {
         .foregroundStyle(isToday ? Color(.paper) : Color(.ink))
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(isToday ? Color(.accent) : Color(.surface), in: RoundedRectangle(cornerRadius: 10))
+        .background(
+            isToday ? Color(.accent) : Color(.surface),
+            in: RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous)
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(date.formatted(date: .complete, time: .omitted) + (isToday ? ", today" : ""))
     }

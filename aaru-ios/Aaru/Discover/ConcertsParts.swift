@@ -27,13 +27,12 @@ struct ConcertsMap: View {
     var body: some View {
         Map(initialPosition: .region(region), interactionModes: []) {
             MapCircle(center: coordinate, radius: CLLocationDistance(radiusKm) * 1000)
-                .foregroundStyle(Color(.accent).opacity(0.15))
+                .foregroundStyle(Color(.accent).opacity(AaruAlpha.wash))
                 .stroke(Color(.accent), lineWidth: 2)
             Marker(name, systemImage: "music.note", coordinate: coordinate)
-                .tint(Color(.accent))
         }
         .frame(height: height)
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: AaruRadius.field, style: .continuous))
         // A new centre or radius frames the map again.
         .id([point.latitude, point.longitude, Double(radiusKm)])
         .accessibilityElement()

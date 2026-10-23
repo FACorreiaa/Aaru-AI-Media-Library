@@ -111,14 +111,14 @@ private struct SeasonMapCell: View {
     }
 
     private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 6)
+        RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous)
     }
 
     private var fill: Color {
         switch state {
         case .watched: Color(.accent)
         case .next: Color(.paper)
-        case .aired: Color(.muted).opacity(0.15)
+        case .aired: Color(.muted).opacity(AaruAlpha.wash)
         case .unaired: .clear
         }
     }
@@ -128,14 +128,17 @@ private struct SeasonMapCell: View {
         case .watched: Color(.paper)
         case .next: Color(.ink)
         case .aired: Color(.ink)
-        case .unaired: Color(.muted).opacity(0.6)
+        case .unaired: Color(.muted).opacity(AaruAlpha.half)
         }
     }
 
     @ViewBuilder private var border: some View {
         switch state {
         case .next: shape.strokeBorder(Color(.gold), lineWidth: 2)
-        case .unaired: shape.strokeBorder(Color(.muted).opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+        case .unaired: shape.strokeBorder(
+                Color(.muted).opacity(AaruAlpha.ghost),
+                style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+            )
         case .watched, .aired: EmptyView()
         }
     }

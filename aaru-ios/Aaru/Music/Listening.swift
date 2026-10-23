@@ -119,7 +119,7 @@ struct ListenCover: View {
                     }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .clipShape(RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous))
             .accessibilityHidden(true)
     }
 }

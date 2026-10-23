@@ -56,7 +56,7 @@ struct CatchUpView: View {
                     kind: show.title.isAnime ? .anime : .show
                 )
                 .frame(width: 52)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: AaruRadius.row, style: .continuous))
                 .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(show.title.title)
@@ -71,8 +71,8 @@ struct CatchUpView: View {
                     }
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 14)
+            .padding(.horizontal, AaruSpace.large)
+            .padding(.top, AaruSpace.large)
             ForEach(show.episodes, id: \.cellID) { entry in
                 CalendarEpisodeRow(
                     entry: entry, feed: feed,
@@ -84,6 +84,6 @@ struct CatchUpView: View {
             }
         }
         .padding(.bottom, 8)
-        .background(Color(.surface), in: RoundedRectangle(cornerRadius: 20))
+        .card()
     }
 }

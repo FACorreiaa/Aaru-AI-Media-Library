@@ -175,7 +175,7 @@ struct SeasonBrowser: View {
         LazyVGrid(columns: columns, spacing: 20) {
             ForEach(0 ..< Self.skeletonCount, id: \.self) { _ in
                 VStack(alignment: .leading, spacing: 8) {
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous)
                         .fill(Color(.surface))
                         .aspectRatio(2 / 3, contentMode: .fit)
                     Capsule().fill(Color(.surface)).frame(height: 12).padding(.trailing, 24)

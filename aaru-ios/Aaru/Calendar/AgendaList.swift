@@ -33,7 +33,7 @@ struct AgendaList: View {
     }
 
     private var empty: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             Text(emptyText)
                 .font(.callout)
                 .foregroundStyle(Color(.muted))
@@ -74,8 +74,8 @@ private struct AgendaHeader: View {
         }
         .font(.footnote.weight(.semibold))
         .foregroundStyle(Color(.accent))
-        .padding(.horizontal, 14)
-        .padding(.top, 14)
+        .padding(.horizontal, AaruSpace.large)
+        .padding(.top, AaruSpace.large)
         .padding(.bottom, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.paper))

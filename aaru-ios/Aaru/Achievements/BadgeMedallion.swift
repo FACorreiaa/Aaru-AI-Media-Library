@@ -44,7 +44,7 @@ struct BadgeMedallion: View {
         case 1:
             Circle().strokeBorder(Color(.stone), lineWidth: 2)
         default:
-            Circle().strokeBorder(Color(.stone).opacity(0.6), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            Circle().strokeBorder(Color(.stone).opacity(AaruAlpha.half), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
         }
     }
 }

@@ -155,7 +155,7 @@ struct UnreadBadge: View {
             Text("\(mentions)")
                 .font(.caption.weight(.semibold).monospacedDigit())
                 .foregroundStyle(Color(.onAccent))
-                .padding(.horizontal, 7)
+                .padding(.horizontal, AaruSpace.small)
                 .padding(.vertical, 2)
                 .background(Color(.accent), in: .capsule)
                 .accessibilityLabel(mentions == 1 ? "1 mention" : "\(mentions) mentions")

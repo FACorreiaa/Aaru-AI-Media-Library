@@ -33,7 +33,7 @@ struct TonightCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.surface))
-            .clipShape(.rect(cornerRadius: 14, style: .continuous))
+            .clipShape(.rect(cornerRadius: AaruRadius.panel, style: .continuous))
             .edgeLit()
             if let also = tonight.also {
                 NavigationLink(value: also.libraryItemId) {

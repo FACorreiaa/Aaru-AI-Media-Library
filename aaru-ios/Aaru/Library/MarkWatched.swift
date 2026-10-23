@@ -186,7 +186,7 @@ struct ProgressPreview: View {
     let entry: LibraryEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             PosterView(url: entry.title.posterURL, kind: entry.title.mediaKind)
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title.title)

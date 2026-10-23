@@ -25,7 +25,7 @@ struct ActivityChart: View {
                 x: .value("Period", bucket.start),
                 y: .value("Hours", empty ? track : Double(bucket.minutes) / 60)
             )
-            .foregroundStyle(empty ? Color(.muted).opacity(0.3) : Color(.accent))
+            .foregroundStyle(empty ? Color(.muted).opacity(AaruAlpha.ghost) : Color(.accent))
             .cornerRadius(3)
             .accessibilityLabel(label(bucket.start, full: true))
             .accessibilityValue("\(hoursValue(minutes: bucket.minutes)) hours")
@@ -167,7 +167,7 @@ struct RatingsHistogram: View {
     @ScaledMetric(relativeTo: .body) private var height = 140
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             if let mean = ratings.mean {
                 Text(
                     "Average \(RecapDeck.ratingLabel(mean)) from "

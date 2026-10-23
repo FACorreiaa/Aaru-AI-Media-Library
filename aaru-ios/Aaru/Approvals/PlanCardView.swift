@@ -79,7 +79,7 @@ struct PlanCardView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.surface), in: RoundedRectangle(cornerRadius: 20))
+        .card()
     }
 
     /// An approval is one action, so the toast that follows it offers Undo (DESIGN.md §9).

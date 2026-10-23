@@ -138,7 +138,7 @@ private struct StremioGuide: View {
 
     var body: some View {
         DisclosureGroup("How to set it up") {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: AaruSpace.medium) {
                 ForEach(Array(Self.steps.enumerated()), id: \.offset) { index, step in
                     row("\(index + 1).", step)
                 }

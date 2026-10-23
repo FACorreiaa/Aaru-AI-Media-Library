@@ -56,7 +56,7 @@ struct PlusPaywall: View {
             Text("Plus is not on sale in this build yet.")
                 .foregroundStyle(Color(.muted))
         } else {
-            VStack(spacing: 10) {
+            VStack(spacing: AaruSpace.medium) {
                 ForEach(plus.products, id: \.id) { product in
                     Button {
                         Task {

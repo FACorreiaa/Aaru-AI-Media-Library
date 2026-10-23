@@ -13,7 +13,6 @@ struct AlbumHeader: View {
         VStack(spacing: 16) {
             PosterView(url: coverURL, kind: .music)
                 .frame(maxWidth: 280)
-                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
             VStack(spacing: 4) {
                 Text(title)
                     .font(.aaruDisplay(.title2))
