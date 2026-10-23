@@ -1,8 +1,8 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { z } from 'zod'
-import { MEDIA_TYPES } from '../media'
 import { api } from '../api/client'
 import { sessionToken } from '../session/guard'
+import { mediaRef } from './media-ref'
 import { check, checkEmpty } from './responses'
 import type { components } from '../api/schema'
 
@@ -230,18 +230,6 @@ export const declineGroupInvite = createServerFn({ method: 'POST' })
       'That invite is already gone.',
     ),
   )
-
-/**
- * A title by Aaru id, by provider ids, or by title and year, as the server's `MediaRef`. Kept
- * private: an exported schema survives the server-function split and pulls zod into the browser.
- */
-const mediaRef = z.object({
-  titleId: uuid.optional(),
-  type: z.enum(MEDIA_TYPES),
-  ids: z.record(z.string(), z.string()).optional(),
-  title: z.string().optional(),
-  year: z.number().int().optional(),
-})
 
 /** Makes a channel. A title channel takes the title, and its name when none is given. */
 export const createChannel = createServerFn({ method: 'POST' })
