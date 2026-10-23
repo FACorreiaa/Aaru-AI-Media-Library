@@ -11,7 +11,6 @@ extension ImportFileSource: @retroactive Identifiable {
         switch self {
         case .auto: "Any other CSV"
         case .csv: "CSV"
-        case .capture: "Capture"
         case .imdb: "IMDb"
         case .letterboxd: "Letterboxd"
         case .netflix: "Netflix"

@@ -23,7 +23,7 @@ struct WireContractTests {
         #expect(
             ImportSource.allCases.map(\.rawValue) == [
                 "trakt", "stremio", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics",
-                "netflix_csv", "tvtime_csv", "mal_xml", "anilist", "csv",
+                "netflix_csv", "tvtime_csv", "mal_xml", "anilist", "csv", "capture",
             ]
         )
     }
