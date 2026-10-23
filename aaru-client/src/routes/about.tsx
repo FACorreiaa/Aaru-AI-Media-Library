@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/solid-router'
 import { Credits } from '../components/Credits'
 import { LegalPage } from '../components/LegalPage'
 import { CONTACT_EMAIL } from '../lib/credits'
+import { DISCORD_URL } from '../lib/site'
 
 export const Route = createFileRoute('/about')({
   head: () => ({
@@ -55,6 +56,15 @@ function About() {
         for what Aaru stores and how to delete it. Questions:{' '}
         <a href={`mailto:${CONTACT_EMAIL}`} class={link}>
           {CONTACT_EMAIL}
+        </a>
+        .{' '}
+        <a
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class={link}
+        >
+          Join us on Discord
         </a>
         .
       </p>
