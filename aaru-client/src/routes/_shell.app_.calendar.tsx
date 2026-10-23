@@ -458,6 +458,7 @@ function Calendar() {
           <div class={cn(cardClass, 'mt-6 px-6')}>
             <OwlEmpty
               size="sm"
+              pose="sleeping"
               title={`Nothing from your shows airs this ${view() === 'week' ? 'week' : 'month'}${entries().length > 0 ? ' with these filters' : ''}.`}
               body="Shows you add, or mark as watching, appear here as their episodes air."
               action={

@@ -1,4 +1,4 @@
-import { OwlMark } from '../Brand'
+import { MascotMedallion } from '../Brand'
 import { Show } from 'solid-js'
 import {
   Button,
@@ -41,8 +41,12 @@ export default function BadgeReveal(props: {
               tier={props.award.tier}
               size="lg"
             />
-            {/* Aaru hands it over (owner, 2026-10-23). */}
-            <OwlMark class="absolute -right-3 -bottom-1 size-10 ring-4 ring-paper" />
+            {/* Aaru celebrates it with you (owner, 2026-10-23). */}
+            <MascotMedallion
+              decorative
+              pose="celebrating"
+              class="absolute -right-4 -bottom-2 w-14 ring-4 ring-paper"
+            />
           </div>
           <div>
             <Show when={tierName(props.award.tier, props.award.maxTier)}>
