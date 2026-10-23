@@ -5,6 +5,7 @@ import type { BoardPost } from '../../lib/board/model'
 import { splitMentions, timeLabel } from '../../lib/groups/model'
 import { kindOf } from '../../lib/library/model'
 import { activityDay, inviterName, monogram } from '../../lib/social/model'
+import { AddToLibrary } from '../AddToLibrary'
 import { Poster } from '../Poster'
 import { SpoilerVeil } from '../groups/SpoilerVeil'
 import { Monogram } from '../groups/Monogram'
@@ -23,14 +24,15 @@ export function postHref(id: string): string {
 
 /**
  * PostCard (BOARD-002): one post on the Board. Who and when, the title it is about with its
- * stars, the words, then Upvote and the comment count. The card is not a link, so its words stay
- * selectable; the poster, the comment count and Open are. A post that may spoil what the reader
- * has not watched folds its words and stars behind the veil until asked; the author never sees
- * one, and only the author sees how it is marked.
+ * stars and "Add to my library", the words, then Upvote and the comment count. The card is not
+ * a link, so its words stay selectable; the comment count and Open are. The poster is not a
+ * link: the title page opens a library item, and a friend's title may not be one of yours. A
+ * post that may spoil what the reader has not watched folds its words and stars behind the veil
+ * until asked; the author never sees one, and only the author sees how it is marked.
  */
 export function PostCard(props: {
   post: BoardPost
-  /** Handles that read as mentions: you and the people on the Board, lowercased. */
+  /** Handles that read as mentions: you, your friends and authors here, lowercased. */
   handles: ReadonlySet<string>
   myHandle?: string
 }) {
@@ -72,19 +74,12 @@ export function PostCard(props: {
         <Show when={props.post.title}>
           {(t) => (
             <div class="mt-3 flex items-center gap-3">
-              <Link
-                to="/app/title/$id"
-                params={{ id: t().id }}
-                aria-label={`Open ${t().title}`}
-                class="shrink-0 rounded-thumb"
-              >
-                <Poster
-                  url={t().posterUrl}
-                  kind={kindOf(t().type, t().isAnime)}
-                  radius="thumb"
-                  class="w-12"
-                />
-              </Link>
+              <Poster
+                url={t().posterUrl}
+                kind={kindOf(t().type, t().isAnime)}
+                radius="thumb"
+                class="w-12 shrink-0"
+              />
               <div class="min-w-0 flex-1 leading-tight">
                 <p class="truncate font-display text-base font-medium">
                   {t().title}
@@ -94,16 +89,21 @@ export function PostCard(props: {
                     </span>
                   </Show>
                 </p>
-                <Show when={props.post.rating !== undefined && !veiled()}>
-                  <p class="mt-1 text-base tracking-wide text-gold">
-                    <span aria-hidden="true">
-                      {starsLabel(props.post.rating!)}
-                    </span>
-                    <span class="sr-only">
-                      {ratingWords(props.post.rating!)}
-                    </span>
-                  </p>
-                </Show>
+                <div class="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                  <Show when={props.post.rating !== undefined && !veiled()}>
+                    <p class="text-base tracking-wide text-gold">
+                      <span aria-hidden="true">
+                        {starsLabel(props.post.rating!)}
+                      </span>
+                      <span class="sr-only">
+                        {ratingWords(props.post.rating!)}
+                      </span>
+                    </p>
+                  </Show>
+                  <Show when={!props.post.mine}>
+                    <AddToLibrary title={t()} look="inline" />
+                  </Show>
+                </div>
                 <Show
                   when={props.post.mine && spoilerLabel(props.post.spoiler)}
                 >

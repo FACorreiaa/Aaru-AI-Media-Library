@@ -28,6 +28,7 @@ import { kindOf } from '../../lib/library/model'
 import type { MediaType } from '../../lib/media'
 import { monogram } from '../../lib/social/model'
 import type { SocialUser } from '../../lib/social/server'
+import { MentionList, createMentions } from '../Mentions'
 import { Poster } from '../Poster'
 import { Monogram } from '../groups/Monogram'
 
@@ -70,6 +71,8 @@ function fromHit(hit: CatalogHit): Picked {
  */
 export function PostComposer(props: {
   me: SocialUser
+  /** Who `@` suggests: your friends. Never Aaru, until it answers on the Board (BOARD-004). */
+  friends: SocialUser[]
   /** A title to start with: `?title=<id>` from a title page's "Write about this". */
   initialTitleId?: string
   /** The starting title was used or put aside, so the link can forget it. */
@@ -86,6 +89,17 @@ export function PostComposer(props: {
   const [rating, setRating] = createSignal<number | undefined>()
   const [spoiler, setSpoiler] = createSignal<SpoilerChoice>(AUTO_SPOILER)
   const [posting, setPosting] = createSignal(false)
+  const mentions = createMentions({
+    people: () => props.friends.map((user) => ({ user })),
+    meId: () => props.me.userId,
+    id: 'board-composer-mentions',
+    box: () => box,
+    text,
+    onPick: (value) => {
+      setText(value)
+      resize()
+    },
+  })
   // Bumped by Cancel, so a starting title that arrives after it is dropped.
   let titleTicket = 0
 
@@ -157,6 +171,7 @@ export function PostComposer(props: {
     titleTicket++
     setLoadingTitle(false)
     setText('')
+    mentions.close()
     if (box) box.value = ''
     setPicked(null)
     setPicking(false)
@@ -226,24 +241,41 @@ export function PostComposer(props: {
       <div class="flex gap-3">
         <Monogram text={monogram(props.me)} size="sm" class="mt-0.5" />
         <div class="min-w-0 flex-1">
-          <TextField value={text()} onChange={setText} class="flex">
+          <TextField value={text()} onChange={setText} class="relative flex">
             <TextFieldLabel class="sr-only">Write a post</TextFieldLabel>
             <TextFieldTextArea
               ref={box}
               rows={1}
               placeholder="Write something…"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={mentions.expanded()}
+              aria-controls={mentions.id}
+              aria-activedescendant={mentions.activeId()}
               onFocus={() => setOpen(true)}
               onInput={(e) => {
                 setText(e.currentTarget.value)
+                mentions.track(
+                  e.currentTarget.value,
+                  e.currentTarget.selectionStart,
+                )
                 resize()
               }}
+              onClick={() => mentions.sync()}
+              onBlur={() => mentions.close()}
               onKeyDown={(e: KeyboardEvent) => {
+                if (mentions.onKeyDown(e)) return
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()
                   void post()
                 }
               }}
               class={`max-h-[220px] flex-1 resize-none rounded-none border-0 bg-transparent px-0 py-1 text-base leading-6 placeholder:text-muted focus-visible:ring-0 md:text-base ${expanded() ? 'min-h-[4.5rem]' : 'min-h-8'}`}
+            />
+            {/* Under the box: the composer sits at the top of the page. */}
+            <MentionList
+              mentions={mentions}
+              class="top-full right-0 left-0 z-20 mt-1 slide-in-from-top-1"
             />
           </TextField>
 

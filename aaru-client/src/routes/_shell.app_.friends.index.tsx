@@ -89,6 +89,7 @@ function Friends() {
               handle: page().handle ?? 'you',
               displayName: page().displayName,
             }}
+            friends={page().social.friends}
             initialTitleId={search().title}
             onTitleDone={forgetTitle}
             onShowLately={() => switchView('lately')}

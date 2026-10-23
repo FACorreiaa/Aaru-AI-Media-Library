@@ -236,13 +236,16 @@ export function mentionQuery(
   return { start: at, query: query.toLowerCase() }
 }
 
+/** Someone a tag can name: a group member, or a friend on the Board. */
+export type MentionPerson = Pick<GroupMember, 'user'>
+
 /** Members to suggest for a partial tag: handle prefix first, then name or handle contains. */
-export function matchMembers(
-  members: GroupMember[],
+export function matchMembers<T extends MentionPerson>(
+  members: T[],
   query: string,
   meId: string,
   limit = 6,
-): GroupMember[] {
+): T[] {
   const q = query.toLowerCase()
   const others = members.filter((m) => m.user.userId !== meId)
   const prefix = others.filter((m) => m.user.handle.startsWith(q))

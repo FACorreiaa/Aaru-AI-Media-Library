@@ -26,6 +26,8 @@ export function BoardView(props: {
   initial: BoardData | null
   problem?: string
   me: SocialUser
+  /** Who `@` suggests in the composer, and whose handles read as mentions. */
+  friends: SocialUser[]
   initialTitleId?: string
   onTitleDone?: () => void
   /** Switches Friends to Lately, where Invite lives. */
@@ -52,9 +54,11 @@ export function BoardView(props: {
   const handles = createMemo(
     () =>
       new Set(
-        [props.me.handle, ...posts().map((p) => p.author.handle)].map((h) =>
-          h.toLowerCase(),
-        ),
+        [
+          props.me.handle,
+          ...props.friends.map((f) => f.handle),
+          ...posts().map((p) => p.author.handle),
+        ].map((h) => h.toLowerCase()),
       ),
   )
   const empty = () => (loaded() ? boardEmpty(posts(), friendCount()) : null)
@@ -109,6 +113,7 @@ export function BoardView(props: {
     <div class="max-w-2xl">
       <PostComposer
         me={props.me}
+        friends={props.friends}
         initialTitleId={props.initialTitleId}
         onTitleDone={props.onTitleDone}
         onPosted={posted}
