@@ -48,15 +48,7 @@ extension ImportService {
             filled.append("owned mark")
         }
         if row.type == .manga {
-            // A reading position only moves forward, like ticks are only added.
-            if let chapter = row.mangaChapter, chapter > fields.mangaChapter ?? 0 {
-                fields.mangaChapter = chapter
-                filled.append("chapter \(chapter)")
-            }
-            if let volume = row.mangaVolume, volume > fields.mangaVolume ?? 0 {
-                fields.mangaVolume = volume
-                filled.append("volume \(volume)")
-            }
+            filled += forwardMangaProgress(&fields, by: row)
         }
         let fieldsChanged = moved != nil || !filled.isEmpty
         let missing = (row.watched ?? []).filter { !item.watched.contains($0) }.sorted()
@@ -79,6 +71,20 @@ extension ImportService {
         else { return nil }
         fields.status = incoming
         return incoming
+    }
+
+    /// A reading position only moves forward, like ticks are only added. Returns what it filled.
+    private static func forwardMangaProgress(_ fields: inout ItemFields, by row: ImportRow) -> [String] {
+        var filled: [String] = []
+        if let chapter = row.mangaChapter, chapter > fields.mangaChapter ?? 0 {
+            fields.mangaChapter = chapter
+            filled.append("chapter \(chapter)")
+        }
+        if let volume = row.mangaVolume, volume > fields.mangaVolume ?? 0 {
+            fields.mangaVolume = volume
+            filled.append("volume \(volume)")
+        }
+        return filled
     }
 
     private static func reason(moved: LibraryStatus?, filled: [String], type: MediaType) -> String? {
