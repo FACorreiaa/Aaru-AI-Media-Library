@@ -84,13 +84,12 @@ private struct UnlockToast: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AaruSpace.large)
             .padding(.vertical, 10)
             .frame(maxWidth: 440)
-            .background(Color(.surface), in: .rect(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color(.line)))
-            .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
-            .contentShape(.rect(cornerRadius: 14))
+            .background(Color(.surface), in: .rect(cornerRadius: AaruRadius.panel, style: .continuous))
+            .lift()
+            .contentShape(.rect(cornerRadius: AaruRadius.panel, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(unlock.message)

@@ -10,7 +10,7 @@ struct HomeRow<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
                     .font(.aaruDisplay(.title3, weight: .semibold))
@@ -77,7 +77,7 @@ struct HomeArt: View {
                         image.resizable().scaledToFill()
                     } else {
                         LinearGradient(
-                            colors: [Color(.accent).opacity(0.25), Color(.gold).opacity(0.25)],
+                            colors: [Color(.accent).opacity(AaruAlpha.ghost), Color(.gold).opacity(AaruAlpha.ghost)],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         )
                     }
@@ -91,14 +91,14 @@ struct HomeArt: View {
 /// A small chip over art: runtime, time left, "Finale".
 struct HomeChip: View {
     let text: String
-    var tint: Color = .black.opacity(0.55)
-    var foreground: Color = .white
+    var tint: Color = .init(.scrim)
+    var foreground: Color = .init(.onScrim)
 
     var body: some View {
         Text(text)
             .font(.caption2.weight(.bold))
             .foregroundStyle(foreground)
-            .padding(.horizontal, 7)
+            .padding(.horizontal, AaruSpace.small)
             .padding(.vertical, 3)
             .background(tint, in: Capsule())
     }
@@ -118,7 +118,6 @@ struct HoverLift: ViewModifier {
         #else
             content
                 .scaleEffect(hovering && !reduceMotion ? 1.02 : 1)
-                .shadow(color: .black.opacity(hovering ? 0.18 : 0), radius: 8, y: 4)
                 .animation(.easeOut(duration: 0.15), value: hovering)
                 .onHover { hovering = $0 }
         #endif

@@ -24,7 +24,7 @@ struct NowSection: View {
         let groups = library.nowGroups(kind: kind)
         VStack(alignment: .leading, spacing: 24) {
             ForEach(groups) { group in
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AaruSpace.medium) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(group.title)
                             .font(.aaruDisplay(.title2, weight: .semibold))
@@ -112,14 +112,14 @@ private struct NowCard: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(title.title)
                 .accessibilityHint("Opens the title")
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: AaruSpace.medium) {
                 progress
                 actions
             }
-            .padding(14)
+            .padding(AaruSpace.large)
         }
-        .background(Color(.surface), in: RoundedRectangle(cornerRadius: 20))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(.rect(cornerRadius: AaruRadius.card, style: .continuous))
+        .card()
         .alert("Page", isPresented: $editingPage) {
             TextField("Page", text: $pageText)
             #if os(iOS)
@@ -138,11 +138,10 @@ private struct NowCard: View {
 
     @ViewBuilder private var art: some View {
         if item.kind == .book || item.kind == .music {
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: AaruSpace.medium) {
                 PosterView(url: title.posterUrl.flatMap(URL.init(string:)), kind: item.kind)
                     .frame(width: 76)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .shadow(radius: 3, y: 2)
+                    .clipShape(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title.title)
                         .font(.aaruDisplay(.title3, weight: .semibold))
@@ -154,7 +153,7 @@ private struct NowCard: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding([.horizontal, .top], 14)
+            .padding([.horizontal, .top], AaruSpace.large)
         } else {
             Color(.surface)
                 .aspectRatio(16 / 9, contentMode: .fit)
@@ -163,19 +162,19 @@ private struct NowCard: View {
                         if let image = phase.image {
                             image.resizable().scaledToFill()
                         } else {
-                            Color(.accent).opacity(0.15)
+                            Color(.accent).opacity(AaruAlpha.wash)
                         }
                     }
                 }
                 .overlay(alignment: .bottomLeading) {
                     Text(title.title)
                         .font(.aaruDisplay(.title3, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color(.onScrim))
                         .lineLimit(2)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(LinearGradient(
-                            colors: [.black.opacity(0.7), .clear],
+                            colors: [Color(.scrim), .clear],
                             startPoint: .bottom,
                             endPoint: .top
                         ))
@@ -197,7 +196,6 @@ private struct NowCard: View {
             }
             if let done = item.done {
                 ProgressView(value: done)
-                    .tint(Color(.accent))
                     .accessibilityLabel("\(title.title) progress")
             }
         }
@@ -219,7 +217,6 @@ private struct NowCard: View {
                     .frame(minHeight: 30)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(.accent))
             } else if item.kind == .book {
                 Button {
                     pageText = item.entry.bookProgress?.page.map(String.init) ?? ""
@@ -228,7 +225,6 @@ private struct NowCard: View {
                     Label("Update page", systemImage: "bookmark").frame(minHeight: 30)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(.accent))
             }
             if item.next == nil {
                 Button { perform(.finish) } label: {

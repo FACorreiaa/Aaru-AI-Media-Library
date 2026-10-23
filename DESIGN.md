@@ -1062,7 +1062,7 @@ AI" UI.
   `--alpha-*` variables, `RADIUS`/`ALPHA`/`MOTION` in `tokens.gen.ts`, and
   `AaruRadius`/`AaruAlpha`/`AaruMotion`/`AaruSpace` in `Tokens.gen.swift` for the app and the
   widgets. A radius, tint, duration or padding outside the scale is a review comment. Apple
-  corners are always `.continuous`. Web spacing is Tailwind's 4 px scale.
+  corners are always `.continuous`. Web spacing is Tailwind's 4 px scale. Widgets read the same colour sets (their own catalog carries every role) and mark their glyph and title `widgetAccentable`, so the tinted Home Screen and vibrant Lock Screen modes still read.
 - **Elevation.** Flat: Paper, Surface and Stone separate by tint and hairline, never by
   shadow. One `lift` (a line-strong ring and a soft navy shadow) belongs to layers that float:
   menus, popovers, dialogs, drawers, toasts, a dragged card. Gradients exist only as a glow

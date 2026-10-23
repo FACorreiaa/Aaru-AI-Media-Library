@@ -14,8 +14,8 @@
         var body: some WidgetConfiguration {
             ActivityConfiguration(for: NowPlayingActivityAttributes.self) { context in
                 NowPlayingLockScreen(state: context.state, isStale: context.isStale)
-                    .activityBackgroundTint(Palette.paper)
-                    .activitySystemActionForegroundColor(Palette.ink)
+                    .activityBackgroundTint(Color(.paper))
+                    .activitySystemActionForegroundColor(Color(.ink))
                     .widgetURL(nowPlayingLink(context.state))
             } dynamicIsland: { context in
                 NowPlayingIsland.make(context.state)
@@ -30,8 +30,8 @@
             ActivityConfiguration(for: NowWatchingAttributes.self) { context in
                 let state = context.attributes.activityState(context.state)
                 NowPlayingLockScreen(state: state, isStale: context.isStale)
-                    .activityBackgroundTint(Palette.paper)
-                    .activitySystemActionForegroundColor(Palette.ink)
+                    .activityBackgroundTint(Color(.paper))
+                    .activitySystemActionForegroundColor(Color(.ink))
                     .widgetURL(nowPlayingLink(state))
             } dynamicIsland: { context in
                 NowPlayingIsland.make(context.attributes.activityState(context.state))
@@ -56,7 +56,7 @@
             } else if items.isEmpty {
                 Text("Nothing playing")
                     .font(.subheadline)
-                    .foregroundStyle(Palette.muted)
+                    .foregroundStyle(Color(.muted))
                     .padding(16)
             } else {
                 // A check column for every row once one row has a check, so the times line up.
@@ -86,7 +86,7 @@
                     HStack(alignment: .firstTextBaseline) {
                         Text(item.title)
                             .font(.widgetDisplay)
-                            .foregroundStyle(Palette.ink)
+                            .foregroundStyle(Color(.ink))
                             .lineLimit(1)
                         Spacer(minLength: 4)
                         TimeLabel(item: item, showsEndTime: showsEndTime, long: true)
@@ -95,13 +95,13 @@
                     if !item.detailLine.isEmpty {
                         Text(item.detailLine)
                             .font(.caption)
-                            .foregroundStyle(Palette.muted)
+                            .foregroundStyle(Color(.muted))
                             .lineLimit(1)
                     }
                     if isStale, item.canMarkWatched {
                         Text("Did you finish?")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Palette.ink)
+                            .foregroundStyle(Color(.ink))
                     } else if item.endsAt != nil {
                         RowProgress(item: item)
                     }
@@ -127,7 +127,7 @@
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 Text(item.title)
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Palette.ink)
+                                    .foregroundStyle(Color(.ink))
                                     .lineLimit(1)
                                 Spacer(minLength: 4)
                                 TimeLabel(item: item, showsEndTime: showsEndTime, long: false)
@@ -136,7 +136,7 @@
                             HStack(spacing: 8) {
                                 Text(item.detailLine)
                                     .font(.caption)
-                                    .foregroundStyle(Palette.muted)
+                                    .foregroundStyle(Color(.muted))
                                     .lineLimit(1)
                                 Spacer(minLength: 4)
                                 if item.endsAt != nil, !item.watched {

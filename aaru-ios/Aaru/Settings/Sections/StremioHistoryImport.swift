@@ -71,7 +71,11 @@ struct StremioHistoryImport: View {
                     }
                     .frame(width: 160, height: 160)
                     .padding(6)
-                    .background(.white, in: .rect(cornerRadius: 10))
+                    // A QR code's quiet zone is white in both appearances, so scanners read it.
+                    .background(.white, in: .rect( // brand-guard: allow
+                        cornerRadius: AaruRadius.field,
+                        style: .continuous
+                    ))
                     .accessibilityLabel("QR code that opens the Stremio approval page on another device")
                 }
                 HStack(spacing: 8) {

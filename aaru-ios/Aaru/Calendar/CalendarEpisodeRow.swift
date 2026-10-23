@@ -10,7 +10,7 @@ struct CalendarEpisodeRow: View {
     var detail: String?
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: AaruSpace.small) {
             Button { feed.open(entry) } label: {
                 HStack(spacing: 12) {
                     PosterView(
@@ -18,7 +18,7 @@ struct CalendarEpisodeRow: View {
                         kind: entry.title.isAnime ? .anime : .show
                     )
                     .frame(width: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(entry.title.title)
@@ -48,7 +48,7 @@ struct CalendarEpisodeRow: View {
             .accessibilityHint("Shows the episode")
             CalendarTick(entry: entry, feed: feed)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AaruSpace.large)
         .padding(.vertical, 6)
         .opacity(entry.watched ? 0.55 : 1)
     }
@@ -65,7 +65,7 @@ struct CalendarTick: View {
         } label: {
             Image(systemName: entry.watched ? "checkmark.circle.fill" : "circle")
                 .font(.title2)
-                .foregroundStyle(entry.watched ? Color(.accent) : Color(.ink).opacity(0.35))
+                .foregroundStyle(entry.watched ? Color(.accent) : Color(.ink).opacity(AaruAlpha.ghost))
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }

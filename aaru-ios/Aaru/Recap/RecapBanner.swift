@@ -26,7 +26,7 @@ struct RecapBanner: View {
             }
             .padding(20)
             .foregroundStyle(Color(.paper))
-            .background(Color(.ink), in: RoundedRectangle(cornerRadius: 20))
+            .background(Color(.ink), in: RoundedRectangle(cornerRadius: AaruRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityHint("Plays your recap as a story")

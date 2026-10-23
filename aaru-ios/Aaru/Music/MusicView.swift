@@ -85,17 +85,15 @@ private struct RecentListens: View {
                 }
             }
             ForEach(Listening.byDay(model.listens, now: .now), id: \.heading) { day in
-                Text(day.heading.uppercased())
-                    .font(.caption.weight(.semibold))
-                    .tracking(1.5)
-                    .foregroundStyle(Color(.muted))
+                Text(day.heading)
+                    .eyebrow()
                     .padding(.top, 20)
                     .padding(.bottom, 4)
                     .accessibilityAddTraits(.isHeader)
                 ForEach(day.listens, id: \.id) { listen in
                     ListenRow(listen: listen, library: library)
                     if listen.id != day.listens.last?.id {
-                        Divider().padding(.leading, 52)
+                        Divider().padding(.leading, AaruSpace.page)
                     }
                 }
             }

@@ -41,11 +41,11 @@
             } minimal: {
                 if let primary {
                     Image(systemName: primary.watched ? "checkmark" : primary.kind.glyph)
-                        .foregroundStyle(Palette.brand)
+                        .foregroundStyle(Color(.accent))
                 }
             }
             .widgetURL(nowPlayingLink(state))
-            .keylineTint(Palette.brand)
+            .keylineTint(Color(.accent))
         }
     }
 
@@ -100,7 +100,7 @@
         var body: some View {
             if let second = others.first {
                 Image(systemName: second.kind.glyph)
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
                     .accessibilityLabel(others.count == 1 ? "And one more" : "And \(others.count) more")
             } else if let primary {
                 CompactTime(item: primary)
@@ -138,20 +138,20 @@
         var body: some View {
             if item.watched {
                 Image(systemName: "checkmark")
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
                     .accessibilityLabel("Watched")
             } else if item.pausedAt != nil {
                 Image(systemName: "pause.fill")
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
                     .accessibilityLabel("Paused")
             } else if let endsAt = item.endsAt {
                 Text(timerInterval: Date.now ... endsAt, countsDown: true, showsHours: false)
                     .monospacedDigit()
                     .frame(maxWidth: 44)
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
             } else {
                 Image(systemName: item.kind.glyph)
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
             }
         }
     }

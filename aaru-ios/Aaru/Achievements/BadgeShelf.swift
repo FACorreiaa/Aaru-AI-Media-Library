@@ -19,7 +19,7 @@ struct BadgeShelf: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: AaruSpace.section) {
             ForEach(families, id: \.family) { group in
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .firstTextBaseline) {
@@ -116,7 +116,7 @@ private struct BadgeDetailSheet: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(spacing: 10) {
+                    VStack(spacing: AaruSpace.medium) {
                         BadgeMedallion(badge: badge.id, family: badge.family, tier: badge.tier, size: 88)
                         Text(badge.name ?? "")
                             .font(.aaruDisplay(.title2))
@@ -197,7 +197,7 @@ struct FriendBadgeRow: View {
             }
             if !recent.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: 14) {
+                    LazyHStack(alignment: .top, spacing: AaruSpace.medium) {
                         ForEach(recent.prefix(6), id: \.id) { award in
                             AwardCell(award: award)
                         }

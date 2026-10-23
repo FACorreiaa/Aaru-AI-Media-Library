@@ -14,8 +14,8 @@ struct StreakBar: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
+            HStack(spacing: AaruSpace.small) {
                 Image(systemName: streak.current > 0 ? "flame.fill" : "flame")
                     .font(.title3)
                     .foregroundStyle(streak.current > 0 ? Color(.accent) : Color(.muted))
@@ -41,9 +41,8 @@ struct StreakBar: View {
                 LevelLine(progress: progress)
             }
         }
-        .padding(14)
-        .background(Color(.surface), in: RoundedRectangle(cornerRadius: 14))
-        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .panel()
+        .contentShape(.rect(cornerRadius: AaruRadius.panel, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityHint(isLink ? "Opens Achievements" : "")
     }
@@ -100,7 +99,6 @@ struct LevelLine: View {
                     .foregroundStyle(Color(.muted))
             }
             ProgressView(value: min(max(fraction, 0), 1))
-                .tint(Color(.accent))
                 .accessibilityHidden(true)
         }
     }

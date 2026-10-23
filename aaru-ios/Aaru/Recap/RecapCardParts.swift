@@ -8,7 +8,6 @@ struct Eyebrow: View {
     var body: some View {
         Text(text.uppercased())
             .font(.subheadline.weight(.medium))
-            .tracking(1.8)
             .opacity(0.8)
             .rise(0)
     }
@@ -180,6 +179,9 @@ struct RecapPoster: View {
 
     var body: some View {
         PosterView(url: url, kind: kind)
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(.primary.opacity(0.2), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous).stroke(
+                .primary.opacity(0.2),
+                lineWidth: 1
+            ))
     }
 }

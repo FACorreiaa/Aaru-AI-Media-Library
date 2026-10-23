@@ -46,21 +46,18 @@ struct FriendsPage: View {
                             Task { await social.setShareLibrary(share) }
                         })
                     )
-                    .tint(Color(.accent))
                     Toggle(
                         "Show my badges and level to friends",
                         isOn: Binding(get: { social.showAchievements }, set: { show in
                             Task { await social.setShowAchievements(show) }
                         })
                     )
-                    .tint(Color(.accent))
                     Toggle(
                         "Join the weekly friends board",
                         isOn: Binding(get: { social.leaderboardOptIn }, set: { join in
                             Task { await social.setLeaderboardOptIn(join) }
                         })
                     )
-                    .tint(Color(.accent))
                 }
             } header: {
                 Text("Friends")
@@ -387,7 +384,7 @@ private struct PersonRow<Actions: View>: View {
             Text(user.monogram)
                 .font(.subheadline.weight(.medium))
                 .frame(width: side, height: side)
-                .background(Color(.medallion).opacity(0.2), in: .circle)
+                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
                 .accessibilityHidden(true)
             Text(user.label).lineLimit(2)
             Spacer(minLength: 8)
