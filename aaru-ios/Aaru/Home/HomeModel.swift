@@ -45,6 +45,8 @@ final class HomeModel {
     /// The airings behind "Airing soon", for the episode sheet a card opens (UX-092). Fetched once,
     /// for the same window the widgets use.
     let airingFeed: CalendarFeed
+    /// Tonight as the server ranks it (AG-005).
+    let tonightFeed: TonightFeed
     /// The last load or check that failed. Shown until the next action.
     var problem: String?
 
@@ -79,6 +81,7 @@ final class HomeModel {
         self.calendar = calendar
         self.now = now
         airingFeed = CalendarFeed(api: api, library: library, calendar: calendar)
+        tonightFeed = TonightFeed(api: api, cache: cache, timeZone: calendar.timeZone)
         if let snapshot = cache?.load() {
             self.snapshot = snapshot
             apply(snapshot)
@@ -149,8 +152,9 @@ final class HomeModel {
             loadedRevision = library?.revision ?? 0
             async let discoverRows = Self.fetchDiscover(api)
             async let stats: Void = loadWeekStats(api)
+            async let tonight: Void = tonightFeed.load()
             let coreLoaded = await loadCore(api)
-            await stats
+            await (stats, tonight)
             if let rows = await discoverRows {
                 discover = rows
                 cache?.saveDiscover(rows)
@@ -331,7 +335,9 @@ final class HomeModel {
         card.isFinale = false
         continueWatching[index] = card
     }
+}
 
+extension HomeModel {
     private static func notSaved(_ entry: ContinueEntry) -> String {
         "\(entry.title.title) \(EpisodeCode.short(season: entry.next.season, number: entry.next.number)) was not saved."
     }

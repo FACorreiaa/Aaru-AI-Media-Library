@@ -59,7 +59,20 @@ import type {
   UpNext,
   WeekStrip,
 } from '../lib/home/model'
-import { airingToday, composeTonight, fieldLine } from '../lib/home/tonight'
+import {
+  airingToday,
+  composeTonight,
+  fieldLine,
+  pickMarkable,
+  rankedTonight,
+} from '../lib/home/tonight'
+import { recalledTonight, rememberTonight } from '../lib/home/tonight-cache'
+import type {
+  RankedTonight,
+  TonightPick,
+  TonightVerdict,
+} from '../lib/home/tonight'
+import { getTonight, sendTonightFeedback } from '../lib/home/server'
 import { daypartHeading } from '../lib/appearance'
 import type { ImportJob } from '../lib/imports/server'
 import { upsert } from '../lib/library/model'
@@ -185,6 +198,10 @@ function Home() {
   const [progress, setProgress] = createSignal<Progress | null>(null)
   const [playing, setPlaying] = createSignal<NowPlayingItem[]>([])
   const [playingAt, setPlayingAt] = createSignal(new Date())
+  /** The server's Tonight (AG-005); used only on the day it names. */
+  const [ranked, setRanked] = createSignal<RankedTonight | null>(null)
+  /** Tonight picks set aside here since the last Tonight load. */
+  const [shelved, setShelved] = createSignal<ReadonlySet<string>>(new Set())
   /** Sessions marked watched here: the player may still report them for a while. */
   const [setAside, setSetAside] = createSignal<ReadonlySet<string>>(new Set())
   let libraryRequested = false
@@ -355,10 +372,49 @@ function Home() {
     }
   }
 
+  /** Tonight as the server ranks it. A failure keeps the last answer; Tonight falls back to
+   * the browser's composition once its day has passed. */
+  async function loadTonight() {
+    try {
+      const answer = await getTonight({ data: { tz: viewerTimeZone() } })
+      setRanked(answer)
+      setShelved(new Set<string>())
+      rememberTonight(answer)
+    } catch {
+      // The cached answer, or the composition, stands.
+    }
+  }
+
+  /** "Not tonight" or "Not for me": the card moves on at once, then Tonight loads again. */
+  async function setAsideTonight(pick: TonightPick, verdict: TonightVerdict) {
+    const id = pick.entry.libraryItemId
+    if (shelved().has(id)) return
+    setProblem(null)
+    setShelved((current) => new Set([...current, id]))
+    try {
+      await sendTonightFeedback({
+        data: { id, verdict, tz: viewerTimeZone() },
+      })
+    } catch (err) {
+      setShelved((current) => {
+        const next = new Set(current)
+        next.delete(id)
+        return next
+      })
+      setProblem(
+        err instanceof Error ? err.message : 'That could not be set aside.',
+      )
+      return
+    }
+    void loadTonight()
+  }
+
   onMount(async () => {
     const current = new Date()
     setNow(current)
     const today = localDayKey(current)
+    setRanked(recalledTonight(today))
+    void loadTonight()
     void loadStrip()
     void loadDiscover()
     void loadPlans()
@@ -404,10 +460,18 @@ function Home() {
     return current ? airingBadge(entry, current) : null
   }
 
-  // Continue watching alone needs no clock, so the server draws Tonight's lead too; today's
-  // airings join in the browser.
+  // The server's answer for today when there is one. Without it, Continue watching alone needs
+  // no clock, so the server draws Tonight's lead too; today's airings join in the browser.
   const tonight = createMemo(() => {
     const away = playingItems()
+    const answer = ranked()
+    const current = now()
+    if (answer && current && answer.day === localDayKey(current))
+      return rankedTonight(
+        answer,
+        continuing(),
+        new Set([...away, ...shelved()]),
+      )
     return composeTonight(
       continuing().filter((e) => !away.has(e.libraryItemId)),
       airings().filter((a) => !away.has(a.libraryItemId)),
@@ -417,7 +481,7 @@ function Home() {
   /** The show Tonight leads with leaves Continue watching, so no card shows twice. */
   const tonightItem = () => {
     const pick = tonight()?.primary
-    return pick?.kind === 'continue' ? pick.entry.libraryItemId : null
+    return pick ? (pickMarkable(pick)?.libraryItemId ?? null) : null
   }
   const continuingRow = createMemo(() =>
     continuing().filter(
@@ -501,6 +565,7 @@ function Home() {
         a.number === entry.next.number,
     )
     if (match) setAirings((rows) => withWatched(rows, match, true))
+    void loadTonight()
     try {
       showUpNext(await freshUpNext())
     } catch {
@@ -561,11 +626,11 @@ function Home() {
               {(picked) => (
                 <TonightStrip
                   tonight={picked()}
-                  busy={
-                    picked().primary.kind === 'continue' &&
-                    busy().has(picked().primary.entry.libraryItemId)
-                  }
+                  busy={busy().has(picked().primary.entry.libraryItemId)}
                   onWatched={(entry) => void markWatched(entry)}
+                  onSetAside={(pick, verdict) =>
+                    void setAsideTonight(pick, verdict)
+                  }
                 />
               )}
             </Show>

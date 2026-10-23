@@ -2,26 +2,25 @@ import { Link } from '@tanstack/solid-router'
 import { Show } from 'solid-js'
 import { shortCode } from '../lib/calendar/model'
 import type { ContinueEntry } from '../lib/home/model'
-import { pickEpisode, pickReason } from '../lib/home/tonight'
-import type { Tonight, TonightPick } from '../lib/home/tonight'
+import { pickEpisode, pickMarkable, pickReason } from '../lib/home/tonight'
+import type { Tonight, TonightPick, TonightVerdict } from '../lib/home/tonight'
 import { Art } from './HomeRows'
 import { Button, buttonVariants } from '~/components/ui'
 
 // VIEWS.md `TonightStrip`: the Field's focal piece. One thing to watch now, lit and large, and
-// one more on a line under it. Composed in the browser (lib/home/tonight.ts); a mark-watched
-// here is the same write as Continue watching's check.
+// one more on a line under it. Ranked by the server, composed in the browser when there is no
+// answer for today (lib/home/tonight.ts); a mark-watched here is the same write as Continue
+// watching's check. "Not tonight" sets the pick aside for the day, "Not for me" for longer.
 export function TonightStrip(props: {
   tonight: Tonight
   busy: boolean
   onWatched: (entry: ContinueEntry) => void
+  onSetAside: (pick: TonightPick, verdict: TonightVerdict) => void
   timeZone?: string
 }) {
   const primary = () => props.tonight.primary
   const title = () => primary().entry.title
-  const continuing = () => {
-    const pick = primary()
-    return pick.kind === 'continue' ? pick.entry : null
-  }
+  const continuing = () => pickMarkable(primary())
   return (
     <section class="mt-8" aria-labelledby="tonight">
       <h2 id="tonight" class="eyebrow">
@@ -54,9 +53,11 @@ export function TonightStrip(props: {
               {title().title}
             </Link>
           </h3>
-          <p class="mt-2 text-sm font-medium tabular-nums">
-            {pickEpisode(primary())}
-          </p>
+          <Show when={pickEpisode(primary())}>
+            {(line) => (
+              <p class="mt-2 text-sm font-medium tabular-nums">{line()}</p>
+            )}
+          </Show>
           <p class="mt-0.5 text-sm text-muted tabular-nums">
             {pickReason(primary(), props.timeZone)}
           </p>
@@ -80,6 +81,20 @@ export function TonightStrip(props: {
             >
               Open
             </Link>
+            <Button
+              variant="ghost"
+              disabled={props.busy}
+              onClick={() => props.onSetAside(primary(), 'not_tonight')}
+            >
+              Not tonight
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={props.busy}
+              onClick={() => props.onSetAside(primary(), 'rejected')}
+            >
+              Not for me
+            </Button>
           </div>
           <Show when={props.tonight.also}>
             {(also) => <AlsoLine pick={also()} timeZone={props.timeZone} />}

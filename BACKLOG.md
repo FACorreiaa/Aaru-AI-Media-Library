@@ -594,7 +594,7 @@ account or a stranger that has not happened yet.
 | AG-002 | Open | none | |
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
-| AG-005 | Partial | Tonight/TonightService.swift, `/v1/tonight` | Server built; clients still compose on device |
+| AG-005 | Built, unverified | Tonight/TonightService.swift, `/v1/tonight`; `Home/Tonight.swift`, `lib/home/tonight.ts` | Not seen on a device; reject never checked across a night |
 | AG-006 | Open | none | |
 | AG-007 | Open | no ModelProviding | |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
@@ -3035,7 +3035,11 @@ progress, today's airings, books in progress and wishlist films by a fixed score
 nearness to the end, time on the list, minus rejections in the last 14 days). "Not tonight"
 hides an item for the local day; reasons are templates. `POST /v1/tonight/{id}/feedback`.
 `tonight_picks` records what was shown, for the `tonight_accepted` count (progress on a pick
-within 6 h). Clients still compose Tonight on the device until they read this route.
+within 6 h).
+
+**Built 2026-10-23 (clients):** iOS, Mac and web read `/v1/tonight`, keep the last answer for
+offline, and fall back to the device's composition only without an answer for today. "Not
+tonight" and "Not for me" on every pick.
 
 ### AG-006 · Capture as an import source · L
 **Needs:** AG-003, IMP-005, IMP-011, JOB-001.
