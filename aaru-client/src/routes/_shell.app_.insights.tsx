@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { Link, createFileRoute } from '@tanstack/solid-router'
 import {
   Match,
@@ -199,17 +200,19 @@ function Insights() {
                 when={!isEmpty(stats())}
                 fallback={
                   <>
-                    <p class="mt-10 text-muted">
-                      {period()?.span === 'all'
-                        ? 'Nothing tracked yet.'
-                        : period()?.span === 'last7'
-                          ? 'Nothing tracked in the last 7 days.'
-                          : period()?.span === 'last30'
-                            ? 'Nothing tracked in the last 30 days.'
-                            : `Nothing tracked in ${insightsLabel(period() ?? { span: 'all' })} yet.`}{' '}
-                      Tick an episode or finish a title, and it will show up
-                      here.
-                    </p>
+                    <OwlEmpty
+                      class="mt-6"
+                      title={
+                        period()?.span === 'all'
+                          ? 'Nothing tracked yet.'
+                          : period()?.span === 'last7'
+                            ? 'Nothing tracked in the last 7 days.'
+                            : period()?.span === 'last30'
+                              ? 'Nothing tracked in the last 30 days.'
+                              : `Nothing tracked in ${insightsLabel(period() ?? { span: 'all' })} yet.`
+                      }
+                      body="Tick an episode or finish a title, and it will show up here."
+                    />
                     {music(stats())}
                   </>
                 }

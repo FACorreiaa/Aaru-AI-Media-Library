@@ -10,6 +10,10 @@ struct RecapCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             switch card {
             case let .intro(heading, partial):
+                // The owl opens the story, still: the cards move enough on their own.
+                OwlMedallion(size: 72)
+                    .padding(.bottom, 24)
+                    .rise(0)
                 Eyebrow(text: partial ? "So far" : "Your recap")
                 Text(heading)
                     .font(.aaruDisplay(size: 56))

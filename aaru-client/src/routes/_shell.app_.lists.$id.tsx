@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { Link, createFileRoute } from '@tanstack/solid-router'
 import { BackLink } from '../components/shell/BackLink'
 import {
@@ -195,17 +196,15 @@ function ListPage() {
         <Show
           when={rows().length > 0}
           fallback={
-            <div class="mt-16 text-center">
-              <p class="text-muted">Nothing on this list yet.</p>
-              <Button
-                variant="default"
-                size="lg"
-                class="mt-6"
-                onClick={openSearch}
-              >
-                Add titles
-              </Button>
-            </div>
+            <OwlEmpty
+              class="mt-8"
+              title="Nothing on this list yet"
+              action={
+                <Button variant="default" size="lg" onClick={openSearch}>
+                  Add titles
+                </Button>
+              }
+            />
           }
         >
           {/* An ordered list reads top to bottom: one column, at a width rows can be read. */}

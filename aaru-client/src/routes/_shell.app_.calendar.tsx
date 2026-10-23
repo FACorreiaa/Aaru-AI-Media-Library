@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { createFileRoute, useNavigate } from '@tanstack/solid-router'
 import { lastShown } from '../lib/presence'
 import { useAppShell } from '../components/shell/context'
@@ -454,25 +455,22 @@ function Calendar() {
         </Show>
 
         <Show when={empty() && !problem()}>
-          <div class={cn(cardClass, 'mt-6 p-6')}>
-            <p class="font-display text-xl">
-              Nothing from your shows airs this{' '}
-              {view() === 'week' ? 'week' : 'month'}
-              {entries().length > 0 ? ' with these filters' : ''}.
-            </p>
-            <p class="mt-1 text-sm text-muted">
-              Shows you add, or mark as watching, appear here as their episodes
-              air.
-            </p>
-            {/* UX-087: Search opens in place, on Shows. */}
-            <Button
-              variant="default"
+          <div class={cn(cardClass, 'mt-6 px-6')}>
+            <OwlEmpty
               size="sm"
-              class="mt-4"
-              onClick={() => shell.openSearch('show')}
-            >
-              Find shows to add
-            </Button>
+              title={`Nothing from your shows airs this ${view() === 'week' ? 'week' : 'month'}${entries().length > 0 ? ' with these filters' : ''}.`}
+              body="Shows you add, or mark as watching, appear here as their episodes air."
+              action={
+                /* UX-087: Search opens in place, on Shows. */
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => shell.openSearch('show')}
+                >
+                  Find shows to add
+                </Button>
+              }
+            />
           </div>
         </Show>
 

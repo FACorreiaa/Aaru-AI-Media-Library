@@ -974,10 +974,17 @@ sets, brand assets), main wins.
   "Aaru", used as artwork, never set in a font.
 - **Mark and icon.** The A with the amber star and the swoosh. The app icon is that mark on
   night navy.
-- **Mascot.** The white and amber robot owl, on signed-out surfaces, always on the `night` disc
-  (the poster's sky, the same in both appearances, so the white owl reads). Its head on the same
-  disc is the agent's mark (`OwlMark` on the web, `Image(.owlMark)` on Apple): it breathes slowly
-  while Aaru works and holds still under Reduce Motion.
+- **Mascot.** The white and amber robot owl, always on the `night` disc (the poster's sky, the
+  same in both appearances, so the white owl reads). Its head on the same disc is the agent's
+  mark (`OwlMark` on the web, `Image(.owlMark)` on Apple): it breathes slowly while Aaru works
+  and holds still under Reduce Motion.
+- **Where the owl lives (owner, 2026-10-23).** Signed-out surfaces, and in the app: beside the
+  Home greeting, in screen-level empty states (`OwlEmpty` / `OwlUnavailableView`, never inside
+  a picker, a filter result, search results or a settings row), on errors, the 404 and the load-failed view, on the recap cover,
+  on an earned badge. Never on a plan card, which an outside connection wrote. Two motions, never both at once: the
+  **breath** means Aaru is working; **idle** (a slow float and an amber glow behind the eyes) is
+  the owl at rest, on Home and empty states only. Errors and recap cards stay still. Under
+  Reduce Motion the owl never moves.
 - **Tagline.** "Your stories. Your world."
 - **Enforced.** `.github/workflows/ci-brand.yml` runs `scripts/generate-tokens.mjs --check` and
   `scripts/brand-guard.sh`: no colour literals outside the generated tokens, no serif or bundled

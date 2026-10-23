@@ -70,11 +70,8 @@ private struct UnlockToast: View {
                 if let award = unlock.award {
                     BadgeMedallion(badge: award.badge, family: award.family, tier: award.tier, size: 36)
                 } else {
-                    Image(systemName: "rosette")
-                        .font(.title3)
-                        .foregroundStyle(Color(.gold))
-                        .frame(width: 36, height: 36)
-                        .accessibilityHidden(true)
+                    // A summary (an import, the first run) has no one badge to show: the owl tallies.
+                    OwlHead(size: 36)
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     if let award = unlock.award, let word = BadgeGlyph.tierWord(award.tier, of: award.maxTier) {

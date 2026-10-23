@@ -63,12 +63,11 @@ struct InsightsView: View {
     @ViewBuilder private var content: some View {
         if let stats = model.stats {
             if stats.totals.isZero, stats.ratings.mean == nil {
-                ContentUnavailableView(
-                    model.span.isRolling
+                OwlUnavailableView(
+                    title: model.span.isRolling
                         ? "Nothing tracked in the \(model.period.label.lowercased())"
                         : "Nothing tracked in \(model.period.label)",
-                    systemImage: "chart.bar",
-                    description: Text("Tick episodes and finish titles, and they add up here.")
+                    message: "Tick episodes and finish titles, and they add up here."
                 )
             } else {
                 if let period = model.period.recap {
