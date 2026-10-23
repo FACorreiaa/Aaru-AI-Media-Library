@@ -9,6 +9,8 @@ struct AccountPage: View {
     var onSignOut: () -> Void
     /// Mac only: the Account pane ends with Delete account. Nil leaves it out.
     var onDeleteAccount: (() async -> String?)?
+    /// Nil in previews.
+    @Environment(PlusModel.self) private var plus: PlusModel?
 
     var body: some View {
         @Bindable var account = account
@@ -28,6 +30,9 @@ struct AccountPage: View {
                 Text("Name and handle")
             } footer: {
                 Text("Friends find you by your exact handle. Your name is what they see.")
+            }
+            if let plus {
+                PlusSection(plus: plus)
             }
             Section("Signed in with") {
                 LabeledContent("Signed in with", value: account.providers)

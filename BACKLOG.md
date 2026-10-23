@@ -598,6 +598,10 @@ account or a stranger that has not happened yet.
 | AG-005 | Built, unverified | Tonight/TonightService.swift, `/v1/tonight`; `Home/Tonight.swift`, `lib/home/tonight.ts` | Not seen on a device; reject never checked across a night |
 | AG-006 | Built, unverified | Imports/ImportService+Capture.swift, Capture/, `/v1/imports/capture`; `aaru-ios/Aaru/Capture`, `CaptureComposer.tsx` | Composer and review on web and Apple; no Share Extension yet; no library-reading tools for text. Not tried on a device |
 | AG-007 | Partial | Agent/ModelProviding.swift, `agent_usage.cost_micros` | Monthly spend metered per user; no own key yet |
+| BIL-001 | Built, unverified | Billing/AppleSignedData.swift, `entitlements`; BillingTests | Products and the notifications URL not set up in App Store Connect |
+| BIL-002 | Built, unverified | `/v1/billing/apple/transactions`, `/v1/billing/apple/notifications`; BillingService.swift | No sandbox purchase, renewal or expiry seen |
+| BIL-003 | Built, unverified | `aaru-ios/Aaru/Plus` | Paywall, Restore, `Transaction.updates`; no `.storekit` file; not on a device |
+| BIL-004 | Built, unverified | `/v1/me/entitlement`; Settings → Account on web and Apple; capture fair use | Not seen with a real subscription |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
@@ -3213,6 +3217,50 @@ context without paging the library.
 **OPEN:** `MARKETING.md` launch-gate item 14 requires free CSV/JSON export and **no backlog
 ticket exists for it** — there is no `EXP` prefix in use. Recommendation: file the export
 ticket first and make this a format of that export rather than a second export path.
+
+---
+
+## P7 · Billing — Aaru Plus (pulled forward 2026-10-22)
+
+Plus is sold on the App Store only, as a StoreKit 2 subscription. The server owns the
+entitlement; every client reads it. No Stripe, no web checkout, no Household or Founding yet.
+
+### BIL-001 · Verify Apple's signed data · M
+**Needs:** AUTH-001.
+Verify App Store JWS (transactions and Server Notifications v2) on the server against Apple
+Root CA - G3, with Apple's marker OIDs and the bundle ids in `config.appleAudiences`. No App
+Store Server API key. Table `entitlements` keyed by `original_transaction_id`; a write older than
+the stored `signed_at` is dropped.
+
+**Done when:** a forged chain, a wrong bundle id and an out-of-order notification are each
+refused or ignored in tests, and a real sandbox transaction verifies.
+
+### BIL-002 · Record purchases and notifications · M
+**Needs:** BIL-001.
+`POST /v1/billing/apple/transactions` (session) and `POST /v1/billing/apple/notifications`
+(public). Accounts link by `appAccountToken`, the user id. `plus_purchased` fires once per
+original transaction.
+
+**Done when:** a sandbox purchase lifts the capture quota at once, and a sandbox expiry turns
+it off through the notification.
+
+### BIL-003 · Paywall and restore on Apple · M
+**Needs:** BIL-002.
+`aaru-ios/Aaru/Plus`: the paywall (price from `Product.displayPrice`, period, what Plus
+includes, Restore Purchases, Terms and Privacy links), a Settings section, and a
+`Transaction.updates` listener that posts each transaction. Opened from the capture quota.
+
+**Done when:** buy, restore on a second device, and Manage Subscription work on a TestFlight
+build.
+
+### BIL-004 · Entitlement on every client · S
+**Needs:** BIL-002.
+`GET /v1/me/entitlement`: Plus, renewal date, the month's captures and limit, and the
+`appAccountToken`. Settings → Account shows it on web and Apple; the web sells nothing and says
+Plus is bought in the Apple apps. Plus lifts the 3-a-month capture quota to a fair use of 30 a
+day.
+
+**Done when:** the web and the app show the same Plus state for one account.
 
 ---
 
