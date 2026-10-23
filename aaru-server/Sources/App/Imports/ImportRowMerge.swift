@@ -97,6 +97,8 @@ extension ImportService {
             if let watched = row.watched {
                 merged.watched = Array(Set(merged.watched ?? []).union(watched)).sorted()
             }
+            merged.mangaChapter = [merged.mangaChapter, row.mangaChapter].compactMap(\.self).max()
+            merged.mangaVolume = [merged.mangaVolume, row.mangaVolume].compactMap(\.self).max()
             if row.listOnly != true {
                 merged.listOnly = nil
             }

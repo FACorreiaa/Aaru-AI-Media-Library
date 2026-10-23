@@ -2,18 +2,28 @@ import AaruCore
 import Foundation
 
 /// IMP-013 and IMP-014: anime lists from MyAnimeList (XML export) and AniList (public list by
-/// username). Both carry hard ids (`mal`, `anilist`), so rows resolve through AniList and the same
-/// show imported from both lands on one title. Episodes are season 1, as for every AniList entry.
+/// username), and their manga lists too (MNG-002). Both carry hard ids (`mal`, `anilist`), so rows
+/// resolve through AniList and the same show imported from both lands on one title. Episodes are
+/// season 1, as for every AniList entry.
 enum AnimeListImport {
-    /// MAL and AniList statuses on Aaru's four (IMP-013). On hold is still in progress.
+    /// MAL and AniList statuses on Aaru's four (IMP-013). On hold is still in progress. MAL's manga
+    /// list says reading and plan to read; its numeric codes are the anime list's.
     static func status(_ value: String) -> LibraryStatus? {
         switch value.lowercased().replacingOccurrences(of: " ", with: "") {
-        case "watching", "1", "current", "repeating", "on-hold", "onhold", "3", "paused": .inProgress
+        case "watching", "reading", "1", "current", "repeating", "rereading", "on-hold", "onhold", "3", "paused":
+            .inProgress
         case "completed", "2": .finished
         case "dropped", "4": .dropped
-        case "plantowatch", "6", "planning": .wishlist
+        case "plantowatch", "plantoread", "6", "planning": .wishlist
         default: nil
         }
+    }
+
+    /// A manga's chapter or volume as read: a completed entry exported with 0 read means all of
+    /// them, when the total is known. Zero is none.
+    static func read(_ count: Int, total: Int?, status: LibraryStatus?) -> Int? {
+        let read = status == .finished && count == 0 ? total ?? 0 : count
+        return read > 0 ? read : nil
     }
 
     /// Episodes 1…n of season 1, the AniList shape.
@@ -40,13 +50,49 @@ enum AnimeListImport {
 /// CDATA. Read with a small scanner rather than `XMLParser`, which needs libxml2 on Linux.
 enum MALListParser {
     static func parse(_ text: String) throws -> [ImportRow] {
-        guard text.contains("<myanimelist"), text.contains("<anime>") || text.contains("</myinfo>") else {
+        guard text.contains("<myanimelist"),
+              text.contains("<anime>") || text.contains("<manga>") || text.contains("</myinfo>")
+        else {
             throw ImportFormatError(
-                message: "This does not look like a MyAnimeList export. Export your anime list from MAL and "
-                    + "upload the .xml (or .xml.gz) file."
+                message: "This does not look like a MyAnimeList export. Export your anime or manga list from "
+                    + "MAL and upload the .xml (or .xml.gz) file."
             )
         }
-        return blocks("anime", in: text).compactMap { block in
+        return animeRows(text) + mangaRows(text)
+    }
+
+    /// MAL's manga export (MNG-002): `<manga>` entries with their own MAL ids, read chapters and
+    /// volumes.
+    static func mangaRows(_ text: String) -> [ImportRow] {
+        blocks("manga", in: text).compactMap { block in
+            guard let id = field("manga_mangadb_id", in: block), Int(id) != nil,
+                  let title = field("manga_title", in: block)
+            else { return nil }
+            let status = field("my_status", in: block).flatMap(AnimeListImport.status)
+            func count(_ name: String) -> Int? {
+                field(name, in: block).flatMap { Int($0) }
+            }
+            return ImportRow(
+                sourceKey: "mal-manga:\(id)",
+                type: .manga,
+                title: title,
+                ids: ExternalIDs(mal: id),
+                status: status,
+                rating: AnimeListImport.rating(field("my_score", in: block).flatMap(Double.init)),
+                finishedAt: field("my_finish_date", in: block).flatMap(Date.catalogDay),
+                lists: [],
+                mangaChapter: AnimeListImport.read(
+                    count("my_read_chapters") ?? 0, total: count("manga_chapters"), status: status
+                ),
+                mangaVolume: AnimeListImport.read(
+                    count("my_read_volumes") ?? 0, total: count("manga_volumes"), status: status
+                )
+            )
+        }
+    }
+
+    static func animeRows(_ text: String) -> [ImportRow] {
+        blocks("anime", in: text).compactMap { block in
             guard let id = field("series_animedb_id", in: block), Int(id) != nil,
                   let title = field("series_title", in: block)
             else { return nil }
@@ -111,6 +157,7 @@ enum MALListParser {
 // MARK: AniList (IMP-014)
 
 protocol AniListListReading: Sendable {
-    /// The user's anime list as import rows. A private list or unknown user is `.notFound`.
-    func animeRows(userName: String) async throws -> [ImportRow]
+    /// The user's anime and manga lists as import rows. A private list or unknown user is
+    /// `.notFound`.
+    func listRows(userName: String) async throws -> [ImportRow]
 }

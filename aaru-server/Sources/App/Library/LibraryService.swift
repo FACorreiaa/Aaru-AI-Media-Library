@@ -5,7 +5,7 @@ import Foundation
 /// fields to empty (JSON cannot tell "absent" from "null" through the generated types).
 struct ItemPatch: Sendable {
     enum Clearable: String, Sendable {
-        case rating, notes, bookProgress
+        case rating, notes, bookProgress, mangaProgress
     }
 
     var status: LibraryStatus?
@@ -14,6 +14,8 @@ struct ItemPatch: Sendable {
     var isOwned: Bool?
     var bookPage: Int?
     var bookPercent: Double?
+    var mangaChapter: Int?
+    var mangaVolume: Int?
     var clear: Set<Clearable> = []
 }
 
@@ -295,6 +297,31 @@ extension LibraryService {
         }
     }
 
+    /// MNG-001: a chapter, a volume, or both; each validated by `AaruCore.MangaProgress`.
+    func applyMangaProgress(_ patch: ItemPatch, to fields: inout ItemFields, type: MediaType) throws {
+        let touchesManga = patch.mangaChapter != nil || patch.mangaVolume != nil
+            || patch.clear.contains(.mangaProgress)
+        guard touchesManga else { return }
+        guard type == .manga else {
+            throw AppError(
+                status: .unprocessableContent, code: "validation_failed",
+                message: "Only manga have chapter progress.",
+                details: ["progress": "Only manga have chapter progress."]
+            )
+        }
+        if patch.clear.contains(.mangaProgress) {
+            fields.mangaChapter = nil
+            fields.mangaVolume = nil
+        }
+        _ = try MangaProgress(chapter: patch.mangaChapter, volume: patch.mangaVolume)
+        if let chapter = patch.mangaChapter {
+            fields.mangaChapter = chapter
+        }
+        if let volume = patch.mangaVolume {
+            fields.mangaVolume = volume
+        }
+    }
+
     static func updateSummary(current: LibraryEntry, fields: ItemFields) -> String {
         let name = current.title.title
         if fields.status != current.fields.status {
@@ -305,6 +332,12 @@ extension LibraryService {
         }
         if fields.isOwned != current.fields.isOwned {
             return fields.isOwned ? "Marked \(name) owned" : "Marked \(name) not owned"
+        }
+        if let chapter = fields.mangaChapter, chapter != current.fields.mangaChapter {
+            return "Read \(name) to chapter \(chapter)"
+        }
+        if let volume = fields.mangaVolume, volume != current.fields.mangaVolume {
+            return "Read \(name) to volume \(volume)"
         }
         return "Updated \(name)"
     }
@@ -321,24 +354,26 @@ extension LibraryEntry {
             isOwned: item.isOwned,
             finishedAt: item.finishedAt,
             bookPage: bookProgress?.page,
-            bookPercent: bookProgress?.percent
+            bookPercent: bookProgress?.percent,
+            mangaChapter: mangaProgress?.chapter,
+            mangaVolume: mangaProgress?.volume
         )
     }
 }
 
 extension LibraryStatus {
     /// The status as people read it, per kind (APP-014). The stored value never changes:
-    /// films, shows and anime read Plan to watch / Watching / Watched; books Plan to read /
-    /// Reading / Read; albums Plan to listen / Listening / Listened (MUS-001).
+    /// films, shows and anime read Plan to watch / Watching / Watched; books and manga Plan to
+    /// read / Reading / Read; albums Plan to listen / Listening / Listened (MUS-001).
     func label(for type: MediaType) -> String {
         switch (self, type) {
-        case (.wishlist, .book): "Plan to read"
+        case (.wishlist, .book), (.wishlist, .manga): "Plan to read"
         case (.wishlist, .album): "Plan to listen"
         case (.wishlist, _): "Plan to watch"
-        case (.inProgress, .book): "Reading"
+        case (.inProgress, .book), (.inProgress, .manga): "Reading"
         case (.inProgress, .album): "Listening"
         case (.inProgress, _): "Watching"
-        case (.finished, .book): "Read"
+        case (.finished, .book), (.finished, .manga): "Read"
         case (.finished, .album): "Listened"
         case (.finished, _): "Watched"
         case (.dropped, _): "Dropped"

@@ -116,7 +116,8 @@ struct PostgresLibraryStore: LibraryStore {
             UPDATE library_items SET status = \(bind: fields.status.rawValue), rating = \(bind: fields.rating),
                 notes = \(bind: fields.notes), is_owned = \(bind: fields.isOwned),
                 finished_at = \(bind: fields.finishedAt), book_page = \(bind: fields.bookPage),
-                book_percent = \(bind: fields.bookPercent),
+                book_percent = \(bind: fields.bookPercent), manga_chapter = \(bind: fields.mangaChapter),
+                manga_volume = \(bind: fields.mangaVolume),
                 status_by_hand = COALESCE(\(bind: fields.statusByHand), status_by_hand), updated_at = now()
             WHERE id = \(bind: id.rawValue)
             """).run()
@@ -158,11 +159,12 @@ struct PostgresLibraryStore: LibraryStore {
         let fields = snapshot.fields
         try await sql.raw("""
         INSERT INTO library_items (id, user_id, title_id, status, is_owned, rating, notes, added_at,
-            updated_at, finished_at, book_page, book_percent, status_by_hand)
+            updated_at, finished_at, book_page, book_percent, manga_chapter, manga_volume, status_by_hand)
         VALUES (\(bind: snapshot.id.rawValue), \(bind: userID.rawValue), \(bind: snapshot.titleID.rawValue),
             \(bind: fields.status.rawValue), \(bind: fields.isOwned), \(bind: fields.rating), \(bind: fields.notes),
             \(bind: snapshot.addedAt), now(), \(bind: fields.finishedAt), \(bind: fields.bookPage),
-            \(bind: fields.bookPercent), \(bind: fields.statusByHand ?? false))
+            \(bind: fields.bookPercent), \(bind: fields.mangaChapter), \(bind: fields.mangaVolume),
+            \(bind: fields.statusByHand ?? false))
         """).run()
         try await insertTicks(snapshot.watched, item: snapshot.id, known: false, sql: sql)
         try await sql.raw("""
@@ -213,22 +215,6 @@ struct PostgresLibraryStore: LibraryStore {
                     \(bind: keys.map(\.episode))::int[]) AS k(id, season, episode)
         ON CONFLICT (library_item_id, season, episode) DO NOTHING
         """).run()
-    }
-
-    /// Locks the user's item row and returns its fields. Another user's item is 404.
-    private static func lockedFields(
-        _ id: LibraryItemID,
-        userID: UserID,
-        sql: any SQLDatabase
-    ) async throws -> ItemFields {
-        guard let row = try await sql.raw("""
-        SELECT status, rating, notes, is_owned, finished_at, book_page, book_percent, status_by_hand
-        FROM library_items
-        WHERE id = \(bind: id.rawValue) AND user_id = \(bind: userID.rawValue) FOR UPDATE
-        """).first(decoding: FieldsRow.self, keyDecodingStrategy: .convertFromSnakeCase),
-            let fields = row.fields
-        else { throw AppError.notFound() }
-        return fields
     }
 
     /// Writes whose ticks were not watched today: an import, and the whole show marked watched
@@ -287,6 +273,25 @@ struct PostgresLibraryStore: LibraryStore {
     }
 }
 
+extension PostgresLibraryStore {
+    /// Locks the user's item row and returns its fields. Another user's item is 404.
+    private static func lockedFields(
+        _ id: LibraryItemID,
+        userID: UserID,
+        sql: any SQLDatabase
+    ) async throws -> ItemFields {
+        guard let row = try await sql.raw("""
+        SELECT status, rating, notes, is_owned, finished_at, book_page, book_percent, manga_chapter, manga_volume,
+            status_by_hand
+        FROM library_items
+        WHERE id = \(bind: id.rawValue) AND user_id = \(bind: userID.rawValue) FOR UPDATE
+        """).first(decoding: FieldsRow.self, keyDecodingStrategy: .convertFromSnakeCase),
+            let fields = row.fields
+        else { throw AppError.notFound() }
+        return fields
+    }
+}
+
 private struct CreatedRow: Decodable {
     let createdAt: Date
 }
@@ -299,13 +304,16 @@ private struct FieldsRow: Decodable {
     let finishedAt: Date?
     let bookPage: Int?
     let bookPercent: Double?
+    let mangaChapter: Int?
+    let mangaVolume: Int?
     let statusByHand: Bool
 
     var fields: ItemFields? {
         LibraryStatus(rawValue: status).map {
             ItemFields(
                 status: $0, rating: rating, notes: notes, isOwned: isOwned, finishedAt: finishedAt,
-                bookPage: bookPage, bookPercent: bookPercent, statusByHand: statusByHand
+                bookPage: bookPage, bookPercent: bookPercent, mangaChapter: mangaChapter, mangaVolume: mangaVolume,
+                statusByHand: statusByHand
             )
         }
     }

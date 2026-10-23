@@ -78,7 +78,7 @@ extension ValidationError {
         case .ratingOutOfRange, .ratingNotInHalfSteps: "rating"
         case .emptyListName: "name"
         case .invalidEpisodeNumber: "episode"
-        case .invalidBookProgress: "progress"
+        case .invalidBookProgress, .invalidMangaProgress: "progress"
         case .unresolvableMediaRef: "mediaRef"
         }
     }

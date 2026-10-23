@@ -9,6 +9,7 @@ public enum ValidationError: Error, Hashable, Sendable, CustomStringConvertible 
     case emptyListName
     case invalidEpisodeNumber(season: Int, episode: Int)
     case invalidBookProgress
+    case invalidMangaProgress
     case unresolvableMediaRef
 
     public var description: String {
@@ -27,6 +28,8 @@ public enum ValidationError: Error, Hashable, Sendable, CustomStringConvertible 
             "Season \(season) episode \(episode) is not a valid episode reference."
         case .invalidBookProgress:
             "Book progress needs a non-negative page or a percent between 0 and 100."
+        case .invalidMangaProgress:
+            "Manga progress needs a non-negative chapter or volume."
         case .unresolvableMediaRef:
             "A media reference needs a title id, an external id, or a title and year."
         }

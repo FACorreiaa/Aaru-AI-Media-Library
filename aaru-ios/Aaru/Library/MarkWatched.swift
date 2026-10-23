@@ -166,7 +166,7 @@ struct MarkWatchedButton: View {
         case .show:
             guard let progress = entry.progress else { return true }
             return progress.watchedCount < progress.airedCount
-        case .book, .album:
+        case .book, .album, .manga:
             return false
         }
     }

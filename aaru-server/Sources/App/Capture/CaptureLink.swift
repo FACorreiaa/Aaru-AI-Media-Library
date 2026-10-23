@@ -27,8 +27,8 @@ enum CaptureLink: Equatable {
         }
     }
 
-    /// /movie/603-the-matrix and /tv/1396 on TMDB, /anime/21/One-Piece on AniList (manga is not a
-    /// kind Aaru keeps yet), /works/OL45804W/Fantastic_Mr_Fox on Open Library.
+    /// /movie/603-the-matrix and /tv/1396 on TMDB, /anime/21/One-Piece and /manga/30013/One-Piece on
+    /// AniList (MNG-001), /works/OL45804W/Fantastic_Mr_Fox on Open Library.
     private static func catalogTitle(host: String, url: URL) -> CaptureLink? {
         let parts = url.pathComponents.filter { $0 != "/" }
         guard parts.count >= 2 else { return nil }
@@ -40,6 +40,8 @@ enum CaptureLink: Equatable {
             return leadingNumber(id).map { title(.show, ExternalIDs(tmdb: $0), url: url) }
         case ("anilist.co", "anime"):
             return leadingNumber(id).map { title(.show, ExternalIDs(anilist: $0), url: url) }
+        case ("anilist.co", "manga"):
+            return leadingNumber(id).map { title(.manga, ExternalIDs(anilist: $0), url: url) }
         case ("openlibrary.org", "works") where id.hasPrefix("OL") && id.hasSuffix("W"):
             return title(.book, ExternalIDs(openLibrary: id), url: url)
         default:

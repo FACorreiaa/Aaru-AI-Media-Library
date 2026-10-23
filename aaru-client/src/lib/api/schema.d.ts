@@ -2071,7 +2071,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Import a public AniList anime list by username. Read and matched in the background, written only after approval. */
+    /** Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval. */
     post: operations['createAniListImport']
     delete?: never
     options?: never
@@ -2845,6 +2845,8 @@ export interface components {
       lastSeason?: number
       lastEpisode?: number
       bookPage?: number
+      /** @description Manga. The last chapter they read. */
+      mangaChapter?: number
       /** Format: date-time */
       finishedAt?: string
       /** Format: date-time */
@@ -2856,6 +2858,8 @@ export interface components {
       anime: number
       book: number
       album: number
+      /** @description MNG-001. Absent from servers before it. */
+      manga?: number
     }
     FriendCompare: {
       /** @description Titles you both plan to watch or read. */
@@ -3497,10 +3501,10 @@ export interface components {
       musicbrainz?: string
     }
     /**
-     * @description `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress.
+     * @description `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
      * @enum {string}
      */
-    MediaType: 'movie' | 'show' | 'book' | 'album'
+    MediaType: 'movie' | 'show' | 'book' | 'album' | 'manga'
     CatalogHit: {
       type: components['schemas']['MediaType']
       title: string
@@ -3508,7 +3512,7 @@ export interface components {
       year?: number
       posterUrl?: string
       overview?: string
-      /** @description Authors, for books; the artist credit, for albums. */
+      /** @description Authors, for books and manga; the artist credit, for albums. */
       byline?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
@@ -3664,7 +3668,7 @@ export interface components {
       runtimeMinutes?: number
       /** @description Shows only. */
       seasons?: components['schemas']['Season'][]
-      /** @description Authors, for books; the artist credit, for albums. */
+      /** @description Authors, for books and manga; the artist credit, for albums. */
       byline?: string
       /** @description Albums only (MUS-001), at most five, most tagged first. */
       genres?: string[]
@@ -3701,8 +3705,12 @@ export interface components {
       isOwned?: boolean
       bookPage?: number
       bookPercent?: number
+      /** @description Manga only. The last chapter read. */
+      mangaChapter?: number
+      /** @description Manga only. The last volume read. */
+      mangaVolume?: number
       /** @description Fields to empty. */
-      clear?: ('rating' | 'notes' | 'bookProgress')[]
+      clear?: ('rating' | 'notes' | 'bookProgress' | 'mangaProgress')[]
     }
     EpisodeWatched: {
       watched: boolean
@@ -3721,6 +3729,11 @@ export interface components {
       page?: number
       percent?: number
     }
+    /** @description MNG-001. Either or both. */
+    MangaProgress: {
+      chapter?: number
+      volume?: number
+    }
     TitleSummary: {
       /** Format: uuid */
       id: string
@@ -3733,10 +3746,14 @@ export interface components {
       backdropUrl?: string
       /** @description Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll"). */
       network?: string
-      /** @description Authors, for books; the artist credit, for albums. */
+      /** @description Authors, for books and manga; the artist credit, for albums. */
       byline?: string
       /** @description Books only, when known (Open Library's median across editions). */
       pageCount?: number
+      /** @description Manga only, once AniList knows it (absent while a series runs). */
+      chapterCount?: number
+      /** @description Manga only, once AniList knows it. */
+      volumeCount?: number
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
     }
@@ -3756,6 +3773,7 @@ export interface components {
       finishedAt?: string
       progress?: components['schemas']['ShowProgress']
       bookProgress?: components['schemas']['BookProgress']
+      mangaProgress?: components['schemas']['MangaProgress']
       /**
        * @description Every watched episode of a show, in order. Only on single-item responses (the item,
        *     and episode and season writes); lists and sync leave it out.
@@ -4023,7 +4041,7 @@ export interface components {
       isPartial: boolean
       totals: components['schemas']['StatsTotals']
       prior?: components['schemas']['StatsTotals']
-      /** @description Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`. */
+      /** @description Movie, show, anime and book, always, in that order; then album (MUS-001) and manga (MNG-001), each only when the period finished one. They sum to `totals`. */
       byKind: components['schemas']['StatsKind'][]
       /** @description One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order. */
       buckets: components['schemas']['StatsBucket'][]
@@ -4177,13 +4195,15 @@ export interface components {
       booksFinished: number
       /** @description MUS-001. Albums have no minutes. */
       albumsFinished: number
+      /** @description MNG-001. Manga has no minutes. */
+      mangaFinished?: number
     }
     StatsKind: {
       /**
        * @description Anime is its own kind, films and shows alike; never counted again as either.
        * @enum {string}
        */
-      kind: 'movie' | 'show' | 'anime' | 'book' | 'album'
+      kind: 'movie' | 'show' | 'anime' | 'book' | 'album' | 'manga'
       episodes: number
       minutes: number
       finished: number
@@ -6909,8 +6929,8 @@ export interface operations {
     parameters: {
       query: {
         q: string
-        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001). */
-        type: 'all' | 'movie' | 'show' | 'anime' | 'book' | 'album'
+        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList (MNG-001; empty and incomplete while AniList is down). */
+        type: 'all' | 'movie' | 'show' | 'anime' | 'book' | 'album' | 'manga'
       }
       header?: never
       path?: never
@@ -7678,7 +7698,7 @@ export interface operations {
   createCSVImport: {
     parameters: {
       query: {
-        /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
+        /** @description `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
         source:
           | 'auto'
           | 'imdb'

@@ -23,6 +23,9 @@ struct ImportRow: Codable, Sendable, Equatable {
     var unsupported: String?
     /// Watched episodes, for shows (Trakt history). Ticked on create; missing ones filled on update.
     var watched: [EpisodeKey]?
+    /// Manga (MNG-002): the last chapter and volume read. Moved forward on update, never back.
+    var mangaChapter: Int?
+    var mangaVolume: Int?
     /// On a source list only: joins that list, never the library.
     var listOnly: Bool?
     /// Stremio's compressed watched-episode bitfield, still undecoded. The worker turns it into
@@ -49,6 +52,11 @@ struct ImportRow: Codable, Sendable, Equatable {
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)
+    }
+
+    /// Ticks or a reading position: the row is under way even when it names no status.
+    var hasProgress: Bool {
+        watched?.isEmpty == false || (mangaChapter ?? 0) > 0 || (mangaVolume ?? 0) > 0
     }
 }
 

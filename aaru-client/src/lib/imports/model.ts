@@ -38,7 +38,7 @@ export const FILE_SOURCES = [
   {
     source: 'mal',
     label: 'MyAnimeList',
-    hint: 'MAL → Profile → Export → Anime list. The .xml.gz file as downloaded.',
+    hint: 'MAL → Profile → Export → Anime list or Manga list. The .xml.gz file as downloaded.',
     accept: '.xml,.gz,application/xml,text/xml,application/gzip',
   },
   {

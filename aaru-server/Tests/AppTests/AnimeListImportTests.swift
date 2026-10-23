@@ -62,6 +62,16 @@ struct AnimeListImportTests {
     func anilistReader() async throws {
         let stub = StubTransport { request in
             let body = String(data: request.body ?? Data(), encoding: .utf8) ?? ""
+            if body.contains("type: MANGA") {
+                return OutboundResponse(status: 200, body: Data(#"""
+                {"data":{"MediaListCollection":{"lists":[{"entries":[
+                  {"status":"CURRENT","progress":112,"progressVolumes":12,"score":9,
+                   "completedAt":{"year":null,"month":null,"day":null},
+                   "media":{"id":30002,"idMal":2,"format":"MANGA","chapters":null,"volumes":null,
+                            "title":{"romaji":"Berserk","english":null},"startDate":{"year":1989}}}
+                ]}]}}}
+                """#.utf8))
+            }
             if body.contains("\"hidden\"") {
                 return OutboundResponse(
                     status: 404,
@@ -83,13 +93,15 @@ struct AnimeListImportTests {
         let anilist = AniListCatalog(client: ProviderClient(
             name: "anilist", transport: stub, pacer: RequestPacer(requestsPerSecond: 1000, burst: 100)
         ))
-        let rows = try await anilist.animeRows(userName: "someone")
-        #expect(rows.map(\.ids.anilist) == ["154587", "21"])
+        let rows = try await anilist.listRows(userName: "someone")
+        #expect(rows.map(\.ids.anilist) == ["154587", "21", "30002"])
         #expect(rows[0].ids.mal == "52991" && rows[0].title == "Frieren" && rows[0].year == 2023)
         #expect(rows[0].status == .inProgress && rows[0].rating == 8.5 && rows[0].watched?.count == 3)
         #expect(rows[1].type == .movie && rows[1].status == .finished && rows[1].rating == nil)
         #expect(rows[1].finishedAt == Date.catalogDay("2021-03-04"))
-        await #expect(throws: ProviderError.self) { try await anilist.animeRows(userName: "hidden") }
+        #expect(rows[2].type == .manga && rows[2].ids.mal == "2" && rows[2].status == .inProgress)
+        #expect(rows[2].mangaChapter == 112 && rows[2].mangaVolume == 12 && rows[2].watched == nil)
+        await #expect(throws: ProviderError.self) { try await anilist.listRows(userName: "hidden") }
     }
 
     @Test("A MAL upload plans through AniList, ticks watched episodes on approval")

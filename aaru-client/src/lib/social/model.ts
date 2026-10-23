@@ -55,7 +55,7 @@ export function inviterName(user: SocialUser): string {
 
 /** The line an invite carrying a title says, in the sender's voice. */
 export function invitePlea(title: string, kind: MediaKind): string {
-  if (kind === 'book') return `Read ${title} with me.`
+  if (kind === 'book' || kind === 'manga') return `Read ${title} with me.`
   if (kind === 'album') return `Listen to ${title} with me.`
   return `Watch ${title} with me.`
 }
@@ -104,6 +104,7 @@ export function itemProgress(item: FriendItem): string | null {
   if (item.lastSeason != null && item.lastEpisode != null)
     return `S${item.lastSeason} · E${item.lastEpisode}`
   if (item.bookPage != null) return `Page ${item.bookPage}`
+  if (item.mangaChapter != null) return `Ch. ${item.mangaChapter}`
   return null
 }
 
@@ -114,6 +115,7 @@ export function countsLine(counts: FriendProfile['counts']): string | null {
     [counts.movie, 'film', 'films'],
     [counts.show, 'show', 'shows'],
     [counts.anime, 'anime', 'anime'],
+    [counts.manga ?? 0, 'manga', 'manga'],
     [counts.book, 'book', 'books'],
     [counts.album, 'album', 'albums'],
   ]

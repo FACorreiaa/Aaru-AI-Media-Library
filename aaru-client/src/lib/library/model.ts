@@ -15,11 +15,12 @@ export const SEARCH_TYPES = [
   'anime',
   'book',
   'album',
+  'manga',
 ] as const
 export type SearchType = (typeof SEARCH_TYPES)[number]
 
 /** How the library is browsed: anime is its own shelf even though it is a show or a film. */
-export type MediaKind = 'film' | 'show' | 'anime' | 'book' | 'album'
+export type MediaKind = 'film' | 'show' | 'anime' | 'manga' | 'book' | 'album'
 
 export const KINDS: Array<{
   kind: MediaKind
@@ -29,6 +30,7 @@ export const KINDS: Array<{
   { kind: 'film', label: 'Films', search: 'movie' },
   { kind: 'show', label: 'Shows', search: 'show' },
   { kind: 'anime', label: 'Anime', search: 'anime' },
+  { kind: 'manga', label: 'Manga', search: 'manga' },
   { kind: 'book', label: 'Books', search: 'book' },
   { kind: 'album', label: 'Music', search: 'album' },
 ]
@@ -38,6 +40,7 @@ const KIND_NAMES: Record<MediaKind, string> = {
   film: 'Film',
   show: 'Show',
   anime: 'Anime',
+  manga: 'Manga',
   book: 'Book',
   album: 'Album',
 }
@@ -85,7 +88,7 @@ const NEUTRAL_LABELS: Record<LibraryStatus, string> = {
 
 function labelsFor(kind: MediaKind | null): Record<LibraryStatus, string> {
   if (kind === null) return NEUTRAL_LABELS
-  if (kind === 'book') return BOOK_LABELS
+  if (kind === 'book' || kind === 'manga') return BOOK_LABELS
   if (kind === 'album') return LISTEN_LABELS
   return VIDEO_LABELS
 }
@@ -110,6 +113,7 @@ export function statusOptions(
 export function kindOf(type: MediaType, isAnime: boolean): MediaKind {
   if (type === 'book') return 'book'
   if (type === 'album') return 'album'
+  if (type === 'manga') return 'manga'
   if (isAnime) return 'anime'
   return type === 'movie' ? 'film' : 'show'
 }
@@ -133,10 +137,26 @@ export interface LibraryRow {
   updatedAt: string
 }
 
+/** Where a manga reader is (MNG-001): "Ch. 112 of 364 · Vol. 12", either part alone, or
+ * undefined before they log any. */
+export function mangaProgressLabel(entry: LibraryEntry): string | undefined {
+  const chapter = entry.mangaProgress?.chapter
+  const volume = entry.mangaProgress?.volume
+  const parts: string[] = []
+  if (chapter != null) {
+    const total = entry.title.chapterCount
+    parts.push(total ? `Ch. ${chapter} of ${total}` : `Ch. ${chapter}`)
+  }
+  if (volume != null) parts.push(`Vol. ${volume}`)
+  return parts.length > 0 ? parts.join(' · ') : undefined
+}
+
 export function toRow(entry: LibraryEntry): LibraryRow {
   let detail: string | undefined
   if (entry.progress && entry.progress.airedCount > 0) {
     detail = `${entry.progress.watchedCount} of ${entry.progress.airedCount} episodes`
+  } else if (entry.mangaProgress) {
+    detail = mangaProgressLabel(entry)
   } else if (entry.bookProgress?.page != null) {
     detail = `Page ${entry.bookProgress.page}`
   } else if (entry.bookProgress?.percent != null) {

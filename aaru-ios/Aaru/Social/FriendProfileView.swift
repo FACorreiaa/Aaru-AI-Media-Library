@@ -178,7 +178,8 @@ private struct ProfileHeader: View {
     static func countsLine(_ counts: Components.Schemas.KindCounts) -> String? {
         let parts = [
             Self.count(counts.movie, "film", "films"), Self.count(counts.show, "show", "shows"),
-            Self.count(counts.anime, "anime", "anime"), Self.count(counts.book, "book", "books"),
+            Self.count(counts.anime, "anime", "anime"), Self.count(counts.manga ?? 0, "manga", "manga"),
+            Self.count(counts.book, "book", "books"),
             Self.count(counts.album, "album", "albums"),
         ].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
@@ -241,6 +242,6 @@ private extension FriendItem {
         if let season = lastSeason, let episode = lastEpisode {
             return EpisodeCode.short(season: season, number: episode)
         }
-        return bookPage.map { "Page \($0)" }
+        return bookPage.map { "Page \($0)" } ?? mangaChapter.map { "Ch. \($0)" }
     }
 }

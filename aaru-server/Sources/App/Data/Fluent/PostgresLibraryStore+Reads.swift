@@ -129,11 +129,14 @@ extension PostgresLibraryStore {
             let finishedAt: Date?
             let bookPage: Int?
             let bookPercent: Double?
+            let mangaChapter: Int?
+            let mangaVolume: Int?
             let statusByHand: Bool
         }
         let sql = try sqlDatabase(database)
         let rows = try await sql.raw("""
-        SELECT id, title_id, status, rating, notes, is_owned, finished_at, book_page, book_percent, status_by_hand
+        SELECT id, title_id, status, rating, notes, is_owned, finished_at, book_page, book_percent, manga_chapter,
+            manga_volume, status_by_hand
         FROM library_items
         WHERE user_id = \(bind: userID.rawValue) AND title_id = ANY(\(bind: titleIDs.map(\.rawValue)))
         """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
@@ -146,7 +149,8 @@ extension PostgresLibraryStore {
                 itemID: id,
                 fields: ItemFields(
                     status: status, rating: row.rating, notes: row.notes, isOwned: row.isOwned,
-                    finishedAt: row.finishedAt, bookPage: row.bookPage, bookPercent: row.bookPercent
+                    finishedAt: row.finishedAt, bookPage: row.bookPage, bookPercent: row.bookPercent,
+                    mangaChapter: row.mangaChapter, mangaVolume: row.mangaVolume
                 ),
                 statusByHand: row.statusByHand,
                 watched: watched[id] ?? []
@@ -236,11 +240,11 @@ extension PostgresLibraryStore {
         """
         let query: SQLQueryString = """
         SELECT li.id, li.title_id, li.status, li.rating, li.notes, li.is_owned, li.added_at, li.updated_at,
-            li.finished_at, li.book_page, li.book_percent,
+            li.finished_at, li.book_page, li.book_percent, li.manga_chapter, li.manga_volume,
             (extract(epoch FROM li.updated_at) * 1000000)::bigint AS updated_micros,
             t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.backdrop_url, t.network, t.is_anime,
-            t.byline, t.page_count, t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn, t.open_library, t.anilist, t.mal,
-            t.anidb, t.musicbrainz,
+            t.byline, t.page_count, t.chapter_count, t.volume_count, t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn,
+            t.open_library, t.anilist, t.mal, t.anidb, t.musicbrainz,
             (SELECT count(*)::int FROM episode_progress ep WHERE ep.library_item_id = li.id AND ep.season > 0)
                 AS watched_count,
             (SELECT count(*)::int FROM show_episodes se WHERE se.title_id = li.title_id AND se.season > 0
@@ -274,6 +278,8 @@ private struct EntryRow: Decodable {
     let finishedAt: Date?
     let bookPage: Int?
     let bookPercent: Double?
+    let mangaChapter: Int?
+    let mangaVolume: Int?
     let updatedMicros: Int64
     let type: String
     let title: String
@@ -286,6 +292,8 @@ private struct EntryRow: Decodable {
     let isAnime: Bool
     let byline: String?
     let pageCount: Int?
+    let chapterCount: Int?
+    let volumeCount: Int?
     let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb, musicbrainz: String?
     let watchedCount: Int
     let airedCount: Int
@@ -311,6 +319,8 @@ private struct EntryRow: Decodable {
             synopsis: synopsis, posterURL: posterUrl.flatMap(URL.init(string:)),
             backdropURL: backdropUrl.flatMap(URL.init(string:)), network: network, byline: byline,
             pageCount: pageCount,
+            chapterCount: chapterCount,
+            volumeCount: volumeCount,
             ids: ExternalIDs(
                 tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
                 openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb, musicbrainz: musicbrainz
@@ -327,7 +337,8 @@ private struct EntryRow: Decodable {
                 airedCount: airedCount,
                 nextEpisode: next
             )
-                : nil
+                : nil,
+            mangaProgress: type == .manga ? (mangaChapter, mangaVolume) : nil
         )
     }
 }

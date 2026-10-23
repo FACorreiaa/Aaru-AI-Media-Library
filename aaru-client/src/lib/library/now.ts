@@ -1,4 +1,4 @@
-import { kindOf } from './model'
+import { kindOf, mangaProgressLabel } from './model'
 import type { LibraryEntry, MediaKind } from './model'
 
 // APP-017: "Now" at the top of Library — what the user is in the middle of, grouped the way they
@@ -33,7 +33,7 @@ const TITLES: Record<NowGroup, string> = {
 /** The kinds a group holds, so a kind chip narrows Now to its own group. */
 export const GROUP_KINDS: Record<NowGroup, MediaKind[]> = {
   watching: ['film', 'show', 'anime'],
-  reading: ['book'],
+  reading: ['book', 'manga'],
   listening: ['album'],
 }
 
@@ -54,6 +54,16 @@ export function nowItem(entry: LibraryEntry): NowItem {
             label: `S${next.season} · E${next.number}`,
           }
         : undefined,
+    }
+  }
+  if (kind === 'manga') {
+    const chapter = entry.mangaProgress?.chapter
+    const total = entry.title.chapterCount
+    return {
+      entry,
+      kind,
+      done: chapter != null && total ? Math.min(1, chapter / total) : undefined,
+      progressLabel: mangaProgressLabel(entry) ?? 'Just started',
     }
   }
   const book = entry.bookProgress
