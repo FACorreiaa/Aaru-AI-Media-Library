@@ -4901,6 +4901,10 @@ public enum Components {
             public var lastEpisode: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/FriendItem/bookPage`.
             public var bookPage: Swift.Int?
+            /// Manga. The last chapter they read.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendItem/mangaChapter`.
+            public var mangaChapter: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/FriendItem/finishedAt`.
             public var finishedAt: Foundation.Date?
             /// - Remark: Generated from `#/components/schemas/FriendItem/updatedAt`.
@@ -4914,6 +4918,7 @@ public enum Components {
             ///   - lastSeason: Shows. The last episode they ticked.
             ///   - lastEpisode:
             ///   - bookPage:
+            ///   - mangaChapter: Manga. The last chapter they read.
             ///   - finishedAt:
             ///   - updatedAt:
             public init(
@@ -4923,6 +4928,7 @@ public enum Components {
                 lastSeason: Swift.Int? = nil,
                 lastEpisode: Swift.Int? = nil,
                 bookPage: Swift.Int? = nil,
+                mangaChapter: Swift.Int? = nil,
                 finishedAt: Foundation.Date? = nil,
                 updatedAt: Foundation.Date
             ) {
@@ -4932,6 +4938,7 @@ public enum Components {
                 self.lastSeason = lastSeason
                 self.lastEpisode = lastEpisode
                 self.bookPage = bookPage
+                self.mangaChapter = mangaChapter
                 self.finishedAt = finishedAt
                 self.updatedAt = updatedAt
             }
@@ -4942,6 +4949,7 @@ public enum Components {
                 case lastSeason
                 case lastEpisode
                 case bookPage
+                case mangaChapter
                 case finishedAt
                 case updatedAt
             }
@@ -4958,6 +4966,10 @@ public enum Components {
             public var book: Swift.Int
             /// - Remark: Generated from `#/components/schemas/KindCounts/album`.
             public var album: Swift.Int
+            /// MNG-001. Absent from servers before it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/KindCounts/manga`.
+            public var manga: Swift.Int?
             /// Creates a new `KindCounts`.
             ///
             /// - Parameters:
@@ -4966,18 +4978,21 @@ public enum Components {
             ///   - anime:
             ///   - book:
             ///   - album:
+            ///   - manga: MNG-001. Absent from servers before it.
             public init(
                 movie: Swift.Int,
                 show: Swift.Int,
                 anime: Swift.Int,
                 book: Swift.Int,
-                album: Swift.Int
+                album: Swift.Int,
+                manga: Swift.Int? = nil
             ) {
                 self.movie = movie
                 self.show = show
                 self.anime = anime
                 self.book = book
                 self.album = album
+                self.manga = manga
             }
             public enum CodingKeys: String, CodingKey {
                 case movie
@@ -4985,6 +5000,7 @@ public enum Components {
                 case anime
                 case book
                 case album
+                case manga
             }
         }
         /// - Remark: Generated from `#/components/schemas/FriendCompare`.
@@ -7739,7 +7755,7 @@ public enum Components {
                 case musicbrainz
             }
         }
-        /// `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress.
+        /// `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
         ///
         /// - Remark: Generated from `#/components/schemas/MediaType`.
         @frozen public enum MediaType: String, Codable, Hashable, Sendable, CaseIterable {
@@ -7747,6 +7763,7 @@ public enum Components {
             case show = "show"
             case book = "book"
             case album = "album"
+            case manga = "manga"
         }
         /// - Remark: Generated from `#/components/schemas/CatalogHit`.
         public struct CatalogHit: Codable, Hashable, Sendable {
@@ -7762,7 +7779,7 @@ public enum Components {
             public var posterUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CatalogHit/overview`.
             public var overview: Swift.String?
-            /// Authors, for books; the artist credit, for albums.
+            /// Authors, for books and manga; the artist credit, for albums.
             ///
             /// - Remark: Generated from `#/components/schemas/CatalogHit/byline`.
             public var byline: Swift.String?
@@ -7787,7 +7804,7 @@ public enum Components {
             ///   - year:
             ///   - posterUrl:
             ///   - overview:
-            ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - byline: Authors, for books and manga; the artist credit, for albums.
             ///   - isAnime:
             ///   - ids:
             ///   - libraryItemId: The caller's library item for this title, when they have one. Discover only.
@@ -8471,7 +8488,7 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleDetail/seasons`.
             public var seasons: [Components.Schemas.Season]?
-            /// Authors, for books; the artist credit, for albums.
+            /// Authors, for books and manga; the artist credit, for albums.
             ///
             /// - Remark: Generated from `#/components/schemas/TitleDetail/byline`.
             public var byline: Swift.String?
@@ -8498,7 +8515,7 @@ public enum Components {
             ///   - status:
             ///   - runtimeMinutes:
             ///   - seasons: Shows only.
-            ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - byline: Authors, for books and manga; the artist credit, for albums.
             ///   - genres: Albums only (MUS-001), at most five, most tagged first.
             ///   - tracks: Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet.
             public init(
@@ -8678,11 +8695,20 @@ public enum Components {
             public var bookPage: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/bookPercent`.
             public var bookPercent: Swift.Double?
+            /// Manga only. The last chapter read.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/mangaChapter`.
+            public var mangaChapter: Swift.Int?
+            /// Manga only. The last volume read.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/mangaVolume`.
+            public var mangaVolume: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/ClearPayload`.
             @frozen public enum ClearPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case rating = "rating"
                 case notes = "notes"
                 case bookProgress = "bookProgress"
+                case mangaProgress = "mangaProgress"
             }
             /// Fields to empty.
             ///
@@ -8701,6 +8727,8 @@ public enum Components {
             ///   - isOwned:
             ///   - bookPage:
             ///   - bookPercent:
+            ///   - mangaChapter: Manga only. The last chapter read.
+            ///   - mangaVolume: Manga only. The last volume read.
             ///   - clear: Fields to empty.
             public init(
                 status: Components.Schemas.LibraryStatus? = nil,
@@ -8709,6 +8737,8 @@ public enum Components {
                 isOwned: Swift.Bool? = nil,
                 bookPage: Swift.Int? = nil,
                 bookPercent: Swift.Double? = nil,
+                mangaChapter: Swift.Int? = nil,
+                mangaVolume: Swift.Int? = nil,
                 clear: Components.Schemas.LibraryItemPatch.ClearPayload? = nil
             ) {
                 self.status = status
@@ -8717,6 +8747,8 @@ public enum Components {
                 self.isOwned = isOwned
                 self.bookPage = bookPage
                 self.bookPercent = bookPercent
+                self.mangaChapter = mangaChapter
+                self.mangaVolume = mangaVolume
                 self.clear = clear
             }
             public enum CodingKeys: String, CodingKey {
@@ -8726,6 +8758,8 @@ public enum Components {
                 case isOwned
                 case bookPage
                 case bookPercent
+                case mangaChapter
+                case mangaVolume
                 case clear
             }
         }
@@ -8821,6 +8855,31 @@ public enum Components {
                 case percent
             }
         }
+        /// MNG-001. Either or both.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MangaProgress`.
+        public struct MangaProgress: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MangaProgress/chapter`.
+            public var chapter: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/MangaProgress/volume`.
+            public var volume: Swift.Int?
+            /// Creates a new `MangaProgress`.
+            ///
+            /// - Parameters:
+            ///   - chapter:
+            ///   - volume:
+            public init(
+                chapter: Swift.Int? = nil,
+                volume: Swift.Int? = nil
+            ) {
+                self.chapter = chapter
+                self.volume = volume
+            }
+            public enum CodingKeys: String, CodingKey {
+                case chapter
+                case volume
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/TitleSummary`.
         public struct TitleSummary: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/TitleSummary/id`.
@@ -8843,7 +8902,7 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/network`.
             public var network: Swift.String?
-            /// Authors, for books; the artist credit, for albums.
+            /// Authors, for books and manga; the artist credit, for albums.
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/byline`.
             public var byline: Swift.String?
@@ -8851,6 +8910,14 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/pageCount`.
             public var pageCount: Swift.Int?
+            /// Manga only, once AniList knows it (absent while a series runs).
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/chapterCount`.
+            public var chapterCount: Swift.Int?
+            /// Manga only, once AniList knows it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/volumeCount`.
+            public var volumeCount: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/isAnime`.
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/TitleSummary/ids`.
@@ -8866,8 +8933,10 @@ public enum Components {
             ///   - posterUrl:
             ///   - backdropUrl: Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
             ///   - network: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
-            ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - byline: Authors, for books and manga; the artist credit, for albums.
             ///   - pageCount: Books only, when known (Open Library's median across editions).
+            ///   - chapterCount: Manga only, once AniList knows it (absent while a series runs).
+            ///   - volumeCount: Manga only, once AniList knows it.
             ///   - isAnime:
             ///   - ids:
             public init(
@@ -8881,6 +8950,8 @@ public enum Components {
                 network: Swift.String? = nil,
                 byline: Swift.String? = nil,
                 pageCount: Swift.Int? = nil,
+                chapterCount: Swift.Int? = nil,
+                volumeCount: Swift.Int? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds
             ) {
@@ -8894,6 +8965,8 @@ public enum Components {
                 self.network = network
                 self.byline = byline
                 self.pageCount = pageCount
+                self.chapterCount = chapterCount
+                self.volumeCount = volumeCount
                 self.isAnime = isAnime
                 self.ids = ids
             }
@@ -8908,6 +8981,8 @@ public enum Components {
                 case network
                 case byline
                 case pageCount
+                case chapterCount
+                case volumeCount
                 case isAnime
                 case ids
             }
@@ -8936,6 +9011,8 @@ public enum Components {
             public var progress: Components.Schemas.ShowProgress?
             /// - Remark: Generated from `#/components/schemas/LibraryEntry/bookProgress`.
             public var bookProgress: Components.Schemas.BookProgress?
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/mangaProgress`.
+            public var mangaProgress: Components.Schemas.MangaProgress?
             /// Every watched episode of a show, in order. Only on single-item responses (the item,
             /// and episode and season writes); lists and sync leave it out.
             ///
@@ -8956,6 +9033,7 @@ public enum Components {
             ///   - finishedAt:
             ///   - progress:
             ///   - bookProgress:
+            ///   - mangaProgress:
             ///   - watchedEpisodes: Every watched episode of a show, in order. Only on single-item responses (the item,
             public init(
                 id: Swift.String,
@@ -8969,6 +9047,7 @@ public enum Components {
                 finishedAt: Foundation.Date? = nil,
                 progress: Components.Schemas.ShowProgress? = nil,
                 bookProgress: Components.Schemas.BookProgress? = nil,
+                mangaProgress: Components.Schemas.MangaProgress? = nil,
                 watchedEpisodes: [Components.Schemas.EpisodeRef]? = nil
             ) {
                 self.id = id
@@ -8982,6 +9061,7 @@ public enum Components {
                 self.finishedAt = finishedAt
                 self.progress = progress
                 self.bookProgress = bookProgress
+                self.mangaProgress = mangaProgress
                 self.watchedEpisodes = watchedEpisodes
             }
             public enum CodingKeys: String, CodingKey {
@@ -8996,6 +9076,7 @@ public enum Components {
                 case finishedAt
                 case progress
                 case bookProgress
+                case mangaProgress
                 case watchedEpisodes
             }
         }
@@ -10205,7 +10286,7 @@ public enum Components {
             public var totals: Components.Schemas.StatsTotals
             /// - Remark: Generated from `#/components/schemas/Stats/prior`.
             public var prior: Components.Schemas.StatsTotals?
-            /// Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`.
+            /// Movie, show, anime and book, always, in that order; then album (MUS-001) and manga (MNG-001), each only when the period finished one. They sum to `totals`.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/byKind`.
             public var byKind: [Components.Schemas.StatsKind]
@@ -10264,7 +10345,7 @@ public enum Components {
             ///   - isPartial: The period is not over yet in the user's time zone (always true for `all`).
             ///   - totals:
             ///   - prior:
-            ///   - byKind: Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`.
+            ///   - byKind: Movie, show, anime and book, always, in that order; then album (MUS-001) and manga (MNG-001), each only when the period finished one. They sum to `totals`.
             ///   - buckets: One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order.
             ///   - busiest:
             ///   - mostEpisodes:
@@ -10915,6 +10996,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/StatsTotals/albumsFinished`.
             public var albumsFinished: Swift.Int
+            /// MNG-001. Manga has no minutes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/mangaFinished`.
+            public var mangaFinished: Swift.Int?
             /// Creates a new `StatsTotals`.
             ///
             /// - Parameters:
@@ -10926,6 +11011,7 @@ public enum Components {
             ///   - animeFinished: Anime shows and films. Not counted again as shows or movies.
             ///   - booksFinished:
             ///   - albumsFinished: MUS-001. Albums have no minutes.
+            ///   - mangaFinished: MNG-001. Manga has no minutes.
             public init(
                 episodesWatched: Swift.Int,
                 minutesWatched: Swift.Int,
@@ -10934,7 +11020,8 @@ public enum Components {
                 showsFinished: Swift.Int,
                 animeFinished: Swift.Int,
                 booksFinished: Swift.Int,
-                albumsFinished: Swift.Int
+                albumsFinished: Swift.Int,
+                mangaFinished: Swift.Int? = nil
             ) {
                 self.episodesWatched = episodesWatched
                 self.minutesWatched = minutesWatched
@@ -10944,6 +11031,7 @@ public enum Components {
                 self.animeFinished = animeFinished
                 self.booksFinished = booksFinished
                 self.albumsFinished = albumsFinished
+                self.mangaFinished = mangaFinished
             }
             public enum CodingKeys: String, CodingKey {
                 case episodesWatched
@@ -10954,6 +11042,7 @@ public enum Components {
                 case animeFinished
                 case booksFinished
                 case albumsFinished
+                case mangaFinished
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsKind`.
@@ -10967,6 +11056,7 @@ public enum Components {
                 case anime = "anime"
                 case book = "book"
                 case album = "album"
+                case manga = "manga"
             }
             /// Anime is its own kind, films and shows alike; never counted again as either.
             ///
@@ -27195,8 +27285,9 @@ public enum Operations {
                     case anime = "anime"
                     case book = "book"
                     case album = "album"
+                    case manga = "manga"
                 }
-                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
+                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList (MNG-001; empty and incomplete while AniList is down).
                 ///
                 /// - Remark: Generated from `#/paths/v1/search/GET/query/type`.
                 public var _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -27204,7 +27295,7 @@ public enum Operations {
                 ///
                 /// - Parameters:
                 ///   - q:
-                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
+                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList (MNG-001; empty and incomplete while AniList is down).
                 public init(
                     q: Swift.String,
                     _type: Operations.SearchCatalog.Input.Query._TypePayload

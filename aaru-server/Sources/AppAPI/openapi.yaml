@@ -1764,10 +1764,11 @@ paths:
           description: >-
             `all` searches films, shows and anime together (TMDB and AniList in parallel, merged;
             books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB;
-            `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
+            `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList
+            (MNG-001; empty and incomplete while AniList is down).
           schema:
             type: string
-            enum: [all, movie, show, anime, book, album]
+            enum: [all, movie, show, anime, book, album, manga]
       responses:
         '200':
           description: >-
@@ -3373,6 +3374,7 @@ components:
         lastSeason: {type: integer, description: Shows. The last episode they ticked.}
         lastEpisode: {type: integer}
         bookPage: {type: integer}
+        mangaChapter: {type: integer, description: Manga. The last chapter they read.}
         finishedAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
     KindCounts:
@@ -3384,6 +3386,7 @@ components:
         anime: {type: integer}
         book: {type: integer}
         album: {type: integer}
+        manga: {type: integer, description: MNG-001. Absent from servers before it.}
     FriendCompare:
       type: object
       required: [bothWant, bothFinished, theyLoved]
@@ -4091,8 +4094,9 @@ components:
       type: string
       description: >-
         `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and
-        notes, no progress.
-      enum: [movie, show, book, album]
+        notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa,
+        manhua, one-shots and light novels), read by chapter and volume.
+      enum: [movie, show, book, album, manga]
     CatalogHit:
       type: object
       required: [type, title, isAnime, ids]
@@ -4105,7 +4109,7 @@ components:
         overview: {type: string}
         byline:
           type: string
-          description: Authors, for books; the artist credit, for albums.
+          description: Authors, for books and manga; the artist credit, for albums.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
         libraryItemId:
@@ -4340,7 +4344,7 @@ components:
           items: {$ref: '#/components/schemas/Season'}
         byline:
           type: string
-          description: Authors, for books; the artist credit, for albums.
+          description: Authors, for books and manga; the artist credit, for albums.
         genres:
           type: array
           description: Albums only (MUS-001), at most five, most tagged first.
@@ -4393,12 +4397,14 @@ components:
         isOwned: {type: boolean}
         bookPage: {type: integer}
         bookPercent: {type: number}
+        mangaChapter: {type: integer, description: Manga only. The last chapter read.}
+        mangaVolume: {type: integer, description: Manga only. The last volume read.}
         clear:
           type: array
           description: Fields to empty.
           items:
             type: string
-            enum: [rating, notes, bookProgress]
+            enum: [rating, notes, bookProgress, mangaProgress]
     EpisodeWatched:
       type: object
       required: [watched]
@@ -4423,6 +4429,12 @@ components:
       properties:
         page: {type: integer}
         percent: {type: number}
+    MangaProgress:
+      type: object
+      description: MNG-001. Either or both.
+      properties:
+        chapter: {type: integer}
+        volume: {type: integer}
     TitleSummary:
       type: object
       required: [id, type, title, isAnime, ids]
@@ -4441,10 +4453,16 @@ components:
           description: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
         byline:
           type: string
-          description: Authors, for books; the artist credit, for albums.
+          description: Authors, for books and manga; the artist credit, for albums.
         pageCount:
           type: integer
           description: Books only, when known (Open Library's median across editions).
+        chapterCount:
+          type: integer
+          description: Manga only, once AniList knows it (absent while a series runs).
+        volumeCount:
+          type: integer
+          description: Manga only, once AniList knows it.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
     LibraryEntry:
@@ -4462,6 +4480,7 @@ components:
         finishedAt: {type: string, format: date-time}
         progress: {$ref: '#/components/schemas/ShowProgress'}
         bookProgress: {$ref: '#/components/schemas/BookProgress'}
+        mangaProgress: {$ref: '#/components/schemas/MangaProgress'}
         watchedEpisodes:
           type: array
           description: |
@@ -4848,8 +4867,8 @@ components:
         byKind:
           type: array
           description: >-
-            Movie, show, anime and book, always, in that order; then album (MUS-001) only when the
-            period finished one. They sum to `totals`.
+            Movie, show, anime and book, always, in that order; then album (MUS-001) and manga
+            (MNG-001), each only when the period finished one. They sum to `totals`.
           items: {$ref: '#/components/schemas/StatsKind'}
         buckets:
           type: array
@@ -5050,13 +5069,16 @@ components:
         albumsFinished:
           type: integer
           description: MUS-001. Albums have no minutes.
+        mangaFinished:
+          type: integer
+          description: MNG-001. Manga has no minutes.
     StatsKind:
       type: object
       required: [kind, episodes, minutes, finished]
       properties:
         kind:
           type: string
-          enum: [movie, show, anime, book, album]
+          enum: [movie, show, anime, book, album, manga]
           description: Anime is its own kind, films and shows alike; never counted again as either.
         episodes: {type: integer}
         minutes: {type: integer}

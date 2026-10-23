@@ -67,7 +67,8 @@ extension Components.Schemas.FriendProfile {
             guard let title = titles[item.titleID] else { return nil }
             return .init(
                 title: .init(title), status: .init(item.status), rating: item.rating, lastSeason: item.lastSeason,
-                lastEpisode: item.lastEpisode, bookPage: item.bookPage, finishedAt: item.finishedAt,
+                lastEpisode: item.lastEpisode, bookPage: item.bookPage, mangaChapter: item.mangaChapter,
+                finishedAt: item.finishedAt,
                 updatedAt: item.updatedAt
             )
         }
@@ -81,7 +82,7 @@ extension Components.Schemas.FriendProfile {
             counts: shelf.map {
                 .init(
                     movie: $0.counts["movie"] ?? 0, show: $0.counts["show"] ?? 0, anime: $0.counts["anime"] ?? 0,
-                    book: $0.counts["book"] ?? 0, album: $0.counts["album"] ?? 0
+                    book: $0.counts["book"] ?? 0, album: $0.counts["album"] ?? 0, manga: $0.counts["manga"] ?? 0
                 )
             },
             watching: shelf.map { $0.watching.compactMap(item) },

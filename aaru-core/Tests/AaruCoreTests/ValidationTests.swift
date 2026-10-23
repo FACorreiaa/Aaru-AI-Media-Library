@@ -53,6 +53,13 @@ struct ValidationTests {
     }
 
     @Test
+    func mangaProgressRejectsNegativeCounts() {
+        #expect(throws: ValidationError.invalidMangaProgress) { try MangaProgress(chapter: -1) }
+        #expect(throws: ValidationError.invalidMangaProgress) { try MangaProgress(volume: -1) }
+        #expect(throws: Never.self) { try MangaProgress(chapter: 112, volume: 12) }
+    }
+
+    @Test
     func showProgressReportsTheFurthestEpisode() throws {
         let progress = try ShowProgress(watched: [
             EpisodeKey(season: 1, episode: 9),

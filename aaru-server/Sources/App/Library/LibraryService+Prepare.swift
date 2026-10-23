@@ -74,6 +74,7 @@ extension LibraryService {
             fields.isOwned = owned
         }
         try applyBookProgress(patch, to: &fields, type: current.title.type)
+        try applyMangaProgress(patch, to: &fields, type: current.title.type)
         return fields
     }
 
