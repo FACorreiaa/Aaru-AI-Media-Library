@@ -162,6 +162,15 @@ Mark watched (the same write as the Continue card) and Open; no reject and no "n
 until the agent composes it. Same rule on the web (`lib/home/tonight.ts`) and Apple
 (`Home/Tonight.swift`).
 
+**Server-composed, client fallback (2026-10-23, AG-005):** the Field now shows
+`GET /v1/tonight` for the viewer's local day: shows in progress, today's airings, books in
+progress and wishlist films, ranked on the server with template reasons. The last answer is
+kept (Home's cache on Apple, `localStorage` on the web, cleared on sign-out), so Tonight opens
+offline. The device composes it as above only when no answer for today exists. Each pick has
+"Not tonight" (gone for the day) and "Not for me" (ranked lower for 14 days): buttons on the
+web, a "…" menu and a context menu on Apple. The card moves on at once, then Tonight loads
+again. Mark watched shows only when the pick is a show's next episode.
+
 ## 6. The shelf (library as query, not as app section)
 
 Library is a **saved question**.
@@ -978,10 +987,15 @@ sets, brand assets), main wins.
   same in both appearances, so the white owl reads). Its head on the same disc is the agent's
   mark (`OwlMark` on the web, `Image(.owlMark)` on Apple): it breathes slowly while Aaru works
   and holds still under Reduce Motion.
-- **Where the owl lives (owner, 2026-10-23).** Signed-out surfaces, and in the app: beside the
-  Home greeting, in screen-level empty states (`OwlEmpty` / `OwlUnavailableView`, never inside
-  a picker, a filter result, search results or a settings row), on errors, the 404 and the load-failed view, on the recap cover,
-  on an earned badge. Never on a plan card, which an outside connection wrote. Two motions, never both at once: the
+- **Where the owl lives (owner, 2026-10-23).** Signed-out surfaces, and in the app: beside
+  "The Field" on Home, in screen-level empty states (`OwlEmpty` / `OwlUnavailableView`, never
+  inside a picker, a filter result or a settings row), on errors, the 404 and the load-failed
+  view, on the recap cover, on an earned badge. Never on a plan card, which an outside
+  connection wrote.
+- **Poses.** Standing (the poster's owl) by default; **curious** when nothing matches (search,
+  the 404), **sleeping** when nothing airs or you are caught up, **celebrating** for a
+  milestone (the badge reveal, the unlock summary). One owl, four poses: never a new
+  character, and no pose is invented in code. Two motions, never both at once: the
   **breath** means Aaru is working; **idle** (a slow float and an amber glow behind the eyes) is
   the owl at rest, on Home and empty states only. Errors and recap cards stay still. Under
   Reduce Motion the owl never moves.

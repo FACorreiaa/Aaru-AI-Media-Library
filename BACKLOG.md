@@ -57,12 +57,13 @@ library layer stay separate, external IDs stored whenever known, no second backe
   files win over any branch, and `ci-brand.yml` blocks colour literals and other faces
   (BRD-001…003).
 - **The owl lives in the signed-in app too (owner, 2026-10-23).** "The owl never shows": it was
-  on signed-out surfaces only. Now it is also beside the Home greeting, in screen-level empty
+  on signed-out surfaces only. Now it is also beside "The Field" on Home, in screen-level empty
   states, on errors and the 404, on the recap cover and earned badges.
   Where it is not working it idles: a slow float and an amber glow, calmer than the breath that
   means "working", and still under Reduce Motion. No new chat surface: the owl stays in the spots
-  Aaru already speaks from. Poses (curious, sleeping, celebrating) come later from an image
-  generator other than Higgsfield; the poster owl stands in until then (BRD-004).
+  Aaru already speaks from. Poses (curious, sleeping, celebrating) were generated from the owl
+  master with FLUX.1 Kontext [dev], the owner's pick of a free generator other than Higgsfield,
+  and approved by the owner the same day (BRD-004).
 - **Achievements now: the whole of P5's core (owner, 2026-10-22).** Pulled forward before the
   P2 gate, with 0 strangers: the points ledger (GAM-001), levels (GAM-002), streaks (GAM-003),
   badges (GAM-004), the friends leaderboard (GAM-005) and the streak widget (WID-007). The
@@ -438,7 +439,7 @@ account or a stranger that has not happened yet.
 | BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
 | BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
 | BRD-003 | Built | #148 | Owner checks the owl on TestFlight + beta web |
-| BRD-004 | In progress | this PR | Poses not yet generated |
+| BRD-004 | Built | #150, this PR | Owner checks the owl and its poses on TestFlight + beta web |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -594,7 +595,7 @@ account or a stranger that has not happened yet.
 | AG-002 | Open | none | |
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
-| AG-005 | Partial | Tonight/TonightService.swift, `/v1/tonight` | Server built; clients still compose on device |
+| AG-005 | Built, unverified | Tonight/TonightService.swift, `/v1/tonight`; `Home/Tonight.swift`, `lib/home/tonight.ts` | Not seen on a device; reject never checked across a night |
 | AG-006 | Built, unverified | Imports/ImportService+Capture.swift, Capture/, `/v1/imports/capture` | Server only; composer, review screen and Share Extension next. No library-reading tools for text yet |
 | AG-007 | Partial | Agent/ModelProviding.swift, `agent_usage.cost_micros` | Monthly spend metered per user; no own key yet |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
@@ -802,13 +803,14 @@ Motion. The guard then also bans `heron` and the reed mark by name.
 600 px tall in the poster; ask for a 2048 px master before an App Store release.
 
 ### BRD-004 · The owl in the signed-in app · M · owner, 2026-10-23
-The owl appears where a signed-in user looks: beside the Home greeting, in every screen-level
+The owl appears where a signed-in user looks: beside "The Field" on Home, in every screen-level
 empty state (`OwlEmpty` on the web, `OwlUnavailableView` on Apple), on route errors, the 404 and
 the load-failed view, on the recap cover and on an earned badge. Not on a plan card: a plan
 comes from an outside connection ("Claude asks"), and the owl there would say Aaru wrote it.
 Idle owls float slowly with an amber glow; the breath stays the sign that Aaru is working; both
-hold still under Reduce Motion. Then a pose set (curious for search, sleeping for nothing airing,
-celebrating for milestones) generated from the poster owl, swapped in per state.
+hold still under Reduce Motion. Three poses from the owl master (`docs/brand/owl_poses.py`):
+curious on search with no results and the 404, sleeping when nothing airs and when caught up,
+celebrating on an earned badge and the unlock summary.
 
 **Done when:** the owner has seen the owl on Home, an empty state, an error and the recap on
 TestFlight and beta web, and the poses are in.
@@ -3035,7 +3037,11 @@ progress, today's airings, books in progress and wishlist films by a fixed score
 nearness to the end, time on the list, minus rejections in the last 14 days). "Not tonight"
 hides an item for the local day; reasons are templates. `POST /v1/tonight/{id}/feedback`.
 `tonight_picks` records what was shown, for the `tonight_accepted` count (progress on a pick
-within 6 h). Clients still compose Tonight on the device until they read this route.
+within 6 h).
+
+**Built 2026-10-23 (clients):** iOS, Mac and web read `/v1/tonight`, keep the last answer for
+offline, and fall back to the device's composition only without an answer for today. "Not
+tonight" and "Not for me" on every pick.
 
 ### AG-006 · Capture as an import source · L
 **Needs:** AG-003, IMP-005, IMP-011, JOB-001.

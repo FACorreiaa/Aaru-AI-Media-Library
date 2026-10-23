@@ -4,7 +4,7 @@ import {
   useNavigate,
   useRouter,
 } from '@tanstack/solid-router'
-import { Show, createSignal } from 'solid-js'
+import { Show, createSignal, onMount } from 'solid-js'
 import { optionalString } from '../lib/search-params'
 import { safeNext } from '../lib/oauth/model'
 import { rememberNext } from '../lib/session/pending-next'
@@ -29,6 +29,7 @@ import {
   signInWithGoogle,
 } from '../lib/session/session'
 import { forgetAccount } from '../lib/session/query'
+import { forgetTonight } from '../lib/home/tonight-cache'
 
 // The web twin of the Apple apps' welcome screen and email sheet (DESIGN.md §0).
 export const Route = createFileRoute('/sign-in')({
@@ -58,6 +59,8 @@ function SignIn() {
   const [email, setEmail] = createSignal('')
   const [code, setCode] = createSignal('')
   const [working, setWorking] = createSignal(false)
+  // Signed out: the last account's Tonight leaves this browser too.
+  onMount(forgetTonight)
   const [error, setError] = createSignal<string | null>(null)
 
   async function run(action: () => Promise<void>) {

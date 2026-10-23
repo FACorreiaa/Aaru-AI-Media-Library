@@ -17,6 +17,8 @@ struct HomeCache {
     /// Discover rows (DISC-001) load on their own, so they keep their own file. Home and the
     /// Discover tab share it. The rows carry the caller's `libraryItemId`, so sign-out clears it.
     let discoverURL: URL
+    /// The server's Tonight (AG-005) loads on its own too, so it has its own file.
+    let tonightURL: URL
     /// An earlier build's Discover file in another shape; only ever removed.
     private let legacyDiscoverURL: URL
 
@@ -26,6 +28,7 @@ struct HomeCache {
         )) ?? fileManager.temporaryDirectory
         url = base.appendingPathComponent("home.json")
         discoverURL = base.appendingPathComponent("discover-rows.json")
+        tonightURL = base.appendingPathComponent("tonight.json")
         legacyDiscoverURL = base.appendingPathComponent("discover.json")
     }
 
@@ -49,9 +52,20 @@ struct HomeCache {
         try? data.write(to: discoverURL, options: [.atomic, .completeFileProtection])
     }
 
+    func loadTonight() -> Components.Schemas.Tonight? {
+        guard let data = try? Data(contentsOf: tonightURL) else { return nil }
+        return try? JSONDecoder().decode(Components.Schemas.Tonight.self, from: data)
+    }
+
+    func saveTonight(_ tonight: Components.Schemas.Tonight) {
+        guard let data = try? JSONEncoder().encode(tonight) else { return }
+        try? data.write(to: tonightURL, options: [.atomic, .completeFileProtection])
+    }
+
     func clear() {
         try? FileManager.default.removeItem(at: url)
         try? FileManager.default.removeItem(at: discoverURL)
+        try? FileManager.default.removeItem(at: tonightURL)
         try? FileManager.default.removeItem(at: legacyDiscoverURL)
     }
 }

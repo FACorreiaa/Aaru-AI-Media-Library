@@ -27,9 +27,11 @@ extension HomeScreen {
             TonightCard(
                 tonight: tonight,
                 isPending: model.pending.contains(tonight.primary.libraryItemId),
-                wide: !compact
-            ) { entry in Task { await model.markNextWatched(entry) } }
-                .padding(.horizontal, 20)
+                wide: !compact,
+                onSetAside: { pick, verdict in Task { await model.setAside(pick, verdict: verdict) } },
+                onMarkWatched: { entry in Task { await model.markNextWatched(entry) } }
+            )
+            .padding(.horizontal, 20)
         }
     }
 
@@ -69,7 +71,7 @@ extension HomeScreen {
         let playing = model.playingItemIds
         let continuing = model.continueWatching.filter { entry in
             guard !playing.contains(entry.libraryItemId) else { return false }
-            guard case let .continuing(lead)? = model.tonight?.primary else { return true }
+            guard let lead = model.tonight?.primary.markable else { return true }
             return entry.libraryItemId != lead.libraryItemId
         }
         if !continuing.isEmpty {

@@ -32,7 +32,8 @@ struct CatchUpView: View {
             } else if shows.isEmpty {
                 OwlUnavailableView(
                     title: "You are all caught up",
-                    message: "Nothing from your shows aired in the last four weeks without a tick."
+                    message: "Nothing from your shows aired in the last four weeks without a tick.",
+                    pose: .sleeping
                 )
                 .padding(.top, 40)
             } else {

@@ -1,3 +1,4 @@
+import { OwlEmpty } from './Brand'
 import {
   For,
   Show,
@@ -252,8 +253,13 @@ export function SearchPanel(props: {
               hits().length === 0
             }
           >
-            <li class="py-8 text-center text-sm text-muted">
-              No results for "{query().trim()}"
+            <li>
+              <OwlEmpty
+                size="sm"
+                as="p"
+                pose="curious"
+                title={`No results for "${query().trim()}"`}
+              />
             </li>
           </Show>
           <For each={hits()}>

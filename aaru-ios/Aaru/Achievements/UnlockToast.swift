@@ -70,8 +70,8 @@ private struct UnlockToast: View {
                 if let award = unlock.award {
                     BadgeMedallion(badge: award.badge, family: award.family, tier: award.tier, size: 36)
                 } else {
-                    // A summary (an import, the first run) has no one badge to show: the owl tallies.
-                    OwlHead(size: 36)
+                    // A summary (an import, the first run) has no one badge to show: the owl celebrates.
+                    OwlMedallion(size: 36, pose: .celebrating)
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     if let award = unlock.award, let word = BadgeGlyph.tierWord(award.tier, of: award.maxTier) {
@@ -110,6 +110,13 @@ struct BadgeReveal: View {
         VStack(spacing: 20) {
             Spacer()
             BadgeMedallion(badge: award.badge, family: award.family, tier: award.tier, size: 132)
+                // Aaru celebrates it with you (owner, 2026-10-23), as on the web.
+                .overlay(alignment: .bottomTrailing) {
+                    OwlMedallion(size: 56, pose: .celebrating)
+                        .padding(3)
+                        .background(Color(.paper), in: Circle())
+                        .offset(x: 14, y: 6)
+                }
                 .scaleEffect(settled || reduceMotion ? 1 : 0.6)
                 .opacity(settled ? 1 : 0)
             VStack(spacing: 6) {

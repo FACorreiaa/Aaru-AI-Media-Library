@@ -6,6 +6,31 @@ import wordmark from '../assets/brand/wordmark.svg'
 import mascot from '../assets/brand/mascot.webp'
 import mascot2x from '../assets/brand/mascot@2x.webp'
 import owlMark from '../assets/brand/owl-mark.webp'
+import owlCurious from '../assets/brand/owl-curious.webp'
+import owlCurious2x from '../assets/brand/owl-curious@2x.webp'
+import owlSleeping from '../assets/brand/owl-sleeping.webp'
+import owlSleeping2x from '../assets/brand/owl-sleeping@2x.webp'
+import owlCelebrating from '../assets/brand/owl-celebrating.webp'
+import owlCelebrating2x from '../assets/brand/owl-celebrating@2x.webp'
+
+/** The owl's poses (BRD-004, `docs/brand/owl_poses.py`): standing is the poster's owl; curious
+ * when nothing matches, sleeping when nothing airs, celebrating for a milestone. */
+export type OwlPose = 'standing' | 'curious' | 'sleeping' | 'celebrating'
+
+const POSES: Record<
+  OwlPose,
+  { src: string; src2x: string; width: number; height: number }
+> = {
+  standing: { src: mascot, src2x: mascot2x, width: 720, height: 877 },
+  curious: { src: owlCurious, src2x: owlCurious2x, width: 360, height: 389 },
+  sleeping: { src: owlSleeping, src2x: owlSleeping2x, width: 360, height: 438 },
+  celebrating: {
+    src: owlCelebrating,
+    src2x: owlCelebrating2x,
+    width: 360,
+    height: 359,
+  },
+}
 
 /** A router link that never claims to be the current page: on /app the wordmark is a way home,
  * and only the Home row of the nav carries `aria-current`. */
@@ -46,7 +71,9 @@ export function MascotMedallion(props: {
   priority?: boolean
   idle?: boolean
   decorative?: boolean
+  pose?: OwlPose
 }) {
+  const art = () => POSES[props.pose ?? 'standing']
   return (
     <div
       aria-hidden={props.decorative || undefined}
@@ -54,15 +81,15 @@ export function MascotMedallion(props: {
     >
       <div class="absolute inset-0 overflow-hidden rounded-full bg-night">
         <img
-          src={mascot}
-          srcset={`${mascot} 1x, ${mascot2x} 2x`}
+          src={art().src}
+          srcset={`${art().src} 1x, ${art().src2x} 2x`}
           alt={
             props.decorative
               ? ''
               : "Aaru's mascot, a small white robot owl with glowing amber eyes"
           }
-          width="720"
-          height="877"
+          width={art().width}
+          height={art().height}
           fetchpriority={props.priority ? 'high' : 'auto'}
           class="absolute inset-0 h-full w-full translate-y-[3%] object-contain"
         />
@@ -105,6 +132,7 @@ export function OwlEmpty(props: {
   size?: 'sm' | 'md'
   /** The title's element: `h2` for a screen, `p` inside a section that has its own heading. */
   as?: 'h2' | 'h3' | 'p'
+  pose?: OwlPose
   class?: string
 }) {
   const sm = () => props.size === 'sm'
@@ -112,7 +140,12 @@ export function OwlEmpty(props: {
     <div
       class={`flex flex-col items-center text-center ${sm() ? 'py-8' : 'py-14'} ${props.class ?? ''}`}
     >
-      <MascotMedallion idle decorative class={sm() ? 'w-16' : 'w-24'} />
+      <MascotMedallion
+        idle
+        decorative
+        pose={props.pose}
+        class={sm() ? 'w-16' : 'w-24'}
+      />
       <Dynamic
         component={props.as ?? 'h2'}
         class="mt-5 font-display text-xl font-medium text-balance"

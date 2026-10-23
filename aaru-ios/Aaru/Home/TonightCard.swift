@@ -1,12 +1,17 @@
+import AaruAPI
 import SwiftUI
+
+typealias TonightVerdict = Components.Schemas.TonightFeedback.VerdictPayload
 
 /// The Field's focal card (VIEWS.md `TonightStrip`): the one thing to watch now, over its
 /// backdrop, with why it is here and the next step. "Also tonight" names one more under it.
+/// Either can be set aside: "Not tonight" for today, "Not for me" for longer (AG-005).
 struct TonightCard: View {
     let tonight: Tonight
     let isPending: Bool
     /// Side by side on wide screens: the art, then the words and actions beside it.
     var wide = false
+    var onSetAside: (TonightPick, TonightVerdict) -> Void = { _, _ in }
     let onMarkWatched: (ContinueEntry) -> Void
 
     var body: some View {
@@ -35,13 +40,16 @@ struct TonightCard: View {
                     HStack(spacing: 4) {
                         Text("Also tonight").foregroundStyle(Color(.muted))
                         Text(also.title.title).foregroundStyle(Color(.accent))
-                        Text("· \(also.episodeLine)").foregroundStyle(Color(.muted))
-                            .monospacedDigit()
+                        if !also.episodeLine.isEmpty {
+                            Text("· \(also.episodeLine)").foregroundStyle(Color(.muted))
+                                .monospacedDigit()
+                        }
                     }
                     .font(.subheadline)
                     .lineLimit(1)
                 }
                 .buttonStyle(.plain)
+                .contextMenu { setAsideButtons(also) }
             }
         }
     }
@@ -52,6 +60,7 @@ struct TonightCard: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .contextMenu { setAsideButtons(tonight.primary) }
         .accessibilityLabel("Open \(tonight.primary.title.title)")
     }
 
@@ -61,10 +70,12 @@ struct TonightCard: View {
                 .font(.aaruDisplay(wide ? .title : .title2))
                 .foregroundStyle(Color(.ink))
                 .lineLimit(2)
-            Text(tonight.primary.episodeLine)
-                .font(.subheadline)
-                .monospacedDigit()
-                .lineLimit(1)
+            if !tonight.primary.episodeLine.isEmpty {
+                Text(tonight.primary.episodeLine)
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
             Text(tonight.primary.reason)
                 .font(.footnote)
                 .monospacedDigit()
@@ -76,7 +87,7 @@ struct TonightCard: View {
 
     private var actions: some View {
         HStack(spacing: 12) {
-            if case let .continuing(entry) = tonight.primary {
+            if let entry = tonight.primary.markable {
                 let code = EpisodeCode.short(season: entry.next.season, number: entry.next.number)
                 Button {
                     onMarkWatched(entry)
@@ -93,8 +104,30 @@ struct TonightCard: View {
                 Text("Open").frame(minHeight: 32)
             }
             .buttonStyle(.bordered)
+            Menu {
+                setAsideButtons(tonight.primary)
+            } label: {
+                Label("More", systemImage: "ellipsis")
+                    .labelStyle(.iconOnly)
+                    .frame(minWidth: 32, minHeight: 32)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityLabel("Set \(tonight.primary.title.title) aside")
         }
         .controlSize(.large)
+    }
+
+    @ViewBuilder private func setAsideButtons(_ pick: TonightPick) -> some View {
+        Button {
+            onSetAside(pick, .notTonight)
+        } label: {
+            Label("Not tonight", systemImage: "moon.zzz")
+        }
+        Button {
+            onSetAside(pick, .rejected)
+        } label: {
+            Label("Not for me", systemImage: "hand.thumbsdown")
+        }
     }
 
     private var artURL: URL? {
