@@ -115,7 +115,7 @@ struct CountdownView: View {
         } else {
             Text("Nothing airing soon")
                 .font(.caption)
-                .foregroundStyle(Palette.muted)
+                .foregroundStyle(Color(.muted))
         }
     }
 
@@ -126,43 +126,47 @@ struct CountdownView: View {
             case .accessoryInline:
                 when(state)
             case .accessoryCircular:
+                // The circle has no room for "In 2 hr, 14 min" or "Thursday 21:00" at any text
+                // style, so the time alone keeps a scale factor.
                 VStack(spacing: 0) {
                     Text(state.airing.shortCode)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.caption2.weight(.semibold))
+                        .widgetAccentable()
                     when(state)
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.6)
                 }
             case .accessoryRectangular:
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(state.airing.title).font(.headline).lineLimit(1)
+                    Text(state.airing.title).font(.headline).lineLimit(1).widgetAccentable()
                     Text(state.airing.shortCode).font(.caption)
                     when(state).font(.caption)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
         #endif
         default:
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                 Text("Next episode")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
+                    .widgetAccentable()
                 Text(state.airing.title)
                     .font(.widgetDisplay)
-                    .foregroundStyle(Palette.ink)
+                    .foregroundStyle(Color(.ink))
                     .lineLimit(2)
                 Text(state.airing.shortCode + (state.airing.episodeName.map { " · \($0)" } ?? ""))
                     .font(.caption)
-                    .foregroundStyle(Palette.muted)
+                    .foregroundStyle(Color(.muted))
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 when(state)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(state.isOut ? Palette.gold : Palette.brand)
+                    .foregroundStyle(state.isOut ? Color(.gold) : Color(.accent))
                 if let network = state.airing.network {
                     Text(network)
                         .font(.caption2)
-                        .foregroundStyle(Palette.muted)
+                        .foregroundStyle(Color(.muted))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

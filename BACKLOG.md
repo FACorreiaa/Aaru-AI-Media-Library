@@ -924,6 +924,11 @@ Apple surfaces + spacing + type) follow under the same id.
 **Done when:** `generate-tokens.mjs --check` covers the new files; `rounded-lg`/`-xl` keep
 their pixel values (10/14) so nothing moves in this PR; both targets build with the enums.
 
+### BRD-009 · Widgets on the tokens · S · owner, 2026-10-23
+The widget extension had its own string palette (`Color("Paper")`, accent called `brand`) with six roles, fixed 9–12 pt fonts, no `widgetAccentable`, and a gradient fallback for missing art. Its catalog now gets every role from `design/tokens.json` (`Accent`, `OnAccent`, `Stone`, `Line`, `LineStrong`, `Danger`, `Night`, `Medallion`, `Scrim`, `OnScrim`), the code uses the generated symbols and `AaruRadius`/`AaruAlpha`, text is in text styles (one `` for the circular count), each family marks its glyph and title `widgetAccentable` so tinted and vibrant modes read, capacity progress is a `Gauge`, and the Live Activity and Island use the tokens.
+
+**Done when:** no `Palette.` or `.system(size:` in `AaruWidgets` beyond the one scaled metric; the app scheme builds for iOS and macOS; the owner has seen the gallery in tinted mode.
+
 ## P0 · M1 — Server foundation
 
 ### SRV-001 · Delete template scaffolding · S

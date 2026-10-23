@@ -61,6 +61,8 @@ struct StreakProvider: TimelineProvider {
 struct StreakWidgetView: View {
     let entry: StreakEntry
     @Environment(\.widgetFamily) private var family
+    /// The count in the circular family: a fixed share of a tiny dial, scaled with the caption.
+    @ScaledMetric(relativeTo: .caption2) private var circularCount: CGFloat = 20
 
     var body: some View {
         if let streak = entry.streak {
@@ -77,21 +79,25 @@ struct StreakWidgetView: View {
             case .accessoryInline:
                 Label(Self.days(summary.current), systemImage: "flame")
             case .accessoryCircular:
+                // A four-digit streak does not fit the dial at this size, so the count keeps a
+                // scale factor.
                 VStack(spacing: 0) {
                     Image(systemName: "flame")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
+                        .widgetAccentable()
                     Text("\(summary.current)")
-                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .font(.system(size: circularCount, weight: .semibold))
                         .monospacedDigit()
                         .minimumScaleFactor(0.6)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Streak, \(Self.days(summary.current))")
             case .accessoryRectangular:
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                     Label(Self.days(summary.current), systemImage: "flame")
                         .font(.headline)
-                    Bars(week: week, active: .primary, idle: .secondary.opacity(0.4))
+                        .widgetAccentable()
+                    Bars(week: week, active: .primary, idle: .tertiary)
                         .frame(height: 6)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -105,22 +111,22 @@ struct StreakWidgetView: View {
         VStack(alignment: .leading, spacing: 6) {
             Image(systemName: summary.current > 0 ? "flame.fill" : "flame")
                 .font(.title3)
-                .foregroundStyle(summary.current > 0 ? Palette.brand : Palette.muted)
+                .foregroundStyle(summary.current > 0 ? Color(.accent) : Color(.muted))
+                .widgetAccentable()
                 .accessibilityHidden(true)
             Spacer(minLength: 0)
             Text("\(summary.current)")
                 .font(.system(.largeTitle, design: .default, weight: .medium))
                 .monospacedDigit()
-                .foregroundStyle(Palette.ink)
-                .minimumScaleFactor(0.6)
+                .foregroundStyle(Color(.ink))
             Text("day streak")
                 .font(.caption)
-                .foregroundStyle(Palette.muted)
-            Bars(week: week, active: Palette.brand, idle: Palette.muted.opacity(0.3))
+                .foregroundStyle(Color(.muted))
+            Bars(week: week, active: Color(.accent), idle: Color(.muted).opacity(AaruAlpha.ghost))
                 .frame(height: 8)
             Text(summary.today || summary.current == 0 ? " " : "Tick something today")
                 .font(.caption2)
-                .foregroundStyle(Palette.muted)
+                .foregroundStyle(Color(.muted))
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

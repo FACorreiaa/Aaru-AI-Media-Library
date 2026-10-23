@@ -72,8 +72,8 @@ struct UpNextView: View {
             SetUpView(compact: family == .systemSmall)
         } else if rows.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Up Next").font(.widgetDisplay).foregroundStyle(Palette.ink)
-                Text("You are all caught up.").font(.caption).foregroundStyle(Palette.muted)
+                Text("Up Next").font(.widgetDisplay).foregroundStyle(Color(.ink)).widgetAccentable()
+                Text("You are all caught up.").font(.caption).foregroundStyle(Color(.muted))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         } else if family == .systemSmall, let row = rows.first {
@@ -82,7 +82,8 @@ struct UpNextView: View {
             VStack(alignment: .leading, spacing: family == .systemLarge ? 10 : 6) {
                 Text("Up Next")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
+                    .widgetAccentable()
                 ForEach(rows) { row in
                     UpNextRow(row: row, artwork: entry.artwork[row.libraryItemId], showsDetail: family == .systemLarge)
                 }
@@ -105,7 +106,8 @@ struct WatchedCheck: View {
         )) {
             Image(systemName: "checkmark.circle")
                 .font(.title3)
-                .foregroundStyle(Palette.brand)
+                .foregroundStyle(Color(.accent))
+                .widgetAccentable()
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Mark \(row.title) S\(row.season) · E\(row.number) watched")
@@ -118,21 +120,21 @@ private struct UpNextSmall: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            ArtworkView(data: artwork)
+            ArtworkView(data: artwork, radius: AaruRadius.field)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .clipShape(.rect(cornerRadius: 10))
             Text(row.title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Palette.brand)
+                .foregroundStyle(Color(.accent))
+                .widgetAccentable()
                 .lineLimit(1)
             Text("S\(row.season) · E\(row.number)")
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(Palette.ink)
+                .foregroundStyle(Color(.ink))
             HStack {
                 Text(row.isFinale ? "Finale" : "\(row.remainingCount) left")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(row.isFinale ? Palette.gold : Palette.muted)
+                    .foregroundStyle(row.isFinale ? Color(.gold) : Color(.muted))
                 Spacer()
                 WatchedCheck(row: row)
             }
@@ -151,22 +153,21 @@ private struct UpNextRow: View {
         HStack(spacing: 10) {
             Link(destination: WidgetLink.title(row.libraryItemId) ?? URL(fileURLWithPath: "/")) {
                 HStack(spacing: 10) {
-                    ArtworkView(data: artwork)
+                    ArtworkView(data: artwork, radius: AaruRadius.thumb)
                         .frame(width: 64, height: 36)
-                        .clipShape(.rect(cornerRadius: 6))
                     VStack(alignment: .leading, spacing: 1) {
                         Text(row.title)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Palette.ink)
+                            .foregroundStyle(Color(.ink))
                             .lineLimit(1)
                         Text(subtitle)
                             .font(.caption)
-                            .foregroundStyle(Palette.muted)
+                            .foregroundStyle(Color(.muted))
                             .lineLimit(1)
                         if showsDetail {
                             Text(remaining)
                                 .font(.caption2.weight(.semibold))
-                                .foregroundStyle(row.isFinale ? Palette.gold : Palette.brand)
+                                .foregroundStyle(row.isFinale ? Color(.gold) : Color(.accent))
                         }
                     }
                 }
