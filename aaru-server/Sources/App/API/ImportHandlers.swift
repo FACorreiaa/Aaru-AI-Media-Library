@@ -61,6 +61,30 @@ extension APIImplementation {
         return .accepted(.init(body: .json(.init(job))))
     }
 
+    func createCaptureImport(_ input: Operations.CreateCaptureImport.Input) async throws
+        -> Operations.CreateCaptureImport.Output
+    {
+        let request: ImportService.CaptureRequest
+        switch input.body {
+        case let .json(body):
+            switch (body.text, body.url) {
+            case let (text?, nil): request = .text(text)
+            case let (nil, url?): request = .link(url)
+            default:
+                throw AppError(
+                    status: .unprocessableContent, code: "validation_failed", message: "Send text or a link, not both.",
+                    details: ["body": "Exactly one of text and url."]
+                )
+            }
+        case let .jpeg(body): request = try await .image(Self.image(body), mediaType: "image/jpeg")
+        case let .png(body): request = try await .image(Self.image(body), mediaType: "image/png")
+        case let .imageGif(body): request = try await .image(Self.image(body), mediaType: "image/gif")
+        case let .imageWebp(body): request = try await .image(Self.image(body), mediaType: "image/webp")
+        }
+        let job = try await services.imports.createCapture(userID: currentUser(), request)
+        return .accepted(.init(body: .json(.init(job))))
+    }
+
     func getImport(_ input: Operations.GetImport.Input) async throws -> Operations.GetImport.Output {
         let detail = try await services.imports.detail(importID(input.path.id), userID: currentUser())
         return .ok(.init(body: .json(.init(
@@ -145,6 +169,21 @@ extension APIImplementation {
         }
         do {
             return try await String(collecting: body, upTo: ImportService.maxUploadBytes)
+        } catch {
+            throw tooLarge
+        }
+    }
+
+    /// An image's bytes, up to the same 5 MB as a file. Apps downscale before sending.
+    private static func image(_ body: HTTPBody) async throws -> Data {
+        let tooLarge = AppError(
+            status: .contentTooLarge, code: "file_too_large", message: "That image is larger than 5 MB."
+        )
+        if case let .known(length) = body.length, length > ImportService.maxUploadBytes {
+            throw tooLarge
+        }
+        do {
+            return try await Data(collecting: body, upTo: ImportService.maxUploadBytes)
         } catch {
             throw tooLarge
         }

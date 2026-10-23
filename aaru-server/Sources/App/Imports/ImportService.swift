@@ -20,6 +20,12 @@ struct ImportService: Sendable {
     var stremio: StremioAccount?
     /// The user's CAT calendar by its link (IMP-010). Nil in most tests.
     var catFeed: CATCalendarFeed?
+    /// Reads text and image captures (AG-006). Nil when no model is configured: links still work.
+    var model: (any ModelProviding)?
+    /// Says a capture's plan is ready (`UserPush.send`). Nil in tests and when no push is
+    /// configured. A closure, not the `UserPush` itself: that holds a copy of `Stores`, and
+    /// `Services` is already large enough to overflow a test thread's stack when copied.
+    var push: (@Sendable (PushMessage, UserID) async -> Void)?
     var now: @Sendable () -> Date = { Date() }
 
     // MARK: Requests
@@ -72,6 +78,12 @@ struct ImportService: Sendable {
             )
         }
         _ = try await stores.importJobs.delete(id: id, userID: userID)
+        if job.source == .capture {
+            try await stores.capture.deleteInput(jobID: id)
+            if job.state == .planned {
+                ProductEvents.capture(.capturePlanDecided, userID: userID, ["decision": "denied"])
+            }
+        }
     }
 
     // MARK: The worker's step
@@ -84,18 +96,9 @@ struct ImportService: Sendable {
         else { return false }
         var job = claimed.job
         do {
-            var stored = try await stores.importJobs.rows(jobID: job.id)
-            if stored.isEmpty, job.source == .trakt || job.source == .anilist {
-                let fetched = job.source == .trakt ? try await fetchTrakt(&job) : try await fetchAniList(&job)
-                guard let fetched else {
-                    Self.count(job)
-                    return true
-                }
-                try await stores.importJobs.appendRows(fetched, jobID: job.id)
-                stored = try await stores.importJobs.rows(jobID: job.id)
-            }
-            if job.source == .stremio {
-                stored = try await expandStremioWatched(stored)
+            guard let stored = try await rowsToPlan(&job) else {
+                Self.count(job)
+                return true
             }
             let jobID = job.id
             // The last try plans without AniList if it is still down: the rest of the file is not
@@ -112,6 +115,9 @@ struct ImportService: Sendable {
             job.updatedAt = now()
             try await stores.importJobs.savePlan(job, rows: rows)
             Self.count(job)
+            if job.source == .capture {
+                await push?(Self.capturePlanned(job), job.userID)
+            }
         } catch {
             // A shutdown is not the job's failure: hand it back untouched, attempt uncounted, for
             // the next worker (whatever the provider client turned the cancellation into).
@@ -132,9 +138,32 @@ struct ImportService: Sendable {
                 job.updatedAt = now()
                 try await stores.importJobs.update(job)
                 Self.count(job)
+                if job.source == .capture {
+                    try? await stores.capture.deleteInput(jobID: job.id)
+                }
             }
         }
         return true
+    }
+
+    /// The rows a job plans: its file's, or what its source gives when there is no file. Nil when
+    /// fetching failed the job for good.
+    private func rowsToPlan(_ job: inout ImportJob) async throws -> [PlannedRow]? {
+        var stored = try await stores.importJobs.rows(jobID: job.id)
+        if stored.isEmpty, [.trakt, .anilist, .capture].contains(job.source) {
+            let fetched = switch job.source {
+            case .trakt: try await fetchTrakt(&job)
+            case .anilist: try await fetchAniList(&job)
+            default: try await fetchCapture(&job)
+            }
+            guard let fetched else { return nil }
+            try await stores.importJobs.appendRows(fetched, jobID: job.id)
+            stored = try await stores.importJobs.rows(jobID: job.id)
+        }
+        if job.source == .stremio {
+            stored = try await expandStremioWatched(stored)
+        }
+        return stored
     }
 
     /// One finished job, in `aaru_imports_total` and as a product event: planned, or failed for good.
@@ -196,6 +225,9 @@ extension ImportService {
         if let provider = error as? ProviderError {
             return "\(provider.displayName) could not be reached while matching titles."
         }
+        if error is ModelProviderError {
+            return "Aaru could not read the capture just now. Send it again in a bit."
+        }
         return "Matching stopped: \(String(describing: error).prefix(200))"
     }
 }
@@ -236,7 +268,7 @@ extension ImportService {
         return nil
     }
 
-    private func fail(_ job: inout ImportJob, _ summary: String) async throws {
+    func fail(_ job: inout ImportJob, _ summary: String) async throws {
         job.state = .failed
         job.errorSummary = summary
         job.updatedAt = now()
@@ -265,6 +297,7 @@ extension ImportSource {
         case .malXML: "MyAnimeList"
         case .anilist: "AniList"
         case .genericCSV: "CSV"
+        case .capture: "a capture"
         }
     }
 }

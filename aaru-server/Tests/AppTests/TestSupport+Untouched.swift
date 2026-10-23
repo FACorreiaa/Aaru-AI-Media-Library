@@ -242,7 +242,7 @@ extension UntouchedStore: AgentStore {
         throw Touched()
     }
 
-    func recordUsage(_: UserID, day _: Date, inputTokens _: Int, outputTokens _: Int) async throws {
+    func recordUsage(_: UserID, day _: Date, inputTokens _: Int, outputTokens _: Int, costMicros _: Int) async throws {
         throw Touched()
     }
 

@@ -40,6 +40,8 @@ struct AgentUsage: Sendable, Equatable {
     var requests: Int
     var inputTokens: Int
     var outputTokens: Int
+    /// Millionths of a dollar.
+    var costMicros: Int = 0
 }
 
 protocol AgentStore: Sendable {
@@ -50,6 +52,6 @@ protocol AgentStore: Sendable {
     func finish(_ id: UUID, state: AgentReplyState, error: String?, now: Date) async throws
     func retry(_ id: UUID, error: String, notBefore: Date, now: Date) async throws
     /// Adds one model call to the user's row for that UTC day.
-    func recordUsage(_ user: UserID, day: Date, inputTokens: Int, outputTokens: Int) async throws
+    func recordUsage(_ user: UserID, day: Date, inputTokens: Int, outputTokens: Int, costMicros: Int) async throws
     func usage(_ user: UserID, day: Date) async throws -> AgentUsage
 }

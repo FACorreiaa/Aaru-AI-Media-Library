@@ -24,6 +24,12 @@ enum ProductEvent: String, Sendable {
     case tonightAccepted = "tonight_accepted"
     /// `verdict`: rejected, not_tonight.
     case tonightRejected = "tonight_rejected"
+    /// `kind`: text, image, url (AG-006).
+    case captureSubmitted = "capture_submitted"
+    /// `decision`: approved (applied), denied (a planned capture deleted).
+    case capturePlanDecided = "capture_plan_decided"
+    /// `reason`: capture_quota. The server refused and the apps offer Plus.
+    case paywallShown = "paywall_shown"
 }
 
 /// Where product events go. `PostHogClient` in production; nothing until one is installed.

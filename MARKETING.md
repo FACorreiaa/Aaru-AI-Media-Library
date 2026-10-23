@@ -294,9 +294,11 @@ Rules:
   Haiku-class pricing keeps gross margin above 80% at $29.99/yr. Re-derive with real usage
   after 100 strangers. Bring-your-own-key exists so a power user can never hit a wall and so
   the privacy pitch has a "your key, your model" answer.
-- **Capture is Plus, and the first run is free.** Extraction is a metered model call, so it
-  belongs on the paid side by the §5.1 rule — but it is also the onboarding demo and the
-  30-second video, so one run costs nothing. Paste a group chat, watch the shelf fill.
+- **Capture is Plus, with 3 free a month** (owner, 2026-10-22). Extraction is a metered model
+  call, so it belongs on the paid side by the §5.1 rule — but it is also the onboarding demo and
+  the 30-second video, so a free account gets 3 captures each calendar month (UTC). Paste a group
+  chat, watch the shelf fill. A link to a TMDB, AniList or Open Library title costs no model call
+  but counts the same, so the rule stays one number.
 - **Agent tokens are Plus, read-only scope included.** Reading your own shelf from another
   agent is cheap for Aaru; the write path is where the plan card and the support load are.
 - No free trial before there are 100 users; there is not enough signal to tune one. Import

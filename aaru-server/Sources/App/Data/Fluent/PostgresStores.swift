@@ -38,7 +38,8 @@ extension Stores {
             agent: PostgresAgentStore(sql: sql),
             concerts: PostgresConcertStore(database: database),
             gamification: PostgresGamificationStore(sql: sql),
-            tonight: PostgresTonightStore(sql: sql)
+            tonight: PostgresTonightStore(sql: sql),
+            capture: PostgresCaptureStore(sql: sql)
         )
     }
 }

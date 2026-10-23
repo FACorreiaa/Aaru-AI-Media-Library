@@ -104,6 +104,13 @@ from your own library with their status and progress. It never sends another mem
 or progress. Aaru's answer is posted in the channel like any message. Aaru keeps a count of how
 many questions you asked each day and how much text they used, to keep the service fair.
 
+**Capture.** If you paste text or send a picture to Aaru to find titles in it, Aaru sends that
+text or picture to Anthropic (below) to read the names of films, shows, anime and books. It is
+kept only until it has been read, and never longer than an hour, then deleted. What it found
+becomes an import you review like any other; nothing is added to your library until you approve
+it. A link you send is read for the title it names and is never opened. Aaru counts how many
+captures you made this month and how much text each used.
+
 **Importing your Stremio history.** If you choose to, you approve a code on stremio.com (your
 Stremio password never reaches Aaru). Aaru then reads your Stremio library once, signs that
 session out at once, and does not keep Stremio's session key. What it read becomes an import you
@@ -133,7 +140,8 @@ are used: an account was created and how (Apple, Google or email), an import fin
 where, a title was added or changed and by whom (you, an agent, an import or a player), a list or
 group was created, a friend was added, an agent's request was approved or declined, the Tonight
 strip showed something today, one of its picks was started within six hours, or you answered a
-pick with "not tonight" or "not for me". Each event
+pick with "not tonight" or "not for me", a capture was sent (as text, a link or a picture) and its
+plan approved or discarded, or the monthly capture limit was reached. Each event
 carries only those words and your account's random id, never a title, a name, an email, text or
 your IP address, and no profile is built from them. They go to PostHog. The apps and the website
 send nothing of this kind themselves.
@@ -151,8 +159,9 @@ Aaru only uses these services, and only for the purpose listed:
   sees an encrypted message and when it was sent, never its text.
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
-- **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer. It receives
-  what is described under "Aaru in groups" above, through its API, and does not train on it.
+- **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer, or when you
+  send a capture, to read the titles in it. It receives what is described under "Aaru in
+  groups" and "Capture" above, through its API, and does not train on it.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
   what you play. If you import your Stremio history, Aaru's server reads your Stremio library
   once with the code you approved, then signs out. Aaru also asks Stremio's public catalog

@@ -595,8 +595,8 @@ account or a stranger that has not happened yet.
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
 | AG-005 | Partial | Tonight/TonightService.swift, `/v1/tonight` | Server built; clients still compose on device |
-| AG-006 | Open | none | |
-| AG-007 | Open | no ModelProviding | |
+| AG-006 | Built, unverified | Imports/ImportService+Capture.swift, Capture/, `/v1/imports/capture` | Server only; composer, review screen and Share Extension next. No library-reading tools for text yet |
+| AG-007 | Partial | Agent/ModelProviding.swift, `agent_usage.cost_micros` | Monthly spend metered per user; no own key yet |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
@@ -3054,7 +3054,11 @@ including when only a single row was extracted.
 
 **OPEN:** image extraction is the most expensive and least reliable input. Recommendation:
 ship text and URL first behind the same route, image second, so triage is proven on cheap
-input.
+input. **Closed 2026-10-22:** all three ship together; every row still goes through a plan the
+user approves, and a cost check of 20 image captures comes before capture opens to everyone.
+Links are parsed by id and never fetched (owner, 2026-10-22). Text is read in one forced
+`report_titles` call; a text that refers to the library ("the Nolan films I haven't seen") is
+left for later.
 
 ### AG-007 · Model provider, own key, metering · M
 **Needs:** AG-001.

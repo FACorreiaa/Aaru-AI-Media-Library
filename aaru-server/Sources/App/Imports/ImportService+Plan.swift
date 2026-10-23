@@ -203,6 +203,9 @@ extension ImportService {
         job.updatedAt = now()
         job.actionID = action?.id
         try await stores.importJobs.savePlan(job, rows: rows)
+        if job.source == .capture {
+            ProductEvents.capture(.capturePlanDecided, userID: userID, ["decision": "approved"])
+        }
         await GamificationService(stores: stores, now: now).batchApplied(
             userID,
             actionID: action?.id,

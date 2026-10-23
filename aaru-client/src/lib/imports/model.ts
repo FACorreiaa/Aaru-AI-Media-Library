@@ -63,6 +63,7 @@ const SOURCE_LABELS: Record<ImportJob['source'], string> = {
   mal_xml: 'MyAnimeList',
   anilist: 'AniList',
   csv: 'CSV',
+  capture: 'Capture',
 }
 
 export const sourceLabel = (job: ImportJob) => SOURCE_LABELS[job.source]
