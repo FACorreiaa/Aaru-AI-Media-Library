@@ -34,6 +34,12 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-23
+
+- **No paying plans for now** (owner, 2026-10-23). Plus (BIL-001…004) stays live in code, but
+  nothing is set up in App Store Connect, so nothing can be bought. Until that changes, a free
+  account hitting the capture limit must not land on an empty paywall: BIL-005.
+
 ## Decisions recorded 2026-10-22
 
 - **Tonight, capture and Plus: the agent as the paid product, built before the P2 gate**, by the
@@ -631,6 +637,7 @@ account or a stranger that has not happened yet.
 | BIL-002 | Built, unverified | `/v1/billing/apple/transactions`, `/v1/billing/apple/notifications`; BillingService.swift | No sandbox purchase, renewal or expiry seen |
 | BIL-003 | Built, unverified | `aaru-ios/Aaru/Plus` | Paywall, Restore, `Transaction.updates`; no `.storekit` file; not on a device |
 | BIL-004 | Built, unverified | `/v1/me/entitlement`; Settings → Account on web and Apple; capture fair use | Not seen with a real subscription |
+| BIL-005 | Open | none | Paywall with Plus off sale |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
@@ -3359,6 +3366,22 @@ Plus is bought in the Apple apps. Plus lifts the 3-a-month capture quota to a fa
 day.
 
 **Done when:** the web and the app show the same Plus state for one account.
+
+### BIL-005 · Capture limit while Plus is off sale · S
+**Needs:** BIL-003, BIL-004.
+The owner has no paying plans for now (2026-10-23), so the App Store has no Plus products. Today
+a free account's fourth capture in a month gets 402 `capture_quota`, and on Apple
+`CaptureComposer` opens `PlusPaywall`, which has nothing to sell; Settings → Account also shows
+"Get Aaru Plus" (`PlusSection`). The web only shows a line, and that line says Plus is bought in
+the Apple apps.
+
+Decide and build one, on Apple and the web together:
+- hide the paywall and "Get Aaru Plus" while no product loads, and show a plain "limit reached,
+  resets on …" message, keeping 3 a month; or
+- lift the monthly quota while Plus is off sale, keeping the 30-a-day fair use.
+
+**Done when:** a free account past its limit sees no purchase offer it cannot complete, on
+iPhone, Mac and the web, and Settings → Account offers nothing to buy.
 
 ---
 
