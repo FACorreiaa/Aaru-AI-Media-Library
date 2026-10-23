@@ -39,6 +39,7 @@ extension Stores {
             concerts: PostgresConcertStore(database: database),
             gamification: PostgresGamificationStore(sql: sql),
             tonight: PostgresTonightStore(sql: sql),
+            capture: PostgresCaptureStore(sql: sql),
             boards: PostgresBoardStore(database: database)
         )
     }

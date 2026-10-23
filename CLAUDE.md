@@ -45,7 +45,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20); group mention and invite alerts with groups (GRP-012); the "Now watching" Live Activity pushed from scrobbles (push-to-start, update, end; SCR-008) |
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
-| User import — capture | Pasted text, image, or URL. One-shot, out-of-band, P7 |
+| User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text and images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. Free accounts get 3 a month |
 | Agent model | Pluggable `ModelProviding` in `aaru-server` (`Sources/App/Agent`). Anthropic default, user key supported, spend metered daily |
 | Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`, with an OAuth front door (`Sources/App/OAuth`) so Claude can add Aaru as a custom connector. Not a second backend |
 

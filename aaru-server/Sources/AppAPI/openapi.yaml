@@ -2312,6 +2312,42 @@ paths:
               schema: {$ref: '#/components/schemas/ImportJob'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/imports/capture:
+    post:
+      operationId: createCaptureImport
+      summary: >-
+        Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library,
+        planned like any import and written only after approval. Links are read from the URL alone,
+        never fetched. Text and images are read by Aaru's model in the background and deleted once read.
+        A free account starts 3 captures a calendar month (UTC); the next is refused with 402
+        `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with
+        `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Exactly one of `text` and `url`.
+              properties:
+                text: {type: string, maxLength: 20000}
+                url: {type: string, maxLength: 2048}
+          image/jpeg:
+            schema: {type: string, format: binary}
+          image/png:
+            schema: {type: string, format: binary}
+          image/gif:
+            schema: {type: string, format: binary}
+          image/webp:
+            schema: {type: string, format: binary}
+      responses:
+        '202':
+          description: Queued for reading and matching.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/imports/anilist:
     post:
       operationId: createAniListImport
@@ -2933,7 +2969,7 @@ components:
         id: {type: string, format: uuid}
         source:
           type: string
-          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, netflix_csv, tvtime_csv, mal_xml, anilist, csv]
+          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, netflix_csv, tvtime_csv, mal_xml, anilist, csv, capture]
         state:
           type: string
           enum: [queued, running, planned, succeeded, failed, partial]

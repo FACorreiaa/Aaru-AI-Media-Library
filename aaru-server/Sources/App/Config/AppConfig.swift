@@ -179,9 +179,15 @@ struct AppConfig: Sendable {
         }
         let effort = reader.string(forKey: "anthropic.effort", default: "low")
         let workspace = reader.string(forKey: "anthropic.workspace.id", default: "")
+        // Claude Haiku 5.5's list price; set both when ANTHROPIC_MODEL names another model.
+        let pricing = ModelPricing(
+            inputPerMTok: Double(reader.string(forKey: "anthropic.price.input", default: "0.10")) ?? 0.10,
+            outputPerMTok: Double(reader.string(forKey: "anthropic.price.output", default: "0.50")) ?? 0.50
+        )
         return AnthropicSettings(
             apiKey: key, model: reader.string(forKey: "anthropic.model", default: "claude-haiku-5-5"),
-            effort: effort.isEmpty ? nil : effort, baseURL: url, workspaceID: workspace.isEmpty ? nil : workspace
+            effort: effort.isEmpty ? nil : effort, baseURL: url, workspaceID: workspace.isEmpty ? nil : workspace,
+            pricing: pricing
         )
     }
 
@@ -268,4 +274,6 @@ struct AnthropicSettings: Sendable {
     var effort: String?
     var baseURL: URL
     var workspaceID: String?
+    /// `ANTHROPIC_PRICE_INPUT` / `ANTHROPIC_PRICE_OUTPUT`, dollars per million tokens.
+    var pricing = ModelPricing(inputPerMTok: 0.10, outputPerMTok: 0.50)
 }

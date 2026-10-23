@@ -694,6 +694,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/cat/feed`.
     /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)`.
     func createCATFeedImport(_ input: Operations.CreateCATFeedImport.Input) async throws -> Operations.CreateCATFeedImport.Output
+    /// Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. A free account starts 3 captures a calendar month (UTC); the next is refused with 402 `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/capture`.
+    /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)`.
+    func createCaptureImport(_ input: Operations.CreateCaptureImport.Input) async throws -> Operations.CreateCaptureImport.Output
     /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
@@ -2523,6 +2528,19 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. A free account starts 3 captures a calendar month (UTC); the next is refused with 402 `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/capture`.
+    /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)`.
+    public func createCaptureImport(
+        headers: Operations.CreateCaptureImport.Input.Headers = .init(),
+        body: Operations.CreateCaptureImport.Input.Body
+    ) async throws -> Operations.CreateCaptureImport.Output {
+        try await createCaptureImport(Operations.CreateCaptureImport.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
@@ -3740,6 +3758,7 @@ public enum Components {
                 case malXml = "mal_xml"
                 case anilist = "anilist"
                 case csv = "csv"
+                case capture = "capture"
             }
             /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
             public var source: Components.Schemas.ImportJob.SourcePayload
@@ -31766,6 +31785,179 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. A free account starts 3 captures a calendar month (UTC); the next is refused with 402 `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/capture`.
+    /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)`.
+    public enum CreateCaptureImport {
+        public static let id: Swift.String = "createCaptureImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/capture/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCaptureImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCaptureImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateCaptureImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// Exactly one of `text` and `url`.
+                ///
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/json/text`.
+                    public var text: Swift.String?
+                    /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/json/url`.
+                    public var url: Swift.String?
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - text:
+                    ///   - url:
+                    public init(
+                        text: Swift.String? = nil,
+                        url: Swift.String? = nil
+                    ) {
+                        self.text = text
+                        self.url = url
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case text
+                        case url
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/application\/json`.
+                case json(Operations.CreateCaptureImport.Input.Body.JsonPayload)
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/image\/jpeg`.
+                case jpeg(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/image\/png`.
+                case png(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/image\/gif`.
+                case imageGif(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/image\/webp`.
+                case imageWebp(OpenAPIRuntime.HTTPBody)
+            }
+            public var body: Operations.CreateCaptureImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateCaptureImport.Input.Headers = .init(),
+                body: Operations.CreateCaptureImport.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/capture/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateCaptureImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateCaptureImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued for reading and matching.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateCaptureImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateCaptureImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

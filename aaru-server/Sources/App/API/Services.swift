@@ -67,7 +67,8 @@ struct Services: Sendable {
                 trakt: trakt.map { TraktImport(connect: traktConnect(stores, $0), importer: TraktImporter(api: $0)) },
                 anilistLists: catalogs.anilist as? any AniListListReading,
                 stremio: stremio,
-                catFeed: catFeed
+                catFeed: catFeed,
+                model: model
             ),
             traktConnect: traktConnect(stores, trakt),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),

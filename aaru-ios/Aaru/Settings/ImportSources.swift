@@ -51,6 +51,7 @@ extension ImportJob {
         case .malXml: "MyAnimeList"
         case .anilist: "AniList"
         case .csv: "CSV"
+        case .capture: "Capture"
         }
     }
 

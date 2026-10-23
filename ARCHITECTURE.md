@@ -284,7 +284,7 @@ POST   /v1/imports/{id}/apply             # approve the plan: one journaled, und
 DELETE /v1/imports/{id}                   # discard
 POST   /v1/imports/cat                    # text/plain list or text/calendar ics (IMP-009/010)
 POST   /v1/imports/cat/feed               # {url}: the user's CAT iCal link, read once, not kept
-POST   /v1/imports/capture                # one-shot capture: text | image | url
+POST   /v1/imports/capture                # AG-006: JSON {text} | {url}, or an image body; 402 past the free quota
 GET    /v1/imports/{id}
 
 GET    /v1/settings
@@ -683,6 +683,28 @@ Later sources fill empty fields; they do not overwrite a non-empty rating, statu
 
 Idempotency: re-running the same Trakt import updates in place via `(user_id, title_id)` and does not duplicate items.
 
+### Capture (AG-006)
+
+A capture is an import job with `source = capture`. It is user-triggered and out-of-band: it is
+not in the merge order, and it plans and applies like every other import (one plan, IMP-011's
+"Find it" for unmatched rows, one undoable action on apply).
+
+- **Link:** parsed on the request, never fetched. `themoviedb.org/movie|tv/{id}`,
+  `anilist.co/anime/{id}` and `openlibrary.org/works/OL…W` become one row with that id.
+  Letterboxd and IMDb links get 422 `capture_use_csv` (their CSV importers bring the whole list);
+  any other link gets 422 `capture_unsupported_url`.
+- **Text or image:** the request stores the input in `capture_inputs` (job id, user, text or image
+  bytes, media type) and returns the job. The worker sends it to the model in one call that must
+  answer with the `report_titles` tool (`tool_choice`), turns the reported names into rows
+  (deduplicated, at most 50, anime planned as shows, status `wishlist`), and deletes the input
+  whatever the model found. `CaptureSweeper` deletes any input still there an hour on. Images are
+  at most 5 MB, JPEG/PNG/GIF/WebP; clients downscale to 1568 px on the long edge first.
+- **Quota:** a free account starts 3 captures per UTC month (counted from `import_jobs`); the
+  fourth gets 402 `capture_quota` with the reset date. Plus lifts it (BIL items).
+- **Spend:** every model call records tokens and `cost_micros` in `agent_usage`, priced from
+  `ANTHROPIC_PRICE_INPUT` / `ANTHROPIC_PRICE_OUTPUT` (dollars per million tokens).
+- A planned capture pushes "N ready · M need a pick" to the user's devices.
+
 ## Agent tools
 
 `DESIGN.md` makes the agent the way the user speaks to Aaru; `VIEWS.md` fixes what it may
@@ -820,6 +842,10 @@ protocol ModelProviding: Sendable {
 - First consumer (GRP-010, 2026-10-20): `@aaru` replies in groups, on `claude-haiku-5-5`. The
   adapter sends no `temperature`, `top_p`, `top_k` or assistant prefill; Haiku 5.5 rejects
   them (`platform/infra/docs/llm-haiku-trial.md`). User keys wait for AG-007.
+- Second consumer (AG-006, 2026-10-22): capture extraction. `ModelRequest.toolChoice` forces
+  one tool (Haiku 5.5 accepts a forced tool; other current models answer it with a 400), and
+  `ModelTurn.user(image:mediaType:_:)` sends an image block. `ModelProviding.pricing` turns a
+  response's tokens into `agent_usage.cost_micros`.
 
 ## Auth
 
