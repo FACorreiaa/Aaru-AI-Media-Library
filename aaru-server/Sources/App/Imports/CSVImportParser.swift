@@ -13,7 +13,7 @@ enum CSVImportParser {
         case .netflixCSV: return try NetflixCSVParser.parse(table)
         case .tvTimeCSV: return try TVTimeCSVParser.parse(table)
         case .genericCSV: return try GenericCSVParser.parse(table)
-        case .trakt, .stremio, .catList, .catICS, .malXML, .anilist:
+        case .trakt, .stremio, .catList, .catICS, .malXML, .anilist, .capture:
             throw ImportFormatError(message: "\(source.rawValue) is not a CSV import.")
         }
     }

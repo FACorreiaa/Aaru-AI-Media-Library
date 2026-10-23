@@ -88,14 +88,15 @@ struct PostgresAgentStore: AgentStore {
         """).run()
     }
 
-    func recordUsage(_ user: UserID, day: Date, inputTokens: Int, outputTokens: Int) async throws {
+    func recordUsage(_ user: UserID, day: Date, inputTokens: Int, outputTokens: Int, costMicros: Int) async throws {
         try await sql.raw("""
-        INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens)
+        INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros)
         VALUES (\(bind: user.rawValue), (\(bind: day) AT TIME ZONE 'UTC')::date, 1, \(bind: inputTokens),
-                \(bind: outputTokens))
+                \(bind: outputTokens), \(bind: costMicros))
         ON CONFLICT (user_id, day) DO UPDATE SET requests = agent_usage.requests + 1,
             input_tokens = agent_usage.input_tokens + EXCLUDED.input_tokens,
-            output_tokens = agent_usage.output_tokens + EXCLUDED.output_tokens
+            output_tokens = agent_usage.output_tokens + EXCLUDED.output_tokens,
+            cost_micros = agent_usage.cost_micros + EXCLUDED.cost_micros
         """).run()
     }
 
@@ -104,13 +105,15 @@ struct PostgresAgentStore: AgentStore {
             let requests: Int
             let inputTokens: Int
             let outputTokens: Int
+            let costMicros: Int
         }
         let row = try await sql.raw("""
-        SELECT requests, input_tokens, output_tokens FROM agent_usage
+        SELECT requests, input_tokens, output_tokens, cost_micros FROM agent_usage
         WHERE user_id = \(bind: user.rawValue) AND day = (\(bind: day) AT TIME ZONE 'UTC')::date
         """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
         return AgentUsage(
-            requests: row?.requests ?? 0, inputTokens: row?.inputTokens ?? 0, outputTokens: row?.outputTokens ?? 0
+            requests: row?.requests ?? 0, inputTokens: row?.inputTokens ?? 0, outputTokens: row?.outputTokens ?? 0,
+            costMicros: row?.costMicros ?? 0
         )
     }
 }

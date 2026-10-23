@@ -76,7 +76,8 @@ struct AgentReplyService: Sendable {
                 maxTokens: Self.maxTokens
             ))
             try await stores.agent.recordUsage(
-                job.tagger, day: now(), inputTokens: response.inputTokens, outputTokens: response.outputTokens
+                job.tagger, day: now(), inputTokens: response.inputTokens, outputTokens: response.outputTokens,
+                costMicros: model.pricing.micros(response)
             )
             if response.stop == .refusal {
                 reply = Self.refusalReply

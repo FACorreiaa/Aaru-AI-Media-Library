@@ -12,6 +12,8 @@ struct AnthropicMessagesProvider: ModelProviding {
     let transport: any HTTPTransport
     let apiKey: String
     let model: String
+    /// Claude Haiku 5.5's list price (up to 100K input tokens), unless configured.
+    var pricing = ModelPricing(inputPerMTok: 0.10, outputPerMTok: 0.50)
     var baseURL = URL(string: "https://api.anthropic.com")!
     /// `output_config.effort`; nil leaves the model's default.
     var effort: String? = "low"
@@ -80,6 +82,9 @@ struct AnthropicMessagesProvider: ModelProviding {
                     "name": .string($0.name), "description": .string($0.description), "input_schema": $0.inputSchema,
                 ])
             })
+        }
+        if let name = request.toolChoice {
+            body["tool_choice"] = .object(["type": .string("tool"), "name": .string(name)])
         }
         if let effort {
             body["output_config"] = .object(["effort": .string(effort)])

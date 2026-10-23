@@ -1843,6 +1843,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/capture': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. A free account starts 3 captures a calendar month (UTC); the next is refused with 402 `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured. */
+    post: operations['createCaptureImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/anilist': {
     parameters: {
       query?: never
@@ -2354,6 +2371,7 @@ export interface components {
         | 'mal_xml'
         | 'anilist'
         | 'csv'
+        | 'capture'
       /**
        * @description `planned` waits for approval; nothing is written before it.
        * @enum {string}
@@ -7072,6 +7090,38 @@ export interface operations {
     }
     responses: {
       /** @description Queued for matching. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createCaptureImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          text?: string
+          url?: string
+        }
+        'image/jpeg': string
+        'image/png': string
+        'image/gif': string
+        'image/webp': string
+      }
+    }
+    responses: {
+      /** @description Queued for reading and matching. */
       202: {
         headers: {
           [name: string]: unknown

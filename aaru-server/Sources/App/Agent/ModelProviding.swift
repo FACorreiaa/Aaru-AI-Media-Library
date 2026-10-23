@@ -71,6 +71,20 @@ struct ModelTurn: Sendable, Equatable {
     static func user(_ text: String) -> ModelTurn {
         ModelTurn(role: .user, content: [.object(["type": .string("text"), "text": .string(text)])])
     }
+
+    /// One image (base64) and the words about it, in that order.
+    static func user(image: Data, mediaType: String, _ text: String) -> ModelTurn {
+        ModelTurn(role: .user, content: [
+            .object([
+                "type": .string("image"),
+                "source": .object([
+                    "type": .string("base64"), "media_type": .string(mediaType),
+                    "data": .string(image.base64EncodedString()),
+                ]),
+            ]),
+            .object(["type": .string("text"), "text": .string(text)]),
+        ])
+    }
 }
 
 struct ModelRequest: Sendable, Equatable {
@@ -78,6 +92,9 @@ struct ModelRequest: Sendable, Equatable {
     var turns: [ModelTurn]
     var tools: [ModelTool]
     var maxTokens: Int
+    /// A tool the model must call, by name; nil lets it choose. Claude Haiku 5.5 accepts a forced
+    /// call (and skips thinking for it); Opus 5.5, Sonnet 5.5 and Fable 5.1 answer it with a 400.
+    var toolChoice: String?
 }
 
 struct ModelResponse: Sendable, Equatable {
@@ -122,7 +139,29 @@ struct ModelResponse: Sendable, Equatable {
 /// name appears outside its adapter.
 protocol ModelProviding: Sendable {
     var model: String { get }
+    /// What a call costs, for `agent_usage`. Free unless the provider says otherwise.
+    var pricing: ModelPricing { get }
     func complete(_ request: ModelRequest) async throws -> ModelResponse
+}
+
+extension ModelProviding {
+    var pricing: ModelPricing {
+        .free
+    }
+}
+
+/// Dollars per million tokens, which is the same number as millionths of a dollar per token.
+struct ModelPricing: Sendable, Equatable {
+    var inputPerMTok: Double
+    var outputPerMTok: Double
+
+    static let free = ModelPricing(inputPerMTok: 0, outputPerMTok: 0)
+
+    /// One response's cost in millionths of a dollar, rounded up.
+    func micros(_ response: ModelResponse) -> Int {
+        Int((Double(response.inputTokens) * inputPerMTok + Double(response.outputTokens) * outputPerMTok)
+            .rounded(.up))
+    }
 }
 
 /// A provider that answered with an error status, or nothing usable.

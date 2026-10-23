@@ -39,6 +39,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let pushSender = makePushSender(config.push, logger: logger)
     let push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
     services.plans.push = push
+    services.imports.push = { await push.send($0, userID: $1) }
     services.groups.push = push
     services.scrobble.liveActivity = pushSender.map { LiveSetNotifier(stores: stores, sender: $0) }
     if config.email == nil {
@@ -85,6 +86,7 @@ func backgroundServices(
     [
         fluent,
         ImportWorker(imports: services.imports, logger: logger, workers: workers.imports),
+        CaptureSweeper(stores: stores, logger: logger),
         GamificationWorker(gamification: GamificationService(stores: stores), logger: logger),
         AiringNotifierService(notifier: airing, logger: logger),
         LiveActivitySweepService(notifier: services.scrobble.liveActivity, stores: stores, logger: logger),
@@ -164,8 +166,8 @@ func makeModelProvider(
         return nil
     }
     return AnthropicMessagesProvider(
-        transport: transport, apiKey: settings.apiKey, model: settings.model, baseURL: settings.baseURL,
-        effort: settings.effort, workspaceID: settings.workspaceID
+        transport: transport, apiKey: settings.apiKey, model: settings.model, pricing: settings.pricing,
+        baseURL: settings.baseURL, effort: settings.effort, workspaceID: settings.workspaceID
     )
 }
 

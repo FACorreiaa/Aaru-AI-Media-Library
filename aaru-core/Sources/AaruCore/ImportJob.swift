@@ -24,6 +24,10 @@ public enum ImportSource: String, Codable, Hashable, Sendable, CaseIterable {
     case anilist
     /// Any other site's CSV, read by its column names. Last in the merge order: it fills gaps only.
     case genericCSV = "csv"
+    /// A one-shot capture (AG-006): pasted text, a screenshot, or a catalog link. Not part of the
+    /// merge order: the user asks for it, and it never reconciles a connected source. Last, so it
+    /// never outranks one.
+    case capture
 
     /// Position in the merge order, lowest first.
     public var mergeRank: Int {

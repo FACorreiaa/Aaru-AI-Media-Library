@@ -366,4 +366,5 @@ struct Stores: Sendable {
     var concerts: any ConcertStore
     var gamification: any GamificationStore
     var tonight: any TonightStore
+    var capture: any CaptureStore
 }
