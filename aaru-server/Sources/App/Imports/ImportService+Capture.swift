@@ -22,6 +22,8 @@ extension ImportService {
 
     /// Captures a free account may start in one calendar month (UTC).
     static let freeCapturesPerMonth = 3
+    /// Plus's fair use: captures one account may start in a UTC day.
+    static let plusCapturesPerDay = 30
     static let maxCaptureText = 20000
     /// What the model reads. Clients send JPEG; the others are what the Messages API also takes.
     static let captureImageTypes: Set = ["image/jpeg", "image/png", "image/gif", "image/webp"]
@@ -89,8 +91,18 @@ extension ImportService {
         }
     }
 
-    /// Free accounts get `freeCapturesPerMonth`; past it, a 402 the apps answer with Plus.
+    /// Free accounts get `freeCapturesPerMonth`; past it, a 402 the apps answer with Plus. Plus
+    /// lifts the month's limit; `plusCapturesPerDay` keeps one account from running up the bill.
     private func checkCaptureQuota(_ userID: UserID) async throws {
+        if try await stores.entitlements.active(userID: userID, now: now()) != nil {
+            let day = Self.dayStart(now())
+            let today = try await stores.capture.captures(userID: userID, since: day)
+            guard today >= Self.plusCapturesPerDay else { return }
+            throw AppError(
+                status: .tooManyRequests, code: "capture_fair_use",
+                message: "Aaru reads \(Self.plusCapturesPerDay) captures a day. More tomorrow."
+            )
+        }
         let month = Self.monthStart(now())
         let used = try await stores.capture.captures(userID: userID, since: month.start)
         guard used >= Self.freeCapturesPerMonth else { return }
@@ -102,6 +114,13 @@ extension ImportService {
             message: "You have used this month's \(Self.freeCapturesPerMonth) captures. "
                 + "More come on \(month.next.formatted(style)), or Aaru Plus lifts the limit."
         )
+    }
+
+    /// The start of `date`'s UTC day.
+    static func dayStart(_ date: Date) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        return calendar.startOfDay(for: date)
     }
 
     /// The UTC month `date` falls in, and the start of the next.

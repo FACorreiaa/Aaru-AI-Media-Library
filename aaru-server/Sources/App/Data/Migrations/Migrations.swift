@@ -56,6 +56,7 @@ let allMigrations: [any Migration] = [
     AddTonight(),
     AddImportAction(),
     AddCapture(),
+    AddEntitlements(),
     CreateBoards(),
 ]
 

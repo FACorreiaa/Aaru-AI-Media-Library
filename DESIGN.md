@@ -62,8 +62,22 @@ progress · 2 airing today"). **Tonight** (§5) leads, then the user's rows, the
 wide screen (web ≥1024px, iPad and Mac at regular width) a side column holds what Aaru is doing
 for the user: requests waiting for an answer, the **last import** (collapsed `JobLedger`, the
 owl while it matches, opens the import), the last 7 days, status counts, the recap banner and
-the user's lists. On a phone the same blocks follow the rows. The composer is still M13; the
-nav label stays "Home".
+the user's lists. On a phone the same blocks follow the rows. The nav label stays "Home".
+
+**The composer, 2026-10-23 (AG-006, capture only):** one field under the heading, above Now
+playing and Tonight: "Paste titles, a link or a screenshot", a picture button (the photo picker
+on Apple, a file picker, paste or drop on the web) and Send, with "Nothing is added until you
+approve what Aaru found." under it. Sending opens the capture's review; until it is approved or
+dropped, it waits as a "Your capture" card at the top of "Waiting for you" (the owl while Aaru
+reads it, then "Add 7 · 2 need a pick"). Past the free month's captures it says so (the Plus
+paywall on Apple, a line on the web: Plus is bought in the Apple apps). It is not yet a chat with
+the agent (AG-004).
+
+**Aaru Plus, 2026-10-23 (BIL-003/004):** the paywall is a sheet: what Plus includes, one row per
+plan with its App Store price and period, Restore Purchases, the renewal terms, and Terms and
+Privacy links. It opens from the capture limit and from Settings → Account's "Aaru Plus"
+section, which shows the state ("Active · renews 3 November", or this month's captures) and, on
+iPhone and iPad, Manage Subscription. The web shows the same section with no button.
 
 **Now playing and the week, 2026-10-21 (owner, SCR-008):** while a player plays, the
 `NowPlayingCard` (§15) runs across the full width between the heading and Tonight, and Tonight
@@ -296,6 +310,11 @@ for free and adds no new furniture.
 
 The feeling to protect: **it never writes what it guessed without showing you the guess.**
 Extraction from a screenshot is a guess. One row or ninety, the `MatchTable` comes first.
+
+**Built 2026-10-23:** the review is the import's own page, titled "Your capture", headed "Add 7 ·
+2 need a pick", with **Approve** and **Not this**, "Find it" on unmatched rows, and the Undo toast
+after Approve. Its back link and "Not this" return to Home. The "ready" notification opens it.
+The Share Extension is not built yet.
 
 ## 12. Approvals (a plan from somewhere else)
 
@@ -809,7 +828,7 @@ new import source or connected app joins its page; it never gets a page of its o
 
 | # | Page | Web slug | Sections, in order |
 | --- | --- | --- | --- |
-| 1 | Account | `account` | Name and handle (one editor) · Signed in with, Link Google · On this device: Appearance (System / Light / Dark) · Sign out |
+| 1 | Account | `account` | Name and handle (one editor) · Signed in with, Link Google · Aaru Plus (state; buy and manage on Apple only) · On this device: Appearance (System / Light / Dark) · Sign out |
 | 2 | Friends & privacy | `friends` | Add a friend · Asking you · Waiting on · Friends · Blocked · Show my badges and level to friends · Join the weekly friends board (2026-10-22) · Location: Concerts near, Remove (only while concerts are on). Footer: "Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private." |
 | 3 | Notifications | `notifications` | New episodes · Mentions in groups · Group invites · this browser's alerts (web). Footer: "Requests from your connected agents always alert you." The switches are per account, so the Mac shows them too: "Alerts go to your iPhone and your browsers." |
 | 4 | Import | `import` | Trakt · Bring your history, in `CLAUDE.md`'s import order: Stremio history, IMDb, Letterboxd, Goodreads, Pogdesign CAT, Netflix, MyAnimeList, AniList, Any other CSV · Imports (the jobs; "No imports yet." when none) |
@@ -822,7 +841,7 @@ Where each existing piece goes:
 
 | Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
 | --- | --- | --- |
-| Account | `AccountPage`: `ProfileEditor` (handle and name), Signed in with + Link Google, `AppearanceSection`, Sign out | `AccountSettings` first section; `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
+| Account | `AccountPage`: `ProfileEditor` (handle and name), Signed in with + Link Google, Aaru Plus (`plusLine`), `AppearanceSection`, Sign out | `AccountSettings` first section; `PlusSection` + `PlusPaywall` (`Aaru/Plus`); `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
 | Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsPage` (`Social/FriendsView.swift`): handle, a Friends row that opens Friends (`router.showFriends()`), Show my library to friends; `ConcertPlaceSection`. The friend lists, invites and requests live on Friends (`FriendsScreen`), as on the web |
 | Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
 | Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |

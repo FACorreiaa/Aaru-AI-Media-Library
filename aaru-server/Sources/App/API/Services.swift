@@ -23,6 +23,8 @@ struct Services: Sendable {
     var groups: GroupService
     var board: BoardService
     var concerts: ConcertService
+    /// Aaru Plus (BIL-001). Purchases answer 503 until `App+build` gives it Apple's verifier.
+    var billing: BillingService
     /// Open sockets and browser tickets (GRP-006). One per process.
     var realtime: RealtimeHub
     /// `@aaru` answers; nil when no model is configured (GRP-011).
@@ -86,6 +88,7 @@ struct Services: Sendable {
             groups: groups,
             board: BoardService(stores: stores, resolver: resolver, library: library),
             concerts: ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places),
+            billing: BillingService(stores: stores, apple: nil),
             realtime: realtime,
             agentReplies: model.map {
                 AgentReplyService(

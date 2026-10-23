@@ -15,6 +15,8 @@ final class AppServices {
     let groups: GroupsModel
     /// Level, streak, badges and the unlock toast (GAM-001…005), read after every library write.
     let progress: ProgressModel
+    /// Aaru Plus (BIL-004): the entitlement and the App Store's products.
+    let plus: PlusModel
     /// The `/v1/ws` socket (GRP-006): open while signed in and active.
     let realtime: RealtimeClient
     #if os(iOS)
@@ -44,6 +46,7 @@ final class AppServices {
         groups = GroupsModel(api: api, realtime: realtime)
         let progress = ProgressModel(api: api)
         self.progress = progress
+        plus = PlusModel(api: api)
         #if os(iOS)
             push = PushRegistrar(api: api)
             PushRegistrar.current = push

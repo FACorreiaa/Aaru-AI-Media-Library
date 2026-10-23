@@ -152,6 +152,69 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/entitlement:
+    get:
+      operationId: getEntitlement
+      summary: >-
+        Aaru Plus and this month's captures (BIL-001). The same on every client; Plus is bought in
+        the Apple apps only.
+      responses:
+        '200':
+          description: The account's entitlement.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entitlement'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/billing/apple/transactions:
+    post:
+      operationId: recordAppleTransaction
+      summary: >-
+        A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction
+        must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another,
+        422 `invalid_transaction` when it does not verify.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [signedTransaction]
+              properties:
+                signedTransaction:
+                  type: string
+                  description: StoreKit 2's `jwsRepresentation`.
+      responses:
+        '200':
+          description: The entitlement after it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entitlement'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/billing/apple/notifications:
+    post:
+      operationId: receiveAppleNotification
+      summary: >-
+        App Store Server Notifications v2 (BIL-003): renewals, expiries, refunds. Unauthenticated;
+        the payload is verified up to Apple's root certificate.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [signedPayload]
+              properties:
+                signedPayload: {type: string}
+      responses:
+        '200':
+          description: Received.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/me/profile:
     put:
       operationId: updateProfile
@@ -3221,6 +3284,40 @@ components:
           items:
             type: string
             enum: [apple, email, google]
+    Entitlement:
+      type: object
+      required: [plus, appAccountToken, capture]
+      properties:
+        plus:
+          type: boolean
+          description: Aaru Plus is active.
+        productId:
+          type: string
+          description: The App Store product keeping Plus active.
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the current period ends; it renews unless cancelled.
+        sandbox:
+          type: boolean
+          description: Bought in the App Store sandbox (TestFlight).
+        appAccountToken:
+          type: string
+          format: uuid
+          description: What the Apple app sets as a purchase's `appAccountToken`.
+        capture:
+          type: object
+          required: [used, resetsAt]
+          properties:
+            used:
+              type: integer
+              description: Captures started this UTC month.
+            limit:
+              type: integer
+              description: The month's limit. Absent on Plus.
+            resetsAt:
+              type: string
+              format: date-time
     ProfileUpdate:
       type: object
       required: [handle]

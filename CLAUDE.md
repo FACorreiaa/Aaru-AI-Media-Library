@@ -47,6 +47,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
 | User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text and images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. Free accounts get 3 a month |
 | Agent model | Pluggable `ModelProviding` in `aaru-server` (`Sources/App/Agent`). Anthropic default, user key supported, spend metered daily |
+| Billing | Aaru Plus on StoreKit 2, bought in the Apple apps only (BIL-001…004, pulled forward 2026-10-22). The server verifies Apple's signed transactions and notifications itself (`Sources/App/Billing`, against Apple's root) and keeps the entitlement; the web shows it and sells nothing. No Stripe, no web checkout |
 | Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`, with an OAuth front door (`Sources/App/OAuth`) so Claude can add Aaru as a custom connector. Not a second backend |
 
 ## Repo layout

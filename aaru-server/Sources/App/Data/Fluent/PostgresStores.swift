@@ -40,6 +40,7 @@ extension Stores {
             gamification: PostgresGamificationStore(sql: sql),
             tonight: PostgresTonightStore(sql: sql),
             capture: PostgresCaptureStore(sql: sql),
+            entitlements: PostgresEntitlementStore(sql: sql),
             boards: PostgresBoardStore(database: database)
         )
     }

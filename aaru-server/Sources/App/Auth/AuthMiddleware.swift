@@ -20,6 +20,8 @@ struct AuthMiddleware: RouterMiddleware {
         "/v1/scrobble/start",
         "/v1/scrobble/pause",
         "/v1/scrobble/stop",
+        // App Store Server Notifications: Apple's signature is the authentication (BIL-003).
+        "/v1/billing/apple/notifications",
     ]
 
     /// Whether a path answers without a session: the fixed public routes, and an invite link's

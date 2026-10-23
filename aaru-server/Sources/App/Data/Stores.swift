@@ -335,37 +335,3 @@ struct WebPushSubscription: Sendable, Equatable {
     /// The VAPID public key it was made with (base64url), so a later key still reaches it.
     var vapidKeyID: String
 }
-
-/// Everything handlers may touch, injected once at boot.
-struct Stores: Sendable {
-    var health: any DatabaseHealth
-    var users: any UserStore
-    var sessions: any SessionStore
-    var magicLinks: any MagicLinkStore
-    var titles: any TitleStore
-    var animeMappings: any AnimeMappingStore
-    var library: any LibraryStore
-    var lists: any ListStore
-    var shelves: any ShelfStore
-    var schedule: any ScheduleStore
-    var stats: any StatsStore
-    var importJobs: any ImportJobStore
-    var trakt: any TraktStore
-    var push: any PushStore
-    var agentTokens: any AgentTokenStore
-    var watchEvents: any WatchEventStore
-    var listens: any ListenStore
-    var plans: any PlanStore
-    var oauth: any OAuthStore
-    var social: any SocialStore
-    var friendViews: any FriendViewStore
-    var interactions: any InteractionStore
-    var groups: any GroupStore
-    var groupKinds: any GroupKindStore
-    var agent: any AgentStore
-    var concerts: any ConcertStore
-    var gamification: any GamificationStore
-    var tonight: any TonightStore
-    var capture: any CaptureStore
-    var boards: any BoardStore
-}

@@ -86,8 +86,9 @@
             [.banner, .sound]
         }
 
-        /// A tap on an airing alert opens the show it announced; one on an agent request opens it;
-        /// one on a mention opens its channel, and one on a group invite the Groups tab.
+        /// A tap on an airing alert opens the show it announced; one on an agent request or a
+        /// capture's plan opens it; one on a mention opens its channel, and one on a group invite
+        /// the Groups tab.
         nonisolated func userNotificationCenter(
             _: UNUserNotificationCenter,
             didReceive response: UNNotificationResponse
@@ -95,10 +96,12 @@
             let info = response.notification.request.content.userInfo
             let id = info["libraryItemId"] as? String
             let plan = info["planId"] as? String
+            let capture = info["importId"] as? String
             let group = (info["url"] as? String).flatMap(URL.init(string:))
             await MainActor.run {
                 PushInbox.shared.libraryItemID = id
                 PushInbox.shared.planID = plan
+                PushInbox.shared.importID = capture
                 PushInbox.shared.groupLink = group
             }
         }

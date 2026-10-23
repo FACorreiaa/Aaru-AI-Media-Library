@@ -20,9 +20,11 @@ import {
   listImports,
 } from '../lib/imports/server'
 import type { ImportDetail, ImportRow } from '../lib/imports/server'
+import { captureHeadline } from '../lib/capture/model'
 
 // APP-007 on the web: one import. A ledger of steps while it is matched (IMP-017), then the
 // plan to approve. An unmatched row can be matched by hand, before or after approval (IMP-011).
+// A capture (AG-006) is reviewed here too, as a plan card: it came from Home and goes back there.
 export const Route = createFileRoute('/_shell/app_/imports/$id')({
   loader: ({ params }) => getImport({ data: { id: params.id } }),
   // UX-013: the tab names the import.
@@ -53,6 +55,8 @@ function ImportPage() {
   const [finding, setFinding] = createSignal<ImportRow | null>(null)
   const shownRow = lastShown(finding)
   const job = () => detail().job
+  const capture = () => job().source === 'capture'
+  const home = () => (capture() ? '/app' : '/app/settings/import')
   const planned = () => job().state === 'planned'
   const resolvable = () =>
     planned() || job().state === 'partial' || job().state === 'succeeded'
@@ -100,7 +104,7 @@ function ImportPage() {
     setProblem(null)
     try {
       await discardImport({ data: { id: job().id } })
-      await navigate({ to: '/app/settings/import' })
+      await navigate({ to: home() })
     } catch (error) {
       setProblem(
         error instanceof Error
@@ -137,18 +141,26 @@ function ImportPage() {
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
-        <BackLink to="/app/settings/import" label="Import" class="-ml-1" />
+        <BackLink
+          to={home()}
+          label={capture() ? 'Home' : 'Import'}
+          class="-ml-1"
+        />
         <h1 class="mt-4 font-display text-3xl font-medium tracking-tight">
-          {job().filename ?? sourceLabel(job())}
+          {capture() ? 'Your capture' : (job().filename ?? sourceLabel(job()))}
         </h1>
         <p class="mt-2 text-muted" aria-live="polite">
-          {sourceLabel(job())} · {stateLabel(job())}
+          {(capture() && captureHeadline(job())) ||
+            `${sourceLabel(job())} · ${stateLabel(job())}`}
         </p>
         <Show when={importSteps(job()).length > 0}>
           <Ledger steps={importSteps(job())} />
           <p class="mt-6 max-w-prose text-sm text-muted">
-            You can leave this page: the plan waits under Settings → Import, and
-            nothing reaches your library until you approve it.
+            You can leave this page: the plan waits{' '}
+            {capture()
+              ? 'on Home under Waiting for you'
+              : 'under Settings → Import'}
+            , and nothing reaches your library until you approve it.
           </p>
           <Show when={job().state === 'queued'}>
             <Button
@@ -198,7 +210,11 @@ function ImportPage() {
               disabled={applying()}
               onClick={apply}
             >
-              {applying() ? 'Importing…' : 'Approve and import'}
+              {applying()
+                ? 'Adding…'
+                : capture()
+                  ? 'Approve'
+                  : 'Approve and import'}
             </Button>
             <Button
               variant="ghost"
@@ -206,7 +222,7 @@ function ImportPage() {
               onClick={discard}
               class="min-h-9 text-sm hover:text-danger"
             >
-              Discard
+              {capture() ? 'Not this' : 'Discard'}
             </Button>
             <span class="text-sm text-muted">
               Lands in your history as one action you can undo.

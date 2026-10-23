@@ -12,6 +12,8 @@ import {
 } from 'solid-js'
 import { OwlMark } from '../components/Brand'
 import { DiscoverRows } from '../components/DiscoverRows'
+import { CaptureCard } from '../components/CaptureCard'
+import { CaptureComposer } from '../components/CaptureComposer'
 import { LastImportCard } from '../components/LastImportCard'
 import { Medallion } from '../components/Medallion'
 import { PlanCard } from '../components/PlanCard'
@@ -75,6 +77,7 @@ import type {
 import { getTonight, sendTonightFeedback } from '../lib/home/server'
 import { daypartHeading } from '../lib/appearance'
 import type { ImportJob } from '../lib/imports/server'
+import { waitingCaptures } from '../lib/capture/model'
 import { upsert } from '../lib/library/model'
 import type { LibraryEntry } from '../lib/library/model'
 import {
@@ -195,6 +198,7 @@ function Home() {
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
   const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
+  const [captures, setCaptures] = createSignal<ImportJob[]>([])
   const [progress, setProgress] = createSignal<Progress | null>(null)
   const [playing, setPlaying] = createSignal<NowPlayingItem[]>([])
   const [playingAt, setPlayingAt] = createSignal(new Date())
@@ -279,15 +283,19 @@ function Home() {
     }
   }
 
-  /** The newest import, collapsed beside the rows. A failure just leaves it out. */
+  /** The newest import, collapsed beside the rows, and the captures still waiting (AG-006),
+   * which sit with the requests instead. A failure just leaves them out. */
   async function loadLastImport() {
     try {
       const jobs = await queryClient.query(importsQuery)
-      const newest = jobs.reduce<ImportJob | null>(
-        (best, job) => (!best || job.createdAt > best.createdAt ? job : best),
-        null,
-      )
+      const newest = jobs
+        .filter((job) => job.source !== 'capture')
+        .reduce<ImportJob | null>(
+          (best, job) => (!best || job.createdAt > best.createdAt ? job : best),
+          null,
+        )
       setLastImport(newest)
+      setCaptures(waitingCaptures(jobs))
     } catch {
       setLastImport(null)
     }
@@ -607,6 +615,8 @@ function Home() {
           )}
         </Show>
 
+        <CaptureComposer />
+
         <Show when={nowPlaying()[0]}>
           {(lead) => (
             <Suspense>
@@ -642,7 +652,7 @@ function Home() {
           {/* On a phone these join the column in order; on a wide screen they are the side
               column, held in view while the rows scroll. */}
           <div class="contents lg:sticky lg:top-6 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-8 lg:flex lg:flex-col lg:gap-4 lg:self-start">
-            <Show when={plans().length > 0}>
+            <Show when={plans().length > 0 || captures().length > 0}>
               <section
                 class="order-2 mt-8 lg:mt-0"
                 aria-labelledby="home-waiting"
@@ -651,6 +661,9 @@ function Home() {
                   Waiting for you
                 </h2>
                 <div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+                  <For each={captures()}>
+                    {(job) => <CaptureCard job={job} />}
+                  </For>
                   <For each={plans()}>
                     {(plan) => (
                       <PlanCard

@@ -15,6 +15,7 @@ struct RootView: View {
     @Environment(SessionStore.self) private var session
     @Environment(AppRouter.self) private var router
     @Environment(ProgressModel.self) private var progress: ProgressModel?
+    @Environment(PlusModel.self) private var plus: PlusModel?
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -83,6 +84,7 @@ struct RootView: View {
                 settings.reset()
                 groups.reset()
                 progress?.reset()
+                plus?.reset()
                 realtime.reset()
                 router.reset()
                 HomeCache().clear()
@@ -145,6 +147,7 @@ private struct MainTabs: View {
 
     @Environment(AppRouter.self) private var router
     @Environment(ProgressModel.self) private var progress: ProgressModel?
+    @Environment(PlusModel.self) private var plus: PlusModel?
     @Environment(\.scenePhase) private var scenePhase
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -155,6 +158,8 @@ private struct MainTabs: View {
     @State private var linkedTitle: LinkedTitle?
     /// An agent request a notification asked to open (OUT-004).
     @State private var linkedPlan: LinkedTitle?
+    /// A capture whose plan is ready, from its notification (AG-006).
+    @State private var linkedImport: LinkedTitle?
 
     /// iPhone and a compact iPad window: a tab bar of five, no sidebar. `.sidebarOnly` alone
     /// still counts a hidden tab there and turns the fifth into More, so those tabs are left out.
@@ -201,6 +206,16 @@ private struct MainTabs: View {
                     PlanSheet(api: api, id: link.id) { linkedPlan = nil }
                 }
             }
+            .sheet(item: $linkedImport) { link in
+                NavigationStack {
+                    ImportDetailView(id: link.id, imports: imports, library: library, lists: lists, api: api)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") { linkedImport = nil }
+                            }
+                        }
+                }
+            }
             .sheet(item: $linkedTitle) { link in
                 NavigationStack {
                     LibraryEntryDestination(id: link.id, api: api, library: library, lists: lists)
@@ -237,6 +252,8 @@ private struct MainTabs: View {
             }
             // The tab's mention badge needs the counts before the tab is opened.
             .task { await groups.load() }
+            // Renewals and Ask to Buy approvals arrive while the app runs (BIL-004).
+            .task { await plus?.listen() }
             // Badges earned elsewhere (an import, another device) toast on return (GAM-004).
             .task(id: scenePhase) {
                 if scenePhase == .active {
@@ -264,6 +281,11 @@ private struct MainTabs: View {
                 guard let id else { return }
                 linkedPlan = LinkedTitle(id: id)
                 PushInbox.shared.planID = nil
+            }
+            .onChange(of: PushInbox.shared.importID, initial: true) { _, id in
+                guard let id else { return }
+                linkedImport = LinkedTitle(id: id)
+                PushInbox.shared.importID = nil
             }
             .onChange(of: PushInbox.shared.libraryItemID, initial: true) { _, id in
                 guard let id else { return }

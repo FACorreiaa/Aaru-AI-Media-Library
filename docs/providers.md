@@ -47,7 +47,7 @@ typed into the city search; that route's query is dropped from Aaru's request lo
 
 | Provider | Used for | Key | Secret | Data it receives |
 | --- | --- | --- | --- | --- |
-| Apple | Sign in with Apple; push notifications (APNs) | Team key (APNs) | `APNS_PRIVATE_KEY` in `aaru-env`, `APNS_KEY_ID` env | Apple ID sign-in token; device push token + notification text |
+| Apple | Sign in with Apple; push notifications (APNs); Aaru Plus on the App Store (BIL-001…004) | Team key (APNs); none for Plus (signed data checked against Apple's root) | `APNS_PRIVATE_KEY` in `aaru-env`, `APNS_KEY_ID` env | Apple ID sign-in token; device push token + notification text. Plus: Aaru sends nothing; Apple sends signed transactions (product, dates, refunds, the user id set as `appAccountToken`) to `/v1/billing/apple/*` |
 | Google | Sign in with Google | none (public client ids) | `GOOGLE_CLIENT_IDS` env | Google sign-in token |
 | Resend | Sign-in emails (code + link) | API key | `RESEND_API_KEY` in `aaru-env` | Email address and the sign-in email |
 | Stremio (optional, per user) | Importing a user's Stremio history once (IMP-016): `link.stremio.com` device-link code, `api.strem.io` library read + logout. Unofficial API | none | — | The approved link code; the session key is used for one read and never stored |
