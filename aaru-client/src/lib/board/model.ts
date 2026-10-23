@@ -11,12 +11,28 @@ type MediaType = components['schemas']['MediaType']
 
 export type BoardSort = 'recent' | 'top'
 
+/** Posts per Recent page: the server's default page size. */
+export const BOARD_PAGE_SIZE = 20
+
+/** Whether "Show older" is offered: a full Recent page may have more behind it; Top never pages. */
+export function hasOlder(sort: BoardSort, page: BoardPost[]): boolean {
+  return sort === 'recent' && page.length >= BOARD_PAGE_SIZE
+}
+
 /** A 1-10 rating as five symbols: whole stars, a half where odd. */
 export function starsLabel(rating: number): string {
   const r = Math.max(0, Math.min(10, Math.round(rating)))
   const full = Math.floor(r / 2)
   const half = r % 2 === 1 ? 1 : 0
   return '★'.repeat(full) + '½'.repeat(half) + '☆'.repeat(5 - full - half)
+}
+
+/** A 1-10 rating for a screen reader: `9` → "4½ of 5 stars". */
+export function ratingWords(rating: number): string {
+  const r = Math.max(0, Math.min(10, Math.round(rating)))
+  const whole = Math.floor(r / 2)
+  const half = r % 2 === 1 ? '½' : ''
+  return `${whole > 0 || !half ? whole : ''}${half} of 5 stars`
 }
 
 export function spoilerLabel(stamp: SpoilerStamp | undefined): string | null {

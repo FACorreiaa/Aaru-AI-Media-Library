@@ -81,27 +81,8 @@ export function debounced(action: () => unknown, ms: number): () => void {
   }
 }
 
-/** A round monogram: groups in the rail, people in rows. */
-export function Monogram(props: {
-  text: string
-  size?: 'sm' | 'md' | 'lg'
-  class?: string
-}) {
-  const size = () =>
-    props.size === 'lg'
-      ? 'size-12 text-base'
-      : props.size === 'sm'
-        ? 'size-8 text-xs'
-        : 'size-10 text-sm'
-  return (
-    <span
-      aria-hidden="true"
-      class={`grid shrink-0 place-items-center rounded-full bg-medallion/20 font-display font-medium ${size()} ${props.class ?? ''}`}
-    >
-      {props.text}
-    </span>
-  )
-}
+// Its own module, so a page that only shows people (the Board) does not load the menu below.
+export { Monogram } from './Monogram'
 
 /** A mention count pill; nothing at zero. */
 export function MentionPill(props: { count: number; label?: string }) {

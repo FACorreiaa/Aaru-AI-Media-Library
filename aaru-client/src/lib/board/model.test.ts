@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  BOARD_PAGE_SIZE,
   boardEmpty,
+  hasOlder,
   mergeComments,
+  ratingWords,
   reviewEffect,
   shouldLoadMore,
   spoilerLabel,
@@ -129,5 +132,19 @@ describe('board model', () => {
     expect(boardEmpty([], 0)).toBe('no-friends')
     expect(boardEmpty([], 2)).toBe('quiet')
     expect(boardEmpty([post], 2)).toBeNull()
+  })
+
+  it('offers older posts only after a full Recent page', () => {
+    const page = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ id: `p${i}` }) as BoardPost)
+    expect(hasOlder('recent', page(BOARD_PAGE_SIZE))).toBe(true)
+    expect(hasOlder('recent', page(BOARD_PAGE_SIZE - 1))).toBe(false)
+    expect(hasOlder('top', page(BOARD_PAGE_SIZE))).toBe(false)
+  })
+
+  it('says a rating in words', () => {
+    expect(ratingWords(9)).toBe('4½ of 5 stars')
+    expect(ratingWords(2)).toBe('1 of 5 stars')
+    expect(ratingWords(1)).toBe('½ of 5 stars')
   })
 })

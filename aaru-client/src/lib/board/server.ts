@@ -218,3 +218,56 @@ export const reportPost = createServerFn({ method: 'POST' })
       'That report was not sent.',
     ),
   )
+
+/** A title the composer starts with: enough to show it, send it, and word what posting does. */
+export type ComposerTitle = {
+  titleId: string
+  type: components['schemas']['MediaType']
+  title: string
+  year?: number
+  posterUrl?: string
+  isAnime: boolean
+  libraryItemId?: string
+}
+
+/**
+ * The title a "Write about this" link names (`/app/friends?title=<id>`). The id is the one
+ * `/app/title/$id` uses, a library item, so the composer knows the title is yours and says its
+ * status stays; a catalog title id works too, read from the catalog.
+ */
+export const loadComposerTitle = createServerFn({ method: 'GET' })
+  .validator(z.object({ id: uuid }))
+  .handler(async ({ data }): Promise<ComposerTitle> => {
+    const client = api(sessionToken())
+    const fallback = 'That title could not be loaded.'
+    const item = await client.GET('/v1/library/items/{id}', {
+      params: { path: { id: data.id } },
+    })
+    if (item.response.status !== 404) {
+      const entry = check(item, fallback)
+      const t = entry.title
+      return {
+        titleId: t.id,
+        type: t.type,
+        title: t.title,
+        year: t.year,
+        posterUrl: t.posterUrl,
+        isAnime: t.isAnime,
+        libraryItemId: entry.id,
+      }
+    }
+    const t = check(
+      await client.GET('/v1/titles/{id}', {
+        params: { path: { id: data.id } },
+      }),
+      fallback,
+    )
+    return {
+      titleId: t.id,
+      type: t.type,
+      title: t.title,
+      year: t.year,
+      posterUrl: t.posterUrl,
+      isAnime: t.isAnime,
+    }
+  })
