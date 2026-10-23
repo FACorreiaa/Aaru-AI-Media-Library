@@ -4,6 +4,7 @@ import { Wordmark } from '../components/Brand'
 import { SettingsPageTitle } from '../components/settings/SettingsNav'
 import { SettingsSection } from '../components/settings/SettingsSection'
 import { CONTACT_EMAIL } from '../lib/credits'
+import { DISCORD_URL } from '../lib/site'
 
 // Settings → About (DESIGN.md §18): the wordmark, credits, and the public pages, which lead
 // back here while you are signed in (UX-014).
@@ -43,6 +44,16 @@ function About() {
           <li>
             <a href={`mailto:${CONTACT_EMAIL}`} class={link}>
               Contact
+            </a>
+          </li>
+          <li>
+            <a
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              class={link}
+            >
+              Join us on Discord
             </a>
           </li>
         </ul>
