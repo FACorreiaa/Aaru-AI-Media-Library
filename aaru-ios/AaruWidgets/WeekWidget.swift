@@ -76,7 +76,8 @@ struct WeekWidgetView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("This week")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
+                    .widgetAccentable()
                 HStack(alignment: .top, spacing: 4) {
                     ForEach(columns.days) { day in
                         DayColumn(day: day, perDay: perDay, roomy: family == .systemExtraLarge)
@@ -101,13 +102,16 @@ private struct DayColumn: View {
                 Text(day.date.formatted(.dateTime.day()))
                     .font(.headline.monospacedDigit())
                 Text(day.date.formatted(.dateTime.weekday(.abbreviated)).uppercased())
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
             }
-            .foregroundStyle(day.isToday ? Palette.paper : Palette.ink)
+            .foregroundStyle(day.isToday ? Color(.onAccent) : Color(.ink))
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(day.isToday ? Palette.brand : .clear, in: .rect(cornerRadius: 6))
+            .background(
+                day.isToday ? Color(.accent) : .clear,
+                in: .rect(cornerRadius: AaruRadius.thumb, style: .continuous)
+            )
             ForEach(day.airings.prefix(perDay)) { airing in
                 Link(destination: WidgetLink.title(airing.libraryItemId) ?? URL(fileURLWithPath: "/")) {
                     WeekCellView(airing: airing, roomy: roomy)
@@ -116,15 +120,15 @@ private struct DayColumn: View {
             if day.airings.count > perDay {
                 Text("+\(day.airings.count - perDay)")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Palette.muted)
+                    .foregroundStyle(Color(.muted))
             }
             Spacer(minLength: 0)
         }
         .padding(3)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(
-            day.isToday ? Palette.brand.opacity(0.08) : Palette.surface.opacity(0.6),
-            in: .rect(cornerRadius: 8)
+            day.isToday ? Color(.accent).opacity(AaruAlpha.tint) : Color(.surface).opacity(AaruAlpha.half),
+            in: .rect(cornerRadius: AaruRadius.row, style: .continuous)
         )
     }
 }
@@ -136,16 +140,16 @@ private struct WeekCellView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(airing.title)
-                .font(.system(size: roomy ? 12 : 10, weight: .semibold))
-                .foregroundStyle(Palette.brand)
+                .font((roomy ? Font.caption : .caption2).weight(.semibold))
+                .foregroundStyle(Color(.accent))
                 .lineLimit(2)
             Text(airing.episodeCode)
-                .font(.system(size: 9).monospacedDigit())
-                .foregroundStyle(Palette.ink)
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(Color(.ink))
             if roomy, let detail {
                 Text(detail)
-                    .font(.system(size: 9))
-                    .foregroundStyle(Palette.muted)
+                    .font(.caption2)
+                    .foregroundStyle(Color(.muted))
                     .lineLimit(1)
             }
         }
@@ -154,7 +158,7 @@ private struct WeekCellView: View {
         .overlay(alignment: .leading) {
             if airing.kind != .regular {
                 Rectangle()
-                    .fill(airing.kind == .finale ? Palette.gold : Palette.brand)
+                    .fill(airing.kind == .finale ? Color(.gold) : Color(.accent))
                     .frame(width: 2)
             }
         }

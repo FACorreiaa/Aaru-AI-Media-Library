@@ -510,6 +510,7 @@ account or a stranger that has not happened yet.
 | BRD-007 | Built | this PR; `Design/Surfaces.swift` | Apple contrast P1s + launch screen in Paper. Owner checks a sheet and a cold launch in dark on TestFlight |
 | BRD-008 | Built | #161 (source + generator); #162 (web surfaces); #163 (web type + motion); this PR (Apple: card/well/field/lift, radii, alpha, spacing, Settings tiles on tokens, brand guard for system colours) | Owner checks a menu, a dialog, the drawer, a card and the recap in both appearances on beta web, once with Reduce Motion |
 | BRD-010 | Built | this PR; `docs/brand/owl_icon_appearances.py` | Dark + tinted app icon (iOS 18), extension popup on the tokens, PWA manifest rule. Owner checks the icon in all three Home Screen modes |
+| BRD-009 | Built | this PR; `WidgetAssets.xcassets` gets every role | Widgets on the tokens: generated colour sets, `widgetAccentable`, text styles, Gauge. Owner checks the widget gallery in light, dark and tinted |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -945,6 +946,10 @@ Apple surfaces + spacing + type) follow under the same id.
 **Done when:** `generate-tokens.mjs --check` covers the new files; `rounded-lg`/`-xl` keep
 their pixel values (10/14) so nothing moves in this PR; both targets build with the enums.
 
+### BRD-009 · Widgets on the tokens · S · owner, 2026-10-23
+The widget extension had its own string palette (`Color("Paper")`, accent called `brand`) with six roles, fixed 9–12 pt fonts, no `widgetAccentable`, and a gradient fallback for missing art. Its catalog now gets every role from `design/tokens.json` (`Accent`, `OnAccent`, `Stone`, `Line`, `LineStrong`, `Danger`, `Night`, `Medallion`, `Scrim`, `OnScrim`), the code uses the generated symbols and `AaruRadius`/`AaruAlpha`, text is in text styles (one `` for the circular count), each family marks its glyph and title `widgetAccentable` so tinted and vibrant modes read, capacity progress is a `Gauge`, and the Live Activity and Island use the tokens.
+
+**Done when:** no `Palette.` or `.system(size:` in `AaruWidgets` beyond the one scaled metric; the app scheme builds for iOS and macOS; the owner has seen the gallery in tinted mode.
 ### BRD-010 · Shell polish: icon appearances, extension popup, PWA manifest · S · owner, 2026-10-23
 The app icon had one appearance; iOS 18 asks for dark and tinted. `docs/brand/owl_icon_appearances.py` renders both from the traced A-mark: dark is the mark on flat night navy without the hologram glow, tinted is the mark alone in grey on transparent for the system to tint; the Beta set keeps its band. The extension popup takes the web's eyebrow (12 px, 0.12 em), the pill radius and the motion tokens instead of its own values. The PWA manifest's two colours are the dark paper by design (one splash for both appearances), written by the generator and documented in DESIGN.md.
 

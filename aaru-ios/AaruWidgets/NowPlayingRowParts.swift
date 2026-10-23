@@ -59,11 +59,13 @@
             }
             .monospacedDigit()
             .multilineTextAlignment(.trailing)
-            .foregroundStyle(Palette.brand)
+            .foregroundStyle(Color(.accent))
         }
     }
 
-    /// A bar that runs with the clock, or stands still at the pause. Needs `endsAt`.
+    /// A bar that runs with the clock, or stands still at the pause. Needs `endsAt`. A standing
+    /// bar is a capacity (elapsed over length), so it is a gauge; only the running one is a
+    /// progress view, which is the one that can follow a timer.
     struct RowProgress: View {
         let item: NowPlayingActivityItem
 
@@ -72,11 +74,9 @@
                 if let endsAt = item.endsAt {
                     if let pausedAt = item.pausedAt {
                         let length = endsAt.timeIntervalSince(item.startedAt)
-                        ProgressView(
-                            value: length > 0 ? min(max(pausedAt.timeIntervalSince(item.startedAt) / length, 0), 1) : 0
-                        )
+                        capacity(length > 0 ? min(max(pausedAt.timeIntervalSince(item.startedAt) / length, 0), 1) : 0)
                     } else if item.watched {
-                        ProgressView(value: 1)
+                        capacity(1)
                     } else {
                         ProgressView(
                             timerInterval: item.startedAt ... max(endsAt, item.startedAt),
@@ -87,7 +87,12 @@
                     }
                 }
             }
-            .tint(Palette.brand)
+            .tint(Color(.accent))
+        }
+
+        private func capacity(_ fraction: Double) -> some View {
+            Gauge(value: fraction, in: 0 ... 1) { EmptyView() }
+                .gaugeStyle(.accessoryLinearCapacity)
         }
     }
 
@@ -113,7 +118,7 @@
                     Button(intent: intent) {
                         Image(systemName: "checkmark.circle")
                             .font(.title3)
-                            .foregroundStyle(Palette.brand)
+                            .foregroundStyle(Color(.accent))
                             .frame(width: 28, height: 28)
                     }
                     .buttonStyle(.plain)
@@ -122,16 +127,17 @@
                     Button(intent: intent) {
                         Label("Mark watched", systemImage: "checkmark.circle")
                             .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color(.onAccent))
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Palette.brand)
+                    .tint(Color(.accent))
                 }
             }
         }
     }
 
-    /// The art the app saved into the App Group for this row, or the brand wash with the kind's
+    /// The art the app saved into the App Group for this row, or the flat surface with the kind's
     /// glyph. Alone, a row keeps its art's shape (a poster, a cover, a thumbnail) at `height`;
     /// stacked, every row takes the same square so the titles line up.
     struct ArtTile: View {
@@ -153,13 +159,15 @@
             ArtworkView(data: artwork)
                 .overlay {
                     if artwork == nil {
+                        // The glyph is a share of the tile, which is a fixed frame, not text.
                         Image(systemName: item.kind.glyph)
-                            .font(.system(size: size.height * 0.4))
-                            .foregroundStyle(Palette.ink.opacity(0.6))
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: size.height * 0.4, height: size.height * 0.4)
+                            .foregroundStyle(Color(.ink).opacity(AaruAlpha.half))
                     }
                 }
                 .frame(width: size.width, height: size.height)
-                .clipShape(RoundedRectangle(cornerRadius: max(4, size.height / 8)))
                 .accessibilityHidden(true)
         }
     }
