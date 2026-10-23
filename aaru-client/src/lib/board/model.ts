@@ -162,3 +162,39 @@ export function dropComment(items: BoardComment[], id: string): BoardComment[] {
     return [c]
   })
 }
+
+/** What a reply answers: the top-level comment it hangs from, whom it names, and its first words. */
+export type ReplyTarget = {
+  /** Sent as `replyTo`: always a top-level comment, since threads are one level deep. */
+  id: string
+  /** Who "Replying to" names: the author of the comment Reply was pressed on. */
+  author?: BoardComment['author']
+  /** `@ben ` when answering a reply, so Ben is tagged; empty for a top-level comment. */
+  prefill: string
+}
+
+/**
+ * Reply on `comment`. A top-level comment is answered as itself. A reply is answered under its
+ * top-level comment (its `replyTo`, loaded or not), tagging the reply's author.
+ */
+export function replyTarget(comment: BoardComment): ReplyTarget {
+  if (!comment.replyTo) {
+    return { id: comment.id, author: comment.author, prefill: '' }
+  }
+  return {
+    id: comment.replyTo,
+    author: comment.author,
+    prefill: comment.author ? `@${comment.author.handle} ` : '',
+  }
+}
+
+/**
+ * The box's text when the reply target changes from one prefill to another: an untouched box (or
+ * one holding only the old prefill) takes the new one; typed words keep, with the new tag in
+ * front unless they already start with it.
+ */
+export function prefillReply(text: string, from: string, to: string): string {
+  if (text.trim() === '' || text === from) return to
+  const rest = from && text.startsWith(from) ? text.slice(from.length) : text
+  return rest.startsWith(to) ? rest : to + rest
+}

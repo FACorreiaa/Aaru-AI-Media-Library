@@ -1,4 +1,4 @@
-import { Show, createSignal } from 'solid-js'
+import { Show, createEffect, createSignal, on } from 'solid-js'
 import {
   Button,
   TextField,
@@ -6,7 +6,8 @@ import {
   TextFieldTextArea,
   toast,
 } from '~/components/ui'
-import type { BoardComment } from '../../lib/board/model'
+import { prefillReply } from '../../lib/board/model'
+import type { BoardComment, ReplyTarget } from '../../lib/board/model'
 import { addComment } from '../../lib/board/server'
 import { MAX_MESSAGE_LENGTH, remainingLabel } from '../../lib/groups/model'
 import { inviterName, monogram } from '../../lib/social/model'
@@ -14,13 +15,12 @@ import type { SocialUser } from '../../lib/social/server'
 import { MentionList, createMentions } from '../Mentions'
 import { Monogram } from '../groups/Monogram'
 
-/** The comment a reply answers: always a top-level one, since threads are one level deep. */
-export type ReplyTarget = { id: string; author?: SocialUser }
-
 /**
  * CommentComposer (BOARD-002): the reply box under a post's thread. One line that grows to
  * 160px; `@` suggests the post's author and your friends, never Aaru (BOARD-004). Replying
- * names who above the box with a ✕ to drop it; Escape drops it too. ⌘/Ctrl+Enter sends.
+ * names who above the box with a ✕ to drop it; Escape drops it too. Replying to a reply starts
+ * the box with `@who `, so they are tagged though the reply hangs off the top-level comment.
+ * ⌘/Ctrl+Enter sends; after a send, focus stays in the box for the next one.
  */
 export function CommentComposer(props: {
   postId: string
@@ -53,8 +53,29 @@ export function CommentComposer(props: {
   const canSend = () => text().trim().length > 0 && !tooLong() && !sending()
   const replyName = () => {
     const author = props.replyTo?.author
-    return author ? `@${author.handle}` : 'a deleted comment'
+    return author ? `@${author.handle}` : 'Aaru'
   }
+
+  // A new reply target swaps its `@who ` in (or out), keeping anything typed after it.
+  createEffect(
+    on(
+      () => props.replyTo,
+      (next, prev) => {
+        const value = prefillReply(
+          text(),
+          prev?.prefill ?? '',
+          next?.prefill ?? '',
+        )
+        if (value === text()) return
+        setText(value)
+        if (!box) return
+        box.value = value
+        box.setSelectionRange(value.length, value.length)
+        resize()
+      },
+      { defer: true },
+    ),
+  )
 
   function resize() {
     if (!box) return
@@ -78,6 +99,8 @@ export function CommentComposer(props: {
       mentions.close()
       resize()
       props.onPosted(created)
+      // Whatever sent it: a clicked Comment button goes disabled, and focus would fall to the page.
+      box?.focus({ preventScroll: true })
     } catch (error) {
       toast(
         error instanceof Error ? error.message : 'Your comment was not posted.',

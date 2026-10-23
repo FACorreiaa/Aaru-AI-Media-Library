@@ -5,7 +5,9 @@ import {
   dropComment,
   hasOlder,
   mergeComments,
+  prefillReply,
   ratingWords,
+  replyTarget,
   reviewEffect,
   shouldLoadMore,
   spoilerLabel,
@@ -184,5 +186,38 @@ describe('board model', () => {
     expect(dropComment(items, 'b')).toEqual([])
     const kept = [comment('a'), comment('b', 'a'), comment('c', 'a')]
     expect(dropComment(kept, 'b').map((c) => c.id)).toEqual(['a', 'c'])
+  })
+
+  it('replies to a reply under its top-level comment, tagging its author', () => {
+    const ana = { userId: 'a', handle: 'ana' }
+    const ben = { userId: 'b', handle: 'ben' }
+    expect(replyTarget(comment('a', undefined, { author: ana }))).toEqual({
+      id: 'a',
+      author: ana,
+      prefill: '',
+    })
+    expect(replyTarget(comment('b', 'a', { author: ben }))).toEqual({
+      id: 'a',
+      author: ben,
+      prefill: '@ben ',
+    })
+  })
+
+  it('answers an orphan reply under its own replyTo, never its own id', () => {
+    // Its parent is not loaded, so threading shows it top-level; the server still wants the root.
+    const orphan = comment('b', 'gone', {
+      author: { userId: 'b', handle: 'ben' },
+    })
+    expect(threadComments([orphan])[0].comment.id).toBe('b')
+    expect(replyTarget(orphan).id).toBe('gone')
+  })
+
+  it('swaps a prefill without losing typed words', () => {
+    expect(prefillReply('', '', '@ben ')).toBe('@ben ')
+    expect(prefillReply('@ben ', '@ben ', '@cy ')).toBe('@cy ')
+    expect(prefillReply('@ben great', '@ben ', '@cy ')).toBe('@cy great')
+    expect(prefillReply('so true', '', '@ben ')).toBe('@ben so true')
+    expect(prefillReply('@ben ', '@ben ', '')).toBe('')
+    expect(prefillReply('@ben hi', '@ben ', '')).toBe('hi')
   })
 })

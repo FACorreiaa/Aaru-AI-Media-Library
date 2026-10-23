@@ -4,10 +4,11 @@ import { Button, buttonVariants, toast } from '~/components/ui'
 import {
   dropComment,
   mergeComments,
+  replyTarget,
   shouldLoadMore,
   threadComments,
 } from '../../lib/board/model'
-import type { BoardComment, Thread } from '../../lib/board/model'
+import type { BoardComment, ReplyTarget, Thread } from '../../lib/board/model'
 import { deleteComment, loadComments } from '../../lib/board/server'
 import type { BoardCommentPage } from '../../lib/board/server'
 import { splitMentions } from '../../lib/groups/model'
@@ -18,7 +19,6 @@ import { ConfirmDialog } from '../ConfirmDialog'
 import { Monogram } from '../groups/Monogram'
 import { Menu, MenuItem } from '../groups/shell'
 import { CommentComposer } from './CommentComposer'
-import type { ReplyTarget } from './CommentComposer'
 import { postedLabel } from './PostCard'
 
 /** Empty pages followed in a row before the thread stops and offers the button again. */
@@ -108,10 +108,7 @@ export function CommentThread(props: {
   })
 
   function reply(comment: BoardComment) {
-    const root = comment.replyTo
-      ? (comments().find((c) => c.id === comment.replyTo) ?? comment)
-      : comment
-    setReplyTo({ id: root.id, author: root.author })
+    setReplyTo(replyTarget(comment))
     box?.focus()
     box?.scrollIntoView({ block: 'nearest' })
   }
