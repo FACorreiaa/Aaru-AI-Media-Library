@@ -8,7 +8,7 @@ import { COLORS } from '../lib/tokens.gen'
 const shade = `linear-gradient(to top, ${COLORS.ink.light}73, transparent 60%)`
 const tileTints = [
   [COLORS.ink.light, COLORS.accent.light],
-  [COLORS.accent.light, COLORS.agent.light],
+  [COLORS.accent.light, COLORS.gold.light],
   [COLORS.accent.light, COLORS.gold.light],
 ].map(
   ([from, to]) => `${shade}, linear-gradient(160deg, ${from} 0%, ${to} 100%)`,

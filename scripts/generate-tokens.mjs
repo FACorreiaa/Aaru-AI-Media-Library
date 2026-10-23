@@ -47,15 +47,16 @@ const contrast = (a, b) => {
   return (hi + 0.05) / (lo + 0.05)
 }
 
+// A translucent token is checked as the colour it becomes on top of the layer under it: a
+// translucent background sits on paper, a translucent foreground sits on that background.
+const over = ({ rgb, alpha }, under) => rgb.map((c, i) => Math.round(c * alpha + under[i] * (1 - alpha)))
+
 const failures = []
 for (const [fg, bg, min] of tokens.contrast.pairs) {
   for (const scheme of ['light', 'dark']) {
-    const f = resolve(fg, scheme)
-    const b = resolve(bg, scheme)
-    if (f.alpha !== 1 || b.alpha !== 1) {
-      throw new Error(`contrast pair ${fg}/${bg} uses a translucent token`)
-    }
-    const ratio = contrast(f.rgb, b.rgb)
+    const b = over(resolve(bg, scheme), resolve('paper', scheme).rgb)
+    const f = over(resolve(fg, scheme), b)
+    const ratio = contrast(f, b)
     if (ratio < min) {
       failures.push(`${scheme}: ${fg} on ${bg} is ${ratio.toFixed(2)}, needs ${min}`)
     }
@@ -162,6 +163,15 @@ const colorset = (name) =>
     2,
   )}\n`
 
+// The PWA manifest cannot read CSS variables. Its two colours are the dark paper (the art is
+// dark-first; an installed app's splash is one colour for both appearances), written here so the
+// brand guard can refuse any other literal under aaru-client/public.
+const manifestPath = 'aaru-client/public/manifest.webmanifest'
+const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'))
+manifest.background_color = colors.paper.dark
+manifest.theme_color = colors.paper.dark
+const manifestJson = `${JSON.stringify(manifest, null, 2)}\n`
+
 // Outputs ----------------------------------------------------------------------------------------
 
 const outputs = [
@@ -169,6 +179,7 @@ const outputs = [
   ['aaru-client/src/lib/tokens.gen.ts', ts],
   ['aaru-extension/src/entrypoints/popup/tokens.css', extensionCss],
   ['aaru-extension/src/lib/tokens.gen.ts', ts],
+  [manifestPath, manifestJson],
 ]
 const catalogs = {
   apple: 'aaru-ios/Aaru/Assets.xcassets',

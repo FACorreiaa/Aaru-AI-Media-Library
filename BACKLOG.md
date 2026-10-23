@@ -70,6 +70,16 @@ library layer stay separate, external IDs stored whenever known, no second backe
   Aaru already speaks from. Poses (curious, sleeping, celebrating) were generated from the owl
   master with FLUX.1 Kontext [dev], the owner's pick of a free generator other than Higgsfield,
   and approved by the owner the same day (BRD-004).
+- **Theme audit of both clients (owner, 2026-10-23).** Audited `origin/main` against the owl
+  brand after BRD-004: tokens pass AA, but the contract had gaps (no Apple `on-accent` or
+  `line-strong`, `agent` 1.1:1 from `gold`, `medallion` mis-described, colours only: no radius,
+  alpha, motion or space scale, so each client invented its own) and each client had contrast
+  bugs (web focus ring at 50% accent, placeholders at 70% muted, muted text on accent menu rows;
+  Apple white on the dark accent, 13 forms on the system grey). The owner chose: fix all of it in
+  small PRs (BRD-005…010); elevation is flat Paper with hairlines plus one lift for floating
+  layers; one amber (`agent` merges into `gold`); the direction is the poster kept professional:
+  ice-blue hologram hairlines in dark, amber LED edge light, silver chrome for selection, thin
+  glyphs, no glass by default, gradients only as glow or scrim.
 - **Achievements now: the whole of P5's core (owner, 2026-10-22).** Pulled forward before the
   P2 gate, with 0 strangers: the points ledger (GAM-001), levels (GAM-002), streaks (GAM-003),
   badges (GAM-004), the friends leaderboard (GAM-005) and the streak widget (WID-007). The
@@ -473,7 +483,8 @@ account or a stranger that has not happened yet.
 | BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
 | BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
 | BRD-003 | Built | #148 | Owner checks the owl on TestFlight + beta web |
-| BRD-004 | Built | #150, this PR | Owner checks the owl and its poses on TestFlight + beta web |
+| BRD-004 | Built | #150, #153 | Owner checks the owl and its poses on TestFlight + beta web |
+| BRD-005 | Built | this PR; `generate-tokens.mjs --check` covers the manifest and translucent pairs | Theme audit 2026-10-23: contract fixes. BRD-006…010 follow |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -854,6 +865,20 @@ celebrating on an earned badge and the unlock summary.
 
 **Done when:** the owner has seen the owl on Home, an empty state, an error and the recap on
 TestFlight and beta web, and the poses are in.
+
+### BRD-005 · Theme contract after the audit · S · owner, 2026-10-23
+The 2026-10-23 theme audit of both clients against the owl brand. This item is the token
+contract: `agent` merges into `gold` (one amber; the two were 1.1:1 apart and Apple never used
+`agent`); `on-accent` and `line-strong` get Apple colour sets (`OnAccent`, `LineStrong`) so
+Swift stops hand-rolling white-on-accent (2.4:1 on the dark accent) and Ink at 0.18/0.25; the
+generator checks translucent pairs by compositing instead of refusing them, and owns the PWA
+manifest's two colours; the brand guard scans `aaru-client/public`. The audit's other findings
+are BRD-006 (web contrast P1s), BRD-007 (Apple contrast P1s + launch screen), BRD-008
+(radius/alpha/motion/space tokens and their adoption on both clients), BRD-009 (widgets),
+BRD-010 (dark + tinted app icon, PWA, extension drift).
+
+**Done when:** `generate-tokens.mjs --check` and `brand-guard.sh` pass with no `agent` token
+anywhere, and `Color(.onAccent)` / `Color(.lineStrong)` compile on Apple.
 
 ## P0 · M1 — Server foundation
 

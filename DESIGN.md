@@ -1024,9 +1024,15 @@ sets, brand assets), main wins.
   faces in any client.
 
 Assets and how they are made: `docs/brand/README.md`. Colour tokens (`Paper`, `Surface`,
-`Stone`, `Ink`, `Muted`, `Medallion`, accent, `Gold`, `Agent`, `Line`, `Danger`) are generated
-into the asset catalogs, `aaru-client/src/tokens.css` and the extension's popup from one file,
-`design/tokens.json`. The marks and icons come from `docs/brand/owl_poster.py` (BRD-002), the owl
+`Stone`, `Ink`, `Muted`, `Medallion`, `Night`, accent, `OnAccent`, `Gold`, `Line`,
+`LineStrong`, `Scrim`, `OnScrim`, `Danger`) are generated into the asset catalogs,
+`aaru-client/src/tokens.css`, the extension's popup and the PWA manifest's two colours from one
+file, `design/tokens.json`. There is one amber: the `agent` token merged into `gold` on
+2026-10-23 (the two were 1.1:1 apart). By night the hairlines (`line`, `line-strong`) are ice
+blue, the poster's hologram edge, so a card separates from the page without a shadow; by day
+they are navy ink. `scrim` is a navy veil in both appearances (over artwork, behind floating
+layers) and `on-scrim` the light text on it. `medallion` is the silver disc under avatars and
+kind marks; the owl sits on `night`. The marks and icons come from `docs/brand/owl_poster.py` (BRD-002), the owl
 and its head from `docs/brand/owl_mascot.py` (BRD-003). The guard rejects the retired heron and
 reed mark by name.
 
@@ -1040,9 +1046,11 @@ AI" UI.
   pairs that must pass WCAG AA (4.5 text, 3 non-text). `scripts/generate-tokens.mjs` writes
   `aaru-client/src/tokens.css`, `src/lib/tokens.gen.ts`, the extension's popup tokens and badge
   values, and the colour sets in both Apple asset catalogs, and fails on a pair below AA; CI runs
-  it with `--check`. **Gold** (amber) is edge light only: hairlines, the next-up ring, stars, a
-  dot on the active nav item. It never fills a surface. **Agent** (owl-eye amber) marks the
-  agent's activity. No pure black.
+  it with `--check`. A translucent token is checked as the colour it composites to. **Gold**
+  (amber) is edge light only: hairlines, the next-up ring, stars, the active-nav mark, the
+  owl's glow while Aaru works and the dot on a plan card. It never fills a surface and never
+  carries text. Text on an accent fill is **on-accent**, never white (2.4:1 on the dark
+  accent). No pure black.
 - **Appearance.** System, Light or Dark, per device. The web keeps it in the `aaru_appearance`
   cookie and renders `<html data-theme>` on the server, so nothing flashes; Apple keeps it in
   `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system.

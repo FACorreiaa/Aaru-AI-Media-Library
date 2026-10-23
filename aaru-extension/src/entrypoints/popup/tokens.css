@@ -8,9 +8,10 @@
   --accent: #2a62a6;
   --on-accent: #f4f6fa;
   --gold: #a35f1c;
-  --agent: #97591a;
   --danger: #a3372a;
-  --medallion: #eef1f6;
+  --medallion: #c9d2de;
+  --scrim: rgb(18 26 40 / 0.65);
+  --on-scrim: #f4f6fa;
   --night: #16233a;
   --line: rgb(18 26 40 / 0.12);
   --line-strong: rgb(18 26 40 / 0.22);
@@ -27,11 +28,12 @@
     --accent: #6aaeea;
     --on-accent: #0e141e;
     --gold: #e0904f;
-    --agent: #eab27a;
     --danger: #f2a08f;
-    --medallion: #e7ebf1;
+    --medallion: #2b3647;
+    --scrim: rgb(14 20 30 / 0.85);
+    --on-scrim: #e7ebf1;
     --night: #16233a;
-    --line: rgb(231 235 241 / 0.1);
-    --line-strong: rgb(231 235 241 / 0.2);
+    --line: rgb(106 174 234 / 0.16);
+    --line-strong: rgb(106 174 234 / 0.3);
   }
 }

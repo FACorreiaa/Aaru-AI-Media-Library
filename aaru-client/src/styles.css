@@ -38,8 +38,9 @@
   --color-danger: var(--danger);
   --color-stone: var(--stone);
   --color-gold: var(--gold);
-  --color-agent: var(--agent);
   --color-line-strong: var(--line-strong);
+  --color-scrim: var(--scrim);
+  --color-on-scrim: var(--on-scrim);
   /* Corner radii: cards, panels (callouts, inner boxes), fields. */
   --radius-card: 20px;
   --radius-panel: 14px;
@@ -130,7 +131,7 @@
   --sidebar-ring: var(--accent);
   --chart-1: var(--accent);
   --chart-2: var(--gold);
-  --chart-3: var(--agent);
+  --chart-3: var(--ink);
   --chart-4: var(--danger);
   --chart-5: var(--muted);
   --vis-tooltip-padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2.5);
