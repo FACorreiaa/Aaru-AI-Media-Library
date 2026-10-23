@@ -67,7 +67,7 @@ export function CardMenu(props: {
       props.tone === 'row'
         ? ['size-11 shrink-0 text-muted hover:text-ink', props.triggerClass]
         : [
-            'absolute size-9 bg-black/65 text-white hover:bg-black/75 hover:text-white',
+            'absolute size-9 bg-scrim text-on-scrim',
             props.triggerClass ?? 'top-1.5 right-1.5',
           ],
     )

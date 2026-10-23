@@ -123,7 +123,7 @@ export function Art(props: { sources: (string | undefined)[]; title: string }) {
       when={url()}
       keyed
       fallback={
-        <div class="grid h-full place-items-center bg-linear-135 from-accent/20 to-gold/20 px-4 text-center font-display text-lg leading-tight text-ink/75">
+        <div class="grid h-full place-items-center bg-surface edge-lit px-4 text-center font-display text-lg leading-tight text-ink/75">
           {props.title}
         </div>
       }
@@ -352,7 +352,7 @@ export function AiringCard(props: {
         class="block transition-opacity"
         classList={{ 'opacity-60': e().watched }}
       >
-        <div class="relative aspect-[2/1] overflow-hidden rounded-[12px] shadow-[0_0_0_1px_var(--line)]">
+        <div class="relative aspect-[2/1] overflow-hidden rounded-panel shadow-[0_0_0_1px_var(--line)]">
           <Art
             sources={[e().title.backdropUrl, e().title.posterUrl]}
             title={e().title.title}

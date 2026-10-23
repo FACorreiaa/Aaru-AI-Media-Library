@@ -671,7 +671,7 @@ export function MessageList(props: {
                             (mine() || manages())
                           }
                         >
-                          <div class="absolute -top-3 right-4 flex overflow-hidden rounded-lg border border-line bg-paper text-xs shadow-sm opacity-0 group-hover/msg:opacity-100 focus-within:opacity-100 md:right-6 [@media(hover:none)]:static [@media(hover:none)]:self-start [@media(hover:none)]:opacity-100">
+                          <div class="absolute -top-3 right-4 flex overflow-hidden rounded-lg border border-line bg-paper text-xs opacity-0 group-hover/msg:opacity-100 focus-within:opacity-100 md:right-6 [@media(hover:none)]:static [@media(hover:none)]:self-start [@media(hover:none)]:opacity-100">
                             <Show when={mine()}>
                               <Button
                                 variant="soft"
@@ -778,7 +778,7 @@ export function MessageList(props: {
             variant="ink"
             size="sm"
             onClick={() => scrollToBottom(true)}
-            class="absolute bottom-3 left-1/2 -translate-x-1/2 font-medium shadow-lg animate-in duration-200 fade-in-0 zoom-in-95 slide-in-from-bottom-2"
+            class="absolute bottom-3 left-1/2 -translate-x-1/2 font-medium shadow-lift animate-in duration-200 fade-in-0 zoom-in-95 slide-in-from-bottom-2"
           >
             {unreadSummary()} ↓
           </Button>

@@ -157,7 +157,7 @@ function LeadArt(props: { item: NowPlayingItem }) {
         </span>
       </Match>
       <Match when={props.item.kind === 'track'}>
-        <span class="absolute inset-0 flex items-center justify-center bg-linear-135 from-accent/20 to-gold/20 p-4 md:p-6">
+        <span class="absolute inset-0 flex items-center justify-center bg-surface edge-lit p-4 md:p-6">
           <span class="aspect-square h-full overflow-hidden rounded-field">
             <Art sources={[props.item.artworkUrl]} title={props.item.name} />
           </span>

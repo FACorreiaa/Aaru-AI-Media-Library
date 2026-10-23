@@ -67,7 +67,7 @@ export default function CardMenuPopup(props: {
           <Show when={label()}>
             {(text) => (
               <DropdownMenuItem
-                class="min-h-10 rounded-[10px] px-3"
+                class="min-h-10 rounded-field px-3"
                 disabled={busy()}
                 onSelect={() => void mark()}
               >
@@ -76,7 +76,7 @@ export default function CardMenuPopup(props: {
             )}
           </Show>
           <DropdownMenuItem
-            class="min-h-10 rounded-[10px] px-3"
+            class="min-h-10 rounded-field px-3"
             onSelect={() =>
               void navigate({ to: '/app/title/$id', params: { id: props.id } })
             }

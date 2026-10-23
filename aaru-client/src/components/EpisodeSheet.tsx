@@ -93,7 +93,7 @@ export function EpisodeSheet(props: {
               <Button
                 variant={isWatched() ? 'default' : 'outline'}
                 size="sm"
-                class="font-semibold disabled:opacity-40"
+                class="font-semibold disabled:opacity-50"
                 aria-pressed={isWatched()}
                 disabled={
                   (!aired() && !isWatched()) || props.pending.has(key())

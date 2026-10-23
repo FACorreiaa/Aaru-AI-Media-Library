@@ -132,7 +132,7 @@ function ImportPage() {
   const rows = (outcome: Outcome) =>
     detail().rows.filter((r) => r.outcome === outcome)
   const stat = (label: string, value: number) => (
-    <div class="rounded-[16px] bg-surface px-4 py-3">
+    <div class="rounded-panel bg-surface px-4 py-3">
       <div class="text-2xl font-medium tabular-nums">{value}</div>
       <div class="text-sm text-muted">{label}</div>
     </div>
@@ -312,7 +312,7 @@ function ImportPage() {
 }
 
 /** DESIGN §3: a working import is a timeline of steps, not a spinner. Nothing loops; the bar
- *  only moves when the count does. */
+ * only moves when the count does. */
 function Ledger(props: { steps: ImportStep[] }) {
   return (
     <ol class="mt-8" aria-label="Import progress">

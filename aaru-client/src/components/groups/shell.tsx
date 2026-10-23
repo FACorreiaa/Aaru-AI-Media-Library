@@ -142,7 +142,7 @@ export function Menu(props: {
       </DropdownMenuTrigger>
       <DropdownMenuPortal>
         <DropdownMenuContent
-          class={`min-w-48 rounded-2xl border-line bg-paper py-1 text-sm text-ink shadow-xl ${props.class ?? ''}`}
+          class={`min-w-48 rounded-panel border-line bg-paper py-1 text-sm text-ink shadow-lift ${props.class ?? ''}`}
         >
           {props.children}
         </DropdownMenuContent>

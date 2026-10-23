@@ -12,7 +12,7 @@ export function Medallion(props: { person: Person; class?: string }) {
     <span
       aria-hidden="true"
       class={cn(
-        'grid shrink-0 place-items-center rounded-full bg-medallion font-display font-medium text-black/75 shadow-[0_0_0_1px_var(--line-strong)]',
+        'grid shrink-0 place-items-center rounded-full bg-medallion font-display font-medium text-ink shadow-[0_0_0_1px_var(--line-strong)]',
         props.class,
       )}
     >

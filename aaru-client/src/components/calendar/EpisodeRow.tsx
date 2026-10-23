@@ -6,7 +6,7 @@ import { Badge, Button } from '~/components/ui'
 import { WatchButton } from './WatchButton'
 
 /** One episode as a row: poster, show, code and name, network and time, and the tick. The row
- *  opens the episode sheet; the tick works on its own. Agenda, phone day list, day sheet and
+ * opens the episode sheet; the tick works on its own. Agenda, phone day list, day sheet and
  *  Missed all use it. */
 export function EpisodeRow(props: {
   entry: CalendarEntry

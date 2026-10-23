@@ -10,7 +10,7 @@ export const toggleButtonVariants = cva({
     variant: {
       default: 'bg-transparent',
       outline:
-        'border border-input bg-transparent shadow-xs hover:bg-accent hover:text-accent-foreground',
+        'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
       // Aaru's segment looks (they were SegmentedControlItem's): pills that stand apart.
       /** Ink when pressed, quiet text otherwise. */
       ink: 'rounded-full text-muted hover:bg-transparent hover:text-ink data-[pressed]:bg-ink data-[pressed]:text-paper',

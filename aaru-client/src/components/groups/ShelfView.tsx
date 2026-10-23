@@ -131,7 +131,7 @@ export function ShelfView(props: {
           </Button>
         </div>
         <Show when={adding()}>
-          <div class="mt-4 max-w-xl rounded-2xl border border-line bg-paper p-4 shadow-sm animate-in duration-150 fade-in-0 slide-in-from-top-1">
+          <div class="mt-4 max-w-xl rounded-card border border-line bg-paper p-4 animate-in duration-150 fade-in-0 slide-in-from-top-1">
             <TitlePicker onPick={add} busy={busy().has('add')} />
           </div>
         </Show>
@@ -215,7 +215,7 @@ export function ShelfView(props: {
                             aria-label={`Remove ${item.title.title} from list`}
                             title="Remove from list"
                             onClick={() => setRemoving(item.title.id)}
-                            class="absolute right-1.5 size-7 bg-paper/90 font-normal opacity-0 shadow-sm group-hover/item:opacity-100 hover:text-danger focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                            class="absolute right-1.5 size-7 bg-paper/90 font-normal opacity-0 group-hover/item:opacity-100 hover:text-danger focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                             classList={{
                               'top-1.5': item.title.type !== 'album',
                               'top-[calc(50cqw+0.375rem)]':
@@ -226,7 +226,7 @@ export function ShelfView(props: {
                           </Button>
                         }
                       >
-                        <div class="absolute inset-x-1.5 top-1.5 flex items-center justify-between gap-2 rounded-xl bg-paper/95 px-3 py-2 text-xs shadow">
+                        <div class="absolute inset-x-1.5 top-1.5 flex items-center justify-between gap-2 rounded-xl bg-paper/95 px-3 py-2 text-xs">
                           <Button
                             variant="ghost"
                             size="bare"

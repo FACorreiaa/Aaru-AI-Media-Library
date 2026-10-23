@@ -71,7 +71,7 @@ export const SegmentedControlIndicator = <T extends ValidComponent = 'div'>(
     <SegmentedControlPrimitive.Indicator
       data-slot="segmented-control-indicator"
       class={cx(
-        'bg-background dark:border-input dark:bg-input/30 absolute top-[3px] left-[3px] rounded-md border border-transparent shadow-sm transition-[width,height,transform]',
+        'bg-background dark:border-input absolute top-[3px] left-[3px] rounded-md border border-transparent transition-[width,height,transform]',
         'group-[[data-invalid]]/segmented-control:border-destructive dark:group-[[data-invalid]]/segmented-control:border-destructive',
         props.class,
       )}

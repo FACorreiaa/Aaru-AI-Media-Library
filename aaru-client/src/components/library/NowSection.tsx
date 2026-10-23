@@ -195,7 +195,7 @@ function NowCard(props: {
             <Poster
               url={e().title.posterUrl}
               kind={props.item.kind}
-              class="w-20 shrink-0 shadow-md"
+              class="w-20 shrink-0"
             />
             <div class="min-w-0">
               <Link
@@ -228,8 +228,8 @@ function NowCard(props: {
               />
             )}
           </Show>
-          <span class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-          <span class="absolute inset-x-4 bottom-3 font-display text-xl leading-tight font-medium text-white">
+          <span class="absolute inset-0 bg-gradient-to-t from-scrim via-scrim/20 to-transparent" />
+          <span class="absolute inset-x-4 bottom-3 font-display text-xl leading-tight font-medium text-on-scrim">
             {e().title.title}
           </span>
         </Link>

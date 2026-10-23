@@ -160,7 +160,7 @@ export function CityPicker(props: {
                           <Button
                             variant="ghost"
                             size="bare"
-                            class="flex w-full items-center justify-between gap-3 rounded-[12px] px-3 py-2.5 text-left font-normal text-ink hover:bg-surface hover:text-ink disabled:opacity-60"
+                            class="flex w-full items-center justify-between gap-3 rounded-panel px-3 py-2.5 text-left font-normal text-ink hover:bg-surface hover:text-ink disabled:opacity-50"
                             disabled={saving() !== null}
                             onClick={() => void choose(place)}
                           >

@@ -46,7 +46,7 @@ export function RatingsHistogram(props: { distribution: number[] }) {
         {(bar) => (
           <div class="flex h-full flex-1 flex-col justify-end gap-1">
             <div
-              class="rounded-t-[3px] bg-current/60"
+              class="rounded-t-xs bg-current/60"
               style={{
                 height: `${Math.max(bar.height * 100, bar.count > 0 ? 4 : 1)}%`,
               }}
@@ -158,7 +158,7 @@ export function StatsPanel(props: {
               {(bar, i) => (
                 <div class="flex h-full min-w-0 flex-1 flex-col justify-end gap-1">
                   <div
-                    class="rounded-t-[3px]"
+                    class="rounded-t-xs"
                     classList={{
                       'bg-current': bar.busiest,
                       'bg-current/35': !bar.busiest && bar.height > 0,

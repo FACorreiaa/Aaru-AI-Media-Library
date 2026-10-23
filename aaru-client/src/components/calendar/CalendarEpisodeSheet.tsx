@@ -13,7 +13,7 @@ import {
 } from '~/components/ui'
 
 /** One airing up close (CAL-002): the still, the show, when and where, the synopsis, the tick
- *  and the way to the show. A bottom sheet on phones, centred from 40rem. */
+ * and the way to the show. A bottom sheet on phones, centred from 40rem. */
 export default function CalendarEpisodeSheet(props: {
   entry: CalendarEntry
   pending: boolean
@@ -73,7 +73,7 @@ export default function CalendarEpisodeSheet(props: {
               <Poster
                 url={e().title.posterUrl}
                 kind={e().title.isAnime ? 'anime' : 'show'}
-                class="-mt-14 w-20 shrink-0 shadow-lg ring-4 ring-paper"
+                class="-mt-14 w-20 shrink-0 shadow-lift ring-4 ring-paper"
               />
               <div class="min-w-0 flex-1">
                 <p class="text-xs font-semibold tracking-wide text-muted uppercase">

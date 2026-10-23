@@ -13,8 +13,8 @@ import type { ImportJob, ImportRow } from '../lib/imports/server'
 import { TitlePicker } from './groups/TitlePicker'
 
 /** IMP-011: search for the title an unmatched import row meant, and pick it. The row's status,
- *  rating and ticks come with it; before approval it joins the plan. The page keeps it mounted
- *  on its last row (`lastShown`) so the exit plays (WEB-011). */
+ * rating and ticks come with it; before approval it joins the plan. The page keeps it mounted
+ * on its last row (`lastShown`) so the exit plays (WEB-011). */
 export function ResolveRowDialog(props: {
   open: boolean
   jobId: string

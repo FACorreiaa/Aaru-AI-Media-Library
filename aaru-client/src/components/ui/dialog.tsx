@@ -31,7 +31,7 @@ export const DialogCloseButton = <T extends ValidComponent = 'button'>(
 }
 
 /** Aaru: where the modal sits. `center` is shadcn's; `sheet` rises from the bottom edge on
- *  phones and centres from `sm` up; `full` fills the viewport. */
+ * phones and centres from `sm` up; `full` fills the viewport. */
 const placements = {
   center: '',
   sheet:
@@ -65,14 +65,14 @@ export const DialogContent = <T extends ValidComponent = 'div'>(
     <>
       <DialogPrimitive.Overlay
         data-slot="dialog-overlay"
-        class="data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 fixed inset-0 z-50 bg-black/50"
+        class="data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 fixed inset-0 z-50 bg-scrim"
       />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         class={cx(
           // Aaru: paper, the card radius, no border, a deeper shadow, and never taller than
           // the viewport.
-          'bg-background text-foreground data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid max-h-[85dvh] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-card p-6 shadow-2xl duration-200 sm:max-w-lg',
+          'bg-background text-foreground data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid max-h-[85dvh] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-card p-6 shadow-lift duration-200 sm:max-w-lg',
           placements[merge.placement ?? 'center'],
           props.class,
         )}

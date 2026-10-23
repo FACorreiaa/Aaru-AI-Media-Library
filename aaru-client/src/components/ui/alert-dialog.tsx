@@ -37,7 +37,7 @@ export const AlertDialogOverlay = <T extends ValidComponent = 'div'>(
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       class={cx(
-        'data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        'data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 fixed inset-0 z-50 bg-scrim',
         props.class,
       )}
       {...rest}
@@ -59,8 +59,8 @@ export const AlertDialogContent = <T extends ValidComponent = 'div'>(
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         class={cx(
-          // Aaru: paper, the card radius, no border, a deeper shadow (as DialogContent).
-          'bg-background text-foreground data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-card p-6 shadow-2xl duration-200 sm:max-w-md',
+          // Aaru: paper, the card radius, no border, a deeper  (as DialogContent).
+          'bg-background text-foreground data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-card p-6 shadow-lift duration-200 sm:max-w-md',
           props.class,
         )}
         {...rest}

@@ -12,6 +12,7 @@
   --medallion: #c9d2de;
   --scrim: rgb(18 26 40 / 0.65);
   --on-scrim: #f4f6fa;
+  --shadow: rgb(18 26 40 / 0.18);
   --night: #16233a;
   --line: rgb(18 26 40 / 0.12);
   --line-strong: rgb(18 26 40 / 0.22);
@@ -46,6 +47,7 @@
     --medallion: #2b3647;
     --scrim: rgb(14 20 30 / 0.85);
     --on-scrim: #e7ebf1;
+    --shadow: rgb(10 15 23 / 0.7);
     --night: #16233a;
     --line: rgb(106 174 234 / 0.16);
     --line-strong: rgb(106 174 234 / 0.3);

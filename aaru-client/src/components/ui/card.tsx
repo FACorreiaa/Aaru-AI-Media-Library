@@ -5,21 +5,19 @@ import { cx } from '~/lib/cva'
 
 // Aaru: `cardClass` lives in its own module so a page that only borrows the class (the
 // landing page) does not load `cx` and tailwind-merge with it.
-export { cardClass } from './card-class'
+import { cardClass } from './card-class'
+export { cardClass }
 
 export type CardProps = ComponentProps<'div'>
 
-// Aaru: a flat surface (no border, no shadow) on the 20 px card radius.
+// Aaru: a flat surface on the 20 px card radius: tint and hairline, no shadow (cardClass).
 export const Card = (props: CardProps) => {
   const [, rest] = splitProps(props, ['class'])
 
   return (
     <div
       data-slot="card"
-      class={cx(
-        'bg-card text-card-foreground flex flex-col gap-6 rounded-card py-6',
-        props.class,
-      )}
+      class={cx(cardClass, 'flex flex-col gap-6 text-ink py-6', props.class)}
       {...rest}
     />
   )

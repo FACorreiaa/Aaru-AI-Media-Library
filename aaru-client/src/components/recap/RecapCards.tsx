@@ -130,7 +130,7 @@ export function RecapCardView(props: {
                 {(bar, i) => (
                   <div class="flex h-full flex-1 flex-col justify-end gap-1">
                     <div
-                      class="recap-bar rounded-t-[3px]"
+                      class="recap-bar rounded-t-xs"
                       classList={{
                         'bg-current': bar.busiest,
                         'bg-current/35': !bar.busiest,

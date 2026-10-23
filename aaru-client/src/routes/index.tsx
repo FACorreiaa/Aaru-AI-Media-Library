@@ -198,7 +198,7 @@ function Landing() {
             width="512"
             height="512"
             loading="lazy"
-            class="mx-auto h-28 w-28 rounded-[22.5%] shadow-[0_18px_40px_-18px_rgb(0_0_0/0.55)] md:h-32 md:w-32"
+            class="mx-auto h-28 w-28 rounded-[22.5%] shadow-[0_18px_40px_-18px_var(--shadow)] md:h-32 md:w-32"
           />
           <h2 class="mt-10 font-display text-3xl leading-tight font-medium tracking-tight md:text-5xl">
             Made for iPhone, iPad, Mac and the web

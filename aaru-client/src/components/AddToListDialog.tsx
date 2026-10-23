@@ -164,7 +164,7 @@ export function AddToListDialog(props: {
                   <Button
                     variant="soft"
                     size="bare"
-                    class="w-full justify-between rounded-[12px] px-3 py-2.5 text-left text-base disabled:opacity-100 disabled:hover:bg-transparent"
+                    class="w-full justify-between rounded-panel px-3 py-2.5 text-left text-base disabled:opacity-100 disabled:hover:bg-transparent"
                     disabled={added().has(list.id)}
                     onClick={() => add(list.id)}
                   >

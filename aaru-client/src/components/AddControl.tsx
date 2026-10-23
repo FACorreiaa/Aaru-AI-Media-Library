@@ -60,7 +60,7 @@ export function AddControl(props: {
               >
                 {(s) => (
                   <DropdownMenuItem
-                    class="min-h-10 rounded-[10px] px-3"
+                    class="min-h-10 rounded-field px-3"
                     onSelect={() => props.onAdd(s.status)}
                   >
                     {s.label}

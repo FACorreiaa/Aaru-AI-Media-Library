@@ -131,7 +131,7 @@ export function Composer(props: {
           id="group-composer-mentions"
           role="listbox"
           aria-label="Who to tag"
-          class="absolute animate-in duration-150 fade-in-0 slide-in-from-bottom-1 right-3 bottom-full left-3 mb-1 overflow-hidden rounded-2xl border border-line bg-paper py-1 shadow-xl md:right-4 md:left-4"
+          class="absolute animate-in duration-150 fade-in-0 slide-in-from-bottom-1 right-3 bottom-full left-3 mb-1 overflow-hidden rounded-panel border border-line bg-paper py-1 shadow-lift md:right-4 md:left-4"
         >
           <For each={suggestions()}>
             {(suggestion, index) => (
@@ -179,7 +179,7 @@ export function Composer(props: {
         <div class="mb-1.5 flex">{props.accessory}</div>
       </Show>
       <div
-        class={`flex items-end gap-2 rounded-2xl bg-surface px-3 py-2 focus-within:ring-2 ${tooLong() ? 'ring-2 ring-danger' : 'focus-within:ring-accent'}`}
+        class={`flex items-end gap-2 rounded-card bg-surface px-3 py-2 focus-within:ring-2 ${tooLong() ? 'ring-2 ring-danger' : 'focus-within:ring-accent'}`}
       >
         <TextField
           value={text()}
@@ -230,7 +230,7 @@ export function Composer(props: {
           onClick={send}
           disabled={!canSend()}
           aria-label="Send"
-          class="shrink-0 disabled:opacity-30"
+          class="shrink-0 disabled:opacity-50"
         >
           <svg
             viewBox="0 0 20 20"

@@ -5,7 +5,7 @@ import { pop } from '../../lib/motion'
 import { Button } from '~/components/ui'
 
 /** The calendar's tick: a 44px round toggle, filled once watched. The page owns the state and
- *  the optimistic write; a pending write disables it so a double tap never sends two. */
+ * the optimistic write; a pending write disables it so a double tap never sends two. */
 export function WatchButton(props: {
   entry: CalendarEntry
   pending?: boolean

@@ -50,7 +50,7 @@ export function StreakBar(props: { streak: StreakState; compact?: boolean }) {
           {(day, i) => (
             <li class="flex flex-col items-center gap-1">
               <span
-                class="block h-6 w-2.5 rounded-[3px]"
+                class="block h-6 w-2.5 rounded-xs"
                 classList={{
                   'bg-accent': day.active,
                   'bg-line': !day.active && i() !== last(),

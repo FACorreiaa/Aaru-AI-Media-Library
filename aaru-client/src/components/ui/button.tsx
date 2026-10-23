@@ -22,16 +22,17 @@ export const buttonVariants = cva({
       default:
         'bg-primary font-semibold text-primary-foreground hover:bg-primary/90',
       destructive:
-        'bg-destructive font-semibold text-on-accent hover:bg-destructive/90 focus-visible:ring-destructive/20 focus-visible:dark:ring-destructive/40',
-      outline: 'border border-ink/25 font-semibold hover:bg-surface',
+        'bg-destructive font-semibold text-on-accent hover:bg-destructive/90',
+      outline: 'border border-line-strong font-semibold hover:bg-surface',
       secondary:
         'bg-secondary font-semibold text-secondary-foreground hover:bg-secondary/80',
       ghost: 'text-muted hover:text-ink',
       link: 'text-primary underline-offset-4 hover:underline',
       // Aaru
       quiet: 'border border-line font-semibold hover:bg-surface',
-      ink: 'bg-ink font-semibold text-paper',
-      'danger-outline': 'border border-danger/50 font-semibold text-danger',
+      ink: 'bg-ink font-semibold text-paper hover:bg-ink/90',
+      'danger-outline':
+        'border border-danger/50 font-semibold text-danger hover:bg-danger/8',
       soft: 'hover:bg-surface',
     },
     size: {

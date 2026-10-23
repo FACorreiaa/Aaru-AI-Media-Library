@@ -37,7 +37,7 @@ export const TabsList = <T extends ValidComponent = 'div'>(
     <TabsPrimitive.List
       data-slot="tabs-list"
       class={cx(
-        'bg-muted text-muted-foreground ring-muted relative flex h-[calc(var(--spacing)*7.5)] w-fit items-center justify-center rounded-lg ring-[3px]',
+        'bg-muted text-muted-foreground relative flex h-[calc(var(--spacing)*7.5)] w-fit items-center justify-center rounded-lg',
         'data-[orientation=vertical]:mt-[3px] data-[orientation=vertical]:size-full data-[orientation=vertical]:flex-col',
         props.class,
       )}
@@ -96,7 +96,7 @@ export const TabsIndicator = <T extends ValidComponent = 'div'>(
     <TabsPrimitive.Indicator
       data-slot="tabs-indicator"
       class={cx(
-        'bg-background dark:bg-input/30 dark:border-input peer-focus-visible:border-ring peer-focus-visible:outline-accent peer-focus-visible:outline-ring absolute inset-0 rounded-lg border border-transparent shadow-sm transition-[box-shadow,transform,width,height] duration-200 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-2',
+        'bg-background dark:border-input peer-focus-visible:border-ring peer-focus-visible:outline-accent peer-focus-visible:outline-ring absolute inset-0 rounded-lg border border-transparent transition-[box-shadow,transform,width,height] duration-200 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-2',
         props.class,
       )}
       {...rest}

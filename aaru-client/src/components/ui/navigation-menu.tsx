@@ -29,7 +29,7 @@ export const NavigationMenu = <T extends ValidComponent = 'ul'>(
       {...rest}
     >
       {props.children}
-      <NavigationMenuPrimitive.Viewport class="data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:zoom-out-95 data-[expanded]:zoom-in-90 data-[expanded]:fade-in-0 data-[closed]:fade-out-0 bg-popover text-popover-foreground z-50 h-(--kb-navigation-menu-viewport-height) w-(--kb-navigation-menu-viewport-width) origin-(--kb-menu-content-transform-origin) overflow-x-clip overflow-y-visible rounded-md border shadow transition-[width,height] duration-300 data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:overflow-y-clip" />
+      <NavigationMenuPrimitive.Viewport class="data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:zoom-out-95 data-[expanded]:zoom-in-90 data-[expanded]:fade-in-0 data-[closed]:fade-out-0 bg-popover text-popover-foreground z-50 h-(--kb-navigation-menu-viewport-height) w-(--kb-navigation-menu-viewport-width) origin-(--kb-menu-content-transform-origin) overflow-x-clip overflow-y-visible rounded-md border transition-[width,height] duration-300 data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:overflow-y-clip" />
     </NavigationMenuPrimitive>
   )
 }
