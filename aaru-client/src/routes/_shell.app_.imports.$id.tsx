@@ -4,7 +4,7 @@ import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { Button } from '~/components/ui'
 import { ResolveRowDialog } from '../components/ResolveRowDialog'
 import { lastShown } from '../lib/presence'
-import { offerUndo } from '../components/mark-watched'
+import { offerUndo } from '../components/undo-toast'
 import {
   appliedMessage,
   importSteps,

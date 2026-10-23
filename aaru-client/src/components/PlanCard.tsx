@@ -3,7 +3,7 @@ import { For, Show, createSignal } from 'solid-js'
 import { Button } from '~/components/ui'
 import { countsLine, decidedLabel, expiresLabel } from '../lib/plans/model'
 import { approvePlan, denyPlan } from '../lib/plans/server'
-import { offerUndo } from './mark-watched'
+import { offerUndo } from './undo-toast'
 import type { AgentPlan } from '../lib/plans/server'
 
 // DESIGN §12: an agent's request leads with who asked, then what changes, then the two
