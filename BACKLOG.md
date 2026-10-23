@@ -39,6 +39,11 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **No paying plans for now** (owner, 2026-10-23). Plus (BIL-001…004) stays live in code, but
   nothing is set up in App Store Connect, so nothing can be bought. Until that changes, a free
   account hitting the capture limit must not land on an empty paywall: BIL-005.
+- **Security audit run-1 documented, nothing scheduled** (owner, 2026-10-23). The parent-only
+  pass at `cd4ea2f` found one low finding (a music token sent as `?token=` reaches request
+  logs) and a hardening list; see `docs/audit/security.md` and SEC-001…003. The fixes and the
+  deferred coverage are recorded, not started; the audit resumes outside auto mode from a
+  pinned worktree.
 
 ## Decisions recorded 2026-10-22
 
@@ -661,6 +666,9 @@ account or a stranger that has not happened yet.
 | MOAT-001 | Dropped (promoted) | now SCR-003 | SCR-003 built |
 | MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
 | MOAT-003 | Dropped (promoted) | now SCR-004 | |
+| SEC-001 | Documented, not scheduled | docs/audit/security.md | Low: `?token=` on validate-token reaches request logs; ingress access log keeps queries |
+| SEC-002 | Documented, not scheduled | docs/audit/security.md | Hardening list, no boundary violation |
+| SEC-003 | Documented, not scheduled | ~/security-audit-skill/aaru/run-1 | 42 of 79 coverage units deferred; no independent verification ran |
 
 ### P0 progress log (from 2026-10-09; merged in #1, deployed 2026-10-15)
 
@@ -3510,6 +3518,50 @@ Now **SCR-004** (P3): user-triggered push with a dry-run diff, one-way out.
   or error message that could contain message content is a bug.
 - **X-013** All infra changes go to `~/Work/production/platform/infra`. Secrets are sealed for
   namespace `horus` and the exact secret name.
+
+# Security
+
+Cross-cutting. Source: `docs/audit/security.md` (run-1, 2026-10-23). Nothing here is scheduled;
+the owner decided to document and move on. Pick these up before the first strangers, or when the
+touched code changes anyway.
+
+### SEC-001 · Token in a query string reaches request logs · S
+
+`GET /listenbrainz/1/validate-token` accepts the music token as `?token=` and
+`RedactedLogRequestsMiddleware.redacted` keeps the query for every path but three, so the secret is
+logged at info. Traefik's access log keeps `RequestPath` with its query too (ticket, Trakt
+`code`/`state`, Stremio token path). Refuse the `?token=` form (header only), return the bare path
+for `/listenbrainz/` routes in `redacted()`, and set `accesslog.fields.queryParameters.defaultMode:
+drop` in the infra Traefik chart.
+
+**Done when:** a unit test asserts `redacted("/listenbrainz/1/validate-token", query: "token=x")`
+is the bare path, a route test gets 400 from `validate-token` without an Authorization header, and
+the infra PR drops query parameters from the access log.
+
+### SEC-002 · Hardening from the audit · M
+
+Require the Google sign-in nonce server-side; re-authenticate before `DELETE /v1/me` and add
+sign-out-everywhere; derive an OAuth client's kind from its redirect host, not its name, and expire
+unused DCR clients; require the binding on `GET /v1/oauth/requests/{id}`; a per-token rolling cap on
+unplanned tap-sized agent writes; refuse Sandbox-environment transactions for Plus before an App
+Store release; drop query strings from request logs by default. Each is a small change in one file;
+see `docs/audit/security.md` for the file names.
+
+**Done when:** each bullet has a test, or a one-line note in `docs/audit/security.md` saying why it
+stays as is.
+
+### SEC-003 · Finish the audit · M
+
+Run `/security-audit` outside auto mode from a worktree pinned to one commit, launching the 15 hunter
+briefs in `~/security-audit-skill/aaru/run-1/agents/<group>/brief.md` (re-seed with
+`_tools/gen-ledger.cjs`, re-brief with `_tools/build-brief.cjs`), then the candidate and record
+verifiers on SEC-001 and any new candidates. The deferred list in `docs/audit/security.md` is the
+hunting order: `@aaru` disclosure, scrobble name-only writes, deletion ownership promotion, library
+and import isolation, OAuth exchange, realtime fan-out, web CSRF and rendering.
+
+**Done when:** every ledger unit is covered, candidate or blocked with an owner, both validators
+pass, and every confirmed record has an independent verifier decision.
+
 
 ## Explicitly not doing
 
