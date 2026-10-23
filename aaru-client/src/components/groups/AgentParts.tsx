@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/solid-router'
 import { For, Show } from 'solid-js'
 import type { MessageComponent } from '../../lib/groups/agent'
 import { kindName, kindOf } from '../../lib/library/model'
@@ -66,21 +65,11 @@ export function AgentCards(props: { cards: MessageComponent[] }) {
           const kind = () => kindOf(card.title.type, card.title.isAnime)
           return (
             <li class="flex gap-3 rounded-xl border border-line bg-paper p-2">
-              <Link
-                to="/app/title/$id"
-                params={{ id: card.title.id }}
-                class="w-12 shrink-0"
-              >
+              <div class="w-12 shrink-0">
                 <Poster url={card.title.posterUrl} kind={kind()} class="w-12" />
-              </Link>
+              </div>
               <div class="flex min-w-0 flex-1 flex-col">
-                <Link
-                  to="/app/title/$id"
-                  params={{ id: card.title.id }}
-                  class="truncate text-sm font-semibold hover:underline"
-                >
-                  {card.title.title}
-                </Link>
+                <p class="truncate text-sm font-semibold">{card.title.title}</p>
                 <p class="truncate text-xs text-muted">
                   {[
                     kind() === 'album' ? card.title.byline : undefined,

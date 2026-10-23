@@ -36,7 +36,7 @@
     "/_shell/app_/settings/friends": 96505,
     "/_shell/app_/settings/import": 104874,
     "/_shell/app_/settings/notifications": 97586,
-    "/_shell/app_/title/$id": 148437,
+    "/_shell/app_/title/$id": 157815,
     "/about": 95593,
     "/app": 106695,
     "/app_/discover": 97136,
@@ -66,7 +66,7 @@
     "/app_/week": 98071,
     "/auth/verify": 105427,
     "/connect/extension": 105996,
-    "/i/$code": 111919,
+    "/i/$code": 115285,
     "/oauth/consent": 113875,
     "/privacy": 97112,
     "/sign-in": 114287

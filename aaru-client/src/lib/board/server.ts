@@ -167,6 +167,34 @@ export const listTitlePosts = createServerFn({ method: 'GET' })
       ).items,
   )
 
+/** What a title page's "From friends" needs: a few posts, and whether there is anyone to hear from. */
+export const loadFromFriends = createServerFn({ method: 'GET' })
+  .validator(z.object({ titleId: uuid }))
+  .handler(
+    async ({
+      data,
+    }): Promise<{
+      posts: BoardPost[]
+      friendHandles: string[]
+      myHandle?: string
+    }> => {
+      const client = api(sessionToken())
+      const [posts, friends, me] = await Promise.all([
+        client.GET('/v1/titles/{id}/posts', {
+          params: { path: { id: data.titleId } },
+        }),
+        client.GET('/v1/social/friends'),
+        client.GET('/v1/me'),
+      ])
+      const fallback = 'The posts about this title could not be loaded.'
+      return {
+        posts: check(posts, fallback).items,
+        friendHandles: check(friends, fallback).items.map((f) => f.handle),
+        myHandle: check(me, fallback).handle,
+      }
+    },
+  )
+
 /** How long a report's own note may be: the server's 1,000 less the post reference. */
 export const REPORT_NOTE_LENGTH = 900
 

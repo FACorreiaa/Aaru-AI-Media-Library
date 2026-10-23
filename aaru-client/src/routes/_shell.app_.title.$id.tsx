@@ -1,4 +1,9 @@
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/solid-router'
+import {
+  Link,
+  createFileRoute,
+  useNavigate,
+  useRouter,
+} from '@tanstack/solid-router'
 import { BackLink } from '../components/shell/BackLink'
 import {
   For,
@@ -17,6 +22,7 @@ import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
 import { RecommendDialog } from '../components/Recommendations'
 import { EpisodeSheet } from '../components/EpisodeSheet'
+import { PostCard } from '../components/board/PostCard'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
 import { Segmented } from '../components/Segmented'
@@ -49,6 +55,7 @@ import {
   cardClass,
   toast,
 } from '~/components/ui'
+import { loadFromFriends } from '../lib/board/server'
 import { lastShown } from '../lib/presence'
 import { cn } from '~/lib/utils'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
@@ -141,6 +148,29 @@ function TitleRoom() {
   onMount(() => {
     if (notesField) notesField.value = notes()
   })
+
+  // BOARD-002: what friends wrote about this title. Read in the browser after the room shows,
+  // and a failed read just leaves the section out.
+  const [fromFriends, setFromFriends] = createSignal<Awaited<
+    ReturnType<typeof loadFromFriends>
+  > | null>(null)
+  onMount(() => {
+    loadFromFriends({ data: { titleId: page().entry.title.id } })
+      .then(setFromFriends)
+      .catch(() => undefined)
+  })
+  const friendHandles = createMemo(
+    () =>
+      new Set(
+        [
+          fromFriends()?.myHandle,
+          ...(fromFriends()?.friendHandles ?? []),
+          ...(fromFriends()?.posts.map((p) => p.author.handle) ?? []),
+        ]
+          .filter((h): h is string => Boolean(h))
+          .map((h) => h.toLowerCase()),
+      ),
+  )
 
   const [opened, setOpened] = createSignal<Episode | null>(null)
   const shownEpisode = lastShown(opened)
@@ -700,6 +730,49 @@ function TitleRoom() {
                 </Button>
               </Show>
             </section>
+
+            <Show
+              when={
+                fromFriends() &&
+                (fromFriends()!.posts.length > 0 ||
+                  fromFriends()!.friendHandles.length > 0)
+              }
+            >
+              <section aria-labelledby="from-friends">
+                <h2 id="from-friends" class="eyebrow">
+                  From friends
+                </h2>
+                <Show
+                  when={fromFriends()!.posts.length > 0}
+                  fallback={
+                    <p class="mt-3 text-sm text-muted">
+                      None of your friends has written about this yet.
+                    </p>
+                  }
+                >
+                  <ul class="mt-1 divide-y divide-line">
+                    <For each={fromFriends()!.posts.slice(0, 5)}>
+                      {(post) => (
+                        <li>
+                          <PostCard
+                            post={post}
+                            handles={friendHandles()}
+                            myHandle={fromFriends()!.myHandle?.toLowerCase()}
+                          />
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </Show>
+                <Link
+                  to="/app/friends"
+                  search={{ title: page().entry.id }}
+                  class="mt-2 inline-block text-sm font-medium text-accent hover:underline"
+                >
+                  Write about this
+                </Link>
+              </section>
+            </Show>
 
             <Show when={entry().title.type === 'show' && title()?.synopsis}>
               <section>
