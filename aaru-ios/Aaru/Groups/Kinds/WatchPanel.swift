@@ -55,7 +55,7 @@ struct WatchPanel: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color(.surface).opacity(0.6))
-        .overlay(alignment: .bottom) { Rectangle().fill(.separator).frame(height: 0.5) }
+        .overlay(alignment: .bottom) { Rectangle().fill(Color(.line)).frame(height: 0.5) }
         .overlay(alignment: .topTrailing) { floatingReactions }
         .task { await model.load() }
         .task {
@@ -262,7 +262,7 @@ private struct OpenPartySheet: View {
                     Text("Everyone presses play on their own screen when the countdown reaches zero.")
                 }
             }
-            .formStyle(.grouped)
+            .paperPage()
             .navigationTitle("Watch party")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

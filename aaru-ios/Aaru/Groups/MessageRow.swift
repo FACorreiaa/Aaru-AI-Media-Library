@@ -193,12 +193,12 @@ struct DayDivider: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Rectangle().fill(.separator).frame(height: 1)
+            Rectangle().fill(Color(.line)).frame(height: 1)
             Text(day, format: .dateTime.weekday(.wide).day().month(.wide))
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color(.muted))
                 .fixedSize()
-            Rectangle().fill(.separator).frame(height: 1)
+            Rectangle().fill(Color(.line)).frame(height: 1)
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)

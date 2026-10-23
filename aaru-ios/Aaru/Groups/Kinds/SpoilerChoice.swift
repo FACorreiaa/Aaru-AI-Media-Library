@@ -90,7 +90,7 @@ struct SpoilerMenu: View {
                         Text("Anyone who hasn't watched up to this episode sees it veiled until they tap it.")
                     }
                 }
-                .formStyle(.grouped)
+                .paperPage()
                 .navigationTitle("Spoils up to")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { picksEpisode = false } }
