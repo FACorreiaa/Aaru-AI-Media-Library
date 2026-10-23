@@ -79,7 +79,6 @@ struct RecommendSheet: View {
                                     }
                                 }
                             ))
-                            .tint(Color(.accent))
                         }
                     }
                 }

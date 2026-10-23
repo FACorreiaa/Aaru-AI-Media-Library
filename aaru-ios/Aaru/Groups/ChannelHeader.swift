@@ -39,7 +39,7 @@ struct ChannelHeader: View {
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color(.muted).opacity(0.12), in: .capsule)
+                    .background(Color(.muted).opacity(AaruAlpha.tint), in: .capsule)
                     .frame(minHeight: 44)
                     .contentShape(.rect)
             }

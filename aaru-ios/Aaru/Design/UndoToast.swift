@@ -101,7 +101,7 @@ struct UndoToast: View {
         .frame(maxWidth: 560)
         .background(
             toast.tone == .problem ? Color(.danger) : Color(.ink),
-            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            in: RoundedRectangle(cornerRadius: AaruRadius.panel, style: .continuous)
         )
         .padding(.horizontal, 16)
         .padding(.bottom, 8)

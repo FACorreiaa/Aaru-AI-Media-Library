@@ -14,10 +14,10 @@ struct TapHitRow: View {
     let onTap: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AaruSpace.medium) {
             PosterView(url: hit.posterUrl.flatMap(URL.init(string:)), kind: kind)
                 .frame(width: 52)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                 Text(hit.title).font(.body.weight(.medium)).lineLimit(2)
                 Text(hit.detailLine(kind: kind))
                     .font(.footnote)
@@ -36,7 +36,7 @@ struct TapHitRow: View {
                 Button(action: onTap) {
                     Text(action)
                         .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, AaruSpace.large)
                         .padding(.vertical, 6)
                         .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                         .frame(minWidth: 44, minHeight: 44)
@@ -59,10 +59,10 @@ struct SearchHitRow: View {
     let onAddToList: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AaruSpace.medium) {
             PosterView(url: hit.posterUrl.flatMap(URL.init(string:)), kind: kind)
                 .frame(width: 52)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                 Text(hit.title).font(.body.weight(.medium)).lineLimit(2)
                 Text(hit.detailLine(kind: kind))
                     .font(.footnote)

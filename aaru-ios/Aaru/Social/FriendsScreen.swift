@@ -60,7 +60,7 @@ struct ActivityRow: View {
             Text(item.user.monogram)
                 .font(.subheadline.weight(.medium))
                 .frame(width: side, height: side)
-                .background(Color(.medallion).opacity(0.2), in: .circle)
+                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(sentence).lineLimit(3)
@@ -144,7 +144,7 @@ private struct ReactionStrip: View {
                         .font(.footnote)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(mine ? Color(.accent).opacity(0.15) : Color(.surface), in: .capsule)
+                        .background(mine ? Color(.accent).opacity(AaruAlpha.wash) : Color(.surface), in: .capsule)
                         .overlay {
                             if mine {
                                 Capsule().strokeBorder(Color(.accent))

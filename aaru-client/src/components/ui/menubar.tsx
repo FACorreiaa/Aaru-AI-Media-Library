@@ -302,7 +302,7 @@ export const MenubarShortcut = (props: MenubarShortcut) => {
     <span
       data-slot="menubar-shortcut"
       class={cx(
-        'text-muted-foreground ml-auto text-xs tracking-widest',
+        'text-muted-foreground ml-auto text-xs tracking-wide',
         props.class,
       )}
       {...rest}

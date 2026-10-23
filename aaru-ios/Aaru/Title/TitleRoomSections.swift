@@ -14,16 +14,20 @@ struct TitleHero: View {
 
     @Environment(\.dynamicTypeSize) private var typeSize
 
+    /// How far the poster rises over the backdrop; the text beside it starts just below that.
+    private var overlap: CGFloat {
+        compact ? AaruSpace.page : AaruSpace.page + AaruSpace.large
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HeroBackdrop(url: entry.title.backdropUrl.flatMap(URL.init(string:)), seed: entry.title.id)
                 .frame(height: compact ? 200 : 300)
-                .clipShape(.rect(cornerRadius: 20, style: .continuous))
+                .clipShape(.rect(cornerRadius: AaruRadius.card, style: .continuous))
             HStack(alignment: .top, spacing: 16) {
                 PosterView(url: entry.title.posterUrl.flatMap(URL.init(string:)), kind: kind)
                     .frame(width: compact ? 96 : 140)
-                    .edgeLit(cornerRadius: 10)
-                    .shadow(color: Color(.ink).opacity(0.18), radius: 12, y: 6)
+                    .edgeLit(cornerRadius: AaruRadius.field)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 8) {
                     Text(entry.title.title)
@@ -44,13 +48,12 @@ struct TitleHero: View {
                                 .monospacedDigit()
                                 .foregroundStyle(Color(.muted))
                         }
-                        .tint(Color(.accent))
                     }
                 }
-                .padding(.top, compact ? 56 : 72)
+                .padding(.top, overlap + AaruSpace.small)
             }
-            .padding(.horizontal, compact ? 12 : 24)
-            .padding(.top, compact ? -48 : -64)
+            .padding(.horizontal, compact ? AaruSpace.medium : AaruSpace.xxlarge)
+            .padding(.top, -overlap)
         }
     }
 }
@@ -80,7 +83,6 @@ struct TitleYourLayer: View {
             }
             Divider()
             Toggle("Owned", isOn: ownedBinding)
-                .tint(Color(.accent))
             if entry.title._type == .book {
                 Divider()
                 LabeledContent("Page") {

@@ -92,7 +92,7 @@ struct Composer: View {
             .textFieldStyle(.plain)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(.surface), in: RoundedRectangle(cornerRadius: 18))
+            .card()
             .focused(focused)
         #if os(macOS)
             .onSubmit(onSend)

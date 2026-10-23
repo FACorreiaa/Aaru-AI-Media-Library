@@ -389,7 +389,7 @@ export function MessageList(props: {
 
   function Body(bodyProps: { text: string }) {
     return (
-      <p class="text-[15px] leading-6 break-words whitespace-pre-wrap">
+      <p class="text-md leading-6 break-words whitespace-pre-wrap">
         <For each={splitMentions(bodyProps.text, handles(), myHandle())}>
           {(segment) =>
             segment.kind === 'text' ? (
@@ -416,9 +416,7 @@ export function MessageList(props: {
     return (
       <Show when={headerProps.starts}>
         <div class="flex items-baseline gap-2">
-          <span class="truncate text-[15px] font-semibold">
-            {headerProps.name}
-          </span>
+          <span class="truncate text-md font-semibold">{headerProps.name}</span>
           <Show when={headerProps.agent}>
             <AssistantTag />
           </Show>
@@ -523,7 +521,7 @@ export function MessageList(props: {
                     class="relative my-2 flex items-center px-4 md:px-6"
                   >
                     <span class="h-px flex-1 bg-accent" />
-                    <span class="ml-2 rounded-full bg-accent px-2 text-[11px] leading-5 font-semibold text-on-accent">
+                    <span class="ml-2 rounded-full bg-accent px-2 text-2xs leading-5 font-semibold text-on-accent">
                       New
                     </span>
                   </div>
@@ -545,7 +543,7 @@ export function MessageList(props: {
                             fallback={
                               <time
                                 datetime={m().createdAt}
-                                class="block pt-1 text-right text-[10px] text-muted opacity-0 group-hover/msg:opacity-100"
+                                class="block pt-1 text-right text-2xs text-muted opacity-0 group-hover/msg:opacity-100"
                               >
                                 {timeLabel(m().createdAt)}
                               </time>
@@ -588,7 +586,7 @@ export function MessageList(props: {
                                   <AgentCards cards={agentCards(m())} />
                                 </Show>
                                 <Show when={m().editedAt}>
-                                  <span class="text-[11px] text-muted">
+                                  <span class="text-2xs text-muted">
                                     (edited)
                                   </span>
                                 </Show>
@@ -596,7 +594,7 @@ export function MessageList(props: {
                                   {(stamp) => (
                                     <span
                                       title="Hidden from members who haven't watched this far. Only you see the mark."
-                                      class="ml-1.5 rounded bg-surface px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-muted uppercase"
+                                      class="ml-1.5 rounded bg-surface px-1.5 py-0.5 eyebrow text-2xs"
                                     >
                                       {stamp()}
                                     </span>
@@ -844,7 +842,7 @@ function EditBox(props: {
               props.onSave(text())
             }
           }}
-          class="min-h-0 w-full resize-none rounded-xl border-0 bg-surface px-3 py-2 text-[15px] leading-6 md:text-[15px]"
+          class="min-h-0 w-full resize-none rounded-xl border-0 bg-surface px-3 py-2 text-md leading-6 md:text-md"
         />
       </TextField>
       <p class="text-xs text-muted">

@@ -39,6 +39,27 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **No paying plans for now** (owner, 2026-10-23). Plus (BIL-001…004) stays live in code, but
   nothing is set up in App Store Connect, so nothing can be bought. Until that changes, a free
   account hitting the capture limit must not land on an empty paywall: BIL-005.
+- **Security audit run-1 documented, nothing scheduled** (owner, 2026-10-23). The parent-only
+  pass at `cd4ea2f` found one low finding (a music token sent as `?token=` reaches request
+  logs) and a hardening list; see `docs/audit/security.md` and SEC-001…003. The fixes and the
+  deferred coverage are recorded, not started; the audit resumes outside auto mode from a
+  pinned worktree.
+- **MyAnimeList two-way, as a named exception (owner, 2026-10-23).** The owner lifted "no
+  two-way sync" for MyAnimeList only. Aaru pushes anime progress to a connected MAL account
+  (SCR-005) and reads that list back (SCR-010): when a client opens Aaru and the last read is over
+  10 minutes old, and every 6 hours in the background. MAL has no webhooks, so the read is a poll
+  of the user's own list sorted by `list_updated_at`. What comes in goes through the import merge
+  unchanged: it fills gaps and moves a status forward only, never out of `dropped`, never past
+  `status_by_hand`, and Aaru wins every tie. Entries removed on MAL are listed in settings, never
+  deleted in Aaru. Aaru's own pushes are recognised and dropped when they come back. Still no
+  conflict engine, and every other provider (Trakt and AniList included) stays one-way. MAL's API
+  agreement asks commercial apps for written authorization and Plus exists in code, so MAL is told
+  and asked for its OK before anyone but the owner connects. Estimate: about 4 MAL calls a day for
+  an idle user on this schedule; about 2.5k lines across server, tests and both clients.
+- **AniDB: alternate titles only (owner, 2026-10-23).** AniDB's mylist API needs the user's AniDB
+  password (no OAuth) and bans by IP, and every Aaru user shares the cluster's, so Aaru neither
+  reads nor writes AniDB mylists. It loads AniDB's daily title dump for alternate titles
+  (CAT-022). Scraping AniDB stays out.
 
 ## Decisions recorded 2026-10-22
 
@@ -124,6 +145,15 @@ library layer stay separate, external IDs stored whenever known, no second backe
   | Chat entry | An Ask Aaru page opened by a sparkle "Ask" button beside the medallion; "Ask Aaru about this" on title pages |
   | Chat v1 | History and streaming, voice input (cluster Whisper), image upload, Share to Board |
   | LLM budget | The shared `haiku-trial` workspace ($20 cap). No fallback model; out of credit shows "resting" |
+
+- **Board on Friends, post page, inline composer (owner, 2026-10-23, BOARD-002).** The spec's
+  Social tab (Groups becoming Social with `Board | Groups`) is dropped. The Board lives on
+  Friends: `/app/friends` opens on Board and `Board | Lately` is a segmented control, with no nav
+  rename and Groups untouched. Comments open on a post page, `/app/friends/posts/$postId`. The
+  composer is an inline box at the top of Board, with no floating button or dialog. The poster
+  in a post row is not a link, because title pages are library items; friends' posts carry "Add
+  to my library". BOARD-003 follows: Board inside Friends, reached on iPhone from Groups'
+  Friends button.
 
 - **BOARD-001 as built (2026-10-22).** A review of a new title writes two journal rows (add, then
   the rating update), so undo is per row. "Report post" reuses `reportUser` on the post author
@@ -487,7 +517,9 @@ account or a stranger that has not happened yet.
 | BRD-005 | Built | #158; `generate-tokens.mjs --check` covers the manifest and translucent pairs | Theme audit 2026-10-23: contract fixes. BRD-006…010 follow |
 | BRD-006 | Built | #159 | Web contrast P1s: one focus form, placeholders, menu rows, toasts |
 | BRD-007 | Built | this PR; `Design/Surfaces.swift` | Apple contrast P1s + launch screen in Paper. Owner checks a sheet and a cold launch in dark on TestFlight |
-| BRD-008 | Built | #161 (source + generator); this PR (web surfaces: lift, scrim, hairline cards, radii, skeleton, tooltip, inputs, disabled, selection); web type + motion and the Apple adoption follow | Owner checks a menu, a dialog, the drawer and a card in both appearances on beta web |
+| BRD-008 | Built | #161 (source + generator); #162 (web surfaces); #163 (web type + motion); this PR (Apple: card/well/field/lift, radii, alpha, spacing, Settings tiles on tokens, brand guard for system colours) | Owner checks a menu, a dialog, the drawer, a card and the recap in both appearances on beta web, once with Reduce Motion |
+| BRD-010 | Built | this PR; `docs/brand/owl_icon_appearances.py` | Dark + tinted app icon (iOS 18), extension popup on the tokens, PWA manifest rule. Owner checks the icon in all three Home Screen modes |
+| BRD-009 | Built | this PR; `WidgetAssets.xcassets` gets every role | Widgets on the tokens: generated colour sets, `widgetAccentable`, text styles, Gauge. Owner checks the widget gallery in light, dark and tinted |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -524,6 +556,7 @@ account or a stranger that has not happened yet.
 | PROG-003 | Done | #2; LibraryTests nextEpisode | |
 | PROG-004 | Done | #2; ValidationTests percent | |
 | PROG-005 | Done | ShowWatchedTests | Pulled forward 2026-10-22; not yet run on TestFlight |
+| PROG-006 | Built, unverified | `lib/home/tonight.test.ts`; `TonightStrip.tsx`, `Home/TonightCard.swift` | Client-only (owner, 2026-10-23); not yet run on TestFlight |
 | LST-001 | Done | #2; ListShelfTests visibility | |
 | LST-002 | Done | #2; `/v1/lists/{id}/items`, `/order` | |
 | LST-003 | Built, unverified | ListShelfTests LST-003, CatalogRefreshTests | iOS not checked on TestFlight yet |
@@ -552,6 +585,7 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
+| BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
 | BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
@@ -590,6 +624,7 @@ account or a stranger that has not happened yet.
 | CAT-019 | Done | #43 5be7fef; CatalogSearchAllTests (Mobland) | Stub tests |
 | CAT-020 | Dropped | superseded by DISC-001 | |
 | CAT-021 | Built | AniListCatalog.classify, TMDB anime stand-in | Stub tests; live AniList outage 2026-10-21 |
+| CAT-022 | Open | none | AniDB's terms and a registered client name to check first |
 | UPN-002 | Done | #43; ScheduleTests UPN-002 | |
 | GAM-006c | Done | #43; StatsTests "all time equals the years summed" | |
 | GAM-006d | Done | #65; StatsTests GAM-006d, insights/home model tests | iOS not run on a device |
@@ -612,6 +647,7 @@ account or a stranger that has not happened yet.
 | SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
 | SCR-008 | Built, unverified | NowPlaying.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device; the activity became SCR-009's |
 | SCR-009 | Built, unverified | LivePlays.swift, LiveSetNotifier.swift, LiveActivitySweepService.swift, `live_plays`, `live_activity_states`; NowPlayingTests(+Plays); `NowPlayingActivityAttributes`, NowPlayingLiveActivity; `aaru-extension/src/sites/youtube.ts` | Not seen on a device; YouTube selectors not checked on the live site |
+| SCR-010 | Open | none | Needs SCR-005, and MAL's written OK before anyone but the owner connects |
 | SOC-001 | Built, unverified | `profiles`, `PUT /v1/me/profile`, `social_settings` (`share_library_with_friends`), `/v1/me/social-settings`, `/v1/social/friends/{userId}/profile`; SocialTests, FriendTests | Points, streaks and leaderboard settings wait for P5 |
 | SOC-002 | Built, unverified | requests, friends, blocks, reports; invite links (`social_invites`, `/v1/social/invites`, `/v1/invites/{code}`, web `/i/{code}`, AASA); SocialTests, InviteTests | Seed signing ran on the branch 2026-10-21; universal links not tried on a device; contact email hash not built |
 | SOC-003 | Partial | `GET /v1/activity` (dated ticks and finishes, 14 days); FriendTests; web `/app/friends`, iOS Friends tab | No `FriendStories` on Home, no scrobbles, no save-to-wishlist yet |
@@ -660,6 +696,9 @@ account or a stranger that has not happened yet.
 | MOAT-001 | Dropped (promoted) | now SCR-003 | SCR-003 built |
 | MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
 | MOAT-003 | Dropped (promoted) | now SCR-004 | |
+| SEC-001 | Documented, not scheduled | docs/audit/security.md | Low: `?token=` on validate-token reaches request logs; ingress access log keeps queries |
+| SEC-002 | Documented, not scheduled | docs/audit/security.md | Hardening list, no boundary violation |
+| SEC-003 | Documented, not scheduled | ~/security-audit-skill/aaru/run-1 | 42 of 79 coverage units deferred; no independent verification ran |
 
 ### P0 progress log (from 2026-10-09; merged in #1, deployed 2026-10-15)
 
@@ -667,11 +706,6 @@ account or a stranger that has not happened yet.
 | --- | --- |
 | SRV-001…SRV-008 | Built; 13 server tests pass against local Postgres; `--db-migrate` verified from the CLI. |
 | SRV-009, REL-001 | Root workflows written (`ci-swift`, `ci-apple`, `ci-web`); all checks pass locally. Unverified on GitHub until pushed. |
-| REL-002 | Done. |
-| REL-003 | Project builds for iOS Simulator and macOS; Beta/Release settings resolve. Side-by-side install on a device needs App IDs registered and real icons. |
-| REL-004 | Lanes and workflows written. Needs ASC records, App IDs, secrets, and one Seed signing run. |
-| REL-005 | Image builds from the repo root and was smoke-tested locally (migrate, fail-fast, health 200); promote workflow written; infra draft PR LuminaVault/LuminaVaultInfra#292. Needs `TMDB_API_KEY` sealed, first image tag, `/data/pg-aaru` on the node, `INFRA_TOKEN`, and the domain. |
-| REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Domain `aaruapp.com` (Cloudflare, 2026-10-15): prod Worker on `aaruapp.com` (+ `www` → apex 301), beta on `beta.aaruapp.com`, no `workers.dev`; security headers in `src/start.ts`. Needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (token also needs Workers Routes + DNS edit on the zone for the custom domains). |
 
 ### P1 and later progress log (from 2026-10-09)
 
@@ -692,7 +726,6 @@ with every provider stubbed.
 | PRV-001, LAND-003 | Built 2026-10-16: `docs/providers.md` (register) and `docs/privacy.md` (policy, rendered at `aaruapp.com/privacy`); `/about` and the Apple About screen show the TMDB logo + notice, TVmaze (CC BY-SA), AniList, Open Library. `privacy@aaruapp.com` needs Cloudflare Email Routing. No self-serve export yet (policy says "ask us"). |
 | APP-009 Home rows | Built 2026-10-16 on iPhone, iPad, Mac and web: Home is the first destination (Home · Library · Calendar; web library moved to `/app/library`). Continue watching (one-tap check advances optimistically), Airing soon / Coming up (badges from `airTimeKnown`), Start watching. Apple renders from a disk cache first; the web has no offline cache yet. In-progress movies are not in Continue watching (server returns shows only). Checked with sample data only. |
 | WID-001…004, WID-006 | Built 2026-10-16 (iOS + macOS, one extension): App Group snapshot (`Shared/WidgetSnapshot.swift`) written after every Home load and tick, an hourly `BGAppRefreshTask` on iOS, cleared on sign-out. Up Next (small/medium/large) with an interactive "mark watched" App Intent that calls the same PUT with the shared Keychain token, advances optimistically and restores on failure; Next Episode countdown (small + Lock Screen accessories on iOS; entries at each air time flip to "Out now"); This Week (large/extra large, Monday-first, deep links `aaru://title/{id}`). Not yet seen on a device; no undo ribbon for widget ticks; the large Up Next has no progress bar (the snapshot has no episode totals). WID-005 (Live Activity) is next. |
-| WID-005 | Built 2026-10-19 (iOS only, client-side; no server change): "Start watching" from an aired episode's context menu in title detail and from Home's Continue watching card starts a `NowWatchingAttributes` Live Activity (one at a time; poster downsampled into the App Group). Lock Screen + Dynamic Island: poster, `S1 · E8 · Name`, progress bar, "Ends at" ↔ "Nm left" via `ToggleEndTimeIntent`, "Mark watched" via `MarkNowWatchingIntent` (same PUT and widget path as the Up Next check). Stale after end + 30 min ("Did you finish?"), ended on app foreground and in the background refresh; ticking that episode anywhere ends it with a brief "Watched". Started by check-in only; scrobble start is P3. Not yet run on a device. |
 | DISC-001 Discover rows | Built 2026-10-20 on iPhone, iPad, Mac and web: `GET /v1/discover` returns up to eight public rows (TMDB trending/on the air/new shows/trending movies/in theaters, AniList this season + trending, Open Library weekly trending), cached in memory for 6 h, a failing provider dropping only its row; items the caller has carry `libraryItemId`. Home renders them under the user's rows; a new account sees a slim "Add a show" header above them. Adding from a card is search's add (wishlist, or a status, or a list). TMDB rows checked with stubs only (no local key); AniList and Open Library checked live. |
 | APP-010 + catch-up month | Built 2026-10-15 on iPhone, iPad, Mac and web: Calendar destination with Week (CAT grid / iPhone day pager) and Month (Stremio-style posters + agenda). Server adds `backdropUrl`, `network`, `airTimeKnown`, `episodeOverview`; range up to 42 days. Checked with sample data only. |
 | CAT-019, UPN-002, GAM-006c, APP-014 (server) | Built 2026-10-20 on `feat/discover-insights`, tests against stubs only: `type=all` search with `releaseDate` on hits, Up Next `counts` + `unfinished`, `/v1/me/stats?span=all` with `byKind` and the ratings distribution, per-kind labels in journal summaries and the Stremio catalog name. CAT-020's own `/v1/discover` was dropped for DISC-001's in the merge. Clients (APP-011…APP-015: Discover tab/page on DISC-001's rows, Insights, Home additions, Lists tab) are being built. |
@@ -923,6 +956,15 @@ Apple surfaces + spacing + type) follow under the same id.
 
 **Done when:** `generate-tokens.mjs --check` covers the new files; `rounded-lg`/`-xl` keep
 their pixel values (10/14) so nothing moves in this PR; both targets build with the enums.
+
+### BRD-009 · Widgets on the tokens · S · owner, 2026-10-23
+The widget extension had its own string palette (`Color("Paper")`, accent called `brand`) with six roles, fixed 9–12 pt fonts, no `widgetAccentable`, and a gradient fallback for missing art. Its catalog now gets every role from `design/tokens.json` (`Accent`, `OnAccent`, `Stone`, `Line`, `LineStrong`, `Danger`, `Night`, `Medallion`, `Scrim`, `OnScrim`), the code uses the generated symbols and `AaruRadius`/`AaruAlpha`, text is in text styles (one `` for the circular count), each family marks its glyph and title `widgetAccentable` so tinted and vibrant modes read, capacity progress is a `Gauge`, and the Live Activity and Island use the tokens.
+
+**Done when:** no `Palette.` or `.system(size:` in `AaruWidgets` beyond the one scaled metric; the app scheme builds for iOS and macOS; the owner has seen the gallery in tinted mode.
+### BRD-010 · Shell polish: icon appearances, extension popup, PWA manifest · S · owner, 2026-10-23
+The app icon had one appearance; iOS 18 asks for dark and tinted. `docs/brand/owl_icon_appearances.py` renders both from the traced A-mark: dark is the mark on flat night navy without the hologram glow, tinted is the mark alone in grey on transparent for the system to tint; the Beta set keeps its band. The extension popup takes the web's eyebrow (12 px, 0.12 em), the pill radius and the motion tokens instead of its own values. The PWA manifest's two colours are the dark paper by design (one splash for both appearances), written by the generator and documented in DESIGN.md.
+
+**Done when:** both `AppIcon*` sets carry `dark` and `tinted` 1024 images and the catalog compiles; the owner has seen the icon in default, dark and tinted modes on an iOS 18 Home Screen.
 
 ## P0 · M1 — Server foundation
 
@@ -1316,6 +1358,19 @@ the status select. Both show "Marked N episodes · Undo".
 
 **Done when:** one request ticks a 60-episode show in one undoable action, unaired episodes stay
 unticked, and this week's Insights does not move.
+
+### PROG-006 · Season watched from Tonight · S · owner, 2026-10-23
+**Needs:** PROG-003, AG-005.
+Tonight's card has a second visible button, "Season N watched", beside "Mark watched", for a
+user who has already seen the rest of the season. It is the title page's season tick
+(`POST /v1/library/items/{id}/seasons/{season}/watched`): every aired episode of the next
+episode's season, as one action; no API change. It shows only when episodes after the next one
+remain in that season (not at the finale, not with one left). Nothing moves until the server
+answers; then Tonight and Up Next load again. Season only: the whole show stays on the title
+page and the card menus (PROG-005). Like the title page's, the ticks are dated today.
+
+**Done when:** a pick mid-season marks the season in one tap on web, iPhone and Mac, Tonight moves
+to the next season's first episode (or on), and a finale pick shows no season button.
 
 ---
 
@@ -2198,6 +2253,19 @@ Superseded by DISC-001 (2026-10-20). This branch built its own `GET /v1/discover
 DISC-001 on `main`, the owner kept DISC-001's API and this one was dropped, code and tests. The
 Discover tab/page (APP-012) renders DISC-001's rows. The id stays so old references resolve.
 
+### CAT-022 · AniDB alternate titles · S · owner, 2026-10-23
+**Needs:** CAT-010, PRV-001.
+Load AniDB's title dump (`anime-titles.xml.gz`: every official title, synonym and short name per
+AniDB id) at most once a day, with a registered client name, into
+`anime_title_synonyms (anidb_id, lang, kind, title)`. Titles join through the `anidb` id that
+CAT-010's mapping gives them. Search and Capture matching use the synonyms as extra keys to find
+a candidate; matching stays ids first, and two titles never merge on a name. Check AniDB's terms
+for reuse and its credit first and record them in `docs/providers.md`. No other AniDB request: no
+mylist, no HTTP API, no scraping.
+
+**Done when:** an anime found only by an AniDB synonym (a romaji or short name AniList lacks) is
+a search hit, a second load the same day downloads nothing, and About shows AniDB's credit.
+
 ### UPN-002 · Library counts and Unfinished business · S
 **Needs:** UPN-001.
 `GET /v1/up-next` gains `counts` (items per status) and `unfinished`: every `dropped` item and
@@ -2460,6 +2528,17 @@ One-way out per connected account: MAL API v2 (OAuth2 PKCE; `PATCH
 a revoked provider token surfaces in settings rather than failing silently, and no provider
 token appears in a response or log.
 
+**MAL details (owner, 2026-10-23):** MAL's OAuth accepts only the `plain` PKCE challenge; tokens
+last about 31 days and refresh the way Trakt's do (`TraktConnectService`,
+`PostgresTraktStore.refreshConnection`). Aaru's TMDB show splits back into one MAL entry per
+mapped season (`anime_mappings`); a season with no MAL id is skipped, not an error. `in_progress`
+is not pushed over MAL's `on_hold` unless Aaru's ticks moved. Each push is kept per entry
+(`mal_entry_state`) so SCR-010 recognises it when it comes back, and writes SCR-010 makes are
+never pushed. Also done when: a show with two mapped seasons updates two MAL entries, and an
+`on_hold` entry stays `on_hold` when only its rating changed.
+The PR that builds it changes `docs/privacy.md` first (MAL in "Imports" and "Who else is
+involved"); `/privacy` is rendered from that file, so it does not change before the feature exists.
+
 ### SCR-006 · Movie resume position · S
 **Needs:** SCR-001, UPN-001.
 `pause` positions feed Continue Watching for movies ("1h 27m left").
@@ -2564,6 +2643,23 @@ Start only after the P2 gate. Private by default: a new account has no public su
 settings default to friends-only, and nothing is visible to a non-friend. Design copied from
 Norviq (`apps/norviq/norviq-backend/Sources/StockPlanBackend/Social/`,
 `Migrations/CreateSocialTables.swift`).
+
+### SCR-010 · Read MyAnimeList back · M · owner, 2026-10-23
+**Needs:** SCR-005, IMP-013.
+The one two-way exception (decisions 2026-10-23). For each connected MAL account, read
+`GET /v2/users/@me/animelist?fields=list_status&sort=list_updated_at` newest first and stop at the
+first entry not newer than the stored cursor. It runs when a client opens Aaru
+(`POST /v1/connections/mal/pull`, ignored when the last read is under 10 minutes old) and in a
+background pass every 6 hours, in-process like `CatalogRefresher`. Changed entries go through
+IMP-013's mapping and the import merge (`ImportService+Decide`), journaled with the caller
+"MyAnimeList" so the ribbon names it and Undo works. An entry equal to what Aaru last pushed is
+skipped. A weekly full read lists entries removed on MAL in settings; Aaru deletes nothing for
+them. A 401/403 marks the connection revoked in settings.
+
+**Done when:** an episode ticked on MAL shows in Aaru after the next app open; Aaru's own push
+coming back changes nothing; a MAL status that would move backward, leave `dropped` or pass a
+hand-set status is ignored; an entry removed on MAL shows in settings and stays in Aaru; and the
+tests use a stub MAL server only.
 
 ## P4 · Profiles, friends, activity
 
@@ -2858,14 +2954,16 @@ and a review of a new title adds it as Watched with the rating, all on TestFligh
 **Built 2026-10-22:** server only. **Known gaps:** upvote and comment counts include rows from
 users the viewer blocked.
 
-### BOARD-002 · Board on the web, and the Social tab · L
+### BOARD-002 · Board on the web (on Friends) · L
 **Needs:** BOARD-001.
-Groups becomes Social with a `Board | Groups` switch. Feed, composer, comment thread, upvote,
-"Top this week" rail, and "From friends" on the title page. Surfaces in `DESIGN.md` and `VIEWS.md`.
+Friends opens on Board, with a `Board | Lately` control (owner, 2026-10-23; no Social tab).
+Inline composer, post rows (Recent / Top this week), the post page with its comment thread and
+upvoter names, upvote, and "From friends" on the title page. Surfaces in `DESIGN.md` and `VIEWS.md`.
+**Built 2026-10-23:** web only, unverified.
 
 ### BOARD-003 · Board on iOS and Mac · L
 **Needs:** BOARD-001.
-The same surfaces as BOARD-002 in SwiftUI.
+The same surfaces as BOARD-002 in SwiftUI: Board inside Friends, reached on iPhone from Groups' Friends button.
 
 ### BOARD-004 · `@aaru` on the Board, and push · M
 **Needs:** BOARD-001, GRP-011, GRP-012.
@@ -3505,9 +3603,54 @@ Now **SCR-004** (P3): user-triggered push with a dry-run diff, one-way out.
 - **X-013** All infra changes go to `~/Work/production/platform/infra`. Secrets are sealed for
   namespace `horus` and the exact secret name.
 
+# Security
+
+Cross-cutting. Source: `docs/audit/security.md` (run-1, 2026-10-23). Nothing here is scheduled;
+the owner decided to document and move on. Pick these up before the first strangers, or when the
+touched code changes anyway.
+
+### SEC-001 · Token in a query string reaches request logs · S
+
+`GET /listenbrainz/1/validate-token` accepts the music token as `?token=` and
+`RedactedLogRequestsMiddleware.redacted` keeps the query for every path but three, so the secret is
+logged at info. Traefik's access log keeps `RequestPath` with its query too (ticket, Trakt
+`code`/`state`, Stremio token path). Refuse the `?token=` form (header only), return the bare path
+for `/listenbrainz/` routes in `redacted()`, and set `accesslog.fields.queryParameters.defaultMode:
+drop` in the infra Traefik chart.
+
+**Done when:** a unit test asserts `redacted("/listenbrainz/1/validate-token", query: "token=x")`
+is the bare path, a route test gets 400 from `validate-token` without an Authorization header, and
+the infra PR drops query parameters from the access log.
+
+### SEC-002 · Hardening from the audit · M
+
+Require the Google sign-in nonce server-side; re-authenticate before `DELETE /v1/me` and add
+sign-out-everywhere; derive an OAuth client's kind from its redirect host, not its name, and expire
+unused DCR clients; require the binding on `GET /v1/oauth/requests/{id}`; a per-token rolling cap on
+unplanned tap-sized agent writes; refuse Sandbox-environment transactions for Plus before an App
+Store release; drop query strings from request logs by default. Each is a small change in one file;
+see `docs/audit/security.md` for the file names.
+
+**Done when:** each bullet has a test, or a one-line note in `docs/audit/security.md` saying why it
+stays as is.
+
+### SEC-003 · Finish the audit · M
+
+Run `/security-audit` outside auto mode from a worktree pinned to one commit, launching the 15 hunter
+briefs in `~/security-audit-skill/aaru/run-1/agents/<group>/brief.md` (re-seed with
+`_tools/gen-ledger.cjs`, re-brief with `_tools/build-brief.cjs`), then the candidate and record
+verifiers on SEC-001 and any new candidates. The deferred list in `docs/audit/security.md` is the
+hunting order: `@aaru` disclosure, scrobble name-only writes, deletion ownership promotion, library
+and import isolation, OAuth exchange, realtime fan-out, web CSRF and rendering.
+
+**Done when:** every ledger unit is covered, candidate or blocked with an owner, both validators
+pass, and every confirmed record has an independent verifier decision.
+
+
 ## Explicitly not doing
 
-Two-way sync · conflict engine · recommendations engine (DISC-001's public provider rows are
+Two-way sync (the one exception is MyAnimeList, SCR-010, owner 2026-10-23) · conflict engine ·
+recommendations engine (DISC-001's public provider rows are
 not one: nothing personalised) · a global or public activity feed ·
 public profile pages indexed by search engines · scraping any site
 without an official export (Pogdesign, IMDb pages, AniDB; the one owner exception is SCR-007's

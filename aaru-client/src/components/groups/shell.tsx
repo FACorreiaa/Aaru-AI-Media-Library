@@ -81,34 +81,15 @@ export function debounced(action: () => unknown, ms: number): () => void {
   }
 }
 
-/** A round monogram: groups in the rail, people in rows. */
-export function Monogram(props: {
-  text: string
-  size?: 'sm' | 'md' | 'lg'
-  class?: string
-}) {
-  const size = () =>
-    props.size === 'lg'
-      ? 'size-12 text-base'
-      : props.size === 'sm'
-        ? 'size-8 text-xs'
-        : 'size-10 text-sm'
-  return (
-    <span
-      aria-hidden="true"
-      class={`grid shrink-0 place-items-center rounded-full bg-medallion/20 font-display font-medium ${size()} ${props.class ?? ''}`}
-    >
-      {props.text}
-    </span>
-  )
-}
+// Its own module, so a page that only shows people (the Board) does not load the menu below.
+export { Monogram } from './Monogram'
 
 /** A mention count pill; nothing at zero. */
 export function MentionPill(props: { count: number; label?: string }) {
   return (
     <Show when={props.count > 0}>
       <span
-        class="min-w-5 rounded-full bg-danger px-1.5 text-center text-[11px] leading-5 font-semibold text-paper tabular-nums"
+        class="min-w-5 rounded-full bg-danger px-1.5 text-center text-2xs leading-5 font-semibold text-paper tabular-nums"
         aria-label={props.label ?? `${props.count} mentions`}
       >
         {badgeText(props.count)}
@@ -129,6 +110,8 @@ export function Menu(props: {
   triggerClass: string
   placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end'
   class?: string
+  /** As the menu closes; `preventDefault()` keeps focus off the trigger (an item moved it). */
+  onCloseAutoFocus?: (event: Event) => void
   children: JSX.Element
 }) {
   return (
@@ -142,6 +125,7 @@ export function Menu(props: {
       </DropdownMenuTrigger>
       <DropdownMenuPortal>
         <DropdownMenuContent
+          onCloseAutoFocus={(event: Event) => props.onCloseAutoFocus?.(event)}
           class={`min-w-48 rounded-panel border-line bg-paper py-1 text-sm text-ink shadow-lift ${props.class ?? ''}`}
         >
           {props.children}

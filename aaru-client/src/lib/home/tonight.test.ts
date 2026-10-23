@@ -5,6 +5,7 @@ import {
   pickEpisode,
   pickMarkable,
   pickReason,
+  pickSeasonMarkable,
   rankedTonight,
 } from './tonight'
 import {
@@ -138,6 +139,30 @@ describe('labels', () => {
   })
 })
 
+describe('the season tick', () => {
+  it('marks the season while episodes after the next one remain in it', () => {
+    const next = { kind: 'continue', entry: continuing(1) } as const
+    expect(pickSeasonMarkable(next)?.next.season).toBe(4)
+  })
+
+  it('is left out where it would be the same as the episode tick', () => {
+    const finale = {
+      kind: 'continue',
+      entry: continuing(1, { isFinale: true }),
+    } as const
+    const lastAired = {
+      kind: 'continue',
+      entry: continuing(1, { remainingCount: 1 }),
+    } as const
+    expect(pickSeasonMarkable(finale)).toBeNull()
+    expect(pickSeasonMarkable(lastAired)).toBeNull()
+  })
+
+  it('never marks an airing on its own', () => {
+    expect(pickSeasonMarkable({ kind: 'airing', entry: airing(2) })).toBeNull()
+  })
+})
+
 describe('fieldLine', () => {
   it('leaves out what is zero', () => {
     expect(fieldLine('Tuesday evening', 3, 2)).toBe(
@@ -222,6 +247,13 @@ describe('rankedTonight', () => {
       new Set(),
     )?.primary
     expect(book && pickEpisode(book)).toBe('')
+  })
+
+  it("marks a ranked show's season through its Continue watching card", () => {
+    const show = rankedTonight(answer([ranked(1)]), [continuing(1)], new Set())
+    expect(show && pickSeasonMarkable(show.primary)).toEqual(continuing(1))
+    const unseen = rankedTonight(answer([ranked(1)]), [], new Set())
+    expect(unseen && pickSeasonMarkable(unseen.primary)).toBeNull()
   })
 })
 

@@ -117,7 +117,7 @@ export function TitleCard(props: { channel: Channel }) {
                     <li class="flex items-center gap-1.5 rounded-full bg-paper py-0.5 pr-2.5 pl-0.5 text-xs">
                       <span
                         aria-hidden="true"
-                        class="grid size-5 place-items-center rounded-full bg-medallion/20 font-display text-[9px] font-medium"
+                        class="grid size-5 place-items-center rounded-full bg-medallion/20 font-display text-2xs font-medium"
                       >
                         {monogram(member.user)}
                       </span>
@@ -150,12 +150,12 @@ export function TitleCard(props: { channel: Channel }) {
                 <SwitchThumb />
               </SwitchControl>
             </span>
-            <SwitchDescription class="hidden max-w-44 text-[11px] leading-tight text-muted md:block">
+            <SwitchDescription class="hidden max-w-44 text-2xs leading-tight text-muted md:block">
               {sharing()
                 ? 'Members here see how far you are.'
                 : 'Off: nobody here sees how far you are.'}
             </SwitchDescription>
-            <SwitchErrorMessage class="text-[11px] text-danger">
+            <SwitchErrorMessage class="text-2xs text-danger">
               {problem()}
             </SwitchErrorMessage>
           </Switch>

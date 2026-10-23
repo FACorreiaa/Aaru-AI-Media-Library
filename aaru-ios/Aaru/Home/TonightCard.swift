@@ -12,6 +12,7 @@ struct TonightCard: View {
     /// Side by side on wide screens: the art, then the words and actions beside it.
     var wide = false
     var onSetAside: (TonightPick, TonightVerdict) -> Void = { _, _ in }
+    var onMarkSeasonWatched: (ContinueEntry) -> Void = { _ in }
     let onMarkWatched: (ContinueEntry) -> Void
 
     var body: some View {
@@ -33,7 +34,7 @@ struct TonightCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.surface))
-            .clipShape(.rect(cornerRadius: 14, style: .continuous))
+            .clipShape(.rect(cornerRadius: AaruRadius.panel, style: .continuous))
             .edgeLit()
             if let also = tonight.also {
                 NavigationLink(value: also.libraryItemId) {
@@ -85,7 +86,17 @@ struct TonightCard: View {
         .padding(wide ? 24 : 16)
     }
 
+    /// The full phrasing where it fits; on a narrow iPhone the ticks drop to the bare code so
+    /// nothing truncates.
     private var actions: some View {
+        ViewThatFits(in: .horizontal) {
+            actionRow(short: false)
+            actionRow(short: true)
+        }
+        .controlSize(.large)
+    }
+
+    private func actionRow(short: Bool) -> some View {
         HStack(spacing: 12) {
             if let entry = tonight.primary.markable {
                 let code = EpisodeCode.short(season: entry.next.season, number: entry.next.number)
@@ -93,12 +104,26 @@ struct TonightCard: View {
                     onMarkWatched(entry)
                 } label: {
                     // One phrasing for the tick wherever the episode is named (UX-044).
-                    Label("Mark \(code) watched", systemImage: "checkmark")
+                    Label(short ? code : "Mark \(code) watched", systemImage: "checkmark")
                         .frame(minHeight: 32)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isPending)
                 .accessibilityLabel("Mark \(entry.title.title) \(code) watched")
+            }
+            if let entry = tonight.primary.seasonMarkable {
+                Button {
+                    onMarkSeasonWatched(entry)
+                } label: {
+                    Label(
+                        short ? "Season \(entry.next.season)" : "Season \(entry.next.season) watched",
+                        systemImage: "checkmark.circle"
+                    )
+                    .frame(minHeight: 32)
+                }
+                .buttonStyle(.bordered)
+                .disabled(isPending)
+                .accessibilityLabel("Mark \(entry.title.title) season \(entry.next.season) watched")
             }
             NavigationLink(value: tonight.primary.libraryItemId) {
                 Text("Open").frame(minHeight: 32)
@@ -114,7 +139,6 @@ struct TonightCard: View {
             .buttonStyle(.bordered)
             .accessibilityLabel("Set \(tonight.primary.title.title) aside")
         }
-        .controlSize(.large)
     }
 
     @ViewBuilder private func setAsideButtons(_ pick: TonightPick) -> some View {

@@ -164,11 +164,11 @@ ${Object.entries(alpha)
   .join('\n')}
 } as const
 
-/** Durations in ms and the one ease-out curve, for motion/mini. */
+/** Durations in ms and the one ease-out curve as a bezier, for motion/mini (CSS has --motion-*). */
 export const MOTION = {
 ${Object.entries(motion)
-  .filter(([name]) => !name.startsWith('$'))
-  .map(([name, value]) => `  ${name}: ${typeof value === 'number' ? value : `'${value}'`},`)
+  .filter(([name]) => !name.startsWith('$') && name !== 'ease')
+  .map(([name, value]) => `  ${name}: ${value},`)
   .join('\n')}
   easeBezier: [${ease.slice(1).join(', ')}],
 } as const

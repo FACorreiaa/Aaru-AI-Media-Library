@@ -1073,6 +1073,15 @@ Trakt history push (SCR-004) and MAL / AniList progress push (SCR-005) are **one
 - Tokens live in `outbound_connections`, encrypted at rest.
 - MAL uses OAuth with PKCE. AniList uses `SaveMediaListEntry`.
 
+**MyAnimeList read-back (SCR-010, owner 2026-10-23)** is the one exception to "never read back".
+MAL has no webhooks, so Aaru polls the user's own list sorted by `list_updated_at` and stops at
+its cursor: when a client opens Aaru (at most every 10 minutes) and every 6 hours in the
+background, in-process like `CatalogRefresher`. Changed entries are applied as an import (IMP-013's
+mapping, the forward-only merge, `status_by_hand` wins), journaled with the caller "MyAnimeList".
+`mal_entry_state` keeps what Aaru last pushed per MAL entry, so an echo of Aaru's own push is
+dropped and SCR-010's writes are never pushed again. Entries removed on MAL are listed in settings,
+never deleted. There is no conflict engine: fixed precedence, Aaru wins ties.
+
 ## Social (Phase 4)
 
 Modelled on Norviq's `social_*` design (`norviq-backend/.../Social`, `CreateSocialTables`).

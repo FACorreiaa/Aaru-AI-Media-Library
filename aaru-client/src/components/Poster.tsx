@@ -38,7 +38,7 @@ export function Poster(props: {
         when={props.url && !failed()}
         fallback={
           <span
-            class="absolute inset-0 grid place-items-center text-xs font-medium tracking-wide text-muted/70 uppercase"
+            class="absolute inset-0 grid place-items-center eyebrow"
             aria-hidden="true"
           >
             {glyph[props.kind]}

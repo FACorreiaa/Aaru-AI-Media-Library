@@ -54,7 +54,7 @@ struct AgentMessageRow: View {
                         .font(.caption2.weight(.medium))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 1)
-                        .background(Color(.medallion).opacity(0.25), in: .capsule)
+                        .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .capsule)
                     Text(message.createdAt, format: .dateTime.hour().minute())
                         .font(.caption)
                         .foregroundStyle(Color(.muted))
@@ -136,7 +136,7 @@ struct AgentTitleCard: View {
         VStack(alignment: .leading, spacing: 6) {
             PosterView(url: title.posterURL, kind: title.mediaKind)
                 .frame(width: 96)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous))
                 .accessibilityLabel(title.title)
             Text(title.title).font(.caption.weight(.medium)).lineLimit(3)
             if let year = title.year {

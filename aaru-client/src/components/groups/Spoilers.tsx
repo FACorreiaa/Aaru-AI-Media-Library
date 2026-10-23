@@ -13,26 +13,8 @@ import {
 import { spoilerChoiceLabel, validEpisode } from '../../lib/groups/kinds'
 import type { SpoilerChoice } from '../../lib/groups/kinds'
 
-/**
- * SpoilerVeil (GRP-007): a group message that may spoil what the reader has not watched yet,
- * folded until they ask. Lifting it is local; nobody is told.
- */
-export function SpoilerVeil(props: { onShow: () => void }) {
-  return (
-    <p class="mt-0.5 flex items-center gap-2 rounded-lg bg-surface px-3 py-1.5 text-sm text-muted">
-      <span aria-hidden="true">◐</span>
-      <span>May spoil what you haven't watched yet ·</span>
-      <Button
-        variant="link"
-        size="bare"
-        onClick={() => props.onShow()}
-        class="font-medium text-accent"
-      >
-        Show
-      </Button>
-    </p>
-  )
-}
+// Its own module, so a page that only reads posts (the Board) does not load the popover below.
+export { SpoilerVeil } from './SpoilerVeil'
 
 function Choice(props: { onSelect: () => void; children: JSX.Element }) {
   return (
@@ -57,6 +39,8 @@ const numberClass = 'min-h-8 w-14 rounded-md border-0 bg-surface px-1.5 text-sm'
 export function SpoilerControl(props: {
   value: SpoilerChoice
   onChange: (choice: SpoilerChoice) => void
+  /** The trigger's tooltip; the Board's readers are friends, not members. */
+  hint?: string
 }) {
   const [open, setOpen] = createSignal(false)
   const [season, setSeason] = createSignal('1')
@@ -71,7 +55,10 @@ export function SpoilerControl(props: {
   return (
     <Popover open={open()} onOpenChange={setOpen} placement="top-start">
       <PopoverTrigger
-        title="Members who haven't watched this far see it veiled. Only you see the mark."
+        title={
+          props.hint ??
+          "Members who haven't watched this far see it veiled. Only you see the mark."
+        }
         class={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${props.value.mode === 'auto' ? 'bg-surface text-muted hover:text-ink' : 'bg-accent/15 text-accent'}`}
       >
         <span aria-hidden="true">◐</span>

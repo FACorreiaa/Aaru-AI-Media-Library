@@ -3,15 +3,9 @@ import SwiftUI
 import UniformTypeIdentifiers
 import WidgetKit
 
-/// Brand colours, from the extension's own asset catalog (the app's catalog is not in this target).
-enum Palette {
-    static let paper = Color("Paper")
-    static let ink = Color("Ink")
-    static let muted = Color("Muted")
-    static let surface = Color("Surface")
-    static let brand = Color("Brand")
-    static let gold = Color("Gold")
-}
+// Colours are the generated asset symbols of the extension's own catalog (`WidgetAssets.xcassets`,
+// written by scripts/generate-tokens.mjs from each token's `widget` list): `Color(.paper)`,
+// `Color(.accent)`, `Color(.onAccent)`, and so on. Tints are `AaruAlpha` steps, corners `AaruRadius`.
 
 extension Font {
     /// A widget's one heading, as in the app (`Font.aaruDisplay`): the system sans at the
@@ -28,25 +22,33 @@ struct SnapshotEntry: TimelineEntry {
     var artwork: [String: Data] = [:]
 }
 
-/// Shown when the app has not written a snapshot yet (never opened, or signed out).
+/// Shown when the app has not written a snapshot yet (never opened, or signed out). On the Lock
+/// Screen (vibrant mode) it draws in the hierarchical styles, since a token fill turns to its
+/// luminance there and ink can vanish.
 struct SetUpView: View {
     var compact = false
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
             Image(systemName: "sparkles.tv")
                 .font(compact ? .body : .title3)
-                .foregroundStyle(Palette.brand)
+                .foregroundStyle(vibrant ? AnyShapeStyle(.primary) : AnyShapeStyle(Color(.accent)))
+                .widgetAccentable()
             Text("Open Aaru to set up")
                 .font(compact ? .caption : .subheadline.weight(.semibold))
-                .foregroundStyle(Palette.ink)
+                .foregroundStyle(vibrant ? AnyShapeStyle(.primary) : AnyShapeStyle(Color(.ink)))
             if !compact {
                 Text("Your shows appear here after you sign in.")
                     .font(.caption)
-                    .foregroundStyle(Palette.muted)
+                    .foregroundStyle(vibrant ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color(.muted)))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private var vibrant: Bool {
+        renderingMode == .vibrant
     }
 }
 
@@ -91,30 +93,35 @@ enum WidgetArtwork {
     }
 }
 
-/// Fetched artwork, or a brand wash when there is none.
+/// Fetched artwork, or a flat surface with a hairline when there is none (surfaces are flat; a
+/// gradient is only a glow or a scrim). Clipped here, to a continuous `radius`, so the hairline
+/// follows the corner.
 struct ArtworkView: View {
     let data: Data?
+    var radius: CGFloat = AaruRadius.thumb
 
     var body: some View {
-        if let data, let source = CGImageSourceCreateWithData(data as CFData, nil),
-           let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
-        {
-            Image(decorative: image, scale: 1)
-                .resizable()
-                .scaledToFill()
-        } else {
-            LinearGradient(
-                colors: [Palette.brand.opacity(0.35), Palette.gold.opacity(0.35)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        Group {
+            if let data, let source = CGImageSourceCreateWithData(data as CFData, nil),
+               let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+            {
+                Image(decorative: image, scale: 1)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Color(.surface)
+                    .overlay { shape.strokeBorder(Color(.line), lineWidth: 1) }
+            }
         }
+        .clipShape(shape)
     }
 }
 
 extension View {
     /// The brand paper behind every widget.
     func aaruWidgetBackground() -> some View {
-        containerBackground(for: .widget) { Palette.paper }
+        containerBackground(for: .widget) { Color(.paper) }
     }
 }
 

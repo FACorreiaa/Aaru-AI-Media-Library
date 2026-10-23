@@ -73,9 +73,7 @@ export function MemberList(props: { class?: string }) {
       </Show>
       <Show when={scope.detail().agent}>
         <section class="px-2 pt-4">
-          <h3 class="px-2 pb-1 text-xs font-semibold tracking-wide text-muted uppercase">
-            Assistant
-          </h3>
+          <h3 class="px-2 pb-1 eyebrow">Assistant</h3>
           <details class="group/aaru rounded-lg px-2 py-1.5 hover:bg-surface open:bg-surface">
             <summary
               title="Aaru reads this channel's recent group messages, and your own library when it helps. It can't change anything."
@@ -100,7 +98,7 @@ export function MemberList(props: { class?: string }) {
       <For each={sections()}>
         {(section) => (
           <section class="px-2 pt-4">
-            <h3 class="px-2 pb-1 text-xs font-semibold tracking-wide text-muted uppercase">
+            <h3 class="px-2 pb-1 eyebrow">
               {section.label} — {section.members.length}
             </h3>
             <ul>
@@ -173,7 +171,7 @@ export function MemberList(props: { class?: string }) {
       </For>
       <Show when={scope.detail().invited.length > 0}>
         <section class="px-2 pt-4">
-          <h3 class="px-2 pb-1 text-xs font-semibold tracking-wide text-muted uppercase">
+          <h3 class="px-2 pb-1 eyebrow">
             Invited — {scope.detail().invited.length}
           </h3>
           <ul>

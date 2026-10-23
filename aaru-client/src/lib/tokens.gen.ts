@@ -35,11 +35,10 @@ export const ALPHA = {
   half: 0.5,
 } as const
 
-/** Durations in ms and the one ease-out curve, for motion/mini. */
+/** Durations in ms and the one ease-out curve as a bezier, for motion/mini (CSS has --motion-*). */
 export const MOTION = {
   fast: 150,
   base: 240,
   slow: 420,
-  ease: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
   easeBezier: [0.2, 0.7, 0.2, 1],
 } as const

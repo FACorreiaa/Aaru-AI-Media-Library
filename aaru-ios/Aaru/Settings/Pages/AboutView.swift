@@ -6,7 +6,7 @@ struct AboutView: View {
     var body: some View {
         Form {
             Section {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AaruSpace.medium) {
                     Image(.wordmark)
                         .resizable()
                         .scaledToFit()
@@ -22,7 +22,7 @@ struct AboutView: View {
             }
 
             Section {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AaruSpace.medium) {
                     // Smaller than Aaru's own wordmark, as TMDB's terms require.
                     Image(.tmdbLogo)
                         .resizable()

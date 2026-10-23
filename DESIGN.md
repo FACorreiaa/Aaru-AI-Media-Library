@@ -183,7 +183,9 @@ kept (Home's cache on Apple, `localStorage` on the web, cleared on sign-out), so
 offline. The device composes it as above only when no answer for today exists. Each pick has
 "Not tonight" (gone for the day) and "Not for me" (ranked lower for 14 days): buttons on the
 web, a "…" menu and a context menu on Apple. The card moves on at once, then Tonight loads
-again. Mark watched shows only when the pick is a show's next episode.
+again. Mark watched shows only when the pick is a show's next episode; beside it, "Season N
+watched" (PROG-006, owner 2026-10-23) ticks every aired episode of that season, shown only while
+episodes after the next one remain in it.
 
 ## 6. The shelf (library as query, not as app section)
 
@@ -611,7 +613,7 @@ The feeling to protect: **social is a room you invite people into, not a feed yo
 Friends is its own page on the web and its own sidebar destination on iPad and Mac, between
 Lists and Groups. On iPhone the five tabs are full (§18), so Groups opens it from a Friends
 button in its toolbar, and Settings → Friends & privacy links to it (Apple audit, 2026-10-22,
-APL-043). It opens on "Lately": one quiet row
+APL-043). It opens on Board; Lately is its second view (BOARD-002, below). Lately is one quiet row
 per friend, title and day ("Ana watched 3 episodes, up to S1 · E3 Severance", "Today"), with the
 poster, and Earlier for more. No unread badge and no push: you visit it. Below come Invite,
 requests, friends and blocks.
@@ -641,6 +643,35 @@ only friends see it. A spent, expired or revoked link says so plainly, with no d
 The sender invites from Friends: "Invite a friend", or "Invite to watch something together"
 through the title picker. The link opens the share sheet (copied to the clipboard on desktop
 web), and open invites list what they say, the days left, and Revoke.
+
+### Board (BOARD-002, 2026-10-23)
+
+The Board lives on Friends, not in a Social tab (owner, 2026-10-23; the spec's tab is dropped).
+Friends opens on **Board**; a `Board | Lately` segmented control holds Lately (For you from
+friends, activity, leaderboard, Invite, requests, friends). No nav rename, Groups untouched.
+
+- **Composer.** An inline box at the top of Board that grows on focus: no floating button, no
+  dialog. It offers + Title, half stars, the spoiler choice, and, once a title is chosen, a
+  one-line review effect ("Adds Severance to Watched, ★4½"; "Watched, or Watching if it's still
+  airing" for a show; "Updates your rating. Its status stays." for a title already in the
+  library). `@` suggests your friends; there is no `@aaru` until BOARD-004. It also starts
+  with a title from `/app/friends?title=<library item id>`, which is where "Write about this" goes.
+- **Post rows.** Author, day, words, the attached title with its stars, Upvote and the comment
+  count. The poster is not a link: title pages are library items and a friend's title is
+  usually not yours, so friends' posts carry "Add to my library" instead. A spoiler sits behind
+  `SpoilerVeil`; the author never sees a veil.
+- **Recent / Top this week.** Recent is the default and pages with "Show older"; Top this week is
+  one ranked page.
+- **Empty.** The owl: no friends points to Invite (in Lately); friends with no posts says it is
+  quiet. The composer stays either way.
+- **Post page** (`/app/friends/posts/$postId`). The post, the upvoters' names beside the Upvote
+  button, then the thread: comments with one level of replies. Reply is a visible button; when
+  answering a reply it prefills `@name`. A deleted comment with replies reads "Comment deleted"
+  in muted text with its replies still under it. Menus: Edit, Delete and Report on a post;
+  Delete sits in a comment's ⋯ menu.
+- **From friends on a title.** After the notes on a title page: up to five post rows about this
+  title and "Write about this" (to Friends with the title in the composer). Hidden when there
+  are no posts and no friends.
 
 ### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
 
@@ -798,8 +829,9 @@ bottom, Insights and Settings.
 - **Web.** One shell for every `/app` page. At 1024px and up a persistent left sidebar
   (collapsible to icons): the wordmark, Search (⌘K; opens in place on every page), the six
   destinations with Friends between Lists and Groups (its own page since SOC-003, owner
-  2026-10-21), a gap, Insights, Settings, and last the account row (name and @handle, opens
-  Settings → Account). Groups carries the mention count. Below 1024px a top bar (wordmark,
+  2026-10-21; it opens on Board, and Lately is its second view), a gap, Insights, Settings,
+  and last the account row (name and @handle, opens Settings → Account). Groups carries the
+  mention count. Below 1024px a top bar (wordmark,
   Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
   names where you came from. Sign out lives on Account only.
@@ -1060,7 +1092,7 @@ AI" UI.
   `--alpha-*` variables, `RADIUS`/`ALPHA`/`MOTION` in `tokens.gen.ts`, and
   `AaruRadius`/`AaruAlpha`/`AaruMotion`/`AaruSpace` in `Tokens.gen.swift` for the app and the
   widgets. A radius, tint, duration or padding outside the scale is a review comment. Apple
-  corners are always `.continuous`. Web spacing is Tailwind's 4 px scale.
+  corners are always `.continuous`. Web spacing is Tailwind's 4 px scale. Widgets read the same colour sets (their own catalog carries every role) and mark their glyph and title `widgetAccentable`, so the tinted Home Screen and vibrant Lock Screen modes still read.
 - **Elevation.** Flat: Paper, Surface and Stone separate by tint and hairline, never by
   shadow. One `lift` (a line-strong ring and a soft navy shadow) belongs to layers that float:
   menus, popovers, dialogs, drawers, toasts, a dragged card. Gradients exist only as a glow
@@ -1068,11 +1100,18 @@ AI" UI.
   text, never glass by default.
 - **Appearance.** System, Light or Dark, per device. The web keeps it in the `aaru_appearance`
   cookie and renders `<html data-theme>` on the server, so nothing flashes; Apple keeps it in
-  `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system.
+  `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system. The PWA manifest's two colours are the dark paper (an installed app's splash is one colour, so it is dark-first in both appearances); the browser's `theme-color` follows the paper.
 - **Type.** The system sans. Titles and headings use `--font-display` on the web and
   `Font.aaruDisplay(_:)` on Apple (relative to a text style, so Dynamic Type scales it); widgets
   use `Font.widgetDisplay` for their one heading. Small uppercase eyebrows (tracked 1.5) over
-  sections. Dates, `S·E` codes, counts and ratings use tabular figures.
+  sections. Dates, `S·E` codes, counts and ratings use tabular figures. On the web the
+  eyebrow is the `.eyebrow` class and nothing else (12 px, 600, 0.12 em; `text-2xs` for the
+  smallest); the sizes are Tailwind's plus `text-2xs` (11 px, badges) and `text-md` (15 px,
+  message bodies), never an arbitrary `text-[…]`; tracking is `tracking-tight` on display
+  text, `tracking-wide` on shortcut hints, and the eyebrow's. Motion durations and the curve
+  come from the motion tokens; the landing hero's 700 ms `rise` is the one longer entrance,
+  and the signed-in app has no page-load choreography. Under Reduce Motion every transition
+  is instant and every entrance is a cross-fade; only the loading spinner still turns.
 - **Badges.** Premiere and new season are accent, Finale is ink, both under Paper text (the web's
   `accent` and `ink` badge tones). Gold never carries small text.
 - **Texture, on the Field and the Title room only.** Two faint pinstripes of different pitch

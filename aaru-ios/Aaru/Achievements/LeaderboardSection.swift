@@ -22,7 +22,7 @@ struct LeaderboardSection: View {
                             .foregroundStyle(Color(.muted))
                     }
                 } else {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: AaruSpace.medium) {
                         Text("A weekly board, just for friends")
                             .font(.aaruDisplay(.title3))
                         Text(
@@ -61,7 +61,7 @@ private struct BoardRow: View {
             Text(entry.user.monogram)
                 .font(.footnote.weight(.medium))
                 .frame(width: side, height: side)
-                .background(Color(.medallion).opacity(0.2), in: .circle)
+                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
                 .accessibilityHidden(true)
             Text(entry.you ? "You" : entry.user.inviteName)
                 .fontWeight(entry.you ? .semibold : .regular)
@@ -71,7 +71,7 @@ private struct BoardRow: View {
                 .font(.body.weight(.semibold))
                 .monospacedDigit()
         }
-        .listRowBackground(entry.you ? Color(.accent).opacity(0.08) : nil)
+        .listRowBackground(entry.you ? Color(.accent).opacity(AaruAlpha.tint) : nil)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(entry.rank), \(entry.you ? "You" : entry.user.inviteName), \(entry.points) points")
     }

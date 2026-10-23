@@ -52,7 +52,7 @@ export function RatingsHistogram(props: { distribution: number[] }) {
               }}
               title={`${bar.count} rated ${bar.label}`}
             />
-            <span class="text-center text-[11px] text-muted">{bar.label}</span>
+            <span class="text-center text-2xs text-muted">{bar.label}</span>
           </div>
         )}
       </For>
@@ -168,7 +168,7 @@ export function StatsPanel(props: {
                       height: `${Math.max(bar.height * 100, bar.height > 0 ? 4 : 1)}%`,
                     }}
                   />
-                  <span class="h-4 text-center text-[11px] text-muted">
+                  <span class="h-4 text-center text-2xs text-muted">
                     {showLabel(i()) ? bar.label : ''}
                   </span>
                 </div>

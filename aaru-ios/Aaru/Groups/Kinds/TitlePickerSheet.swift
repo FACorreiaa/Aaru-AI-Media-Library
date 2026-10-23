@@ -39,13 +39,13 @@ struct TitlePickerSheet: View {
                     Button {
                         pick(hit)
                     } label: {
-                        HStack(spacing: 14) {
+                        HStack(spacing: AaruSpace.medium) {
                             PosterView(
                                 url: hit.posterUrl.flatMap(URL.init(string:)),
                                 kind: MediaKind(type: hit._type, isAnime: hit.isAnime)
                             )
                             .frame(width: 44)
-                            VStack(alignment: .leading, spacing: 3) {
+                            VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                                 Text(hit.title).font(.body.weight(.medium)).lineLimit(2)
                                 Text(pickerLine(hit))
                                     .font(.footnote)

@@ -76,7 +76,7 @@ export default function CalendarEpisodeSheet(props: {
                 class="-mt-14 w-20 shrink-0 shadow-lift ring-4 ring-paper"
               />
               <div class="min-w-0 flex-1">
-                <p class="text-xs font-semibold tracking-wide text-muted uppercase">
+                <p class="eyebrow">
                   {e().title.title} · {episodeCode(e().season, e().number)}
                 </p>
                 <h2 class="mt-1 font-display text-2xl leading-tight font-medium">

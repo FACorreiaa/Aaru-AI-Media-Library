@@ -27,6 +27,8 @@ export function ConfirmDialog(props: {
   busy?: boolean
   onConfirm: () => void
   onCancel: () => void
+  /** Where focus goes as it closes; `preventDefault()` keeps it off the opener. */
+  onCloseAutoFocus?: (event: Event) => void
 }) {
   let cancel: HTMLButtonElement | undefined
   // Resolved once: tested in `when` and shown in the body (see SettingsSection).
@@ -45,6 +47,7 @@ export function ConfirmDialog(props: {
             event.preventDefault()
             cancel?.focus()
           }}
+          onCloseAutoFocus={(event: Event) => props.onCloseAutoFocus?.(event)}
         >
           <AlertDialogHeader>
             <AlertDialogTitle>{props.title}</AlertDialogTitle>

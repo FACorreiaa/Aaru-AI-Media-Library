@@ -29,7 +29,7 @@ struct LibraryFilterBar: View {
                         )
                         .font(.subheadline.weight(.medium))
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
+                        .padding(.vertical, AaruSpace.small)
                         .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                         .frame(minHeight: 44)
                         .contentShape(.rect)
@@ -63,8 +63,8 @@ private struct FilterChip: View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline.weight(.medium))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
+                .padding(.horizontal, AaruSpace.medium)
+                .padding(.vertical, AaruSpace.small)
                 .foregroundStyle(isOn ? Color(.paper) : Color(.ink))
                 .background(isOn ? Color(.ink) : .clear, in: Capsule())
                 .overlay(Capsule().strokeBorder(isOn ? Color.clear : Color(.lineStrong)))
@@ -132,10 +132,10 @@ struct LibraryListRow: View {
     let row: LibraryRow
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AaruSpace.medium) {
             PosterView(url: row.posterURL, kind: row.kind)
                 .frame(width: 48)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                 Text(row.title).font(.body.weight(.medium)).lineLimit(2)
                 Text(metaLine)
                     .font(.footnote)
@@ -180,9 +180,9 @@ struct ListsEntryRow: View {
                     .foregroundStyle(Color(.muted))
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AaruSpace.large)
             .frame(minHeight: 44)
-            .background(Color(.surface), in: .rect(cornerRadius: 12))
+            .background(Color(.surface), in: .rect(cornerRadius: AaruRadius.panel, style: .continuous))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -213,7 +213,7 @@ struct RemovalRibbon: View {
                     .frame(minWidth: 44, minHeight: 44)
             }
             .padding(.horizontal, 16)
-            .background(Color(.surface), in: .rect(cornerRadius: 14))
+            .background(Color(.surface), in: .rect(cornerRadius: AaruRadius.panel, style: .continuous))
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
             .transition(.opacity)
@@ -241,8 +241,8 @@ extension View {
             content
                 .overlay(alignment: .top) {
                     if hovering {
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(Color(.accent).opacity(0.6), lineWidth: 2)
+                        RoundedRectangle(cornerRadius: AaruRadius.panel, style: .continuous)
+                            .strokeBorder(Color(.accent).opacity(AaruAlpha.half), lineWidth: 2)
                             .padding(-4)
                             .allowsHitTesting(false)
                     }
