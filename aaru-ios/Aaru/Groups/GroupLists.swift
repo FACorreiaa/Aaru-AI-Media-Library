@@ -154,7 +154,7 @@ struct UnreadBadge: View {
         if mentions > 0 {
             Text("\(mentions)")
                 .font(.caption.weight(.semibold).monospacedDigit())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color(.onAccent))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2)
                 .background(Color(.accent), in: .capsule)

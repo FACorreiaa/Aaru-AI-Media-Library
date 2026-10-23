@@ -38,7 +38,7 @@ struct ChannelEditorSheet: View {
                     }
                 }
             }
-            .formStyle(.grouped)
+            .paperPage()
             .navigationTitle("Edit channel")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

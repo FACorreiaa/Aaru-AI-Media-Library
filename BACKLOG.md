@@ -486,6 +486,7 @@ account or a stranger that has not happened yet.
 | BRD-004 | Built | #150, #153 | Owner checks the owl and its poses on TestFlight + beta web |
 | BRD-005 | Built | #158; `generate-tokens.mjs --check` covers the manifest and translucent pairs | Theme audit 2026-10-23: contract fixes. BRD-006…010 follow |
 | BRD-006 | Built | #159 | Web contrast P1s: one focus form, placeholders, menu rows, toasts |
+| BRD-007 | Built | this PR; `Design/Surfaces.swift` | Apple contrast P1s + launch screen in Paper. Owner checks a sheet and a cold launch in dark on TestFlight |
 | BRD-008 | Built | this PR; `Tokens.gen.swift`, `tokens.theme.css` | Radius, alpha, motion and space scales in `tokens.json`; adoption on each client follows in BRD-008's web and Apple PRs |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
@@ -893,6 +894,20 @@ Toasts take the scheme the page is drawn in, so a pinned appearance reaches them
 **Done when:** no `ring-ring/50` or `placeholder:text-muted/70` in `aaru-client/src`; tabbing
 through sign-in, search, a select and a menu shows one ring, in both appearances.
 
+### BRD-007 · Apple contrast P1s and the launch screen · S · owner, 2026-10-23
+White on the dark accent is 2.4:1; the mention badge, the Discover check and the Account tile
+glyph now use `Color(.onAccent)`. Seven capsule outlines hand-rolled as Ink at 0.18/0.25 use
+`Color(.lineStrong)`, and the Groups separators use `Color(.line)` instead of the system
+`.separator`, so one hairline runs through the app. Thirteen Forms and Lists drew the system
+grouped grey instead of Paper (worst in dark); `View.paperPage()` in `Design/Surfaces.swift`
+is the one implementation (`settingsPage()` delegates to it) and every grouped Form and List
+carries it. The three image placeholders that used `medallion` (now a mid silver) use
+`surface`. The launch screen is Paper (`UILaunchScreen.UIColorName` in the Info.plist; the
+generated-launch-screen build setting is gone, since Xcode merged the two into a stray nested
+dict), so a dark cold start no longer flashes white.
+
+**Done when:** `xcodebuild build` passes; every sheet in the list sits on Paper in dark; a cold
+launch in dark shows navy, not white; the mention badge reads on the accent.
 ### BRD-008 · One scale source: radius, alpha, motion, space · M · owner, 2026-10-23
 `design/tokens.json` held colours only, so each client invented the rest: the web kept four
 radii in `styles.css` and shadcn's `--radius` remap, Apple used ten radii (72 of 83 not
