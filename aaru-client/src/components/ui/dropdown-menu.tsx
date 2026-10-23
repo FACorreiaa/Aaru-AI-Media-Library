@@ -345,7 +345,7 @@ export const DropdownMenuShortcut = (props: DropdownMenuShortcutProps) => {
     <span
       data-slot="dropdown-menu-shortcut"
       class={cx(
-        'text-muted-foreground ml-auto text-xs tracking-widest',
+        'text-muted-foreground ml-auto text-xs tracking-wide',
         props.class,
       )}
       {...rest}

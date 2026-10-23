@@ -52,7 +52,7 @@ export function SeasonMap(props: {
                     <Button
                       variant="ghost"
                       size="bare"
-                      class={`h-7 min-w-7 rounded-row px-1 text-[11px] font-semibold tabular-nums transition-colors hover:text-current disabled:opacity-100 motion-safe:active:scale-100 ${CELL[state()]}`}
+                      class={`h-7 min-w-7 rounded-row px-1 text-2xs font-semibold tabular-nums transition-colors hover:text-current disabled:opacity-100 motion-safe:active:scale-100 ${CELL[state()]}`}
                       aria-pressed={state() === 'watched'}
                       aria-label={`${season.number === 0 ? 'Special' : `Season ${season.number}`}, episode ${episode.number}${episode.name ? `, ${episode.name}` : ''}, ${STATE_LABEL[state()]}`}
                       title={episode.name ?? `Episode ${episode.number}`}

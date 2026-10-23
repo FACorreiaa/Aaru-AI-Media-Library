@@ -14,7 +14,7 @@ export function CaptureCard(props: { job: ImportJob }) {
       params={{ id: props.job.id }}
       class="edge-lit block rounded-card bg-surface p-5 hover:bg-surface/80"
     >
-      <span class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted uppercase">
+      <span class="flex items-center gap-2 eyebrow">
         <span class="size-1.5 rounded-full bg-gold" aria-hidden="true" />
         Your capture
       </span>

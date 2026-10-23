@@ -54,7 +54,7 @@ export function GroupRail(props: { class?: string }) {
               </svg>
             </span>
             <Show when={shell.invites().length > 0}>
-              <span class="absolute -right-1 -bottom-1 min-w-5 rounded-full border-2 border-surface bg-danger px-1 text-center text-[11px] leading-4 font-semibold text-paper">
+              <span class="absolute -right-1 -bottom-1 min-w-5 rounded-full border-2 border-surface bg-danger px-1 text-center text-2xs leading-4 font-semibold text-paper">
                 {badgeText(shell.invites().length)}
               </span>
             </Show>
@@ -84,7 +84,7 @@ export function GroupRail(props: { class?: string }) {
                 {groupMonogram(group.name)}
               </span>
               <Show when={group.mentions > 0}>
-                <span class="absolute right-2 -bottom-1 min-w-5 rounded-full border-2 border-surface bg-danger px-1 text-center text-[11px] leading-4 font-semibold text-paper tabular-nums">
+                <span class="absolute right-2 -bottom-1 min-w-5 rounded-full border-2 border-surface bg-danger px-1 text-center text-2xs leading-4 font-semibold text-paper tabular-nums">
                   {badgeText(group.mentions)}
                 </span>
               </Show>

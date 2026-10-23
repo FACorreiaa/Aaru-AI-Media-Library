@@ -56,9 +56,7 @@ export function EpisodeSheet(props: {
           <div class="px-5 pt-4 pb-5">
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
-                <p class="text-xs font-semibold tracking-wide text-muted uppercase">
-                  {code()}
-                </p>
+                <p class="eyebrow">{code()}</p>
                 <h2 class="mt-1 font-display text-2xl leading-tight font-medium">
                   {name()}
                 </h2>

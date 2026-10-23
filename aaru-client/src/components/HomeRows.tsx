@@ -413,7 +413,7 @@ export function DiscoverCard(props: {
   const DateBadge = () => (
     <Show when={dateLabel()}>
       {(text) => (
-        <span class="absolute bottom-1.5 left-1.5 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-on-accent">
+        <span class="absolute bottom-1.5 left-1.5 rounded-full bg-accent px-2 py-0.5 text-2xs font-semibold text-on-accent">
           {text()}
         </span>
       )}

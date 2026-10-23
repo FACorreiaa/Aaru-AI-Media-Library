@@ -24,7 +24,7 @@ export function AaruAvatar(props: { size?: 'sm' | 'md'; breathing?: boolean }) {
 /** The small tag beside Aaru's name. */
 export function AssistantTag() {
   return (
-    <span class="rounded bg-medallion/25 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-muted uppercase">
+    <span class="rounded bg-medallion/25 px-1.5 py-0.5 eyebrow text-2xs">
       Assistant
     </span>
   )

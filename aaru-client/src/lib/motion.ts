@@ -1,5 +1,6 @@
 import type { animate } from 'motion/mini'
 import { prefersReducedMotion } from './reduced-motion'
+import { MOTION } from './tokens.gen'
 
 // The web's motion helpers (DESIGN.md §17). CSS keyframes stay the default; these are for what
 // CSS cannot do: an exit before an element leaves the DOM, siblings sliding into a gap (FLIP),
@@ -9,9 +10,9 @@ import { prefersReducedMotion } from './reduced-motion'
 // on its own when the browser is idle after a page that uses it, or on the first animation.
 
 /** The same ease-out as the CSS `.rise` entrance. */
-export const EASE_OUT = [0.2, 0.7, 0.2, 1] as const
+export const EASE_OUT = MOTION.easeBezier
 
-const DURATION = 0.24
+const DURATION = MOTION.base / 1000
 
 type Frames = Parameters<typeof animate>[1]
 

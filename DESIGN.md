@@ -1072,7 +1072,14 @@ AI" UI.
 - **Type.** The system sans. Titles and headings use `--font-display` on the web and
   `Font.aaruDisplay(_:)` on Apple (relative to a text style, so Dynamic Type scales it); widgets
   use `Font.widgetDisplay` for their one heading. Small uppercase eyebrows (tracked 1.5) over
-  sections. Dates, `S·E` codes, counts and ratings use tabular figures.
+  sections. Dates, `S·E` codes, counts and ratings use tabular figures. On the web the
+  eyebrow is the `.eyebrow` class and nothing else (12 px, 600, 0.12 em; `text-2xs` for the
+  smallest); the sizes are Tailwind's plus `text-2xs` (11 px, badges) and `text-md` (15 px,
+  message bodies), never an arbitrary `text-[…]`; tracking is `tracking-tight` on display
+  text, `tracking-wide` on shortcut hints, and the eyebrow's. Motion durations and the curve
+  come from the motion tokens; the landing hero's 700 ms `rise` is the one longer entrance,
+  and the signed-in app has no page-load choreography. Under Reduce Motion every transition
+  is instant and every entrance is a cross-fade; only the loading spinner still turns.
 - **Badges.** Premiere and new season are accent, Finale is ink, both under Paper text (the web's
   `accent` and `ink` badge tones). Gold never carries small text.
 - **Texture, on the Field and the Title room only.** Two faint pinstripes of different pitch

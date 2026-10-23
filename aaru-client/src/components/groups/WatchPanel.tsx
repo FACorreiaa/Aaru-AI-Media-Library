@@ -307,7 +307,7 @@ export function WatchPanel(props: { channel: Channel }) {
                 class="w-12 shrink-0"
               />
               <div class="min-w-0 flex-1">
-                <p class="text-xs font-semibold tracking-wide text-accent uppercase">
+                <p class="eyebrow text-accent">
                   {phaseLabel(phase() ?? 'lobby')}
                 </p>
                 <p class="truncate font-display text-lg leading-tight font-medium">

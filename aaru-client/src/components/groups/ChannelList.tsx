@@ -149,9 +149,7 @@ export function ChannelList(props: { class?: string }) {
 
       <div class="flex-1 overflow-y-auto px-2 py-3">
         <div class="flex items-center justify-between px-2 pb-1">
-          <h3 class="text-xs font-semibold tracking-wide text-muted uppercase">
-            Channels
-          </h3>
+          <h3 class="eyebrow">Channels</h3>
           <Show when={manages()}>
             <Button
               variant="ghost"

@@ -113,7 +113,7 @@ export const CalendarHeadCell = <T extends ValidComponent = 'th'>(
     <CalendarPrimitive.HeadCell
       data-slot="calendar-head-cell"
       class={cx(
-        'text-muted-foreground w-8 rounded-md text-[0.8rem] font-normal',
+        'text-muted-foreground w-8 rounded-md text-xs font-normal',
         props.class,
       )}
       {...rest}

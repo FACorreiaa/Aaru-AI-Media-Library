@@ -117,9 +117,7 @@ function Recent(props: { now: Date }) {
         <For each={byDay(listens(), props.now)}>
           {(day) => (
             <>
-              <h3 class="mt-6 text-xs font-semibold tracking-wider text-muted uppercase">
-                {day.heading}
-              </h3>
+              <h3 class="mt-6 eyebrow">{day.heading}</h3>
               <ul class="mt-1 divide-y divide-line">
                 <For each={day.listens}>
                   {(listen) => (
