@@ -9,12 +9,6 @@ typealias ImportRow = Components.Schemas.ImportRow
 /// A row matched by hand (IMP-011): the job's new counts and the row as it now stands.
 typealias ResolvedImportRow = Operations.ResolveImportRow.Output.Ok.Body.JsonPayload
 
-extension ImportRow: @retroactive Identifiable {
-    public var id: Int {
-        index
-    }
-}
-
 typealias ImportFileSource = Operations.CreateCSVImport.Input.Query.SourcePayload
 
 /// APP-007: the user's imports. Upload a file, watch it get matched, approve the plan.
@@ -36,7 +30,7 @@ final class ImportsModel {
     /// Where Trakt's sign-in sheet returns.
     static let traktReturn = "aaru://settings/trakt"
 
-    @ObservationIgnored private let api: Client?
+    @ObservationIgnored let api: Client?
 
     init(api: Client?) {
         self.api = api
@@ -82,6 +76,11 @@ final class ImportsModel {
             problem = "That file could not be uploaded. Aaru could not reach the server."
         }
         return nil
+    }
+
+    /// A job started outside this model (a capture, AG-006), listed first.
+    func started(_ job: ImportJob) {
+        jobs.insert(job, at: 0)
     }
 
     /// A public AniList anime list (IMP-014). The server reads it in the background; the job's

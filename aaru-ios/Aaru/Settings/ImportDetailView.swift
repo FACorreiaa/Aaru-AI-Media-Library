@@ -49,11 +49,16 @@ struct ImportDetailView: View {
         detail?.job
     }
 
+    private var title: String {
+        guard let job else { return "Import" }
+        return job.isCapture ? "Your capture" : job.filename ?? job.sourceLabel
+    }
+
     var body: some View {
         Form {
             if let job {
                 Section {
-                    LabeledContent("Status", value: job.stateLabel)
+                    LabeledContent("Status", value: job.captureHeadline ?? job.stateLabel)
                     if let error = job.errorSummary, job.state == .failed {
                         Text(error).font(.footnote).foregroundStyle(Color(.danger))
                     }
@@ -70,8 +75,8 @@ struct ImportDetailView: View {
                         }
                     } footer: {
                         Text(
-                            "You can leave: the plan waits under Settings → Import, and nothing reaches your "
-                                + "library until you approve it."
+                            "You can leave: the plan waits \(job.isCapture ? "on Home" : "under Settings → Import"), "
+                                + "and nothing reaches your library until you approve it."
                         )
                     }
                 }
@@ -88,9 +93,11 @@ struct ImportDetailView: View {
                 }
                 if job.state == .planned {
                     Section {
-                        Button(applying ? "Importing…" : "Approve and import") { Task { await apply() } }
-                            .disabled(applying)
-                        Button("Discard", role: .destructive) { confirmsDiscard = true }
+                        Button(applying ? "Adding…" : job.isCapture ? "Approve" : "Approve and import") {
+                            Task { await apply() }
+                        }
+                        .disabled(applying)
+                        Button(job.isCapture ? "Not this" : "Discard", role: .destructive) { confirmsDiscard = true }
                     } footer: {
                         Text("One step to undo: it lands in History, in Your data, as a single action.")
                     }
@@ -109,12 +116,16 @@ struct ImportDetailView: View {
                 ProgressView().frame(maxWidth: .infinity)
             }
         }
-        .settingsPage(job?.filename ?? job?.sourceLabel ?? "Import", problem: problem)
+        .settingsPage(title, problem: problem)
         .undoToast()
         .confirmationDialog("Discard this plan?", isPresented: $confirmsDiscard, titleVisibility: .visible) {
             Button("Discard", role: .destructive) { Task { await discard() } }
         } message: {
-            Text("Nothing was added yet. You can import the file again later.")
+            Text(
+                job?.isCapture == true
+                    ? "Nothing was added yet."
+                    : "Nothing was added yet. You can import the file again later."
+            )
         }
         .task(id: id) { await poll() }
         .sheet(item: $finding) { row in
@@ -253,6 +264,13 @@ struct ImportDetailView: View {
     static func appliedMessage(_ stats: Components.Schemas.ImportStats) -> String {
         let added = stats.created == 1 ? "Imported 1 title" : "Imported \(stats.created) titles"
         return stats.updated > 0 ? "\(added) · filled in \(stats.updated)" : added
+    }
+}
+
+/// "Find it" opens a sheet per row.
+extension ImportRow: @retroactive Identifiable {
+    public var id: Int {
+        index
     }
 }
 

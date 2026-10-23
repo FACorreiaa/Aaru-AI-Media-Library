@@ -121,7 +121,12 @@ export function importSteps(job: ImportJob): ImportStep[] {
   const checking = running && known && job.rowsMatched >= job.rowsTotal
   return [
     {
-      label: fromAccount ? `Read your ${source} library` : 'Read your file',
+      label:
+        job.source === 'capture'
+          ? 'Read what you sent'
+          : fromAccount
+            ? `Read your ${source} library`
+            : 'Read your file',
       detail: known ? entries : undefined,
       state: known ? 'done' : running ? 'current' : 'todo',
     },

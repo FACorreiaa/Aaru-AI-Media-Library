@@ -22,6 +22,8 @@ struct HomeScreen: View {
     @State var model: HomeModel
     @State var recap: RecapPeriod?
     @State var listTarget: CatalogHit?
+    /// A capture just sent from the composer (AG-006): its review opens over Home.
+    @State var openedCapture: ImportJob?
     /// Home's stack: a title opened from a card or from an airing's sheet.
     @State var path: [String] = []
     /// Home's own width: a narrow regular window (iPad at 2/3, a small Mac window) takes the
@@ -111,6 +113,11 @@ struct HomeScreen: View {
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
+                .navigationDestination(item: $openedCapture) { job in
+                    if let imports {
+                        ImportDetailView(id: job.id, imports: imports, library: library, lists: lists, api: api)
+                    }
+                }
                 // Adds from Search and Discover land in the library; Home's rows come from other endpoints.
                 .onChange(of: library.revision) { Task { await model.shelfChanged() } }
                 // A request answered anywhere (a notification's sheet too) leaves "Waiting for you" (UX-082).
@@ -185,6 +192,7 @@ struct HomeScreen: View {
     private var sections: some View {
         VStack(alignment: .leading, spacing: 28) {
             header
+            composer
             nowPlayingSection
             if compact {
                 tonightSection

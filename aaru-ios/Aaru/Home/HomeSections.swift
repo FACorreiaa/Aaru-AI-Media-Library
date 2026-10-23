@@ -35,14 +35,37 @@ extension HomeScreen {
         }
     }
 
-    /// Agent requests waiting for the user (OUT-004), with the owl while any wait.
+    /// The Field's composer (AG-006): a capture opens its review, then waits below until approved.
+    @ViewBuilder var composer: some View {
+        if let imports {
+            CaptureComposer(imports: imports) { openedCapture = $0 }
+                .padding(.horizontal, 20)
+        }
+    }
+
+    /// Captures being read or waiting for approval, newest first.
+    var waitingCaptures: [ImportJob] {
+        (imports?.jobs ?? []).filter(\.isWaitingCapture).sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Captures and agent requests waiting for the user (AG-006, OUT-004), with the owl while any wait.
     @ViewBuilder var waitingSection: some View {
-        if let api, !model.plans.isEmpty {
+        if let api, !model.plans.isEmpty || !waitingCaptures.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 8) {
                     Text("Waiting for you").eyebrow()
                         .accessibilityAddTraits(.isHeader)
                     AgentPresence(label: "Aaru is waiting for your answer")
+                }
+                if let imports {
+                    ForEach(waitingCaptures, id: \.id) { job in
+                        NavigationLink {
+                            ImportDetailView(id: job.id, imports: imports, library: library, lists: lists, api: api)
+                        } label: {
+                            CaptureCard(job: job)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 ForEach(model.plans, id: \.id) { plan in
                     // The card posts `.aaruPlanDecided`; Home's observer updates the list. A new
@@ -197,7 +220,8 @@ extension HomeScreen {
     }
 
     private var lastImport: ImportJob? {
-        imports?.jobs.max { $0.createdAt < $1.createdAt }
+        // Captures wait under "Waiting for you" instead.
+        imports?.jobs.filter { !$0.isCapture }.max { $0.createdAt < $1.createdAt }
     }
 
     /// DISC-001: the public rows, after the user's own. The first one leads to the Discover tab.

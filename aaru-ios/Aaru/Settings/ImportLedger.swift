@@ -42,7 +42,8 @@ extension ImportJob {
         }
         return [
             ImportStep(
-                label: fromAccount ? "Read your \(sourceLabel) library" : "Read your file",
+                label: isCapture ? "Read what you sent"
+                    : fromAccount ? "Read your \(sourceLabel) library" : "Read your file",
                 detail: known ? entries : nil,
                 state: known ? .done : running ? .current : .todo
             ),
