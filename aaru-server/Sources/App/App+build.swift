@@ -28,9 +28,10 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     let auth = makeAuthService(config: config, stores: stores, transport: transport)
     let catalogs = makeCatalogProviders(config: config, transport: transport)
     let trakt = config.trakt.map { makeTraktAPI($0, transport) }
+    let mal = config.mal.map { makeMALAPI($0, transport) }
     let webPush = makeWebPushSender(config.vapidConfigJSON, logger: logger)
     var services = Services.make(
-        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, stremio: makeStremioAccount(transport),
+        stores: stores, catalogs: catalogs, auth: auth, trakt: trakt, mal: mal, stremio: makeStremioAccount(transport),
         catFeed: makeCATCalendarFeed(transport),
         publicBaseURL: config.publicBaseURL, oauth: (config.webBaseURL, config.oauthCookieDomain),
         model: makeModelProvider(config.anthropic, transport: transport, logger: logger)
@@ -105,7 +106,7 @@ func backgroundServices(
         ),
     ] + (services.agentReplies.map {
         [AgentReplyWorker(replies: $0, logger: logger, workers: workers.agentReplies)]
-    } ?? [])
+    } ?? []) + MALPushService.services(stores: stores, connect: services.malConnect, logger: logger)
         + (services.catalog.catalogs.recordings.map {
             [ListenResolverService(resolver: ListenResolver(stores: stores, recordings: $0), logger: logger)]
         } ?? [])
@@ -259,16 +260,7 @@ func buildRouter(stores: Stores, services: Services, metricsSecret: String = "")
     try APIImplementation(stores: stores, services: services).registerHandlers(
         on: router, configuration: .init(dateTranscoder: LenientDateTranscoder())
     )
-    // Trakt's browser redirect (IMP-002). Plain, not generated: the generated server would
-    // percent-encode the `aaru://` Location.
-    router.get("/v1/imports/trakt/callback") { request, _ -> Response in
-        let query = request.uri.queryParameters
-        let next = try await services.traktConnect.callback(
-            code: query["code"].map(String.init), state: query["state"].map(String.init),
-            error: query["error"].map(String.init)
-        )
-        return Response(status: .found, headers: [.location: next.absoluteString])
-    }
+    ConnectRedirectRoutes(trakt: services.traktConnect, mal: services.malConnect).register(on: router)
     StremioRoutes(
         service: StremioService(
             library: services.library, schedule: services.schedule, catalog: services.catalog,

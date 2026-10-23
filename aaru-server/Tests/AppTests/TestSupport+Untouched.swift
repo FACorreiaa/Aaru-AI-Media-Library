@@ -70,6 +70,10 @@ extension UntouchedStore {
         throw Touched()
     }
 
+    func mappings(tmdb _: [String]) async throws -> [AnimeMapping] {
+        throw Touched()
+    }
+
     func mappings(anilist _: [String]) async throws -> [AnimeMapping] {
         throw Touched()
     }

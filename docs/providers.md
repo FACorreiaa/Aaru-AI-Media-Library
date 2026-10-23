@@ -53,13 +53,13 @@ typed into the city search; that route's query is dropped from Aaru's request lo
 | Stremio (optional, per user) | Importing a user's Stremio history once (IMP-016): `link.stremio.com` device-link code, `api.strem.io` library read + logout. Unofficial API | none | — | The approved link code; the session key is used for one read and never stored |
 | Pogdesign CAT (optional, per user) | Reading the user's own CAT iCal export once, when they paste its link (IMP-010). No other CAT page | none | — | The link, which holds the user's CAT key; used for one GET and never stored or logged |
 | Anthropic | `@aaru` replies in groups (GRP-010); reading titles from a pasted text or picture (AG-006) | API key | `ANTHROPIC_API_KEY` in `aaru-env`, `ANTHROPIC_MODEL`, `ANTHROPIC_PRICE_INPUT`/`_OUTPUT` env | A group's last 30 messages and the asker's relevant library rows; a capture's text or image, deleted from Aaru once read. No training on API data |
+| MyAnimeList (optional, per user) | Pushing anime progress to the user's list (SCR-005); reading it back follows (SCR-010). MAL API v2, no published rate limit: 1/s for all users | OAuth client (PKCE `plain`; a secret only for a "web" app) | `MAL_CLIENT_ID` (+ `MAL_CLIENT_SECRET`) env, `MAL_TOKEN_KEY` in `aaru-env` | The user's MAL authorisation; each changed anime's status, watched episodes and score, per MAL entry. Tokens stored encrypted, forgotten on disconnect (MAL has no revoke). Commercial apps need MAL's written authorization: asked before anyone but the owner connects |
 | Trakt (optional, per user) | Importing a user's Trakt history (IMP-002/003) | OAuth client (PKCE, no secret) | `TRAKT_CLIENT_ID` env, `TRAKT_TOKEN_KEY` in `aaru-env` | The user's Trakt authorisation; tokens stored encrypted, revoked on disconnect. Credit: "Aaru uses Trakt but is not endorsed or certified by Trakt." |
 
 ## Planned, not called yet (owner, 2026-10-23)
 
 | Provider | Used for | Key | Secret | Data it receives |
 | --- | --- | --- | --- | --- |
-| MyAnimeList (optional, per user) | Pushing anime progress to the user's list (SCR-005) and reading it back (SCR-010). MAL API v2, no published rate limit: ≤ 1/s, back off on 403/429 | OAuth client (PKCE `plain`) | `MAL_CLIENT_ID` env, token key in `aaru-env` | The user's MAL authorisation; their anime status, episodes and score. Commercial apps need MAL's written authorization; ask before anyone but the owner connects |
 | AniDB | Alternate titles from the daily title dump (CAT-022); no other AniDB request | registered client name | — | Nothing about users: one download a day. Terms and credit to confirm before CAT-022 ships |
 
 ## Hosting

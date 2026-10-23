@@ -67,7 +67,9 @@ struct RedactedLogRequestsMiddleware<Context: RequestContext>: RouterMiddleware 
             path = "/stremio/[token]" + tail
             return path
         }
-        if path == "/v1/imports/trakt/callback" || path == "/v1/concerts/places" {
+        if path == "/v1/imports/trakt/callback" || path == "/v1/connections/mal/callback"
+            || path == "/v1/concerts/places"
+        {
             return path
         }
         guard let query, !query.isEmpty else { return path }

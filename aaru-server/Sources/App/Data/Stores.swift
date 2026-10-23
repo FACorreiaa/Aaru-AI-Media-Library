@@ -146,6 +146,8 @@ protocol AnimeMappingStore: Sendable {
     func mappings(anilist: [String]) async throws -> [AnimeMapping]
     /// `mapping(mal:)` for many MAL ids in one query, keyed by MAL id.
     func mappings(mal: [String]) async throws -> [String: AnimeMapping]
+    /// Every mapping onto these TMDB shows: one per AniList entry, so a show's seasons (SCR-005).
+    func mappings(tmdb: [String]) async throws -> [AnimeMapping]
     func upsert(_ mapping: AnimeMapping) async throws
     /// Upserts in batches inside one transaction; re-running with the same rows changes nothing.
     func upsertMany(_ mappings: [AnimeMapping]) async throws

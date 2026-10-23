@@ -1070,8 +1070,19 @@ Trakt history push (SCR-004) and MAL / AniList progress push (SCR-005) are **one
 - Aaru writes to them after its own write commits.
 - What it pushed is never read back as a conflict source, and a remote change never overwrites
   Aaru. Imports stay one-way in.
-- Tokens live in `outbound_connections`, encrypted at rest.
-- MAL uses OAuth with PKCE. AniList uses `SaveMediaListEntry`.
+- Tokens live in `outbound_connections`, encrypted at rest. MAL's, as built, live in
+  `mal_connections` beside `trakt_connections` (sealed with `MAL_TOKEN_KEY`).
+- MAL uses OAuth with PKCE (`plain`, the only method it takes). AniList uses `SaveMediaListEntry`.
+
+**MyAnimeList push (SCR-005, as built).** `MALPushService` runs every 30 s in the API process.
+`mal_connections.push_cursor` starts at connect time, so the library as it was is never pushed;
+each pass reads `LibraryStore.changes` since the cursor for users with newer writes, so a tap, an
+import, a scrobble or an undo all go out the same way, and nothing on the write path calls it. A
+TMDB show splits into one MAL entry per season through `anime_mappings` (a season two MAL entries
+share is skipped); any other anime uses its own MAL id. `mal_entry_states` keeps what Aaru and MAL
+last agreed on per entry: a push sends only what differs, an `on_hold` entry stays on hold until
+the ticks move, and SCR-010 will use the same row to drop echoes. A 401/403 marks the connection
+`revoked_at` and pushing stops until the user connects again. Deletes are not pushed.
 
 **MyAnimeList read-back (SCR-010, owner 2026-10-23)** is the one exception to "never read back".
 MAL has no webhooks, so Aaru polls the user's own list sorted by `list_updated_at` and stops at

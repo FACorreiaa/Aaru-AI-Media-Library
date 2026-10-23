@@ -747,6 +747,19 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/imports/trakt/connection`.
     /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)`.
     func disconnectTrakt(_ input: Operations.DisconnectTrakt.Input) async throws -> Operations.DisconnectTrakt.Output
+    /// Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005).
+    ///
+    /// - Remark: HTTP `POST /v1/connections/mal/connect`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/connect/post(connectMAL)`.
+    func connectMAL(_ input: Operations.ConnectMAL.Input) async throws -> Operations.ConnectMAL.Output
+    /// - Remark: HTTP `GET /v1/connections/mal`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/get(getMALConnection)`.
+    func getMALConnection(_ input: Operations.GetMALConnection.Input) async throws -> Operations.GetMALConnection.Output
+    /// Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are.
+    ///
+    /// - Remark: HTTP `DELETE /v1/connections/mal`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)`.
+    func disconnectMAL(_ input: Operations.DisconnectMAL.Input) async throws -> Operations.DisconnectMAL.Output
     /// One import with every row and what its plan does with it.
     ///
     /// - Remark: HTTP `GET /v1/imports/{id}`.
@@ -2654,6 +2667,31 @@ extension APIProtocol {
     public func disconnectTrakt(headers: Operations.DisconnectTrakt.Input.Headers = .init()) async throws -> Operations.DisconnectTrakt.Output {
         try await disconnectTrakt(Operations.DisconnectTrakt.Input(headers: headers))
     }
+    /// Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005).
+    ///
+    /// - Remark: HTTP `POST /v1/connections/mal/connect`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/connect/post(connectMAL)`.
+    public func connectMAL(
+        headers: Operations.ConnectMAL.Input.Headers = .init(),
+        body: Operations.ConnectMAL.Input.Body
+    ) async throws -> Operations.ConnectMAL.Output {
+        try await connectMAL(Operations.ConnectMAL.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `GET /v1/connections/mal`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/get(getMALConnection)`.
+    public func getMALConnection(headers: Operations.GetMALConnection.Input.Headers = .init()) async throws -> Operations.GetMALConnection.Output {
+        try await getMALConnection(Operations.GetMALConnection.Input(headers: headers))
+    }
+    /// Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are.
+    ///
+    /// - Remark: HTTP `DELETE /v1/connections/mal`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)`.
+    public func disconnectMAL(headers: Operations.DisconnectMAL.Input.Headers = .init()) async throws -> Operations.DisconnectMAL.Output {
+        try await disconnectMAL(Operations.DisconnectMAL.Input(headers: headers))
+    }
     /// One import with every row and what its plan does with it.
     ///
     /// - Remark: HTTP `GET /v1/imports/{id}`.
@@ -3747,6 +3785,75 @@ public enum Components {
                 case connected
                 case username
                 case connectedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MALConnectRequest`.
+        public struct MALConnectRequest: Codable, Hashable, Sendable {
+            /// Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MALConnectRequest/returnTo`.
+            public var returnTo: Swift.String
+            /// Creates a new `MALConnectRequest`.
+            ///
+            /// - Parameters:
+            ///   - returnTo: Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server.
+            public init(returnTo: Swift.String) {
+                self.returnTo = returnTo
+            }
+            public enum CodingKeys: String, CodingKey {
+                case returnTo
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MALConnectStart`.
+        public struct MALConnectStart: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MALConnectStart/authorizeUrl`.
+            public var authorizeUrl: Swift.String
+            /// Creates a new `MALConnectStart`.
+            ///
+            /// - Parameters:
+            ///   - authorizeUrl:
+            public init(authorizeUrl: Swift.String) {
+                self.authorizeUrl = authorizeUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case authorizeUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MALConnection`.
+        public struct MALConnection: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MALConnection/connected`.
+            public var connected: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/MALConnection/username`.
+            public var username: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MALConnection/connectedAt`.
+            public var connectedAt: Foundation.Date?
+            /// MyAnimeList refused the tokens. Nothing is pushed until the user connects again.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MALConnection/needsReconnect`.
+            public var needsReconnect: Swift.Bool
+            /// Creates a new `MALConnection`.
+            ///
+            /// - Parameters:
+            ///   - connected:
+            ///   - username:
+            ///   - connectedAt:
+            ///   - needsReconnect: MyAnimeList refused the tokens. Nothing is pushed until the user connects again.
+            public init(
+                connected: Swift.Bool,
+                username: Swift.String? = nil,
+                connectedAt: Foundation.Date? = nil,
+                needsReconnect: Swift.Bool
+            ) {
+                self.connected = connected
+                self.username = username
+                self.connectedAt = connectedAt
+                self.needsReconnect = needsReconnect
+            }
+            public enum CodingKeys: String, CodingKey {
+                case connected
+                case username
+                case connectedAt
+                case needsReconnect
             }
         }
         /// - Remark: Generated from `#/components/schemas/StremioLink`.
@@ -33498,6 +33605,386 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/trakt/connection/delete(disconnectTrakt)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005).
+    ///
+    /// - Remark: HTTP `POST /v1/connections/mal/connect`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/connect/post(connectMAL)`.
+    public enum ConnectMAL {
+        public static let id: Swift.String = "connectMAL"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/connections/mal/connect/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ConnectMAL.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ConnectMAL.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ConnectMAL.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/connections/mal/connect/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/connections/mal/connect/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.MALConnectRequest)
+            }
+            public var body: Operations.ConnectMAL.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ConnectMAL.Input.Headers = .init(),
+                body: Operations.ConnectMAL.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/connections/mal/connect/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/connections/mal/connect/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.MALConnectStart)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.MALConnectStart {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ConnectMAL.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ConnectMAL.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Where to send the browser.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/connect/post(connectMAL)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ConnectMAL.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ConnectMAL.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/connect/post(connectMAL)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// - Remark: HTTP `GET /v1/connections/mal`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/get(getMALConnection)`.
+    public enum GetMALConnection {
+        public static let id: Swift.String = "getMALConnection"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/connections/mal/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetMALConnection.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetMALConnection.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetMALConnection.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetMALConnection.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/connections/mal/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/connections/mal/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.MALConnection)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.MALConnection {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetMALConnection.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetMALConnection.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Whether MyAnimeList is connected, and whether it must be connected again.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/get(getMALConnection)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetMALConnection.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetMALConnection.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/get(getMALConnection)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are.
+    ///
+    /// - Remark: HTTP `DELETE /v1/connections/mal`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)`.
+    public enum DisconnectMAL {
+        public static let id: Swift.String = "disconnectMAL"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/connections/mal/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DisconnectMAL.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DisconnectMAL.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DisconnectMAL.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.DisconnectMAL.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Disconnected.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DisconnectMAL.Output.NoContent)
+            /// Disconnected.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DisconnectMAL.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

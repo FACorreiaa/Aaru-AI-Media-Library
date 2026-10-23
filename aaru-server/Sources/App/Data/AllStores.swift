@@ -17,6 +17,7 @@ final class Stores: Sendable {
     let stats: any StatsStore
     let importJobs: any ImportJobStore
     let trakt: any TraktStore
+    let mal: any MALStore
     let push: any PushStore
     let agentTokens: any AgentTokenStore
     let watchEvents: any WatchEventStore
@@ -50,6 +51,7 @@ final class Stores: Sendable {
         stats: any StatsStore,
         importJobs: any ImportJobStore,
         trakt: any TraktStore,
+        mal: any MALStore,
         push: any PushStore,
         agentTokens: any AgentTokenStore,
         watchEvents: any WatchEventStore,
@@ -82,6 +84,7 @@ final class Stores: Sendable {
         self.stats = stats
         self.importJobs = importJobs
         self.trakt = trakt
+        self.mal = mal
         self.push = push
         self.agentTokens = agentTokens
         self.watchEvents = watchEvents
