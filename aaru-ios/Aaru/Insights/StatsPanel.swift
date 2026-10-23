@@ -8,7 +8,7 @@ struct StatsPanel: View {
     let stats: Stats
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: AaruSpace.section) {
             if let from = stats.from, let until = stats.until {
                 Text("\(RecapDeck.dayLabel(from)) – \(RecapDeck.dayLabel(until)) · Private to you")
                     .font(.footnote)
@@ -65,7 +65,7 @@ struct PanelSection<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             Text(title)
                 .font(.aaruDisplay(.title3, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
@@ -156,9 +156,7 @@ struct StatTile: View {
                 .font(.footnote)
                 .foregroundStyle(Color(.muted))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color(.surface), in: RoundedRectangle(cornerRadius: 12))
+        .panel()
         .accessibilityElement(children: .combine)
     }
 }

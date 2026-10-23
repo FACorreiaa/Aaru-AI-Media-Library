@@ -199,7 +199,6 @@ private struct InviteTitleOffer: View {
                     .italic()
                     .fixedSize(horizontal: false, vertical: true)
                 Toggle("Add to my \(LibraryStatus.wishlist.label(for: kind))", isOn: $addTitle)
-                    .tint(Color(.accent))
             }
         }
     }
@@ -225,7 +224,7 @@ private struct InviteHandleField: View {
             }
             .padding(.horizontal, 16)
             .frame(minHeight: 48)
-            .background(Color(.surface), in: .rect(cornerRadius: 10))
+            .field()
         }
     }
 }

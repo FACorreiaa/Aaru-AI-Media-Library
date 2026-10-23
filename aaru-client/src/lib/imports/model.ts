@@ -20,7 +20,7 @@ export const FILE_SOURCES = [
   {
     source: 'goodreads',
     label: 'Goodreads',
-    hint: 'goodreads_library_export.csv. Custom shelves become lists.',
+    hint: 'On Goodreads: My Books → Import and export → Export Library, then upload the CSV. Goodreads closed its API, so there is no connect option. Custom shelves become lists.',
     accept: '.csv,text/csv,text/plain',
   },
   {

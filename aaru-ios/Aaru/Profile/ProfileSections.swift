@@ -76,7 +76,7 @@ struct ProfileTimeSplit: View {
             .chartYAxis(.hidden)
             .chartLegend(.hidden)
             .frame(height: 24)
-            .clipShape(.rect(cornerRadius: 6))
+            .clipShape(.rect(cornerRadius: AaruRadius.thumb, style: .continuous))
             HStack(spacing: 16) {
                 ForEach(parts) { part in
                     HStack(spacing: 6) {
@@ -155,10 +155,8 @@ struct ProfileCountTiles: View {
                     .foregroundStyle(Color(.muted))
                     .accessibilityHidden(detail == nil)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
-            .background(Color(.surface), in: RoundedRectangle(cornerRadius: 12))
-            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .panel()
+            .contentShape(.rect(cornerRadius: AaruRadius.panel, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
@@ -174,7 +172,7 @@ struct ProfileGenreBars: View {
 
     var body: some View {
         let most = max(1, genres.map(\.minutes).max() ?? 1)
-        VStack(spacing: 14) {
+        VStack(spacing: AaruSpace.large) {
             ForEach(genres, id: \.name) { genre in
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {

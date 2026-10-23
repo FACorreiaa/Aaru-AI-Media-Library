@@ -50,7 +50,10 @@ struct CATImportSheet: View {
             .settingsPage("Pogdesign CAT", problem: $imports.problem)
             .overlay {
                 if busy {
-                    ProgressView("Starting…").padding().background(.regularMaterial, in: .rect(cornerRadius: 14))
+                    ProgressView("Starting…").padding().background(
+                        .regularMaterial,
+                        in: .rect(cornerRadius: AaruRadius.panel, style: .continuous)
+                    )
                 }
             }
             .toolbar {

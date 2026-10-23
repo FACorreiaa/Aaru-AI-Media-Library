@@ -27,7 +27,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
 | Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
 | Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4); for an album, a square cover and the tracklist instead of the season map (MUS-001); More menu: Discuss in a group…, Remove from library… (confirmed, undoable in History, UX-061) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}`, `DELETE /v1/library/items/{id}` | 2 · M7 |
-| Tonight | `TonightStrip` | `GET /v1/tonight`, `POST /v1/tonight/{id}/feedback` | 7 · M13 (on the Field since 2026-10-21; server-ranked with a client fallback since 2026-10-23, DESIGN.md §5) |
+| Tonight | `TonightStrip` | `GET /v1/tonight`, `POST /v1/tonight/{id}/feedback`, `PUT .../episodes/{s}/{e}`, `POST .../seasons/{s}/watched` | 7 · M13 (on the Field since 2026-10-21; server-ranked with a client fallback since 2026-10-23; season tick PROG-006, DESIGN.md §5) |
 | Shelf | `Shelf`; Remove from library in the item's context menu on Apple | `GET /v1/library/items` + saved query, `DELETE /v1/library/items/{id}` | 1–2 · M6 / M7 |
 | Library · Now | `NowCard` (Library only; the agent does not emit it — `TonightStrip` is its agent counterpart). Under the filters; the newest six per group with "Show all N"; hidden while a status is chosen (DESIGN.md, 2026-10-22) | the synced shelf; `PUT .../episodes/{s}/{e}`, `PATCH /v1/library/items/{id}` | 2 · APP-017 |
 | Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
@@ -46,7 +46,10 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Music scrobblers (Settings) | none — a section of Settings → Connections: the last listen, pick a scrobbler (Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin, other), connect, its steps from the server with values to copy and the token shown once, a wait for the first listen, live scrobblers with last use, disconnect | `GET`/`POST /v1/agent/tokens?for=music` (`scrobbler`), `GET /v1/me/listens?limit=1`, `DELETE /v1/agent/tokens/{id}` | 2 · MUS-007 (owner exception 2026-10-21) |
 | Invite (the Friends section) | none — "Invite a friend" (optionally with a title picked from search), the share sheet, open invites with time left and Revoke | `GET`/`POST /v1/social/invites`, `DELETE /v1/social/invites/{code}`, `GET /v1/search` | 4 · SOC-002 (owner pulled forward 2026-10-21) |
 | Invite letter | none — web `/i/{code}`, an `InviteSheet` in the apps: who sent it, the title it carries with an "Add to my Plan to watch" switch, a handle field when the friend has none, Join Aaru (signed out) or Add as a friend | `GET /v1/invites/{code}` (public), `POST /v1/social/invites/{code}/redeem`, `PUT /v1/me/profile` | 4 · SOC-002 (2026-10-21) |
-| Friends (`/app/friends` on the web; a sidebar destination on iPad and Mac, pushed from Groups' toolbar and Friends & privacy on iPhone) | none — Lately (friends' last two weeks), Invite, requests, friends, blocks | `GET /v1/activity`, `/v1/social/*` | 4 · SOC-003 minimal (owner 2026-10-21) |
+| Friends (`/app/friends` on the web; a sidebar destination on iPad and Mac, pushed from Groups' toolbar and Friends & privacy on iPhone) | none — opens on Board; `Board \| Lately`. Lately: friends' last two weeks, Invite, requests, friends, blocks | `GET /v1/activity`, `/v1/social/*` | 4 · SOC-003 minimal (owner 2026-10-21) |
+| Board (the default view of Friends) | `PostComposer`, `PostCard` — Recent / Top this week, "Show older", owl empty states | `GET /v1/board`, `POST /v1/board/posts`, `PUT`/`DELETE …/upvote` | BOARD-002 (2026-10-23) |
+| Post page (`/app/friends/posts/$postId`) | `PostCard` (standalone, with upvoter names), `CommentThread` — one level of replies, Reply, Edit / Delete / Report | `GET`/`PATCH`/`DELETE /v1/board/posts/{id}`, `…/comments[/{cid}]` | BOARD-002 (2026-10-23) |
+| From friends (on a title page) | `PostCard` ×5, "Write about this" opens Friends with `?title=` | `GET /v1/titles/{id}/posts` | BOARD-002 (2026-10-23) |
 | Recommend | none — a sheet from a title (pick friends) or a friend's profile (find a title), with a note of up to 140 characters; the friend's "For you from friends" at the top of Friends adds it to Plan to watch or dismisses it | `POST /v1/social/recommendations`, `GET /v1/me/recommendations`, `POST …/{id}/add`, `DELETE …/{id}` | 4 · SOC-006 (2026-10-21) |
 | Friend profile | none — shelf first: header with counts, Watching, You both (both want, both finished, they loved), Recently finished; only a name when they hide their library | `GET /v1/social/friends/{userId}/profile` | 4 · SOC-001/003 (2026-10-21) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
@@ -203,6 +206,12 @@ Wording that follows from this: the user "pins a shelf", "adds to a list". Do no
 "add to shelf" anywhere in UI copy or route names.
 
 ---
+
+## Board components (app chrome)
+
+`PostCard`, `PostComposer` and `CommentThread` (BOARD-002) are app chrome, like `Poster` or
+`SpoilerVeil`'s host rows. They are not in the catalog above and the agent never emits them: a
+Board post is written by a person, and `@aaru` on the Board waits for BOARD-004.
 
 ## Agent emission rules
 

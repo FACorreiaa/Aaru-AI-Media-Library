@@ -16,11 +16,11 @@ struct PosterView: View {
                     } else {
                         Image(systemName: kind.symbol)
                             .font(.title2)
-                            .foregroundStyle(Color(.muted).opacity(0.6))
+                            .foregroundStyle(Color(.muted).opacity(AaruAlpha.half))
                     }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
             .accessibilityHidden(true)
     }
 }

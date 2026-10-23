@@ -78,7 +78,7 @@ struct EpisodeRow: View {
 
             Button(action: onOpen) {
                 HStack(spacing: 12) {
-                    EpisodeStill(url: episode.stillUrl.flatMap(URL.init(string:)), cornerRadius: 4)
+                    EpisodeStill(url: episode.stillUrl.flatMap(URL.init(string:)), cornerRadius: AaruRadius.thumb)
                         .frame(width: 64)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(episode.number). \(episode.name ?? "Episode \(episode.number)")")

@@ -6,7 +6,7 @@ This file is the working contract for anyone — human or agent — changing the
 
 ## Product rules
 
-- Aaru is the source of truth after import. Imports and scrobbles are one-way into Aaru. Pushes to Trakt, MAL, and AniList (P3) are one-way out and are never read back as a conflict source. Do not build two-way sync or a conflict engine.
+- Aaru is the source of truth after import. Imports and scrobbles are one-way into Aaru. Pushes to Trakt, MAL, and AniList (P3) are one-way out and are never read back as a conflict source. Do not build two-way sync or a conflict engine. The one exception is MyAnimeList (SCR-010, owner 2026-10-23): Aaru reads a connected MAL list back through the import merge (forward only, Aaru wins ties, removals only listed). No conflict engine, and no other provider is read back.
 - Private by default. A new account has no visible surface. Social is opt-in per user and friends-only; there is no global feed and no public profile page. Groups are friends-only too: no invite links, no public or discoverable groups.
 - Group messages are server-visible and every channel says "not end-to-end". DMs are end-to-end and the server never reads them. Never blur the two.
 - Catalog metadata and user library are different layers. Never treat TMDB/Trakt/Open Library/AniList payloads as the user’s library row.
@@ -29,7 +29,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
 | Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
-| Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021) |
+| Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021). AniDB's daily title dump adds alternate titles for matching only (CAT-022) |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
@@ -39,6 +39,7 @@ This file is the working contract for anyone — human or agent — changing the
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export (its CSVs one at a time: Export my data or the GDPR export), MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble — music | ListenBrainz's submit protocol at `/listenbrainz/1/` with music tokens only (MUS-005, owner 2026-10-21): Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin's plugin. No Spotify OAuth, no native Apple Music path |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped, scrobble tokens only), the browser extension for Netflix / Disney+ / Prime Video (SCR-007, owner exception 2026-10-21), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
+| MyAnimeList sync | OAuth PKCE per user: anime progress pushed out (SCR-005) and the list read back on app open and every 6 h (SCR-010), the one two-way exception |
 | Realtime | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
 | Groups | Friends-only spaces with channels (`text`, `title`, `watch`, `shelf`) and `#general`. Server-visible messages in Postgres; `@aaru` replies through `ModelProviding` (pulled forward 2026-10-20) |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
@@ -267,7 +268,7 @@ the points ledger, levels, streaks, badges, the friends leaderboard and the stre
 
 ## Out of scope (do not add unless asked)
 
-- Two-way sync with any provider, or a conflict engine
+- Two-way sync with any provider, or a conflict engine (MyAnimeList's read-back, SCR-010, is the one exception)
 - A documented public API with third-party clients, quotas, and a deprecation policy
 - Recommendations engine. Provider-curated public rows on Home and the Discover tab
   (trending, this season, DISC-001) are allowed; anything personalised is not

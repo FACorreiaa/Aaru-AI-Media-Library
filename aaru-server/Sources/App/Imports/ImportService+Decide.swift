@@ -1,9 +1,10 @@
 import AaruCore
 import Foundation
 
-/// What an import does to one title (IMP-004). It never overwrites: it fills an empty rating or
-/// finish date, adds missing ticks, and moves a status forward (wishlist → in progress →
-/// finished), never backward, never out of dropped, never past a status the user chose.
+/// What an import does to one title (IMP-004). It never overwrites: it fills an empty rating,
+/// finish date or notes, sets owned but never clears it (IMP-020), adds missing ticks, and moves
+/// a status forward (wishlist → in progress → finished), never backward, never out of dropped,
+/// never past a status the user chose.
 extension ImportService {
     struct Decision {
         var outcome: ImportOutcome
@@ -21,7 +22,7 @@ extension ImportService {
             let status = row.status ?? (row.hasProgress ? .inProgress : .wishlist)
             let isManga = row.type == .manga
             let fields = ItemFields(
-                status: status, rating: Self.rating(row.rating), notes: nil, isOwned: false,
+                status: status, rating: Self.rating(row.rating), notes: row.notes, isOwned: row.isOwned == true,
                 finishedAt: status == .finished ? row.finishedAt : nil, bookPage: nil, bookPercent: nil,
                 mangaChapter: isManga ? row.mangaChapter : nil, mangaVolume: isManga ? row.mangaVolume : nil
             )
@@ -37,6 +38,14 @@ extension ImportService {
         if fields.finishedAt == nil, fields.status == .finished, let finished = row.finishedAt {
             fields.finishedAt = finished
             filled.append("finish date")
+        }
+        if fields.notes?.nilIfBlank == nil, let notes = row.notes {
+            fields.notes = notes
+            filled.append("notes")
+        }
+        if !fields.isOwned, row.isOwned == true {
+            fields.isOwned = true
+            filled.append("owned mark")
         }
         if row.type == .manga {
             // A reading position only moves forward, like ticks are only added.

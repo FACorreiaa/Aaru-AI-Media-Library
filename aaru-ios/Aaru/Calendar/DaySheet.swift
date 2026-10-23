@@ -16,7 +16,8 @@ struct DaySheet: View {
                 LazyVStack(spacing: 0) {
                     ForEach(entries, id: \.cellID) { entry in
                         CalendarEpisodeRow(entry: entry, feed: feed)
-                        Divider().padding(.leading, 66)
+                        // Inset past the row's poster: its leading padding, 40 pt of art, the gap.
+                        Divider().padding(.leading, AaruSpace.page + AaruSpace.xlarge)
                     }
                     if entries.isEmpty {
                         Text(feed.filter.isActive

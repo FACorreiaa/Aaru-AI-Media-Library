@@ -78,7 +78,7 @@ struct ImportLedger: View {
                         Text(detail).font(.footnote).foregroundStyle(Color(.muted)).monospacedDigit()
                     }
                     if let progress = step.progress {
-                        ProgressView(value: progress).tint(Color(.accent))
+                        ProgressView(value: progress)
                     }
                 }
             }

@@ -87,6 +87,10 @@ extension ImportService {
                 merged.status = status
             }
             merged.rating = merged.rating ?? row.rating
+            merged.notes = merged.notes ?? row.notes
+            if row.isOwned == true {
+                merged.isOwned = true
+            }
             if let finished = row.finishedAt, finished > (merged.finishedAt ?? .distantPast) {
                 merged.finishedAt = finished
             }

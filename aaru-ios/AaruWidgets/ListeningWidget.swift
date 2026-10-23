@@ -62,8 +62,8 @@ struct ListeningView: View {
             SetUpView(compact: family == .systemSmall)
         } else if albums.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Listening").font(.widgetDisplay).foregroundStyle(Palette.ink)
-                Text("Albums you mark Listening show here.").font(.caption).foregroundStyle(Palette.muted)
+                Text("Listening").font(.widgetDisplay).foregroundStyle(Color(.ink)).widgetAccentable()
+                Text("Albums you mark Listening show here.").font(.caption).foregroundStyle(Color(.muted))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         } else if family == .systemSmall, let album = albums.first {
@@ -85,8 +85,7 @@ private struct Cover: View {
     var body: some View {
         Color.clear
             .aspectRatio(1, contentMode: .fit)
-            .overlay { ArtworkView(data: data) }
-            .clipShape(.rect(cornerRadius: 8))
+            .overlay { ArtworkView(data: data, radius: AaruRadius.row) }
             .accessibilityHidden(true)
     }
 }
@@ -103,19 +102,20 @@ private struct ListeningSmall: View {
                 Spacer(minLength: 0)
                 Image(systemName: "music.note")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
+                    .widgetAccentable()
                     .accessibilityHidden(true)
             }
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: 0) {
                 Text(album.title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Palette.ink)
+                    .foregroundStyle(Color(.ink))
                     .lineLimit(1)
                 if let artist = album.artist {
                     Text(artist)
                         .font(.caption)
-                        .foregroundStyle(Palette.muted)
+                        .foregroundStyle(Color(.muted))
                         .lineLimit(1)
                 }
             }
@@ -139,12 +139,13 @@ private struct ListeningMedium: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Listening")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Palette.brand)
+                    .foregroundStyle(Color(.accent))
+                    .widgetAccentable()
                 Spacer()
                 if total > albums.count {
                     Text("\(total) albums")
                         .font(.caption2)
-                        .foregroundStyle(Palette.muted)
+                        .foregroundStyle(Color(.muted))
                 }
             }
             HStack(alignment: .top, spacing: 12) {
@@ -173,7 +174,7 @@ private struct AlbumLink: View {
                 Cover(data: artwork)
                 Text(album.title)
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Palette.ink)
+                    .foregroundStyle(Color(.ink))
                     .lineLimit(1)
             }
         }

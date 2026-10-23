@@ -13,10 +13,10 @@ struct ListItemRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AaruSpace.medium) {
             PosterView(url: item.title.posterUrl.flatMap(URL.init(string:)), kind: kind)
                 .frame(width: 44)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                 Text(item.title.title).font(.body.weight(.medium)).lineLimit(2)
                 Text(metaLine)
                     .font(.footnote)
@@ -27,7 +27,7 @@ struct ListItemRow: View {
                         if let status = item.showStatus {
                             Text(status.label)
                                 .font(.caption)
-                                .padding(.horizontal, 7)
+                                .padding(.horizontal, AaruSpace.small)
                                 .padding(.vertical, 1)
                                 .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                         }

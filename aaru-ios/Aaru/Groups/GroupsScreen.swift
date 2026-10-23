@@ -175,7 +175,7 @@ private struct GroupsSplit: View {
                             }
                     }
                 } label: {
-                    HStack(spacing: 10) {
+                    HStack(spacing: AaruSpace.small) {
                         Monogram(text: group.monogram, size: 28)
                         Text(group.name).fontWeight(.semibold).lineLimit(1)
                         Spacer(minLength: 4)

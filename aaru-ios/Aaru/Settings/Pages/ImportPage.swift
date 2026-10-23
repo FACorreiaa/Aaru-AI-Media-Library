@@ -26,7 +26,7 @@ struct ImportPage: View {
             if imports.uploading {
                 ProgressView("Uploading…")
                     .padding()
-                    .background(.regularMaterial, in: .rect(cornerRadius: 14))
+                    .background(.regularMaterial, in: .rect(cornerRadius: AaruRadius.panel, style: .continuous))
             }
         }
         .fileImporter(

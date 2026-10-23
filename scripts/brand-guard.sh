@@ -35,6 +35,14 @@ rgbweb=$(git grep -InE 'rgba?\( *[0-9]' -- \
 rgb=$(git grep -InE '(Color|UIColor|NSColor)\((red|hue|white):|Color\(hex' -- 'aaru-ios/*.swift' || true)
 [ -z "$rgb" ] || fail "Colour literal in Swift. Use a colour set generated from design/tokens.json." "$rgb"
 
+# Nor the system's named colours (.white, .black, .blue, …) where a Color is meant: text over art
+# is on-scrim, a glyph on a tint is on-accent. A site that must stay literal (Apple's sign-in
+# button style, a QR code's quiet zone, a mask where black means "opaque") ends with
+# `// brand-guard: allow`. Lines with a `/` before the match (comments) are skipped.
+hue=$(git grep -InE '^[^/]*(Color|[(:?,=\[]) *\.(white|black|blue|red|green|orange|indigo|gray|purple|pink|yellow|teal|mint|cyan|brown)([^a-zA-Z0-9_]|$)' -- 'aaru-ios/*.swift' |
+  grep -v '// brand-guard: allow$' || true)
+[ -z "$hue" ] || fail "System colour in Swift. Use a token colour set (Color(.ink), Color(.onScrim), …)." "$hue"
+
 # Display face: the system sans everywhere. No serif design, no bundled or named faces.
 serif=$(git grep -InE '\.serif([^a-zA-Z]|$)|\.custom\("' -- 'aaru-ios/*.swift' || true)
 [ -z "$serif" ] || fail "Serif or custom font in Swift. Use Font.aaruDisplay (the system sans)." "$serif"

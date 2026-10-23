@@ -1,6 +1,7 @@
 import type { components } from '../api/schema'
 import { matchMembers } from './model'
-import type { GroupMember, GroupMessage } from './server'
+import type { MentionPerson } from './model'
+import type { GroupMessage } from './server'
 
 // GRP-011 on the web: the pure half of @aaru in a channel. The server decides when Aaru answers
 // and what it may read; these only suggest the tag, track "thinking", and describe replies.
@@ -14,14 +15,14 @@ export const THINKING_TTL_MS = 90_000
 export const REPLY_SNIPPET_LENGTH = 80
 
 export type MentionSuggestion =
-  { kind: 'agent' } | { kind: 'member'; member: GroupMember }
+  { kind: 'agent' } | { kind: 'member'; member: MentionPerson }
 
 /**
  * Who to suggest for a partial `@` tag: Aaru first when it answers in this group and the tag
  * could be it, then members as `matchMembers` orders them.
  */
 export function suggestMentions(
-  members: GroupMember[],
+  members: MentionPerson[],
   query: string,
   meId: string,
   agent: boolean,

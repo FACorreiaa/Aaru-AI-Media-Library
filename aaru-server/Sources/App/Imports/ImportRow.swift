@@ -43,6 +43,12 @@ struct ImportRow: Codable, Sendable, Equatable {
     var namedEpisodes: [NamedEpisode]?
     /// A name-only row: the year it was first watched, so a title released later is not it.
     var notAfter: Int?
+    /// The source's own words about the title (a Goodreads review, else its private notes,
+    /// IMP-020). Fills empty notes only; never replaces what the library has.
+    var notes: String?
+    /// The source says the user owns a copy (Goodreads "Owned Copies", IMP-020). Only ever sets
+    /// the flag, never clears it.
+    var isOwned: Bool?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)

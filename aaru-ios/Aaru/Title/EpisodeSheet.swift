@@ -50,7 +50,6 @@ struct EpisodeSheet: View {
             }
 
             Toggle("Watched", isOn: watchedBinding)
-                .tint(Color(.accent))
                 .disabled(!model.canToggle(episode) || model.pending.contains(key))
 
             if let overview = episode.overview, !overview.isEmpty {
@@ -116,7 +115,7 @@ struct EpisodeSheet: View {
 /// there is none. Shared by the sheet and the episode rows.
 struct EpisodeStill: View {
     let url: URL?
-    var cornerRadius: CGFloat = 10
+    var cornerRadius: CGFloat = AaruRadius.field
 
     var body: some View {
         Color(.surface)
@@ -127,11 +126,11 @@ struct EpisodeStill: View {
                         image.resizable().scaledToFill()
                     } else {
                         Image(systemName: "tv")
-                            .foregroundStyle(Color(.muted).opacity(0.6))
+                            .foregroundStyle(Color(.muted).opacity(AaruAlpha.half))
                     }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
             .accessibilityHidden(true)
     }
 }

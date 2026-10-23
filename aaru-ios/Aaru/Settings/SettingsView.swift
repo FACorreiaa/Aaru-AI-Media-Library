@@ -157,7 +157,7 @@ struct SettingsRowLabel: View {
         } icon: {
             Image(systemName: page.symbol)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(page == .account ? Color(.onAccent) : .white)
+                .foregroundStyle(Color(.onAccent))
                 .frame(width: side, height: side)
                 .background(page.tint, in: .rect(cornerRadius: side / 4, style: .continuous))
                 .accessibilityHidden(true)
