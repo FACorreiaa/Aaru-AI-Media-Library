@@ -25,6 +25,7 @@ extension APIImplementation {
         async let groups = services.groups.groups(userID)
         async let groupMessages = stores.groups.exportMessages(userID)
         async let listens = services.listens.all(userID: userID)
+        async let favorites = FavoriteService.favorites(of: userID, stores: stores)
         return try await .ok(.init(
             headers: .init(contentDisposition: "attachment; filename=\"aaru-export-\(stamp).json\""),
             body: .json(.init(
@@ -48,7 +49,8 @@ extension APIImplementation {
                 groupMessages: groupMessages.map {
                     .init(group: $0.group, channel: $0.channel, body: $0.body, createdAt: $0.createdAt)
                 },
-                listens: listens.map(Components.Schemas.Listen.init)
+                listens: listens.map(Components.Schemas.Listen.init),
+                favorites: .init(favorites)
             ))
         ))
     }

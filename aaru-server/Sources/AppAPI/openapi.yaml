@@ -232,6 +232,40 @@ paths:
               schema: {$ref: '#/components/schemas/SocialUser'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/favorites:
+    get:
+      operationId: getMyFavorites
+      summary: Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+      responses:
+        '200':
+          description: Every kind, each in your order; an empty list for a kind with none.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Favorites'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/favorites/{kind}:
+    put:
+      operationId: setMyFavorites
+      summary: >-
+        Replace one kind's favorites with these titles, in this order: add, remove and reorder are
+        all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not
+        journaled.
+      parameters:
+        - {name: kind, in: path, required: true, schema: {$ref: '#/components/schemas/FavoriteKind'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FavoritesUpdate'}
+      responses:
+        '200':
+          description: All your favorites after the change.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Favorites'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/social/users/{handle}:
     get:
       operationId: getSocialUser
@@ -3418,6 +3452,32 @@ components:
           items: {$ref: '#/components/schemas/FriendItem'}
         compare: {$ref: '#/components/schemas/FriendCompare'}
         achievements: {$ref: '#/components/schemas/FriendAchievements'}
+        favorites:
+          $ref: '#/components/schemas/Favorites'
+          description: Their top 10s (FAV-001). Sent only while they share their library.
+    FavoriteKind:
+      type: string
+      enum: [film, show, anime, manga, book, album]
+      description: A favorites kind. Anime is any anime, film or series.
+    Favorites:
+      type: object
+      required: [film, show, anime, manga, book, album]
+      description: An ordered top 10 per kind (FAV-001), first is the favorite.
+      properties:
+        film: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        show: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        anime: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        manga: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        book: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        album: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+    FavoritesUpdate:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: The whole kind, in order. Empty clears it. More than 10 is a 422.
+          items: {$ref: '#/components/schemas/MediaRef'}
     FriendAchievements:
       type: object
       required: [level, badges]
@@ -4540,6 +4600,7 @@ components:
           type: array
           description: Every listen in your listening log, newest first (MUS-005).
           items: {$ref: '#/components/schemas/Listen'}
+        favorites: {$ref: '#/components/schemas/Favorites'}
     LibraryPage:
       type: object
       required: [items, page]

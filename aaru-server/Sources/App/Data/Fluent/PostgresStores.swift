@@ -41,7 +41,8 @@ extension Stores {
             tonight: PostgresTonightStore(sql: sql),
             capture: PostgresCaptureStore(sql: sql),
             entitlements: PostgresEntitlementStore(sql: sql),
-            boards: PostgresBoardStore(database: database)
+            boards: PostgresBoardStore(database: database),
+            favorites: PostgresFavoriteStore(database: database)
         )
     }
 }

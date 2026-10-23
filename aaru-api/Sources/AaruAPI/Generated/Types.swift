@@ -76,6 +76,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
     func updateProfile(_ input: Operations.UpdateProfile.Input) async throws -> Operations.UpdateProfile.Output
+    /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+    ///
+    /// - Remark: HTTP `GET /v1/me/favorites`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)`.
+    func getMyFavorites(_ input: Operations.GetMyFavorites.Input) async throws -> Operations.GetMyFavorites.Output
+    /// Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
+    func setMyFavorites(_ input: Operations.SetMyFavorites.Input) async throws -> Operations.SetMyFavorites.Output
     /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
@@ -943,6 +953,28 @@ extension APIProtocol {
         body: Operations.UpdateProfile.Input.Body
     ) async throws -> Operations.UpdateProfile.Output {
         try await updateProfile(Operations.UpdateProfile.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+    ///
+    /// - Remark: HTTP `GET /v1/me/favorites`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)`.
+    public func getMyFavorites(headers: Operations.GetMyFavorites.Input.Headers = .init()) async throws -> Operations.GetMyFavorites.Output {
+        try await getMyFavorites(Operations.GetMyFavorites.Input(headers: headers))
+    }
+    /// Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
+    public func setMyFavorites(
+        path: Operations.SetMyFavorites.Input.Path,
+        headers: Operations.SetMyFavorites.Input.Headers = .init(),
+        body: Operations.SetMyFavorites.Input.Body
+    ) async throws -> Operations.SetMyFavorites.Output {
+        try await setMyFavorites(Operations.SetMyFavorites.Input(
+            path: path,
             headers: headers,
             body: body
         ))
@@ -5056,6 +5088,10 @@ public enum Components {
             public var compare: Components.Schemas.FriendCompare?
             /// - Remark: Generated from `#/components/schemas/FriendProfile/achievements`.
             public var achievements: Components.Schemas.FriendAchievements?
+            /// Their top 10s (FAV-001). Sent only while they share their library.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/favorites`.
+            public var favorites: Components.Schemas.Favorites?
             /// Creates a new `FriendProfile`.
             ///
             /// - Parameters:
@@ -5067,6 +5103,7 @@ public enum Components {
             ///   - recentlyFinished:
             ///   - compare:
             ///   - achievements:
+            ///   - favorites: Their top 10s (FAV-001). Sent only while they share their library.
             public init(
                 user: Components.Schemas.SocialUser,
                 friendsSince: Foundation.Date,
@@ -5075,7 +5112,8 @@ public enum Components {
                 watching: [Components.Schemas.FriendItem]? = nil,
                 recentlyFinished: [Components.Schemas.FriendItem]? = nil,
                 compare: Components.Schemas.FriendCompare? = nil,
-                achievements: Components.Schemas.FriendAchievements? = nil
+                achievements: Components.Schemas.FriendAchievements? = nil,
+                favorites: Components.Schemas.Favorites? = nil
             ) {
                 self.user = user
                 self.friendsSince = friendsSince
@@ -5085,6 +5123,7 @@ public enum Components {
                 self.recentlyFinished = recentlyFinished
                 self.compare = compare
                 self.achievements = achievements
+                self.favorites = favorites
             }
             public enum CodingKeys: String, CodingKey {
                 case user
@@ -5095,6 +5134,84 @@ public enum Components {
                 case recentlyFinished
                 case compare
                 case achievements
+                case favorites
+            }
+        }
+        /// A favorites kind. Anime is any anime, film or series.
+        ///
+        /// - Remark: Generated from `#/components/schemas/FavoriteKind`.
+        @frozen public enum FavoriteKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case film = "film"
+            case show = "show"
+            case anime = "anime"
+            case manga = "manga"
+            case book = "book"
+            case album = "album"
+        }
+        /// An ordered top 10 per kind (FAV-001), first is the favorite.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Favorites`.
+        public struct Favorites: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Favorites/film`.
+            public var film: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/show`.
+            public var show: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/anime`.
+            public var anime: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/manga`.
+            public var manga: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/book`.
+            public var book: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/album`.
+            public var album: [Components.Schemas.TitleSummary]
+            /// Creates a new `Favorites`.
+            ///
+            /// - Parameters:
+            ///   - film:
+            ///   - show:
+            ///   - anime:
+            ///   - manga:
+            ///   - book:
+            ///   - album:
+            public init(
+                film: [Components.Schemas.TitleSummary],
+                show: [Components.Schemas.TitleSummary],
+                anime: [Components.Schemas.TitleSummary],
+                manga: [Components.Schemas.TitleSummary],
+                book: [Components.Schemas.TitleSummary],
+                album: [Components.Schemas.TitleSummary]
+            ) {
+                self.film = film
+                self.show = show
+                self.anime = anime
+                self.manga = manga
+                self.book = book
+                self.album = album
+            }
+            public enum CodingKeys: String, CodingKey {
+                case film
+                case show
+                case anime
+                case manga
+                case book
+                case album
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FavoritesUpdate`.
+        public struct FavoritesUpdate: Codable, Hashable, Sendable {
+            /// The whole kind, in order. Empty clears it. More than 10 is a 422.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FavoritesUpdate/items`.
+            public var items: [Components.Schemas.MediaRef]
+            /// Creates a new `FavoritesUpdate`.
+            ///
+            /// - Parameters:
+            ///   - items: The whole kind, in order. Empty clears it. More than 10 is a 422.
+            public init(items: [Components.Schemas.MediaRef]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
             }
         }
         /// Absent when the friend turned off showing their badges and level.
@@ -9203,6 +9320,8 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AccountExport/listens`.
             public var listens: [Components.Schemas.Listen]?
+            /// - Remark: Generated from `#/components/schemas/AccountExport/favorites`.
+            public var favorites: Components.Schemas.Favorites?
             /// Creates a new `AccountExport`.
             ///
             /// - Parameters:
@@ -9216,6 +9335,7 @@ public enum Components {
             ///   - groups:
             ///   - groupMessages: Messages you wrote in groups, oldest first.
             ///   - listens: Every listen in your listening log, newest first (MUS-005).
+            ///   - favorites:
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
@@ -9226,7 +9346,8 @@ public enum Components {
                 blocked: [Components.Schemas.SocialUser]? = nil,
                 groups: Components.Schemas.AccountExport.GroupsPayload? = nil,
                 groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil,
-                listens: [Components.Schemas.Listen]? = nil
+                listens: [Components.Schemas.Listen]? = nil,
+                favorites: Components.Schemas.Favorites? = nil
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
@@ -9238,6 +9359,7 @@ public enum Components {
                 self.groups = groups
                 self.groupMessages = groupMessages
                 self.listens = listens
+                self.favorites = favorites
             }
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
@@ -9250,6 +9372,7 @@ public enum Components {
                 case groups
                 case groupMessages
                 case listens
+                case favorites
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.
@@ -13066,6 +13189,291 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+    ///
+    /// - Remark: HTTP `GET /v1/me/favorites`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)`.
+    public enum GetMyFavorites {
+        public static let id: Swift.String = "getMyFavorites"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/favorites/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetMyFavorites.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetMyFavorites.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetMyFavorites.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetMyFavorites.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/favorites/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/favorites/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Favorites)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Favorites {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetMyFavorites.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetMyFavorites.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Every kind, each in your order; an empty list for a kind with none.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetMyFavorites.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetMyFavorites.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
+    public enum SetMyFavorites {
+        public static let id: Swift.String = "setMyFavorites"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/path/kind`.
+                public var kind: Components.Schemas.FavoriteKind
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - kind:
+                public init(kind: Components.Schemas.FavoriteKind) {
+                    self.kind = kind
+                }
+            }
+            public var path: Operations.SetMyFavorites.Input.Path
+            /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetMyFavorites.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetMyFavorites.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SetMyFavorites.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.FavoritesUpdate)
+            }
+            public var body: Operations.SetMyFavorites.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.SetMyFavorites.Input.Path,
+                headers: Operations.SetMyFavorites.Input.Headers = .init(),
+                body: Operations.SetMyFavorites.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Favorites)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Favorites {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SetMyFavorites.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SetMyFavorites.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// All your favorites after the change.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SetMyFavorites.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SetMyFavorites.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
