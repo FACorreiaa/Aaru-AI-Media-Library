@@ -1,6 +1,6 @@
 # Aaru
 
-Aaru is a private-first media library and tracking app for movies, TV shows, anime, books, and music albums. The name comes from the Egyptian Field of Reeds: a calm place where stories live. Social features (friends, activity, encrypted DMs, watch-together), gamification, and scrobbling are planned. They are scheduled in `BACKLOG.md` phases P3–P6 and do not start until the P2 gate ("basics done") is met.
+Aaru is a private-first media library and tracking app for movies, TV shows, anime, manga, books, and music albums. The name comes from the Egyptian Field of Reeds: a calm place where stories live. Social features (friends, activity, encrypted DMs, watch-together), gamification, and scrobbling are planned. They are scheduled in `BACKLOG.md` phases P3–P6 and do not start until the P2 gate ("basics done") is met.
 
 This file is the working contract for anyone — human or agent — changing the repo.
 
@@ -31,12 +31,13 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021). AniDB's daily title dump adds alternate titles for matching only (CAT-022) |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows; TMDB stays the episode source |
+| Catalog — manga | AniList GraphQL, type MANGA (any format: manga, manhwa, manhua, one-shot, light novel), with MAL ids; no fallback while AniList is down (MNG-001, pulled forward 2026-10-23) |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
 | Concerts | Ticketmaster Discovery API v2 (`TICKETMASTER_API_KEY`, free, 5,000 calls/day; Aaru stops at 4,500), behind `ConcertListing`; off without the key. Tickets link out (MUS-003) |
 | Geocoding | Open-Meteo geocoding (no key, non-commercial) for the "Concerts near" city only (MUS-003) |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
-| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export (its CSVs one at a time: Export my data or the GDPR export), MAL-format XML (MyAnimeList, Kitsu, AniList exports), AniList list by username, any other CSV read by its column names; `source=auto` detects the format |
+| User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export (its CSVs one at a time: Export my data or the GDPR export), MAL-format XML, anime or manga (MyAnimeList, Kitsu, AniList exports), AniList anime and manga lists by username, any other CSV read by its column names; `source=auto` detects the format |
 | Scrobble — music | ListenBrainz's submit protocol at `/listenbrainz/1/` with music tokens only (MUS-005, owner 2026-10-21): Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin's plugin. No Spotify OAuth, no native Apple Music path |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped, scrobble tokens only), the browser extension for Netflix / Disney+ / Prime Video (SCR-007, owner exception 2026-10-21), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | MyAnimeList sync | OAuth PKCE per user: anime progress pushed out (SCR-005) and the list read back on app open and every 6 h (SCR-010), the one two-way exception |
@@ -153,21 +154,27 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
 
 Use these words in code, APIs, and UI:
 
-- **Title** — a movie, show, anime, book, or album in the catalog
+- **Title** — a movie, show, anime, manga, book, or album in the catalog
 - **Library item** — a user’s relationship to a title
 - **Status** — consumption only: `wishlist` | `in_progress` | `finished` | `dropped`. These
   stored values never change; UI labels are per kind: films, shows and anime read Plan to
-  watch / Watching / Watched / Dropped, books Plan to read / Reading / Read / Dropped, albums
+  watch / Watching / Watched / Dropped, books and manga Plan to read / Reading / Read / Dropped, albums
   Plan to listen / Listening / Listened / Dropped, no kind Planned / In progress / Finished /
   Dropped
 - **Album** — one MusicBrainz release group of type Album or EP: the tracked unit of music.
   Status, rating and notes only; its tracklist is catalog data, never ticked
+- **Manga** — one AniList work of type MANGA (manga, manhwa, manhua, one-shot, light novel):
+  `MediaType.manga`, never a book and never anime. Progress is the last chapter and volume read.
+  MyAnimeList numbers manga apart from anime, so a MAL id is unique per kind
 - **Concert** — one music event from the concert provider, near a place or by an artist of the
   user's albums (matched by MusicBrainz artist id, never by name). Catalog data linked out for
   tickets; Aaru sells nothing and stores no event past the cache. A position used to find
   concerts is rounded to two decimals and never stored; the saved "Concerts near" city is the
   only place kept, and the user removes it in Settings
 - **Owned** — separate `isOwned` flag; do not overload status
+- **Favorite** — one title in a user's ordered top 10 for a kind (film, show, anime, manga,
+  book, album), any catalog title. Profile data shown on the profile: not a library write, not
+  journaled, not a List
 - **Progress** — episode ticks for TV; page/percentage optional for books
 - **List** — user-curated collection of library items, stored as membership rows
 - **Shelf** — a *saved query* over library items (`saved_queries`), not membership. Shares a
@@ -264,7 +271,8 @@ and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remo
 concerts (MUS-001…003), 2026-10-21; friend invite links, profiles and basic social, 2026-10-21;
 profile stats without badges (GAM-006b) and the whole show marked watched (PROG-005), 2026-10-22;
 the points ledger, levels, streaks, badges, the friends leaderboard and the streak widget
-(GAM-001…005, WID-007) and Boards, 2026-10-22).
+(GAM-001…005, WID-007) and Boards, 2026-10-22; manga as a sixth kind with MAL and AniList manga
+imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23).
 
 ## Out of scope (do not add unless asked)
 
@@ -274,8 +282,9 @@ the points ledger, levels, streaks, badges, the friends leaderboard and the stre
   (trending, this season, DISC-001) are allowed; anything personalised is not
 - A global or public activity feed; public profile pages indexed by search engines
 - Serializd / SIMKL integrations
-- Manga, comics, games before the P2 gate (they are planned after it; see `BACKLOG.md`
-  decisions 2026-10-15). Music albums were pulled forward by the owner (MUS-001…003, 2026-10-21)
+- Comics and games before the P2 gate (they are planned after it; see `BACKLOG.md`
+  decisions 2026-10-15). Music albums (MUS-001…003, 2026-10-21) and manga (MNG-001…002,
+  2026-10-23) were pulled forward by the owner
 - Scraping Pogdesign, IMDb pages, AniDB, or any site without an official export/API. The owner
   exceptions are SCR-007's browser extension reading the player page the user is watching, in
   their own browser (2026-10-21), and the same extension reading `youtube.com/watch` for Now

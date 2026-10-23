@@ -148,6 +148,10 @@ genre chips, the same status / rating / notes as any title, then the tracklist (
 length in tabular figures; "Disc 1"… only when there is more than one). No playback and no
 ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not available yet".
 
+**A manga's room (MNG-001, 2026-10-23)** is a book's room with chapter and volume in place of the
+page: two number fields, each with its total when AniList knows it, saved together. The byline
+is the story and art credits.
+
 **Built 2026-10-21 (web, iPhone, iPad, Mac):** the room opens on a hero: the title's backdrop
 under a veil that fades into Paper (or, without art, the room's own reed code, seeded by the
 title id so each room has its rhythm), the poster standing over the hero's lower edge, the name
@@ -213,7 +217,10 @@ since the shelf is then that list. Each group shows its newest six, with "Show a
 the rest in place. Below Now the shelf has its own heading, naming the filter ("Shows ·
 Watching", "All titles") with a count; arriving with `?status=` or `?kind=` scrolls to it.
 Cards scroll sideways on phones and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
-carry Open Library's page count, so a page reads "Page 120 of 412" with its bar.
+carry Open Library's page count, so a page reads "Page 120 of 412" with its bar. Manga joined
+Reading on 2026-10-23 (MNG-001): a portrait cover like a book, "Ch. 112 of 364 · Vol. 12" (the
+totals only when AniList knows them), **Read ch. 113** as the next step and **Mark read** to
+close it.
 
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
 library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
