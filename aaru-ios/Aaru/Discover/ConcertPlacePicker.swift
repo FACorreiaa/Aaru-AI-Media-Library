@@ -49,6 +49,7 @@ struct ConcertPlacePicker: View {
                 .accessibilityLabel(place.label)
                 .accessibilityAddTraits(place == model.savedPlace ? .isSelected : [])
             }
+            .paperPage()
             .overlay { overlay }
             #if os(iOS)
                 .searchable(text: $text, placement: .navigationBarDrawer(displayMode: .always), prompt: "City")

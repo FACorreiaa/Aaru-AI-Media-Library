@@ -57,7 +57,7 @@ struct ChannelHeader: View {
         }
         .padding(.horizontal, 16)
         .background(Color(.paper))
-        .overlay(alignment: .bottom) { Rectangle().fill(.separator).frame(height: 0.5) }
+        .overlay(alignment: .bottom) { Rectangle().fill(Color(.line)).frame(height: 0.5) }
     }
 
     private var explanation: String {

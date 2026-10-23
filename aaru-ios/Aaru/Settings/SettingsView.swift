@@ -37,9 +37,7 @@ struct SettingsView: View {
                     row(.delete)
                 }
             }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .background(Color(.paper))
+            .paperPage()
             .navigationTitle("Settings")
             .navigationDestination(for: SettingsRoute.self) { route in
                 SettingsRouteView(route: route, context: context) { router.settingsPath.append($0) }
@@ -159,7 +157,7 @@ struct SettingsRowLabel: View {
         } icon: {
             Image(systemName: page.symbol)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(page == .account ? Color(.onAccent) : .white)
                 .frame(width: side, height: side)
                 .background(page.tint, in: .rect(cornerRadius: side / 4, style: .continuous))
                 .accessibilityHidden(true)
@@ -168,11 +166,9 @@ struct SettingsRowLabel: View {
 }
 
 extension View {
-    /// Every Settings page reads the same: grouped, on paper, with its own problem below (UX-029).
+    /// Every Settings page reads the same: on paper (`paperPage()`), with its own problem below (UX-029).
     func settingsPage(_ title: String, problem: Binding<String?>) -> some View {
-        formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .background(Color(.paper))
+        paperPage()
             .navigationTitle(title)
             .safeAreaInset(edge: .bottom) {
                 ProblemBanner(message: problem.wrappedValue) { problem.wrappedValue = nil }

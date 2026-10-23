@@ -98,7 +98,7 @@ struct RecommendSheet: View {
                     }
                 }
             }
-            .formStyle(.grouped)
+            .paperPage()
             .navigationTitle(friend.map { "Recommend to \($0.inviteName)" } ?? "Recommend")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
@@ -174,6 +174,7 @@ struct GroupInviteSheet: View {
                     Text(problem).foregroundStyle(Color(.danger))
                 }
             }
+            .paperPage()
             .overlay {
                 if loadFailed {
                     LoadFailedView(title: "Your groups didn't load", message: "Aaru could not reach the server.") {

@@ -156,7 +156,7 @@ private struct NowCard: View {
             }
             .padding([.horizontal, .top], 14)
         } else {
-            Color(.medallion)
+            Color(.surface)
                 .aspectRatio(16 / 9, contentMode: .fit)
                 .overlay {
                     AsyncImage(url: (title.backdropUrl ?? title.posterUrl).flatMap(URL.init(string:))) { phase in

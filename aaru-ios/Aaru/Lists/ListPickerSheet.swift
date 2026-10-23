@@ -38,6 +38,7 @@ struct ListPickerSheet: View {
                     .accessibilityValue(added.contains(list.id) ? "On this list" : "")
                 }
             }
+            .paperPage()
             .safeAreaInset(edge: .bottom) { ProblemBanner(message: lists.problem) { lists.problem = nil } }
             .navigationTitle("Add “\(titleName)” to a list")
             #if os(iOS)

@@ -27,7 +27,7 @@ struct GroupNameSheet: View {
                     Text("Only friends you invite can find it.")
                 }
             }
-            .formStyle(.grouped)
+            .paperPage()
             .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

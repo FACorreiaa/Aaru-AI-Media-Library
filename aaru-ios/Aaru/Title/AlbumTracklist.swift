@@ -98,5 +98,5 @@ private struct TrackRow: View {
 
 #Preview("Tracklist loading") {
     Form { AlbumTracklist(tracks: nil, isLoading: true) }
-        .formStyle(.grouped)
+        .paperPage()
 }

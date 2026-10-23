@@ -29,7 +29,7 @@ struct ListItemRow: View {
                                 .font(.caption)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 1)
-                                .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.18)))
+                                .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                         }
                         if let next = item.nextAiring {
                             TimelineView(.everyMinute) { context in

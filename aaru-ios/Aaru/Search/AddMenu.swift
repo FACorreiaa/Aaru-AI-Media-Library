@@ -19,7 +19,7 @@ struct AddMenu: View {
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
-                .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.25)))
+                .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                 // The capsule stays slim; the tap target is 44pt.
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())

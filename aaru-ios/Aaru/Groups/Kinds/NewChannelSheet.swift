@@ -107,7 +107,7 @@ struct NewChannelSheet: View {
                     Text(problem).foregroundStyle(Color(.danger))
                 }
             }
-            .formStyle(.grouped)
+            .paperPage()
             .navigationTitle("New channel")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
