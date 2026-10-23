@@ -564,6 +564,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/titles/{id}`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/get(getTitle)`.
     func getTitle(_ input: Operations.GetTitle.Input) async throws -> Operations.GetTitle.Output
+    /// Posts about this title by you and your friends, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)`.
+    func listTitlePosts(_ input: Operations.ListTitlePosts.Input) async throws -> Operations.ListTitlePosts.Output
     /// The user's library, most recently updated first. Shelves use the same filters.
     ///
     /// - Remark: HTTP `GET /v1/library/items`.
@@ -2120,6 +2125,21 @@ extension APIProtocol {
     ) async throws -> Operations.GetTitle.Output {
         try await getTitle(Operations.GetTitle.Input(
             path: path,
+            headers: headers
+        ))
+    }
+    /// Posts about this title by you and your friends, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)`.
+    public func listTitlePosts(
+        path: Operations.ListTitlePosts.Input.Path,
+        query: Operations.ListTitlePosts.Input.Query = .init(),
+        headers: Operations.ListTitlePosts.Input.Headers = .init()
+    ) async throws -> Operations.ListTitlePosts.Output {
+        try await listTitlePosts(Operations.ListTitlePosts.Input(
+            path: path,
+            query: query,
             headers: headers
         ))
     }
@@ -26387,6 +26407,171 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/get(getTitle)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Posts about this title by you and your friends, newest first.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)`.
+    public enum ListTitlePosts {
+        public static let id: Swift.String = "listTitlePosts"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/posts/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/posts/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.ListTitlePosts.Input.Path
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/posts/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// 1–50, default 20.
+                ///
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/posts/GET/query/limit`.
+                public var limit: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - limit: 1–50, default 20.
+                public init(limit: Swift.Int? = nil) {
+                    self.limit = limit
+                }
+            }
+            public var query: Operations.ListTitlePosts.Input.Query
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/posts/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListTitlePosts.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListTitlePosts.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListTitlePosts.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            public init(
+                path: Operations.ListTitlePosts.Input.Path,
+                query: Operations.ListTitlePosts.Input.Query = .init(),
+                headers: Operations.ListTitlePosts.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/posts/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/{id}/posts/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.BoardPostPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.BoardPostPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListTitlePosts.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListTitlePosts.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListTitlePosts.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListTitlePosts.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

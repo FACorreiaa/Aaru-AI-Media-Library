@@ -17,6 +17,17 @@ extension APIImplementation {
         )))))
     }
 
+    func listTitlePosts(_ input: Operations.ListTitlePosts.Input) async throws -> Operations.ListTitlePosts.Output {
+        let viewer = try currentUser()
+        guard let id = UUID(uuidString: input.path.id) else { throw AppError.notFound("That title isn't here.") }
+        let page = try await services.board.posts(title: TitleID(id), limit: input.query.limit, viewer: viewer)
+        return try await .ok(.init(body: .json(.init(items: boardPosts(
+            page.posts,
+            veiled: page.veiled,
+            viewer: viewer
+        )))))
+    }
+
     func createBoardPost(_ input: Operations.CreateBoardPost.Input) async throws
         -> Operations.CreateBoardPost.Output
     {

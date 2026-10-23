@@ -1800,6 +1800,29 @@ paths:
                 $ref: '#/components/schemas/TitleDetail'
         default:
           $ref: '#/components/responses/Error'
+  /v1/titles/{id}/posts:
+    get:
+      operationId: listTitlePosts
+      summary: Posts about this title by you and your friends, newest first.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: 1–50, default 20.
+          schema: {type: integer}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPostPage'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/library/items:
     get:
       operationId: listLibraryItems

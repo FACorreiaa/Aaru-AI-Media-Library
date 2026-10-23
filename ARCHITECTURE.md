@@ -1107,6 +1107,24 @@ Rules:
   call.
 - **Push** for mentions and invites carries no message text, only who, where and a deep link.
 
+## Board (pulled forward 2026-10-22)
+
+A friends-only stream of posts, upvotes and comments (BRD-001). Tables: `board_posts`
+(author, optional title, rating, body, spoiler stamp), `board_upvotes` (post, user),
+`board_comments` (post, author kind `user` / `agent`, `reply_to`, `mentions`). The Board itself
+is a query, not a table.
+
+- **Visibility is in `BoardService`.** The audience is the viewer plus their friends, minus
+  anyone blocked in either direction; a post outside it is the same 404 as a missing one.
+  Pages come from the data layer already filtered, so the cursor is keyset on `(created_at, id)`.
+- **A review writes the library through `LibraryService`.** A rating on a post adds a new title
+  as finished, then rates it (two journal rows); an existing title only gets the rating. The
+  post keeps its own copy of the rating, so undoing the library action never deletes the post.
+- **Spoiler veil** reuses the title-channel stamp: only the author sees the stamp, a reader who
+  is behind gets `veiled`.
+- Reports reuse `reportUser` on the author, with the note prefixed `post:<id>`.
+- `GET /v1/titles/{id}/posts` is the title page's "From friends" slice of the same query.
+
 ## Gamification (Phase 5)
 
 Modelled on Norviq `gamification_xp_events` and Loci `points_events`.

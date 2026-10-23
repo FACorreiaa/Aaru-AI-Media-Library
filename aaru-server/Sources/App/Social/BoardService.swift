@@ -49,6 +49,14 @@ struct BoardService: Sendable {
         return try await Page(posts: posts, veiled: veiled(posts, viewer: viewer))
     }
 
+    /// Posts about one title by the viewer's audience, newest first.
+    func posts(title: TitleID, limit: Int?, viewer: UserID) async throws -> Page {
+        let authors = try await audience(viewer)
+        let size = min(max(limit ?? Self.defaultPageSize, 1), Self.maxPageSize)
+        let posts = try await stores.boards.posts(title: title, authors: authors, limit: size, viewer: viewer)
+        return try await Page(posts: posts, veiled: veiled(posts, viewer: viewer))
+    }
+
     /// Posts whose spoiler stamp is ahead of the viewer's own progress. Progress is read once per title.
     func veiled(_ posts: [BoardPost], viewer: UserID) async throws -> Set<UUID> {
         let stamped = posts.filter { $0.spoiler != nil && $0.titleID != nil && $0.author.id != viewer }

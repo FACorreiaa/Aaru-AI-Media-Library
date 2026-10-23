@@ -1584,6 +1584,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/titles/{id}/posts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Posts about this title by you and your friends, newest first. */
+    get: operations['listTitlePosts']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/library/items': {
     parameters: {
       query?: never
@@ -6531,6 +6548,32 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['TitleDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listTitlePosts: {
+    parameters: {
+      query?: {
+        /** @description 1–50, default 20. */
+        limit?: number
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPostPage']
         }
       }
       default: components['responses']['Error']
