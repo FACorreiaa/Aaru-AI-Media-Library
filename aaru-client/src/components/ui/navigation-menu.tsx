@@ -56,7 +56,7 @@ export const NavigationMenuItem = <T extends ValidComponent = 'a'>(
     <NavigationMenuPrimitive.Item
       data-slot="navigation-menu-item"
       class={cx(
-        "data-[expanded]:focus:bg-accent data-[expanded]:hover:bg-accent data-[expanded]:bg-accent/50 data-[expanded]:text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-ring/50 [&_svg:not([class*='text-'])]:text-muted-foreground flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&_svg:not([class*='size-'])]:size-4",
+        "data-[expanded]:focus:bg-accent data-[expanded]:hover:bg-accent data-[expanded]:bg-accent/50 data-[expanded]:text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground flex flex-col gap-1 rounded-sm p-2 text-sm transition-all focus-visible:outline-2 [&_svg:not([class*='size-'])]:size-4",
         props.class,
       )}
       {...rest}

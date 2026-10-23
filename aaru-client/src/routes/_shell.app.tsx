@@ -598,7 +598,7 @@ function Home() {
           <Link
             to="/app/profile"
             aria-label="Your profile"
-            class="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            class="shrink-0 rounded-full"
           >
             <Medallion person={session()} class="size-11 text-base" />
           </Link>

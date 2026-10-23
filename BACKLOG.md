@@ -484,7 +484,8 @@ account or a stranger that has not happened yet.
 | BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
 | BRD-003 | Built | #148 | Owner checks the owl on TestFlight + beta web |
 | BRD-004 | Built | #150, #153 | Owner checks the owl and its poses on TestFlight + beta web |
-| BRD-005 | Built | this PR; `generate-tokens.mjs --check` covers the manifest and translucent pairs | Theme audit 2026-10-23: contract fixes. BRD-006…010 follow |
+| BRD-005 | Built | #158; `generate-tokens.mjs --check` covers the manifest and translucent pairs | Theme audit 2026-10-23: contract fixes. BRD-006…010 follow |
+| BRD-006 | Built | this PR | Web contrast P1s: one focus form, placeholders, menu rows, toasts |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -879,6 +880,17 @@ BRD-010 (dark + tinted app icon, PWA, extension drift).
 
 **Done when:** `generate-tokens.mjs --check` and `brand-guard.sh` pass with no `agent` token
 anywhere, and `Color(.onAccent)` / `Color(.lineStrong)` compile on Apple.
+
+### BRD-006 · Web contrast P1s · S · owner, 2026-10-23
+The web's keyboard focus had three forms, and the one the shadcn primitives used (a 3 px ring
+of accent at 50%) was 2.2:1 on light paper, under the 3:1 the tokens file demands for rings.
+Now every primitive uses the global form, a 2 px solid accent outline with a 2 px offset.
+Placeholders were muted at 70% (3.3:1); they are muted. Icons and shortcut hints inside an
+accent-highlighted menu row were muted on accent (1.02:1); they inherit the on-accent text.
+Toasts take the scheme the page is drawn in, so a pinned appearance reaches them.
+
+**Done when:** no `ring-ring/50` or `placeholder:text-muted/70` in `aaru-client/src`; tabbing
+through sign-in, search, a select and a menu shows one ring, in both appearances.
 
 ## P0 · M1 — Server foundation
 

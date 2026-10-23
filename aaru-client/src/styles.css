@@ -169,6 +169,20 @@ body {
   }
 }
 
+/* A highlighted menu row is an accent fill, so its icons and shortcut hint take the on-accent
+   text with it: muted on accent is 1.02:1. Utilities layer, after Tailwind's, so it wins the
+   `[&_svg]:text-muted-foreground` the shadcn primitives set. */
+@layer utilities {
+  :is(
+      [data-highlighted],
+      [data-selected='true'],
+      [data-slot='select-item']:focus
+    )
+    :is(svg:not([class*='text-']), [data-slot$='shortcut']) {
+    color: inherit;
+  }
+}
+
 /* Reduced motion: the components' enter/exit keyframes (tw-animate-css), the drawer's slide,
    loops (skeleton pulse, OTP caret) and their transitions are all off. Kobalte sees no
    animation and unmounts a closed popover at once. Motion's own helpers check the same query
