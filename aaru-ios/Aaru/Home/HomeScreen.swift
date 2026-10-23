@@ -28,6 +28,8 @@ struct HomeScreen: View {
     /// phone's single column, since the 340pt side column would squeeze the rows.
     @State private var width: CGFloat = 0
     @Environment(AppRouter.self) var router
+    /// Level and streak for the strip (GAM-002/003); nil in previews.
+    @Environment(ProgressModel.self) var achievements: ProgressModel?
     @Environment(\.dynamicTypeSize) private var dynamicType
     @Environment(\.scenePhase) private var scenePhase
 
@@ -154,11 +156,10 @@ struct HomeScreen: View {
                 message: "Aaru could not reach the server. Check your connection and try again."
             ) { await reload() }
         } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty, model.hasLoaded {
-            ContentUnavailableView {
-                Label(HomeEmptyCopy.headline, systemImage: "sparkles.tv")
-            } description: {
-                Text("What you are watching, reading and listening to, and what airs next, lands here.")
-            } actions: {
+            OwlUnavailableView(
+                title: HomeEmptyCopy.headline,
+                message: "What you are watching, reading and listening to, and what airs next, lands here."
+            ) {
                 Button("Browse Discover") { onSelectTab(.discover) }
                     .buttonStyle(.borderedProminent)
                 Button("Search") { router.showsSearch = true }

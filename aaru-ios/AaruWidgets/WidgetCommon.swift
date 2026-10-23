@@ -1,4 +1,3 @@
-import CoreText
 import ImageIO
 import SwiftUI
 import UniformTypeIdentifiers
@@ -14,23 +13,11 @@ enum Palette {
     static let gold = Color("Gold")
 }
 
-/// Newsreader Medium for a widget's one heading, as in the app (`Font.aaruDisplay`). Only the
-/// one face is bundled here; the rest of a widget stays the system font.
-enum WidgetType {
-    static func registerFont() {
-        guard let url = Bundle.main.url(forResource: "Newsreader-Medium", withExtension: "ttf") else { return }
-        CTFontManagerRegisterFontURLs([url] as CFArray, .process, true, nil)
-    }
-}
-
 extension Font {
-    /// Newsreader at the headline's size, scaled with Dynamic Type.
+    /// A widget's one heading, as in the app (`Font.aaruDisplay`): the system sans at the
+    /// headline's size, scaled with Dynamic Type.
     static var widgetDisplay: Font {
-        #if os(macOS)
-            .custom("Newsreader-Medium", size: 13, relativeTo: .headline)
-        #else
-            .custom("Newsreader-Medium", size: 17, relativeTo: .headline)
-        #endif
+        .system(.headline, design: .default, weight: .medium)
     }
 }
 

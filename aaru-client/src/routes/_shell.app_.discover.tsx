@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { Link, createFileRoute, useRouter } from '@tanstack/solid-router'
 import {
   For,
@@ -196,22 +197,24 @@ function DiscoverPage() {
             <Show
               when={rows().some((row) => row.items.length > 0)}
               fallback={
-                <div class="mx-auto mt-20 max-w-sm text-center">
-                  <h2 class="font-display text-2xl font-medium">
-                    Nothing to discover right now
-                  </h2>
-                  <p class="mt-2 text-muted">
-                    The catalog lists could not be loaded. Search still works.
-                  </p>
-                  <div class="mt-6 flex flex-wrap justify-center gap-3">
-                    <Button onClick={() => void router.invalidate()}>
-                      Try again
-                    </Button>
-                    <Button variant="quiet" onClick={() => shell.openSearch()}>
-                      Search
-                    </Button>
-                  </div>
-                </div>
+                <OwlEmpty
+                  class="mt-12"
+                  title="Nothing to discover right now"
+                  body="The catalog lists could not be loaded. Search still works."
+                  action={
+                    <div class="flex flex-wrap justify-center gap-3">
+                      <Button onClick={() => void router.invalidate()}>
+                        Try again
+                      </Button>
+                      <Button
+                        variant="quiet"
+                        onClick={() => shell.openSearch()}
+                      >
+                        Search
+                      </Button>
+                    </div>
+                  }
+                />
               }
             >
               <DiscoverRows

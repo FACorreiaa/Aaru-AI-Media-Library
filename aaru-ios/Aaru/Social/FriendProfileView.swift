@@ -41,6 +41,10 @@ struct FriendProfileView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 32) {
                         ProfileHeader(profile: profile)
+                        // GAM-005: shown only while they keep the switch on, whatever they share.
+                        if let achievements = profile.achievements {
+                            FriendBadgeRow(name: profile.user.inviteName, achievements: achievements)
+                        }
                         if profile.sharing {
                             shelves(profile)
                         } else {

@@ -18,6 +18,12 @@ enum ProductEvent: String, Sendable {
     case friendAdded = "friend_added"
     /// `decision`: approved, denied.
     case agentPlanDecided = "agent_plan_decided"
+    /// The Tonight strip showed at least one pick, once per local day (AG-005).
+    case tonightShown = "tonight_shown"
+    /// Progress landed on a pick within six hours of it showing; once per local day.
+    case tonightAccepted = "tonight_accepted"
+    /// `verdict`: rejected, not_tonight.
+    case tonightRejected = "tonight_rejected"
 }
 
 /// Where product events go. `PostHogClient` in production; nothing until one is installed.

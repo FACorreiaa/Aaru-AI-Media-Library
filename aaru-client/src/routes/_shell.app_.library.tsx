@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { Link, createFileRoute } from '@tanstack/solid-router'
 import { useAppShell, useSearchHost } from '../components/shell/context'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
@@ -258,11 +259,11 @@ function Library() {
         <Show
           when={rows().length > 0}
           fallback={
-            <div class="mx-auto mt-24 max-w-sm text-center">
+            <div class="mt-12">
               <Show
                 when={entries().length === 0}
                 fallback={
-                  <>
+                  <div class="mx-auto mt-12 max-w-sm text-center">
                     <h2 class="font-display text-2xl font-medium">
                       Nothing here
                     </h2>
@@ -276,27 +277,29 @@ function Library() {
                     >
                       Clear filters
                     </Button>
-                  </>
+                  </div>
                 }
               >
-                <h2 class="font-display text-2xl font-medium">
-                  Your library is empty
-                </h2>
-                <p class="mt-2 text-muted">
-                  Search for a film, show, anime, book or album, or bring your
-                  history from another app.
-                </p>
-                <div class="mt-6 flex flex-wrap justify-center gap-3">
-                  <Button variant="default" size="lg" onClick={openSearch}>
-                    Search
-                  </Button>
-                  <Link
-                    to="/app/settings/import"
-                    class={buttonVariants({ variant: 'outline', size: 'lg' })}
-                  >
-                    Bring your history
-                  </Link>
-                </div>
+                <OwlEmpty
+                  title="Your library is empty"
+                  body="Search for a film, show, anime, book or album, or bring your history from another app."
+                  action={
+                    <div class="flex flex-wrap justify-center gap-3">
+                      <Button variant="default" size="lg" onClick={openSearch}>
+                        Search
+                      </Button>
+                      <Link
+                        to="/app/settings/import"
+                        class={buttonVariants({
+                          variant: 'outline',
+                          size: 'lg',
+                        })}
+                      >
+                        Bring your history
+                      </Link>
+                    </div>
+                  }
+                />
               </Show>
             </div>
           }

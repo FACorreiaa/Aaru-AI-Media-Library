@@ -31,7 +31,7 @@ struct WelcomeView: View {
             Group {
                 if isWide {
                     HStack(alignment: .center, spacing: 56) {
-                        MascotMedallion()
+                        OwlMedallion.welcome
                             .frame(maxWidth: 380)
                         VStack(alignment: .leading, spacing: 32) {
                             copy
@@ -42,7 +42,7 @@ struct WelcomeView: View {
                     .padding(48)
                 } else {
                     VStack(alignment: .leading, spacing: 28) {
-                        MascotMedallion()
+                        OwlMedallion.welcome
                             .frame(maxWidth: 230)
                             .frame(maxWidth: .infinity)
                         copy
@@ -128,20 +128,10 @@ struct WelcomeView: View {
     }
 }
 
-/// The mascot on a paper disc, so its painted edge reads the same in light and dark.
-private struct MascotMedallion: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color(.medallion))
-            Image(.mascot)
-                .resizable()
-                .scaledToFit()
-                .padding(.top, 10)
-                .accessibilityLabel("Aaru's mascot, a small teal bird carrying books and a film reel")
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .clipShape(Circle())
+private extension OwlMedallion {
+    /// The owl introduced, with what it is for VoiceOver.
+    static var welcome: OwlMedallion {
+        OwlMedallion(label: Text("Aaru's mascot, a small white robot owl with glowing amber eyes"))
     }
 }
 

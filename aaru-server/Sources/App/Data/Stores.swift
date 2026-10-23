@@ -364,5 +364,7 @@ struct Stores: Sendable {
     var groupKinds: any GroupKindStore
     var agent: any AgentStore
     var concerts: any ConcertStore
+    var gamification: any GamificationStore
+    var tonight: any TonightStore
     var boards: any BoardStore
 }

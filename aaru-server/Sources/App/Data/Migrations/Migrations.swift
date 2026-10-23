@@ -52,6 +52,9 @@ let allMigrations: [any Migration] = [
     AddSocialSettings(),
     AddSocialInteractions(),
     AddLivePlays(),
+    AddGamification(),
+    AddTonight(),
+    AddImportAction(),
     CreateBoards(),
 ]
 

@@ -85,6 +85,7 @@ func backgroundServices(
     [
         fluent,
         ImportWorker(imports: services.imports, logger: logger, workers: workers.imports),
+        GamificationWorker(gamification: GamificationService(stores: stores), logger: logger),
         AiringNotifierService(notifier: airing, logger: logger),
         LiveActivitySweepService(notifier: services.scrobble.liveActivity, stores: stores, logger: logger),
         CatalogRefreshService(
@@ -249,6 +250,7 @@ func buildRouter(stores: Stores, services: Services, metricsSecret: String = "")
         HTTPMetricsMiddleware()
         ErrorMiddleware(sentry: services.sentry)
         AuthMiddleware(sessions: stores.sessions)
+        ClientTimeZoneMiddleware()
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()
     }

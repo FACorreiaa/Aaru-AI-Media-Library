@@ -36,6 +36,58 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-22
 
+- **Tonight, capture and Plus: the agent as the paid product, built before the P2 gate**, by the
+  owner's call (owner, 2026-10-22). Items: AG-005 composed on the server (`GET /v1/tonight`),
+  with reject and "not tonight" kept as the user's own data (this closes AG-005's OPEN: persist,
+  not local), still derived only from the user's own library; AG-004's composer on The Field;
+  AG-006 capture from text and image; the slice of AG-007 that meters model spend per month; and
+  Plus on StoreKit 2 with a server-side entitlement (BIL items). Free accounts get the Tonight
+  strip and 3 captures a month; Plus lifts the capture quota (this replaces MARKETING §5.2's "the
+  first run is free"). **URL capture fetches nothing**: a Letterboxd or IMDb link is answered
+  with the CSV importer, and TMDB, AniList and Open Library links resolve by id through their
+  APIs. No new scraping exception. A capture is an import job (`source = capture`), so its plan
+  is the job's plan: unmatched rows use IMP-011's "Find it", and apply is one undoable action.
+  Tonight's reasons are templates, never a model call, so Home needs no model.
+- **Rebrand to the owl poster (owner, 2026-10-22).** The poster "Aaru Owl: Your stories. Your
+  world." is the standard from now on (DESIGN.md "Brand"). The name stays Aaru; the teal bird,
+  reeds, heron and teal → gold go. The owner chose: dark-first with a derived light mode, both
+  following the system; the system sans for every heading (Newsreader is dropped, reversing
+  2026-10-21); every asset extracted from the one poster; the owl as both the mascot and the
+  agent's mark. Reminded of the "no rebrands before 10 strangers" rule; went ahead. Main's brand
+  files win over any branch, and `ci-brand.yml` blocks colour literals and other faces
+  (BRD-001…003).
+- **The owl lives in the signed-in app too (owner, 2026-10-23).** "The owl never shows": it was
+  on signed-out surfaces only. Now it is also beside "The Field" on Home, in screen-level empty
+  states, on errors and the 404, on the recap cover and earned badges.
+  Where it is not working it idles: a slow float and an amber glow, calmer than the breath that
+  means "working", and still under Reduce Motion. No new chat surface: the owl stays in the spots
+  Aaru already speaks from. Poses (curious, sleeping, celebrating) were generated from the owl
+  master with FLUX.1 Kontext [dev], the owner's pick of a free generator other than Higgsfield,
+  and approved by the owner the same day (BRD-004).
+- **Achievements now: the whole of P5's core (owner, 2026-10-22).** Pulled forward before the
+  P2 gate, with 0 strangers: the points ledger (GAM-001), levels (GAM-002), streaks (GAM-003),
+  badges (GAM-004), the friends leaderboard (GAM-005) and the streak widget (WID-007). The
+  design is `docs/superpowers/specs/2026-10-22-achievements-design.md`; its badge catalog
+  (61 badges) is for the owner to review.
+- **Friends stay mutual.** The owner asked for friends that "work as followers"; that feel comes
+  from profiles, activity and achievements on a profile. There is still no one-way follow.
+- **Imports count for milestones, not for activity.** Milestone badges ("100 films") read the
+  library, so imported history counts. Points, streaks, the weekly board and activity badges
+  ("10 episodes in a day", Night Owl) count only live writes. An import awards its badges
+  quietly, as one summary.
+- **Badges come from two sources.** Milestones from library facts, activity from the points
+  ledger and streak days. This replaces GAM-004's "awarded from ledger events only".
+- **Friends see badges and level by default**, behind their own "Show my badges and level to
+  friends" switch (`show_achievements_to_friends`, on). The weekly board is a separate opt-in
+  (`leaderboard_opt_in`, off). Blocks apply both ways; there is never a global board.
+- **The unlock moment is quiet**: a medallion toast (a haptic on Apple); a badge's top tier gets
+  a one-time full card. No push for unlocks or for a streak about to break.
+- **About 15% of badges are hidden** until earned; the rest show progress ("62 / 100").
+- **Names are plain, with a little wit** (Century, Night Owl, Completionist). Tiers are 1–4 in
+  code and bronze, silver, gold and platinum in the UI, drawn without gold fills (DESIGN.md).
+- **Listens alone do not keep a streak**, and friend and first-import points stay off the weekly
+  board (calls made in the design; the owner can reverse them).
+
 - **Boards and Ask Aaru (owner, 2026-10-22).** Two pulled-forward features, designed in
   `docs/superpowers/specs/2026-10-22-boards-and-ask-aaru-design.md`. Items BRD-001…004 and
   ASK-001…008 below.
@@ -61,7 +113,6 @@ library layer stay separate, external IDs stored whenever known, no second backe
   `next` cursor, and a page can be short or empty after deleted and blocked rows are filtered.
   Known gaps, for later: the upvote count and `commentCount` include rows from users the viewer
   blocked while the lists hide them.
-
 - **Everything playing, in one Live Activity (owner, 2026-10-22, SCR-009).** When a show and a
   song, or a show and a YouTube video, play at once, the iPhone shows them together: one
   combined "Now playing" activity, not one activity per thing (owner chose the combined layout
@@ -392,7 +443,9 @@ account or a stranger that has not happened yet.
 **Known gaps no item owns yet:**
 
 - **Undo ribbon.** DESIGN.md and AUD-001 require it, WID-002 and OUT-002 depend on it, and the
-  server's `POST /v1/actions/{id}/undo` exists, but no client calls it.
+  server's `POST /v1/actions/{id}/undo` exists. Clients call it from toasts only: PROG-005's tick
+  toast, and since 2026-10-23 an Undo toast after approving a plan or applying an import (the
+  import job returns `actionId`). There is still no ribbon.
 - IMP-004's text still says a later source never overwrites a status; since 2026-10-20 (#41)
   status moves forward only (see that day's decision).
 - PRV-001's ODbL credit no longer applies: anime mappings come from Fribb (MIT).
@@ -409,6 +462,10 @@ account or a stranger that has not happened yet.
 | REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
 | REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
 | DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
+| BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
+| BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
+| BRD-003 | Built | #148 | Owner checks the owl on TestFlight + beta web |
+| BRD-004 | Built | #150, this PR | Owner checks the owl and its poses on TestFlight + beta web |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -541,12 +598,12 @@ account or a stranger that has not happened yet.
 | SOC-006 | Built, unverified | `social_recommendations`, `/v1/social/recommendations`, `/v1/me/recommendations*`; InteractionTests; web Recommend (title page, profile) and inbox, iOS RecommendSheet and inbox | No push to the recipient yet (needs a notification category) |
 | SOC-007 | Built, unverified | `social_reactions`, `PUT/DELETE /v1/activity/{id}/reaction`, reactions on `ActivityItem`; InteractionTests; web and iOS Lately rows | |
 | SHR-001 | Open | none | |
-| GAM-001 | Open | none | |
-| GAM-002 | Open | none | |
-| GAM-003 | Open | none | |
-| WID-007 | Open | none | |
-| GAM-004 | Open | none | |
-| GAM-005 | Open | none | |
+| GAM-001 | Built, unverified | `points_events`, `PointsRules`, award/revoke in the library transaction, friend/room/listen/import hooks; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
+| GAM-002 | Built, unverified | `Levels`, `GET /v1/me/progress`, `GET /v1/me/points`; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
+| GAM-003 | Built, unverified | AaruCore `Streak` (travel grace), `check_ins`, `X-Timezone` (server + AaruAPI), milestone bonuses; StreakTests, GamificationTests; web + iOS streak strip | owner judges design; TestFlight |
+| WID-007 | Built, unverified | `AaruWidgets/StreakWidget.swift` (small + accessory), timeline at the next two local midnights via AaruCore `Streak` | flip at midnight on TestFlight |
+| GAM-004 | Built, unverified | `BadgeCatalog` (62, 9 hidden), facts query, `user_badges`, `GamificationWorker` backfill, undo takes a tier back, `/v1/me/badges`; BadgeRuleTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
+| GAM-005 | Built, unverified | two `social_settings` switches (partial PUT), `FriendProfile.achievements`, `GET /v1/social/leaderboard`; LeaderboardTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-006a | Done | #32 4657b9d; StatsTests, Recap* (iOS + web) | Apple story never run on device |
 | GAM-006e | Done | #67; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
 | GAM-006b | Partial | #43 Insights; ShowWatchedTests "GAM-006b" | Profile pulled forward 2026-10-22; badges wait for GAM-001 |
@@ -565,7 +622,7 @@ account or a stranger that has not happened yet.
 | AG-002 | Open | none | |
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
 | AG-004 | Open | none | |
-| AG-005 | Open | none | |
+| AG-005 | Built, unverified | Tonight/TonightService.swift, `/v1/tonight`; `Home/Tonight.swift`, `lib/home/tonight.ts` | Not seen on a device; reject never checked across a night |
 | AG-006 | Open | none | |
 | AG-007 | Open | no ModelProviding | |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
@@ -743,6 +800,47 @@ No API, auth, import, permission or persistence change.
 `weekGold`, no `Color.accentColor`. Every heading is in Newsreader, the widgets included. The
 Field and the Title room ship on all clients. The owner has checked the TestFlight build:
 widgets, Dynamic Type at accessibility sizes, VoiceOver, and the Mac window.
+
+### BRD-001 · Owl palette and system sans · M · owner, 2026-10-22
+The poster's palette in `design/tokens.json` (night navy, silver-white, ice-blue accent, amber
+gold and agent), regenerated for web, Apple and the browser extension. The extension's popup and
+toolbar badge read the generated tokens instead of hand copies. Newsreader removed from both
+clients; `Font.aaruDisplay`, `Font.widgetDisplay` and `--font-display` are the system sans.
+`scripts/brand-guard.sh` and `ci-brand.yml` fail a PR with colour literals or another face.
+
+**Done when:** the token check and guard pass in CI, every pair passes AA in both appearances,
+and the owner has checked TestFlight and beta.aaruapp.com in light and dark.
+
+### BRD-002 · Mark, wordmark and icons from the poster · M · owner, 2026-10-22
+The A-mark and wordmark traced from the poster to SVG (`docs/brand/owl_poster.py`). They become
+the app icon (iOS, macOS squircle, BETA band), with a simplified mark at 40 px and below, the
+favicons and PWA icons, the extension icons, the landing icon and the wordmark on both clients
+(one colour, the text's). The OG image is the poster cropped. `ReedMark` is the agent's mark
+and goes with BRD-003.
+
+**Done when:** every icon and the wordmark on every client come from the traced SVGs.
+
+### BRD-003 · Owl mascot and agent mark · M · owner, 2026-10-22
+The owl cut out of the poster replaces the bird in `Mascot` and the web `mascot*.webp`. A small
+owl's head on a `night` disc (a new token: the poster's sky in both appearances) replaces the
+reed mark and the heron as the agent's mark, breathing while Aaru works, still under Reduce
+Motion. The guard then also bans `heron` and the reed mark by name.
+
+**Done when:** no client shows the bird, the heron or the reeds. Known limit: the owl is about
+600 px tall in the poster; ask for a 2048 px master before an App Store release.
+
+### BRD-004 · The owl in the signed-in app · M · owner, 2026-10-23
+The owl appears where a signed-in user looks: beside "The Field" on Home, in every screen-level
+empty state (`OwlEmpty` on the web, `OwlUnavailableView` on Apple), on route errors, the 404 and
+the load-failed view, on the recap cover and on an earned badge. Not on a plan card: a plan
+comes from an outside connection ("Claude asks"), and the owl there would say Aaru wrote it.
+Idle owls float slowly with an amber glow; the breath stays the sign that Aaru is working; both
+hold still under Reduce Motion. Three poses from the owl master (`docs/brand/owl_poses.py`):
+curious on search with no results and the 404, sleeping when nothing airs and when caught up,
+celebrating on an earned badge and the unlock summary.
+
+**Done when:** the owner has seen the owl on Home, an empty state, an error and the recap on
+TestFlight and beta web, and the poses are in.
 
 ## P0 · M1 — Server foundation
 
@@ -2727,7 +2825,8 @@ search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
 
 # P5 — Gamification
 
-Start only after the P2 gate. Points are a **ledger**, never a counter — copied from Norviq
+Start only after the P2 gate, except GAM-001…005 and WID-007, pulled forward by the owner
+on 2026-10-22 (see that day's decisions). Points are a **ledger**, never a counter — copied from Norviq
 (`StockPlanBackend/Gamification/XPService.swift`) and Loci (`0113_gamification.up.sql`).
 
 ## P5 · Points, streaks, badges
@@ -2773,7 +2872,10 @@ closed.
 **Needs:** GAM-001.
 `user_badges` (`userId`, `badgeType`, `tier`, `awardedAt`); definitions in code. Discovery
 badges (first import, first list, first friend, first room) and milestone badges (100 episodes,
-first finished anime, 10 books, a full season in a day). Awarded from ledger events only.
+first finished anime, 10 books, a full season in a day). Since 2026-10-22: milestone badges
+read library facts (imports count) and activity badges read the ledger and streak days; the
+catalog is in `docs/superpowers/specs/2026-10-22-achievements-design.md`. Undoing the action
+that earned a tier takes the tier back when its rule no longer holds.
 
 **Done when:** every badge has a unit test for its rule, and re-running the evaluator awards
 nothing new.
@@ -2781,7 +2883,7 @@ nothing new.
 ### GAM-005 · Friends leaderboard · S
 **Needs:** GAM-001, SOC-002.
 Weekly, friends only, opt-in (`leaderboard_opt_in`); blocks applied both ways. No global
-board.
+board. Weeks run on each person's own local dates; friend and first-import points are left out.
 
 **Done when:** a user who has not opted in never appears on anyone's board, including their
 friends'.
@@ -3023,8 +3125,19 @@ are recorded as signal.
 **Done when:** the strip is derived only from the user's own library — no cross-user data,
 no recommendation service — and a reject never re-suggests the same item that night.
 
-**OPEN:** does reject signal persist as user data or stay local? Recommendation: local first,
-since it is preference noise, not library truth.
+**Decided (owner, 2026-10-22):** reject and "not tonight" persist as the user's own data
+(`tonight_feedback`), so they shape the next day on every device.
+
+**Built 2026-10-22 (server):** `GET /v1/tonight?tz=` ranks the next episode of shows in
+progress, today's airings, books in progress and wishlist films by a fixed score (momentum,
+nearness to the end, time on the list, minus rejections in the last 14 days). "Not tonight"
+hides an item for the local day; reasons are templates. `POST /v1/tonight/{id}/feedback`.
+`tonight_picks` records what was shown, for the `tonight_accepted` count (progress on a pick
+within 6 h).
+
+**Built 2026-10-23 (clients):** iOS, Mac and web read `/v1/tonight`, keep the last answer for
+offline, and fall back to the device's composition only without an answer for today. "Not
+tonight" and "Not for me" on every pick.
 
 ### AG-006 · Capture as an import source · L
 **Needs:** AG-003, IMP-005, IMP-011, JOB-001.

@@ -93,7 +93,7 @@ private struct WeekBanner: View {
             .accessibilityHidden(true)
     }
 
-    /// No art: a quiet teal-to-gold wash. The show's name is right below, so no text here.
+    /// No art: a quiet blue-to-amber wash. The show's name is right below, so no text here.
     private var placeholder: some View {
         LinearGradient(
             colors: [Color(.accent).opacity(0.25), Color(.gold).opacity(0.25)],
@@ -141,7 +141,7 @@ struct WeekBadge: View {
 }
 
 extension CalendarEntry {
-    /// Premieres and finales stand out: teal for a start, ink for an end (as on the web), each
+    /// Premieres and finales stand out: accent for a start, ink for an end (as on the web), each
     /// under Paper text that passes AA in both appearances. Not CAT's colours.
     enum Badge {
         case premiere, newSeason, finale

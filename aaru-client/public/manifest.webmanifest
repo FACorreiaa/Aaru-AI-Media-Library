@@ -4,8 +4,8 @@
   "description": "A private shelf for films, shows, anime and books.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fbf6ec",
-  "theme_color": "#1f6970",
+  "background_color": "#0e141e",
+  "theme_color": "#0e141e",
   "icons": [
     {
       "src": "/icon-192.png",

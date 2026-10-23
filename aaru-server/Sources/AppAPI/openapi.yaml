@@ -285,6 +285,92 @@ paths:
               schema: {$ref: '#/components/schemas/SocialSettings'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/progress:
+    get:
+      operationId: getProgress
+      summary: >-
+        Your points, level, streak and the badges you have not seen yet (GAM-001…004). Days are
+        counted in the zone from `X-Timezone`, else the zone you last sent, else UTC. Clients read
+        this after a write to show what was earned: one toast for a live unlock, one summary when
+        `unseen.origin` is `batch` (an import or approved plan) or `backfill` (the first run).
+      responses:
+        '200':
+          description: Your progress.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Progress'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/badges:
+    get:
+      operationId: listBadges
+      summary: >-
+        Every badge in the catalog with what you have of it. A hidden badge you have not earned
+        comes back with only its id, family and `hidden`: no name, rule or progress.
+      responses:
+        '200':
+          description: The catalog.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BadgeList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/badges/seen:
+    post:
+      operationId: markBadgesSeen
+      summary: Marks earned badges (by award id) as seen, so they leave `unseen`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  maxItems: 200
+                  items: {type: string, format: uuid}
+      responses:
+        '204':
+          description: Seen.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/points:
+    get:
+      operationId: listPoints
+      summary: The points ledger, newest first, a page at a time ("How you earned it").
+      parameters:
+        - {name: before, in: query, schema: {type: string, format: date-time}}
+        - {name: limit, in: query, description: '1–100, 50 unless asked.', schema: {type: integer}}
+      responses:
+        '200':
+          description: A page of the ledger.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PointsPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/social/leaderboard:
+    get:
+      operationId: getLeaderboard
+      summary: >-
+        The weekly friends board (GAM-005): you and friends who joined it, by points earned that
+        week on each person's own local dates. Making friends and a first import do not count.
+        Until you join (`leaderboardOptIn`), `optedIn` is false and nobody is listed. Never global.
+      parameters:
+        - name: week
+          in: query
+          description: An ISO week such as `2026-W43`. Absent means this week in your zone.
+          schema: {type: string}
+      responses:
+        '200':
+          description: The board.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Leaderboard'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/social/friends/{userId}/profile:
     get:
       operationId: getFriendProfile
@@ -2496,6 +2582,48 @@ paths:
               schema: {$ref: '#/components/schemas/UpNext'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/tonight:
+    get:
+      operationId: getTonight
+      summary: >-
+        One to three things to start tonight (AG-005), ranked from the user's own library: the next
+        episode of shows in progress, today's airings, books in progress, wishlist films. Reasons
+        are templates; no model is called.
+      parameters:
+        - name: tz
+          in: query
+          description: IANA time zone for "today" and air times. Absent means UTC.
+          schema: {type: string}
+      responses:
+        '200':
+          description: The strip for the local day.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Tonight'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/tonight/{id}/feedback:
+    post:
+      operationId: sendTonightFeedback
+      summary: >-
+        "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against
+        it for 14 days.
+      parameters:
+        - {name: id, in: path, required: true, description: The library item., schema: {type: string, format: uuid}}
+        - name: tz
+          in: query
+          description: IANA time zone for the local day. Absent means UTC.
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TonightFeedback'}
+      responses:
+        '204':
+          description: Recorded.
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -2827,6 +2955,12 @@ components:
           description: >-
             Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is
             retried. With `rowsTotal` it is the import's progress.
+        actionId:
+          type: string
+          format: uuid
+          description: >-
+            The action that applied the plan, once approved and if it wrote anything. Undo it with
+            POST /v1/actions/{id}/undo.
     ImportStats:
       type: object
       required: [created, updated, skipped, unmatched]
@@ -3082,10 +3216,19 @@ components:
     SocialSettings:
       type: object
       required: [shareLibraryWithFriends]
+      description: >-
+        On PUT, a field left out keeps its saved value (older apps send only
+        `shareLibraryWithFriends`). Responses always carry every field.
       properties:
         shareLibraryWithFriends:
           type: boolean
           description: Friends see your shelves, activity and what you share. On by default.
+        showAchievementsToFriends:
+          type: boolean
+          description: Friends see your level and badges (never ones about notes or owned items). On by default.
+        leaderboardOptIn:
+          type: boolean
+          description: You join the weekly friends board, and see it. Off by default.
     FriendItem:
       type: object
       required: [title, status, updatedAt]
@@ -3138,6 +3281,156 @@ components:
           type: array
           items: {$ref: '#/components/schemas/FriendItem'}
         compare: {$ref: '#/components/schemas/FriendCompare'}
+        achievements: {$ref: '#/components/schemas/FriendAchievements'}
+    FriendAchievements:
+      type: object
+      required: [level, badges]
+      description: Absent when the friend turned off showing their badges and level.
+      properties:
+        level: {type: integer}
+        badges:
+          type: array
+          description: Their highest tier of each earned badge, newest first. Never private badges.
+          items: {$ref: '#/components/schemas/BadgeAward'}
+    BadgeFamily:
+      type: string
+      enum: [films, shows, anime, books, music, ratings, lists, imports, discovery, streaks, social]
+    BadgeOrigin:
+      type: string
+      enum: [live, batch, backfill]
+      description: A live write (toast), an import or approved plan (one summary), or the first run.
+    BadgeAward:
+      type: object
+      required: [id, badge, name, family, tier, maxTier, awardedAt, origin, reveal]
+      properties:
+        id: {type: string, format: uuid, description: The award; send it to /v1/me/badges/seen.}
+        badge: {type: string, description: 'The badge id, such as `films`.'}
+        name: {type: string}
+        family: {$ref: '#/components/schemas/BadgeFamily'}
+        tier: {type: integer, description: 1–4. Bronze, silver, gold, platinum.}
+        maxTier: {type: integer}
+        awardedAt: {type: string, format: date-time}
+        origin: {$ref: '#/components/schemas/BadgeOrigin'}
+        reveal:
+          type: boolean
+          description: A live award of a tiered badge's top tier, or of a hidden badge. Show the full card once.
+    BadgeTier:
+      type: object
+      required: [tier, threshold, description]
+      properties:
+        tier: {type: integer}
+        threshold: {type: integer}
+        description: {type: string}
+        awardedAt: {type: string, format: date-time}
+    Badge:
+      type: object
+      required: [id, family, hidden, earned, tier, maxTier]
+      properties:
+        id: {type: string}
+        family: {$ref: '#/components/schemas/BadgeFamily'}
+        hidden: {type: boolean}
+        earned: {type: boolean}
+        tier: {type: integer, description: The highest tier earned; 0 for none.}
+        maxTier: {type: integer}
+        private: {type: boolean, description: Never shown to friends.}
+        name: {type: string, description: Absent for a hidden badge not yet earned.}
+        description: {type: string, description: What the next tier asks, or the top tier once earned.}
+        progress:
+          type: object
+          required: [current, target]
+          description: Toward the next tier. Absent once every tier is earned, and for hidden badges.
+          properties:
+            current: {type: integer}
+            target: {type: integer}
+        tiers:
+          type: array
+          items: {$ref: '#/components/schemas/BadgeTier'}
+    BadgeList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Badge'}
+    StreakDayState:
+      type: object
+      required: [date, active]
+      properties:
+        date: {type: string, format: date}
+        active: {type: boolean}
+    StreakState:
+      type: object
+      required: [current, longest, today, days]
+      properties:
+        current: {type: integer, description: Days in the streak still alive; 0 when broken.}
+        longest: {type: integer}
+        today: {type: boolean, description: Today already counts.}
+        days:
+          type: array
+          description: The last seven local dates, oldest first.
+          items: {$ref: '#/components/schemas/StreakDayState'}
+    Progress:
+      type: object
+      required: [total, level, levelStart, nextLevelAt, weekPoints, streak, unseen]
+      properties:
+        total: {type: integer}
+        level: {type: integer}
+        levelStart: {type: integer, description: Points where this level began.}
+        nextLevelAt: {type: integer}
+        weekPoints: {type: integer, description: This ISO week's points as the board counts them.}
+        streak: {$ref: '#/components/schemas/StreakState'}
+        unseen:
+          type: object
+          required: [count, origin, items]
+          properties:
+            count: {type: integer}
+            origin: {$ref: '#/components/schemas/BadgeOrigin'}
+            items:
+              type: array
+              description: The newest five.
+              items: {$ref: '#/components/schemas/BadgeAward'}
+    PointsEventItem:
+      type: object
+      required: [id, kind, points, day, at, revocation]
+      properties:
+        id: {type: string, format: uuid}
+        kind:
+          type: string
+          description: >-
+            episode, movie_finished, book_finished, album_finished, season_bonus, scrobble_bonus,
+            book_progress, listen, room_attended, friend_added, import_first, streak_milestone
+        points: {type: integer}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        day: {type: string, format: date}
+        at: {type: string, format: date-time}
+        revocation: {type: boolean, description: Points taken back by an undo or a short friendship.}
+    PointsPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/PointsEventItem'}
+        nextBefore: {type: string, format: date-time}
+    LeaderboardEntry:
+      type: object
+      required: [user, points, rank, you]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        points: {type: integer}
+        rank: {type: integer, description: Equal points share a rank.}
+        you: {type: boolean}
+    Leaderboard:
+      type: object
+      required: [week, from, until, optedIn, entries]
+      properties:
+        week: {type: string}
+        from: {type: string, format: date}
+        until: {type: string, format: date}
+        optedIn: {type: boolean}
+        entries:
+          type: array
+          items: {$ref: '#/components/schemas/LeaderboardEntry'}
     ActivityItem:
       type: object
       required: [id, user, title, day, episodes, finished, at]
@@ -4312,6 +4605,41 @@ components:
         libraryItemId: {type: string, format: uuid}
         title: {$ref: '#/components/schemas/TitleSummary'}
         runtimeMinutes: {type: integer}
+    TonightPick:
+      type: object
+      required: [libraryItemId, title, kind, reason, airTimeKnown]
+      properties:
+        libraryItemId: {type: string, format: uuid}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        kind:
+          type: string
+          enum: [continue, airing, reading, start]
+          description: >-
+            continue: the next aired episode of a show in progress. airing: an episode airing
+            today. reading: a book in progress. start: a wishlist film.
+        episode: {$ref: '#/components/schemas/EpisodeRef'}
+        episodeName: {type: string}
+        minutes: {type: integer}
+        airsAt: {type: string, format: date-time}
+        airTimeKnown: {type: boolean}
+        reason:
+          type: string
+          description: Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min".
+    Tonight:
+      type: object
+      required: [day, picks]
+      properties:
+        day: {type: string, format: date, description: The local day the strip is for.}
+        picks:
+          type: array
+          items: {$ref: '#/components/schemas/TonightPick'}
+    TonightFeedback:
+      type: object
+      required: [verdict]
+      properties:
+        verdict:
+          type: string
+          enum: [rejected, not_tonight]
     UpNext:
       type: object
       required: [continueWatching, startWatching]

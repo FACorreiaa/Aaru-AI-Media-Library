@@ -3,11 +3,25 @@ import Foundation
 
 /// BRD-001: the friends-only Board. A post is visible to its author and to the author's
 /// friends, unless either side blocked the other.
-struct BoardService: Sendable {
+/// A class, not a struct: it holds a whole `Stores` and a `LibraryService`, and inline in `Services`
+/// it pushed the router's setup past the test threads' stack in debug builds.
+final class BoardService: Sendable {
     let stores: Stores
     let resolver: TitleResolver
     let library: LibraryService
-    var now: @Sendable () -> Date = { Date() }
+    let now: @Sendable () -> Date
+
+    init(
+        stores: Stores,
+        resolver: TitleResolver,
+        library: LibraryService,
+        now: @escaping @Sendable () -> Date = { Date() }
+    ) {
+        self.stores = stores
+        self.resolver = resolver
+        self.library = library
+        self.now = now
+    }
 
     static let maxBodyLength = 4000
     static let defaultPageSize = 20

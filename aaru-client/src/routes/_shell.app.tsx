@@ -7,8 +7,10 @@ import {
   createMemo,
   createSignal,
   lazy,
+  onCleanup,
   onMount,
 } from 'solid-js'
+import { OwlMark } from '../components/Brand'
 import { DiscoverRows } from '../components/DiscoverRows'
 import { LastImportCard } from '../components/LastImportCard'
 import { Medallion } from '../components/Medallion'
@@ -23,6 +25,9 @@ import {
 } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { WeekStripCard } from '../components/WeekStripCard'
+import { ProgressStrip } from '../components/achievements/ProgressStrip'
+import { PROGRESS_KEY } from '../lib/achievements/keys'
+import type { Progress } from '../lib/achievements/model'
 import {
   AiringCard,
   ContinueCard,
@@ -54,7 +59,20 @@ import type {
   UpNext,
   WeekStrip,
 } from '../lib/home/model'
-import { airingToday, composeTonight, fieldLine } from '../lib/home/tonight'
+import {
+  airingToday,
+  composeTonight,
+  fieldLine,
+  pickMarkable,
+  rankedTonight,
+} from '../lib/home/tonight'
+import { recalledTonight, rememberTonight } from '../lib/home/tonight-cache'
+import type {
+  RankedTonight,
+  TonightPick,
+  TonightVerdict,
+} from '../lib/home/tonight'
+import { getTonight, sendTonightFeedback } from '../lib/home/server'
 import { daypartHeading } from '../lib/appearance'
 import type { ImportJob } from '../lib/imports/server'
 import { upsert } from '../lib/library/model'
@@ -81,6 +99,7 @@ import {
   libraryQuery,
   listsQuery,
   pendingPlansQuery,
+  progressQuery,
   upNextQuery,
 } from '../lib/queries'
 import type { QueryClient } from '@tanstack/solid-query'
@@ -138,6 +157,7 @@ function startReads(queryClient: QueryClient, current: Date) {
   void queryClient.query(pendingPlansQuery).catch(ignore)
   void queryClient.query(importsQuery).catch(ignore)
   void queryClient.query(libraryQuery).catch(ignore)
+  void queryClient.query(progressQuery).catch(ignore)
   void queryClient
     .query(myStatsQuery({ span: 'last7', tz: viewerTimeZone() }))
     .catch(ignore)
@@ -175,8 +195,13 @@ function Home() {
   const [entries, setEntries] = createSignal<LibraryEntry[]>([])
   const [plans, setPlans] = createSignal<AgentPlan[]>([])
   const [lastImport, setLastImport] = createSignal<ImportJob | null>(null)
+  const [progress, setProgress] = createSignal<Progress | null>(null)
   const [playing, setPlaying] = createSignal<NowPlayingItem[]>([])
   const [playingAt, setPlayingAt] = createSignal(new Date())
+  /** The server's Tonight (AG-005); used only on the day it names. */
+  const [ranked, setRanked] = createSignal<RankedTonight | null>(null)
+  /** Tonight picks set aside here since the last Tonight load. */
+  const [shelved, setShelved] = createSignal<ReadonlySet<string>>(new Set())
   /** Sessions marked watched here: the player may still report them for a while. */
   const [setAside, setSetAside] = createSignal<ReadonlySet<string>>(new Set())
   let libraryRequested = false
@@ -329,6 +354,16 @@ function Home() {
     }
   }
 
+  /** Level and streak (GAM-002/003). The unlock watcher refreshes the cache after a write; the
+   * strip follows it. A failure just leaves the strip out. */
+  async function loadProgress() {
+    try {
+      setProgress(await queryClient.query(progressQuery))
+    } catch {
+      setProgress(null)
+    }
+  }
+
   async function loadLists() {
     try {
       setLists(await queryClient.query(listsQuery))
@@ -337,16 +372,65 @@ function Home() {
     }
   }
 
+  /** Tonight as the server ranks it. A failure keeps the last answer; Tonight falls back to
+   * the browser's composition once its day has passed. */
+  async function loadTonight() {
+    try {
+      const answer = await getTonight({ data: { tz: viewerTimeZone() } })
+      setRanked(answer)
+      setShelved(new Set<string>())
+      rememberTonight(answer)
+    } catch {
+      // The cached answer, or the composition, stands.
+    }
+  }
+
+  /** "Not tonight" or "Not for me": the card moves on at once, then Tonight loads again. */
+  async function setAsideTonight(pick: TonightPick, verdict: TonightVerdict) {
+    const id = pick.entry.libraryItemId
+    if (shelved().has(id)) return
+    setProblem(null)
+    setShelved((current) => new Set([...current, id]))
+    try {
+      await sendTonightFeedback({
+        data: { id, verdict, tz: viewerTimeZone() },
+      })
+    } catch (err) {
+      setShelved((current) => {
+        const next = new Set(current)
+        next.delete(id)
+        return next
+      })
+      setProblem(
+        err instanceof Error ? err.message : 'That could not be set aside.',
+      )
+      return
+    }
+    void loadTonight()
+  }
+
   onMount(async () => {
     const current = new Date()
     setNow(current)
     const today = localDayKey(current)
+    setRanked(recalledTonight(today))
+    void loadTonight()
     void loadStrip()
     void loadDiscover()
     void loadPlans()
     void loadLists()
     void loadLastImport()
     void loadNowPlaying()
+    void loadProgress()
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (
+        event.type === 'updated' &&
+        event.action.type === 'success' &&
+        event.query.queryKey[0] === PROGRESS_KEY[0]
+      )
+        setProgress(event.query.state.data as Progress)
+    })
+    onCleanup(unsubscribe)
     loadLibrary()
     try {
       setAirings(await queryClient.query(calendarQuery(airingWindow(today))))
@@ -376,10 +460,18 @@ function Home() {
     return current ? airingBadge(entry, current) : null
   }
 
-  // Continue watching alone needs no clock, so the server draws Tonight's lead too; today's
-  // airings join in the browser.
+  // The server's answer for today when there is one. Without it, Continue watching alone needs
+  // no clock, so the server draws Tonight's lead too; today's airings join in the browser.
   const tonight = createMemo(() => {
     const away = playingItems()
+    const answer = ranked()
+    const current = now()
+    if (answer && current && answer.day === localDayKey(current))
+      return rankedTonight(
+        answer,
+        continuing(),
+        new Set([...away, ...shelved()]),
+      )
     return composeTonight(
       continuing().filter((e) => !away.has(e.libraryItemId)),
       airings().filter((a) => !away.has(a.libraryItemId)),
@@ -389,7 +481,7 @@ function Home() {
   /** The show Tonight leads with leaves Continue watching, so no card shows twice. */
   const tonightItem = () => {
     const pick = tonight()?.primary
-    return pick?.kind === 'continue' ? pick.entry.libraryItemId : null
+    return pick ? (pickMarkable(pick)?.libraryItemId ?? null) : null
   }
   const continuingRow = createMemo(() =>
     continuing().filter(
@@ -473,6 +565,7 @@ function Home() {
         a.number === entry.next.number,
     )
     if (match) setAirings((rows) => withWatched(rows, match, true))
+    void loadTonight()
     try {
       showUpNext(await freshUpNext())
     } catch {
@@ -486,9 +579,13 @@ function Home() {
     <div class="atmos flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <div class="mt-6 flex items-start justify-between gap-4">
-          <h1 class="font-display text-4xl font-medium tracking-tight md:text-5xl">
-            The Field
-          </h1>
+          {/* Aaru at rest beside the page's name (owner, 2026-10-23): idle, never "working". */}
+          <div class="flex min-w-0 items-center gap-3 md:gap-4">
+            <OwlMark idle class="size-12 md:size-14" />
+            <h1 class="font-display text-4xl font-medium tracking-tight md:text-5xl">
+              The Field
+            </h1>
+          </div>
           {/* The way to the profile, as on the Apple apps' Home (owner, 2026-10-22). */}
           <Link
             to="/app/profile"
@@ -529,11 +626,11 @@ function Home() {
               {(picked) => (
                 <TonightStrip
                   tonight={picked()}
-                  busy={
-                    picked().primary.kind === 'continue' &&
-                    busy().has(picked().primary.entry.libraryItemId)
-                  }
+                  busy={busy().has(picked().primary.entry.libraryItemId)}
                   onWatched={(entry) => void markWatched(entry)}
+                  onSetAside={(pick, verdict) =>
+                    void setAsideTonight(pick, verdict)
+                  }
                 />
               )}
             </Show>
@@ -569,6 +666,9 @@ function Home() {
               </section>
             </Show>
             <div class="order-4 mt-10 flex flex-col gap-4 lg:mt-0">
+              <Show when={progress()}>
+                {(current) => <ProgressStrip progress={current()} />}
+              </Show>
               <Show when={lastImport()}>
                 {(job) => <LastImportCard job={job()} />}
               </Show>

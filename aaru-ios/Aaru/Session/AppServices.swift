@@ -13,6 +13,8 @@ final class AppServices {
     /// The models behind Settings' pages.
     let settings: SettingsServices
     let groups: GroupsModel
+    /// Level, streak, badges and the unlock toast (GAM-001…005), read after every library write.
+    let progress: ProgressModel
     /// The `/v1/ws` socket (GRP-006): open while signed in and active.
     let realtime: RealtimeClient
     #if os(iOS)
@@ -40,12 +42,15 @@ final class AppServices {
         settings = SettingsServices(api: api)
         realtime = RealtimeClient(baseURL: AppEnvironment.apiBaseURL) { session.token }
         groups = GroupsModel(api: api, realtime: realtime)
+        let progress = ProgressModel(api: api)
+        self.progress = progress
         #if os(iOS)
             push = PushRegistrar(api: api)
             PushRegistrar.current = push
             liveActivities = LiveActivityRegistrar(api: api)
             LiveActivityRegistrar.current = liveActivities
         #endif
+        library.onWrite = { progress.refreshSoon() }
     }
 
     /// What Settings' pages need, for the Mac Settings scene (the main window builds its own).

@@ -1,3 +1,4 @@
+import { OwlEmpty } from './Brand'
 import { Link } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import { kindOf } from '../lib/library/model'
@@ -72,9 +73,11 @@ export function FriendActivity(props: { page: ActivityPage; me?: string }) {
       <Show
         when={items().length > 0}
         fallback={
-          <p class="mt-2 text-sm text-muted">
-            Nothing from your friends in the last two weeks.
-          </p>
+          <OwlEmpty
+            size="sm"
+            as="p"
+            title="Nothing from your friends in the last two weeks."
+          />
         }
       >
         <ul class="mt-2 divide-y divide-line">

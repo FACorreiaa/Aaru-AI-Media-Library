@@ -192,15 +192,22 @@ extension ImportService {
         }
         ops += try await listOps(listMembers, userID: userID)
         job.stats = Self.stats(rows)
+        var action: ActionRecord?
         if !ops.isEmpty {
-            try await stores.library.apply(
+            action = try await stores.library.apply(
                 .batch(ops), userID: userID, actor: .user, kind: "import",
                 summary: Self.summary(job.source, stats: job.stats)
             )
         }
         job.state = job.stats.unmatched > 0 ? .partial : .succeeded
         job.updatedAt = now()
+        job.actionID = action?.id
         try await stores.importJobs.savePlan(job, rows: rows)
+        await GamificationService(stores: stores, now: now).batchApplied(
+            userID,
+            actionID: action?.id,
+            firstImport: true
+        )
         return job
     }
 

@@ -15,6 +15,8 @@ struct PlanCardView: View {
 
     @State private var model: PlanModel
     @Environment(AppRouter.self) private var router
+    /// Nil in previews.
+    @Environment(ToastCenter.self) private var toasts: ToastCenter?
 
     init(
         api: Client,
@@ -80,10 +82,18 @@ struct PlanCardView: View {
         .background(Color(.surface), in: RoundedRectangle(cornerRadius: 20))
     }
 
+    /// An approval is one action, so the toast that follows it offers Undo (DESIGN.md §9).
     private func decide(approve: Bool) {
         Task {
-            if let decided = await model.decide(approve: approve) {
-                onDecided(decided)
+            guard let decided = await model.decide(approve: approve) else { return }
+            onDecided(decided)
+            guard decided.status == .applied, let actionID = decided.actionId else { return }
+            toasts?.show("Applied: \(decided.summary)") {
+                let problem = await model.takeBack(actionID)
+                if problem == nil {
+                    onDecided(decided)
+                }
+                return problem
             }
         }
     }
@@ -145,6 +155,7 @@ struct PlanSheet: View {
                     ProgressView()
                 }
             }
+            .undoToast()
             .navigationTitle("Request")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done", action: onDone) }

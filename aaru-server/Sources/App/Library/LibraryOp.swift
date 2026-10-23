@@ -62,11 +62,18 @@ struct Caller: Sendable, Equatable {
     var actor: Actor
     var agentTokenID: UUID?
     var agentName: String?
+    /// The write came from a player (Stremio or the browser extension): it earns the scrobble
+    /// bonus on top (GAM-001).
+    var scrobbled = false
 
     static let user = Caller(actor: .user)
 
     static func agent(_ token: AgentToken) -> Caller {
-        Caller(actor: .externalAgent, agentTokenID: token.id, agentName: token.name)
+        let group = token.kind.group
+        return Caller(
+            actor: .externalAgent, agentTokenID: token.id, agentName: token.name,
+            scrobbled: group == .stremio || group == .scrobble
+        )
     }
 
     func summary(_ text: String) -> String {

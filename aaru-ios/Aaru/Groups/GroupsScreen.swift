@@ -225,10 +225,9 @@ private struct GroupsSplit: View {
                     .inspectorColumnWidth(min: 220, ideal: 260, max: 320)
             }
         } else {
-            ContentUnavailableView(
-                "Pick a channel",
-                systemImage: "number",
-                description: Text("Talk about what you're watching, reading and listening to.")
+            OwlUnavailableView(
+                title: "Pick a channel",
+                message: "Talk about what you're watching, reading and listening to."
             )
             .background(Color(.paper))
         }

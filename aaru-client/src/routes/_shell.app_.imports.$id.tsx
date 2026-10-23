@@ -4,7 +4,9 @@ import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { Button } from '~/components/ui'
 import { ResolveRowDialog } from '../components/ResolveRowDialog'
 import { lastShown } from '../lib/presence'
+import { offerUndo } from '../components/undo-toast'
 import {
+  appliedMessage,
   importSteps,
   isWorking,
   sourceLabel,
@@ -77,8 +79,14 @@ function ImportPage() {
     setApplying(true)
     setProblem(null)
     try {
-      await applyImport({ data: { id: job().id } })
+      const applied = await applyImport({ data: { id: job().id } })
       setDetail(await getImport({ data: { id: job().id } }))
+      // The whole import is one action, so the toast offers Undo.
+      if (applied.actionId) {
+        offerUndo(appliedMessage(applied.stats), applied.actionId, () => {
+          void getImport({ data: { id: applied.id } }).then(setDetail)
+        })
+      }
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'The import was not applied.',

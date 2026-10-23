@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/solid-router'
+import { OwlEmpty } from '../components/Brand'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import {
   Match,
   Show,
@@ -125,9 +126,18 @@ function Insights() {
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
-        <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
-          Insights
-        </h1>
+        <div class="mt-6 flex items-baseline justify-between gap-4">
+          <h1 class="font-display text-4xl font-medium tracking-tight">
+            Insights
+          </h1>
+          {/* GAM-004: Achievements opens from here, Home's strip and Friends. */}
+          <Link
+            to="/app/achievements"
+            class="shrink-0 text-sm font-semibold text-accent hover:underline"
+          >
+            Achievements →
+          </Link>
+        </div>
 
         <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
           <Segmented
@@ -190,17 +200,19 @@ function Insights() {
                 when={!isEmpty(stats())}
                 fallback={
                   <>
-                    <p class="mt-10 text-muted">
-                      {period()?.span === 'all'
-                        ? 'Nothing tracked yet.'
-                        : period()?.span === 'last7'
-                          ? 'Nothing tracked in the last 7 days.'
-                          : period()?.span === 'last30'
-                            ? 'Nothing tracked in the last 30 days.'
-                            : `Nothing tracked in ${insightsLabel(period() ?? { span: 'all' })} yet.`}{' '}
-                      Tick an episode or finish a title, and it will show up
-                      here.
-                    </p>
+                    <OwlEmpty
+                      class="mt-6"
+                      title={
+                        period()?.span === 'all'
+                          ? 'Nothing tracked yet.'
+                          : period()?.span === 'last7'
+                            ? 'Nothing tracked in the last 7 days.'
+                            : period()?.span === 'last30'
+                              ? 'Nothing tracked in the last 30 days.'
+                              : `Nothing tracked in ${insightsLabel(period() ?? { span: 'all' })} yet.`
+                      }
+                      body="Tick an episode or finish a title, and it will show up here."
+                    />
                     {music(stats())}
                   </>
                 }

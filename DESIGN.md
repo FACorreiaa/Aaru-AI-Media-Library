@@ -19,12 +19,12 @@ Keep a **canvas** beside intent so work does not die in the scroll.
 ## 0. Welcome (signed out)
 
 The app's landing screen, and the web landing page's twin. Mascot on its disc, wordmark, one
-serif headline, three plain pillars (one library, private by default, bring your history), then
+display headline, three plain pillars (one library, private by default, bring your history), then
 Sign in with Apple and Continue with email pinned to the bottom on iPhone. Side by side on iPad
 and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`.
 
 The web landing (`src/routes/index.tsx`, owner 2026-10-20) is centred: a privacy pill, the
-serif headline, Get started, then App Store and Google Play buttons at equal weight ("Coming
+display headline, Get started, then App Store and Google Play buttons at equal weight ("Coming
 soon" until a listing exists; URLs in `src/lib/site.ts`). Below sits a still fan of real
 posters (`PosterFan`) that fades into the page; it enters once and never sways. Then one card
 per thing tracked (TV shows, movies, anime, books, music, sports), each with a small fan of
@@ -54,14 +54,14 @@ Poster grids exist, but they are an artifact you ask for ("show my 2024 films"),
 default chrome.
 
 Inspiration: Apple TV "Up Next" + Things 3 today list + Copilot canvas.
-Mood: reed field at dusk, teal/gold, lots of air.
+Mood: a lit room at night, navy with ice-blue light and amber edges, lots of air.
 
 **Built 2026-10-21 (web, iPhone, iPad, Mac), in the Mindspace language below:** the page is
 headed "The Field" with one line of when it is and what is live ("Tuesday evening · 3 in
 progress · 2 airing today"). **Tonight** (§5) leads, then the user's rows, then Discover. On a
 wide screen (web ≥1024px, iPad and Mac at regular width) a side column holds what Aaru is doing
 for the user: requests waiting for an answer, the **last import** (collapsed `JobLedger`, the
-heron while it matches, opens the import), the last 7 days, status counts, the recap banner and
+owl while it matches, opens the import), the last 7 days, status counts, the recap banner and
 the user's lists. On a phone the same blocks follow the rows. The composer is still M13; the
 nav label stays "Home".
 
@@ -129,7 +129,7 @@ previous/next. Only the season holding the next episode starts open. A title tha
 says so with a retry, never an endless spinner.
 
 **An album's room (MUS-001, 2026-10-21)** is an album page, not a season map: a big square
-cover with almost no chrome, the title in the serif, the artist under it in muted, the year,
+cover with almost no chrome, the title in the display face, the artist under it in muted, the year,
 genre chips, the same status / rating / notes as any title, then the tracklist (number, name,
 length in tabular figures; "Disc 1"… only when there is more than one). No playback and no
 ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not available yet".
@@ -137,7 +137,7 @@ ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not av
 **Built 2026-10-21 (web, iPhone, iPad, Mac):** the room opens on a hero: the title's backdrop
 under a veil that fades into Paper (or, without art, the room's own reed code, seeded by the
 title id so each room has its rhythm), the poster standing over the hero's lower edge, the name
-in Newsreader. One row of next steps sits under it: **Mark S4 · E3 watched** for a show with an
+in the display face. One row of next steps sits under it: **Mark S4 · E3 watched** for a show with an
 aired, unwatched episode, then the status in the kind's words. On a wide screen the title's
 layer (About for films and books, the tracklist, the season map and seasons) is the main column
 and the user's layer (rating, owned, page, notes; About for shows) a side column; on a phone
@@ -161,6 +161,15 @@ only real fields (runtime, episodes left, "Last one aired", air time, premiere/f
 Mark watched (the same write as the Continue card) and Open; no reject and no "not tonight"
 until the agent composes it. Same rule on the web (`lib/home/tonight.ts`) and Apple
 (`Home/Tonight.swift`).
+
+**Server-composed, client fallback (2026-10-23, AG-005):** the Field now shows
+`GET /v1/tonight` for the viewer's local day: shows in progress, today's airings, books in
+progress and wishlist films, ranked on the server with template reasons. The last answer is
+kept (Home's cache on Apple, `localStorage` on the web, cleared on sign-out), so Tonight opens
+offline. The device composes it as above only when no answer for today exists. Each pick has
+"Not tonight" (gone for the day) and "Not for me" (ranked lower for 14 days): buttons on the
+web, a "…" menu and a context menu on Apple. The card moves on at once, then Tonight loads
+again. Mark watched shows only when the pick is a show's next episode.
 
 ## 6. The shelf (library as query, not as app section)
 
@@ -378,7 +387,7 @@ destination on iPad, Mac and the web (§18).
 
 **Seasons (DISC-002, 2026-10-21).** A Today | Seasons control sits under the title (pinned under
 the large title on iPhone, in the toolbar on the Mac). Seasons shows one season as an object:
-its name in the display serif as the headline ("Fall 2026"), "Oct – Dec · 84 anime" under it in
+its name in the display face as the headline ("Fall 2026"), "Oct – Dec · 84 anime" under it in
 muted, a step to the season either side (a swipe across the name on iPhone), then the kind
 switch (Anime · New shows · Returning · Movies) and a poster grid, popular first, with "Show
 more" rather than endless scroll. A new season comes in from the side it lies on (about 200 ms,
@@ -389,7 +398,7 @@ real poster size stand in: nothing shimmers. A provider that is down says so on 
 absent while the server has no concert provider. Two sections: "Your artists on tour" (artists of
 the user's own albums, like the calendar, so not a recommendation) and "Near <city>" with "Use my
 location" and a 25 · 50 · 100 km switch. A date-led list: each row opens with a ticket-stub date
-block (the day large in the display serif, month and weekday small), then the act, "venue ·
+block (the day large in the display face, month and weekday small), then the act, "venue ·
 city" in muted, "distance · time", and "Tickets ↗" out to Ticketmaster. Aaru never sells, holds
 or prices a ticket. Dates and times are the venue's, never converted. On iPhone and Mac a List |
 Map switch shows the searched area as a circle on a map; the web is list only. "Use my location"
@@ -526,7 +535,7 @@ does not take within five seconds is revoked. Then: "Connected. You can close th
 The extension draws nothing inside the streaming sites. Its toolbar badge is the only signal:
 ✓ matched, ? not matched, ! connect again. Its popup shows what is playing now and what Aaru
 matched it to, the last few plays with their result (marked, finished, not matched), and
-Connected · Disconnect, in Aaru's paper and ink with the display serif for the title.
+Connected · Disconnect, in Aaru's paper and ink with the display face for the title.
 
 ## 16. Widgets (Phase 2)
 
@@ -542,7 +551,9 @@ ships.
   (episodes, movies, a YouTube video, a track), progress plus "Ends at". "Now watching" (one
   episode) remains for a check-in started by hand.
 - **Listening** (S / M, MUS-001) — square covers of albums in progress; a tap opens the album.
-- **Streak** (Phase 5) — current streak and this week's ticks.
+- **Streak** (WID-007, pulled forward 2026-10-22) — small and Lock Screen accessory: a flame,
+  the day count and the last seven days as bars. It flips at local midnight from the snapshot
+  with the app closed, using AaruCore's `Streak` rule.
 - **macOS** — the same widgets on the desktop and in Notification Center. Almost no tracker
   ships Mac widgets.
 
@@ -559,14 +570,15 @@ ship before the Phase 2 gate.
 - **Profile and stats** (`ProfilePanel`, pulled forward 2026-10-22 without badges) — MAL-style
   all-time numbers, private to you: a medallion at the leading end of Home's toolbar (iOS, as a
   sheet) and of Home's heading (web, `/app/profile`) opens it. In order: name, @handle and "In
-  Aaru since"; the time in days and hours in the display serif, with hours and episodes under;
+  Aaru since"; the time in days and hours in the display face, with hours and episodes under;
   four tiles (shows watched · watching, anime, films, books read); where the time went (TV,
   anime, films, one stacked bar); the top eight genres; the three titles with the most time;
   networks; mean score and the ratings histogram; then Insights and Recap. It counts the library
   as it is, undated ticks included, and says so ("Includes episodes without a watch date").
-  Static, like §13b. Badges (`BadgeShelf`) stay in Phase 5.
-- **Badges** (`BadgeShelf`, Phase 5) — discovery badges and milestone badges, tiered.
-- **Leaderboard** (Phase 5) — friends only, weekly, opt-in. Never global.
+  Static, like §13b. Badges (`BadgeShelf`) live on Achievements (below).
+- **Badges** (`BadgeShelf`, pulled forward 2026-10-22) — discovery badges and milestone badges,
+  tiered. See "Achievements" below.
+- **Leaderboard** (pulled forward 2026-10-22) — friends only, weekly, opt-in. Never global.
 - **Watch channel** (`WatchPanel`, with groups since 2026-10-20; was the Phase 6 Room) — watch
   together inside a group: countdown to "press play", who is in, reactions, drift from
   scrobbles ("Ana is 2 min ahead"), and "Mark watched for me" at the end.
@@ -586,7 +598,7 @@ poster, and Earlier for more. No unread badge and no push: you visit it. Below c
 requests, friends and blocks.
 
 A friend's profile is shelf first, like visiting someone's shelf. A monogram, their name in the
-serif face, "@ana · Friends since October 2026" and "42 films · 12 shows · 8 books". Then
+display face, "@ana · Friends since October 2026" and "42 films · 12 shows · 8 books". Then
 Watching (covers with "S2 · E4" or "Page 120"), a "You both" card (titles you both want, how many
 you both finished, what they loved that you haven't), and Recently finished with their stars. A
 friend who hides their library shows only the header and one line saying so.
@@ -601,7 +613,7 @@ also offers Invite to a group, through the group invites that already exist.
 ### Invites (SOC-002, pulled forward 2026-10-21)
 
 A friend invite is a letter, not a growth hack. The page or sheet it opens shows the mascot
-medallion, "{Name} invited you to Aaru." in the serif display face, their handle, and, when the
+medallion, "{Name} invited you to Aaru." in the display face, their handle, and, when the
 invite carries a title, its poster with "Watch Arrival with me." and a switch to add it to Plan
 to watch (on by default; the friend's tap is the consent). One ink button: Join Aaru when signed
 out, Add {Name} as a friend when signed in. One line under it: your library stays private,
@@ -610,6 +622,37 @@ only friends see it. A spent, expired or revoked link says so plainly, with no d
 The sender invites from Friends: "Invite a friend", or "Invite to watch something together"
 through the title picker. The link opens the share sheet (copied to the clipboard on desktop
 web), and open invites list what they say, the days left, and Revoke.
+
+### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
+
+Achievements are a shelf of medallions you fill by living with your library, not a game layered
+over it. Calm first: nothing shouts, nothing counts down at you.
+
+- **Where it lives.** Achievements is not a destination (like Recap and Listens). It opens from
+  the Home strip (`StreakBar` with the level), the "You" card at the top of Friends, and
+  Insights. Web: `/app/achievements`. Apple: pushed from those three.
+- **The page.** Level and points to the next level on top, then `StreakBar`, then the badges by
+  family (Films, Shows, Anime, Books, Music, Ratings, Lists, Imports, Discovery, Streaks,
+  Social). Earned medallions first in each family, then the rest with "62 / 100" under them.
+  A hidden badge not yet earned is a blank medallion reading "???" with no hint. "How you
+  earned it" opens the points ledger, newest first.
+- **Medallions.** A round mark with the badge's glyph. Tier 1 a Stone ring, tier 2 an Ink ring,
+  tier 3 a gold hairline, tier 4 a double gold hairline (the Mindspace gold rule: gold is edge
+  light and never fills). Names in the display face; tier as "Bronze · Silver · Gold · Platinum" in a
+  small eyebrow. Unearned medallions are Stone at reduced contrast that still passes AA for
+  their text.
+- **The unlock.** A quiet toast at the bottom (web) or top (Apple): the medallion, "Night Owl ·
+  earned", tap to open the shelf. A success haptic on iPhone. Reaching a badge's top tier gets
+  one full card, once, with the medallion settling into place (`motion/mini` on the web, a
+  spring on Apple; a cross-fade under Reduce Motion). Several at once collapse into one toast
+  ("3 badges earned"); an import or the first-run backfill is always one summary ("Your history
+  earned you 14 badges"). No push.
+- **On a friend's profile.** Under the header: level and a single row of their most recent
+  badges, "See all" for the rest (`BadgeShelf`). Hidden when they turned the switch off; badges
+  about notes and owned items are never shown.
+- **The board.** On Friends, "This week": you and friends who joined, ranked by this week's
+  points, your row marked. Before you join, one card explains it and offers "Join the board".
+  No global board, no all-time board.
 
 ### Groups (GRP-004/005, pulled forward 2026-10-20)
 
@@ -638,11 +681,11 @@ thing being talked about.
   and a tap to reveal. It never shows a spoiler by default.
 
 **Composer.** One box, auto-growing. Enter sends and Shift+Enter adds a line. `@` suggests
-members, with Aaru first, wearing the medallion. A sent message appears at once, dimmed until
+members, with Aaru first, wearing the owl. A sent message appears at once, dimmed until
 the server confirms, and gets a retry if it fails.
 
 **Aaru in a group.** Aaru speaks only when tagged, as a member row with the medallion. While
-it works, the heron breathes in its row ("Aaru is thinking…"), never bouncing dots. Its answer
+it works, the owl breathes in its row ("Aaru is thinking…"), never bouncing dots. Its answer
 is short text plus catalog cards (`TitleCard`, `CalendarRow`, `Shelf`). Every button on a card
 acts for whoever taps it. Aaru never adds anything for the group on its own.
 
@@ -656,7 +699,7 @@ Spotify Wrapped's shape, Aaru's calm. One full-screen card at a time: intro, tim
 episodes with a month (or day) bar chart, the top title, the top five, what was finished, the
 longest run of days, ratings, the first and last title, and a summary that shares an image.
 A card with nothing to say is left out, and an empty period gets a sentence, not a story.
-Backdrops cycle Ink, accent and Surface; type is the serif display face.
+Backdrops cycle Ink, accent and Surface; type is the display face.
 
 The Year in Review (GAM-006e, 2026-10-21) adds, for a year only: the biggest day after the
 episodes chart; a soft glow of the top title's own poster behind it (blurred, on screen only);
@@ -690,7 +733,7 @@ On the web, one component library, then performance:
   cmdk-solid, somoto, unovis and solid-table where the registry uses them) and are imported
   only through the `~/components/ui` barrel. One `cn` (`tailwind-merge` + `clsx`, in
   `~/lib/utils`), `cva`/`cx` as the registry ships them (`~/lib/cva`). shadcn's CSS variables
-  are Aaru's tokens, so `bg-primary` is the teal and a menu's highlighted row is teal with
+  are Aaru's tokens, so `bg-primary` is the accent and a menu's highlighted row is accent with
   on-accent text, the way a system menu highlights; Aaru's own looks (pill buttons at 44 pt,
   `quiet`/`ink`/`soft`, segment chips) are variants on those components.
 - **Enter and exit from `tw-animate-css`.** Kobalte overlays animate with its
@@ -767,7 +810,7 @@ new import source or connected app joins its page; it never gets a page of its o
 | # | Page | Web slug | Sections, in order |
 | --- | --- | --- | --- |
 | 1 | Account | `account` | Name and handle (one editor) · Signed in with, Link Google · On this device: Appearance (System / Light / Dark) · Sign out |
-| 2 | Friends & privacy | `friends` | Add a friend · Asking you · Waiting on · Friends · Blocked · Location: Concerts near, Remove (only while concerts are on). Footer: "Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private." |
+| 2 | Friends & privacy | `friends` | Add a friend · Asking you · Waiting on · Friends · Blocked · Show my badges and level to friends · Join the weekly friends board (2026-10-22) · Location: Concerts near, Remove (only while concerts are on). Footer: "Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private." |
 | 3 | Notifications | `notifications` | New episodes · Mentions in groups · Group invites · this browser's alerts (web). Footer: "Requests from your connected agents always alert you." The switches are per account, so the Mac shows them too: "Alerts go to your iPhone and your browsers." |
 | 4 | Import | `import` | Trakt · Bring your history, in `CLAUDE.md`'s import order: Stremio history, IMDb, Letterboxd, Goodreads, Pogdesign CAT, Netflix, MyAnimeList, AniList, Any other CSV · Imports (the jobs; "No imports yet." when none) |
 | 5 | Connections | `connections` | Agents: the picker (Claude, Claude Code, Codex, Hermes, Gemini CLI, other MCP client, Browser extension) and live connections · Stremio: the addon, with "Import your Stremio history" linking to Import · Music: scrobblers, the last listen → Listens. One verb: Disconnect |
@@ -923,49 +966,83 @@ looking like Aaru.
 | Cursor / Copilot canvases | Plan → work → artifact, not chat log |
 | Linear | Command palette as a peer of the mouse |
 
-Brand: teal → gold, paper-white or deep reed-green dark mode. Assets and how they are made:
-`docs/brand/README.md`. Colour tokens (`Paper`, `Surface`, `Stone`, `Ink`, `Muted`, `Medallion`,
-accent teal, `Gold`, `Agent`, `Line`, `Danger`) are generated into the asset catalogs and
-`aaru-client/src/tokens.css` from one file, `design/tokens.json` (see "Mindspace" below). The
-mascot (a small teal bird with books and a film reel) is the app icon (cropped to the face, on
-deep teal; chosen 2026-10-21) and otherwise appears on signed-out surfaces only, always on a paper
-disc. The heron only as a quiet mark when the agent is working (breathing reed, not a bouncing
-dots spinner).
+### Brand (owl poster, owner 2026-10-22)
 
-### Mindspace (visual language, 2026-10-21)
+The standard is the poster `docs/brand/source/owl-poster.png` ("Aaru Owl: Your stories. Your
+world."). It supersedes the teal bird, the reeds and the heron. Every client follows it; when a
+branch conflicts with main on a brand file (`design/tokens.json`, the generated tokens, colour
+sets, brand assets), main wins.
 
-Aaru is a constructed room for stories: a warm, lit interior with something quietly computed
-about it. Calm and editorial first; the uncanny is a texture, never an effect. No franchise
-look, no cyberpunk, no glitching or "broken AI" UI.
+- **Palette.** Night navy (`paper` dark `#0e141e`), silver-white ink, **ice blue** as the accent
+  (the hologram's colour: actions, links, selection, focus) and **amber** as `gold` (the star and
+  the owl's glow: edge light only). Light mode is derived from it: silver-white paper, navy ink,
+  deeper blue and amber that pass AA. Dark-first in the art; both follow the system unless the
+  Appearance setting pins one.
+- **Type.** The system sans for everything (SF Pro on Apple, `system-ui` on the web), headings
+  set apart by weight and size. No bundled or serif faces. The wordmark is the poster's geometric
+  "Aaru", used as artwork, never set in a font.
+- **Mark and icon.** The A with the amber star and the swoosh. The app icon is that mark on
+  night navy.
+- **Mascot.** The white and amber robot owl, always on the `night` disc (the poster's sky, the
+  same in both appearances, so the white owl reads). Its head on the same disc is the agent's
+  mark (`OwlMark` on the web, `Image(.owlMark)` on Apple): it breathes slowly while Aaru works
+  and holds still under Reduce Motion.
+- **Where the owl lives (owner, 2026-10-23).** Signed-out surfaces, and in the app: beside
+  "The Field" on Home, in screen-level empty states (`OwlEmpty` / `OwlUnavailableView`, never
+  inside a picker, a filter result or a settings row), on errors, the 404 and the load-failed
+  view, on the recap cover, on an earned badge. Never on a plan card, which an outside
+  connection wrote.
+- **Poses.** Standing (the poster's owl) by default; **curious** when nothing matches (search,
+  the 404), **sleeping** when nothing airs or you are caught up, **celebrating** for a
+  milestone (the badge reveal, the unlock summary). One owl, four poses: never a new
+  character, and no pose is invented in code. Two motions, never both at once: the
+  **breath** means Aaru is working; **idle** (a slow float and an amber glow behind the eyes) is
+  the owl at rest, on Home and empty states only. Errors and recap cards stay still. Under
+  Reduce Motion the owl never moves.
+- **Tagline.** "Your stories. Your world."
+- **Enforced.** `.github/workflows/ci-brand.yml` runs `scripts/generate-tokens.mjs --check` and
+  `scripts/brand-guard.sh`: no colour literals outside the generated tokens, no serif or bundled
+  faces in any client.
+
+Assets and how they are made: `docs/brand/README.md`. Colour tokens (`Paper`, `Surface`,
+`Stone`, `Ink`, `Muted`, `Medallion`, accent, `Gold`, `Agent`, `Line`, `Danger`) are generated
+into the asset catalogs, `aaru-client/src/tokens.css` and the extension's popup from one file,
+`design/tokens.json`. The marks and icons come from `docs/brand/owl_poster.py` (BRD-002), the owl
+and its head from `docs/brand/owl_mascot.py` (BRD-003). The guard rejects the retired heron and
+reed mark by name.
+
+### Mindspace (visual language, 2026-10-21; palette and type replaced 2026-10-22)
+
+Aaru is a constructed room for stories, lit at night: navy dark, ice-blue light, amber edges.
+Calm and editorial first; the uncanny is a texture, never an effect. No glitching or "broken
+AI" UI.
 
 - **One token source.** `design/tokens.json` holds every colour, light and dark, plus the
   pairs that must pass WCAG AA (4.5 text, 3 non-text). `scripts/generate-tokens.mjs` writes
-  `aaru-client/src/tokens.css`, `src/lib/tokens.gen.ts` and the colour sets in both Apple asset
-  catalogs, and fails on a pair below AA; CI runs it with `--check`. Light is warm lit
-  architecture (Paper ivory, Surface parchment, Stone sunken); dark is reed-green and warm
-  charcoal. Accent is a desaturated teal. **Gold** is edge light only: hairlines, the next-up
-  ring, stars, a dot on the active nav item. It never fills a surface. **Agent** (reed sage)
-  marks the agent's activity. No pure black, no neon.
+  `aaru-client/src/tokens.css`, `src/lib/tokens.gen.ts`, the extension's popup tokens and badge
+  values, and the colour sets in both Apple asset catalogs, and fails on a pair below AA; CI runs
+  it with `--check`. **Gold** (amber) is edge light only: hairlines, the next-up ring, stars, a
+  dot on the active nav item. It never fills a surface. **Agent** (owl-eye amber) marks the
+  agent's activity. No pure black.
 - **Appearance.** System, Light or Dark, per device. The web keeps it in the `aaru_appearance`
   cookie and renders `<html data-theme>` on the server, so nothing flashes; Apple keeps it in
   `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system.
-- **Type.** Newsreader (OFL, bundled on both clients, `design/fonts.md`) for titles and
-  headings; the system sans for everything else. Small uppercase eyebrows (tracked 1.5) over
-  sections. Dates, `S·E` codes, counts and ratings use tabular figures. On Apple the serif is
-  `Font.aaruDisplay(_:)`, relative to a text style, so Dynamic Type scales it. Widgets bundle the
-  Medium face only and use it for their one heading; the rest of a widget is the system font.
-- **Badges.** Premiere and new season are teal, Finale is ink, both under Paper text (the web's
+- **Type.** The system sans. Titles and headings use `--font-display` on the web and
+  `Font.aaruDisplay(_:)` on Apple (relative to a text style, so Dynamic Type scales it); widgets
+  use `Font.widgetDisplay` for their one heading. Small uppercase eyebrows (tracked 1.5) over
+  sections. Dates, `S·E` codes, counts and ratings use tabular figures.
+- **Badges.** Premiere and new season are accent, Finale is ink, both under Paper text (the web's
   `accent` and `ink` badge tones). Gold never carries small text.
 - **Texture, on the Field and the Title room only.** Two faint pinstripes of different pitch
   (the room's "code"; the Title room seeds them from the title id), film grain on the web, a
   daypart wash that is warmer at dusk and cooler at night (`data-daypart`, set once before
   paint), a gold top edge on the one or two focal pieces (`edge-lit` / `.edgeLit()`), and a
-  soft teal/gold chromatic edge on the focal art (`fringe`, web). All static: nothing animates.
+  soft blue/amber chromatic edge on the focal art (`fringe`, web). All static: nothing animates.
   All gone under increased contrast, forced colours or Reduce Transparency. Every other screen
   is flat Paper with hairlines.
-- **Agent presence.** The heron stays quiet: the existing reed mark, breathing slowly beside
-  "Waiting for you" or an import that is matching, only while something is in progress, and
-  still under Reduce Motion. The brand mark is not redrawn.
+- **Agent presence.** Quiet: the owl's head on the night disc beside "Waiting for
+  you" or an import that is matching, only while something is in progress, and still under Reduce
+  Motion.
 
 Research basis (2026-10-09): the user's screenshots of Trakt web home, Trakt "Today" stories
 and the Pogdesign CAT weekly schedule, plus web research on tracker widgets and social

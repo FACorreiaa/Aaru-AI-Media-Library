@@ -13,6 +13,8 @@ struct InsightsView: View {
     @State private var model: InsightsModel
     @State private var recap: RecapPeriod?
     @Environment(\.dynamicTypeSize) private var dynamicType
+    /// Achievements opens from here too (DESIGN.md §17); nil in previews.
+    @Environment(ProgressModel.self) private var achievements: ProgressModel?
 
     init(api: Client?, library: LibraryModel? = nil, model: InsightsModel? = nil) {
         self.api = api
@@ -33,6 +35,17 @@ struct InsightsView: View {
             .frame(maxWidth: .infinity)
         }
         .navigationTitle("Insights")
+        .toolbar {
+            if let achievements {
+                ToolbarItem {
+                    NavigationLink {
+                        AchievementsView(model: achievements)
+                    } label: {
+                        Label("Achievements", systemImage: "rosette")
+                    }
+                }
+            }
+        }
         .task(id: model.period) { await model.load() }
         .refreshable { await model.load() }
         // View → Refresh (⌘R) while Insights is showing.
@@ -50,12 +63,11 @@ struct InsightsView: View {
     @ViewBuilder private var content: some View {
         if let stats = model.stats {
             if stats.totals.isZero, stats.ratings.mean == nil {
-                ContentUnavailableView(
-                    model.span.isRolling
+                OwlUnavailableView(
+                    title: model.span.isRolling
                         ? "Nothing tracked in the \(model.period.label.lowercased())"
                         : "Nothing tracked in \(model.period.label)",
-                    systemImage: "chart.bar",
-                    description: Text("Tick episodes and finish titles, and they add up here.")
+                    message: "Tick episodes and finish titles, and they add up here."
                 )
             } else {
                 if let period = model.period.recap {

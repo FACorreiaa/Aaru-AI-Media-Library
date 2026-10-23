@@ -4,6 +4,7 @@ import { GoogleSignInButton } from '../GoogleSignInButton'
 import { AppearanceSection } from '../AppearanceSection'
 import { Alert, AlertDescription, Button } from '~/components/ui'
 import { linkGoogle, signOut } from '../../lib/session/session'
+import { forgetTonight } from '../../lib/home/tonight-cache'
 import { forgetAccount, forgetSession } from '../../lib/session/query'
 import type { AccountPageData } from '../../lib/settings/account'
 import { ProfileEditor } from './ProfileEditor'
@@ -36,6 +37,7 @@ export function AccountPage(props: { data: AccountPageData }) {
   async function leave() {
     await signOut()
     forgetAccount(router.options.context.queryClient)
+    forgetTonight()
     await router.invalidate()
     await navigate({ to: '/' })
   }

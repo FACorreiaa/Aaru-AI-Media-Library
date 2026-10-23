@@ -20,6 +20,8 @@ struct ImportDetailView: View {
     @State private var confirmsDiscard = false
     @Environment(\.dismiss) private var dismiss
     @Environment(AppRouter.self) private var router
+    /// Nil in previews.
+    @Environment(ToastCenter.self) private var toasts: ToastCenter?
 
     /// From Home's last-import card, outside Settings.
     init(id: String, imports: ImportsModel, library: LibraryModel, lists: ListsModel, api: Client?) {
@@ -108,6 +110,7 @@ struct ImportDetailView: View {
             }
         }
         .settingsPage(job?.filename ?? job?.sourceLabel ?? "Import", problem: problem)
+        .undoToast()
         .confirmationDialog("Discard this plan?", isPresented: $confirmsDiscard, titleVisibility: .visible) {
             Button("Discard", role: .destructive) { Task { await discard() } }
         } message: {
@@ -228,13 +231,28 @@ struct ImportDetailView: View {
         }
     }
 
+    /// The whole import is one action, so the toast that follows offers Undo (DESIGN.md §9).
     private func apply() async {
         applying = true
         defer { applying = false }
-        if await imports.apply(id) != nil {
-            detail = await imports.detail(id)
-            await onApplied()
+        guard let applied = await imports.apply(id) else { return }
+        detail = await imports.detail(id)
+        await onApplied()
+        guard let actionID = applied.actionId, let api else { return }
+        toasts?.show(Self.appliedMessage(applied.stats)) {
+            let problem = await api.takeBack(actionID: actionID)
+            if problem == nil {
+                detail = await imports.detail(id)
+                await onApplied()
+            }
+            return problem
         }
+    }
+
+    /// "Imported 12 titles", "Imported 12 titles · filled in 3".
+    static func appliedMessage(_ stats: Components.Schemas.ImportStats) -> String {
+        let added = stats.created == 1 ? "Imported 1 title" : "Imported \(stats.created) titles"
+        return stats.updated > 0 ? "\(added) · filled in \(stats.updated)" : added
     }
 }
 

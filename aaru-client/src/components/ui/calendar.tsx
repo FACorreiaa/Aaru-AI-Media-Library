@@ -157,7 +157,7 @@ export const CalendarCellTrigger = <T extends ValidComponent = 'button'>(
         variant: 'ghost',
         class: [
           'size-8 p-0 font-normal aria-selected:opacity-100',
-          // Aaru (WEB-010): today is a ring and teal text, so it never reads as the selected day.
+          // Aaru (WEB-010): today is a ring and accent text, so it never reads as the selected day.
           'data-[today]:font-semibold data-[today]:text-accent data-[today]:ring-1 data-[today]:ring-accent/60 data-[today]:ring-inset',
           'aria-selected:not-[[data-in-range]]:bg-primary aria-selected:not-[[data-in-range]]:text-primary-foreground aria-selected:not-[[data-in-range]]:hover:bg-primary aria-selected:not-[[data-in-range]]:hover:text-primary-foreground',
           'data-[range-start]:aria-selected:bg-primary data-[range-start]:aria-selected:text-primary-foreground data-[range-start]:aria-selected:hover:bg-primary! data-[range-start]:aria-selected:hover:text-primary-foreground!',

@@ -72,7 +72,7 @@
         }
     }
 
-    /// One item alone: the art at full height, the title in Newsreader, its line, a bar where the
+    /// One item alone: the art at full height, the title in the display style, its line, a bar where the
     /// player is, and Mark watched for an episode or a movie.
     struct LeadRow: View {
         let item: NowPlayingActivityItem

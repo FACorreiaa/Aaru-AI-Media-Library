@@ -70,9 +70,14 @@ extension ImportService {
         let members = Dictionary(uniqueKeysWithValues: Set(row.row.lists).map { ($0, [titleID]) })
         ops += try await listOps(members, userID: userID)
         guard !ops.isEmpty else { return }
-        try await stores.library.apply(
+        let action = try await stores.library.apply(
             .batch(ops), userID: userID, actor: .user, kind: "import",
             summary: "Matched “\(row.row.title)” from \(Self.sourceName(job.source)) by hand"
+        )
+        await GamificationService(stores: stores, now: now).batchApplied(
+            userID,
+            actionID: action.id,
+            firstImport: false
         )
     }
 }

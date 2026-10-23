@@ -1,3 +1,4 @@
+import { MascotMedallion } from '../Brand'
 import { For, Match, Show, Switch } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { Poster } from '../Poster'
@@ -85,6 +86,10 @@ export function RecapCardView(props: {
       <Match when={props.card.kind === 'intro' && props.card}>
         {(card) => (
           <>
+            {/* Aaru opens the story. Still: a card may be captured as an image. */}
+            <div class="recap-rise mb-8">
+              <MascotMedallion decorative class="w-20 md:w-24" />
+            </div>
             <Eyebrow>{card().partial ? 'So far' : 'Your recap'}</Eyebrow>
             <h2
               class="recap-rise mt-4 font-display text-6xl leading-[1.02] font-medium tracking-tight md:text-7xl"

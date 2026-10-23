@@ -11,17 +11,21 @@ extension APIImplementation {
 
     func getSocialSettings(_: Operations.GetSocialSettings.Input) async throws -> Operations.GetSocialSettings.Output {
         let settings = try await friendViews.settings(currentUser())
-        return .ok(.init(body: .json(.init(shareLibraryWithFriends: settings.shareLibraryWithFriends))))
+        return .ok(.init(body: .json(.init(settings))))
     }
 
     func updateSocialSettings(_ input: Operations.UpdateSocialSettings.Input) async throws
         -> Operations.UpdateSocialSettings.Output
     {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
-        let saved = try await friendViews.save(
-            SocialSettings(shareLibraryWithFriends: body.shareLibraryWithFriends), viewer: currentUser()
-        )
-        return .ok(.init(body: .json(.init(shareLibraryWithFriends: saved.shareLibraryWithFriends))))
+        let viewer = try currentUser()
+        // A field left out keeps its saved value: older apps send only the library switch.
+        var settings = try await friendViews.settings(viewer)
+        settings.shareLibraryWithFriends = body.shareLibraryWithFriends
+        settings.showAchievementsToFriends = body.showAchievementsToFriends ?? settings.showAchievementsToFriends
+        settings.leaderboardOptIn = body.leaderboardOptIn ?? settings.leaderboardOptIn
+        let saved = try await friendViews.save(settings, viewer: viewer)
+        return .ok(.init(body: .json(.init(saved))))
     }
 
     func getFriendProfile(_ input: Operations.GetFriendProfile.Input) async throws
@@ -88,7 +92,23 @@ extension Components.Schemas.FriendProfile {
                     bothFinished: $0.bothFinished,
                     theyLoved: summaries($0.theyLoved)
                 )
+            },
+            achievements: profile.achievements.map {
+                .init(
+                    level: $0.level,
+                    badges: $0.badges.compactMap { Components.Schemas.BadgeAward($0, reveal: false) }
+                )
             }
+        )
+    }
+}
+
+extension Components.Schemas.SocialSettings {
+    init(_ settings: SocialSettings) {
+        self.init(
+            shareLibraryWithFriends: settings.shareLibraryWithFriends,
+            showAchievementsToFriends: settings.showAchievementsToFriends,
+            leaderboardOptIn: settings.leaderboardOptIn
         )
     }
 }

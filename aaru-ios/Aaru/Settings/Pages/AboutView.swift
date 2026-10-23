@@ -11,6 +11,7 @@ struct AboutView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(height: 30)
+                        .foregroundStyle(Color(.ink))
                         .accessibilityLabel("Aaru")
                     Text("A private library for everything you watch, read and listen to.")
                         .foregroundStyle(Color(.muted))

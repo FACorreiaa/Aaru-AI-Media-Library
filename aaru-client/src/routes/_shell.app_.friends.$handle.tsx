@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { Poster } from '../components/Poster'
+import { AwardShelf } from '../components/achievements/BadgeShelf'
 import { BackLink } from '../components/shell/BackLink'
 import {
   GroupInviteDialog,
@@ -10,6 +11,8 @@ import {
 import { Button } from '~/components/ui'
 import { lastShown } from '../lib/presence'
 import { kindOf } from '../lib/library/model'
+import { FRIEND_SHELF } from '../lib/achievements/model'
+import type { FriendAchievements } from '../lib/achievements/model'
 import {
   countsLine,
   friendsSince,
@@ -104,6 +107,9 @@ function Profile() {
                     Invite to a group
                   </Button>
                 </div>
+                <Show when={friend().achievements}>
+                  {(earned) => <FriendBadges achievements={earned()} />}
+                </Show>
                 <Show when={shownDialog() === 'recommend'}>
                   <RecommendDialog
                     open={dialog() === 'recommend'}
@@ -195,6 +201,45 @@ function Profile() {
         </Show>
       </div>
     </div>
+  )
+}
+
+/** GAM-005: their level and newest badges, when they show them; "See all" for the rest. */
+function FriendBadges(props: { achievements: FriendAchievements }) {
+  const [all, setAll] = createSignal(false)
+  const shown = () =>
+    all()
+      ? props.achievements.badges
+      : props.achievements.badges.slice(0, FRIEND_SHELF)
+  return (
+    <section class="mt-8" aria-labelledby="friend-badges">
+      <div class="flex items-baseline gap-3">
+        <h2 id="friend-badges" class="eyebrow">
+          Level {props.achievements.level}
+        </h2>
+        <Show when={props.achievements.badges.length > FRIEND_SHELF}>
+          <Button
+            variant="link"
+            size="bare"
+            class="text-sm font-semibold text-accent"
+            aria-expanded={all()}
+            onClick={() => setAll((open) => !open)}
+          >
+            {all()
+              ? 'Show fewer'
+              : `See all ${props.achievements.badges.length}`}
+          </Button>
+        </Show>
+      </div>
+      <Show
+        when={props.achievements.badges.length > 0}
+        fallback={<p class="mt-2 text-sm text-muted">No badges yet.</p>}
+      >
+        <div class="mt-3">
+          <AwardShelf awards={shown()} />
+        </div>
+      </Show>
+    </section>
   )
 }
 

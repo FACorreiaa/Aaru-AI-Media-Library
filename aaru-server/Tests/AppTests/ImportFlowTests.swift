@@ -102,6 +102,11 @@ struct ImportFlowTests {
             let actions = try await env.send(.get, "/v1/actions?limit=1").json()
             let action = try #require((actions["items"] as? [[String: Any]])?.first)
             #expect(action["kind"] as? String == "import")
+            // The apply answer names the action, so the client can offer Undo without a lookup.
+            let actionID = (action["id"] as? String)?.lowercased()
+            #expect((applied["actionId"] as? String)?.lowercased() == actionID)
+            let fetched = try await env.send(.get, "/v1/imports/\(id)").json()
+            #expect(((fetched["job"] as? [String: Any])?["actionId"] as? String)?.lowercased() == actionID)
             #expect(try await env.send(.post, "/v1/actions/\(action["id"] as? String ?? "")/undo").status == .ok)
             let undone = try await env.send(.get, "/v1/library/sync").json()
             #expect((undone["items"] as? [Any])?.isEmpty == true, "one undo removes the whole import")

@@ -4,17 +4,20 @@ import SwiftUI
 // MARK: The Field's sections
 
 extension HomeScreen {
-    /// "The Field", and when it is: "Tuesday evening · 3 in progress · 2 airing today".
+    /// The owl beside "The Field", and when it is: "Tuesday evening · 3 in progress · 2 airing today".
     var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("The Field")
-                .font(.aaruDisplay(.largeTitle, weight: .semibold))
-                .foregroundStyle(Color(.ink))
-                .accessibilityAddTraits(.isHeader)
-            Text(model.fieldLine)
-                .font(.subheadline)
-                .monospacedDigit()
-                .foregroundStyle(Color(.muted))
+        HStack(spacing: 14) {
+            OwlHead(size: 48, idle: true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("The Field")
+                    .font(.aaruDisplay(.largeTitle, weight: .semibold))
+                    .foregroundStyle(Color(.ink))
+                    .accessibilityAddTraits(.isHeader)
+                Text(model.fieldLine)
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .foregroundStyle(Color(.muted))
+            }
         }
         .padding(.horizontal, 20)
     }
@@ -24,13 +27,15 @@ extension HomeScreen {
             TonightCard(
                 tonight: tonight,
                 isPending: model.pending.contains(tonight.primary.libraryItemId),
-                wide: !compact
-            ) { entry in Task { await model.markNextWatched(entry) } }
-                .padding(.horizontal, 20)
+                wide: !compact,
+                onSetAside: { pick, verdict in Task { await model.setAside(pick, verdict: verdict) } },
+                onMarkWatched: { entry in Task { await model.markNextWatched(entry) } }
+            )
+            .padding(.horizontal, 20)
         }
     }
 
-    /// Agent requests waiting for the user (OUT-004), with the heron while any wait.
+    /// Agent requests waiting for the user (OUT-004), with the owl while any wait.
     @ViewBuilder var waitingSection: some View {
         if let api, !model.plans.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
@@ -66,7 +71,7 @@ extension HomeScreen {
         let playing = model.playingItemIds
         let continuing = model.continueWatching.filter { entry in
             guard !playing.contains(entry.libraryItemId) else { return false }
-            guard case let .continuing(lead)? = model.tonight?.primary else { return true }
+            guard let lead = model.tonight?.primary.markable else { return true }
             return entry.libraryItemId != lead.libraryItemId
         }
         if !continuing.isEmpty {
@@ -165,9 +170,18 @@ extension HomeScreen {
         }
     }
 
-    /// The last 7 days (to Insights, shown at zero too) and the library's counts (to Library,
-    /// hidden at zero).
+    /// The streak and level (to Achievements), the last 7 days (to Insights, shown at zero too)
+    /// and the library's counts (to Library, hidden at zero).
     @ViewBuilder private var summary: some View {
+        if let achievements, let progress = achievements.progress {
+            NavigationLink {
+                AchievementsView(model: achievements)
+            } label: {
+                StreakBar(progress: progress, isLink: true)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+        }
         if let stats = model.weekStats {
             NavigationLink {
                 InsightsView(api: api, library: library, model: InsightsModel(api: api, span: .last7))

@@ -84,8 +84,7 @@ struct InviteSheet: View {
 
     private func letter(_ preview: InvitePreview) -> some View {
         VStack(alignment: .leading, spacing: 24) {
-            InviteMedallion()
-                .frame(width: 112)
+            OwlMedallion(size: 112)
                 .frame(maxWidth: .infinity)
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(preview.inviter.inviteName) invited you to Aaru.")
@@ -228,22 +227,6 @@ private struct InviteHandleField: View {
             .frame(minHeight: 48)
             .background(Color(.surface), in: .rect(cornerRadius: 10))
         }
-    }
-}
-
-/// The mascot on a paper disc, as on the welcome screen.
-private struct InviteMedallion: View {
-    var body: some View {
-        ZStack {
-            Circle().fill(Color(.medallion))
-            Image(.mascot)
-                .resizable()
-                .scaledToFit()
-                .padding(.top, 8)
-                .accessibilityHidden(true)
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .clipShape(Circle())
     }
 }
 

@@ -5,7 +5,7 @@
 @import 'tw-animate-css';
 
 /* Colour tokens come from design/tokens.json (scripts/generate-tokens.mjs), the same names
-   as the Apple apps' asset catalog (DESIGN.md "Mindspace"). Light follows the system unless
+   as the Apple apps' asset catalog (DESIGN.md "Brand"). Light follows the system unless
    <html data-theme> pins it (lib/appearance.ts). */
 @import './tokens.css';
 
@@ -25,58 +25,6 @@
   }
 }
 
-/* Newsreader (OFL, public/fonts/OFL.txt), the display face on every surface. Self-hosted and cut
-   down to what headings use: weight 450–600, optical size fixed at 36, Latin with Latin
-   Extended as its own file the browser fetches only when a title needs it. design/fonts.md
-   has the recipe. */
-@font-face {
-  font-family: 'Newsreader';
-  font-style: normal;
-  font-weight: 450 600;
-  font-display: swap;
-  src: url('/fonts/newsreader-roman.woff2') format('woff2');
-  unicode-range:
-    U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
-    U+2013-2014, U+2018-201A, U+201C-201E, U+2022, U+2026, U+2032-2033, U+20AC,
-    U+2122;
-}
-
-@font-face {
-  font-family: 'Newsreader';
-  font-style: normal;
-  font-weight: 450 600;
-  font-display: swap;
-  src: url('/fonts/newsreader-roman-ext.woff2') format('woff2');
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
-    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: 'Newsreader';
-  font-style: italic;
-  font-weight: 450 600;
-  font-display: swap;
-  src: url('/fonts/newsreader-italic.woff2') format('woff2');
-  unicode-range:
-    U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
-    U+2013-2014, U+2018-201A, U+201C-201E, U+2022, U+2026, U+2032-2033, U+20AC,
-    U+2122;
-}
-
-@font-face {
-  font-family: 'Newsreader';
-  font-style: italic;
-  font-weight: 450 600;
-  font-display: swap;
-  src: url('/fonts/newsreader-italic-ext.woff2') format('woff2');
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
-    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
@@ -86,6 +34,7 @@
   --color-on-accent: var(--on-accent);
   --color-line: var(--line);
   --color-medallion: var(--medallion);
+  --color-night: var(--night);
   --color-danger: var(--danger);
   --color-stone: var(--stone);
   --color-gold: var(--gold);
@@ -97,8 +46,11 @@
   --radius-field: 10px;
   /* Poster thumbnails inside a cell: calendar days, agenda rows. */
   --radius-thumb: 6px;
+  /* The display face is the system sans, as in the brand poster (DESIGN.md "Brand"); headings
+     differ from body text by weight and size, not by family. */
   --font-display:
-    'Newsreader', ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', sans-serif;
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', sans-serif;
@@ -109,8 +61,8 @@
      - `muted` is Aaru's quiet text colour, so `text-muted` stays as it was; shadcn's muted
        *background* (`bg-muted`, skeletons, track fills) is the surface, through Tailwind's
        background-only namespace.
-     - `accent` is Aaru's teal. shadcn's highlight (`bg-accent` on a focused menu item, a
-       pressed toggle) is therefore teal with `accent-foreground` (on-accent) text, the way a
+     - `accent` is Aaru's ice blue. shadcn's highlight (`bg-accent` on a focused menu item, a
+       pressed toggle) is therefore accent with `accent-foreground` (on-accent) text, the way a
        system menu highlights in the accent colour. */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -293,7 +245,7 @@ body {
   background: var(--surface);
   box-shadow:
     0 0 0 1px var(--line),
-    0 22px 40px -22px rgb(15 34 36 / 0.6);
+    0 22px 40px -22px rgb(0 0 0 / 0.6);
   filter: brightness(calc(1 - var(--reach) * 0.06));
 }
 
@@ -399,9 +351,51 @@ body {
       opacity: 1;
     }
   }
+
+  /* The owl at rest (Brand.tsx `idle`): a slow float and an amber glow behind it, on two
+     periods so they never line up. Calmer than `aaru-breathe`, which means "working"; the two
+     never share an element. Under reduced motion there is no glow and nothing moves. */
+  .owl-idle {
+    position: relative;
+    isolation: isolate;
+    animation: owl-float 6s ease-in-out infinite;
+  }
+  .owl-idle::before {
+    content: '';
+    position: absolute;
+    inset: -22%;
+    z-index: -1;
+    border-radius: 9999px;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--gold) 35%, transparent),
+      transparent 70%
+    );
+    opacity: 0.25;
+    pointer-events: none;
+    animation: owl-glow 4s ease-in-out -1.3s infinite;
+  }
+  @keyframes owl-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+  @keyframes owl-glow {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
 }
 
-/* The mindspace layer (DESIGN.md "Mindspace"). Only the Field and the Title room stand in it;
+/* The mindspace layer (DESIGN.md "Brand"). Only the Field and the Title room stand in it;
    every other page is plain paper. All of it is static paint: nothing here animates, and none
    of it is drawn for viewers who ask for more contrast or force their own colours. */
 
@@ -489,7 +483,7 @@ body {
   pointer-events: none;
 }
 
-/* A soft chromatic edge, teal on one side and gold on the other, and a long low shadow. For
+/* A soft chromatic edge, blue on one side and amber on the other, and a long low shadow. For
    the single focal piece (Tonight, the Title room's poster), never a list of cards. */
 .fringe {
   box-shadow:

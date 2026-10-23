@@ -1,31 +1,14 @@
-/* Aaru's brand tokens (aaru-client/src/styles.css): paper and teal in light, reed green in dark. */
+/* Aaru's colour tokens, generated from design/tokens.json (scripts/generate-tokens.mjs), the same
+   values as the web app. The popup follows the system scheme. */
+@import './tokens.css';
+
 :root {
-  --paper: #fbf6ec;
-  --surface: #f3ecdd;
-  --ink: #173a3e;
-  --muted: #4b6668;
-  --accent: #1f6970;
-  --on-accent: #fbf6ec;
-  --line: rgb(23 58 62 / 0.12);
-  --danger: #a33a2c;
-  --font-display: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
+  --font-display:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', sans-serif;
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', sans-serif;
-  color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #0f2224;
-    --surface: #16302f;
-    --ink: #ece5d6;
-    --muted: #a9bdb8;
-    --accent: #7cc3b8;
-    --on-accent: #0f2224;
-    --line: rgb(236 229 214 / 0.12);
-    --danger: #f0a493;
-  }
 }
 
 body {

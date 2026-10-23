@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A small poster for a cell or a list mark: the catalog image, else the title's initials on a
-/// teal-to-gold tile (when given) or the kind's symbol. Decorative: the row it sits in names the
+/// blue-to-amber tile (when given) or the kind's symbol. Decorative: the row it sits in names the
 /// title. Calendar's month cells and group channel marks share it.
 struct PosterThumb: View {
     let url: URL?

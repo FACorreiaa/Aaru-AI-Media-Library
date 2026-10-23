@@ -279,6 +279,91 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your points, level, streak and the badges you have not seen yet (GAM-001…004). Days are counted in the zone from `X-Timezone`, else the zone you last sent, else UTC. Clients read this after a write to show what was earned: one toast for a live unlock, one summary when `unseen.origin` is `batch` (an import or approved plan) or `backfill` (the first run). */
+    get: operations['getProgress']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/badges': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Every badge in the catalog with what you have of it. A hidden badge you have not earned comes back with only its id, family and `hidden`: no name, rule or progress. */
+    get: operations['listBadges']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/badges/seen': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Marks earned badges (by award id) as seen, so they leave `unseen`. */
+    post: operations['markBadgesSeen']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/points': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The points ledger, newest first, a page at a time ("How you earned it"). */
+    get: operations['listPoints']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/social/leaderboard': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The weekly friends board (GAM-005): you and friends who joined it, by points earned that week on each person's own local dates. Making friends and a first import do not count. Until you join (`leaderboardOptIn`), `optedIn` is false and nobody is listed. Never global. */
+    get: operations['getLeaderboard']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/friends/{userId}/profile': {
     parameters: {
       query?: never
@@ -2150,6 +2235,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/tonight': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called. */
+    get: operations['getTonight']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/tonight/{id}/feedback': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days. */
+    post: operations['sendTonightFeedback']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -2404,6 +2523,11 @@ export interface components {
       rowsTotal: number
       /** @description Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress. */
       rowsMatched: number
+      /**
+       * Format: uuid
+       * @description The action that applied the plan, once approved and if it wrote anything. Undo it with POST /v1/actions/{id}/undo.
+       */
+      actionId?: string
     }
     ImportStats: {
       created: number
@@ -2608,9 +2732,14 @@ export interface components {
     SocialUserList: {
       items: components['schemas']['SocialUser'][]
     }
+    /** @description On PUT, a field left out keeps its saved value (older apps send only `shareLibraryWithFriends`). Responses always carry every field. */
     SocialSettings: {
       /** @description Friends see your shelves, activity and what you share. On by default. */
       shareLibraryWithFriends: boolean
+      /** @description Friends see your level and badges (never ones about notes or owned items). On by default. */
+      showAchievementsToFriends?: boolean
+      /** @description You join the weekly friends board, and see it. Off by default. */
+      leaderboardOptIn?: boolean
     }
     /** @description One title on a friend's shelf. Never their notes. */
     FriendItem: {
@@ -2650,6 +2779,146 @@ export interface components {
       watching?: components['schemas']['FriendItem'][]
       recentlyFinished?: components['schemas']['FriendItem'][]
       compare?: components['schemas']['FriendCompare']
+      achievements?: components['schemas']['FriendAchievements']
+    }
+    /** @description Absent when the friend turned off showing their badges and level. */
+    FriendAchievements: {
+      level: number
+      /** @description Their highest tier of each earned badge, newest first. Never private badges. */
+      badges: components['schemas']['BadgeAward'][]
+    }
+    /** @enum {string} */
+    BadgeFamily:
+      | 'films'
+      | 'shows'
+      | 'anime'
+      | 'books'
+      | 'music'
+      | 'ratings'
+      | 'lists'
+      | 'imports'
+      | 'discovery'
+      | 'streaks'
+      | 'social'
+    /**
+     * @description A live write (toast), an import or approved plan (one summary), or the first run.
+     * @enum {string}
+     */
+    BadgeOrigin: 'live' | 'batch' | 'backfill'
+    BadgeAward: {
+      /**
+       * Format: uuid
+       * @description The award; send it to /v1/me/badges/seen.
+       */
+      id: string
+      /** @description The badge id, such as `films`. */
+      badge: string
+      name: string
+      family: components['schemas']['BadgeFamily']
+      /** @description 1–4. Bronze */
+      tier: number
+      maxTier: number
+      /** Format: date-time */
+      awardedAt: string
+      origin: components['schemas']['BadgeOrigin']
+      /** @description A live award of a tiered badge's top tier, or of a hidden badge. Show the full card once. */
+      reveal: boolean
+    }
+    BadgeTier: {
+      tier: number
+      threshold: number
+      description: string
+      /** Format: date-time */
+      awardedAt?: string
+    }
+    Badge: {
+      id: string
+      family: components['schemas']['BadgeFamily']
+      hidden: boolean
+      earned: boolean
+      /** @description The highest tier earned; 0 for none. */
+      tier: number
+      maxTier: number
+      /** @description Never shown to friends. */
+      private?: boolean
+      /** @description Absent for a hidden badge not yet earned. */
+      name?: string
+      /** @description What the next tier asks */
+      description?: string
+      /** @description Toward the next tier. Absent once every tier is earned, and for hidden badges. */
+      progress?: {
+        current: number
+        target: number
+      }
+      tiers?: components['schemas']['BadgeTier'][]
+    }
+    BadgeList: {
+      items: components['schemas']['Badge'][]
+    }
+    StreakDayState: {
+      /** Format: date */
+      date: string
+      active: boolean
+    }
+    StreakState: {
+      /** @description Days in the streak still alive; 0 when broken. */
+      current: number
+      longest: number
+      /** @description Today already counts. */
+      today: boolean
+      /** @description The last seven local dates, oldest first. */
+      days: components['schemas']['StreakDayState'][]
+    }
+    Progress: {
+      total: number
+      level: number
+      /** @description Points where this level began. */
+      levelStart: number
+      nextLevelAt: number
+      /** @description This ISO week's points as the board counts them. */
+      weekPoints: number
+      streak: components['schemas']['StreakState']
+      unseen: {
+        count: number
+        origin: components['schemas']['BadgeOrigin']
+        /** @description The newest five. */
+        items: components['schemas']['BadgeAward'][]
+      }
+    }
+    PointsEventItem: {
+      /** Format: uuid */
+      id: string
+      /** @description episode, movie_finished, book_finished, album_finished, season_bonus, scrobble_bonus, book_progress, listen, room_attended, friend_added, import_first, streak_milestone */
+      kind: string
+      points: number
+      title?: components['schemas']['TitleSummary']
+      /** Format: date */
+      day: string
+      /** Format: date-time */
+      at: string
+      /** @description Points taken back by an undo or a short friendship. */
+      revocation: boolean
+    }
+    PointsPage: {
+      items: components['schemas']['PointsEventItem'][]
+      /** Format: date-time */
+      nextBefore?: string
+    }
+    LeaderboardEntry: {
+      user: components['schemas']['SocialUser']
+      points: number
+      /** @description Equal points share a rank. */
+      rank: number
+      you: boolean
+    }
+    Leaderboard: {
+      week: string
+      /** Format: date */
+      from: string
+      /** Format: date */
+      until: string
+      optedIn: boolean
+      entries: components['schemas']['LeaderboardEntry'][]
     }
     ActivityItem: {
       /** @description Stable per friend, title and day. */
@@ -3583,6 +3852,36 @@ export interface components {
       title: components['schemas']['TitleSummary']
       runtimeMinutes?: number
     }
+    TonightPick: {
+      /** Format: uuid */
+      libraryItemId: string
+      title: components['schemas']['TitleSummary']
+      /**
+       * @description continue: the next aired episode of a show in progress. airing: an episode airing today. reading: a book in progress. start: a wishlist film.
+       * @enum {string}
+       */
+      kind: 'continue' | 'airing' | 'reading' | 'start'
+      episode?: components['schemas']['EpisodeRef']
+      episodeName?: string
+      minutes?: number
+      /** Format: date-time */
+      airsAt?: string
+      airTimeKnown: boolean
+      /** @description Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min". */
+      reason: string
+    }
+    Tonight: {
+      /**
+       * Format: date
+       * @description The local day the strip is for.
+       */
+      day: string
+      picks: components['schemas']['TonightPick'][]
+    }
+    TonightFeedback: {
+      /** @enum {string} */
+      verdict: 'rejected' | 'not_tonight'
+    }
     UpNext: {
       continueWatching: components['schemas']['ContinueEntry'][]
       startWatching: components['schemas']['StartEntry'][]
@@ -4287,6 +4586,122 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SocialSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getProgress: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Your progress. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Progress']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listBadges: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The catalog. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BadgeList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  markBadgesSeen: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          ids: string[]
+        }
+      }
+    }
+    responses: {
+      /** @description Seen. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listPoints: {
+    parameters: {
+      query?: {
+        before?: string
+        /** @description 1–100, 50 unless asked. */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description A page of the ledger. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PointsPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getLeaderboard: {
+    parameters: {
+      query?: {
+        /** @description An ISO week such as `2026-W43`. Absent means this week in your zone. */
+        week?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The board. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Leaderboard']
         }
       }
       default: components['responses']['Error']
@@ -7611,6 +8026,59 @@ export interface operations {
         content: {
           'application/json': components['schemas']['UpNext']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTonight: {
+    parameters: {
+      query?: {
+        /** @description IANA time zone for "today" and air times. Absent means UTC. */
+        tz?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The strip for the local day. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Tonight']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  sendTonightFeedback: {
+    parameters: {
+      query?: {
+        /** @description IANA time zone for the local day. Absent means UTC. */
+        tz?: string
+      }
+      header?: never
+      path: {
+        /** @description The library item. */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TonightFeedback']
+      }
+    }
+    responses: {
+      /** @description Recorded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

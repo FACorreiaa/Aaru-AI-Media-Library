@@ -148,7 +148,7 @@ function Landing() {
             >
               <Link
                 to={signedIn() ? '/app' : '/sign-in'}
-                class="inline-flex items-center rounded-full bg-accent px-7 py-3.5 text-base font-semibold whitespace-nowrap text-on-accent shadow-[0_8px_24px_-12px_rgb(31_105_112/0.6)] transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                class="inline-flex items-center rounded-full bg-accent px-7 py-3.5 text-base font-semibold whitespace-nowrap text-on-accent shadow-[0_8px_24px_-12px_color-mix(in_srgb,var(--accent)_60%,transparent)] transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               >
                 {signedIn() ? 'Open Aaru' : 'Get started on the web'}
               </Link>
@@ -198,7 +198,7 @@ function Landing() {
             width="512"
             height="512"
             loading="lazy"
-            class="mx-auto h-28 w-28 rounded-[22.5%] shadow-[0_18px_40px_-18px_rgb(19_80_90/0.55)] md:h-32 md:w-32"
+            class="mx-auto h-28 w-28 rounded-[22.5%] shadow-[0_18px_40px_-18px_rgb(0_0_0/0.55)] md:h-32 md:w-32"
           />
           <h2 class="mt-10 font-display text-3xl leading-tight font-medium tracking-tight md:text-5xl">
             Made for iPhone, iPad, Mac and the web

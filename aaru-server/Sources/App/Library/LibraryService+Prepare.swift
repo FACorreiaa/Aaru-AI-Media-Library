@@ -179,8 +179,10 @@ extension LibraryService {
     /// Applies one prepared write as one journaled action.
     @discardableResult
     func commit(_ write: PreparedWrite, userID: UserID, caller: Caller) async throws -> ActionRecord {
-        try await stores.library.apply(
+        let action = try await stores.library.apply(
             write.op, userID: userID, caller: caller, kind: write.kind, summary: caller.summary(write.summary)
         )
+        await GamificationService(stores: stores, now: now).afterWrite(userID: userID, actionID: action.id)
+        return action
     }
 }

@@ -30,11 +30,11 @@ struct CatchUpView: View {
                 }
                 .padding(.top, 40)
             } else if shows.isEmpty {
-                ContentUnavailableView {
-                    Label("You are all caught up", systemImage: "checkmark.seal")
-                } description: {
-                    Text("Nothing from your shows aired in the last four weeks without a tick.")
-                }
+                OwlUnavailableView(
+                    title: "You are all caught up",
+                    message: "Nothing from your shows aired in the last four weeks without a tick.",
+                    pose: .sleeping
+                )
                 .padding(.top, 40)
             } else {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 16)], spacing: 16) {

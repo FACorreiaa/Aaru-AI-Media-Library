@@ -1,0 +1,29 @@
+# Keeps every client on Aaru's brand (DESIGN.md "Brand"): the generated colour tokens match
+# design/tokens.json and pass contrast, and no client writes its own colours or display face.
+name: Brand
+
+# Runs on every PR, not on a path filter: main's ruleset requires this check, and a required check
+# that never reports would block a PR that touches no client.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-brand-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  brand:
+    name: tokens and brand guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Colour tokens match design/tokens.json (and pass contrast)
+        run: node scripts/generate-tokens.mjs --check
+      - name: No colour literals or other display faces in the clients
+        run: scripts/brand-guard.sh

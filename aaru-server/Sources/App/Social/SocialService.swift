@@ -21,6 +21,10 @@ struct SocialService: Sendable {
     let stores: Stores
     var now: @Sendable () -> Date = { Date() }
 
+    var gamification: GamificationService {
+        GamificationService(stores: stores, now: now)
+    }
+
     /// Pending requests a user may have out at once.
     static let maxOutgoingRequests = 50
     static let maxDisplayNameLength = 50
@@ -59,8 +63,10 @@ struct SocialService: Sendable {
         case .friend, .outgoing:
             return (target, current)
         case .incoming:
-            if let id = try await stores.social.pendingRequest(sender: target.id, recipient: viewer) {
-                _ = try await stores.social.acceptRequest(id: id, recipient: viewer, now: now())
+            if let id = try await stores.social.pendingRequest(sender: target.id, recipient: viewer),
+               try await stores.social.acceptRequest(id: id, recipient: viewer, now: now()) != nil
+            {
+                await gamification.friendAdded(viewer, target.id)
             }
             return (target, .friend)
         case .none:
@@ -82,6 +88,7 @@ struct SocialService: Sendable {
               let friend = try await stores.social.socialUser(sender)
         else { throw AppError.notFound("No such request.") }
         ProductEvents.capture(.friendAdded, userID: viewer)
+        await gamification.friendAdded(viewer, sender)
         return friend
     }
 
@@ -98,13 +105,21 @@ struct SocialService: Sendable {
     }
 
     func unfriend(_ friend: UserID, viewer: UserID) async throws {
+        let since = try await stores.friendViews.friendsSince(viewer, friend)
         guard try await stores.social.unfriend(viewer, friend) else { throw AppError.notFound("Not a friend.") }
+        if let since {
+            await gamification.friendEnded(viewer, friend, since: since)
+        }
     }
 
     func block(_ target: UserID, viewer: UserID) async throws {
         guard target != viewer else { throw Self.invalid("userId", "You can't block yourself.") }
         guard try await stores.social.socialUser(target) != nil else { throw Self.noSuchUser }
+        let since = try await stores.friendViews.friendsSince(viewer, target)
         try await stores.social.block(viewer, target, now: now())
+        if let since {
+            await gamification.friendEnded(viewer, target, since: since)
+        }
     }
 
     func unblock(_ target: UserID, viewer: UserID) async throws {

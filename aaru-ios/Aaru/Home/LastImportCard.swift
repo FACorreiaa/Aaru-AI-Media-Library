@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The Field's note of the newest import (VIEWS.md `JobLedger`, collapsed): its file or source,
-/// where it stands, and while it runs, the heron and how far matching has got. Opens the import.
+/// where it stands, and while it runs, the owl and how far matching has got. Opens the import.
 struct LastImportCard: View {
     let job: ImportJob
 

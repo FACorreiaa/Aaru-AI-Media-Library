@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
 import type { SearchSchemaInput } from '@tanstack/solid-router'
 import { Match, Switch, createEffect, createSignal, on } from 'solid-js'
@@ -108,16 +109,16 @@ function Recap() {
             )}
           </Match>
           <Match when={ready()?.deck.length === 0}>
-            <p class="mt-4 text-muted">
-              Nothing tracked in {label()} yet. Tick an episode or finish a
-              title, and it will show up here.
-            </p>
-            <Link
-              to="/app"
-              class="mt-6 inline-block font-medium text-accent hover:underline"
-            >
-              Back to Home
-            </Link>
+            <OwlEmpty
+              class="mt-6"
+              title={`Nothing tracked in ${label()} yet.`}
+              body="Tick an episode or finish a title, and it will show up here."
+              action={
+                <Link to="/app" class="font-medium text-accent hover:underline">
+                  Back to Home
+                </Link>
+              }
+            />
           </Match>
           <Match when={ready()}>
             {(current) => (

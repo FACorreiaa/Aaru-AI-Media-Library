@@ -1,18 +1,24 @@
+import AaruAPI
 import Foundation
 
-/// Tonight on the Field (VIEWS.md `TonightStrip`, pulled forward 2026-10-21): one thing to watch
-/// now and at most one more, composed on the device from rows Home already has: Continue
-/// watching (every next episode there has aired) and today's airings. It ranks nothing new and
-/// writes nothing; the agent-composed Tonight, with "not tonight", stays in M13. The web's
-/// `lib/home/tonight.ts` follows the same rule.
+typealias RankedPick = Components.Schemas.TonightPick
+
+/// Tonight on the Field (VIEWS.md `TonightStrip`, AG-005): one thing to watch or read now and at
+/// most one more. The server ranks it (`/v1/tonight`, with "not tonight" and "not for me");
+/// without an answer for today (offline, first launch) it is composed on the device from rows
+/// Home already has: Continue watching (every next episode there has aired) and today's airings.
+/// The web's `lib/home/tonight.ts` follows the same rule.
 enum TonightPick {
     case continuing(ContinueEntry)
     case airing(CalendarEntry)
+    /// A server pick. `next` is Continue watching's card for the same show, so the tick works.
+    case ranked(RankedPick, next: ContinueEntry?)
 
     var libraryItemId: String {
         switch self {
         case let .continuing(entry): entry.libraryItemId
         case let .airing(entry): entry.libraryItemId
+        case let .ranked(pick, _): pick.libraryItemId
         }
     }
 
@@ -20,18 +26,39 @@ enum TonightPick {
         switch self {
         case let .continuing(entry): entry.title
         case let .airing(entry): entry.title
+        case let .ranked(pick, _): pick.title
         }
     }
 
-    /// "S4 · E3 · Name".
+    /// The episode the tick marks, when there is one to mark.
+    var markable: ContinueEntry? {
+        switch self {
+        case let .continuing(entry): entry
+        case .airing: nil
+        case let .ranked(_, next): next
+        }
+    }
+
+    /// "S4 · E3 · Name". Empty for a book or a film.
     var episodeLine: String {
         switch self {
         case let .continuing(entry):
-            [EpisodeCode.short(season: entry.next.season, number: entry.next.number), entry.nextName].compactMap(\.self)
-                .joined(separator: " · ")
+            Self.episodeLine(entry)
         case let .airing(entry):
             [entry.shortCode, entry.episodeName].compactMap(\.self).joined(separator: " · ")
+        case let .ranked(_, next?):
+            Self.episodeLine(next)
+        case let .ranked(pick, nil):
+            [
+                pick.episode.map { EpisodeCode.short(season: $0.season, number: $0.number) },
+                pick.episodeName,
+            ].compactMap(\.self).joined(separator: " · ")
         }
+    }
+
+    private static func episodeLine(_ entry: ContinueEntry) -> String {
+        [EpisodeCode.short(season: entry.next.season, number: entry.next.number), entry.nextName].compactMap(\.self)
+            .joined(separator: " · ")
     }
 
     /// Why it is here: "47m · 3 left · Season finale", or "Airs 9:00 PM · 44m · Premiere".
@@ -49,6 +76,8 @@ enum TonightPick {
                 entry.runtimeMinutes.flatMap { $0 > 0 ? durationLabel(minutes: $0) : nil },
                 entry.badge?.label,
             ].compactMap(\.self).joined(separator: " · ")
+        case let .ranked(pick, _):
+            return pick.reason
         }
     }
 }
@@ -72,6 +101,19 @@ struct Tonight {
         let also = candidates.dropFirst().first { $0.libraryItemId != primary.libraryItemId }
         return Tonight(primary: primary, also: also)
     }
+
+    /// The server's picks in its order, less what is playing now; each show's pick carries its
+    /// Continue watching card. Nil when none is left.
+    static func ranked(
+        _ picks: [RankedPick], continuing: [ContinueEntry], playing: Set<String> = []
+    ) -> Tonight? {
+        let candidates = picks.filter { !playing.contains($0.libraryItemId) }.map { pick in
+            let next = pick.kind == ._continue ? continuing.first { $0.libraryItemId == pick.libraryItemId } : nil
+            return TonightPick.ranked(pick, next: next)
+        }
+        guard let primary = candidates.first else { return nil }
+        return Tonight(primary: primary, also: candidates.dropFirst().first)
+    }
 }
 
 extension HomeModel {
@@ -81,8 +123,20 @@ extension HomeModel {
         return upcoming.filter { $0.day(in: calendar) == today }
     }
 
+    /// The server's answer for today when there is one, else the composition on the device.
+    /// What the user set aside since it loaded is left out of either.
     var tonight: Tonight? {
-        Tonight.compose(continuing: continueWatching, today: airingToday, playing: playingItemIds)
+        let hidden = playingItemIds.union(tonightFeed.hidden)
+        if let ranked = tonightFeed.answer, ranked.day == todayKey {
+            return Tonight.ranked(ranked.picks, continuing: continueWatching, playing: hidden)
+        }
+        return Tonight.compose(continuing: continueWatching, today: airingToday, playing: hidden)
+    }
+
+    /// Today as the server writes a Tonight day, "2026-10-23".
+    var todayKey: String {
+        let parts = calendar.dateComponents([.year, .month, .day], from: now())
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 
     /// The Field's line under its heading: "Tuesday evening · 3 in progress · 2 airing today".

@@ -184,3 +184,12 @@ export function traktResult(
       return null
   }
 }
+
+/** The toast after an import is applied: "Imported 12 titles", "Imported 12 titles · filled in 3". */
+export function appliedMessage(stats: ImportJob['stats']): string {
+  const added =
+    stats.created === 1
+      ? 'Imported 1 title'
+      : `Imported ${stats.created} titles`
+  return stats.updated > 0 ? `${added} · filled in ${stats.updated}` : added
+}

@@ -2,7 +2,7 @@ import { For, Show, createSignal } from 'solid-js'
 import type { Cover, KindCard as Kind, TypeTile } from '../lib/landing/art'
 import { COLORS } from '../lib/tokens.gen'
 
-// Teal → gold, the brand gradient, in three steps so a stack of type tiles reads as three. Light
+// Blue → amber, the brand gradient, in three steps so a stack of type tiles reads as three. Light
 // token values in either appearance: the tiles are fixed brand art with Paper text. A shade of
 // Ink rises from the foot so the title, which sits there, passes AA on every step.
 const shade = `linear-gradient(to top, ${COLORS.ink.light}73, transparent 60%)`
@@ -77,7 +77,7 @@ export function KindCard(props: { kind: Kind }) {
         <For each={props.kind.covers}>
           {(cover, index) => (
             <div
-              class={`absolute bottom-0 overflow-hidden rounded-field bg-paper shadow-[0_14px_28px_-16px_rgb(15_34_36/0.55)] ring-1 ring-line ${width()} ${aspect()} ${placement[props.kind.shape][index()]} ${turn[index()]}`}
+              class={`absolute bottom-0 overflow-hidden rounded-field bg-paper shadow-[0_14px_28px_-16px_rgb(0_0_0/0.55)] ring-1 ring-line ${width()} ${aspect()} ${placement[props.kind.shape][index()]} ${turn[index()]}`}
             >
               {'url' in cover ? (
                 <CoverImage cover={cover} />

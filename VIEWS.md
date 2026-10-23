@@ -17,7 +17,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 
 | Surface | Emits | Server routes | Phase · milestone |
 | --- | --- | --- | --- |
-| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, Listening row (albums in progress, MUS-001), `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20), `TonightStrip` client-composed and the last import as a collapsed `JobLedger` (2026-10-21) (+ the agent's `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists`, `GET /v1/me/now-playing` (SCR-008) | 2 · M7, DISC-001, APP-013 |
+| The Field (home) | `ContinueRow`, `StartRow`, `CalendarRow`, `DiscoverRow`, Listening row (albums in progress, MUS-001), `NowPlayingCard`, `Shelf`, `JobLedger`, `UndoRibbon`; last-7-days strip (GAM-006d), status count chips, `UnfinishedRow`, list chips (2026-10-20), `TonightStrip` (server-ranked, client fallback, 2026-10-23) and the last import as a collapsed `JobLedger` (2026-10-21) (+ the agent's `TonightStrip` in 7, `StreakBar` in 5, `FriendStories` in 4) | `GET /v1/up-next` (with `counts`, `unfinished`), `GET /v1/calendar`, `GET /v1/discover`, `GET /v1/library/items`, `GET /v1/imports`, `GET /v1/me/stats?span=last7`, `GET /v1/lists`, `GET /v1/me/now-playing` (SCR-008), `GET /v1/tonight`, `POST /v1/tonight/{id}/feedback` | 2 · M7, DISC-001, APP-013 |
 | Discover | Today: `DiscoverRow` per DISC-001 row, add with status or to a list. Seasons: `SeasonBrowser` (DISC-002). Concerts: `ConcertList` (MUS-003) | `GET /v1/discover`, `GET /v1/discover/season`, `POST /v1/concerts/near`, `GET /v1/concerts/artists`, `GET /v1/me/concert-place`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · DISC-001 / APP-012 (pulled forward 2026-10-20), DISC-002, MUS-003 (2026-10-21) |
 | Insights | `StatsPanel` (7 days / 30 days / month / year / all time), then Music when the period has `stats.music`: listens and hours with their change, the top five artists / tracks / albums, "All listens" (MUS-008). A sidebar destination at the bottom on web, iPad and Mac; on iPhone from Home's Last 7 days and Library's More menu (DESIGN.md §18) | `GET /v1/me/stats?year&month` or `?span=all|last7|last30`, `GET /v1/me/listens/top?by&limit=5` | 2 · GAM-006c (pulled forward 2026-10-20), GAM-006d (2026-10-21), MUS-008 |
 | Listens | none — Recent (listens under day headings: cover, track, artist · album, time; load more) and Top (7 days / 30 days / Year / all time × artists / tracks / albums, top 20). Side by side when wide, a Recent \| Top switch on a phone. An album row opens its title page when it can: on the web when the album is in the catalog, on Apple when it is in the library. Titled "Listens" (never "Music", the albums kind). From Library's More menu and Insights' "All listens" on both clients, and the last listen in Settings → Connections → Music. Not a destination (DESIGN.md §18) | `GET /v1/me/listens?before&limit`, `GET /v1/me/listens/top?by&span|year&tz&limit` | 2 · MUS-008 (owner exception 2026-10-21) |
@@ -27,7 +27,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
 | Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
 | Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4); for an album, a square cover and the tracklist instead of the season map (MUS-001); More menu: Discuss in a group…, Remove from library… (confirmed, undoable in History, UX-061) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}`, `DELETE /v1/library/items/{id}` | 2 · M7 |
-| Tonight | `TonightStrip` | `GET /v1/library/items?status=in_progress` | 7 · M13 (client-composed on the Field since 2026-10-21, DESIGN.md §5) |
+| Tonight | `TonightStrip` | `GET /v1/tonight`, `POST /v1/tonight/{id}/feedback` | 7 · M13 (on the Field since 2026-10-21; server-ranked with a client fallback since 2026-10-23, DESIGN.md §5) |
 | Shelf | `Shelf`; Remove from library in the item's context menu on Apple | `GET /v1/library/items` + saved query, `DELETE /v1/library/items/{id}` | 1–2 · M6 / M7 |
 | Library · Now | `NowCard` (Library only; the agent does not emit it — `TonightStrip` is its agent counterpart). Under the filters; the newest six per group with "Show all N"; hidden while a status is chosen (DESIGN.md, 2026-10-22) | the synced shelf; `PUT .../episodes/{s}/{e}`, `PATCH /v1/library/items/{id}` | 2 · APP-017 |
 | Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
@@ -50,8 +50,9 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Friend profile | none — shelf first: header with counts, Watching, You both (both want, both finished, they loved), Recently finished; only a name when they hide their library | `GET /v1/social/friends/{userId}/profile` | 4 · SOC-001/003 (2026-10-21) |
 | Friend stories | `FriendStories` | friend activity route | 4 · SOC-003 |
 | Recap | `RecapStory` | `GET /v1/me/stats` | 2 · GAM-006a (pulled forward 2026-10-16) |
-| Profile and stats | `ProfilePanel`; `BadgeShelf` in 5. From the medallion on Home (iOS sheet, web `/app/profile`) | `GET /v1/me/profile/stats`; badges routes in 5 | 2 · GAM-006b (pulled forward 2026-10-22); 5 · GAM-004 |
-| Leaderboard | `Shelf`-like ranked list, friends only | leaderboard route | 5 · GAM-005 |
+| Profile and stats | `ProfilePanel`. From the medallion on Home (iOS sheet, web `/app/profile`) | `GET /v1/me/profile/stats` | 2 · GAM-006b (pulled forward 2026-10-22); 5 · GAM-004 |
+| Achievements (web `/app/achievements`; pushed on Apple from Home, Friends and Insights) | `StreakBar`, `BadgeShelf` — level, streak, badges by family with progress, hidden ones as "???", the points ledger | `GET /v1/me/progress`, `GET /v1/me/badges`, `POST /v1/me/badges/seen`, `GET /v1/me/points` | 5 · GAM-001…004 (owner pulled forward 2026-10-22) |
+| Leaderboard (on Friends, "This week") | `Shelf`-like ranked list, friends only, opt-in | `GET /v1/social/leaderboard` | 5 · GAM-005 (2026-10-22) |
 | Groups | `GroupRail`, `ChannelList`, `MessageList`, `MemberList`, `SpoilerVeil` (a `shelf` channel reads "List" and a Room "Watch party" in the UI); agent replies inside `MessageList` carry `TitleCard`, `CalendarRow`, `Shelf` | `/v1/groups/*`, `/v1/group-invites/*`, `/v1/realtime/ticket`, `/v1/ws` | 4 · GRP-001…GRP-012 (pulled forward 2026-10-20) |
 | Watch channel | `WatchPanel` above the channel's `MessageList` | `/v1/groups/{id}/channels/{cid}/session` + `/v1/ws` | 4 · GRP-009 (absorbs ROOM-001) |
 | Conversations | `ConversationView` | ciphertext message routes + `/v1/ws` | 6 · DM-* |
@@ -92,9 +93,9 @@ refuses and substitutes the nearest catalog piece.
 | `SeasonBrowser` | One season of public catalog titles on Discover (DISC-002) | season + year with steps either side, kind (anime, new shows, returning, movies), `CatalogHit` grid with `libraryItemId`, "Show more"; `DiscoverCard` per hit |
 | `NowPlayingCard` | What plays now | Up to three `NowPlayingItem`s: kind (episode / movie / track / video), name, subtitle, service, art, progress, started at, ends at, `libraryItemId` for library titles. Rendered on iOS as the "Now playing" Live Activity (`NowPlayingActivityAttributes`, SCR-009); a check-in by hand still uses "Now watching" (`NowWatchingAttributes`, WID-005) |
 | `UnfinishedRow` | Dropped or stalled items | ordered `libraryItemId`, reason (`dropped` / `stalled`), since, next `EpisodeKey` for shows |
-| `StreakBar` | Streak and week ticks | current streak, longest, last 7 days |
+| `StreakBar` | Streak and week ticks | current streak, longest, last 7 days (date, active), today done; level and points to next level beside it on Home |
 | `FriendStories` | Friends' watches today | friend ids, per-friend ordered watch events |
-| `BadgeShelf` | Earned badges | badge ids, tier, earned at |
+| `BadgeShelf` | Badges, earned and in progress | badge ids, tier and max tier, earned at, hidden, progress (current / target); on a friend's profile earned only, never private ones |
 | `ProfilePanel` | Profile | all-time time in days and hours, episodes, pages read, tiles per kind, time by kind, top eight genres, three most watched, networks, mean score and ratings histogram; undated ticks included; static (GAM-006b) |
 | `CardMenu` | Library, Home cards (web) | ⋯, right-click or long press: "Mark show watched" / "Mark watched", Open. iOS uses the card's context menu (PROG-005) |
 | `UndoToast` | Anywhere a bulk tap writes | "Marked N episodes · Undo", about six seconds, through `/v1/actions/{id}/undo` (PROG-005) |
@@ -111,10 +112,14 @@ refuses and substitutes the nearest catalog piece.
 `PlanCard`, `JobLedger`, `MatchTable`, and `UndoRibbon` are the four that make agent writes
 safe. None of them is optional decoration.
 
-**`AgentPresence` is chrome, not a catalog component (2026-10-21).** The reed mark, breathing
+**`AgentPresence` is chrome, not a catalog component (2026-10-21).** The owl's head, breathing
 slowly, beside a request waiting for the user or an import that is matching. The client shows
 it from state it already has; the agent never emits it. Web `src/components/AgentPresence.tsx`,
 Apple `Design/AgentPresence.swift`.
+
+**The owl's empty state is chrome too (2026-10-23).** `OwlEmpty` (web, `components/Brand.tsx`)
+and `OwlUnavailableView` (Apple, `Design/Owl.swift`) wrap a screen's existing empty copy and
+actions with the idling owl. The agent never emits them.
 
 **The catalog grows from nine to twenty, said out loud here (2026-10-09).** Phase 1.5 did not
 grow it, and Capture, remote approval, Shortcuts, and MCP still render on the original nine.
@@ -126,7 +131,9 @@ The eleven new components add product, not agent reach, and each has a reason:
   without the agent; these are Trakt's proven shapes.
 - `NowPlayingCard` (Phase 2) — the same data drives the Live Activity; one renderer for both.
 - `FriendStories` (Phase 4) — the only social read surface on Home.
-- `StreakBar`, `BadgeShelf`, `StatsPanel` (Phase 5) — gamification has no home in the nine.
+- `StreakBar`, `BadgeShelf`, `StatsPanel` (Phase 5; the first two pulled forward 2026-10-22) —
+  gamification has no home in the nine. The unlock toast and the top-tier card are chrome, not
+  catalog components: the agent never emits them.
 - `RoomPanel`, `ConversationView` (Phase 6) — realtime and E2E messaging are new objects.
   `RoomPanel` became `WatchPanel` on 2026-10-20, when rooms moved into groups.
 - `RecapStory` (GAM-006a, the twenty-first, added 2026-10-16) — the Recap is a full-screen,

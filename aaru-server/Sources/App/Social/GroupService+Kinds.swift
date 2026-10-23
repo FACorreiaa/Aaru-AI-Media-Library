@@ -178,6 +178,11 @@ extension GroupService {
             throw Self.invalid("countdownSeconds", "Count down from 3 to 60 seconds.")
         }
         try await stores.groupKinds.startSession(party.id, at: now().addingTimeInterval(TimeInterval(seconds)))
+        // Everyone ready when it starts was at the party (GAM-001), once per party.
+        let gamification = GamificationService(stores: stores, now: now)
+        for member in party.ready {
+            await gamification.roomAttended(member.id, session: party.id)
+        }
         await announce(.watchUpdated(group: group, channel: channel), in: group)
         return try await requireParty(group, channel, viewer)
     }
@@ -195,6 +200,7 @@ extension GroupService {
     func markWatched(_ group: UUID, channel: UUID, viewer: UserID) async throws {
         let (party, title) = try await requireParty(group, channel, viewer)
         guard party.startsAt != nil else { throw Self.invalid("party", "The party has not started yet.") }
+        await GamificationService(stores: stores, now: now).roomAttended(viewer, session: party.id)
         let ref = MediaRef(titleID: title.id, type: title.type)
         if let episode = party.episode {
             let entry = try await library.add(ref, status: .inProgress, userID: viewer)
