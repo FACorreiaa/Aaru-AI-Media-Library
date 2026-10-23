@@ -1,0 +1,106 @@
+import type { components } from '../api/schema'
+
+// BOARD-002: how the friends-only Board reads on the web. Pure display rules; every rule about
+// who sees what is the server's.
+
+export type BoardPost = components['schemas']['BoardPost']
+export type BoardComment = components['schemas']['BoardComment']
+type SpoilerStamp = components['schemas']['SpoilerStamp']
+type MediaType = components['schemas']['MediaType']
+
+export type BoardSort = 'recent' | 'top'
+
+/** A 1-10 rating as five symbols: whole stars, a half where odd. */
+export function starsLabel(rating: number): string {
+  const r = Math.max(0, Math.min(10, Math.round(rating)))
+  const full = Math.floor(r / 2)
+  const half = r % 2 === 1 ? 1 : 0
+  return '★'.repeat(full) + '½'.repeat(half) + '☆'.repeat(5 - full - half)
+}
+
+export function spoilerLabel(stamp: SpoilerStamp | undefined): string | null {
+  if (!stamp) return null
+  if (stamp.ending) return 'Spoilers for the ending'
+  if (stamp.season != null && stamp.episode != null) {
+    return `Spoilers up to S${stamp.season} · E${stamp.episode}`
+  }
+  return null
+}
+
+const DONE: Record<MediaType, string> = {
+  movie: 'Watched',
+  show: 'Watched',
+  book: 'Read',
+  album: 'Listened',
+}
+
+/** What posting a review does to the library, in words. Null without a rating: it changes nothing. */
+export function reviewEffect(
+  hit: { title: string; type: MediaType; libraryItemId?: string },
+  rating?: number,
+): string | null {
+  if (rating == null) return null
+  const stars = starsLabel(rating)
+  if (hit.libraryItemId)
+    return `Updates your rating to ${stars}. Its status stays.`
+  if (hit.type === 'show') {
+    return `Adds ${hit.title} to ${DONE.show}, or Watching if it's still airing, ${stars}`
+  }
+  return `Adds ${hit.title} to ${DONE[hit.type]}, ${stars}`
+}
+
+export type Thread = { comment: BoardComment; replies: BoardComment[] }
+
+export function threadComments(items: BoardComment[]): Thread[] {
+  const ids = new Set(items.map((c) => c.id))
+  const threads = new Map<string, Thread>()
+  const order: Thread[] = []
+  for (const c of items) {
+    if (c.replyTo && ids.has(c.replyTo)) continue
+    const t = { comment: c, replies: [] }
+    threads.set(c.id, t)
+    order.push(t)
+  }
+  for (const c of items) {
+    if (c.replyTo) threads.get(c.replyTo)?.replies.push(c)
+  }
+  return order
+}
+
+export function mergeComments(
+  current: BoardComment[],
+  page: BoardComment[],
+): BoardComment[] {
+  const seen = new Set(current.map((c) => c.id))
+  const out = [...current]
+  for (const c of page) {
+    if (seen.has(c.id)) continue
+    seen.add(c.id)
+    out.push(c)
+  }
+  return out
+}
+
+/** A page can be empty and still have a next one (a cursor skipping hidden rows). */
+export function shouldLoadMore(page: {
+  items: unknown[]
+  next?: string | null
+}): boolean {
+  return Boolean(page.next)
+}
+
+export type UpvoteState = { upvotes: number; upvotedByMe: boolean }
+
+export function toggleUpvote(s: UpvoteState): UpvoteState {
+  return s.upvotedByMe
+    ? { upvotes: Math.max(0, s.upvotes - 1), upvotedByMe: false }
+    : { upvotes: s.upvotes + 1, upvotedByMe: true }
+}
+
+export function boardEmpty(
+  posts: BoardPost[],
+  friendCount: number,
+): 'no-friends' | 'quiet' | null {
+  if (posts.length > 0) return null
+  return friendCount === 0 ? 'no-friends' : 'quiet'
+}

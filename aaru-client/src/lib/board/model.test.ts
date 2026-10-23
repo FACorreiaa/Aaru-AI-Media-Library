@@ -1,0 +1,102 @@
+import { describe, expect, it } from 'vitest'
+import {
+  boardEmpty,
+  mergeComments,
+  reviewEffect,
+  shouldLoadMore,
+  spoilerLabel,
+  starsLabel,
+  threadComments,
+  toggleUpvote,
+} from './model'
+import type { BoardComment, BoardPost } from './model'
+
+const comment = (id: string, replyTo?: string): BoardComment => ({
+  id,
+  postId: 'p1',
+  body: id,
+  mentions: [],
+  mentionsAgent: false,
+  deleted: false,
+  createdAt: '2026-10-23T10:00:00Z',
+  fromAgent: false,
+  replyTo,
+})
+
+describe('board model', () => {
+  it('renders ratings as five symbols with a half', () => {
+    expect(starsLabel(9)).toBe('★★★★½')
+    expect(starsLabel(10)).toBe('★★★★★')
+    expect(starsLabel(1)).toBe('½☆☆☆☆')
+    expect(starsLabel(4)).toBe('★★☆☆☆')
+  })
+
+  it('labels spoiler stamps', () => {
+    expect(spoilerLabel({ season: 2, episode: 10, ending: false })).toBe(
+      'Spoilers up to S2 · E10',
+    )
+    expect(spoilerLabel({ ending: true })).toBe('Spoilers for the ending')
+    expect(spoilerLabel(undefined)).toBeNull()
+  })
+
+  it('says what a review does to the library', () => {
+    expect(reviewEffect({ title: 'Arrival', type: 'movie' }, 8)).toBe(
+      'Adds Arrival to Watched, ★★★★☆',
+    )
+    expect(reviewEffect({ title: 'Dune', type: 'book' }, 8)).toBe(
+      'Adds Dune to Read, ★★★★☆',
+    )
+    expect(reviewEffect({ title: 'Severance', type: 'show' }, 9)).toBe(
+      "Adds Severance to Watched, or Watching if it's still airing, ★★★★½",
+    )
+    expect(
+      reviewEffect({ title: 'Arrival', type: 'movie', libraryItemId: 'x' }, 9),
+    ).toBe('Updates your rating to ★★★★½. Its status stays.')
+    expect(reviewEffect({ title: 'Arrival', type: 'movie' })).toBeNull()
+  })
+
+  it('threads replies under their parent', () => {
+    const [c1, r1, c2, r2] = [
+      comment('C1'),
+      comment('R1', 'C1'),
+      comment('C2'),
+      comment('R2', 'C1'),
+    ]
+    expect(threadComments([c1, r1, c2, r2])).toEqual([
+      { comment: c1, replies: [r1, r2] },
+      { comment: c2, replies: [] },
+    ])
+    const orphan = comment('O', 'gone')
+    expect(threadComments([orphan])).toEqual([{ comment: orphan, replies: [] }])
+  })
+
+  it('merges comment pages without duplicates', () => {
+    const a = comment('a')
+    const b = comment('b')
+    const c = comment('c')
+    expect(mergeComments([a, b], [b, c]).map((x) => x.id)).toEqual([
+      'a',
+      'b',
+      'c',
+    ])
+  })
+
+  it('loads more whenever next is set', () => {
+    expect(shouldLoadMore({ items: [], next: 'x' })).toBe(true)
+    expect(shouldLoadMore({ items: [1], next: null })).toBe(false)
+    expect(shouldLoadMore({ items: [1] })).toBe(false)
+  })
+
+  it('toggles an upvote', () => {
+    const on = toggleUpvote({ upvotes: 3, upvotedByMe: false })
+    expect(on).toEqual({ upvotes: 4, upvotedByMe: true })
+    expect(toggleUpvote(on)).toEqual({ upvotes: 3, upvotedByMe: false })
+  })
+
+  it('tells an empty board from a quiet one', () => {
+    const post = { id: 'p' } as BoardPost
+    expect(boardEmpty([], 0)).toBe('no-friends')
+    expect(boardEmpty([], 2)).toBe('quiet')
+    expect(boardEmpty([post], 2)).toBeNull()
+  })
+})
