@@ -932,6 +932,163 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/board:
+    get:
+      operationId: listBoard
+      summary: The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10.
+      parameters:
+        - name: sort
+          in: query
+          schema: {type: string, enum: [recent, top], default: recent}
+        - name: before
+          in: query
+          description: Posts older than this one. Ignored by `top`.
+          schema: {type: string, format: uuid}
+        - name: limit
+          in: query
+          description: 1–50, default 20.
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPostPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts:
+    post:
+      operationId: createBoardPost
+      summary: Post to the Board. Needs a handle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BoardPostCreate'}
+      responses:
+        '201':
+          description: The post.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPost'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getBoardPost
+      summary: One post. 404 unless it is yours or a friend's.
+      responses:
+        '200':
+          description: The post.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPost'}
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: editBoardPost
+      summary: Edit your own post.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BoardPostEdit'}
+      responses:
+        '200':
+          description: The post.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPost'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteBoardPost
+      summary: Delete your own post.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}/upvote:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+    put:
+      operationId: upvoteBoardPost
+      summary: Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's.
+      responses:
+        '204':
+          description: Upvoted.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: removeBoardPostUpvote
+      summary: Take your upvote back. Fine if you never gave one.
+      responses:
+        '204':
+          description: Removed.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}/upvotes:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listBoardPostUpvoters
+      summary: Who upvoted a post, minus anyone blocked either way with you.
+      responses:
+        '200':
+          description: The upvoters.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialUserList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}/comments:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listBoardComments
+      summary: Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit.
+      parameters:
+        - {name: after, in: query, required: false, description: The id of the last comment seen., schema: {type: string, format: uuid}}
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      responses:
+        '200':
+          description: The comments.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardCommentPage'}
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createBoardComment
+      summary: Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BoardCommentCreate'}
+      responses:
+        '201':
+          description: The comment.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardComment'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/board/posts/{postId}/comments/{commentId}:
+    parameters:
+      - {name: postId, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: commentId, in: path, required: true, schema: {type: string, format: uuid}}
+    delete:
+      operationId: deleteBoardComment
+      summary: Delete a comment. Its author or the post's author can.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/groups/{groupId}/channels/{channelId}/read:
     post:
       operationId: markChannelRead
@@ -1790,6 +1947,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TitleDetail'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/titles/{id}/posts:
+    get:
+      operationId: listTitlePosts
+      summary: Posts about this title by you and your friends, newest first.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: 1–50, default 20.
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BoardPostPage'}
         default:
           $ref: '#/components/responses/Error'
   /v1/library/items:
@@ -3684,6 +3864,79 @@ components:
         clientNonce: {type: string, maxLength: 64, description: Makes a retry safe.}
         spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: "Title channels: stamp by hand. Absent: stamped from your progress."}
         spoilerFree: {type: boolean, description: 'Title channels: no stamp at all.'}
+    BoardComment:
+      type: object
+      required: [id, postId, body, mentions, mentionsAgent, deleted, createdAt, fromAgent]
+      properties:
+        id: {type: string, format: uuid}
+        postId: {type: string, format: uuid}
+        author: {$ref: '#/components/schemas/SocialUser', description: Absent for Aaru's comments and for deleted comments.}
+        body: {type: string, description: Empty when deleted.}
+        mentions:
+          type: array
+          description: Friends the comment tags.
+          items: {type: string, format: uuid}
+        mentionsAgent: {type: boolean, description: The comment tags @aaru. Recorded only; Aaru does not answer on the Board yet.}
+        deleted: {type: boolean}
+        createdAt: {type: string, format: date-time}
+        fromAgent: {type: boolean, description: Written by @aaru. It has no author.}
+        replyTo: {type: string, format: uuid, description: The top-level comment this one answers. Never a reply itself.}
+        mine: {type: boolean}
+    BoardCommentCreate:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
+        replyTo: {type: string, format: uuid}
+    BoardCommentPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/BoardComment'}
+        next:
+          type: [string, 'null']
+          format: uuid
+          description: Pass as `after` for the next page. Null on the last page. A page can be empty or short with a `next` still set, because deleted and blocked rows are skipped after the page is cut; keep following it.
+    BoardPost:
+      type: object
+      required: [id, author, body, createdAt, upvotes, upvotedByMe, commentCount, veiled, mine]
+      properties:
+        id: {type: string, format: uuid}
+        author: {$ref: '#/components/schemas/SocialUser'}
+        title: {$ref: '#/components/schemas/TitleSummary'}
+        rating: {type: number, description: Needs a title.}
+        body: {type: string}
+        spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: 'Only on your own posts: it says where you are in the title.'}
+        createdAt: {type: string, format: date-time}
+        editedAt: {type: string, format: date-time}
+        upvotes: {type: integer}
+        upvotedByMe: {type: boolean}
+        commentCount: {type: integer}
+        veiled: {type: boolean, description: "It may spoil what you have not watched yet: show it veiled until you tap."}
+        mine: {type: boolean}
+    BoardPostPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/BoardPost'}
+    BoardPostCreate:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
+        title: {$ref: '#/components/schemas/MediaRef'}
+        rating: {type: number, description: Needs a title.}
+        spoiler: {$ref: '#/components/schemas/SpoilerStamp', description: "With a title: stamp by hand. Absent: stamped from your progress."}
+        spoilerFree: {type: boolean, description: 'With a title: no stamp at all.'}
+    BoardPostEdit:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, maxLength: 4000}
     MessageUpdate:
       type: object
       required: [body]

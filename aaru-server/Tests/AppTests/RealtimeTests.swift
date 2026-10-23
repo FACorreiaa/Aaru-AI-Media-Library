@@ -64,8 +64,8 @@ struct RealtimeTests {
     @Test("Group writes reach every member's socket, flagged for those who blocked the author")
     func groupEvents() async throws {
         try await LibraryHarness.run { env in
-            let mine = try await groups.claimHandle(env)
-            let ana = try await groups.friend(env, of: mine)
+            let mine = try await claimHandle(env)
+            let ana = try await friend(env, of: mine)
             let (group, general) = try await groups.createGroup(env)
             let anaID = try #require(UUID(uuidString: ana.id)).asUser
             let anaSocket = Frames()

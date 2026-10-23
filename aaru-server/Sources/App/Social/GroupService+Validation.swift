@@ -7,7 +7,12 @@ extension GroupService {
     /// Members tagged with `@handle`, and whether `@aaru` was. A tag inside a word or an email
     /// address is not a mention.
     static func mentions(in body: String, members: [GroupMember]) -> (users: [UserID], agent: Bool) {
-        let byHandle = Dictionary(members.map { ($0.user.handle, $0.user.id) }, uniquingKeysWith: { first, _ in first })
+        mentions(in: body, users: members.map(\.user))
+    }
+
+    /// The handle-matching core, shared with the Board: the same rules over any set of people.
+    static func mentions(in body: String, users: [SocialUser]) -> (users: [UserID], agent: Bool) {
+        let byHandle = Dictionary(users.map { ($0.handle, $0.id) }, uniquingKeysWith: { first, _ in first })
         var users: [UserID] = []
         var agent = false
         for match in body.matches(of: /@([A-Za-z0-9_]{3,20})/) {

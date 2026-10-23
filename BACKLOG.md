@@ -87,6 +87,34 @@ library layer stay separate, external IDs stored whenever known, no second backe
   code and bronze, silver, gold and platinum in the UI, drawn without gold fills (DESIGN.md).
 - **Listens alone do not keep a streak**, and friend and first-import points stay off the weekly
   board (calls made in the design; the owner can reverse them).
+
+- **Boards and Ask Aaru (owner, 2026-10-22).** Two pulled-forward features, designed in
+  `docs/superpowers/specs/2026-10-22-boards-and-ask-aaru-design.md`. Items BOARD-001…004 and
+  ASK-001…008 below.
+  IDs renamed from BRD-* to BOARD-* on 2026-10-23 (brand work owns BRD-*); commit messages before
+  the rename say BRD-00x.
+
+  | Topic | Decision |
+  | --- | --- |
+  | Board reach | Friends only. The author's current friends see a post; strangers see nothing. No public page, no global feed |
+  | Post shape | Free text, or one attached title (rating, text, optional spoiler stamp) |
+  | Upvote | One per user per post. Count plus who upvoted. Sort: Recent (default) or Top this week |
+  | Comments | Everyone who can see the post sees every comment and handle. Blocks hide both ways (X-011: 404, never 403) |
+  | Board placement | The Groups tab becomes Social, with a `Board \| Groups` switch; Board is the default |
+  | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating (a still-airing show lands as `in_progress` with aired episodes ticked, PROG-005, so BOARD-002's composer preview must say so); a title already there keeps its status and gets the rating |
+  | Chat writes | Like a tap: one item applies at once, journaled and undoable; anything bigger is a `PlanCard` approved in Aaru (X-009) |
+  | Web search | Media topics only (films, shows, anime, books, music, sport). Off-topic is refused before any search |
+  | Suggestions | Owner exception: personal suggestions in chat only, when asked. No "because you watched" rows anywhere else |
+  | Chat entry | An Ask Aaru page opened by a sparkle "Ask" button beside the medallion; "Ask Aaru about this" on title pages |
+  | Chat v1 | History and streaming, voice input (cluster Whisper), image upload, Share to Board |
+  | LLM budget | The shared `haiku-trial` workspace ($20 cap). No fallback model; out of credit shows "resting" |
+
+- **BOARD-001 as built (2026-10-22).** A review of a new title writes two journal rows (add, then
+  the rating update), so undo is per row. "Report post" reuses `reportUser` on the post author
+  with the note prefixed `post:<id>`; there is no new route. Comment list pages carry a nullable
+  `next` cursor, and a page can be short or empty after deleted and blocked rows are filtered.
+  Known gaps, for later: the upvote count and `commentCount` include rows from users the viewer
+  blocked while the lists hide them.
 - **Everything playing, in one Live Activity (owner, 2026-10-22, SCR-009).** When a show and a
   song, or a show and a YouTube video, play at once, the iPhone shows them together: one
   combined "Now playing" activity, not one activity per thing (owner chose the combined layout
@@ -504,6 +532,7 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
+| BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -2728,6 +2757,75 @@ start, and no push payload contains message text.
 
 Built 2026-10-21: both switches are off until turned on, like `airing`. Browsers get the same
 alerts through web push and open `/app/groups/{g}/{c}`. Mac push stays off.
+
+## P4 · Boards (pulled forward 2026-10-22)
+
+Friends post, upvote and comment, like a small X. Design:
+`docs/superpowers/specs/2026-10-22-boards-and-ask-aaru-design.md`. Visibility lives in
+`BoardService` (X-011).
+
+### BOARD-001 · Board server: posts, upvotes, comments · L · owner, 2026-10-22
+**Needs:** SOC-001, SOC-002, GRP-007.
+Tables `board_posts`, `board_upvotes`, `board_comments` (migration `CreateBoards`). Endpoints
+`/v1/board`, `/v1/board/posts[/{id}]`, `…/upvote` (PUT, DELETE), `…/comments[/{cid}]` and
+`GET /v1/titles/{id}/posts`. A post is visible to its author and the author's friends unless
+either side blocked the other; anything else is the same 404 as a missing post. A rating on a
+post writes the library through `LibraryService`: a new title is added as finished, then rated,
+as two journal rows (undo is per row); an existing title keeps its status. A still-airing show
+lands as `in_progress` with its aired episodes ticked (PROG-005), so BOARD-002's composer preview
+must say so. The spoiler veil
+reuses the title-channel stamp. Comment lists page by cursor (`next`, nullable; a page can be
+short or empty after filtering). Reports use `reportUser` with the note `post:<id>`.
+
+**Done when:** friends see a post, strangers and ex-friends get 404, a block hides both ways,
+and a review of a new title adds it as Watched with the rating, all on TestFlight and the web.
+**Built 2026-10-22:** server only. **Known gaps:** upvote and comment counts include rows from
+users the viewer blocked.
+
+### BOARD-002 · Board on the web, and the Social tab · L
+**Needs:** BOARD-001.
+Groups becomes Social with a `Board | Groups` switch. Feed, composer, comment thread, upvote,
+"Top this week" rail, and "From friends" on the title page. Surfaces in `DESIGN.md` and `VIEWS.md`.
+
+### BOARD-003 · Board on iOS and Mac · L
+**Needs:** BOARD-001.
+The same surfaces as BOARD-002 in SwiftUI.
+
+### BOARD-004 · `@aaru` on the Board, and push · M
+**Needs:** BOARD-001, GRP-011, GRP-012.
+`@aaru` in a post or comment enqueues an agent reply (caps shared with group mentions, 30 per
+user per day); `@handle` mentions and comments on your post push without text. Notification
+filters follow post visibility, not the commenter's friends.
+
+## P7 · Ask Aaru (owner, 2026-10-22)
+
+A one-to-one chat with Aaru about the library, what is airing, titles, music and sport. Backlog:
+ASK-001…ASK-008. Not started.
+
+### ASK-001 · Chat engine, tables and endpoints · L
+Streaming provider, scope gate (fail-closed), `chats` and `chat_turns`, `agent_usage` cost and
+search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
+
+### ASK-002 · Ask Aaru on the web · L
+**Needs:** ASK-001.
+
+### ASK-003 · Ask Aaru on iOS and Mac · L
+**Needs:** ASK-001.
+
+### ASK-004 · Web search and citations · M
+**Needs:** ASK-001. Media topics only, `max_uses` 3 per turn.
+
+### ASK-005 · Library writes from chat · M
+**Needs:** ASK-001. One item applies like a tap; more becomes a `PlanCard` (X-009).
+
+### ASK-006 · Voice input · M
+**Needs:** ASK-001. Cluster Whisper; `allow-whisper` in the infra repo first.
+
+### ASK-007 · Image upload · M
+**Needs:** ASK-001. 5 MB, kept 30 days; `docs/privacy.md`.
+
+### ASK-008 · Share to Board · S
+**Needs:** ASK-001, BOARD-002. A client tap that opens the composer prefilled; no agent write path.
 
 ---
 

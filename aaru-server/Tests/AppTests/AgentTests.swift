@@ -133,8 +133,8 @@ struct AgentTests {
         ])
         try await clearQueue()
         try await LibraryHarness.run(model: model) { env in
-            let mine = try await groups.claimHandle(env)
-            let ana = try await groups.friend(env, of: mine)
+            let mine = try await claimHandle(env)
+            let ana = try await friend(env, of: mine)
             let (group, general) = try await groups.createGroup(env)
             try await groups.join(env, ana, group: group)
             #expect(try await env.send(.get, "/v1/groups/\(group)").json()["agent"] as? Bool == true)
@@ -183,7 +183,7 @@ struct AgentTests {
     func caps() async throws {
         let model = ScriptedModel([])
         try await LibraryHarness.run(model: model) { env in
-            _ = try await groups.claimHandle(env)
+            _ = try await claimHandle(env)
             let (group, general) = try await groups.createGroup(env)
             let channel = "/v1/groups/\(group)/channels/\(general)"
             for number in 1 ... GroupService.agentHourlyCapPerGroup + 2 {
@@ -204,7 +204,7 @@ struct AgentTests {
         ])
         try await clearQueue()
         try await LibraryHarness.run(model: refusing) { env in
-            _ = try await groups.claimHandle(env)
+            _ = try await claimHandle(env)
             let (group, general) = try await groups.createGroup(env)
             let channel = "/v1/groups/\(group)/channels/\(general)"
             _ = try await groups.post(env, channel, "@aaru something odd")
@@ -216,14 +216,14 @@ struct AgentTests {
         let failing = ScriptedModel([])
         try await clearQueue()
         try await LibraryHarness.run(model: failing) { env in
-            _ = try await groups.claimHandle(env)
+            _ = try await claimHandle(env)
             let (group, general) = try await groups.createGroup(env)
             let channel = "/v1/groups/\(group)/channels/\(general)"
             _ = try await groups.post(env, channel, "@aaru hello?")
-            var replies = try #require(env.services.agentReplies)
+            let base = try #require(env.services.agentReplies)
             // Each retry waits; a clock that jumps ahead lets the next attempt claim it.
             let clock = TestClock(Date())
-            replies.now = { clock.now }
+            let replies = base.with(now: { clock.now })
             for _ in 1 ... AgentReplyService.maxAttempts {
                 #expect(try await replies.runNext())
                 clock.advance(by: 600)
@@ -239,7 +239,7 @@ struct AgentTests {
     @Test("GRP-010: with no model configured, groups say so and mentions queue nothing")
     func disabled() async throws {
         try await LibraryHarness.run { env in
-            _ = try await groups.claimHandle(env)
+            _ = try await claimHandle(env)
             let (group, general) = try await groups.createGroup(env)
             #expect(try await env.send(.get, "/v1/groups/\(group)").json()["agent"] as? Bool == false)
             _ = try await groups.post(env, "/v1/groups/\(group)/channels/\(general)", "@aaru hi")

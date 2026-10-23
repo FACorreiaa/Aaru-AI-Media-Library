@@ -886,6 +886,140 @@ export interface paths {
     patch: operations['editMessage']
     trace?: never
   }
+  '/v1/board': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10. */
+    get: operations['listBoard']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Post to the Board. Needs a handle. */
+    post: operations['createBoardPost']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts/{postId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    /** One post. 404 unless it is yours or a friend's. */
+    get: operations['getBoardPost']
+    put?: never
+    post?: never
+    /** Delete your own post. */
+    delete: operations['deleteBoardPost']
+    options?: never
+    head?: never
+    /** Edit your own post. */
+    patch: operations['editBoardPost']
+    trace?: never
+  }
+  '/v1/board/posts/{postId}/upvote': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's. */
+    put: operations['upvoteBoardPost']
+    post?: never
+    /** Take your upvote back. Fine if you never gave one. */
+    delete: operations['removeBoardPostUpvote']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts/{postId}/upvotes': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    /** Who upvoted a post, minus anyone blocked either way with you. */
+    get: operations['listBoardPostUpvoters']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts/{postId}/comments': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    /** Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit. */
+    get: operations['listBoardComments']
+    put?: never
+    /** Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's. */
+    post: operations['createBoardComment']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/board/posts/{postId}/comments/{commentId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+        commentId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Delete a comment. Its author or the post's author can. */
+    delete: operations['deleteBoardComment']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/groups/{groupId}/channels/{channelId}/read': {
     parameters: {
       query?: never
@@ -1578,6 +1712,23 @@ export interface paths {
     }
     /** A title from the catalog. Shows include their seasons and episodes. */
     get: operations['getTitle']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/titles/{id}/posts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Posts about this title by you and your friends, newest first. */
+    get: operations['listTitlePosts']
     put?: never
     post?: never
     delete?: never
@@ -3124,6 +3275,81 @@ export interface components {
       spoiler?: components['schemas']['SpoilerStamp']
       /** @description Title channels: no stamp at all. */
       spoilerFree?: boolean
+    }
+    BoardComment: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      postId: string
+      /** @description Absent for Aaru's comments and for deleted comments. */
+      author?: components['schemas']['SocialUser']
+      /** @description Empty when deleted. */
+      body: string
+      /** @description Friends the comment tags. */
+      mentions: string[]
+      /** @description The comment tags @aaru. Recorded only; Aaru does not answer on the Board yet. */
+      mentionsAgent: boolean
+      deleted: boolean
+      /** Format: date-time */
+      createdAt: string
+      /** @description Written by @aaru. It has no author. */
+      fromAgent: boolean
+      /**
+       * Format: uuid
+       * @description The top-level comment this one answers. Never a reply itself.
+       */
+      replyTo?: string
+      mine?: boolean
+    }
+    BoardCommentCreate: {
+      body: string
+      /** Format: uuid */
+      replyTo?: string
+    }
+    BoardCommentPage: {
+      items: components['schemas']['BoardComment'][]
+      /**
+       * Format: uuid
+       * @description Pass as `after` for the next page. Null on the last page. A page can be empty or short with a `next` still set, because deleted and blocked rows are skipped after the page is cut; keep following it.
+       */
+      next?: string | null
+    }
+    BoardPost: {
+      /** Format: uuid */
+      id: string
+      author: components['schemas']['SocialUser']
+      title?: components['schemas']['TitleSummary']
+      /** @description Needs a title. */
+      rating?: number
+      body: string
+      /** @description Only on your own posts: it says where you are in the title. */
+      spoiler?: components['schemas']['SpoilerStamp']
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      editedAt?: string
+      upvotes: number
+      upvotedByMe: boolean
+      commentCount: number
+      /** @description It may spoil what you have not watched yet: show it veiled until you tap. */
+      veiled: boolean
+      mine: boolean
+    }
+    BoardPostPage: {
+      items: components['schemas']['BoardPost'][]
+    }
+    BoardPostCreate: {
+      body: string
+      title?: components['schemas']['MediaRef']
+      /** @description Needs a title. */
+      rating?: number
+      /** @description With a title: stamp by hand. Absent: stamped from your progress. */
+      spoiler?: components['schemas']['SpoilerStamp']
+      /** @description With a title: no stamp at all. */
+      spoilerFree?: boolean
+    }
+    BoardPostEdit: {
+      body: string
     }
     MessageUpdate: {
       body: string
@@ -5502,6 +5728,270 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  listBoard: {
+    parameters: {
+      query?: {
+        sort?: 'recent' | 'top'
+        /** @description Posts older than this one. Ignored by `top`. */
+        before?: string
+        /** @description 1–50, default 20. */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPostPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BoardPostCreate']
+      }
+    }
+    responses: {
+      /** @description The post. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPost']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The post. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPost']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  editBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BoardPostEdit']
+      }
+    }
+    responses: {
+      /** @description The post. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPost']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  upvoteBoardPost: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Upvoted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  removeBoardPostUpvote: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listBoardPostUpvoters: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The upvoters. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SocialUserList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listBoardComments: {
+    parameters: {
+      query?: {
+        /** @description The id of the last comment seen. */
+        after?: string
+        limit?: number
+      }
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The comments. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardCommentPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createBoardComment: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BoardCommentCreate']
+      }
+    }
+    responses: {
+      /** @description The comment. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardComment']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteBoardComment: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        postId: string
+        commentId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
   markChannelRead: {
     parameters: {
       query?: never
@@ -6642,6 +7132,32 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['TitleDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listTitlePosts: {
+    parameters: {
+      query?: {
+        /** @description 1–50, default 20. */
+        limit?: number
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BoardPostPage']
         }
       }
       default: components['responses']['Error']

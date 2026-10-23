@@ -45,12 +45,12 @@ struct GroupPushTests {
     func mentions() async throws {
         let sender = PushTests.FakeSender()
         try await LibraryHarness.run(push: sender) { env in
-            let mine = try await groups.claimHandle(env)
+            let mine = try await claimHandle(env)
             let (group, general) = try await groups.createGroup(env)
-            let ana = try await groups.friend(env, of: mine)
-            let ben = try await groups.friend(env, of: mine)
-            let cai = try await groups.friend(env, of: mine)
-            let dan = try await groups.friend(env, of: mine)
+            let ana = try await friend(env, of: mine)
+            let ben = try await friend(env, of: mine)
+            let cai = try await friend(env, of: mine)
+            let dan = try await friend(env, of: mine)
             for person in [ana, ben, cai, dan] {
                 try await groups.join(env, person, group: group)
             }
@@ -94,10 +94,10 @@ struct GroupPushTests {
     func invites() async throws {
         let sender = PushTests.FakeSender()
         try await LibraryHarness.run(push: sender) { env in
-            let mine = try await groups.claimHandle(env)
+            let mine = try await claimHandle(env)
             let (group, _) = try await groups.createGroup(env, "Anime night")
-            let ana = try await groups.friend(env, of: mine)
-            let ben = try await groups.friend(env, of: mine)
+            let ana = try await friend(env, of: mine)
+            let ben = try await friend(env, of: mine)
             let anaDevice = try await device(env, token: ana.token)
             _ = try await device(env, token: ben.token)
             _ = try await settings(env, ["groupInvites": true], token: ana.token)

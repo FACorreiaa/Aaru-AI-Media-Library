@@ -220,6 +220,14 @@ Use these words in code, APIs, and UI:
 - **Room** — a watch-together session: invite, countdown, reactions, shared check-off. Aaru
   does not control anyone's player. Since 2026-10-20 it lives in a `watch` channel. The UI
   word is "Watch party" (owner, 2026-10-21: a label only; code keeps Room)
+- **Board** — the friends-only stream of posts. A query, not a table. No public page, no global
+  feed
+- **Post** — one Board entry by a user: free text, or one title with a rating and a spoiler
+  stamp. Not a Group message
+- **Comment** — a reply on a post, one level of nesting. Can be by Aaru
+- **Upvote** — one per user per post
+- **Chat** / **Chat turn** — a one-to-one thread with Aaru, and one user or Aaru entry in it.
+  Never "Conversation" or "Message": those are the encrypted DM terms
 - **Conversation / Message** — an end-to-end encrypted DM thread. The server only ever holds
   ciphertext
 - **Device** — one installed client, the unit for push tokens and Signal keys
@@ -255,7 +263,7 @@ and Home stats 2026-10-20; agent connections, MCP, the Claude connector and remo
 concerts (MUS-001…003), 2026-10-21; friend invite links, profiles and basic social, 2026-10-21;
 profile stats without badges (GAM-006b) and the whole show marked watched (PROG-005), 2026-10-22;
 the points ledger, levels, streaks, badges, the friends leaderboard and the streak widget
-(GAM-001…005, WID-007), 2026-10-22).
+(GAM-001…005, WID-007) and Boards, 2026-10-22).
 
 ## Out of scope (do not add unless asked)
 

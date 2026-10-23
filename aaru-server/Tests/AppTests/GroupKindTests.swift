@@ -8,15 +8,15 @@ struct GroupKindTests {
     let groups = GroupTests()
 
     struct Fixture {
-        let ana: GroupTests.Person
+        let ana: Person
         let group: String
         let channel: String
     }
 
     /// A group with the harness user as owner and Ana as a member, plus a channel of `kind`.
     func setUp(_ env: LibraryHarness, kind: String, title: [String: Any]? = nil) async throws -> Fixture {
-        let mine = try await groups.claimHandle(env)
-        let ana = try await groups.friend(env, of: mine)
+        let mine = try await claimHandle(env)
+        let ana = try await friend(env, of: mine)
         let (group, _) = try await groups.createGroup(env)
         try await groups.join(env, ana, group: group)
         var body: [String: Any] = ["kind": kind]

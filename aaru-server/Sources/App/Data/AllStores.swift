@@ -34,6 +34,7 @@ final class Stores: Sendable {
     let tonight: any TonightStore
     let capture: any CaptureStore
     let entitlements: any EntitlementStore
+    let boards: any BoardStore
 
     init(
         health: any DatabaseHealth,
@@ -65,7 +66,8 @@ final class Stores: Sendable {
         gamification: any GamificationStore,
         tonight: any TonightStore,
         capture: any CaptureStore,
-        entitlements: any EntitlementStore
+        entitlements: any EntitlementStore,
+        boards: any BoardStore
     ) {
         self.health = health
         self.users = users
@@ -97,5 +99,6 @@ final class Stores: Sendable {
         self.tonight = tonight
         self.capture = capture
         self.entitlements = entitlements
+        self.boards = boards
     }
 }

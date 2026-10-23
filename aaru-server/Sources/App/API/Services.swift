@@ -21,6 +21,7 @@ struct Services: Sendable {
     var social: SocialService
     var invites: InviteService
     var groups: GroupService
+    var board: BoardService
     var concerts: ConcertService
     /// Aaru Plus (BIL-001). Purchases answer 503 until `App+build` gives it Apple's verifier.
     var billing: BillingService
@@ -85,6 +86,7 @@ struct Services: Sendable {
             social: SocialService(stores: stores),
             invites: InviteService(stores: stores, library: library, webBaseURL: oauth.webBaseURL),
             groups: groups,
+            board: BoardService(stores: stores, resolver: resolver, library: library),
             concerts: ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places),
             billing: BillingService(stores: stores, apple: nil),
             realtime: realtime,
