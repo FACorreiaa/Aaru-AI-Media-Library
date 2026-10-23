@@ -494,6 +494,7 @@ account or a stranger that has not happened yet.
 | BRD-007 | Built | this PR; `Design/Surfaces.swift` | Apple contrast P1s + launch screen in Paper. Owner checks a sheet and a cold launch in dark on TestFlight |
 | BRD-008 | Built | #161 (source + generator); #162 (web surfaces: lift, scrim, hairline cards, radii, skeleton, tooltip, inputs, disabled, selection); this PR (web type + motion: one eyebrow, named sizes, motion tokens, reduced-motion blanket, no app-shell choreography, fixed share colours); the Apple adoption follows | Owner checks a menu, a dialog, the drawer, a card and the recap in both appearances on beta web, once with Reduce Motion |
 | BRD-010 | Built | this PR; `docs/brand/owl_icon_appearances.py` | Dark + tinted app icon (iOS 18), extension popup on the tokens, PWA manifest rule. Owner checks the icon in all three Home Screen modes |
+| BRD-009 | Built | this PR; `WidgetAssets.xcassets` gets every role | Widgets on the tokens: generated colour sets, `widgetAccentable`, text styles, Gauge. Owner checks the widget gallery in light, dark and tinted |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
