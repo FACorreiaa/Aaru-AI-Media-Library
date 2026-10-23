@@ -1054,9 +1054,15 @@ sets, brand assets), main wins.
   faces in any client.
 
 Assets and how they are made: `docs/brand/README.md`. Colour tokens (`Paper`, `Surface`,
-`Stone`, `Ink`, `Muted`, `Medallion`, accent, `Gold`, `Agent`, `Line`, `Danger`) are generated
-into the asset catalogs, `aaru-client/src/tokens.css` and the extension's popup from one file,
-`design/tokens.json`. The marks and icons come from `docs/brand/owl_poster.py` (BRD-002), the owl
+`Stone`, `Ink`, `Muted`, `Medallion`, `Night`, accent, `OnAccent`, `Gold`, `Line`,
+`LineStrong`, `Scrim`, `OnScrim`, `Danger`) are generated into the asset catalogs,
+`aaru-client/src/tokens.css`, the extension's popup and the PWA manifest's two colours from one
+file, `design/tokens.json`. There is one amber: the `agent` token merged into `gold` on
+2026-10-23 (the two were 1.1:1 apart). By night the hairlines (`line`, `line-strong`) are ice
+blue, the poster's hologram edge, so a card separates from the page without a shadow; by day
+they are navy ink. `scrim` is a navy veil in both appearances (over artwork, behind floating
+layers) and `on-scrim` the light text on it. `medallion` is the silver disc under avatars and
+kind marks; the owl sits on `night`. The marks and icons come from `docs/brand/owl_poster.py` (BRD-002), the owl
 and its head from `docs/brand/owl_mascot.py` (BRD-003). The guard rejects the retired heron and
 reed mark by name.
 
@@ -1070,16 +1076,40 @@ AI" UI.
   pairs that must pass WCAG AA (4.5 text, 3 non-text). `scripts/generate-tokens.mjs` writes
   `aaru-client/src/tokens.css`, `src/lib/tokens.gen.ts`, the extension's popup tokens and badge
   values, and the colour sets in both Apple asset catalogs, and fails on a pair below AA; CI runs
-  it with `--check`. **Gold** (amber) is edge light only: hairlines, the next-up ring, stars, a
-  dot on the active nav item. It never fills a surface. **Agent** (owl-eye amber) marks the
-  agent's activity. No pure black.
+  it with `--check`. A translucent token is checked as the colour it composites to. **Gold**
+  (amber) is edge light only: hairlines, the next-up ring, stars, the active-nav mark, the
+  owl's glow while Aaru works and the dot on a plan card. It never fills a surface and never
+  carries text. Text on an accent fill is **on-accent**, never white (2.4:1 on the dark
+  accent). No pure black.
+- **One scale source (2026-10-23).** The same file holds the radii (card 20, panel 14, field
+  10, row 8, thumb 6, pill), the tint steps (tint 0.08, wash 0.15, ghost 0.25, half 0.5),
+  the motion (fast 150, base 240, slow 420 ms; one ease-out curve, `cubic-bezier(0.2, 0.7,
+  0.2, 1)`) and the 4 pt spacing grid (4, 8, 12, 16, 20, 24, 32, 40, 48). The generator
+  writes them as `aaru-client/src/tokens.theme.css` (`rounded-card` … `rounded-pill`,
+  Tailwind's `sm`…`xl` remapped to thumb/row/field/panel, `ease-aaru`), `--motion-*` and
+  `--alpha-*` variables, `RADIUS`/`ALPHA`/`MOTION` in `tokens.gen.ts`, and
+  `AaruRadius`/`AaruAlpha`/`AaruMotion`/`AaruSpace` in `Tokens.gen.swift` for the app and the
+  widgets. A radius, tint, duration or padding outside the scale is a review comment. Apple
+  corners are always `.continuous`. Web spacing is Tailwind's 4 px scale.
+- **Elevation.** Flat: Paper, Surface and Stone separate by tint and hairline, never by
+  shadow. One `lift` (a line-strong ring and a soft navy shadow) belongs to layers that float:
+  menus, popovers, dialogs, drawers, toasts, a dragged card. Gradients exist only as a glow
+  (accent or gold, radial, fading to transparent) or a scrim. Never a gradient fill or gradient
+  text, never glass by default.
 - **Appearance.** System, Light or Dark, per device. The web keeps it in the `aaru_appearance`
   cookie and renders `<html data-theme>` on the server, so nothing flashes; Apple keeps it in
-  `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system.
+  `@AppStorage("appearance")` and applies `preferredColorScheme`. Widgets follow the system. The PWA manifest's two colours are the dark paper (an installed app's splash is one colour, so it is dark-first in both appearances); the browser's `theme-color` follows the paper.
 - **Type.** The system sans. Titles and headings use `--font-display` on the web and
   `Font.aaruDisplay(_:)` on Apple (relative to a text style, so Dynamic Type scales it); widgets
   use `Font.widgetDisplay` for their one heading. Small uppercase eyebrows (tracked 1.5) over
-  sections. Dates, `S·E` codes, counts and ratings use tabular figures.
+  sections. Dates, `S·E` codes, counts and ratings use tabular figures. On the web the
+  eyebrow is the `.eyebrow` class and nothing else (12 px, 600, 0.12 em; `text-2xs` for the
+  smallest); the sizes are Tailwind's plus `text-2xs` (11 px, badges) and `text-md` (15 px,
+  message bodies), never an arbitrary `text-[…]`; tracking is `tracking-tight` on display
+  text, `tracking-wide` on shortcut hints, and the eyebrow's. Motion durations and the curve
+  come from the motion tokens; the landing hero's 700 ms `rise` is the one longer entrance,
+  and the signed-in app has no page-load choreography. Under Reduce Motion every transition
+  is instant and every entrance is a cross-fade; only the loading spinner still turns.
 - **Badges.** Premiere and new season are accent, Finale is ink, both under Paper text (the web's
   `accent` and `ink` badge tones). Gold never carries small text.
 - **Texture, on the Field and the Title room only.** Two faint pinstripes of different pitch

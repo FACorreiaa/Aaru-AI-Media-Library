@@ -19,7 +19,7 @@ const VIEWS: { value: CalendarView; label: string }[] = [
 ]
 
 /** The calendar's controls (CAL-002): the view, day and week steps, Today, a date to jump to,
- *  and filters that apply to whatever is loaded. */
+ * and filters that apply to whatever is loaded. */
 export function CalendarToolbar(props: {
   view: CalendarView
   ready: boolean

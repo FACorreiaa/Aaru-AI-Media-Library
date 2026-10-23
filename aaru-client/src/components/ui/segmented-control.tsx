@@ -71,7 +71,7 @@ export const SegmentedControlIndicator = <T extends ValidComponent = 'div'>(
     <SegmentedControlPrimitive.Indicator
       data-slot="segmented-control-indicator"
       class={cx(
-        'bg-background dark:border-input dark:bg-input/30 absolute top-[3px] left-[3px] rounded-md border border-transparent shadow-sm transition-[width,height,transform]',
+        'bg-background dark:border-input absolute top-[3px] left-[3px] rounded-md border border-transparent transition-[width,height,transform]',
         'group-[[data-invalid]]/segmented-control:border-destructive dark:group-[[data-invalid]]/segmented-control:border-destructive',
         props.class,
       )}
@@ -115,7 +115,7 @@ export const SegmentedControlList = (props: SegmentedControlListProps) => {
       role="presentation"
       class={cx(
         'bg-muted text-muted-foreground relative h-full w-fit rounded-lg',
-        'has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:ring-ring/50 has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:outline-ring has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:ring-[3px] has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:outline-1',
+        'has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:outline-accent has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:outline-ring has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:outline-2 _[data-slot=segmented-control-indicator]]:outline-offset-2 has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:outline-2',
         'group-[[data-invalid]]/segmented-control:has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:ring-destructive/20 dark:group-[[data-invalid]]/segmented-control:has-[[data-slot=segmented-control-item-input]:focus-visible]:[&_[data-slot=segmented-control-indicator]]:ring-destructive/40',
         props.class,
       )}

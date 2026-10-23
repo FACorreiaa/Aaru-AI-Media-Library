@@ -130,7 +130,7 @@ export function RecapCardView(props: {
                 {(bar, i) => (
                   <div class="flex h-full flex-1 flex-col justify-end gap-1">
                     <div
-                      class="recap-bar rounded-t-[3px]"
+                      class="recap-bar rounded-t-xs"
                       classList={{
                         'bg-current': bar.busiest,
                         'bg-current/35': !bar.busiest,
@@ -141,7 +141,7 @@ export function RecapCardView(props: {
                       }}
                     />
                     <Show when={card().bars.length <= 12}>
-                      <span class="text-center text-[11px] opacity-70">
+                      <span class="text-center text-2xs opacity-70">
                         {bar.label}
                       </span>
                     </Show>

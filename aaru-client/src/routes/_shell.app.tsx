@@ -598,13 +598,13 @@ function Home() {
           <Link
             to="/app/profile"
             aria-label="Your profile"
-            class="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            class="shrink-0 rounded-full"
           >
             <Medallion person={session()} class="size-11 text-base" />
           </Link>
         </div>
         {/* Filled in the browser, which knows the viewer's day; the line is held open so
-            nothing moves when it lands. */}
+ nothing moves when it lands. */}
         <p class="mt-1 min-h-6 text-muted tabular-nums">{subline()}</p>
 
         <Show when={problem()}>
@@ -650,7 +650,7 @@ function Home() {
           </div>
 
           {/* On a phone these join the column in order; on a wide screen they are the side
-              column, held in view while the rows scroll. */}
+ column, held in view while the rows scroll. */}
           <div class="contents lg:sticky lg:top-6 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-8 lg:flex lg:flex-col lg:gap-4 lg:self-start">
             <Show when={plans().length > 0 || captures().length > 0}>
               <section
@@ -712,7 +712,7 @@ function Home() {
                   <Link
                     to="/app/recap"
                     search={period()}
-                    class="rise flex items-center justify-between gap-4 rounded-card bg-ink p-5 text-paper"
+                    class="flex items-center justify-between gap-4 rounded-card bg-ink p-5 text-paper"
                   >
                     <span>
                       <span class="block text-sm opacity-80">

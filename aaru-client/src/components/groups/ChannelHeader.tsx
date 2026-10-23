@@ -103,7 +103,7 @@ export function ChannelHeader(props: {
             <span class="sm:hidden">Not E2E</span>
           </PopoverTrigger>
           <PopoverPortal>
-            <PopoverContent class="w-72 rounded-2xl border-line bg-paper p-4 text-sm leading-relaxed text-ink shadow-xl">
+            <PopoverContent class="w-72 rounded-panel border-line bg-paper p-4 text-sm leading-relaxed text-ink shadow-lift">
               Group messages are stored readable on Aaru's server so the group
               works on every device, and every member can read them. Nobody
               outside the group can see this channel. When someone tags @aaru,

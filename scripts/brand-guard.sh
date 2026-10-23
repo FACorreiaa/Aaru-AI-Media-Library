@@ -12,11 +12,12 @@ fail() {
   status=1
 }
 
-# Web and extension: hex colours live in the generated token files only. `#000` stays allowed,
-# because CSS masks use it as "opaque", not as a colour.
+# Web and extension: hex colours live in the generated token files only (the PWA manifest is one
+# of them). `#000` stays allowed, because CSS masks use it as "opaque", not as a colour.
 hex=$(git grep -InE '#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})([^0-9a-zA-Z_-]|$)' -- \
-  'aaru-client/src' 'aaru-extension/src' \
+  'aaru-client/src' 'aaru-client/public' 'aaru-extension/src' \
   ':!aaru-client/src/tokens.css' ':!aaru-client/src/lib/tokens.gen.ts' \
+  ':!aaru-client/public/manifest.webmanifest' \
   ':!aaru-extension/src/entrypoints/popup/tokens.css' ':!aaru-extension/src/lib/tokens.gen.ts' \
   ':!*.test.ts' ':!*.svg' |
   grep -vE '#000([^0-9a-zA-Z_-]|$)' || true)

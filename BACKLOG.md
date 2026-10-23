@@ -34,6 +34,17 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-23
+
+- **No paying plans for now** (owner, 2026-10-23). Plus (BIL-001…004) stays live in code, but
+  nothing is set up in App Store Connect, so nothing can be bought. Until that changes, a free
+  account hitting the capture limit must not land on an empty paywall: BIL-005.
+- **Security audit run-1 documented, nothing scheduled** (owner, 2026-10-23). The parent-only
+  pass at `cd4ea2f` found one low finding (a music token sent as `?token=` reaches request
+  logs) and a hardening list; see `docs/audit/security.md` and SEC-001…003. The fixes and the
+  deferred coverage are recorded, not started; the audit resumes outside auto mode from a
+  pinned worktree.
+
 ## Decisions recorded 2026-10-22
 
 - **Tonight, capture and Plus: the agent as the paid product, built before the P2 gate**, by the
@@ -64,6 +75,16 @@ library layer stay separate, external IDs stored whenever known, no second backe
   Aaru already speaks from. Poses (curious, sleeping, celebrating) were generated from the owl
   master with FLUX.1 Kontext [dev], the owner's pick of a free generator other than Higgsfield,
   and approved by the owner the same day (BRD-004).
+- **Theme audit of both clients (owner, 2026-10-23).** Audited `origin/main` against the owl
+  brand after BRD-004: tokens pass AA, but the contract had gaps (no Apple `on-accent` or
+  `line-strong`, `agent` 1.1:1 from `gold`, `medallion` mis-described, colours only: no radius,
+  alpha, motion or space scale, so each client invented its own) and each client had contrast
+  bugs (web focus ring at 50% accent, placeholders at 70% muted, muted text on accent menu rows;
+  Apple white on the dark accent, 13 forms on the system grey). The owner chose: fix all of it in
+  small PRs (BRD-005…010); elevation is flat Paper with hairlines plus one lift for floating
+  layers; one amber (`agent` merges into `gold`); the direction is the poster kept professional:
+  ice-blue hologram hairlines in dark, amber LED edge light, silver chrome for selection, thin
+  glyphs, no glass by default, gradients only as glow or scrim.
 - **Achievements now: the whole of P5's core (owner, 2026-10-22).** Pulled forward before the
   P2 gate, with 0 strangers: the points ledger (GAM-001), levels (GAM-002), streaks (GAM-003),
   badges (GAM-004), the friends leaderboard (GAM-005) and the streak widget (WID-007). The
@@ -476,7 +497,12 @@ account or a stranger that has not happened yet.
 | BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
 | BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
 | BRD-003 | Built | #148 | Owner checks the owl on TestFlight + beta web |
-| BRD-004 | Built | #150, this PR | Owner checks the owl and its poses on TestFlight + beta web |
+| BRD-004 | Built | #150, #153 | Owner checks the owl and its poses on TestFlight + beta web |
+| BRD-005 | Built | #158; `generate-tokens.mjs --check` covers the manifest and translucent pairs | Theme audit 2026-10-23: contract fixes. BRD-006…010 follow |
+| BRD-006 | Built | #159 | Web contrast P1s: one focus form, placeholders, menu rows, toasts |
+| BRD-007 | Built | this PR; `Design/Surfaces.swift` | Apple contrast P1s + launch screen in Paper. Owner checks a sheet and a cold launch in dark on TestFlight |
+| BRD-008 | Built | #161 (source + generator); #162 (web surfaces: lift, scrim, hairline cards, radii, skeleton, tooltip, inputs, disabled, selection); this PR (web type + motion: one eyebrow, named sizes, motion tokens, reduced-motion blanket, no app-shell choreography, fixed share colours); the Apple adoption follows | Owner checks a menu, a dialog, the drawer, a card and the recap in both appearances on beta web, once with Reduce Motion |
+| BRD-010 | Built | this PR; `docs/brand/owl_icon_appearances.py` | Dark + tinted app icon (iOS 18), extension popup on the tokens, PWA manifest rule. Owner checks the icon in all three Home Screen modes |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -641,6 +667,7 @@ account or a stranger that has not happened yet.
 | BIL-002 | Built, unverified | `/v1/billing/apple/transactions`, `/v1/billing/apple/notifications`; BillingService.swift | No sandbox purchase, renewal or expiry seen |
 | BIL-003 | Built, unverified | `aaru-ios/Aaru/Plus` | Paywall, Restore, `Transaction.updates`; no `.storekit` file; not on a device |
 | BIL-004 | Built, unverified | `/v1/me/entitlement`; Settings → Account on web and Apple; capture fair use | Not seen with a real subscription |
+| BIL-005 | Open | none | Paywall with Plus off sale |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
@@ -649,6 +676,9 @@ account or a stranger that has not happened yet.
 | MOAT-001 | Dropped (promoted) | now SCR-003 | SCR-003 built |
 | MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
 | MOAT-003 | Dropped (promoted) | now SCR-004 | |
+| SEC-001 | Documented, not scheduled | docs/audit/security.md | Low: `?token=` on validate-token reaches request logs; ingress access log keeps queries |
+| SEC-002 | Documented, not scheduled | docs/audit/security.md | Hardening list, no boundary violation |
+| SEC-003 | Documented, not scheduled | ~/security-audit-skill/aaru/run-1 | 42 of 79 coverage units deferred; no independent verification ran |
 
 ### P0 progress log (from 2026-10-09; merged in #1, deployed 2026-10-15)
 
@@ -857,6 +887,66 @@ celebrating on an earned badge and the unlock summary.
 
 **Done when:** the owner has seen the owl on Home, an empty state, an error and the recap on
 TestFlight and beta web, and the poses are in.
+
+### BRD-005 · Theme contract after the audit · S · owner, 2026-10-23
+The 2026-10-23 theme audit of both clients against the owl brand. This item is the token
+contract: `agent` merges into `gold` (one amber; the two were 1.1:1 apart and Apple never used
+`agent`); `on-accent` and `line-strong` get Apple colour sets (`OnAccent`, `LineStrong`) so
+Swift stops hand-rolling white-on-accent (2.4:1 on the dark accent) and Ink at 0.18/0.25; the
+generator checks translucent pairs by compositing instead of refusing them, and owns the PWA
+manifest's two colours; the brand guard scans `aaru-client/public`. The audit's other findings
+are BRD-006 (web contrast P1s), BRD-007 (Apple contrast P1s + launch screen), BRD-008
+(radius/alpha/motion/space tokens and their adoption on both clients), BRD-009 (widgets),
+BRD-010 (dark + tinted app icon, PWA, extension drift).
+
+**Done when:** `generate-tokens.mjs --check` and `brand-guard.sh` pass with no `agent` token
+anywhere, and `Color(.onAccent)` / `Color(.lineStrong)` compile on Apple.
+
+### BRD-006 · Web contrast P1s · S · owner, 2026-10-23
+The web's keyboard focus had three forms, and the one the shadcn primitives used (a 3 px ring
+of accent at 50%) was 2.2:1 on light paper, under the 3:1 the tokens file demands for rings.
+Now every primitive uses the global form, a 2 px solid accent outline with a 2 px offset.
+Placeholders were muted at 70% (3.3:1); they are muted. Icons and shortcut hints inside an
+accent-highlighted menu row were muted on accent (1.02:1); they inherit the on-accent text.
+Toasts take the scheme the page is drawn in, so a pinned appearance reaches them.
+
+**Done when:** no `ring-ring/50` or `placeholder:text-muted/70` in `aaru-client/src`; tabbing
+through sign-in, search, a select and a menu shows one ring, in both appearances.
+
+### BRD-007 · Apple contrast P1s and the launch screen · S · owner, 2026-10-23
+White on the dark accent is 2.4:1; the mention badge, the Discover check and the Account tile
+glyph now use `Color(.onAccent)`. Seven capsule outlines hand-rolled as Ink at 0.18/0.25 use
+`Color(.lineStrong)`, and the Groups separators use `Color(.line)` instead of the system
+`.separator`, so one hairline runs through the app. Thirteen Forms and Lists drew the system
+grouped grey instead of Paper (worst in dark); `View.paperPage()` in `Design/Surfaces.swift`
+is the one implementation (`settingsPage()` delegates to it) and every grouped Form and List
+carries it. The three image placeholders that used `medallion` (now a mid silver) use
+`surface`. The launch screen is Paper (`UILaunchScreen.UIColorName` in the Info.plist; the
+generated-launch-screen build setting is gone, since Xcode merged the two into a stray nested
+dict), so a dark cold start no longer flashes white.
+
+**Done when:** `xcodebuild build` passes; every sheet in the list sits on Paper in dark; a cold
+launch in dark shows navy, not white; the mention badge reads on the accent.
+### BRD-008 · One scale source: radius, alpha, motion, space · M · owner, 2026-10-23
+`design/tokens.json` held colours only, so each client invented the rest: the web kept four
+radii in `styles.css` and shadcn's `--radius` remap, Apple used ten radii (72 of 83 not
+`.continuous`), about fifty token×alpha combinations, 24 padding values and four tracking
+values; motion had no shared duration or curve. The file now holds the radii (card 20,
+panel 14, field 10, row 8, thumb 6, pill), the tint steps (0.08, 0.15, 0.25, 0.5), the motion
+(150, 240, 420 ms and the one ease-out curve) and the 4 pt spacing grid. The generator emits
+`aaru-client/src/tokens.theme.css` (Tailwind `rounded-*` and `ease-aaru`), `--motion-*` /
+`--alpha-*` variables, `RADIUS`/`ALPHA`/`MOTION` in `tokens.gen.ts`, and `Tokens.gen.swift`
+(`AaruRadius`, `AaruAlpha`, `AaruMotion`, `AaruSpace`) for the app and the widget extension.
+This PR is the source and the generator; the two adoption PRs (web surfaces + type/motion,
+Apple surfaces + spacing + type) follow under the same id.
+
+**Done when:** `generate-tokens.mjs --check` covers the new files; `rounded-lg`/`-xl` keep
+their pixel values (10/14) so nothing moves in this PR; both targets build with the enums.
+
+### BRD-010 · Shell polish: icon appearances, extension popup, PWA manifest · S · owner, 2026-10-23
+The app icon had one appearance; iOS 18 asks for dark and tinted. `docs/brand/owl_icon_appearances.py` renders both from the traced A-mark: dark is the mark on flat night navy without the hologram glow, tinted is the mark alone in grey on transparent for the system to tint; the Beta set keeps its band. The extension popup takes the web's eyebrow (12 px, 0.12 em), the pill radius and the motion tokens instead of its own values. The PWA manifest's two colours are the dark paper by design (one splash for both appearances), written by the generator and documented in DESIGN.md.
+
+**Done when:** both `AppIcon*` sets carry `dark` and `tinted` 1024 images and the catalog compiles; the owner has seen the icon in default, dark and tinted modes on an iOS 18 Home Screen.
 
 ## P0 · M1 — Server foundation
 
@@ -3372,6 +3462,22 @@ day.
 
 **Done when:** the web and the app show the same Plus state for one account.
 
+### BIL-005 · Capture limit while Plus is off sale · S
+**Needs:** BIL-003, BIL-004.
+The owner has no paying plans for now (2026-10-23), so the App Store has no Plus products. Today
+a free account's fourth capture in a month gets 402 `capture_quota`, and on Apple
+`CaptureComposer` opens `PlusPaywall`, which has nothing to sell; Settings → Account also shows
+"Get Aaru Plus" (`PlusSection`). The web only shows a line, and that line says Plus is bought in
+the Apple apps.
+
+Decide and build one, on Apple and the web together:
+- hide the paywall and "Get Aaru Plus" while no product loads, and show a plain "limit reached,
+  resets on …" message, keeping 3 a month; or
+- lift the monthly quota while Plus is off sale, keeping the 30-a-day fair use.
+
+**Done when:** a free account past its limit sees no purchase offer it cannot complete, on
+iPhone, Mac and the web, and Settings → Account offers nothing to buy.
+
 ---
 
 ## Moat exploration — resolved 2026-10-09
@@ -3424,6 +3530,50 @@ Now **SCR-004** (P3): user-triggered push with a dry-run diff, one-way out.
   or error message that could contain message content is a bug.
 - **X-013** All infra changes go to `~/Work/production/platform/infra`. Secrets are sealed for
   namespace `horus` and the exact secret name.
+
+# Security
+
+Cross-cutting. Source: `docs/audit/security.md` (run-1, 2026-10-23). Nothing here is scheduled;
+the owner decided to document and move on. Pick these up before the first strangers, or when the
+touched code changes anyway.
+
+### SEC-001 · Token in a query string reaches request logs · S
+
+`GET /listenbrainz/1/validate-token` accepts the music token as `?token=` and
+`RedactedLogRequestsMiddleware.redacted` keeps the query for every path but three, so the secret is
+logged at info. Traefik's access log keeps `RequestPath` with its query too (ticket, Trakt
+`code`/`state`, Stremio token path). Refuse the `?token=` form (header only), return the bare path
+for `/listenbrainz/` routes in `redacted()`, and set `accesslog.fields.queryParameters.defaultMode:
+drop` in the infra Traefik chart.
+
+**Done when:** a unit test asserts `redacted("/listenbrainz/1/validate-token", query: "token=x")`
+is the bare path, a route test gets 400 from `validate-token` without an Authorization header, and
+the infra PR drops query parameters from the access log.
+
+### SEC-002 · Hardening from the audit · M
+
+Require the Google sign-in nonce server-side; re-authenticate before `DELETE /v1/me` and add
+sign-out-everywhere; derive an OAuth client's kind from its redirect host, not its name, and expire
+unused DCR clients; require the binding on `GET /v1/oauth/requests/{id}`; a per-token rolling cap on
+unplanned tap-sized agent writes; refuse Sandbox-environment transactions for Plus before an App
+Store release; drop query strings from request logs by default. Each is a small change in one file;
+see `docs/audit/security.md` for the file names.
+
+**Done when:** each bullet has a test, or a one-line note in `docs/audit/security.md` saying why it
+stays as is.
+
+### SEC-003 · Finish the audit · M
+
+Run `/security-audit` outside auto mode from a worktree pinned to one commit, launching the 15 hunter
+briefs in `~/security-audit-skill/aaru/run-1/agents/<group>/brief.md` (re-seed with
+`_tools/gen-ledger.cjs`, re-brief with `_tools/build-brief.cjs`), then the candidate and record
+verifiers on SEC-001 and any new candidates. The deferred list in `docs/audit/security.md` is the
+hunting order: `@aaru` disclosure, scrobble name-only writes, deletion ownership promotion, library
+and import isolation, OAuth exchange, realtime fan-out, web CSRF and rendering.
+
+**Done when:** every ledger unit is covered, candidate or blocked with an owner, both validators
+pass, and every confirmed record has an independent verifier decision.
+
 
 ## Explicitly not doing
 

@@ -28,7 +28,7 @@ export function ChannelGlyph(props: { channel: Channel; class?: string }) {
         aria-hidden="true"
         loading="lazy"
         onError={() => setFailed(true)}
-        class={`w-4 shrink-0 rounded-[3px] object-cover ${props.channel.title?.type === 'album' ? 'h-4' : 'h-5'} ${props.class ?? ''}`}
+        class={`w-4 shrink-0 rounded-xs object-cover ${props.channel.title?.type === 'album' ? 'h-4' : 'h-5'} ${props.class ?? ''}`}
       />
     </Show>
   )

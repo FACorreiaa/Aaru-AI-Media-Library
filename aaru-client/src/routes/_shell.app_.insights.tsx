@@ -121,7 +121,7 @@ function Insights() {
   }
 
   const arrow =
-    'grid h-9 w-9 place-items-center rounded-full border border-line text-ink hover:bg-surface disabled:opacity-30 disabled:hover:bg-transparent'
+    'grid h-9 w-9 place-items-center rounded-full border border-line text-ink hover:bg-surface disabled:opacity-50 disabled:hover:bg-transparent'
 
   return (
     <div class="flex-1">

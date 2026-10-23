@@ -42,8 +42,8 @@ export function PlanCard(props: {
 
   return (
     <article class="edge-lit rounded-card bg-surface p-5">
-      <p class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted uppercase">
-        <span class="size-1.5 rounded-full bg-agent" aria-hidden="true" />
+      <p class="flex items-center gap-2 eyebrow">
+        <span class="size-1.5 rounded-full bg-gold" aria-hidden="true" />
         {plan().agentName} asks
       </p>
       <h3 class="mt-1 font-display text-xl font-medium">{plan().summary}</h3>

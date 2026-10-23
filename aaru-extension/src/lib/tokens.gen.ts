@@ -11,8 +11,34 @@ export const COLORS = {
   accent: { light: '#2a62a6', dark: '#6aaeea' },
   onAccent: { light: '#f4f6fa', dark: '#0e141e' },
   gold: { light: '#a35f1c', dark: '#e0904f' },
-  agent: { light: '#97591a', dark: '#eab27a' },
   danger: { light: '#a3372a', dark: '#f2a08f' },
-  medallion: { light: '#eef1f6', dark: '#e7ebf1' },
+  medallion: { light: '#c9d2de', dark: '#2b3647' },
+  onScrim: { light: '#f4f6fa', dark: '#e7ebf1' },
   night: { light: '#16233a', dark: '#16233a' },
+} as const
+
+/** Corner radii in px. */
+export const RADIUS = {
+  card: 20,
+  panel: 14,
+  field: 10,
+  row: 8,
+  thumb: 6,
+  pill: 999,
+} as const
+
+/** Tint steps of a token over a surface. */
+export const ALPHA = {
+  tint: 0.08,
+  wash: 0.15,
+  ghost: 0.25,
+  half: 0.5,
+} as const
+
+/** Durations in ms and the one ease-out curve as a bezier, for motion/mini (CSS has --motion-*). */
+export const MOTION = {
+  fast: 150,
+  base: 240,
+  slow: 420,
+  easeBezier: [0.2, 0.7, 0.2, 1],
 } as const

@@ -73,7 +73,7 @@ function Recap() {
   )
 
   /** Close goes back where the recap was opened from (Home, Insights, Your data), else Home,
-   *  once the story's exit has played. */
+   * once the story's exit has played. */
   function close() {
     setOpen(false)
     const leave = () => {

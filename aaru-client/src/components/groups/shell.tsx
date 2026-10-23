@@ -89,7 +89,7 @@ export function MentionPill(props: { count: number; label?: string }) {
   return (
     <Show when={props.count > 0}>
       <span
-        class="min-w-5 rounded-full bg-danger px-1.5 text-center text-[11px] leading-5 font-semibold text-paper tabular-nums"
+        class="min-w-5 rounded-full bg-danger px-1.5 text-center text-2xs leading-5 font-semibold text-paper tabular-nums"
         aria-label={props.label ?? `${props.count} mentions`}
       >
         {badgeText(props.count)}
@@ -126,7 +126,7 @@ export function Menu(props: {
       <DropdownMenuPortal>
         <DropdownMenuContent
           onCloseAutoFocus={(event: Event) => props.onCloseAutoFocus?.(event)}
-          class={`min-w-48 rounded-2xl border-line bg-paper py-1 text-sm text-ink shadow-xl ${props.class ?? ''}`}
+          class={`min-w-48 rounded-panel border-line bg-paper py-1 text-sm text-ink shadow-lift ${props.class ?? ''}`}
         >
           {props.children}
         </DropdownMenuContent>

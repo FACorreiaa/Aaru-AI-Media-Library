@@ -80,7 +80,7 @@ export const SliderThumb = <T extends ValidComponent = 'span'>(
     <SliderPrimitive.Thumb
       data-slot="slider-thumb"
       class={cx(
-        'border-primary bg-background ring-ring/50 size-4 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 data-[orientation=horizontal]:-top-1 data-[orientation=vertical]:-left-1',
+        'border-primary bg-background size-4 rounded-full border transition-[color,box-shadow] hover:ring-4 hover:ring-accent/20 disabled:pointer-events-none disabled:opacity-50 data-[orientation=horizontal]:-top-1 data-[orientation=vertical]:-left-1',
         props.class,
       )}
       {...rest}

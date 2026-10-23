@@ -8,6 +8,7 @@
    as the Apple apps' asset catalog (DESIGN.md "Brand"). Light follows the system unless
    <html data-theme> pins it (lib/appearance.ts). */
 @import './tokens.css';
+@import './tokens.theme.css';
 
 /* `dark:` follows Aaru's appearance, not Kobalte's `data-kb-theme`: the system scheme unless
    <html data-theme> pins one. */
@@ -38,14 +39,20 @@
   --color-danger: var(--danger);
   --color-stone: var(--stone);
   --color-gold: var(--gold);
-  --color-agent: var(--agent);
   --color-line-strong: var(--line-strong);
-  /* Corner radii: cards, panels (callouts, inner boxes), fields. */
-  --radius-card: 20px;
-  --radius-panel: 14px;
-  --radius-field: 10px;
-  /* Poster thumbnails inside a cell: calendar days, agenda rows. */
-  --radius-thumb: 6px;
+  --color-scrim: var(--scrim);
+  --color-on-scrim: var(--on-scrim);
+  /* The one elevation (DESIGN.md "Elevation"): a line-strong ring and a soft shadow in the
+     shadow token, for layers that float. Cards and panels are flat: tint and hairline. */
+  --shadow-lift: 0 0 0 1px var(--line-strong), 0 12px 32px -16px var(--shadow);
+  /* Corner radii (rounded-card, -panel, -field, -row, -thumb, -pill; sm…xl are the same four)
+     and the easing (ease-aaru) come from tokens.theme.css, generated with the colours. */
+  /* Two named sizes beside Tailwind's: 2xs (11px) for badges and the smallest eyebrows, md
+     (15px) for message bodies. No other arbitrary size. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.5rem;
   /* The display face is the system sans, as in the brand poster (DESIGN.md "Brand"); headings
      differ from body text by weight and size, not by family. */
   --font-display:
@@ -64,10 +71,6 @@
      - `accent` is Aaru's ice blue. shadcn's highlight (`bg-accent` on a focused menu item, a
        pressed toggle) is therefore accent with `accent-foreground` (on-accent) text, the way a
        system menu highlights in the accent colour. */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -103,7 +106,6 @@
 /* shadcn's variables on Aaru's tokens. No dark block: the tokens they point at already switch
    with the appearance (tokens.css). `--muted` and `--accent` are Aaru's (see above). */
 :root {
-  --radius: 10px;
   --background: var(--paper);
   --foreground: var(--ink);
   --card: var(--surface);
@@ -130,7 +132,7 @@
   --sidebar-ring: var(--accent);
   --chart-1: var(--accent);
   --chart-2: var(--gold);
-  --chart-3: var(--agent);
+  --chart-3: var(--ink);
   --chart-4: var(--danger);
   --chart-5: var(--muted);
   --vis-tooltip-padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2.5);
@@ -166,6 +168,28 @@ body {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+  /* Selection and native controls (checkboxes, progress, date pickers) in the accent too. */
+  :root {
+    accent-color: var(--accent);
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+}
+
+/* A highlighted menu row is an accent fill, so its icons and shortcut hint take the on-accent
+   text with it: muted on accent is 1.02:1. Utilities layer, after Tailwind's, so it wins the
+   `[&_svg]:text-muted-foreground` the shadcn primitives set. */
+@layer utilities {
+  :is(
+      [data-highlighted],
+      [data-selected='true'],
+      [data-slot='select-item']:focus
+    )
+    :is(svg:not([class*='text-']), [data-slot$='shortcut']) {
+    color: inherit;
+  }
 }
 
 /* Reduced motion: the components' enter/exit keyframes (tw-animate-css), the drawer's slide,
@@ -181,9 +205,9 @@ body {
   [data-closed][class*='animate-'] {
     animation: none !important;
   }
-  [data-slot],
-  [data-slot]::after,
-  [data-transitioning] {
+  *,
+  *::before,
+  *::after {
     transition-duration: 0s !important;
   }
 }
@@ -191,7 +215,7 @@ body {
 /* Hero entrance only: it orders the first read (headline, then art). No loops. */
 @media (prefers-reduced-motion: no-preference) {
   .rise {
-    animation: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation: rise 700ms var(--motion-ease) both; /* the landing hero: the one entrance longer than --motion-slow */
     animation-delay: var(--delay, 0ms);
   }
   @keyframes rise {
@@ -253,19 +277,19 @@ body {
    reduced motion a card only cross-fades in, and nothing counts, grows or slides. */
 @media (prefers-reduced-motion: no-preference) {
   .recap-card {
-    animation: recap-in 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation: recap-in var(--motion-slow) var(--motion-ease) both;
   }
   .recap-rise {
-    animation: rise 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation: rise var(--motion-slow) var(--motion-ease) both;
     animation-delay: var(--delay, 0ms);
   }
   .recap-pop {
-    animation: recap-pop 700ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    animation: recap-pop var(--motion-slow) var(--motion-ease) both;
     animation-delay: var(--delay, 0ms);
   }
   .recap-bar {
     transform-origin: bottom;
-    animation: recap-grow 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation: recap-grow var(--motion-slow) var(--motion-ease) both;
     animation-delay: var(--delay, 0ms);
   }
   @keyframes recap-in {
@@ -292,7 +316,7 @@ body {
     scroll-behavior: auto;
   }
   .recap-card {
-    animation: recap-fade 240ms ease-out both;
+    animation: recap-fade var(--motion-base) var(--motion-ease) both;
   }
   @keyframes recap-fade {
     from {
@@ -316,7 +340,7 @@ body {
 }
 @media (prefers-reduced-motion: no-preference) {
   .reaction-float {
-    animation: reaction-float 2400ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation: reaction-float 2400ms var(--motion-ease) both;
   }
   @keyframes reaction-float {
     from {
@@ -503,13 +527,16 @@ body {
   );
 }
 
-/* Uppercase label above a heading ("The Field", "Tonight"). */
-.eyebrow {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
+/* The one uppercase label: above a heading ("The Field", "Tonight"), on a section, on a badge
+   (`eyebrow text-2xs`). In the components layer so a utility (`text-accent`, `text-2xs`) wins. */
+@layer components {
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
 }
 
 @media (prefers-contrast: more), (forced-colors: active) {

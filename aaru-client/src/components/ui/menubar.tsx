@@ -23,7 +23,7 @@ export const Menubar = <T extends ValidComponent = 'div'>(
     <MenubarPrimitive
       data-slot="menubar"
       class={cx(
-        'bg-background flex h-9 items-center gap-1 rounded-md border p-1 shadow-xs',
+        'bg-background flex h-9 items-center gap-1 rounded-md border p-1 ',
         props.class,
       )}
       {...rest}
@@ -92,7 +92,7 @@ export const MenubarContent = <T extends ValidComponent = 'div'>(
     <MenubarPrimitive.Content
       data-slot="menubar-content"
       class={cx(
-        'bg-popover text-popover-foreground data-[expanded]:animate-in data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 z-50 min-w-[12rem] origin-(--kb-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-md focus-visible:outline-none',
+        'bg-popover text-popover-foreground data-[expanded]:animate-in data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 z-50 min-w-[12rem] origin-(--kb-menu-content-transform-origin) overflow-hidden rounded-panel border p-1 shadow-lift focus-visible:outline-none',
         "[[data-popper-positioner][style*='--kb-popper-content-transform-origin:_top']>[data-slot=menubar-content]]:slide-in-from-top-2 [[data-popper-positioner][style*='--kb-popper-content-transform-origin:_bottom']>[data-slot=menubar-content]]:slide-in-from-bottom-2 [[data-popper-positioner][style*='--kb-popper-content-transform-origin:_left']>[data-slot=menubar-content]]:slide-in-from-left-2 [[data-popper-positioner][style*='--kb-popper-content-transform-origin:_right']>[data-slot=menubar-content]]:slide-in-from-right-2",
         props.class,
       )}
@@ -302,7 +302,7 @@ export const MenubarShortcut = (props: MenubarShortcut) => {
     <span
       data-slot="menubar-shortcut"
       class={cx(
-        'text-muted-foreground ml-auto text-xs tracking-widest',
+        'text-muted-foreground ml-auto text-xs tracking-wide',
         props.class,
       )}
       {...rest}
@@ -371,7 +371,7 @@ export const MenubarSubContent = <T extends ValidComponent = 'div'>(
     <MenubarPrimitive.SubContent
       data-slot="menubar-sub-content"
       class={cx(
-        'bg-popover text-popover-foreground data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 z-50 min-w-[8rem] origin-(--kb-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg focus-visible:outline-none',
+        'bg-popover text-popover-foreground data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 z-50 min-w-[8rem] origin-(--kb-menu-content-transform-origin) overflow-hidden rounded-panel border p-1 shadow-lift focus-visible:outline-none',
         "[[data-popper-positioner][style*='--kb-popper-content-transform-origin:_top']>[data-slot=menubar-sub-content]]:slide-in-from-top-2 [[data-popper-positioner][style*='--kb-popper-content-transform-origin:_bottom']>[data-slot=menubar-sub-content]]:slide-in-from-bottom-2 [[data-popper-positioner][style*='--kb-popper-content-transform-origin:_left']>[data-slot=menubar-sub-content]]:slide-in-from-left-2 [[data-popper-positioner][style*='--kb-popper-content-transform-origin:_right']>[data-slot=menubar-sub-content]]:slide-in-from-right-2",
         props.class,
       )}

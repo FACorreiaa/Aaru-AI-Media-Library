@@ -114,7 +114,7 @@ export function CaptureComposer() {
               <img
                 src={url()}
                 alt="The picture to send"
-                class="size-12 rounded-[10px] object-cover"
+                class="size-12 rounded-field object-cover"
               />
               <Button
                 variant="ink"

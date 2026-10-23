@@ -28,7 +28,7 @@ export const SwitchControl = <T extends ValidComponent = 'div'>(
         // Aaru: the 44 × 24 track, ink-tinted when off.
         'bg-ink/25 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-transparent p-0.5 transition-colors',
         'data-[checked]:bg-primary',
-        'peer-focus-visible/switch-input:border-ring peer-focus-visible/switch-input:ring-ring/50 peer-focus-visible/switch-input:ring-[3px]',
+        'peer-focus-visible/switch-input:border-ring peer-focus-visible/switch-input:outline-accent peer-focus-visible/switch-input:outline-2 peer-focus-visible/switch-input:outline-offset-2',
         'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
         props.class,
       )}
@@ -51,7 +51,7 @@ export const SwitchThumb = <T extends ValidComponent = 'div'>(
       data-slot="switch-thumb"
       class={cx(
         // Aaru: the medallion thumb in both schemes.
-        'bg-medallion pointer-events-none size-5 rounded-full shadow transition-transform data-[checked]:translate-x-5',
+        'bg-medallion pointer-events-none size-5 rounded-full transition-transform data-[checked]:translate-x-5',
         props.class,
       )}
       {...rest}

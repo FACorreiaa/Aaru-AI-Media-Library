@@ -152,7 +152,7 @@ export function SeasonBrowser(props: {
 
   const step = (way: 1 | -1) => shiftSeason(props.season, way)
   const arrow =
-    'grid size-11 shrink-0 place-items-center rounded-full border border-line text-xl text-ink transition-[background-color,transform] hover:bg-surface motion-safe:active:scale-[0.96] disabled:opacity-30 disabled:hover:bg-transparent'
+    'grid size-11 shrink-0 place-items-center rounded-full border border-line text-xl text-ink transition-[background-color,transform] hover:bg-surface motion-safe:active:scale-[0.96] disabled:opacity-50 disabled:hover:bg-transparent'
 
   return (
     <section class="mt-8" aria-label="Seasons">

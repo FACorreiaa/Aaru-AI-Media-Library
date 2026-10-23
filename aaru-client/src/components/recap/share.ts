@@ -9,22 +9,15 @@ import { COLORS } from '../../lib/tokens.gen'
 const WIDTH = 1080
 const HEIGHT = 1350
 
-function token(name: string, fallback: string): string {
-  const value = getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim()
-  return value || fallback
-}
-
 export async function drawShareImage(stats: Stats): Promise<Blob> {
   const canvas = document.createElement('canvas')
   canvas.width = WIDTH
   canvas.height = HEIGHT
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('This browser cannot draw the share image.')
-  const ink = token('--ink', COLORS.ink.light)
-  const accent = token('--accent', COLORS.accent.light)
-  const paper = token('--on-accent', COLORS.onAccent.light)
+  const ink = COLORS.ink.dark
+  const accent = COLORS.accent.dark
+  const paper = COLORS.onAccent.dark
   const sans = 'system-ui, -apple-system, sans-serif'
 
   const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT)

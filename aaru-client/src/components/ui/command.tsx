@@ -39,11 +39,11 @@ export const CommandDialog = (props: CommandDialogProps) => {
     <CommandPrimitive.Dialog
       data-slot="command-dialog"
       contentClassName={cx(
-        'bg-popover data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 fixed left-[50%] top-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg shadow-lg duration-200 sm:max-w-lg overflow-hidden',
+        'bg-popover data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 fixed left-[50%] top-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg shadow-lift duration-200 sm:max-w-lg overflow-hidden',
         props.contentClassName,
       )}
       overlayClassName={cx(
-        'data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        'data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 fixed inset-0 z-50 bg-scrim',
         props.overlayClassName,
       )}
       class={cx(
@@ -183,7 +183,7 @@ export const CommandShortcut = (props: CommandShortcutProps) => {
     <span
       data-slot="command-shortcut"
       class={cx(
-        'text-muted-foreground ml-auto text-xs tracking-widest',
+        'text-muted-foreground ml-auto text-xs tracking-wide',
         props.class,
       )}
       {...rest}

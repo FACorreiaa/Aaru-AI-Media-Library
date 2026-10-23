@@ -61,7 +61,7 @@ export function UpvoteButton(props: {
       <span
         ref={mark}
         aria-hidden="true"
-        class={`inline-block text-[10px] leading-none ${state().upvotedByMe ? 'text-accent' : ''}`}
+        class={`inline-block text-2xs leading-none ${state().upvotedByMe ? 'text-accent' : ''}`}
       >
         ▲
       </span>

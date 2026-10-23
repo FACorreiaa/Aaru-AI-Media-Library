@@ -9,7 +9,7 @@ import { cardClass } from '~/components/ui'
 import { EpisodeRow } from './EpisodeRow'
 
 /** Missed (CAL-002): what aired in the last four weeks and is not watched, one card per show,
- *  oldest miss first, so catching up starts where it should. */
+ * oldest miss first, so catching up starts where it should. */
 export default function CatchUpList(props: {
   shows: MissedShow[]
   pending: Set<string>

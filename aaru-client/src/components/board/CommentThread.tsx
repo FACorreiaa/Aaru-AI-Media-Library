@@ -373,7 +373,7 @@ function CommentRow(props: {
               {postedLabel(props.comment.createdAt)}
             </time>
           </p>
-          <p class="mt-1 text-[15px] leading-relaxed break-words whitespace-pre-wrap">
+          <p class="mt-1 text-md leading-relaxed break-words whitespace-pre-wrap">
             <For each={segments()}>
               {(segment) =>
                 segment.kind === 'text' || segment.handle === 'aaru' ? (

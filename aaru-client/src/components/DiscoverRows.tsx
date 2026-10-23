@@ -109,7 +109,7 @@ export function DiscoverRows(props: {
   return (
     <>
       {/* Index, not For: an add replaces the hit objects, and the rows and cards must update
-          in place rather than be redrawn, or each row would lose its scroll position. */}
+ in place rather than be redrawn, or each row would lose its scroll position. */}
       <Index each={props.rows.filter((row) => row.items.length > 0)}>
         {(row) => (
           <Row

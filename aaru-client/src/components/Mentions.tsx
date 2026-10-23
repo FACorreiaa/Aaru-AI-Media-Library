@@ -143,7 +143,7 @@ export function MentionList(props: {
         id={props.mentions.id}
         role="listbox"
         aria-label="Who to tag"
-        class={`absolute animate-in overflow-hidden rounded-2xl border border-line bg-paper py-1 shadow-xl duration-150 fade-in-0 ${props.class}`}
+        class={`absolute animate-in overflow-hidden rounded-panel border border-line bg-paper py-1 shadow-lift duration-150 fade-in-0 ${props.class}`}
       >
         <For each={props.mentions.suggestions()}>
           {(suggestion, index) => (

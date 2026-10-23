@@ -78,7 +78,7 @@ private struct WeekBanner: View {
     }
 
     var body: some View {
-        Color(.medallion)
+        Color(.surface)
             .aspectRatio(16 / 5, contentMode: .fit)
             .overlay {
                 AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in

@@ -29,7 +29,7 @@ export const NavigationMenu = <T extends ValidComponent = 'ul'>(
       {...rest}
     >
       {props.children}
-      <NavigationMenuPrimitive.Viewport class="data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:zoom-out-95 data-[expanded]:zoom-in-90 data-[expanded]:fade-in-0 data-[closed]:fade-out-0 bg-popover text-popover-foreground z-50 h-(--kb-navigation-menu-viewport-height) w-(--kb-navigation-menu-viewport-width) origin-(--kb-menu-content-transform-origin) overflow-x-clip overflow-y-visible rounded-md border shadow transition-[width,height] duration-300 data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:overflow-y-clip" />
+      <NavigationMenuPrimitive.Viewport class="data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:zoom-out-95 data-[expanded]:zoom-in-90 data-[expanded]:fade-in-0 data-[closed]:fade-out-0 bg-popover text-popover-foreground z-50 h-(--kb-navigation-menu-viewport-height) w-(--kb-navigation-menu-viewport-width) origin-(--kb-menu-content-transform-origin) overflow-x-clip overflow-y-visible rounded-md border transition-[width,height] duration-300 data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:overflow-y-clip" />
     </NavigationMenuPrimitive>
   )
 }
@@ -56,7 +56,7 @@ export const NavigationMenuItem = <T extends ValidComponent = 'a'>(
     <NavigationMenuPrimitive.Item
       data-slot="navigation-menu-item"
       class={cx(
-        "data-[expanded]:focus:bg-accent data-[expanded]:hover:bg-accent data-[expanded]:bg-accent/50 data-[expanded]:text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-ring/50 [&_svg:not([class*='text-'])]:text-muted-foreground flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&_svg:not([class*='size-'])]:size-4",
+        "data-[expanded]:focus:bg-accent data-[expanded]:hover:bg-accent data-[expanded]:bg-accent/50 data-[expanded]:text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground flex flex-col gap-1 rounded-sm p-2 text-sm transition-all focus-visible:outline-2 [&_svg:not([class*='size-'])]:size-4",
         props.class,
       )}
       {...rest}

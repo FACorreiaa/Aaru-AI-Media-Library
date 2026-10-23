@@ -487,7 +487,7 @@ export function GroupInviteDialog(props: {
             </Show>
             <For each={groups() ?? []}>
               {(group) => (
-                <li class="flex items-center justify-between gap-3 rounded-[12px] px-2 py-2">
+                <li class="flex items-center justify-between gap-3 rounded-panel px-2 py-2">
                   <span class="truncate text-sm font-medium">{group.name}</span>
                   <Button
                     size="sm"

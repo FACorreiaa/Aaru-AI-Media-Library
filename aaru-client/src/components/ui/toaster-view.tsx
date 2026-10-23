@@ -1,17 +1,18 @@
 import { onMount } from 'solid-js'
 import { Toaster as Sonner, toast } from 'somoto'
+import { resolvedScheme } from '../../lib/appearance'
 import { toasterReady } from './toast-bridge'
 
 // Aaru: loaded on the first `toast()` (sonner.tsx), so somoto stays out of first loads.
-// No Kobalte ColorModeProvider (the appearance is Aaru's own, lib/appearance.ts), so
-// the theme follows the system and the colours below come from Aaru's tokens, which already
-// follow a pinned appearance. Toasts are ink on paper's opposite; errors are the danger fill.
+// No Kobalte ColorModeProvider (the appearance is Aaru's own, lib/appearance.ts), so the
+// theme is the scheme the page is drawn in (a pinned appearance included) and the colours
+// below come from Aaru's tokens. Toasts are ink on paper's opposite; errors are the danger fill.
 export default function ToasterView(props: Parameters<typeof Sonner>[0]) {
   // somoto drops toasts published before it subscribes, so the queue waits for this.
   onMount(() => toasterReady(toast))
   return (
     <Sonner
-      theme="system"
+      theme={resolvedScheme()}
       position="bottom-center"
       richColors
       icons={{

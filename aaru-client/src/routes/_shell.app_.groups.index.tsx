@@ -68,14 +68,11 @@ function GroupsHome() {
         </Show>
 
         <Show when={shell.invites().length > 0}>
-          <section class="rise mt-8" aria-labelledby="invites-heading">
-            <h2
-              id="invites-heading"
-              class="text-xs font-semibold tracking-wide text-muted uppercase"
-            >
+          <section class="mt-8" aria-labelledby="invites-heading">
+            <h2 id="invites-heading" class="eyebrow">
               Invites
             </h2>
-            <ul class="mt-2 divide-y divide-line rounded-[20px] bg-surface px-4">
+            <ul class="mt-2 divide-y divide-line rounded-card bg-surface px-4">
               <For each={shell.invites()}>
                 {(invite) => (
                   <li class="flex flex-wrap items-center justify-between gap-3 py-3.5">
@@ -119,7 +116,7 @@ function GroupsHome() {
           when={hasHandle()}
           fallback={
             <OwlEmpty
-              class="rise mt-6"
+              class="mt-6"
               title="Make a place to talk with friends."
               body="Choose a handle first, so friends can see who is talking."
               action={
@@ -134,7 +131,7 @@ function GroupsHome() {
             when={shell.groups().length > 0}
             fallback={
               <OwlEmpty
-                class="rise mt-6"
+                class="mt-6"
                 title="Make a place to talk with friends."
                 body="A group starts with #general. Only friends you invite can join, and nobody can find it otherwise."
                 action={

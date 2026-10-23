@@ -99,7 +99,7 @@ export function StremioHistoryImport(props: { class?: string }) {
             <div class="flex min-w-0 flex-1 flex-col gap-3">
               <p class="text-sm">
                 Sign in to Stremio and approve code{' '}
-                <span class="font-mono text-base font-semibold tracking-widest">
+                <span class="font-mono text-base font-semibold tracking-wide">
                   {current().code}
                 </span>
                 . Scan the code with your phone, or open the page here.

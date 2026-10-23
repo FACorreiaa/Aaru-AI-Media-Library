@@ -8,7 +8,7 @@ import { COLORS } from '../lib/tokens.gen'
 const shade = `linear-gradient(to top, ${COLORS.ink.light}73, transparent 60%)`
 const tileTints = [
   [COLORS.ink.light, COLORS.accent.light],
-  [COLORS.accent.light, COLORS.agent.light],
+  [COLORS.accent.light, COLORS.gold.light],
   [COLORS.accent.light, COLORS.gold.light],
 ].map(
   ([from, to]) => `${shade}, linear-gradient(160deg, ${from} 0%, ${to} 100%)`,
@@ -53,7 +53,7 @@ function TypeCover(props: { tile: TypeTile; index: number }) {
         'background-image': tileTints[props.index % tileTints.length],
       }}
     >
-      <span class="text-[10px] font-semibold tracking-[0.14em] uppercase opacity-80">
+      <span class="text-2xs font-semibold tracking-[0.14em] uppercase opacity-80">
         {props.tile.caption}
       </span>
       <span class="font-display text-base leading-tight font-medium">

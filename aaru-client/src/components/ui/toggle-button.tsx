@@ -5,12 +5,12 @@ import type { VariantProps } from 'cva'
 import { cva } from '~/lib/cva'
 
 export const toggleButtonVariants = cva({
-  base: "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-[pressed]:bg-accent data-[pressed]:text-accent-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none transition-[color,background-color,box-shadow] whitespace-nowrap",
+  base: "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-[pressed]:bg-accent data-[pressed]:text-accent-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 focus-visible:border-ring transition-[color,background-color,box-shadow] whitespace-nowrap",
   variants: {
     variant: {
       default: 'bg-transparent',
       outline:
-        'border border-input bg-transparent shadow-xs hover:bg-accent hover:text-accent-foreground',
+        'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
       // Aaru's segment looks (they were SegmentedControlItem's): pills that stand apart.
       /** Ink when pressed, quiet text otherwise. */
       ink: 'rounded-full text-muted hover:bg-transparent hover:text-ink data-[pressed]:bg-ink data-[pressed]:text-paper',

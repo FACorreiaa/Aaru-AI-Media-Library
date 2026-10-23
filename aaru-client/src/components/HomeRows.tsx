@@ -85,7 +85,7 @@ export function Row(props: {
         role="region"
         aria-labelledby={id}
         tabindex="0"
-        class="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent md:mx-0 md:scroll-px-0 md:px-0"
+        class="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-3 focus-visible:outline-2 focus-visible:-outline-offset-2 md:mx-0 md:scroll-px-0 md:px-0"
       >
         {props.children}
       </div>
@@ -123,7 +123,7 @@ export function Art(props: { sources: (string | undefined)[]; title: string }) {
       when={url()}
       keyed
       fallback={
-        <div class="grid h-full place-items-center bg-linear-135 from-accent/20 to-gold/20 px-4 text-center font-display text-lg leading-tight text-ink/75">
+        <div class="grid h-full place-items-center bg-surface edge-lit px-4 text-center font-display text-lg leading-tight text-ink/75">
           {props.title}
         </div>
       }
@@ -352,7 +352,7 @@ export function AiringCard(props: {
         class="block transition-opacity"
         classList={{ 'opacity-60': e().watched }}
       >
-        <div class="relative aspect-[2/1] overflow-hidden rounded-[12px] shadow-[0_0_0_1px_var(--line)]">
+        <div class="relative aspect-[2/1] overflow-hidden rounded-panel shadow-[0_0_0_1px_var(--line)]">
           <Art
             sources={[e().title.backdropUrl, e().title.posterUrl]}
             title={e().title.title}
@@ -413,7 +413,7 @@ export function DiscoverCard(props: {
   const DateBadge = () => (
     <Show when={dateLabel()}>
       {(text) => (
-        <span class="absolute bottom-1.5 left-1.5 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-on-accent">
+        <span class="absolute bottom-1.5 left-1.5 rounded-full bg-accent px-2 py-0.5 text-2xs font-semibold text-on-accent">
           {text()}
         </span>
       )}

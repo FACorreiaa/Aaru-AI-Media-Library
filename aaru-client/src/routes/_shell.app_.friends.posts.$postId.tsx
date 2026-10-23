@@ -276,7 +276,7 @@ function Upvoters(props: { people: SocialUser[]; me: SocialUser }) {
             {line()}
           </PopoverTrigger>
           <PopoverPortal>
-            <PopoverContent class="w-64 rounded-2xl border-line bg-paper p-1 text-sm text-ink shadow-xl">
+            <PopoverContent class="w-64 rounded-panel border-line bg-paper p-1 text-sm text-ink shadow-lift">
               <p class="px-3 pt-2 pb-1 text-xs text-muted">
                 <span aria-hidden="true" class="text-accent">
                   ▲{' '}
@@ -382,7 +382,7 @@ function PostEditor(props: {
               void save()
             }
           }}
-          class="max-h-80 min-h-16 flex-1 resize-none rounded-none border-0 bg-transparent px-0 py-1 text-[15px] leading-relaxed focus-visible:ring-0"
+          class="max-h-80 min-h-16 flex-1 resize-none rounded-none border-0 bg-transparent px-0 py-1 text-md leading-relaxed focus-visible:ring-0"
         />
       </TextField>
       <div class="mt-2 flex items-center justify-end gap-1">

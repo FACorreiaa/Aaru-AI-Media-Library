@@ -161,7 +161,7 @@ struct OutlineCapsuleButtonStyle: ButtonStyle {
             .font(.body.weight(.semibold))
             .frame(maxWidth: .infinity, minHeight: 52)
             .foregroundStyle(Color(.ink))
-            .overlay { Capsule().strokeBorder(Color(.ink).opacity(0.25), lineWidth: 1) }
+            .overlay { Capsule().strokeBorder(Color(.lineStrong), lineWidth: 1) }
             .contentShape(Capsule())
             .opacity(configuration.isPressed ? 0.75 : 1)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)

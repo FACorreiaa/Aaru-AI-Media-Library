@@ -312,7 +312,7 @@ function NavRow(props: { d: Destination; badge?: number }) {
         aria-label={label()}
         tooltip={props.d.label}
         size="lg"
-        class="h-10 gap-3 rounded-full px-3 text-[0.9375rem] text-muted hover:bg-stone/70 hover:text-ink data-[active=true]:bg-stone data-[active=true]:font-semibold data-[active=true]:text-ink group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-3!"
+        class="h-10 gap-3 rounded-full px-3 text-md text-muted hover:bg-stone/70 hover:text-ink data-[active=true]:bg-stone data-[active=true]:font-semibold data-[active=true]:text-ink group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-3!"
       >
         <props.d.icon class="size-[1.15rem]! shrink-0" />
         <span>{props.d.label}</span>

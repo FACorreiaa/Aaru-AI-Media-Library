@@ -37,7 +37,7 @@ export function GroupRail(props: { class?: string }) {
         {(state) => (
           <>
             <span
-              class={`${circle} ${state.isActive ? 'rounded-2xl bg-accent text-on-accent' : 'rounded-full bg-paper text-ink hover:rounded-2xl'}`}
+              class={`${circle} ${state.isActive ? 'rounded-card bg-accent text-on-accent' : 'rounded-full bg-paper text-ink hover:rounded-card'}`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -54,7 +54,7 @@ export function GroupRail(props: { class?: string }) {
               </svg>
             </span>
             <Show when={shell.invites().length > 0}>
-              <span class="absolute -right-1 -bottom-1 min-w-5 rounded-full border-2 border-surface bg-danger px-1 text-center text-[11px] leading-4 font-semibold text-paper">
+              <span class="absolute -right-1 -bottom-1 min-w-5 rounded-full border-2 border-surface bg-danger px-1 text-center text-2xs leading-4 font-semibold text-paper">
                 {badgeText(shell.invites().length)}
               </span>
             </Show>
@@ -79,12 +79,12 @@ export function GroupRail(props: { class?: string }) {
                 class={`absolute top-1/2 left-0 w-1 -translate-y-1/2 rounded-r-full bg-ink transition-[height] duration-200 ${active() ? 'h-8' : group.unread > 0 ? 'h-2' : 'h-0 group-hover:h-4'}`}
               />
               <span
-                class={`${circle} ${active() ? 'rounded-2xl bg-accent text-on-accent' : 'rounded-full bg-paper text-ink group-hover:rounded-2xl'}`}
+                class={`${circle} ${active() ? 'rounded-card bg-accent text-on-accent' : 'rounded-full bg-paper text-ink group-hover:rounded-card'}`}
               >
                 {groupMonogram(group.name)}
               </span>
               <Show when={group.mentions > 0}>
-                <span class="absolute right-2 -bottom-1 min-w-5 rounded-full border-2 border-surface bg-danger px-1 text-center text-[11px] leading-4 font-semibold text-paper tabular-nums">
+                <span class="absolute right-2 -bottom-1 min-w-5 rounded-full border-2 border-surface bg-danger px-1 text-center text-2xs leading-4 font-semibold text-paper tabular-nums">
                   {badgeText(group.mentions)}
                 </span>
               </Show>
@@ -98,7 +98,7 @@ export function GroupRail(props: { class?: string }) {
         onClick={() => shell.openCreate()}
         title="Create a group"
         aria-label="Create a group"
-        class={`${circle} rounded-full border border-dashed border-line text-accent hover:rounded-2xl hover:bg-paper hover:text-accent`}
+        class={`${circle} rounded-full border border-dashed border-line text-accent hover:rounded-card hover:bg-paper hover:text-accent`}
       >
         <span aria-hidden="true" class="text-2xl leading-none">
           +

@@ -110,7 +110,7 @@ export function ChannelList(props: { class?: string }) {
               </svg>
             </>
           }
-          triggerClass="flex h-14 min-w-0 flex-1 items-center justify-between gap-2 px-4 text-left outline-none hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+          triggerClass="flex h-14 min-w-0 flex-1 items-center justify-between gap-2 px-4 text-left hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2"
           class="w-56"
         >
           <MenuItem onSelect={() => scope.openInvite()}>
@@ -149,9 +149,7 @@ export function ChannelList(props: { class?: string }) {
 
       <div class="flex-1 overflow-y-auto px-2 py-3">
         <div class="flex items-center justify-between px-2 pb-1">
-          <h3 class="text-xs font-semibold tracking-wide text-muted uppercase">
-            Channels
-          </h3>
+          <h3 class="eyebrow">Channels</h3>
           <Show when={manages()}>
             <Button
               variant="ghost"
@@ -176,7 +174,7 @@ export function ChannelList(props: { class?: string }) {
                     params={{ groupId: group().id, channelId: channel.id }}
                     onClick={() => shell.setDrawer(false)}
                     aria-current={active() ? 'page' : undefined}
-                    class={`flex min-h-10 items-center gap-2 rounded-lg px-2 md:min-h-8 ${active() ? 'bg-paper text-ink shadow-sm' : channel.unread > 0 ? 'font-semibold text-ink hover:bg-paper/60' : 'text-muted hover:bg-paper/60 hover:text-ink'}`}
+                    class={`flex min-h-10 items-center gap-2 rounded-lg px-2 md:min-h-8 ${active() ? 'bg-paper text-ink ' : channel.unread > 0 ? 'font-semibold text-ink hover:bg-paper/60' : 'text-muted hover:bg-paper/60 hover:text-ink'}`}
                   >
                     <ChannelGlyph channel={channel} />
                     <span class="min-w-0 flex-1 truncate">{channel.name}</span>
