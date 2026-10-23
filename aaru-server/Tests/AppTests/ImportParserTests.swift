@@ -36,6 +36,36 @@ struct ImportParserTests {
         #expect(rows[2].status == .inProgress)
     }
 
+    @Test("Goodreads (IMP-020): series suffix, did-not-finish shelves, review or private notes, owned copies")
+    func goodreadsMore() throws {
+        let csv = #"""
+        Book Id,Title,Author,Exclusive Shelf,Bookshelves,My Review,Private Notes,Owned Copies
+        1,"Leviathan Wakes (The Expanse, #1)",James S.A. Corey,dnf,dnf,"Slow.<br/>Gave up &amp; moved on.",Hidden,1
+        2,"Dune (Deluxe Edition)",Frank Herbert,Did Not Finish,did-not-finish,,"Private, only",0
+        3,"Small Gods (Discworld, #13; Omnieni #1)",Terry Pratchett,abandoned,,<p> </p>,,
+        4,Plain,Someone,Dropped,,,,x
+        5,Shelved,Someone,favorites,favorites,,,
+        """#
+        let rows = try CSVImportParser.parse(csv, source: .goodreadsCSV, filename: nil)
+        #expect(rows.map(\.title) == ["Leviathan Wakes", "Dune (Deluxe Edition)", "Small Gods", "Plain", "Shelved"])
+        #expect(rows.map(\.status) == [.dropped, .dropped, .dropped, .dropped, nil])
+        #expect(rows[0].lists == ["dnf"], "a custom exclusive shelf is still a list")
+        #expect(rows[0].notes == "Slow.\nGave up & moved on.", "the review wins over private notes")
+        #expect(rows[1].notes == "Private, only")
+        #expect(rows[2].notes == nil, "a review with nothing in it is no notes")
+        #expect(rows.map(\.isOwned) == [true, nil, nil, nil, nil], "only a count above 0 says owned")
+    }
+
+    @Test("Goodreads: only a bracket that numbers the book in a series leaves the title")
+    func goodreadsSeriesSuffix() {
+        #expect(CSVImportParser.withoutSeries("The Way of Kings (The Stormlight Archive, #1)") == "The Way of Kings")
+        #expect(CSVImportParser.withoutSeries("Mistborn (Mistborn, #0.5)") == "Mistborn")
+        #expect(CSVImportParser.withoutSeries("Omnibus (Series #1-3)") == "Omnibus")
+        #expect(CSVImportParser.withoutSeries("Catch-22 (50th Anniversary)") == "Catch-22 (50th Anniversary)")
+        #expect(CSVImportParser.withoutSeries("(#1)") == "(#1)", "a title that is only the bracket stays")
+        #expect(CSVImportParser.plainText("3 < 4 &lt;b&gt;") == "3 < 4 <b>", "only real tags go")
+    }
+
     @Test("IMDb: tconst is the id, episodes are refused with a reason, the watchlist is a wishlist")
     func imdb() throws {
         let ratings = #"""

@@ -585,6 +585,7 @@ account or a stranger that has not happened yet.
 | IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Live 2026-10-21 (API c8b19e7, LuminaVaultInfra#405; web prod); Apple ledger not run on a device |
 | IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
+| IMP-020 | Built, unverified | `feat/imp-020-goodreads`; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests | Stub catalog only; no real Goodreads export run yet |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -1970,6 +1971,33 @@ by title + author, and a custom shelf produces one Aaru list, not one per row.
 **Progress 2026-10-15:** built and tested end to end (Open Library needs no key, so it also works
 locally): `=""` ISBNs, title + author fallback, custom shelves become one list each (an existing
 list of that name is reused).
+
+### IMP-020 · Goodreads CSV matching and export guide · S
+**Needs:** IMP-008.
+Owner, 2026-10-23: "connect or import books from Goodreads". Goodreads closed its API to new
+developers in December 2020, so there is no connect option. The owner chose the CSV only, with a
+better flow: no link, no RSS feed, no scraping exception.
+
+- An ISBN Open Library does not know falls back to title + year + author, as a row without one.
+- The series suffix Goodreads adds ("Leviathan Wakes (The Expanse, #1)") leaves the title before
+  matching. Only a bracket that numbers the book in a series goes.
+- A book may match one year off only when the row's author is one of the hit's authors
+  (normalized) and exactly one hit qualifies; two such hits stay unmatched. No other kind is
+  loosened, and a similar name alone still never merges.
+- Exclusive shelf `dnf`, `did-not-finish`, `abandoned` or `dropped` (any case, spaces or
+  hyphens) → `dropped`; the shelf still becomes a list.
+- `My Review` (Goodreads HTML made plain), else `Private Notes`, fills empty notes only.
+  `Owned Copies` above 0 sets owned; an import never clears it.
+- The Goodreads tile on web and Apple says how to export (My Books → Import and export → Export
+  Library) and that Goodreads has no connect option.
+
+**Done when:** a Goodreads export whose ISBNs Open Library lacks, whose titles carry series
+suffixes, and whose years are one off still matches those books by title and author; a DNF
+shelf lands as dropped; reviews and owned copies arrive without overwriting what the library
+has; and the tile tells the person how to get the file.
+
+**Progress 2026-10-23:** built and tested with a stub catalog (parser, flow and core matching
+tests). Not run on a real export yet.
 
 ### IMP-009 · CAT show list · M
 **Needs:** IMP-005, CAT-002.

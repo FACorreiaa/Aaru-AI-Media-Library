@@ -1,9 +1,10 @@
 import AaruCore
 import Foundation
 
-/// What an import does to one title (IMP-004). It never overwrites: it fills an empty rating or
-/// finish date, adds missing ticks, and moves a status forward (wishlist → in progress →
-/// finished), never backward, never out of dropped, never past a status the user chose.
+/// What an import does to one title (IMP-004). It never overwrites: it fills an empty rating,
+/// finish date or notes, sets owned but never clears it (IMP-020), adds missing ticks, and moves
+/// a status forward (wishlist → in progress → finished), never backward, never out of dropped,
+/// never past a status the user chose.
 extension ImportService {
     struct Decision {
         var outcome: ImportOutcome
@@ -20,7 +21,7 @@ extension ImportService {
         guard let item else {
             let status = row.status ?? (row.watched?.isEmpty == false ? .inProgress : .wishlist)
             let fields = ItemFields(
-                status: status, rating: Self.rating(row.rating), notes: nil, isOwned: false,
+                status: status, rating: Self.rating(row.rating), notes: row.notes, isOwned: row.isOwned == true,
                 finishedAt: status == .finished ? row.finishedAt : nil, bookPage: nil, bookPercent: nil
             )
             return Decision(outcome: .create, fields: fields, watch: row.watched ?? [])
@@ -35,6 +36,14 @@ extension ImportService {
         if fields.finishedAt == nil, fields.status == .finished, let finished = row.finishedAt {
             fields.finishedAt = finished
             filled.append("finish date")
+        }
+        if fields.notes?.nilIfBlank == nil, let notes = row.notes {
+            fields.notes = notes
+            filled.append("notes")
+        }
+        if !fields.isOwned, row.isOwned == true {
+            fields.isOwned = true
+            filled.append("owned mark")
         }
         let fieldsChanged = moved != nil || !filled.isEmpty
         let missing = (row.watched ?? []).filter { !item.watched.contains($0) }.sorted()
