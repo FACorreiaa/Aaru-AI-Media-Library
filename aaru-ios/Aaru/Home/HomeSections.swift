@@ -6,7 +6,7 @@ import SwiftUI
 extension HomeScreen {
     /// The owl beside "The Field", and when it is: "Tuesday evening · 3 in progress · 2 airing today".
     var header: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AaruSpace.medium) {
             OwlHead(size: 48, idle: true)
             VStack(alignment: .leading, spacing: 4) {
                 Text("The Field")
@@ -29,6 +29,7 @@ extension HomeScreen {
                 isPending: model.pending.contains(tonight.primary.libraryItemId),
                 wide: !compact,
                 onSetAside: { pick, verdict in Task { await model.setAside(pick, verdict: verdict) } },
+                onMarkSeasonWatched: { entry in Task { await model.markSeasonWatched(entry) } },
                 onMarkWatched: { entry in Task { await model.markNextWatched(entry) } }
             )
             .padding(.horizontal, 20)

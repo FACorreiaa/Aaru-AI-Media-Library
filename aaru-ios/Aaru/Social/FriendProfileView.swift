@@ -110,7 +110,7 @@ struct FriendProfileView: View {
                 }
             }
             .padding(16)
-            .background(Color(.surface), in: .rect(cornerRadius: 10))
+            .background(Color(.surface), in: .rect(cornerRadius: AaruRadius.field, style: .continuous))
         }
         CoverShelf(
             title: "Recently finished", empty: "Nothing finished yet.",
@@ -159,7 +159,7 @@ private struct ProfileHeader: View {
             Text(profile.user.monogram)
                 .font(.aaruDisplay(.title))
                 .frame(width: side, height: side)
-                .background(Color(.medallion).opacity(0.2), in: .circle)
+                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(profile.user.inviteName)

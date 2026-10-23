@@ -37,7 +37,7 @@ struct TitleChannelHeader: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             if let progress = model.progress {
                 Button {
                     expanded.toggle()
@@ -59,7 +59,7 @@ struct TitleChannelHeader: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(.surface).opacity(0.6))
+        .background(Color(.surface).opacity(AaruAlpha.half))
         .overlay(alignment: .bottom) { Rectangle().fill(Color(.line)).frame(height: 0.5) }
         .task { await model.load() }
         .task {
@@ -144,7 +144,7 @@ struct TitleCardRow: View {
         HStack(spacing: 12) {
             PosterView(url: title.posterURL, kind: title.mediaKind)
                 .frame(width: 36)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title.title).font(.subheadline.weight(.semibold)).lineLimit(2)
                 Text([title.year.map(String.init), mine.map { "You: \($0.summary(for: title.mediaKind))" }]

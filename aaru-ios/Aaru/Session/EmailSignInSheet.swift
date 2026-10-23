@@ -94,7 +94,7 @@ struct EmailSignInSheet: View {
                 .focused($focus, equals: field)
                 .padding(.horizontal, 16)
                 .frame(minHeight: 48)
-                .background(Color(.surface), in: RoundedRectangle(cornerRadius: 14))
+                .field()
         }
     }
 

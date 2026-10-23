@@ -180,7 +180,7 @@ private struct MessageScaffold<Content: View>: View {
             if highlighted {
                 HStack(spacing: 0) {
                     Color(.accent).frame(width: 2)
-                    Color(.accent).opacity(0.08)
+                    Color(.accent).opacity(AaruAlpha.tint)
                 }
             }
         }
@@ -237,7 +237,7 @@ struct Monogram: View {
             .font(size > 40 ? .headline : .subheadline.weight(.medium))
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .frame(width: side, height: side)
-            .background(Color(.medallion).opacity(0.2), in: .circle)
+            .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
             .accessibilityHidden(true)
     }
 }

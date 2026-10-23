@@ -362,7 +362,9 @@ Ignore everyone else until 1,000 users.
 8. **BookTok and film-diet creators.** Small accounts, free Founding tier, no scripts.
 9. **A single owned newsletter.** Monthly, about what shipped. It is the only channel nobody can take away.
 
-**Do not bother:** paid ads (no LTV data), Twitter/X threads (no audience), a Discord (support load for one person), influencer deals, "AI" as a headline anywhere.
+**Do not bother:** paid ads (no LTV data), Twitter/X threads (no audience), influencer deals, "AI" as a headline anywhere.
+
+**Discord** (owner, 2026-10-23, reverses the "do not bother" above): Aaru has its own channel in the shared Discord server, linked as "Join us on Discord" from the site and the app. It is for community building; private and account questions still go to the contact email.
 
 ---
 

@@ -22,7 +22,7 @@ struct NowPlayingCard: View {
                         HStack(alignment: .center, spacing: wide ? 20 : 14) {
                             HomeArt(url: artURL(primary), aspect: artAspect(primary))
                                 .frame(width: artWidth(primary))
-                                .clipShape(.rect(cornerRadius: 10, style: .continuous))
+                                .clipShape(.rect(cornerRadius: AaruRadius.field, style: .continuous))
                             titles(primary)
                             Spacer(minLength: 0)
                         }
@@ -31,7 +31,7 @@ struct NowPlayingCard: View {
                         TimelineView(.periodic(from: .now, by: 30)) { context in
                             progress(primary, at: context.date)
                         }
-                        .padding(.top, 14)
+                        .padding(.top, AaruSpace.large)
                     }
                     ForEach(items.dropFirst(), id: \.id) { item in
                         Divider()
@@ -39,10 +39,7 @@ struct NowPlayingCard: View {
                         NowPlayingRow(item: item)
                     }
                 }
-                .padding(wide ? 20 : 14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.surface))
-                .clipShape(.rect(cornerRadius: 14, style: .continuous))
+                .panel(padding: wide ? AaruSpace.xlarge : AaruSpace.large)
                 .edgeLit()
             }
         }
@@ -67,7 +64,6 @@ struct NowPlayingCard: View {
     private func progress(_ item: NowPlayingItem, at date: Date) -> some View {
         HStack(spacing: 12) {
             ProgressView(value: item.fraction(at: date) ?? 0)
-                .tint(Color(.accent))
                 .accessibilityLabel("Progress")
             Button {
                 showsEndTime.toggle()
@@ -121,7 +117,7 @@ private struct NowPlayingRow: View {
             HStack(spacing: 12) {
                 HomeArt(url: item.artURL.flatMap(URL.init(string:)), aspect: 1)
                     .frame(width: 40)
-                    .clipShape(.rect(cornerRadius: 6, style: .continuous))
+                    .clipShape(.rect(cornerRadius: AaruRadius.thumb, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.name)
                         .font(.subheadline.weight(.semibold))
@@ -217,7 +213,7 @@ extension NowPlayingItem {
 #Preview("Now playing") {
     NavigationStack {
         ScrollView {
-            VStack(spacing: 28) {
+            VStack(spacing: AaruSpace.section) {
                 NowPlayingCard(items: [.sample()])
                 NowPlayingCard(items: [.sample(paused: true)])
                 NowPlayingCard(items: [.sample(), .sampleVideo, .sampleTrack])

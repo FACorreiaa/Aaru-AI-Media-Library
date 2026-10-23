@@ -146,6 +146,15 @@ library layer stay separate, external IDs stored whenever known, no second backe
   | Chat v1 | History and streaming, voice input (cluster Whisper), image upload, Share to Board |
   | LLM budget | The shared `haiku-trial` workspace ($20 cap). No fallback model; out of credit shows "resting" |
 
+- **Board on Friends, post page, inline composer (owner, 2026-10-23, BOARD-002).** The spec's
+  Social tab (Groups becoming Social with `Board | Groups`) is dropped. The Board lives on
+  Friends: `/app/friends` opens on Board and `Board | Lately` is a segmented control, with no nav
+  rename and Groups untouched. Comments open on a post page, `/app/friends/posts/$postId`. The
+  composer is an inline box at the top of Board, with no floating button or dialog. The poster
+  in a post row is not a link, because title pages are library items; friends' posts carry "Add
+  to my library". BOARD-003 follows: Board inside Friends, reached on iPhone from Groups'
+  Friends button.
+
 - **BOARD-001 as built (2026-10-22).** A review of a new title writes two journal rows (add, then
   the rating update), so undo is per row. "Report post" reuses `reportUser` on the post author
   with the note prefixed `post:<id>`; there is no new route. Comment list pages carry a nullable
@@ -508,8 +517,9 @@ account or a stranger that has not happened yet.
 | BRD-005 | Built | #158; `generate-tokens.mjs --check` covers the manifest and translucent pairs | Theme audit 2026-10-23: contract fixes. BRD-006…010 follow |
 | BRD-006 | Built | #159 | Web contrast P1s: one focus form, placeholders, menu rows, toasts |
 | BRD-007 | Built | this PR; `Design/Surfaces.swift` | Apple contrast P1s + launch screen in Paper. Owner checks a sheet and a cold launch in dark on TestFlight |
-| BRD-008 | Built | #161 (source + generator); #162 (web surfaces: lift, scrim, hairline cards, radii, skeleton, tooltip, inputs, disabled, selection); this PR (web type + motion: one eyebrow, named sizes, motion tokens, reduced-motion blanket, no app-shell choreography, fixed share colours); the Apple adoption follows | Owner checks a menu, a dialog, the drawer, a card and the recap in both appearances on beta web, once with Reduce Motion |
+| BRD-008 | Built | #161 (source + generator); #162 (web surfaces); #163 (web type + motion); this PR (Apple: card/well/field/lift, radii, alpha, spacing, Settings tiles on tokens, brand guard for system colours) | Owner checks a menu, a dialog, the drawer, a card and the recap in both appearances on beta web, once with Reduce Motion |
 | BRD-010 | Built | this PR; `docs/brand/owl_icon_appearances.py` | Dark + tinted app icon (iOS 18), extension popup on the tokens, PWA manifest rule. Owner checks the icon in all three Home Screen modes |
+| BRD-009 | Built | this PR; `WidgetAssets.xcassets` gets every role | Widgets on the tokens: generated colour sets, `widgetAccentable`, text styles, Gauge. Owner checks the widget gallery in light, dark and tinted |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -546,6 +556,7 @@ account or a stranger that has not happened yet.
 | PROG-003 | Done | #2; LibraryTests nextEpisode | |
 | PROG-004 | Done | #2; ValidationTests percent | |
 | PROG-005 | Done | ShowWatchedTests | Pulled forward 2026-10-22; not yet run on TestFlight |
+| PROG-006 | Built, unverified | `lib/home/tonight.test.ts`; `TonightStrip.tsx`, `Home/TonightCard.swift` | Client-only (owner, 2026-10-23); not yet run on TestFlight |
 | LST-001 | Done | #2; ListShelfTests visibility | |
 | LST-002 | Done | #2; `/v1/lists/{id}/items`, `/order` | |
 | LST-003 | Built, unverified | ListShelfTests LST-003, CatalogRefreshTests | iOS not checked on TestFlight yet |
@@ -574,6 +585,7 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
+| BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
 | BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
@@ -694,11 +706,6 @@ account or a stranger that has not happened yet.
 | --- | --- |
 | SRV-001…SRV-008 | Built; 13 server tests pass against local Postgres; `--db-migrate` verified from the CLI. |
 | SRV-009, REL-001 | Root workflows written (`ci-swift`, `ci-apple`, `ci-web`); all checks pass locally. Unverified on GitHub until pushed. |
-| REL-002 | Done. |
-| REL-003 | Project builds for iOS Simulator and macOS; Beta/Release settings resolve. Side-by-side install on a device needs App IDs registered and real icons. |
-| REL-004 | Lanes and workflows written. Needs ASC records, App IDs, secrets, and one Seed signing run. |
-| REL-005 | Image builds from the repo root and was smoke-tested locally (migrate, fail-fast, health 200); promote workflow written; infra draft PR LuminaVault/LuminaVaultInfra#292. Needs `TMDB_API_KEY` sealed, first image tag, `/data/pg-aaru` on the node, `INFRA_TOKEN`, and the domain. |
-| REL-006 | Workers configs + deploy workflow written; check/lint/test/build pass locally. Domain `aaruapp.com` (Cloudflare, 2026-10-15): prod Worker on `aaruapp.com` (+ `www` → apex 301), beta on `beta.aaruapp.com`, no `workers.dev`; security headers in `src/start.ts`. Needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (token also needs Workers Routes + DNS edit on the zone for the custom domains). |
 
 ### P1 and later progress log (from 2026-10-09)
 
@@ -719,7 +726,6 @@ with every provider stubbed.
 | PRV-001, LAND-003 | Built 2026-10-16: `docs/providers.md` (register) and `docs/privacy.md` (policy, rendered at `aaruapp.com/privacy`); `/about` and the Apple About screen show the TMDB logo + notice, TVmaze (CC BY-SA), AniList, Open Library. `privacy@aaruapp.com` needs Cloudflare Email Routing. No self-serve export yet (policy says "ask us"). |
 | APP-009 Home rows | Built 2026-10-16 on iPhone, iPad, Mac and web: Home is the first destination (Home · Library · Calendar; web library moved to `/app/library`). Continue watching (one-tap check advances optimistically), Airing soon / Coming up (badges from `airTimeKnown`), Start watching. Apple renders from a disk cache first; the web has no offline cache yet. In-progress movies are not in Continue watching (server returns shows only). Checked with sample data only. |
 | WID-001…004, WID-006 | Built 2026-10-16 (iOS + macOS, one extension): App Group snapshot (`Shared/WidgetSnapshot.swift`) written after every Home load and tick, an hourly `BGAppRefreshTask` on iOS, cleared on sign-out. Up Next (small/medium/large) with an interactive "mark watched" App Intent that calls the same PUT with the shared Keychain token, advances optimistically and restores on failure; Next Episode countdown (small + Lock Screen accessories on iOS; entries at each air time flip to "Out now"); This Week (large/extra large, Monday-first, deep links `aaru://title/{id}`). Not yet seen on a device; no undo ribbon for widget ticks; the large Up Next has no progress bar (the snapshot has no episode totals). WID-005 (Live Activity) is next. |
-| WID-005 | Built 2026-10-19 (iOS only, client-side; no server change): "Start watching" from an aired episode's context menu in title detail and from Home's Continue watching card starts a `NowWatchingAttributes` Live Activity (one at a time; poster downsampled into the App Group). Lock Screen + Dynamic Island: poster, `S1 · E8 · Name`, progress bar, "Ends at" ↔ "Nm left" via `ToggleEndTimeIntent`, "Mark watched" via `MarkNowWatchingIntent` (same PUT and widget path as the Up Next check). Stale after end + 30 min ("Did you finish?"), ended on app foreground and in the background refresh; ticking that episode anywhere ends it with a brief "Watched". Started by check-in only; scrobble start is P3. Not yet run on a device. |
 | DISC-001 Discover rows | Built 2026-10-20 on iPhone, iPad, Mac and web: `GET /v1/discover` returns up to eight public rows (TMDB trending/on the air/new shows/trending movies/in theaters, AniList this season + trending, Open Library weekly trending), cached in memory for 6 h, a failing provider dropping only its row; items the caller has carry `libraryItemId`. Home renders them under the user's rows; a new account sees a slim "Add a show" header above them. Adding from a card is search's add (wishlist, or a status, or a list). TMDB rows checked with stubs only (no local key); AniList and Open Library checked live. |
 | APP-010 + catch-up month | Built 2026-10-15 on iPhone, iPad, Mac and web: Calendar destination with Week (CAT grid / iPhone day pager) and Month (Stremio-style posters + agenda). Server adds `backdropUrl`, `network`, `airTimeKnown`, `episodeOverview`; range up to 42 days. Checked with sample data only. |
 | CAT-019, UPN-002, GAM-006c, APP-014 (server) | Built 2026-10-20 on `feat/discover-insights`, tests against stubs only: `type=all` search with `releaseDate` on hits, Up Next `counts` + `unfinished`, `/v1/me/stats?span=all` with `byKind` and the ratings distribution, per-kind labels in journal summaries and the Stremio catalog name. CAT-020's own `/v1/discover` was dropped for DISC-001's in the merge. Clients (APP-011…APP-015: Discover tab/page on DISC-001's rows, Insights, Home additions, Lists tab) are being built. |
@@ -951,6 +957,10 @@ Apple surfaces + spacing + type) follow under the same id.
 **Done when:** `generate-tokens.mjs --check` covers the new files; `rounded-lg`/`-xl` keep
 their pixel values (10/14) so nothing moves in this PR; both targets build with the enums.
 
+### BRD-009 · Widgets on the tokens · S · owner, 2026-10-23
+The widget extension had its own string palette (`Color("Paper")`, accent called `brand`) with six roles, fixed 9–12 pt fonts, no `widgetAccentable`, and a gradient fallback for missing art. Its catalog now gets every role from `design/tokens.json` (`Accent`, `OnAccent`, `Stone`, `Line`, `LineStrong`, `Danger`, `Night`, `Medallion`, `Scrim`, `OnScrim`), the code uses the generated symbols and `AaruRadius`/`AaruAlpha`, text is in text styles (one `` for the circular count), each family marks its glyph and title `widgetAccentable` so tinted and vibrant modes read, capacity progress is a `Gauge`, and the Live Activity and Island use the tokens.
+
+**Done when:** no `Palette.` or `.system(size:` in `AaruWidgets` beyond the one scaled metric; the app scheme builds for iOS and macOS; the owner has seen the gallery in tinted mode.
 ### BRD-010 · Shell polish: icon appearances, extension popup, PWA manifest · S · owner, 2026-10-23
 The app icon had one appearance; iOS 18 asks for dark and tinted. `docs/brand/owl_icon_appearances.py` renders both from the traced A-mark: dark is the mark on flat night navy without the hologram glow, tinted is the mark alone in grey on transparent for the system to tint; the Beta set keeps its band. The extension popup takes the web's eyebrow (12 px, 0.12 em), the pill radius and the motion tokens instead of its own values. The PWA manifest's two colours are the dark paper by design (one splash for both appearances), written by the generator and documented in DESIGN.md.
 
@@ -1348,6 +1358,19 @@ the status select. Both show "Marked N episodes · Undo".
 
 **Done when:** one request ticks a 60-episode show in one undoable action, unaired episodes stay
 unticked, and this week's Insights does not move.
+
+### PROG-006 · Season watched from Tonight · S · owner, 2026-10-23
+**Needs:** PROG-003, AG-005.
+Tonight's card has a second visible button, "Season N watched", beside "Mark watched", for a
+user who has already seen the rest of the season. It is the title page's season tick
+(`POST /v1/library/items/{id}/seasons/{season}/watched`): every aired episode of the next
+episode's season, as one action; no API change. It shows only when episodes after the next one
+remain in that season (not at the finale, not with one left). Nothing moves until the server
+answers; then Tonight and Up Next load again. Season only: the whole show stays on the title
+page and the card menus (PROG-005). Like the title page's, the ticks are dated today.
+
+**Done when:** a pick mid-season marks the season in one tap on web, iPhone and Mac, Tonight moves
+to the next season's first episode (or on), and a finale pick shows no season button.
 
 ---
 
@@ -2931,14 +2954,16 @@ and a review of a new title adds it as Watched with the rating, all on TestFligh
 **Built 2026-10-22:** server only. **Known gaps:** upvote and comment counts include rows from
 users the viewer blocked.
 
-### BOARD-002 · Board on the web, and the Social tab · L
+### BOARD-002 · Board on the web (on Friends) · L
 **Needs:** BOARD-001.
-Groups becomes Social with a `Board | Groups` switch. Feed, composer, comment thread, upvote,
-"Top this week" rail, and "From friends" on the title page. Surfaces in `DESIGN.md` and `VIEWS.md`.
+Friends opens on Board, with a `Board | Lately` control (owner, 2026-10-23; no Social tab).
+Inline composer, post rows (Recent / Top this week), the post page with its comment thread and
+upvoter names, upvote, and "From friends" on the title page. Surfaces in `DESIGN.md` and `VIEWS.md`.
+**Built 2026-10-23:** web only, unverified.
 
 ### BOARD-003 · Board on iOS and Mac · L
 **Needs:** BOARD-001.
-The same surfaces as BOARD-002 in SwiftUI.
+The same surfaces as BOARD-002 in SwiftUI: Board inside Friends, reached on iPhone from Groups' Friends button.
 
 ### BOARD-004 · `@aaru` on the Board, and push · M
 **Needs:** BOARD-001, GRP-011, GRP-012.

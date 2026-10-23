@@ -30,7 +30,7 @@ struct WelcomeView: View {
         ScrollView {
             Group {
                 if isWide {
-                    HStack(alignment: .center, spacing: 56) {
+                    HStack(alignment: .center, spacing: AaruSpace.page) {
                         OwlMedallion.welcome
                             .frame(maxWidth: 380)
                         VStack(alignment: .leading, spacing: 32) {
@@ -41,7 +41,7 @@ struct WelcomeView: View {
                     }
                     .padding(48)
                 } else {
-                    VStack(alignment: .leading, spacing: 28) {
+                    VStack(alignment: .leading, spacing: AaruSpace.section) {
                         OwlMedallion.welcome
                             .frame(maxWidth: 230)
                             .frame(maxWidth: .infinity)
@@ -82,7 +82,7 @@ struct WelcomeView: View {
                 .font(.title3)
                 .foregroundStyle(Color(.muted))
                 .fixedSize(horizontal: false, vertical: true)
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: AaruSpace.large) {
                 Pillar(symbol: "square.stack.3d.up", text: "One library, four plain statuses")
                 Pillar(symbol: "lock", text: "Private by default. No public profile, no ads")
                 Pillar(symbol: "arrow.down.doc", text: "Bring your history from Trakt, IMDb, Letterboxd and Goodreads")
@@ -109,7 +109,7 @@ struct WelcomeView: View {
                 case let .failure(error): onAppleError(error)
                 }
             }
-            .signInWithAppleButtonStyle(scheme == .dark ? .white : .black)
+            .signInWithAppleButtonStyle(scheme == .dark ? .white : .black) // brand-guard: allow
             .frame(height: 52)
             .clipShape(Capsule())
             if let onContinueWithGoogle {

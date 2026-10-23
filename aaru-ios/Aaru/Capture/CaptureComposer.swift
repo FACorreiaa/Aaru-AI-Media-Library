@@ -33,7 +33,7 @@ struct CaptureComposer: View {
                 )
                 .lineLimit(1 ... 6)
                 .disabled(sending || picture != nil)
-                .padding(.vertical, 11)
+                .padding(.vertical, AaruSpace.medium)
                 .accessibilityLabel("Capture")
                 PhotosPicker(selection: $photo, matching: .images) {
                     Image(systemName: "photo")
@@ -57,14 +57,10 @@ struct CaptureComposer: View {
                 .frame(minHeight: 44)
                 .disabled(!canSend)
             }
-            .padding(.leading, 14)
+            .padding(.leading, AaruSpace.large)
             .padding(.trailing, 6)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.surface), in: .rect(cornerRadius: 20, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(Color(.line), lineWidth: 1)
-            }
+            .card()
             Text(problem ?? "Nothing is added until you approve what Aaru found.")
                 .font(.footnote)
                 .foregroundStyle(problem == nil ? Color(.muted) : Color(.danger))
@@ -105,7 +101,7 @@ struct CaptureComposer: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 48, height: 48)
-                    .clipShape(.rect(cornerRadius: 10, style: .continuous))
+                    .clipShape(.rect(cornerRadius: AaruRadius.field, style: .continuous))
             }
             Button("Remove the picture", systemImage: "xmark.circle.fill") {
                 picture = nil

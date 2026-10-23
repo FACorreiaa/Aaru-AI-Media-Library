@@ -53,6 +53,7 @@ import { Route as ShellAppSettingsImportsRouteImport } from './routes/_shell.app
 import { Route as ShellAppSettingsNotificationsRouteImport } from './routes/_shell.app_.settings.notifications'
 import { Route as ShellAppSettingsRecapsRouteImport } from './routes/_shell.app_.settings.recaps'
 import { Route as ShellAppTitleIdRouteImport } from './routes/_shell.app_.title.$id'
+import { Route as ShellAppFriendsPostsPostIdRouteImport } from './routes/_shell.app_.friends.posts.$postId'
 import { Route as ShellAppGroupsGroupIdIndexRouteImport } from './routes/_shell.app_.groups.$groupId.index'
 import { Route as ShellAppGroupsGroupIdChannelIdRouteImport } from './routes/_shell.app_.groups.$groupId.$channelId'
 
@@ -279,6 +280,12 @@ const ShellAppTitleIdRoute = ShellAppTitleIdRouteImport.update({
   path: '/app/title/$id',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellAppFriendsPostsPostIdRoute =
+  ShellAppFriendsPostsPostIdRouteImport.update({
+    id: '/app_/friends/posts/$postId',
+    path: '/app/friends/posts/$postId',
+    getParentRoute: () => ShellRoute,
+  } as any)
 const ShellAppGroupsGroupIdIndexRoute =
   ShellAppGroupsGroupIdIndexRouteImport.update({
     id: '/',
@@ -336,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/app/groups/': typeof ShellAppGroupsIndexRoute
   '/app/lists/': typeof ShellAppListsIndexRoute
   '/app/settings/': typeof ShellAppSettingsIndexRoute
+  '/app/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/app/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
   '/app/groups/$groupId/': typeof ShellAppGroupsGroupIdIndexRoute
 }
@@ -380,6 +388,7 @@ export interface FileRoutesByTo {
   '/app/groups': typeof ShellAppGroupsIndexRoute
   '/app/lists': typeof ShellAppListsIndexRoute
   '/app/settings': typeof ShellAppSettingsIndexRoute
+  '/app/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/app/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdIndexRoute
 }
@@ -429,6 +438,7 @@ export interface FileRoutesById {
   '/_shell/app_/groups/': typeof ShellAppGroupsIndexRoute
   '/_shell/app_/lists/': typeof ShellAppListsIndexRoute
   '/_shell/app_/settings/': typeof ShellAppSettingsIndexRoute
+  '/_shell/app_/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/_shell/app_/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
   '/_shell/app_/groups/$groupId/': typeof ShellAppGroupsGroupIdIndexRoute
 }
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/app/groups/'
     | '/app/lists/'
     | '/app/settings/'
+    | '/app/friends/posts/$postId'
     | '/app/groups/$groupId/$channelId'
     | '/app/groups/$groupId/'
   fileRoutesByTo: FileRoutesByTo
@@ -522,6 +533,7 @@ export interface FileRouteTypes {
     | '/app/groups'
     | '/app/lists'
     | '/app/settings'
+    | '/app/friends/posts/$postId'
     | '/app/groups/$groupId/$channelId'
     | '/app/groups/$groupId'
   id:
@@ -570,6 +582,7 @@ export interface FileRouteTypes {
     | '/_shell/app_/groups/'
     | '/_shell/app_/lists/'
     | '/_shell/app_/settings/'
+    | '/_shell/app_/friends/posts/$postId'
     | '/_shell/app_/groups/$groupId/$channelId'
     | '/_shell/app_/groups/$groupId/'
   fileRoutesById: FileRoutesById
@@ -898,6 +911,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ShellAppTitleIdRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/app_/friends/posts/$postId': {
+      id: '/_shell/app_/friends/posts/$postId'
+      path: '/app/friends/posts/$postId'
+      fullPath: '/app/friends/posts/$postId'
+      preLoaderRoute: typeof ShellAppFriendsPostsPostIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/app_/groups/$groupId/': {
       id: '/_shell/app_/groups/$groupId/'
       path: '/'
@@ -997,6 +1017,7 @@ interface ShellRouteChildren {
   ShellAppTitleIdRoute: typeof ShellAppTitleIdRoute
   ShellAppFriendsIndexRoute: typeof ShellAppFriendsIndexRoute
   ShellAppListsIndexRoute: typeof ShellAppListsIndexRoute
+  ShellAppFriendsPostsPostIdRoute: typeof ShellAppFriendsPostsPostIdRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
@@ -1019,6 +1040,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAppTitleIdRoute: ShellAppTitleIdRoute,
   ShellAppFriendsIndexRoute: ShellAppFriendsIndexRoute,
   ShellAppListsIndexRoute: ShellAppListsIndexRoute,
+  ShellAppFriendsPostsPostIdRoute: ShellAppFriendsPostsPostIdRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)

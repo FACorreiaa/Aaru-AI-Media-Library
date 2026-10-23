@@ -16,8 +16,8 @@ struct ProblemBanner: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    .background(Color(.danger), in: .rect(cornerRadius: 14))
-                    .contentShape(.rect(cornerRadius: 14))
+                    .background(Color(.danger), in: .rect(cornerRadius: AaruRadius.panel, style: .continuous))
+                    .contentShape(.rect(cornerRadius: AaruRadius.panel, style: .continuous))
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 16)

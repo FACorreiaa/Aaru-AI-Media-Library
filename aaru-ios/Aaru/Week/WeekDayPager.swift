@@ -27,7 +27,7 @@ struct WeekDayPager: View {
                         Text(day.formatted(.dateTime.weekday(.narrow)))
                             .font(.caption2.weight(.semibold))
                         Text(day.formatted(.dateTime.day()))
-                            .font(.system(.headline, design: .rounded, weight: .bold))
+                            .font(.aaruDisplay(.headline, weight: .bold))
                             .monospacedDigit()
                         Circle()
                             .fill(model.entries(on: day).isEmpty ? .clear : Color(.accent))
@@ -35,7 +35,10 @@ struct WeekDayPager: View {
                     }
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .foregroundStyle(isSelected ? Color(.paper) : model.isToday(day) ? Color(.accent) : Color(.ink))
-                    .background(isSelected ? Color(.accent) : .clear, in: RoundedRectangle(cornerRadius: 10))
+                    .background(
+                        isSelected ? Color(.accent) : .clear,
+                        in: RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous)
+                    )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

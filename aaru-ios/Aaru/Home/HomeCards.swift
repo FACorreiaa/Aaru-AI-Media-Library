@@ -14,7 +14,7 @@ struct ContinueCard: View {
             NavigationLink(value: entry.libraryItemId) {
                 HomeArt(url: artURL, aspect: 16 / 9)
                     .overlay(alignment: .bottomLeading) { chips.padding(8) }
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: AaruRadius.panel, style: .continuous))
             }
             .buttonStyle(.plain)
             .modifier(HoverLift())
@@ -93,7 +93,7 @@ struct StartCard: View {
                             HomeChip(text: durationLabel(minutes: runtime)).padding(6)
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
                 // The name sits under the card, so a missing poster needs no text on the wash.
                 Text(entry.title.title)
                     .font(.caption.weight(.semibold))
@@ -128,7 +128,7 @@ struct ListeningCard: View {
                             HomeChip(text: String(year)).padding(6)
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(row.title)
                         .font(.caption.weight(.semibold))
@@ -172,8 +172,8 @@ struct AiringCard: View {
                 .overlay(alignment: .topLeading) {
                     HomeChip(
                         text: when,
-                        tint: isSoon ? Color(.accent) : .black.opacity(0.55),
-                        foreground: isSoon ? Color(.paper) : .white
+                        tint: isSoon ? Color(.accent) : Color(.scrim),
+                        foreground: isSoon ? Color(.onAccent) : Color(.onScrim)
                     )
                     .padding(6)
                 }
@@ -182,7 +182,7 @@ struct AiringCard: View {
                         WeekBadge(badge: badge).padding(6)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .clipShape(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(entry.title.title)
                         .font(.caption.weight(.semibold))

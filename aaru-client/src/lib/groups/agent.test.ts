@@ -72,6 +72,17 @@ describe('@aaru suggestions', () => {
     )
     expect(suggestMentions(many, 'aa', me, true, 3)).toHaveLength(3)
   })
+
+  it('suggests friends who are not group members (the Board), never Aaru', () => {
+    const friends = [
+      { user: { userId: 'u1', handle: 'aardvark' } },
+      { user: { userId: 'u2', handle: 'ben', displayName: 'Aaron Ben' } },
+      { user: { userId: me, handle: 'aamine' } },
+    ]
+    expect(
+      suggestMentions(friends, 'aa', me, false).map(suggestionHandle),
+    ).toEqual(['aardvark', 'ben'])
+  })
 })
 
 describe('Aaru is thinking', () => {

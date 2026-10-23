@@ -127,7 +127,10 @@ struct SpoilerVeil: View {
             .foregroundStyle(Color(.muted))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color(.muted).opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+            .background(
+                Color(.muted).opacity(AaruAlpha.tint),
+                in: RoundedRectangle(cornerRadius: AaruRadius.row, style: .continuous)
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Spoiler hidden. Show it.")

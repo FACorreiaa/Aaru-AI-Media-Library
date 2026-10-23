@@ -47,6 +47,29 @@ extension LibraryModel {
         }
     }
 
+    /// A season's aired episodes, ticked as one action (Tonight's season tick, PROG-006). The
+    /// shelf takes the answer at once. Returns what went wrong, or nil.
+    func markSeasonWatched(_ id: String, season: Int, api: Client?) async -> String? {
+        guard let api else { return "Aaru could not reach the server." }
+        do {
+            switch try await api.markSeasonWatched(path: .init(id: id, season: season)) {
+            case let .ok(response):
+                var forShelf = try response.body.json
+                forShelf.watchedEpisodes = nil
+                upsert(forShelf)
+                Task { try? await WidgetSync.refresh(api: api) }
+                #if os(iOS)
+                    await NowWatching.seasonWatched(libraryItemId: id, season: season)
+                #endif
+                return nil
+            case let .default(_, error):
+                return (try? error.body.json.message) ?? "Season \(season) could not be marked. Try again."
+            }
+        } catch {
+            return "Season \(season) could not be marked. Aaru could not reach the server."
+        }
+    }
+
     /// A film's "Mark watched": status Watched, the same PATCH as the title page. Returns what
     /// went wrong, or nil.
     func markFilmWatched(_ id: String, api: Client?) async -> String? {
@@ -186,7 +209,7 @@ struct ProgressPreview: View {
     let entry: LibraryEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             PosterView(url: entry.title.posterURL, kind: entry.title.mediaKind)
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title.title)
