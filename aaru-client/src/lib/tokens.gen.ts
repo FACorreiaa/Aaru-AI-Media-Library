@@ -11,8 +11,8 @@ export const COLORS = {
   accent: { light: '#2a62a6', dark: '#6aaeea' },
   onAccent: { light: '#f4f6fa', dark: '#0e141e' },
   gold: { light: '#a35f1c', dark: '#e0904f' },
-  agent: { light: '#97591a', dark: '#eab27a' },
   danger: { light: '#a3372a', dark: '#f2a08f' },
-  medallion: { light: '#eef1f6', dark: '#e7ebf1' },
+  medallion: { light: '#c9d2de', dark: '#2b3647' },
+  onScrim: { light: '#f4f6fa', dark: '#e7ebf1' },
   night: { light: '#16233a', dark: '#16233a' },
 } as const

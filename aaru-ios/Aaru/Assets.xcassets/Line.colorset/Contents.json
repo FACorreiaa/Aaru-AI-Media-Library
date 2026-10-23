@@ -16,10 +16,10 @@
       "color": {
         "color-space": "srgb",
         "components": {
-          "alpha": "0.100",
-          "red": "0.906",
-          "green": "0.922",
-          "blue": "0.945"
+          "alpha": "0.160",
+          "red": "0.416",
+          "green": "0.682",
+          "blue": "0.918"
         }
       },
       "idiom": "universal",
