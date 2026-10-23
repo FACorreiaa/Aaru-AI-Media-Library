@@ -7,8 +7,9 @@ struct CreateBoards: SQLMigration {
         CREATE TABLE board_posts (
             id uuid PRIMARY KEY,
             user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            title_id uuid REFERENCES titles(id),
-            rating numeric(3,1) CHECK (rating IS NULL OR title_id IS NOT NULL),
+            title_id uuid REFERENCES titles(id) ON DELETE RESTRICT,
+            rating numeric(3,1) CHECK (rating IS NULL OR title_id IS NOT NULL)
+                CHECK (rating IS NULL OR rating BETWEEN 1 AND 10),
             body text NOT NULL CHECK (char_length(body) <= 4000),
             spoiler_season integer CHECK (spoiler_season >= 0),
             spoiler_episode integer CHECK (spoiler_episode >= 1),
@@ -36,7 +37,7 @@ struct CreateBoards: SQLMigration {
             post_id uuid NOT NULL REFERENCES board_posts(id) ON DELETE CASCADE,
             user_id uuid REFERENCES users(id) ON DELETE CASCADE,
             author_kind text NOT NULL CHECK (author_kind IN ('user', 'agent')),
-            reply_to uuid REFERENCES board_comments(id) ON DELETE CASCADE,
+            reply_to uuid REFERENCES board_comments(id) ON DELETE SET NULL,
             body text NOT NULL CHECK (char_length(body) <= 4000),
             mentions uuid[] NOT NULL DEFAULT '{}',
             mentions_agent boolean NOT NULL DEFAULT false,
@@ -46,6 +47,9 @@ struct CreateBoards: SQLMigration {
         )
         """,
         "CREATE INDEX board_comments_post ON board_comments (post_id, created_at, id)",
+        "CREATE INDEX board_comments_reply_to ON board_comments (reply_to) WHERE reply_to IS NOT NULL",
+        "CREATE INDEX board_comments_user ON board_comments (user_id) WHERE user_id IS NOT NULL",
+        "CREATE INDEX board_upvotes_user ON board_upvotes (user_id)",
     ]
     let backward = [
         "DROP TABLE board_comments",

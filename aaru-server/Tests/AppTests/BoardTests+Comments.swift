@@ -84,6 +84,51 @@ struct BoardCommentTests {
         }
     }
 
+    @Test("BRD-001: an author who blocked the viewer is the missing 404, and off the feed")
+    func authorBlocksViewer() async throws {
+        try await LibraryHarness.run { env in
+            let mine = try await claimHandle(env)
+            let ana = try await friend(env, of: mine)
+            let anaPost = try await createPost(env, "ana's", token: ana.token)
+            let before = try await env.send(.get, "/v1/board/posts/\(anaPost)")
+            #expect(before.status == .ok)
+            #expect(try await env.send(.put, "/v1/social/blocks/\(env.userID)", token: ana.token).status.code < 300)
+
+            let missing = try await env.send(.get, "/v1/board/posts/\(UUID().uuidString)")
+            let hidden = try await env.send(.get, "/v1/board/posts/\(anaPost)")
+            #expect(hidden.status == .notFound)
+            #expect(hidden.text == missing.text)
+            let feed = try await env.send(.get, "/v1/board")
+            let ids = try (feed.json()["items"] as? [[String: Any]] ?? []).compactMap { $0["id"] as? String }
+            #expect(!ids.contains(anaPost))
+        }
+    }
+
+    @Test("BRD-001: mentions reach the post's audience, not the commenter's friends")
+    func mentionAudience() async throws {
+        try await LibraryHarness.run { env in
+            let mine = try await claimHandle(env)
+            let ana = try await friend(env, of: mine)
+            let ben = try await friend(env, of: mine)
+            // Carl is Ben's friend only.
+            let (carlID, carlToken) = try await signedInUser(env.stores)
+            let carl = freshHandle()
+            _ = try await env.send(.put, "/v1/me/profile", json: ["handle": carl], token: carlToken)
+            _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": carl], token: ben.token)
+            let accepted = try await env.send(
+                .post, "/v1/social/friend-requests", json: ["handle": ben.handle], token: carlToken
+            )
+            #expect(try accepted.json()["relationship"] as? String == "friend")
+
+            let post = try await createPost(env, "hello")
+            let toAna = try await comment(env, post, "hi @\(ana.handle)", token: ben.token)
+            #expect(toAna["mentions"] as? [String] == [ana.id])
+            let toCarl = try await comment(env, post, "hi @\(carl)", token: ben.token)
+            #expect(toCarl["mentions"] as? [String] == [])
+            _ = carlID
+        }
+    }
+
     @Test("BRD-001: a blocked friend of a friend is the missing 404")
     func blockedPostIs404() async throws {
         try await LibraryHarness.run { env in
@@ -126,6 +171,9 @@ struct BoardCommentTests {
             #expect(rows.count == 2)
             #expect(rows.first?["deleted"] as? Bool == true)
             #expect(rows.first?["body"] as? String == "")
+            #expect(rows.first?["author"] == nil)
+            #expect(rows.first?["mentions"] as? [String] == [])
+            #expect(rows.first?["mentionsAgent"] as? Bool == false)
             #expect(rows.last?["body"] as? String == "reply")
         }
     }

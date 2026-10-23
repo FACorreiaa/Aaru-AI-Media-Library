@@ -138,4 +138,25 @@ struct BoardStoreTests {
             #expect(try await rowsReferencing(alice.id) == [:])
         }
     }
+
+    @Test("BRD-001: deleting an account keeps other people's replies to its comments")
+    func replySurvivesParentAccountDeletion() async throws {
+        try await withMigratedStores { stores in
+            let ana = try await author(stores)
+            let ben = try await author(stores)
+            let created = try await stores.boards.createPost(post(by: ben))
+            let top = try await stores.boards.addComment(BoardComment(
+                id: UUID(), postID: created.id, author: ana, fromAgent: false, replyTo: nil, body: "top",
+                mentions: [], mentionsAgent: false, createdAt: Date()
+            ))
+            let reply = try await stores.boards.addComment(BoardComment(
+                id: UUID(), postID: created.id, author: ben, fromAgent: false, replyTo: top.id, body: "reply",
+                mentions: [], mentionsAgent: false, createdAt: Date().addingTimeInterval(1)
+            ))
+            try await stores.users.deleteUser(ana.id)
+            let survivor = try #require(try await stores.boards.comment(reply.id, post: created.id))
+            #expect(survivor.body == "reply")
+            #expect(survivor.replyTo == nil)
+        }
+    }
 }

@@ -47,7 +47,7 @@ library layer stay separate, external IDs stored whenever known, no second backe
   | Upvote | One per user per post. Count plus who upvoted. Sort: Recent (default) or Top this week |
   | Comments | Everyone who can see the post sees every comment and handle. Blocks hide both ways (X-011: 404, never 403) |
   | Board placement | The Groups tab becomes Social, with a `Board \| Groups` switch; Board is the default |
-  | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating; a title already there keeps its status and gets the rating |
+  | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating (a still-airing show lands as `in_progress` with aired episodes ticked, PROG-005, so BRD-002's composer preview must say so); a title already there keeps its status and gets the rating |
   | Chat writes | Like a tap: one item applies at once, journaled and undoable; anything bigger is a `PlanCard` approved in Aaru (X-009) |
   | Web search | Media topics only (films, shows, anime, books, music, sport). Off-topic is refused before any search |
   | Suggestions | Owner exception: personal suggestions in chat only, when asked. No "because you watched" rows anywhere else |
@@ -60,8 +60,7 @@ library layer stay separate, external IDs stored whenever known, no second backe
   with the note prefixed `post:<id>`; there is no new route. Comment list pages carry a nullable
   `next` cursor, and a page can be short or empty after deleted and blocked rows are filtered.
   Known gaps, for later: the upvote count and `commentCount` include rows from users the viewer
-  blocked while the lists hide them; mention candidates are the commenter's friends, so BRD-004's
-  notifications must filter by post visibility.
+  blocked while the lists hide them.
 
 - **Everything playing, in one Live Activity (owner, 2026-10-22, SCR-009).** When a show and a
   song, or a show and a YouTube video, play at once, the iPhone shows them together: one
@@ -2668,14 +2667,16 @@ Tables `board_posts`, `board_upvotes`, `board_comments` (migration `CreateBoards
 `GET /v1/titles/{id}/posts`. A post is visible to its author and the author's friends unless
 either side blocked the other; anything else is the same 404 as a missing post. A rating on a
 post writes the library through `LibraryService`: a new title is added as finished, then rated,
-as two journal rows (undo is per row); an existing title keeps its status. The spoiler veil
+as two journal rows (undo is per row); an existing title keeps its status. A still-airing show
+lands as `in_progress` with its aired episodes ticked (PROG-005), so BRD-002's composer preview
+must say so. The spoiler veil
 reuses the title-channel stamp. Comment lists page by cursor (`next`, nullable; a page can be
 short or empty after filtering). Reports use `reportUser` with the note `post:<id>`.
 
 **Done when:** friends see a post, strangers and ex-friends get 404, a block hides both ways,
 and a review of a new title adds it as Watched with the rating, all on TestFlight and the web.
 **Built 2026-10-22:** server only. **Known gaps:** upvote and comment counts include rows from
-users the viewer blocked; mention candidates are the commenter's friends.
+users the viewer blocked.
 
 ### BRD-002 · Board on the web, and the Social tab · L
 **Needs:** BRD-001.
@@ -2721,8 +2722,6 @@ search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
 
 ### ASK-008 · Share to Board · S
 **Needs:** ASK-001, BRD-002. A client tap that opens the composer prefilled; no agent write path.
-
----
 
 ---
 

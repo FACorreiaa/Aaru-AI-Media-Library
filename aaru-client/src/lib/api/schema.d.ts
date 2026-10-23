@@ -2917,7 +2917,7 @@ export interface components {
       id: string
       /** Format: uuid */
       postId: string
-      /** @description Absent once the author deleted their account. */
+      /** @description Absent for Aaru's comments and for deleted comments. */
       author?: components['schemas']['SocialUser']
       /** @description Empty when deleted. */
       body: string

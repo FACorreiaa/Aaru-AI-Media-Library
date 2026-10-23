@@ -163,10 +163,13 @@ extension Components.Schemas.BoardPost {
 
 extension Components.Schemas.BoardComment {
     init(_ comment: BoardComment, viewer: UserID) {
+        // A deleted row only holds the thread together: no author, body or mentions.
+        let gone = comment.deletedAt != nil
         self.init(
-            id: comment.id.uuidString, postId: comment.postID.uuidString, author: comment.author.map { .init($0) },
-            body: comment.deletedAt == nil ? comment.body : "", mentions: comment.mentions.map(\.description),
-            mentionsAgent: comment.mentionsAgent, deleted: comment.deletedAt != nil, createdAt: comment.createdAt,
+            id: comment.id.uuidString, postId: comment.postID.uuidString,
+            author: gone ? nil : comment.author.map { .init($0) },
+            body: gone ? "" : comment.body, mentions: gone ? [] : comment.mentions.map(\.description),
+            mentionsAgent: gone ? false : comment.mentionsAgent, deleted: gone, createdAt: comment.createdAt,
             fromAgent: comment.fromAgent, replyTo: comment.replyTo?.uuidString,
             mine: comment.author?.id == viewer
         )

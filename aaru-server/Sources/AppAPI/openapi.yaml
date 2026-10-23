@@ -798,7 +798,7 @@ paths:
         - name: limit
           in: query
           description: 1–50, default 20.
-          schema: {type: integer}
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
       responses:
         '200':
           description: OK.
@@ -1814,7 +1814,7 @@ paths:
         - name: limit
           in: query
           description: 1–50, default 20.
-          schema: {type: integer}
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
       responses:
         '200':
           description: OK.
@@ -3444,7 +3444,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         postId: {type: string, format: uuid}
-        author: {$ref: '#/components/schemas/SocialUser', description: Absent once the author deleted their account.}
+        author: {$ref: '#/components/schemas/SocialUser', description: Absent for Aaru's comments and for deleted comments.}
         body: {type: string, description: Empty when deleted.}
         mentions:
           type: array

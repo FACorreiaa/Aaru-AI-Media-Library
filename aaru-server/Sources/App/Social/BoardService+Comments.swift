@@ -15,7 +15,7 @@ extension BoardService {
     }
 
     /// Oldest first, minus anyone blocked in either direction with the viewer. A deleted comment
-    /// with live replies on this page stays as an empty-body `deletedAt` row; one without is
+    /// with live replies on this page stays as a `deletedAt` row (the DTO blanks it); one without is
     /// dropped. The store pages over deleted and blocked rows too, so a page can come back shorter
     /// than `limit` (even empty): follow `next`, not the item count. A deleted parent whose replies
     /// sit on a later page is dropped.
@@ -29,9 +29,7 @@ extension BoardService {
         let items: [BoardComment] = rows.compactMap { row in
             guard row.deletedAt != nil else { return row }
             guard answered.contains(row.id) else { return nil }
-            var empty = row
-            empty.body = ""
-            return empty
+            return row
         }
         return CommentPage(items: items, next: scanned.count < size ? nil : scanned.last?.id)
     }
@@ -57,11 +55,13 @@ extension BoardService {
             // Nesting stays one level: a reply to a reply hangs off the top-level comment.
             parent = target.replyTo ?? target.id
         }
+        // Mentions notify the post's audience: its author and the author's friends, so a
+        // commenter can't reach someone the post never showed to.
         let hidden = try await blockedEitherWay(viewer)
-        var candidates = try await stores.social.friends(viewer).filter { !hidden.contains($0.id) }
-        if found.author.id != viewer {
-            candidates.append(found.author)
-        }
+        let authorHidden = try await blockedEitherWay(found.author.id)
+        var candidates = try await stores.social.friends(found.author.id)
+            .filter { !hidden.contains($0.id) && !authorHidden.contains($0.id) }
+        candidates.append(found.author)
         let (mentions, agent) = GroupService.mentions(in: body, users: candidates)
         return try await stores.boards.addComment(
             BoardComment(

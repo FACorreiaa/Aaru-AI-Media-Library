@@ -5925,7 +5925,7 @@ public enum Components {
             public var id: Swift.String
             /// - Remark: Generated from `#/components/schemas/BoardComment/postId`.
             public var postId: Swift.String
-            /// Absent once the author deleted their account.
+            /// Absent for Aaru's comments and for deleted comments.
             ///
             /// - Remark: Generated from `#/components/schemas/BoardComment/author`.
             public var author: Components.Schemas.SocialUser?
@@ -5960,7 +5960,7 @@ public enum Components {
             /// - Parameters:
             ///   - id:
             ///   - postId:
-            ///   - author: Absent once the author deleted their account.
+            ///   - author: Absent for Aaru's comments and for deleted comments.
             ///   - body: Empty when deleted.
             ///   - mentions: Friends the comment tags.
             ///   - mentionsAgent: The comment tags @aaru. Recorded only; Aaru does not answer on the Board yet.
