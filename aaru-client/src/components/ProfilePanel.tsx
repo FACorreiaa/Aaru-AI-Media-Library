@@ -13,7 +13,9 @@ import {
   timeSpent,
 } from '../lib/profile/model'
 import type { ProfileStats, TimeShare } from '../lib/profile/model'
+import type { Favorites } from '../lib/favorites/model'
 import { cn } from '~/lib/utils'
+import { FavoritesRows } from './FavoritesRow'
 import { Poster } from './Poster'
 import { RatingsHistogram } from './StatsPanel'
 import { cardClass } from '~/components/ui'
@@ -49,6 +51,8 @@ export function ProfilePanel(props: {
   person: Person
   /** The library item for a title, so a most-watched poster opens it. */
   itemFor: (titleId: string) => string | undefined
+  /** FAV-001; undefined when they could not be loaded, and the section stays out. */
+  favorites?: Favorites
 }) {
   const s = () => props.stats
   const name = () =>
@@ -261,6 +265,10 @@ export function ProfilePanel(props: {
             <RatingsHistogram distribution={s().ratings.distribution} />
           </Section>
         </Show>
+      </Show>
+
+      <Show when={props.favorites}>
+        {(favorites) => <FavoritesRows favorites={favorites()} own />}
       </Show>
 
       <footer class="mt-12 flex flex-col gap-3 text-sm">

@@ -1,5 +1,7 @@
 import { getConcertPlace } from '../concerts/server'
 import type { ConcertPlaceSetting } from '../concerts/model'
+import { loadFavorites } from '../favorites/server'
+import type { Favorites } from '../favorites/model'
 import { getAccount } from '../imports/server'
 import { getEntitlement } from '../plus/server'
 import type { Entitlement } from '../plus/server'
@@ -7,15 +9,17 @@ import { getSignInConfig } from '../session/session'
 import { getPushSetup } from '../push/server'
 import { loadSocialSettings } from '../social/server'
 
-/** What Settings → Account reads: who you are, how you sign in, and Aaru Plus. */
+/** What Settings → Account reads: who you are, your favorites, how you sign in, and Aaru Plus. */
 export async function loadAccountPage() {
-  const [account, signIn, plus] = await Promise.all([
+  const [account, signIn, plus, favorites] = await Promise.all([
     getAccount(),
     getSignInConfig(),
     // An extra: without an answer, the Plus section stays hidden.
     getEntitlement().catch((): Entitlement | null => null),
+    // An extra too: without an answer, the Favorites section stays hidden.
+    loadFavorites().catch((): Favorites | null => null),
   ])
-  return { account, googleClientId: signIn.googleClientId, plus }
+  return { account, googleClientId: signIn.googleClientId, plus, favorites }
 }
 
 export type AccountPageData = Awaited<ReturnType<typeof loadAccountPage>>

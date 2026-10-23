@@ -69,15 +69,18 @@ export function TitlePicker(props: {
 
   return (
     <div>
-      <Segmented
-        label="Kind"
-        variant="chip"
-        options={kinds().map((k) => ({ value: k.kind, label: k.label }))}
-        value={kind()}
-        onChange={setKind}
-        itemClass="min-h-8 px-3 text-sm"
-      />
-      <TextField value={query()} onChange={setQuery} class="mt-3">
+      {/* One kind (a favorites row) needs no choice. */}
+      <Show when={kinds().length > 1}>
+        <Segmented
+          label="Kind"
+          variant="chip"
+          options={kinds().map((k) => ({ value: k.kind, label: k.label }))}
+          value={kind()}
+          onChange={setKind}
+          itemClass="min-h-8 mb-3 px-3 text-sm"
+        />
+      </Show>
+      <TextField value={query()} onChange={setQuery}>
         <TextFieldLabel class="sr-only">Search titles</TextFieldLabel>
         <TextFieldInput
           type="search"
