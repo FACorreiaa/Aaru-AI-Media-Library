@@ -349,7 +349,8 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         concerts: untouched,
         gamification: untouched,
         tonight: untouched,
-        capture: untouched
+        capture: untouched,
+        entitlements: untouched
     )
 }
 

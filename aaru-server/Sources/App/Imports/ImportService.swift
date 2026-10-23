@@ -23,8 +23,7 @@ struct ImportService: Sendable {
     /// Reads text and image captures (AG-006). Nil when no model is configured: links still work.
     var model: (any ModelProviding)?
     /// Says a capture's plan is ready (`UserPush.send`). Nil in tests and when no push is
-    /// configured. A closure, not the `UserPush` itself: that holds a copy of `Stores`, and
-    /// `Services` is already large enough to overflow a test thread's stack when copied.
+    /// configured.
     var push: (@Sendable (PushMessage, UserID) async -> Void)?
     var now: @Sendable () -> Date = { Date() }
 

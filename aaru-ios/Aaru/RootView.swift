@@ -15,6 +15,7 @@ struct RootView: View {
     @Environment(SessionStore.self) private var session
     @Environment(AppRouter.self) private var router
     @Environment(ProgressModel.self) private var progress: ProgressModel?
+    @Environment(PlusModel.self) private var plus: PlusModel?
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -83,6 +84,7 @@ struct RootView: View {
                 settings.reset()
                 groups.reset()
                 progress?.reset()
+                plus?.reset()
                 realtime.reset()
                 router.reset()
                 HomeCache().clear()
@@ -145,6 +147,7 @@ private struct MainTabs: View {
 
     @Environment(AppRouter.self) private var router
     @Environment(ProgressModel.self) private var progress: ProgressModel?
+    @Environment(PlusModel.self) private var plus: PlusModel?
     @Environment(\.scenePhase) private var scenePhase
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -249,6 +252,8 @@ private struct MainTabs: View {
             }
             // The tab's mention badge needs the counts before the tab is opened.
             .task { await groups.load() }
+            // Renewals and Ask to Buy approvals arrive while the app runs (BIL-004).
+            .task { await plus?.listen() }
             // Badges earned elsewhere (an import, another device) toast on return (GAM-004).
             .task(id: scenePhase) {
                 if scenePhase == .active {

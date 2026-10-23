@@ -704,6 +704,38 @@ not in the merge order, and it plans and applies like every other import (one pl
 - **Spend:** every model call records tokens and `cost_micros` in `agent_usage`, priced from
   `ANTHROPIC_PRICE_INPUT` / `ANTHROPIC_PRICE_OUTPUT` (dollars per million tokens).
 - A planned capture pushes "N ready · M need a pick" to the user's devices.
+- **Plus fair use:** a Plus account has no monthly limit but gets 429 `capture_fair_use` after 30
+  captures in a UTC day.
+
+### Aaru Plus (BIL-001…004)
+
+Plus is a StoreKit 2 subscription (`aaru_plus_monthly`, `aaru_plus_yearly`) bought in the Apple
+apps only. The server keeps the entitlement, so the web and every Apple device read the same
+answer from `GET /v1/me/entitlement` (Plus or not, renewal date, this month's captures and limit,
+and the `appAccountToken` to buy with, which is the user id).
+
+- **Verification** happens in `Billing/AppleSignedData.swift`, with no App Store Server API key:
+  each JWS's x5c chain must end at Apple Root CA - G3 (compiled in), carry Apple's marker OIDs
+  (leaf 1.2.840.113635.100.6.11.1, intermediate 1.2.840.113635.100.6.2.1), be valid at the
+  payload's `signedDate`, and name one of `config.appleAudiences` as its bundle id. Built on
+  JWTKit's `X5CVerifier` with `swift-certificates` / `swift-asn1` for the policy.
+- **`POST /v1/billing/apple/transactions`** (session): the app posts `jwsRepresentation` after a
+  purchase, a restore, or each `Transaction.updates` event, so Plus takes effect at once. A
+  transaction whose `appAccountToken` names another account gets 409 `plus_other_account`.
+- **`POST /v1/billing/apple/notifications`** (public, verified by signature): App Store Server
+  Notifications v2 for renewals, expiries, refunds and revocations. The owner is the account
+  already holding that original transaction, else the `appAccountToken`. Unknown accounts are
+  answered 200 and ignored, so Apple stops retrying.
+- **Table `entitlements`**, one row per `original_transaction_id`: user, product, environment,
+  `expires_at`, `revoked_at`, `signed_at`. A write lands only if its `signed_at` is not older than
+  the row's, so a late notification never undoes a newer one. Plus is active when a row is
+  unrevoked and unexpired.
+- Sandbox (TestFlight) purchases count on the one production API, the same way Beta and Prod
+  share it; the row records `environment`.
+- `plus_purchased` fires once per original transaction, on its first active write.
+
+`Stores` is a `final class` (`Data/AllStores.swift`): copying a struct of every store through
+`Services` overflowed the stack of a debug test thread once it grew past the entitlements store.
 
 ## Agent tools
 

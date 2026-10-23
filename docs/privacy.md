@@ -111,6 +111,12 @@ becomes an import you review like any other; nothing is added to your library un
 it. A link you send is read for the title it names and is never opened. Aaru counts how many
 captures you made this month and how much text each used.
 
+**Aaru Plus.** Plus is bought through Apple in the Aaru app on iPhone, iPad or Mac; Aaru never
+sees your card or Apple ID. Apple sends Aaru a signed record of the subscription: which plan,
+when it renews or ends, whether it was refunded, and a random purchase id. Aaru keeps that record
+with your account so every device, and the website, knows you have Plus. Deleting your account
+deletes it; cancelling is done in your Apple account settings.
+
 **Importing your Stremio history.** If you choose to, you approve a code on stremio.com (your
 Stremio password never reaches Aaru). Aaru then reads your Stremio library once, signs that
 session out at once, and does not keep Stremio's session key. What it read becomes an import you
@@ -141,7 +147,8 @@ where, a title was added or changed and by whom (you, an agent, an import or a p
 group was created, a friend was added, an agent's request was approved or declined, the Tonight
 strip showed something today, one of its picks was started within six hours, or you answered a
 pick with "not tonight" or "not for me", a capture was sent (as text, a link or a picture) and its
-plan approved or discarded, or the monthly capture limit was reached. Each event
+plan approved or discarded, the monthly capture limit was reached, or Aaru Plus was bought
+(and which plan). Each event
 carries only those words and your account's random id, never a title, a name, an email, text or
 your IP address, and no profile is built from them. They go to PostHog. The apps and the website
 send nothing of this kind themselves.
@@ -154,7 +161,7 @@ Aaru only uses these services, and only for the purpose listed:
 
 - **Hetzner** (Germany) runs Aaru's server and database and holds encrypted backups.
 - **Cloudflare** serves the website at aaruapp.com and its DNS.
-- **Apple** for Sign in with Apple and push notifications; **Google** for Sign in with Google.
+- **Apple** for Sign in with Apple, push notifications and selling Aaru Plus; **Google** for Sign in with Google.
 - **Your browser's push service** (Google, Mozilla, Apple or Microsoft) carries browser alerts. It
   sees an encrypted message and when it was sent, never its text.
 - **Resend** sends sign-in emails, so it receives your email address and that email.

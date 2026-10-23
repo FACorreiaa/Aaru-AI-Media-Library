@@ -15,6 +15,10 @@ struct CaptureComposer: View {
     @State private var sending = false
     @State private var problem: String?
     @State private var quota: String?
+    /// The paywall, opened with the server's quota line (BIL-004).
+    @State private var paywallReason: String?
+    /// Nil in previews; the quota then shows as an alert.
+    @Environment(PlusModel.self) private var plus: PlusModel?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -66,6 +70,15 @@ struct CaptureComposer: View {
                 .foregroundStyle(problem == nil ? Color(.muted) : Color(.danger))
         }
         .onChange(of: photo) { _, item in Task { await load(item) } }
+        .sheet(isPresented: Binding(get: { paywallReason != nil }, set: {
+            if !$0 {
+                paywallReason = nil
+            }
+        })) {
+            if let plus {
+                PlusPaywall(plus: plus, reason: paywallReason)
+            }
+        }
         .alert(
             "This month's captures are used",
             isPresented: Binding(get: { quota != nil }, set: {
@@ -131,7 +144,11 @@ struct CaptureComposer: View {
             photo = nil
             onStarted(job)
         case let .quota(message):
-            quota = message
+            if plus == nil {
+                quota = message
+            } else {
+                paywallReason = message
+            }
         case let .failed(message):
             problem = message
         }

@@ -36,6 +36,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
         model: makeModelProvider(config.anthropic, transport: transport, logger: logger)
     )
     services.webPush = webPush
+    services.billing = try BillingService(stores: stores, apple: AppleSignedData(bundleIDs: config.appleAudiences))
     let pushSender = makePushSender(config.push, logger: logger)
     let push = UserPush(stores: stores, sender: pushSender, webPush: webPush)
     services.plans.push = push
@@ -110,8 +111,7 @@ func backgroundServices(
         } ?? [])
 }
 
-/// HTTP/1 with the `/v1/ws` upgrade (GRP-006). A ping every 25 s keeps a proxy with a 60 s idle
-/// timeout from closing a quiet socket.
+/// HTTP/1 with the `/v1/ws` upgrade (GRP-006); a 25 s ping keeps a 60 s-idle proxy from closing it.
 func realtimeServer(_ realtime: RealtimeRoutes) -> HTTPServerBuilder {
     .http1WebSocketUpgrade(
         webSocketRouter: realtime.router(),

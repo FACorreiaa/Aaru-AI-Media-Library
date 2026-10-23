@@ -56,6 +56,21 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
     func deleteAccount(_ input: Operations.DeleteAccount.Input) async throws -> Operations.DeleteAccount.Output
+    /// Aaru Plus and this month's captures (BIL-001). The same on every client; Plus is bought in the Apple apps only.
+    ///
+    /// - Remark: HTTP `GET /v1/me/entitlement`.
+    /// - Remark: Generated from `#/paths//v1/me/entitlement/get(getEntitlement)`.
+    func getEntitlement(_ input: Operations.GetEntitlement.Input) async throws -> Operations.GetEntitlement.Output
+    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify.
+    ///
+    /// - Remark: HTTP `POST /v1/billing/apple/transactions`.
+    /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)`.
+    func recordAppleTransaction(_ input: Operations.RecordAppleTransaction.Input) async throws -> Operations.RecordAppleTransaction.Output
+    /// App Store Server Notifications v2 (BIL-003): renewals, expiries, refunds. Unauthenticated; the payload is verified up to Apple's root certificate.
+    ///
+    /// - Remark: HTTP `POST /v1/billing/apple/notifications`.
+    /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)`.
+    func receiveAppleNotification(_ input: Operations.ReceiveAppleNotification.Input) async throws -> Operations.ReceiveAppleNotification.Output
     /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
@@ -825,6 +840,39 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
     public func deleteAccount(headers: Operations.DeleteAccount.Input.Headers = .init()) async throws -> Operations.DeleteAccount.Output {
         try await deleteAccount(Operations.DeleteAccount.Input(headers: headers))
+    }
+    /// Aaru Plus and this month's captures (BIL-001). The same on every client; Plus is bought in the Apple apps only.
+    ///
+    /// - Remark: HTTP `GET /v1/me/entitlement`.
+    /// - Remark: Generated from `#/paths//v1/me/entitlement/get(getEntitlement)`.
+    public func getEntitlement(headers: Operations.GetEntitlement.Input.Headers = .init()) async throws -> Operations.GetEntitlement.Output {
+        try await getEntitlement(Operations.GetEntitlement.Input(headers: headers))
+    }
+    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify.
+    ///
+    /// - Remark: HTTP `POST /v1/billing/apple/transactions`.
+    /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)`.
+    public func recordAppleTransaction(
+        headers: Operations.RecordAppleTransaction.Input.Headers = .init(),
+        body: Operations.RecordAppleTransaction.Input.Body
+    ) async throws -> Operations.RecordAppleTransaction.Output {
+        try await recordAppleTransaction(Operations.RecordAppleTransaction.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// App Store Server Notifications v2 (BIL-003): renewals, expiries, refunds. Unauthenticated; the payload is verified up to Apple's root certificate.
+    ///
+    /// - Remark: HTTP `POST /v1/billing/apple/notifications`.
+    /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)`.
+    public func receiveAppleNotification(
+        headers: Operations.ReceiveAppleNotification.Input.Headers = .init(),
+        body: Operations.ReceiveAppleNotification.Input.Body
+    ) async throws -> Operations.ReceiveAppleNotification.Output {
+        try await receiveAppleNotification(Operations.ReceiveAppleNotification.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
     ///
@@ -4380,6 +4428,96 @@ public enum Components {
                 case displayName
                 case handle
                 case providers
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Entitlement`.
+        public struct Entitlement: Codable, Hashable, Sendable {
+            /// Aaru Plus is active.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Entitlement/plus`.
+            public var plus: Swift.Bool
+            /// The App Store product keeping Plus active.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Entitlement/productId`.
+            public var productId: Swift.String?
+            /// When the current period ends; it renews unless cancelled.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Entitlement/expiresAt`.
+            public var expiresAt: Foundation.Date?
+            /// Bought in the App Store sandbox (TestFlight).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Entitlement/sandbox`.
+            public var sandbox: Swift.Bool?
+            /// What the Apple app sets as a purchase's `appAccountToken`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Entitlement/appAccountToken`.
+            public var appAccountToken: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Entitlement/capture`.
+            public struct CapturePayload: Codable, Hashable, Sendable {
+                /// Captures started this UTC month.
+                ///
+                /// - Remark: Generated from `#/components/schemas/Entitlement/capture/used`.
+                public var used: Swift.Int
+                /// The month's limit. Absent on Plus.
+                ///
+                /// - Remark: Generated from `#/components/schemas/Entitlement/capture/limit`.
+                public var limit: Swift.Int?
+                /// - Remark: Generated from `#/components/schemas/Entitlement/capture/resetsAt`.
+                public var resetsAt: Foundation.Date
+                /// Creates a new `CapturePayload`.
+                ///
+                /// - Parameters:
+                ///   - used: Captures started this UTC month.
+                ///   - limit: The month's limit. Absent on Plus.
+                ///   - resetsAt:
+                public init(
+                    used: Swift.Int,
+                    limit: Swift.Int? = nil,
+                    resetsAt: Foundation.Date
+                ) {
+                    self.used = used
+                    self.limit = limit
+                    self.resetsAt = resetsAt
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case used
+                    case limit
+                    case resetsAt
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/Entitlement/capture`.
+            public var capture: Components.Schemas.Entitlement.CapturePayload
+            /// Creates a new `Entitlement`.
+            ///
+            /// - Parameters:
+            ///   - plus: Aaru Plus is active.
+            ///   - productId: The App Store product keeping Plus active.
+            ///   - expiresAt: When the current period ends; it renews unless cancelled.
+            ///   - sandbox: Bought in the App Store sandbox (TestFlight).
+            ///   - appAccountToken: What the Apple app sets as a purchase's `appAccountToken`.
+            ///   - capture:
+            public init(
+                plus: Swift.Bool,
+                productId: Swift.String? = nil,
+                expiresAt: Foundation.Date? = nil,
+                sandbox: Swift.Bool? = nil,
+                appAccountToken: Swift.String,
+                capture: Components.Schemas.Entitlement.CapturePayload
+            ) {
+                self.plus = plus
+                self.productId = productId
+                self.expiresAt = expiresAt
+                self.sandbox = sandbox
+                self.appAccountToken = appAccountToken
+                self.capture = capture
+            }
+            public enum CodingKeys: String, CodingKey {
+                case plus
+                case productId
+                case expiresAt
+                case sandbox
+                case appAccountToken
+                case capture
             }
         }
         /// - Remark: Generated from `#/components/schemas/ProfileUpdate`.
@@ -11740,6 +11878,431 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Aaru Plus and this month's captures (BIL-001). The same on every client; Plus is bought in the Apple apps only.
+    ///
+    /// - Remark: HTTP `GET /v1/me/entitlement`.
+    /// - Remark: Generated from `#/paths//v1/me/entitlement/get(getEntitlement)`.
+    public enum GetEntitlement {
+        public static let id: Swift.String = "getEntitlement"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/entitlement/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetEntitlement.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetEntitlement.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetEntitlement.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetEntitlement.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/entitlement/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/entitlement/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Entitlement)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Entitlement {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetEntitlement.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetEntitlement.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The account's entitlement.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/entitlement/get(getEntitlement)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetEntitlement.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetEntitlement.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/entitlement/get(getEntitlement)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify.
+    ///
+    /// - Remark: HTTP `POST /v1/billing/apple/transactions`.
+    /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)`.
+    public enum RecordAppleTransaction {
+        public static let id: Swift.String = "recordAppleTransaction"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/billing/apple/transactions/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RecordAppleTransaction.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RecordAppleTransaction.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RecordAppleTransaction.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/billing/apple/transactions/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/billing/apple/transactions/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// StoreKit 2's `jwsRepresentation`.
+                    ///
+                    /// - Remark: Generated from `#/paths/v1/billing/apple/transactions/POST/requestBody/json/signedTransaction`.
+                    public var signedTransaction: Swift.String
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - signedTransaction: StoreKit 2's `jwsRepresentation`.
+                    public init(signedTransaction: Swift.String) {
+                        self.signedTransaction = signedTransaction
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case signedTransaction
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/billing/apple/transactions/POST/requestBody/content/application\/json`.
+                case json(Operations.RecordAppleTransaction.Input.Body.JsonPayload)
+            }
+            public var body: Operations.RecordAppleTransaction.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.RecordAppleTransaction.Input.Headers = .init(),
+                body: Operations.RecordAppleTransaction.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/billing/apple/transactions/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/billing/apple/transactions/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Entitlement)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Entitlement {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.RecordAppleTransaction.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.RecordAppleTransaction.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The entitlement after it.
+            ///
+            /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.RecordAppleTransaction.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.RecordAppleTransaction.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// App Store Server Notifications v2 (BIL-003): renewals, expiries, refunds. Unauthenticated; the payload is verified up to Apple's root certificate.
+    ///
+    /// - Remark: HTTP `POST /v1/billing/apple/notifications`.
+    /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)`.
+    public enum ReceiveAppleNotification {
+        public static let id: Swift.String = "receiveAppleNotification"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/billing/apple/notifications/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ReceiveAppleNotification.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ReceiveAppleNotification.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ReceiveAppleNotification.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/billing/apple/notifications/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/billing/apple/notifications/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/billing/apple/notifications/POST/requestBody/json/signedPayload`.
+                    public var signedPayload: Swift.String
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - signedPayload:
+                    public init(signedPayload: Swift.String) {
+                        self.signedPayload = signedPayload
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case signedPayload
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/billing/apple/notifications/POST/requestBody/content/application\/json`.
+                case json(Operations.ReceiveAppleNotification.Input.Body.JsonPayload)
+            }
+            public var body: Operations.ReceiveAppleNotification.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ReceiveAppleNotification.Input.Headers = .init(),
+                body: Operations.ReceiveAppleNotification.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// Creates a new `Ok`.
+                public init() {}
+            }
+            /// Received.
+            ///
+            /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ReceiveAppleNotification.Output.Ok)
+            /// Received.
+            ///
+            /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            public static var ok: Self {
+                .ok(.init())
+            }
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ReceiveAppleNotification.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

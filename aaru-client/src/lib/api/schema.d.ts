@@ -141,6 +141,57 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/entitlement': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Aaru Plus and this month's captures (BIL-001). The same on every client; Plus is bought in the Apple apps only. */
+    get: operations['getEntitlement']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/billing/apple/transactions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify. */
+    post: operations['recordAppleTransaction']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/billing/apple/notifications': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** App Store Server Notifications v2 (BIL-003): renewals, expiries, refunds. Unauthenticated; the payload is verified up to Apple's root certificate. */
+    post: operations['receiveAppleNotification']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/profile': {
     parameters: {
       query?: never
@@ -2579,6 +2630,32 @@ export interface components {
       handle?: string
       providers: ('apple' | 'email' | 'google')[]
     }
+    Entitlement: {
+      /** @description Aaru Plus is active. */
+      plus: boolean
+      /** @description The App Store product keeping Plus active. */
+      productId?: string
+      /**
+       * Format: date-time
+       * @description When the current period ends; it renews unless cancelled.
+       */
+      expiresAt?: string
+      /** @description Bought in the App Store sandbox (TestFlight). */
+      sandbox?: boolean
+      /**
+       * Format: uuid
+       * @description What the Apple app sets as a purchase's `appAccountToken`.
+       */
+      appAccountToken: string
+      capture: {
+        /** @description Captures started this UTC month. */
+        used: number
+        /** @description The month's limit. Absent on Plus. */
+        limit?: number
+        /** Format: date-time */
+        resetsAt: string
+      }
+    }
     ProfileUpdate: {
       /** @description 3–20 of a–z, 0–9 and _. Stored lowercase. */
       handle: string
@@ -4149,6 +4226,80 @@ export interface operations {
     responses: {
       /** @description Deleted. */
       204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getEntitlement: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The account's entitlement. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Entitlement']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  recordAppleTransaction: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description StoreKit 2's `jwsRepresentation`. */
+          signedTransaction: string
+        }
+      }
+    }
+    responses: {
+      /** @description The entitlement after it. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Entitlement']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  receiveAppleNotification: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          signedPayload: string
+        }
+      }
+    }
+    responses: {
+      /** @description Received. */
+      200: {
         headers: {
           [name: string]: unknown
         }

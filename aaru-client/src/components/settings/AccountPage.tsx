@@ -7,6 +7,7 @@ import { linkGoogle, signOut } from '../../lib/session/session'
 import { forgetTonight } from '../../lib/home/tonight-cache'
 import { forgetAccount, forgetSession } from '../../lib/session/query'
 import type { AccountPageData } from '../../lib/settings/account'
+import { plusLine } from '../../lib/plus/model'
 import { ProfileEditor } from './ProfileEditor'
 import { SettingsPageTitle } from './SettingsNav'
 import { SettingsSection } from './SettingsSection'
@@ -96,6 +97,20 @@ export function AccountPage(props: { data: AccountPageData }) {
           )}
         </Show>
       </SettingsSection>
+
+      <Show when={props.data.plus}>
+        {(plus) => (
+          <SettingsSection title="Aaru Plus" description={plusLine(plus())}>
+            <Show when={!plus().plus}>
+              <p class="max-w-prose text-sm text-muted">
+                Plus lifts the monthly limit on captures. It is bought in the
+                Aaru app on iPhone, iPad or Mac, and works here as soon as it
+                is.
+              </p>
+            </Show>
+          </SettingsSection>
+        )}
+      </Show>
 
       <AppearanceSection />
 

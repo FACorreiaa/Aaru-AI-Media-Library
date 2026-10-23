@@ -30,6 +30,8 @@ enum ProductEvent: String, Sendable {
     case capturePlanDecided = "capture_plan_decided"
     /// `reason`: capture_quota. The server refused and the apps offer Plus.
     case paywallShown = "paywall_shown"
+    /// `product`: the App Store product id. The first time a subscription is seen active.
+    case plusPurchased = "plus_purchased"
 }
 
 /// Where product events go. `PostHogClient` in production; nothing until one is installed.
