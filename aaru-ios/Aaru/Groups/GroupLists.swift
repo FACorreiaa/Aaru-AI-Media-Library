@@ -64,12 +64,11 @@ struct GroupsEmptyState: View {
     @Environment(AppRouter.self) private var router
 
     var body: some View {
-        ContentUnavailableView {
-            Label("No groups yet", systemImage: "bubble.left.and.bubble.right")
-        } description: {
-            Text(needsHandle ? "Choose a handle first, so friends see who is talking." :
-                "Make a place to talk with friends.")
-        } actions: {
+        OwlUnavailableView(
+            title: "No groups yet",
+            message: needsHandle ? "Choose a handle first, so friends see who is talking." :
+                "Make a place to talk with friends."
+        ) {
             if needsHandle {
                 Button("Choose a handle") { router.openSettings(.account) }
                     .buttonStyle(.borderedProminent)

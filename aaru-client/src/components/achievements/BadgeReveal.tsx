@@ -1,3 +1,4 @@
+import { OwlMark } from '../Brand'
 import { Show } from 'solid-js'
 import {
   Button,
@@ -34,12 +35,14 @@ export default function BadgeReveal(props: {
     <Dialog open={props.open} onOpenChange={(open) => !open && props.onClose()}>
       <DialogPortal>
         <DialogContent class="atmos max-w-sm justify-items-center px-8 py-10 text-center">
-          <div ref={settle}>
+          <div ref={settle} class="relative">
             <BadgeMedallion
               family={props.award.family}
               tier={props.award.tier}
               size="lg"
             />
+            {/* Aaru hands it over (owner, 2026-10-23). */}
+            <OwlMark class="absolute -right-3 -bottom-1 size-10 ring-4 ring-paper" />
           </div>
           <div>
             <Show when={tierName(props.award.tier, props.award.maxTier)}>

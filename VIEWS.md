@@ -112,10 +112,14 @@ refuses and substitutes the nearest catalog piece.
 `PlanCard`, `JobLedger`, `MatchTable`, and `UndoRibbon` are the four that make agent writes
 safe. None of them is optional decoration.
 
-**`AgentPresence` is chrome, not a catalog component (2026-10-21).** The reed mark, breathing
+**`AgentPresence` is chrome, not a catalog component (2026-10-21).** The owl's head, breathing
 slowly, beside a request waiting for the user or an import that is matching. The client shows
 it from state it already has; the agent never emits it. Web `src/components/AgentPresence.tsx`,
 Apple `Design/AgentPresence.swift`.
+
+**The owl's empty state is chrome too (2026-10-23).** `OwlEmpty` (web, `components/Brand.tsx`)
+and `OwlUnavailableView` (Apple, `Design/Owl.swift`) wrap a screen's existing empty copy and
+actions with the idling owl. The agent never emits them.
 
 **The catalog grows from nine to twenty, said out loud here (2026-10-09).** Phase 1.5 did not
 grow it, and Capture, remote approval, Shortcuts, and MCP still render on the original nine.

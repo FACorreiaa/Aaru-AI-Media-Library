@@ -76,9 +76,7 @@ struct ListDetailView: View {
     @ViewBuilder private var state: some View {
         if let detail {
             if detail.items.isEmpty {
-                ContentUnavailableView {
-                    Label("Nothing on this list", systemImage: "text.badge.plus")
-                } actions: {
+                OwlUnavailableView(title: "Nothing on this list") {
                     Button("Add titles") { showsSearch = true }.buttonStyle(.borderedProminent)
                 }
             }

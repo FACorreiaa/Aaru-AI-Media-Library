@@ -1,3 +1,4 @@
+import { OwlEmpty } from '../components/Brand'
 import { createFileRoute } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import { Button, cardClass } from '~/components/ui'
@@ -142,7 +143,7 @@ function Ledger() {
         {(rows) => (
           <Show
             when={rows().length > 0}
-            fallback={<p class="mt-2 text-sm text-muted">No points yet.</p>}
+            fallback={<OwlEmpty size="sm" as="p" title="No points yet." />}
           >
             <ol class="mt-3 divide-y divide-line">
               <For each={rows()}>

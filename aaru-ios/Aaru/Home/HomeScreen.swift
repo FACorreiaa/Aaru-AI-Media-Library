@@ -156,11 +156,10 @@ struct HomeScreen: View {
                 message: "Aaru could not reach the server. Check your connection and try again."
             ) { await reload() }
         } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty, model.hasLoaded {
-            ContentUnavailableView {
-                Label(HomeEmptyCopy.headline, systemImage: "sparkles.tv")
-            } description: {
-                Text("What you are watching, reading and listening to, and what airs next, lands here.")
-            } actions: {
+            OwlUnavailableView(
+                title: HomeEmptyCopy.headline,
+                message: "What you are watching, reading and listening to, and what airs next, lands here."
+            ) {
                 Button("Browse Discover") { onSelectTab(.discover) }
                     .buttonStyle(.borderedProminent)
                 Button("Search") { router.showsSearch = true }

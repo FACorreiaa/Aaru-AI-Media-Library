@@ -32,10 +32,9 @@ struct ListsScreen: View {
                         ListDetailView(listID: selection, lists: lists, library: library, api: api)
                             .id(selection)
                     } else {
-                        ContentUnavailableView(
-                            "Choose a list",
-                            systemImage: "list.bullet.rectangle",
-                            description: Text("Pick one from the lists, or make a new one.")
+                        OwlUnavailableView(
+                            title: "Choose a list",
+                            message: "Pick one from the lists, or make a new one."
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color(.paper))
