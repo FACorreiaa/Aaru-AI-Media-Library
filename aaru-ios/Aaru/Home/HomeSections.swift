@@ -6,7 +6,7 @@ import SwiftUI
 extension HomeScreen {
     /// The owl beside "The Field", and when it is: "Tuesday evening · 3 in progress · 2 airing today".
     var header: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AaruSpace.medium) {
             OwlHead(size: 48, idle: true)
             VStack(alignment: .leading, spacing: 4) {
                 Text("The Field")

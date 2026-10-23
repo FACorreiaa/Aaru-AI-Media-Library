@@ -9,7 +9,7 @@ struct AchievementsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: AaruSpace.section) {
                 if let progress = model.progress {
                     LevelHeader(progress: progress)
                     StreakBar(progress: progress, showsLevel: false)
@@ -57,7 +57,7 @@ private struct LevelHeader: View {
     let progress: AchievementProgress
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             Text("Level \(progress.level)")
                 .font(.aaruDisplay(.largeTitle, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)

@@ -61,7 +61,7 @@ struct DiscoverCard: View {
                         HomeChip(text: kind).padding(6)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .clipShape(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
                 Text(hit.title)
                     .font(.caption.weight(.semibold))
@@ -150,22 +150,25 @@ struct HomeWelcome: View {
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(alignment: .center, spacing: 14) {
+            HStack(alignment: .center, spacing: AaruSpace.medium) {
                 symbol
                 copy
                 Spacer(minLength: 8)
                 actions
             }
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 14) {
+                HStack(alignment: .top, spacing: AaruSpace.medium) {
                     symbol
                     copy
                 }
                 actions
             }
         }
-        .padding(14)
-        .background(Color(.medallion).opacity(0.35), in: RoundedRectangle(cornerRadius: 14))
+        .padding(AaruSpace.large)
+        .background(
+            Color(.medallion).opacity(AaruAlpha.ghost),
+            in: RoundedRectangle(cornerRadius: AaruRadius.panel, style: .continuous)
+        )
         .accessibilityElement(children: .contain)
     }
 

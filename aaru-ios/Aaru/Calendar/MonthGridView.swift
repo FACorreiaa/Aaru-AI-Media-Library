@@ -125,10 +125,16 @@ private struct MonthDayCell: View {
         .opacity(isMuted ? 0.45 : 1)
         .padding(style == .posters ? 6 : 3)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(.ink).opacity(isMuted ? 0.02 : 0.05), in: RoundedRectangle(cornerRadius: 8))
+        .background(
+            isMuted ? Color.clear : Color(.ink).opacity(AaruAlpha.tint),
+            in: .rect(cornerRadius: AaruRadius.row, style: .continuous)
+        )
         .overlay {
             if isSelected {
-                RoundedRectangle(cornerRadius: 8).strokeBorder(Color(.accent), lineWidth: 2)
+                RoundedRectangle(cornerRadius: AaruRadius.row, style: .continuous).strokeBorder(
+                    Color(.accent),
+                    lineWidth: 2
+                )
             }
         }
         .contentShape(Rectangle())
@@ -152,7 +158,10 @@ private struct MonthDayCell: View {
                 PosterThumb(url: entry.title.posterUrl.flatMap(URL.init(string:)), initials: entry.title.initials)
                     .overlay {
                         if let badge = entry.badge {
-                            RoundedRectangle(cornerRadius: 6).strokeBorder(badge.tint, lineWidth: 1.5)
+                            RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous).strokeBorder(
+                                badge.tint,
+                                lineWidth: 1.5
+                            )
                         }
                     }
                     .opacity(entry.watched ? 0.4 : 1)
@@ -164,7 +173,7 @@ private struct MonthDayCell: View {
                     .foregroundStyle(Color(.ink))
                     .padding(.horizontal, 5)
                     .padding(.vertical, 2)
-                    .background(Color(.ink).opacity(0.1), in: Capsule())
+                    .background(Color(.ink).opacity(AaruAlpha.tint), in: Capsule())
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)

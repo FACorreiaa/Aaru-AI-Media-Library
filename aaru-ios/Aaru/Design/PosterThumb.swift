@@ -8,7 +8,7 @@ struct PosterThumb: View {
     var kind: MediaKind = .show
     /// "SH" for Slow Horses. Nil shows the kind's symbol instead.
     var initials: String?
-    var cornerRadius: CGFloat = 6
+    var cornerRadius: CGFloat = AaruRadius.thumb
 
     var body: some View {
         Color(initials == nil ? .surface : .medallion)
@@ -22,7 +22,7 @@ struct PosterThumb: View {
                     }
                 }
             }
-            .clipShape(.rect(cornerRadius: cornerRadius))
+            .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
             .accessibilityHidden(true)
     }
 
@@ -30,12 +30,12 @@ struct PosterThumb: View {
         if let initials {
             ZStack {
                 LinearGradient(
-                    colors: [Color(.accent).opacity(0.55), Color(.gold).opacity(0.45)],
+                    colors: [Color(.accent).opacity(AaruAlpha.half), Color(.gold).opacity(AaruAlpha.half)],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 )
                 Text(initials)
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color(.onAccent))
                     .minimumScaleFactor(0.6)
             }
         } else {

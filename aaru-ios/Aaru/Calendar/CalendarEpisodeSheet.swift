@@ -36,7 +36,7 @@ struct CalendarEpisodeSheet: View {
 
     private func content(_ entry: CalendarEntry) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: AaruSpace.large) {
                 still(entry)
                 header(entry)
                 Text(when(entry))
@@ -55,14 +55,13 @@ struct CalendarEpisodeSheet: View {
     }
 
     private func header(_ entry: CalendarEntry) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: AaruSpace.medium) {
             PosterView(
                 url: entry.title.posterUrl.flatMap(URL.init(string:)),
                 kind: entry.title.isAnime ? .anime : .show
             )
             .frame(width: 72)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .shadow(radius: 4, y: 2)
+            .clipShape(RoundedRectangle(cornerRadius: AaruRadius.row, style: .continuous))
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(entry.title.title) · \(entry.shortCode)")
@@ -83,8 +82,8 @@ struct CalendarEpisodeSheet: View {
     private func actions(_ entry: CalendarEntry) -> some View {
         // Side by side; stacked at accessibility sizes so neither label is cut.
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) { actionButtons(entry) }
-            VStack(alignment: .leading, spacing: 10) { actionButtons(entry) }
+            HStack(spacing: AaruSpace.small) { actionButtons(entry) }
+            VStack(alignment: .leading, spacing: AaruSpace.medium) { actionButtons(entry) }
         }
     }
 
@@ -118,11 +117,11 @@ struct CalendarEpisodeSheet: View {
                     if let image = phase.image {
                         image.resizable().scaledToFill()
                     } else {
-                        Color(.accent).opacity(0.15)
+                        Color(.accent).opacity(AaruAlpha.wash)
                     }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .clipShape(RoundedRectangle(cornerRadius: AaruRadius.panel, style: .continuous))
             .accessibilityHidden(true)
     }
 

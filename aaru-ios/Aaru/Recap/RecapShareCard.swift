@@ -11,7 +11,6 @@ struct RecapShareCard: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("MY RECAP")
                 .font(.system(size: 40, weight: .medium))
-                .tracking(4)
             Text(RecapPeriod(year: stats.year, month: stats.month).label)
                 .font(.aaruDisplay(size: 132))
                 .minimumScaleFactor(0.5)
@@ -25,7 +24,7 @@ struct RecapShareCard: View {
                     Text(line).font(.aaruDisplay(size: compact ? 52 : 64))
                 }
             }
-            .padding(.top, 96)
+            .padding(.top, AaruSpace.page * 2)
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline) {
                 Text("Aaru").font(.aaruDisplay(size: 44, weight: .semibold))
@@ -33,7 +32,7 @@ struct RecapShareCard: View {
                 Text("aaruapp.com").font(.system(size: 32)).opacity(0.75)
             }
         }
-        .padding(96)
+        .padding(AaruSpace.page * 2)
         .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
         .foregroundStyle(Color(.paper))
         .background(LinearGradient(

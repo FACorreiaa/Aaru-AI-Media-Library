@@ -31,7 +31,7 @@ struct ShelfChannelView: View {
                 LoadFailedView(title: "Couldn't load this list", message: problem) { await model.load() }
                     .padding(.top, 40)
             } else if !model.hasLoaded {
-                ProgressView().frame(maxWidth: .infinity).padding(.top, 60)
+                ProgressView().frame(maxWidth: .infinity).padding(.top, AaruSpace.page)
             } else {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 120, maximum: 170), spacing: 16)], spacing: 20) {
                     ForEach(model.items, id: \.title.id) { item in
@@ -84,7 +84,7 @@ private struct ShelfCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             PosterView(url: item.title.posterURL, kind: item.title.mediaKind)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous))
             Text(item.title.title).font(.subheadline.weight(.medium)).lineLimit(3)
             if let addedBy = item.addedBy {
                 Text("Added by \(addedBy.label)").font(.caption).foregroundStyle(Color(.muted)).lineLimit(2)
@@ -104,7 +104,7 @@ private struct ShelfCard: View {
         }
         .accessibilityElement(children: .contain)
         #if os(iOS)
-            .contentShape(.hoverEffect, .rect(cornerRadius: 8))
+            .contentShape(.hoverEffect, .rect(cornerRadius: AaruRadius.row, style: .continuous))
             .hoverEffect(.highlight)
         #endif
     }

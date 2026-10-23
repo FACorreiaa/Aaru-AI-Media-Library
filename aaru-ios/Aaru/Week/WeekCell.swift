@@ -43,13 +43,16 @@ struct WeekCell: View {
             .padding(.bottom, 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.surface), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color(.surface), in: RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
         .overlay {
             if let badge = entry.badge {
-                RoundedRectangle(cornerRadius: 10).strokeBorder(badge.tint.opacity(0.7), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous).strokeBorder(
+                    badge.tint.opacity(0.7),
+                    lineWidth: 1.5
+                )
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous))
         .opacity(entry.watched ? 0.5 : 1)
         .animation(.easeOut(duration: 0.15), value: entry.watched)
         .accessibilityElement(children: .combine)
@@ -96,7 +99,7 @@ private struct WeekBanner: View {
     /// No art: a quiet blue-to-amber wash. The show's name is right below, so no text here.
     private var placeholder: some View {
         LinearGradient(
-            colors: [Color(.accent).opacity(0.25), Color(.gold).opacity(0.25)],
+            colors: [Color(.accent).opacity(AaruAlpha.ghost), Color(.gold).opacity(AaruAlpha.ghost)],
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
     }
@@ -114,8 +117,8 @@ private struct WeekTick: View {
             Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
                 .font(.title3)
                 .symbolRenderingMode(.palette)
-                .foregroundStyle(isOn ? Color.white : Color.white, isOn ? Color(.accent) : .clear)
-                .background(.black.opacity(0.35), in: Circle())
+                .foregroundStyle(isOn ? Color(.onAccent) : Color(.onScrim), isOn ? Color(.accent) : .clear)
+                .background(Color(.scrim), in: Circle())
                 .padding(6)
                 .frame(minWidth: 44, minHeight: 44, alignment: .topLeading)
                 .contentShape(Rectangle())

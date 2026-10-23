@@ -190,7 +190,7 @@ struct HomeScreen: View {
     }
 
     private var sections: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: AaruSpace.section) {
             header
             composer
             nowPlayingSection
@@ -203,7 +203,7 @@ struct HomeScreen: View {
                 discoverRows
             } else {
                 HStack(alignment: .top, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 28) {
+                    VStack(alignment: .leading, spacing: AaruSpace.section) {
                         tonightSection
                         welcome
                         ownRows

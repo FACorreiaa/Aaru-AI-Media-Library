@@ -160,7 +160,7 @@ struct DiscoverScreen: View {
             }
         } else {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 28) {
+                LazyVStack(alignment: .leading, spacing: AaruSpace.section) {
                     ForEach(rows, id: \.id) { row in
                         HomeRow(
                             title: row.title,
