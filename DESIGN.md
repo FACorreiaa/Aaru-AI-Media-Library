@@ -987,10 +987,15 @@ sets, brand assets), main wins.
   same in both appearances, so the white owl reads). Its head on the same disc is the agent's
   mark (`OwlMark` on the web, `Image(.owlMark)` on Apple): it breathes slowly while Aaru works
   and holds still under Reduce Motion.
-- **Where the owl lives (owner, 2026-10-23).** Signed-out surfaces, and in the app: beside the
-  Home greeting, in screen-level empty states (`OwlEmpty` / `OwlUnavailableView`, never inside
-  a picker, a filter result, search results or a settings row), on errors, the 404 and the load-failed view, on the recap cover,
-  on an earned badge. Never on a plan card, which an outside connection wrote. Two motions, never both at once: the
+- **Where the owl lives (owner, 2026-10-23).** Signed-out surfaces, and in the app: beside
+  "The Field" on Home, in screen-level empty states (`OwlEmpty` / `OwlUnavailableView`, never
+  inside a picker, a filter result or a settings row), on errors, the 404 and the load-failed
+  view, on the recap cover, on an earned badge. Never on a plan card, which an outside
+  connection wrote.
+- **Poses.** Standing (the poster's owl) by default; **curious** when nothing matches (search,
+  the 404), **sleeping** when nothing airs or you are caught up, **celebrating** for a
+  milestone (the badge reveal, the unlock summary). One owl, four poses: never a new
+  character, and no pose is invented in code. Two motions, never both at once: the
   **breath** means Aaru is working; **idle** (a slow float and an amber glow behind the eyes) is
   the owl at rest, on Home and empty states only. Errors and recap cards stay still. Under
   Reduce Motion the owl never moves.

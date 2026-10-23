@@ -131,7 +131,11 @@ struct SearchView: View {
                 if model.scope != .all, model.hits.isEmpty, !model.isSearching, model.trimmedQuery.count >= 2,
                    model.problem == nil
                 {
-                    ContentUnavailableView.search(text: model.query)
+                    OwlUnavailableView(
+                        title: "No Results for “\(model.trimmedQuery)”",
+                        message: "Check the spelling or try a new search.",
+                        pose: .curious
+                    )
                 } else if model.isSearching, model.hits.isEmpty {
                     ProgressView()
                 }

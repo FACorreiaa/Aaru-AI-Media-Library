@@ -1,5 +1,20 @@
 import SwiftUI
 
+/// The owl's poses (BRD-004, `docs/brand/owl_poses.py`): standing is the poster's owl; curious
+/// when nothing matches, sleeping when nothing airs, celebrating for a milestone.
+enum OwlPose {
+    case standing, curious, sleeping, celebrating
+
+    var image: ImageResource {
+        switch self {
+        case .standing: .mascot
+        case .curious: .owlCurious
+        case .sleeping: .owlSleeping
+        case .celebrating: .owlCelebrating
+        }
+    }
+}
+
 /// Aaru's owl (DESIGN.md "Brand"): the whole owl on the night disc, the poster's sky, so the white
 /// owl reads in light and dark. Decorative by default; a signed-out screen that introduces the
 /// owl passes a label. `idle` gives it the slow idle life (`OwlIdleLife`); recap cards, errors
@@ -8,11 +23,13 @@ struct OwlMedallion: View {
     /// The disc's diameter. Nil: as wide as offered, square.
     var size: CGFloat?
     var idle = false
+    var pose = OwlPose.standing
     private var label: Text?
 
-    init(size: CGFloat? = nil, idle: Bool = false) {
+    init(size: CGFloat? = nil, idle: Bool = false, pose: OwlPose = .standing) {
         self.size = size
         self.idle = idle
+        self.pose = pose
     }
 
     /// The owl as content, for a screen that introduces it (Welcome).
@@ -36,7 +53,7 @@ struct OwlMedallion: View {
     private var disc: some View {
         ZStack {
             Circle().fill(Color(.night))
-            Image(.mascot)
+            Image(pose.image)
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
@@ -74,25 +91,30 @@ struct OwlHead: View {
 struct OwlUnavailableView<Actions: View>: View {
     private let title: Text
     private let message: Text?
+    private let pose: OwlPose
     private let actions: Actions
 
     init(
         title: LocalizedStringKey,
         message: LocalizedStringKey? = nil,
+        pose: OwlPose = .standing,
         @ViewBuilder actions: () -> Actions
     ) {
         self.title = Text(title)
         self.message = message.map { Text($0) }
+        self.pose = pose
         self.actions = actions()
     }
 
     init(
         title: some StringProtocol,
         message: (some StringProtocol)? = String?.none,
+        pose: OwlPose = .standing,
         @ViewBuilder actions: () -> Actions
     ) {
         self.title = Text(title)
         self.message = message.map { Text($0) }
+        self.pose = pose
         self.actions = actions()
     }
 
@@ -101,7 +123,7 @@ struct OwlUnavailableView<Actions: View>: View {
             Label {
                 title
             } icon: {
-                OwlMedallion(size: 96, idle: true)
+                OwlMedallion(size: 96, idle: true, pose: pose)
                     .padding(.bottom, 4)
             }
         } description: {
@@ -115,12 +137,12 @@ struct OwlUnavailableView<Actions: View>: View {
 }
 
 extension OwlUnavailableView where Actions == EmptyView {
-    init(title: LocalizedStringKey, message: LocalizedStringKey? = nil) {
-        self.init(title: title, message: message) { EmptyView() }
+    init(title: LocalizedStringKey, message: LocalizedStringKey? = nil, pose: OwlPose = .standing) {
+        self.init(title: title, message: message, pose: pose) { EmptyView() }
     }
 
-    init(title: some StringProtocol, message: (some StringProtocol)? = String?.none) {
-        self.init(title: title, message: message) { EmptyView() }
+    init(title: some StringProtocol, message: (some StringProtocol)? = String?.none, pose: OwlPose = .standing) {
+        self.init(title: title, message: message, pose: pose) { EmptyView() }
     }
 }
 
@@ -202,6 +224,11 @@ private extension View {
             OwlHead(size: 40, idle: true)
             OwlHead(size: 28)
             OwlMedallion(size: 96, idle: true)
+        }
+        HStack(spacing: 24) {
+            OwlMedallion(size: 96, pose: .curious)
+            OwlMedallion(size: 96, pose: .sleeping)
+            OwlMedallion(size: 96, pose: .celebrating)
         }
         OwlUnavailableView(title: "Your library is empty", message: "Search for a film, show, anime, book or album.") {
             Button("Search") {}.buttonStyle(.borderedProminent)
