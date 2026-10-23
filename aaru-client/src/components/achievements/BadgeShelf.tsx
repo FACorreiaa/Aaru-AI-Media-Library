@@ -44,7 +44,7 @@ function BadgeCell(props: { badge: Badge }) {
         tier={props.badge.tier}
         secret={secret()}
       />
-      <p class="mt-3 min-h-4 text-[0.6875rem] font-semibold tracking-[0.12em] text-muted uppercase">
+      <p class="mt-3 min-h-4 eyebrow text-2xs">
         {tier() ?? (props.badge.earned ? 'Earned' : '')}
       </p>
       <h3
@@ -85,7 +85,7 @@ export function AwardShelf(props: { awards: BadgeAward[] }) {
               {award.name}
             </p>
             <Show when={tierName(award.tier, award.maxTier)}>
-              {(name) => <p class="text-[0.6875rem] text-muted">{name()}</p>}
+              {(name) => <p class="text-2xs text-muted">{name()}</p>}
             </Show>
           </li>
         )}

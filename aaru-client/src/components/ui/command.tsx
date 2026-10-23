@@ -183,7 +183,7 @@ export const CommandShortcut = (props: CommandShortcutProps) => {
     <span
       data-slot="command-shortcut"
       class={cx(
-        'text-muted-foreground ml-auto text-xs tracking-widest',
+        'text-muted-foreground ml-auto text-xs tracking-wide',
         props.class,
       )}
       {...rest}

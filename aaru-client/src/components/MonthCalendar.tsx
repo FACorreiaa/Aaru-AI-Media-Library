@@ -297,7 +297,7 @@ function Agenda(props: {
           {(group) => (
             <section class="mb-4 last:mb-0">
               <h3
-                class="text-xs font-semibold tracking-wide uppercase"
+                class="eyebrow"
                 classList={{
                   'text-accent': group.day === props.today,
                   'text-muted': group.day !== props.today,

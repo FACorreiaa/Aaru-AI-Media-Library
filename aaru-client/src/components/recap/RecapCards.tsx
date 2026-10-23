@@ -141,7 +141,7 @@ export function RecapCardView(props: {
                       }}
                     />
                     <Show when={card().bars.length <= 12}>
-                      <span class="text-center text-[11px] opacity-70">
+                      <span class="text-center text-2xs opacity-70">
                         {bar.label}
                       </span>
                     </Show>

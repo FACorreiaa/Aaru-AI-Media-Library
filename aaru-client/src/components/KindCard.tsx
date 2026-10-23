@@ -53,7 +53,7 @@ function TypeCover(props: { tile: TypeTile; index: number }) {
         'background-image': tileTints[props.index % tileTints.length],
       }}
     >
-      <span class="text-[10px] font-semibold tracking-[0.14em] uppercase opacity-80">
+      <span class="text-2xs font-semibold tracking-[0.14em] uppercase opacity-80">
         {props.tile.caption}
       </span>
       <span class="font-display text-base leading-tight font-medium">

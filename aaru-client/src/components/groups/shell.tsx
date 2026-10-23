@@ -108,7 +108,7 @@ export function MentionPill(props: { count: number; label?: string }) {
   return (
     <Show when={props.count > 0}>
       <span
-        class="min-w-5 rounded-full bg-danger px-1.5 text-center text-[11px] leading-5 font-semibold text-paper tabular-nums"
+        class="min-w-5 rounded-full bg-danger px-1.5 text-center text-2xs leading-5 font-semibold text-paper tabular-nums"
         aria-label={props.label ?? `${props.count} mentions`}
       >
         {badgeText(props.count)}

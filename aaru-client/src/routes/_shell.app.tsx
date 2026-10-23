@@ -712,7 +712,7 @@ function Home() {
                   <Link
                     to="/app/recap"
                     search={period()}
-                    class="rise flex items-center justify-between gap-4 rounded-card bg-ink p-5 text-paper"
+                    class="flex items-center justify-between gap-4 rounded-card bg-ink p-5 text-paper"
                   >
                     <span>
                       <span class="block text-sm opacity-80">
