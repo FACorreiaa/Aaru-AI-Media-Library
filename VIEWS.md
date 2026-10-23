@@ -27,7 +27,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
 | Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
 | Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4); for an album, a square cover and the tracklist instead of the season map (MUS-001); More menu: Discuss in a group…, Remove from library… (confirmed, undoable in History, UX-061) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}`, `DELETE /v1/library/items/{id}` | 2 · M7 |
-| Tonight | `TonightStrip` | `GET /v1/tonight`, `POST /v1/tonight/{id}/feedback` | 7 · M13 (on the Field since 2026-10-21; server-ranked with a client fallback since 2026-10-23, DESIGN.md §5) |
+| Tonight | `TonightStrip` | `GET /v1/tonight`, `POST /v1/tonight/{id}/feedback`, `PUT .../episodes/{s}/{e}`, `POST .../seasons/{s}/watched` | 7 · M13 (on the Field since 2026-10-21; server-ranked with a client fallback since 2026-10-23; season tick PROG-006, DESIGN.md §5) |
 | Shelf | `Shelf`; Remove from library in the item's context menu on Apple | `GET /v1/library/items` + saved query, `DELETE /v1/library/items/{id}` | 1–2 · M6 / M7 |
 | Library · Now | `NowCard` (Library only; the agent does not emit it — `TonightStrip` is its agent counterpart). Under the filters; the newest six per group with "Show all N"; hidden while a status is chosen (DESIGN.md, 2026-10-22) | the synced shelf; `PUT .../episodes/{s}/{e}`, `PATCH /v1/library/items/{id}` | 2 · APP-017 |
 | Catch-up calendar | `CalendarMonth` + agenda, the episode sheet, and Missed (aired, unwatched, last 4 weeks) | `GET /v1/calendar?from&to` (≤ 42 days), `PUT .../episodes/{s}/{e}` | 2 · M7, CAL-002 |
