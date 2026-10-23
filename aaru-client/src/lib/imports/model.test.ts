@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  appliedMessage,
   importSteps,
   isWorking,
   sourceLabel,
@@ -105,5 +106,15 @@ describe('import ledger (IMP-017)', () => {
 
   it('has no ledger once there is a plan', () => {
     expect(importSteps(mal('planned'))).toEqual([])
+  })
+})
+
+describe('applied import toast', () => {
+  it('counts what was added, and what was filled in when there is any', () => {
+    const stats = { created: 12, updated: 0, skipped: 4, unmatched: 1 }
+    expect(appliedMessage(stats)).toBe('Imported 12 titles')
+    expect(appliedMessage({ ...stats, created: 1, updated: 3 })).toBe(
+      'Imported 1 title · filled in 3',
+    )
   })
 })

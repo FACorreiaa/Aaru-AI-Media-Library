@@ -12,7 +12,8 @@ import {
 import type { LibraryEntry } from '../lib/library/model'
 import { markLabel } from '../lib/title/model'
 import type { MarkTarget } from '../lib/title/model'
-import { markItemWatched, toastFailure } from './mark-watched'
+import { markItemWatched } from './mark-watched'
+import { toastFailure } from './undo-toast'
 
 // CardMenu's menu itself, loaded the first time a card asks for it: the Library grid and Home's
 // rows do not carry the menu primitive (and the writes behind it) on their first load.

@@ -2372,6 +2372,11 @@ export interface components {
       rowsTotal: number
       /** @description Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress. */
       rowsMatched: number
+      /**
+       * Format: uuid
+       * @description The action that applied the plan, once approved and if it wrote anything. Undo it with POST /v1/actions/{id}/undo.
+       */
+      actionId?: string
     }
     ImportStats: {
       created: number

@@ -416,7 +416,9 @@ account or a stranger that has not happened yet.
 **Known gaps no item owns yet:**
 
 - **Undo ribbon.** DESIGN.md and AUD-001 require it, WID-002 and OUT-002 depend on it, and the
-  server's `POST /v1/actions/{id}/undo` exists, but no client calls it.
+  server's `POST /v1/actions/{id}/undo` exists. Clients call it from toasts only: PROG-005's tick
+  toast, and since 2026-10-23 an Undo toast after approving a plan or applying an import (the
+  import job returns `actionId`). There is still no ribbon.
 - IMP-004's text still says a later source never overwrites a status; since 2026-10-20 (#41)
   status moves forward only (see that day's decision).
 - PRV-001's ODbL credit no longer applies: anime mappings come from Fribb (MIT).

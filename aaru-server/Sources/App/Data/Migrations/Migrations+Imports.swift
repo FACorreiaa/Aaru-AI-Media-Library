@@ -316,3 +316,14 @@ struct AddImportProgress: SQLMigration {
     let forward = ["ALTER TABLE import_jobs ADD COLUMN rows_matched integer NOT NULL DEFAULT 0"]
     let backward = ["ALTER TABLE import_jobs DROP COLUMN rows_matched"]
 }
+
+/// Slice 1 of Tonight, capture and Plus · the action an approved import wrote, so the client that
+/// applied it can offer Undo at once. Undo itself stays `/v1/actions/{id}/undo`.
+struct AddImportAction: SQLMigration {
+    let forward = [
+        "ALTER TABLE import_jobs ADD COLUMN action_id uuid REFERENCES actions(id) ON DELETE SET NULL",
+    ]
+    let backward = [
+        "ALTER TABLE import_jobs DROP COLUMN action_id",
+    ]
+}
