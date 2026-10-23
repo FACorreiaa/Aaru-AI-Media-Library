@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/solid-router'
-import { For, Show, createSignal } from 'solid-js'
+import { For, Show, children, createSignal } from 'solid-js'
+import type { JSX } from 'solid-js'
 import { ratingWords, spoilerLabel, starsLabel } from '../../lib/board/model'
-import type { BoardPost } from '../../lib/board/model'
+import type { BoardPost, UpvoteState } from '../../lib/board/model'
 import { splitMentions, timeLabel } from '../../lib/groups/model'
 import { kindOf } from '../../lib/library/model'
 import { activityDay, inviterName, monogram } from '../../lib/social/model'
@@ -12,14 +13,9 @@ import { Monogram } from '../groups/Monogram'
 import { UpvoteButton } from './UpvoteButton'
 
 /** "14:05" today, then "Yesterday", then "Wed 21 Oct": Lately's days, with today's time. */
-function postedLabel(iso: string): string {
+export function postedLabel(iso: string): string {
   const day = activityDay(iso.slice(0, 10))
   return day === 'Today' ? timeLabel(iso) : day
-}
-
-/** Where a post's comments live (Task 4's route, `/app/friends/posts/$postId`). */
-export function postHref(id: string): string {
-  return `/app/friends/posts/${id}`
 }
 
 /**
@@ -29,16 +25,33 @@ export function postHref(id: string): string {
  * link: the title page opens a library item, and a friend's title may not be one of yours. A
  * post that may spoil what the reader has not watched folds its words and stars behind the veil
  * until asked; the author never sees one, and only the author sees how it is marked.
+ *
+ * On its own page (`standalone`) it drops Open and the comment count (the thread's heading
+ * holds it) for who upvoted, carries the post's menu beside the name, and an edit box in place
+ * of its words while the author edits.
  */
 export function PostCard(props: {
   post: BoardPost
   /** Handles that read as mentions: you, your friends and authors here, lowercased. */
   handles: ReadonlySet<string>
   myHandle?: string
+  /** The post page: no links to itself; `beside` stands after Upvote instead. */
+  standalone?: boolean
+  beside?: JSX.Element
+  /** Beside the name: the post's own menu (post page). */
+  menu?: JSX.Element
+  /** In place of the words while the author edits them (post page). */
+  editor?: JSX.Element
+  onUpvote?: (state: UpvoteState) => void
 }) {
   const [shown, setShown] = createSignal(false)
   const veiled = () => props.post.veiled && !props.post.mine && !shown()
   const name = () => (props.post.mine ? 'You' : inviterName(props.post.author))
+  // Resolved once each: reading a JSX prop twice would build it twice.
+  const menu = children(() => props.menu)
+  const editor = children(() => props.editor)
+  const commentsLabel = () =>
+    `${props.post.commentCount} ${props.post.commentCount === 1 ? 'comment' : 'comments'}`
   const segments = () =>
     splitMentions(props.post.body, props.handles, props.myHandle)
 
@@ -68,6 +81,9 @@ export function PostCard(props: {
           </time>
           <Show when={props.post.editedAt}>
             <span class="text-xs text-muted">Edited</span>
+          </Show>
+          <Show when={menu()}>
+            <span class="ml-auto self-center">{menu()}</span>
           </Show>
         </p>
 
@@ -122,29 +138,31 @@ export function PostCard(props: {
           )}
         </Show>
 
-        <Show
-          when={!veiled()}
-          fallback={
-            <div class="mt-3">
-              <SpoilerVeil onShow={() => setShown(true)} />
-            </div>
-          }
-        >
-          <p class="mt-2 text-[15px] leading-relaxed break-words whitespace-pre-wrap">
-            <For each={segments()}>
-              {(segment) =>
-                segment.kind === 'text' || segment.handle === 'aaru' ? (
-                  segment.text
-                ) : (
-                  <span
-                    class={`rounded px-0.5 font-medium text-accent ${segment.me ? 'bg-accent/20' : 'bg-accent/10'}`}
-                  >
-                    {segment.text}
-                  </span>
-                )
-              }
-            </For>
-          </p>
+        <Show when={!editor()} fallback={<div class="mt-2">{editor()}</div>}>
+          <Show
+            when={!veiled()}
+            fallback={
+              <div class="mt-3">
+                <SpoilerVeil onShow={() => setShown(true)} />
+              </div>
+            }
+          >
+            <p class="mt-2 text-[15px] leading-relaxed break-words whitespace-pre-wrap">
+              <For each={segments()}>
+                {(segment) =>
+                  segment.kind === 'text' || segment.handle === 'aaru' ? (
+                    segment.text
+                  ) : (
+                    <span
+                      class={`rounded px-0.5 font-medium text-accent ${segment.me ? 'bg-accent/20' : 'bg-accent/10'}`}
+                    >
+                      {segment.text}
+                    </span>
+                  )
+                }
+              </For>
+            </p>
+          </Show>
         </Show>
 
         <div class="mt-3 flex items-center gap-2">
@@ -152,21 +170,26 @@ export function PostCard(props: {
             postId={props.post.id}
             upvotes={props.post.upvotes}
             upvotedByMe={props.post.upvotedByMe}
+            onChange={props.onUpvote}
           />
-          <a
-            href={postHref(props.post.id)}
-            aria-label={`${props.post.commentCount} ${props.post.commentCount === 1 ? 'comment' : 'comments'}`}
-            class="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-surface px-3 text-xs font-semibold text-muted tabular-nums hover:text-ink"
-          >
-            <span aria-hidden="true">💬</span>
-            {props.post.commentCount}
-          </a>
-          <a
-            href={postHref(props.post.id)}
-            class="ml-auto rounded-full px-2 py-1 text-xs font-medium text-muted hover:text-ink"
-          >
-            Open<span class="sr-only"> post</span>
-          </a>
+          <Show when={!props.standalone} fallback={props.beside}>
+            <Link
+              to="/app/friends/posts/$postId"
+              params={{ postId: props.post.id }}
+              aria-label={commentsLabel()}
+              class="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-surface px-3 text-xs font-semibold text-muted tabular-nums hover:text-ink"
+            >
+              <span aria-hidden="true">💬</span>
+              {props.post.commentCount}
+            </Link>
+            <Link
+              to="/app/friends/posts/$postId"
+              params={{ postId: props.post.id }}
+              class="ml-auto rounded-full px-2 py-1 text-xs font-medium text-muted hover:text-ink"
+            >
+              Open<span class="sr-only"> post</span>
+            </Link>
+          </Show>
         </div>
       </div>
     </article>

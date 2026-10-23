@@ -13,6 +13,8 @@ export function UpvoteButton(props: {
   postId: string
   upvotes: number
   upvotedByMe: boolean
+  /** Hears each change, the rollback included (the post page's upvoter line). */
+  onChange?: (state: UpvoteState) => void
 }) {
   // Seeded once: after a tap this button, not the list, holds the truth.
   const [state, setState] = createSignal<UpvoteState>({
@@ -28,11 +30,13 @@ export function UpvoteButton(props: {
     const before = state()
     const next = toggleUpvote(before)
     setState(next)
+    props.onChange?.(next)
     if (next.upvotedByMe && mark) void pop(mark)
     try {
       await setUpvote({ data: { postId: props.postId, on: next.upvotedByMe } })
     } catch (error) {
       setState(before)
+      props.onChange?.(before)
       toast(
         error instanceof Error ? error.message : 'Your upvote was not saved.',
       )

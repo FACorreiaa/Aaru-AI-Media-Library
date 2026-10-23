@@ -110,6 +110,8 @@ export function Menu(props: {
   triggerClass: string
   placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end'
   class?: string
+  /** As the menu closes; `preventDefault()` keeps focus off the trigger (an item moved it). */
+  onCloseAutoFocus?: (event: Event) => void
   children: JSX.Element
 }) {
   return (
@@ -123,6 +125,7 @@ export function Menu(props: {
       </DropdownMenuTrigger>
       <DropdownMenuPortal>
         <DropdownMenuContent
+          onCloseAutoFocus={(event: Event) => props.onCloseAutoFocus?.(event)}
           class={`min-w-48 rounded-2xl border-line bg-paper py-1 text-sm text-ink shadow-xl ${props.class ?? ''}`}
         >
           {props.children}

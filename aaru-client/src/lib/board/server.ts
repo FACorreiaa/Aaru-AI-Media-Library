@@ -5,7 +5,6 @@ import type { components } from '../api/schema'
 import { mediaRef } from '../groups/media-ref'
 import { check, checkEmpty } from '../groups/responses'
 import { sessionToken } from '../session/guard'
-import type { SocialUser } from '../social/server'
 import type { BoardComment, BoardPost } from './model'
 
 // BOARD-002 on the web: the calls behind the friends-only Board. Every rule about who sees what
@@ -74,35 +73,6 @@ export const createPost = createServerFn({ method: 'POST' })
       await api(sessionToken()).POST('/v1/board/posts', { body: data }),
       'Your post was not shared.',
     ),
-  )
-
-/** One post, who upvoted it, its first comments, and the viewer's friends (for @-mentions). */
-export const loadPost = createServerFn({ method: 'GET' })
-  .validator(postRef)
-  .handler(
-    async ({
-      data,
-    }): Promise<{
-      post: BoardPost
-      upvoters: SocialUser[]
-      comments: BoardCommentPage
-      friends: SocialUser[]
-    }> => {
-      const client = api(sessionToken())
-      const [post, upvoters, comments, friends] = await Promise.all([
-        client.GET('/v1/board/posts/{postId}', postPath(data)),
-        client.GET('/v1/board/posts/{postId}/upvotes', postPath(data)),
-        client.GET('/v1/board/posts/{postId}/comments', postPath(data)),
-        client.GET('/v1/social/friends'),
-      ])
-      const fallback = 'That post could not be loaded.'
-      return {
-        post: check(post, fallback),
-        upvoters: check(upvoters, fallback).items,
-        comments: check(comments, fallback),
-        friends: check(friends, fallback).items,
-      }
-    },
   )
 
 export const editPost = createServerFn({ method: 'POST' })
@@ -197,13 +167,18 @@ export const listTitlePosts = createServerFn({ method: 'GET' })
       ).items,
   )
 
-/** Reports a post through the user-report route; the note says which post. */
+/** How long a report's own note may be: the server's 1,000 less the post reference. */
+export const REPORT_NOTE_LENGTH = 900
+
+/** Reports a post through the user-report route; the note says which post, then the reporter's words. */
 export const reportPost = createServerFn({ method: 'POST' })
   .validator(
     z.object({
       authorId: uuid,
       postId: uuid,
       reason: z.enum(['spam', 'harassment', 'impersonation', 'other']),
+      /** What the reporter adds; the server keeps notes under 1,000 characters in all. */
+      note: z.string().max(REPORT_NOTE_LENGTH).optional(),
     }),
   )
   .handler(async ({ data }) =>
@@ -212,7 +187,9 @@ export const reportPost = createServerFn({ method: 'POST' })
         body: {
           userId: data.authorId,
           reason: data.reason,
-          note: `post:${data.postId}`,
+          note: [`post:${data.postId}`, data.note?.trim()]
+            .filter(Boolean)
+            .join('\n'),
         },
       }),
       'That report was not sent.',

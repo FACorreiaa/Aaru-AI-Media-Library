@@ -128,3 +128,37 @@ export function boardEmpty(
   if (posts.length > 0) return null
   return friendCount === 0 ? 'no-friends' : 'quiet'
 }
+
+/**
+ * Who upvoted, in words: "Ana", "Ana and Ben", "Ana, Ben and 10 others". `names` are in the
+ * order given (the caller puts "You" first when the viewer upvoted). Null with nobody.
+ */
+export function upvotersLine(names: string[]): string | null {
+  if (names.length === 0) return null
+  if (names.length === 1) return names[0]
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  const rest = names.length - 2
+  return `${names[0]}, ${names[1]} and ${rest} ${rest === 1 ? 'other' : 'others'}`
+}
+
+/**
+ * The loaded comments after one is deleted, as the server would page them: a top-level comment
+ * with live replies stays as a blank "Comment deleted" row so its replies keep their place;
+ * anything else leaves. A parent left with no live replies goes with it.
+ */
+export function dropComment(items: BoardComment[], id: string): BoardComment[] {
+  const target = items.find((c) => c.id === id)
+  if (!target) return items
+  const live = (parent: string, without: string) =>
+    items.some((c) => c.replyTo === parent && c.id !== without && !c.deleted)
+  return items.flatMap((c) => {
+    if (c.id === id) {
+      return live(id, id)
+        ? [{ ...c, deleted: true, body: '', author: undefined, mine: false }]
+        : []
+    }
+    // The reply was the last live one under a deleted parent: the parent goes too.
+    if (c.id === target.replyTo && c.deleted && !live(c.id, id)) return []
+    return [c]
+  })
+}

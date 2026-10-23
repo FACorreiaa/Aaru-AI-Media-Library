@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   BOARD_PAGE_SIZE,
   boardEmpty,
+  dropComment,
   hasOlder,
   mergeComments,
   ratingWords,
@@ -11,6 +12,7 @@ import {
   starsLabel,
   threadComments,
   toggleUpvote,
+  upvotersLine,
 } from './model'
 import type { BoardComment, BoardPost } from './model'
 
@@ -146,5 +148,41 @@ describe('board model', () => {
     expect(ratingWords(9)).toBe('4½ of 5 stars')
     expect(ratingWords(2)).toBe('1 of 5 stars')
     expect(ratingWords(1)).toBe('½ of 5 stars')
+  })
+
+  it('names the first two upvoters, then counts the rest', () => {
+    expect(upvotersLine([])).toBeNull()
+    expect(upvotersLine(['Ana'])).toBe('Ana')
+    expect(upvotersLine(['Ana', 'Ben'])).toBe('Ana and Ben')
+    expect(upvotersLine(['Ana', 'Ben', 'Cy'])).toBe('Ana, Ben and 1 other')
+    expect(
+      upvotersLine(['Ana', 'Ben', ...Array.from({ length: 10 }, () => 'x')]),
+    ).toBe('Ana, Ben and 10 others')
+  })
+
+  it('keeps a deleted comment with live replies as a blank row', () => {
+    const items = [
+      comment('a', undefined, {
+        author: { userId: 'u', handle: 'ana' },
+        mine: true,
+      }),
+      comment('b', 'a'),
+    ]
+    const left = dropComment(items, 'a')
+    expect(left.map((c) => c.id)).toEqual(['a', 'b'])
+    expect(left[0]).toMatchObject({ deleted: true, body: '', mine: false })
+    expect(left[0].author).toBeUndefined()
+    expect(threadComments(left)[0].replies.map((c) => c.id)).toEqual(['b'])
+  })
+
+  it('drops a deleted comment without replies, and an emptied deleted parent', () => {
+    expect(dropComment([comment('a')], 'a')).toEqual([])
+    const items = [
+      comment('a', undefined, { deleted: true }),
+      comment('b', 'a'),
+    ]
+    expect(dropComment(items, 'b')).toEqual([])
+    const kept = [comment('a'), comment('b', 'a'), comment('c', 'a')]
+    expect(dropComment(kept, 'b').map((c) => c.id)).toEqual(['a', 'c'])
   })
 })
