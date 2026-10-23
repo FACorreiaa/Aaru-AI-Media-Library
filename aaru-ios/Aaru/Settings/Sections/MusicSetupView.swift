@@ -67,6 +67,7 @@ struct MusicSetupView: View {
                     Section { Text(problem).foregroundStyle(Color(.danger)) }
                 }
             }
+            .paperPage()
             .navigationTitle("Connect a scrobbler")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)

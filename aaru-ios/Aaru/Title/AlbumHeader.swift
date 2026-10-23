@@ -63,5 +63,5 @@ struct AlbumHeader: View {
         .listRowBackground(Color.clear)
         AlbumTracklist(tracks: AlbumSample.okComputerTracks, isLoading: false)
     }
-    .formStyle(.grouped)
+    .paperPage()
 }

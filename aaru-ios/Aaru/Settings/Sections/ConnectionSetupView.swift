@@ -77,6 +77,7 @@ struct ConnectionSetupView: View {
                     Section { Text(problem).foregroundStyle(Color(.danger)) }
                 }
             }
+            .paperPage()
             .navigationTitle("Connect an agent")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)

@@ -38,7 +38,7 @@ struct TapHitRow: View {
                         .font(.subheadline.weight(.semibold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.25)))
+                        .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                 }

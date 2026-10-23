@@ -30,7 +30,7 @@ struct LibraryFilterBar: View {
                         .font(.subheadline.weight(.medium))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 7)
-                        .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.18)))
+                        .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                         .frame(minHeight: 44)
                         .contentShape(.rect)
                     }
@@ -67,7 +67,7 @@ private struct FilterChip: View {
                 .padding(.vertical, 7)
                 .foregroundStyle(isOn ? Color(.paper) : Color(.ink))
                 .background(isOn ? Color(.ink) : .clear, in: Capsule())
-                .overlay(Capsule().strokeBorder(Color(.ink).opacity(isOn ? 0 : 0.18)))
+                .overlay(Capsule().strokeBorder(isOn ? Color.clear : Color(.lineStrong)))
                 .frame(minHeight: 44)
                 .contentShape(.rect)
         }
