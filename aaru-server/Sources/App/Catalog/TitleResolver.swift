@@ -83,7 +83,8 @@ struct TitleResolver: Sendable {
         return resolver
     }
 
-    /// `searchHint` (an author, for books) narrows a title search; it never loosens the match.
+    /// `searchHint` (an author, for books) narrows a title search. The only match it loosens is a
+    /// book's year, by one, when the hint is also the hit's author (IMP-020).
     func resolve(_ ref: MediaRef, searchHint: String? = nil) async throws -> Title {
         try ref.validate()
         if let titleID = ref.titleID {
@@ -211,11 +212,15 @@ struct TitleResolver: Sendable {
         }
         let query = [title, hint].compactMap(\.self).joined(separator: " ")
         let hits = try await provider.search(query: query, type: ref.type)
-        let matches = hits.filter { hit in
-            hit.year != nil && MatchKey.canMerge(
-                MediaRef(type: ref.type, title: ref.title, year: ref.year),
-                hit.mediaRef
-            )
+        let wanted = MediaRef(type: ref.type, title: ref.title, year: ref.year)
+        var matches = hits.filter { hit in
+            hit.year != nil && MatchKey.canMerge(wanted, hit.mediaRef)
+        }
+        // IMP-020: a book one year off, only when the author is the hit's too.
+        if matches.isEmpty, ref.type == .book {
+            matches = hits.filter { hit in
+                MatchKey.canMergeBook(wanted, author: hint, hit.mediaRef, byline: hit.byline)
+            }
         }
         guard !matches.isEmpty else { throw ResolutionError.notFound }
         guard matches.count == 1 else { throw ResolutionError.ambiguous }

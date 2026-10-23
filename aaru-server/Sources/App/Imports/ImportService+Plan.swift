@@ -153,12 +153,17 @@ extension ImportService {
     }
 
     /// Ids first. A row that also allows its name (TV Time's old TVDB ids, which TMDB may not
-    /// know) falls back to the exact-name match when the ids find nothing.
+    /// know) falls back to the exact-name match when the ids find nothing. A book whose ISBN
+    /// Open Library does not know falls back to its title, year and author, as a row without an
+    /// ISBN would (IMP-020).
     private func resolveByIDs(_ row: ImportRow, with resolver: TitleResolver) async throws -> Title {
         do {
             return try await resolver.resolve(row.mediaRef, searchHint: row.author)
         } catch ResolutionError.notFound where row.nameOnly == true && !row.ids.isEmpty && row.year == nil {
             return try await resolver.resolve(named: row.title, type: row.type, notAfter: row.notAfter)
+        } catch ResolutionError.notFound where row.type == .book && !row.ids.isEmpty && row.year != nil {
+            let byTitle = MediaRef(type: .book, title: row.title, year: row.year)
+            return try await resolver.resolve(byTitle, searchHint: row.author)
         }
     }
 

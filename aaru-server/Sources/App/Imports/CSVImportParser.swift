@@ -82,35 +82,79 @@ enum CSVImportParser {
     // MARK: Goodreads
 
     /// Exclusive Shelf → status; custom shelves → lists; ISBNs arrive as `="0441172717"`.
+    /// IMP-020: the series suffix leaves the title, a "did not finish" shelf is dropped, the
+    /// review (else the private notes) is the notes, and an owned copy marks it owned.
     static func goodreads(_ table: CSVTable) throws -> [ImportRow] {
         try require(["Title", "Author", "Exclusive Shelf"], in: table, source: "Goodreads")
         let exclusive: Set = ["to-read", "currently-reading", "read"]
         return table.records.compactMap { record in
-            guard let title = record["Title"], !title.isEmpty else { return nil }
+            guard let raw = record["Title"], !raw.isEmpty else { return nil }
             let isbn = [record["ISBN13"], record["ISBN"]].compactMap { $0.flatMap(cleanISBN) }.first
-            let shelf = record["Exclusive Shelf"] ?? ""
-            let status: LibraryStatus? = switch shelf {
-            case "to-read": .wishlist
-            case "currently-reading": .inProgress
-            case "read": .finished
-            default: nil
-            }
             let stars = record["My Rating"].flatMap(Double.init) ?? 0
             let lists = (record["Bookshelves"] ?? "")
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty && !exclusive.contains($0) }
+            let owned = record["Owned Copies"].flatMap { Int($0.trimmingCharacters(in: .whitespaces)) } ?? 0
             return ImportRow(
-                sourceKey: record["Book Id"], type: .book, title: title,
+                sourceKey: record["Book Id"], type: .book, title: withoutSeries(raw),
                 year: (record["Original Publication Year"] ?? record["Year Published"]).flatMap { Int($0) },
                 author: record["Author"],
                 ids: ExternalIDs(isbn: isbn.flatMap(ISBN.normalize)),
-                status: status,
+                status: goodreadsStatus(record["Exclusive Shelf"] ?? ""),
                 rating: stars > 0 ? stars * 2 : nil,
                 finishedAt: record["Date Read"].flatMap(day),
-                lists: lists
+                lists: lists,
+                notes: record["My Review"].flatMap(plainText) ?? record["Private Notes"].flatMap(plainText),
+                isOwned: owned > 0 ? true : nil
             )
         }
+    }
+
+    /// The three built-in shelves, plus the shelves people make for books they gave up on.
+    /// Any other shelf says nothing about status.
+    static func goodreadsStatus(_ shelf: String) -> LibraryStatus? {
+        let key = shelf.lowercased()
+            .split(whereSeparator: { $0 == " " || $0 == "-" || $0 == "_" })
+            .joined(separator: "-")
+        return switch key {
+        case "to-read": .wishlist
+        case "currently-reading": .inProgress
+        case "read": .finished
+        case "dnf", "did-not-finish", "abandoned", "dropped": .dropped
+        default: nil
+        }
+    }
+
+    /// Goodreads puts the series after the title: "Leviathan Wakes (The Expanse, #1)". The
+    /// catalog does not, so a trailing bracket that numbers the book in a series is dropped.
+    /// Any other bracket ("Dune (Deluxe Edition)") stays.
+    static func withoutSeries(_ title: String) -> String {
+        let trimmed = title.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasSuffix(")"), let open = trimmed.lastIndex(of: "(") else { return trimmed }
+        let inner = trimmed[trimmed.index(after: open) ..< trimmed.index(before: trimmed.endIndex)]
+        let numbered = zip(inner, inner.dropFirst()).contains { $0 == "#" && $1.isNumber }
+        let rest = trimmed[..<open].trimmingCharacters(in: .whitespaces)
+        return numbered && !rest.isEmpty ? rest : trimmed
+    }
+
+    /// Goodreads reviews are HTML (`<br/>` for a line break, `&amp;`). Plain text, or nil
+    /// when nothing is left.
+    static func plainText(_ html: String) -> String? {
+        var text = html
+        for tag in ["<br/>", "<br />", "<br>", "</p>"] {
+            text = text.replacingOccurrences(of: tag, with: "\n", options: .caseInsensitive)
+        }
+        // Only real tags: a "<" that no letter follows ("3 < 4") is text.
+        var plain = text.replacing(#/<\/?[A-Za-z][^>]*>/#, with: "")
+        for (entity, character) in [
+            ("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""), ("&#39;", "'"), ("&nbsp;", " "), ("&amp;", "&"),
+        ] {
+            plain = plain.replacingOccurrences(of: entity, with: character)
+        }
+        let lines = plain.split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
     }
 
     /// Goodreads wraps ISBNs as `="0441172717"` and leaves `=""` when there is none.
