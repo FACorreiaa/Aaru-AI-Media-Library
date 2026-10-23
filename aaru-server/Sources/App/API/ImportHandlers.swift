@@ -178,7 +178,8 @@ extension Components.Schemas.ImportJob {
             createdAt: job.createdAt,
             updatedAt: job.updatedAt,
             rowsTotal: job.rowsTotal,
-            rowsMatched: job.rowsMatched
+            rowsMatched: job.rowsMatched,
+            actionId: job.actionID?.uuidString.lowercased()
         )
     }
 }

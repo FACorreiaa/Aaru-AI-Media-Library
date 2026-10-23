@@ -20,6 +20,7 @@ struct PostgresImportJobStore: ImportJobStore {
         var attempts: Int?
         var rowsTotal: Int?
         var rowsMatched: Int?
+        var actionId: UUID?
 
         var job: ImportJob? {
             guard let source = ImportSource(rawValue: source), let state = ImportJobState(rawValue: state)
@@ -27,13 +28,14 @@ struct PostgresImportJobStore: ImportJobStore {
             return ImportJob(
                 id: ImportJobID(id), userID: UserID(userId), source: source, state: state, stats: stats,
                 errorSummary: errorSummary, filename: filename, createdAt: createdAt, updatedAt: updatedAt,
-                rowsTotal: rowsTotal ?? 0, rowsMatched: rowsMatched ?? 0
+                rowsTotal: rowsTotal ?? 0, rowsMatched: rowsMatched ?? 0, actionID: actionId
             )
         }
     }
 
     private static let columns: SQLQueryString = """
     id, user_id, source, state, stats, error_summary, filename, created_at, updated_at, attempts, rows_matched,
+    action_id,
     (SELECT count(*)::integer FROM import_rows r WHERE r.job_id = import_jobs.id) AS rows_total
     """
     /// Rows per INSERT: well under Postgres's 65,535 bind parameters at three per row.
@@ -178,7 +180,8 @@ struct PostgresImportJobStore: ImportJobStore {
             }
             try await sql.raw("""
             UPDATE import_jobs SET state = \(bind: job.state.rawValue), stats = \(bind: job.stats),
-                error_summary = \(bind: job.errorSummary), updated_at = \(bind: job.updatedAt), locked_until = NULL
+                error_summary = \(bind: job.errorSummary), updated_at = \(bind: job.updatedAt), locked_until = NULL,
+                action_id = coalesce(\(bind: job.actionID), action_id)
             WHERE id = \(bind: job.id.rawValue)
             """).run()
         }

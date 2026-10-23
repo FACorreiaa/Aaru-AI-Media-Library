@@ -3,6 +3,7 @@ import { For, Show, createSignal } from 'solid-js'
 import { Button } from '~/components/ui'
 import { countsLine, decidedLabel, expiresLabel } from '../lib/plans/model'
 import { approvePlan, denyPlan } from '../lib/plans/server'
+import { offerUndo } from './mark-watched'
 import type { AgentPlan } from '../lib/plans/server'
 
 // DESIGN §12: an agent's request leads with who asked, then what changes, then the two
@@ -24,6 +25,12 @@ export function PlanCard(props: {
         : await denyPlan({ data: { id: plan().id } })
       setPlan(decided)
       props.onDecided?.(decided)
+      // Approval is one action, so the toast offers Undo; Home loads again after it.
+      if (decided.status === 'applied' && decided.actionId) {
+        offerUndo(`Applied: ${decided.summary}`, decided.actionId, () =>
+          props.onDecided?.(decided),
+        )
+      }
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'Nothing was changed.',

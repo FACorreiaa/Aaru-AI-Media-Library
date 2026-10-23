@@ -15,6 +15,27 @@ export function toastFailure(err: unknown, fallback: string) {
   toast.error(err instanceof Error ? err.message : fallback)
 }
 
+/** A toast for one journaled write, with Undo for six seconds (DESIGN.md §9): a whole-show
+ * mark, an approved request, an applied import. `onUndone` runs once the server has taken the
+ * action back, so the page can load again. */
+export function offerUndo(
+  message: string,
+  actionId: string,
+  onUndone: () => void,
+) {
+  toast(message, {
+    duration: UNDO_MS,
+    action: {
+      label: 'Undo',
+      onClick: () => {
+        undoAction({ data: { id: actionId } }).then(onUndone, (err: unknown) =>
+          toastFailure(err, 'That could not be undone.'),
+        )
+      },
+    },
+  })
+}
+
 /** The toast after marking a show watched. Undo only when something changed; `onUndone` runs
  * once the server has put the show back, so the page can ask for it again. */
 export function announceShowWatched(
@@ -28,17 +49,7 @@ export function announceShowWatched(
     toast(message)
     return
   }
-  toast(message, {
-    duration: UNDO_MS,
-    action: {
-      label: 'Undo',
-      onClick: () => {
-        undoAction({ data: { id: action.id } }).then(onUndone, (err: unknown) =>
-          toastFailure(err, 'That could not be undone.'),
-        )
-      },
-    },
-  })
+  offerUndo(message, action.id, onUndone)
 }
 
 /** Marks the item watched: every aired episode of a show (one action), or a film finished.

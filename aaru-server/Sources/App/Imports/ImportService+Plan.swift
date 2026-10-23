@@ -201,6 +201,7 @@ extension ImportService {
         }
         job.state = job.stats.unmatched > 0 ? .partial : .succeeded
         job.updatedAt = now()
+        job.actionID = action?.id
         try await stores.importJobs.savePlan(job, rows: rows)
         await GamificationService(stores: stores, now: now).batchApplied(
             userID,

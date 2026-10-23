@@ -3554,6 +3554,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/ImportJob/rowsMatched`.
             public var rowsMatched: Swift.Int
+            /// The action that applied the plan, once approved and if it wrote anything. Undo it with POST /v1/actions/{id}/undo.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportJob/actionId`.
+            public var actionId: Swift.String?
             /// Creates a new `ImportJob`.
             ///
             /// - Parameters:
@@ -3567,6 +3571,7 @@ public enum Components {
             ///   - updatedAt:
             ///   - rowsTotal: Rows read from the file or provider. 0 for a Trakt or AniList import until the worker has read the account.
             ///   - rowsMatched: Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress.
+            ///   - actionId: The action that applied the plan, once approved and if it wrote anything. Undo it with POST /v1/actions/{id}/undo.
             public init(
                 id: Swift.String,
                 source: Components.Schemas.ImportJob.SourcePayload,
@@ -3577,7 +3582,8 @@ public enum Components {
                 createdAt: Foundation.Date,
                 updatedAt: Foundation.Date,
                 rowsTotal: Swift.Int,
-                rowsMatched: Swift.Int
+                rowsMatched: Swift.Int,
+                actionId: Swift.String? = nil
             ) {
                 self.id = id
                 self.source = source
@@ -3589,6 +3595,7 @@ public enum Components {
                 self.updatedAt = updatedAt
                 self.rowsTotal = rowsTotal
                 self.rowsMatched = rowsMatched
+                self.actionId = actionId
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -3601,6 +3608,7 @@ public enum Components {
                 case updatedAt
                 case rowsTotal
                 case rowsMatched
+                case actionId
             }
         }
         /// - Remark: Generated from `#/components/schemas/ImportStats`.

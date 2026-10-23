@@ -87,6 +87,8 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
     /// The rows read from the file or provider, and how many the worker has matched so far.
     public var rowsTotal: Int
     public var rowsMatched: Int
+    /// The journaled action that applied the plan, so a client can offer Undo right after it.
+    public var actionID: UUID?
 
     public init(
         id: ImportJobID = ImportJobID(),
@@ -99,7 +101,8 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         rowsTotal: Int = 0,
-        rowsMatched: Int = 0
+        rowsMatched: Int = 0,
+        actionID: UUID? = nil
     ) {
         self.id = id
         self.userID = userID
@@ -112,5 +115,6 @@ public struct ImportJob: Codable, Hashable, Sendable, Identifiable {
         self.updatedAt = updatedAt
         self.rowsTotal = rowsTotal
         self.rowsMatched = rowsMatched
+        self.actionID = actionID
     }
 }

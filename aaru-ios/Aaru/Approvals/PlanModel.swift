@@ -37,6 +37,11 @@ final class PlanModel {
         }
     }
 
+    /// Undoes an approved request's action. Returns what went wrong, or nil when it was undone.
+    func takeBack(_ actionID: String) async -> String? {
+        await api.takeBack(actionID: actionID)
+    }
+
     /// Answers the request. Returns the plan as the server left it, or nil when nothing changed.
     func decide(approve: Bool) async -> AgentPlan? {
         guard let current = plan, !working else { return nil }

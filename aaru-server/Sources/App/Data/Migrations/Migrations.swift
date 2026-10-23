@@ -54,6 +54,7 @@ let allMigrations: [any Migration] = [
     AddLivePlays(),
     AddGamification(),
     AddTonight(),
+    AddImportAction(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {
