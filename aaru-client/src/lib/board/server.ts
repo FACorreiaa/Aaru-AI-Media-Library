@@ -154,19 +154,6 @@ export const deleteComment = createServerFn({ method: 'POST' })
     ),
   )
 
-/** The posts about one title, for its page. */
-export const listTitlePosts = createServerFn({ method: 'GET' })
-  .validator(z.object({ titleId: uuid }))
-  .handler(
-    async ({ data }): Promise<BoardPost[]> =>
-      check(
-        await api(sessionToken()).GET('/v1/titles/{id}/posts', {
-          params: { path: { id: data.titleId } },
-        }),
-        'The posts about this title could not be loaded.',
-      ).items,
-  )
-
 /** What a title page's "From friends" needs: a few posts, and whether there is anyone to hear from. */
 export const loadFromFriends = createServerFn({ method: 'GET' })
   .validator(z.object({ titleId: uuid }))
@@ -233,6 +220,8 @@ export type ComposerTitle = {
   posterUrl?: string
   isAnime: boolean
   libraryItemId?: string
+  /** Your rating of it, 1-10, when you have one. */
+  rating?: number
 }
 
 /**
@@ -259,6 +248,7 @@ export const loadComposerTitle = createServerFn({ method: 'GET' })
         posterUrl: t.posterUrl,
         isAnime: t.isAnime,
         libraryItemId: entry.id,
+        ...(entry.rating != null ? { rating: entry.rating } : {}),
       }
     }
     const t = check(

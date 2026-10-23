@@ -80,7 +80,11 @@ export function AgentCards(props: { cards: MessageComponent[] }) {
                     .join(' · ')}
                 </p>
                 <div class="mt-auto pt-1.5">
-                  <AddToLibrary title={card.title} look="card" />
+                  <AddToLibrary
+                    title={card.title}
+                    name={card.title.title}
+                    look="card"
+                  />
                 </div>
               </div>
             </li>

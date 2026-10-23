@@ -12,6 +12,8 @@ import type { MediaType } from '../lib/media'
  */
 export function AddToLibrary(props: {
   title: { id: string; type: MediaType; isAnime: boolean }
+  /** The title's name, so the button says which title it adds. */
+  name: string
   look?: 'card' | 'inline'
 }) {
   const [added, setAdded] = createSignal<string | null>(null)
@@ -47,6 +49,7 @@ export function AddToLibrary(props: {
           variant={inline() ? 'ghost' : 'outline'}
           size={inline() ? 'bare' : 'xs'}
           disabled={busy()}
+          aria-label={`Add ${props.name} to my library`}
           onClick={() => void add()}
           class={
             inline()
@@ -60,6 +63,7 @@ export function AddToLibrary(props: {
     >
       {(status) => (
         <span
+          role="status"
           class={
             inline()
               ? 'text-xs text-muted'

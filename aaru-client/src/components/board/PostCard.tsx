@@ -60,20 +60,32 @@ export function PostCard(props: {
   return (
     <article
       aria-label={`Post by ${inviterName(props.post.author)}`}
-      class="flex gap-3 py-5"
+      tabindex="-1"
+      class="flex gap-3 py-5 outline-none"
     >
-      <Link
-        to="/app/friends/$handle"
-        params={{ handle: props.post.author.handle }}
-        aria-label={inviterName(props.post.author)}
-        class="shrink-0 self-start rounded-full"
+      <Show
+        when={!props.post.mine}
+        fallback={
+          <span class="shrink-0 self-start">
+            <Monogram text={monogram(props.post.author)} />
+          </span>
+        }
       >
-        <Monogram text={monogram(props.post.author)} />
-      </Link>
+        <Link
+          to="/app/friends/$handle"
+          params={{ handle: props.post.author.handle }}
+          aria-label={inviterName(props.post.author)}
+          class="shrink-0 self-start rounded-full"
+        >
+          <Monogram text={monogram(props.post.author)} />
+        </Link>
+      </Show>
       <div class="min-w-0 flex-1">
         <p class="flex flex-wrap items-baseline gap-x-2 text-sm leading-tight">
           <span class="font-semibold">{name()}</span>
-          <span class="text-muted">@{props.post.author.handle}</span>
+          <Show when={props.post.author.displayName}>
+            <span class="text-muted">@{props.post.author.handle}</span>
+          </Show>
           <time
             datetime={props.post.createdAt}
             title={new Date(props.post.createdAt).toLocaleString()}
@@ -123,7 +135,7 @@ export function PostCard(props: {
                     </p>
                   </Show>
                   <Show when={!props.post.mine && !props.hideTitle}>
-                    <AddToLibrary title={t()} look="inline" />
+                    <AddToLibrary title={t()} name={t().title} look="inline" />
                   </Show>
                 </div>
                 <Show

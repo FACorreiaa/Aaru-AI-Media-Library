@@ -652,7 +652,7 @@ friends, activity, leaderboard, Invite, requests, friends). No nav rename, Group
   dialog. It offers + Title, half stars, the spoiler choice, and, once a title is chosen, a
   one-line review effect ("Adds Severance to Watched, ★4½"; "Watched, or Watching if it's still
   airing" for a show; "Updates your rating. Its status stays." for a title already in the
-  library). `@` suggests the post's friends; there is no `@aaru` until BOARD-004. It also starts
+  library). `@` suggests your friends; there is no `@aaru` until BOARD-004. It also starts
   with a title from `/app/friends?title=<library item id>`, which is where "Write about this" goes.
 - **Post rows.** Author, day, words, the attached title with its stars, Upvote and the comment
   count. The poster is not a link: title pages are library items and a friend's title is
@@ -827,8 +827,9 @@ bottom, Insights and Settings.
 - **Web.** One shell for every `/app` page. At 1024px and up a persistent left sidebar
   (collapsible to icons): the wordmark, Search (⌘K; opens in place on every page), the six
   destinations with Friends between Lists and Groups (its own page since SOC-003, owner
-  2026-10-21; it opens on Board, and Lately is its second view), a gap, Insights, Settings, and last the account row (name and @handle, opens
-  Settings → Account). Groups carries the mention count. Below 1024px a top bar (wordmark,
+  2026-10-21; it opens on Board, and Lately is its second view), a gap, Insights, Settings,
+  and last the account row (name and @handle, opens Settings → Account). Groups carries the
+  mention count. Below 1024px a top bar (wordmark,
   Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
   names where you came from. Sign out lives on Account only.

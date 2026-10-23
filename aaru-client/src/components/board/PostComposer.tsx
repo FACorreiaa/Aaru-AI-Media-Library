@@ -136,6 +136,7 @@ export function PostComposer(props: {
             isAnime: t.isAnime,
             libraryItemId: t.libraryItemId,
           })
+          setRating(t.rating)
           setPicking(false)
           box?.focus()
         } catch (error) {

@@ -101,6 +101,8 @@ export function BoardView(props: {
   function posted(post: BoardPost) {
     setPosts([post, ...posts().filter((p) => p.id !== post.id)])
     const first = list?.firstElementChild
+    // Focus lands on the new post, so a screen reader reads what was just shared.
+    first?.querySelector<HTMLElement>('article')?.focus()
     if (first) {
       void play(first, {
         opacity: [0, 1],

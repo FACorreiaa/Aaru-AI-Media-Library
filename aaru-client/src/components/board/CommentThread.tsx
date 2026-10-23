@@ -232,9 +232,9 @@ export function CommentThread(props: {
         open={pending() !== null}
         title="Delete this comment?"
         description={
-          pending()?.replyTo
-            ? undefined
-            : 'Replies to it stay, under “Comment deleted”.'
+          (byRoot().get(pending()?.id ?? '')?.replies.length ?? 0) > 0
+            ? 'Replies to it stay, under “Comment deleted”.'
+            : undefined
         }
         confirmLabel={deleting() ? 'Deleting…' : 'Delete comment'}
         busy={deleting()}
@@ -338,21 +338,32 @@ function CommentRow(props: {
           fallback={<Monogram text="A" size="sm" />}
         >
           {(author) => (
-            <Link
-              to="/app/friends/$handle"
-              params={{ handle: author().handle }}
-              aria-label={inviterName(author())}
-              class="shrink-0 self-start rounded-full"
+            <Show
+              when={!props.comment.mine}
+              fallback={
+                <span class="shrink-0 self-start">
+                  <Monogram text={monogram(author())} size="sm" />
+                </span>
+              }
             >
-              <Monogram text={monogram(author())} size="sm" />
-            </Link>
+              <Link
+                to="/app/friends/$handle"
+                params={{ handle: author().handle }}
+                aria-label={inviterName(author())}
+                class="shrink-0 self-start rounded-full"
+              >
+                <Monogram text={monogram(author())} size="sm" />
+              </Link>
+            </Show>
           )}
         </Show>
         <div class="min-w-0 flex-1">
           <p class="flex flex-wrap items-baseline gap-x-2 text-sm leading-tight">
             <span class="font-semibold">{name()}</span>
             <Show when={props.comment.author && !props.comment.mine}>
-              <span class="text-muted">@{props.comment.author!.handle}</span>
+              <Show when={props.comment.author!.displayName}>
+                <span class="text-muted">@{props.comment.author!.handle}</span>
+              </Show>
             </Show>
             <time
               datetime={props.comment.createdAt}
