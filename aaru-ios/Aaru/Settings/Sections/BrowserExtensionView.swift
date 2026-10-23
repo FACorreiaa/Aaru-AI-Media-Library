@@ -27,6 +27,7 @@ struct BrowserExtensionView: View {
                     Text("Connected browsers appear in Settings → Connections, where you can disconnect them.")
                 }
             }
+            .paperPage()
             .navigationTitle("Browser extension")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)

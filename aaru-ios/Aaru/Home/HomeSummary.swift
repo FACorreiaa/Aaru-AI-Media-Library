@@ -117,7 +117,7 @@ struct CountChips: View {
                         .font(.subheadline.weight(.medium))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
-                        .overlay(Capsule().strokeBorder(Color(.ink).opacity(0.18)))
+                        .overlay(Capsule().strokeBorder(Color(.lineStrong)))
                         // The chip stays slim; the tap target is 44pt tall.
                         .frame(minHeight: 44)
                         .contentShape(Rectangle())

@@ -111,7 +111,7 @@ struct CalendarEpisodeSheet: View {
     }
 
     private func still(_ entry: CalendarEntry) -> some View {
-        Color(.medallion)
+        Color(.surface)
             .aspectRatio(16 / 9, contentMode: .fit)
             .overlay {
                 AsyncImage(url: (entry.stillUrl ?? entry.title.backdropUrl).flatMap(URL.init(string:))) { phase in

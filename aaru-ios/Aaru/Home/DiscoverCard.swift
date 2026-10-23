@@ -90,7 +90,7 @@ struct DiscoverCard: View {
         } else {
             Image(systemName: libraryItemID == nil ? "plus" : "checkmark")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(libraryItemID == nil ? Color(.ink) : .white)
+                .foregroundStyle(libraryItemID == nil ? Color(.ink) : Color(.onAccent))
                 .frame(width: 26, height: 26)
                 .background(
                     libraryItemID == nil ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color(.accent)),
