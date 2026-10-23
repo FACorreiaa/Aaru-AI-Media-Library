@@ -756,6 +756,7 @@ function TitleRoom() {
                         <li>
                           <PostCard
                             post={post}
+                            hideTitle
                             handles={friendHandles()}
                             myHandle={fromFriends()!.myHandle?.toLowerCase()}
                           />

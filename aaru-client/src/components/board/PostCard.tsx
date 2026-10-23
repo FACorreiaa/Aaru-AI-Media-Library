@@ -38,6 +38,8 @@ export function PostCard(props: {
   /** The post page: no links to itself; `beside` stands after Upvote instead. */
   standalone?: boolean
   beside?: JSX.Element
+  /** On the title's own page: leave out the poster, name and Add, keep the stars. */
+  hideTitle?: boolean
   /** Beside the name: the post's own menu (post page). */
   menu?: JSX.Element
   /** In place of the words while the author edits them (post page). */
@@ -90,21 +92,25 @@ export function PostCard(props: {
         <Show when={props.post.title}>
           {(t) => (
             <div class="mt-3 flex items-center gap-3">
-              <Poster
-                url={t().posterUrl}
-                kind={kindOf(t().type, t().isAnime)}
-                radius="thumb"
-                class="w-12 shrink-0"
-              />
+              <Show when={!props.hideTitle}>
+                <Poster
+                  url={t().posterUrl}
+                  kind={kindOf(t().type, t().isAnime)}
+                  radius="thumb"
+                  class="w-12 shrink-0"
+                />
+              </Show>
               <div class="min-w-0 flex-1 leading-tight">
-                <p class="truncate font-display text-base font-medium">
-                  {t().title}
-                  <Show when={t().year}>
-                    <span class="ml-1.5 font-sans text-sm font-normal text-muted tabular-nums">
-                      {t().year}
-                    </span>
-                  </Show>
-                </p>
+                <Show when={!props.hideTitle}>
+                  <p class="truncate font-display text-base font-medium">
+                    {t().title}
+                    <Show when={t().year}>
+                      <span class="ml-1.5 font-sans text-sm font-normal text-muted tabular-nums">
+                        {t().year}
+                      </span>
+                    </Show>
+                  </p>
+                </Show>
                 <div class="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                   <Show when={props.post.rating !== undefined && !veiled()}>
                     <p class="text-base tracking-wide text-gold">
@@ -116,7 +122,7 @@ export function PostCard(props: {
                       </span>
                     </p>
                   </Show>
-                  <Show when={!props.post.mine}>
+                  <Show when={!props.post.mine && !props.hideTitle}>
                     <AddToLibrary title={t()} look="inline" />
                   </Show>
                 </div>
