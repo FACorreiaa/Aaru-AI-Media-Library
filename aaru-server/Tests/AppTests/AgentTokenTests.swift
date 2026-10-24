@@ -119,6 +119,8 @@ struct AgentTokenTests {
             == "/stremio/[token]/catalog/series/up-next/skip=100.json")
         #expect(Log.redacted("/stremio/aaru_st_SECRET", query: nil) == "/stremio/[token]")
         #expect(Log.redacted("/v1/imports/trakt/callback", query: "code=abc&state=def") == "/v1/imports/trakt/callback")
+        #expect(Log
+            .redacted("/v1/connections/mal/callback", query: "code=abc&state=def") == "/v1/connections/mal/callback")
         #expect(Log.redacted("/v1/calendar", query: "from=a") == "/v1/calendar?from=a")
     }
 

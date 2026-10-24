@@ -40,6 +40,12 @@ The uploaded file itself is not kept. If you connect Trakt, Aaru stores Trakt's 
 encrypted and uses them only to import your history when you ask; disconnecting revokes them on
 Trakt and deletes them here. Aaru uses Trakt but is not endorsed or certified by Trakt.
 
+**MyAnimeList.** If you connect MyAnimeList, Aaru stores its access tokens encrypted. From then
+on, when an anime changes in your Aaru library, Aaru sends its status, watched episodes and score
+to your MyAnimeList list, one entry per season. Removing an anime from Aaru does not remove it
+there. Disconnecting deletes the tokens and what Aaru remembers about your MyAnimeList entries;
+you can also remove Aaru in MyAnimeList's account settings.
+
 **Stremio.** If you connect Stremio, Aaru stores the link only as a one-way hash, with its name,
 what it may do, and when it was last used. While it is connected, Stremio tells Aaru when you
 start, pause and stop playing something, and Aaru keeps that playback session (the title,
@@ -166,6 +172,7 @@ Aaru only uses these services, and only for the purpose listed:
   sees an encrypted message and when it was sent, never its text.
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
+- **MyAnimeList**, only if you connect it, to keep your anime list there in step with Aaru.
 - **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer, or when you
   send a capture, to read the titles in it. It receives what is described under "Aaru in
   groups" and "Capture" above, through its API, and does not train on it.

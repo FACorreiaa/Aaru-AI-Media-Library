@@ -13,6 +13,7 @@ struct Services: Sendable {
     var stats: StatsService
     var imports: ImportService
     var traktConnect: TraktConnectService
+    var malConnect: MALConnectService
     var agentTokens: AgentTokenService
     var scrobble: ScrobbleService
     var listens: ListenService
@@ -40,6 +41,7 @@ struct Services: Sendable {
         catalogs: CatalogProviders,
         auth: AuthService,
         trakt: TraktAPI? = nil,
+        mal: MALAPI? = nil,
         stremio: StremioAccount? = nil,
         catFeed: CATCalendarFeed? = nil,
         publicBaseURL: URL = URL(string: "https://api.aaruapp.com")!,
@@ -73,6 +75,7 @@ struct Services: Sendable {
                 model: model
             ),
             traktConnect: traktConnect(stores, trakt),
+            malConnect: MALConnectService(stores: stores, settings: mal?.settings, api: mal),
             agentTokens: AgentTokenService(stores: stores, publicBaseURL: publicBaseURL),
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
             listens: ListenService(stores: stores),

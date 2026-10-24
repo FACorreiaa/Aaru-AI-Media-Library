@@ -2551,6 +2551,46 @@ paths:
           description: Disconnected.
         default:
           $ref: '#/components/responses/Error'
+  /v1/connections/mal/connect:
+    post:
+      operationId: connectMAL
+      summary: >-
+        Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a
+        browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec),
+        which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress
+        written from then on is pushed to the MAL list (SCR-005).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MALConnectRequest'}
+      responses:
+        '200':
+          description: Where to send the browser.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MALConnectStart'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/connections/mal:
+    get:
+      operationId: getMALConnection
+      responses:
+        '200':
+          description: Whether MyAnimeList is connected, and whether it must be connected again.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MALConnection'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: disconnectMAL
+      summary: Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are.
+      responses:
+        '204':
+          description: Disconnected.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/imports/{id}:
     parameters:
       - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -3052,6 +3092,28 @@ components:
         connected: {type: boolean}
         username: {type: string}
         connectedAt: {type: string, format: date-time}
+    MALConnectRequest:
+      type: object
+      required: [returnTo]
+      properties:
+        returnTo:
+          type: string
+          description: Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server.
+    MALConnectStart:
+      type: object
+      required: [authorizeUrl]
+      properties:
+        authorizeUrl: {type: string}
+    MALConnection:
+      type: object
+      required: [connected, needsReconnect]
+      properties:
+        connected: {type: boolean}
+        username: {type: string}
+        connectedAt: {type: string, format: date-time}
+        needsReconnect:
+          type: boolean
+          description: MyAnimeList refused the tokens. Nothing is pushed until the user connects again.
     StremioLink:
       type: object
       required: [code, link, qrcode, expiresAt]

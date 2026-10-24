@@ -662,7 +662,7 @@ account or a stranger that has not happened yet.
 | SCR-002 | Open | no Plex/Jellyfin code | |
 | SCR-003 | Done | #36 e8bdebb; Sources/App/Stremio; deployed | Verified in Stremio Web on local server; playback events not tried |
 | SCR-004 | Open | none | |
-| SCR-005 | Open | none | |
+| SCR-005 | Built, unverified (MAL half) | MALConnectService, MALPusher, `mal_connections`, `mal_entry_states`, `/v1/connections/mal*`; MALTests | No client screen yet; needs `MAL_CLIENT_ID` + `MAL_TOKEN_KEY` sealed in infra. AniList push not started |
 | SCR-006 | Open | none | |
 | SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
 | SCR-008 | Built, unverified | NowPlaying.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device; the activity became SCR-009's |

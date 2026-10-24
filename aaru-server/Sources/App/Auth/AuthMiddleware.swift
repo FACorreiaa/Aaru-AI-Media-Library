@@ -14,6 +14,8 @@ struct AuthMiddleware: RouterMiddleware {
         "/v1/auth/google",
         // Trakt's browser redirect: no session; the one-time `state` names the user.
         "/v1/imports/trakt/callback",
+        // MyAnimeList's browser redirect, the same way (SCR-005).
+        "/v1/connections/mal/callback",
         // MCP authenticates itself with an agent token, never a session (OUT-004).
         "/v1/mcp",
         // Scrobbles authenticate themselves with a scrobble token, never a session (SCR-007).
