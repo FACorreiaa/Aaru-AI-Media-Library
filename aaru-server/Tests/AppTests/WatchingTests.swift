@@ -58,8 +58,11 @@ struct WatchingTests {
     @Test("An imported anime with no tick made in Aaru is in the backlog until the first live tick")
     func importedAnime() async throws {
         try await LibraryHarness.run { env in
-            let id = try await importShow(env, tmdb: stubShow(env, "Frieren", anime: true, days: [-30, -23, -16]),
-                                          watched: [1])
+            let id = try await importShow(
+                env,
+                tmdb: stubShow(env, "Frieren", anime: true, days: [-30, -23, -16]),
+                watched: [1]
+            )
             var body = try await entry(env, id)
             #expect(body["inBacklog"] as? Bool == true)
             #expect(body["lastWatchedAt"] == nil, "an imported tick is not a live one")
@@ -80,9 +83,12 @@ struct WatchingTests {
             )
             #expect(try await entry(env, byHand)["inBacklog"] as? Bool == false)
 
-            let tv = try await importShow(env, tmdb: stubShow(env, "Severance", anime: false, days: [-30, -23]),
-                                          watched: [1])
-            #expect(try await entry(env, tv)["inBacklog"] as? Bool == false)
+            let show = try await importShow(
+                env,
+                tmdb: stubShow(env, "Severance", anime: false, days: [-30, -23]),
+                watched: [1]
+            )
+            #expect(try await entry(env, show)["inBacklog"] as? Bool == false)
 
             // Started in Aaru, then the same title imported again: still active.
             let tmdb = stubShow(env, "Mushishi", anime: true, days: [-60, -53, -46])
@@ -109,8 +115,11 @@ struct WatchingTests {
             _ = try await env.send(.put, "/v1/library/items/\(caughtUp)/episodes/1/1", json: ["watched": true])
             let film = try await env.add("movie", tmdb: env.stubMovie("Arrival"), status: "in_progress")
             _ = try await env.add("show", tmdb: stubShow(env, "Later", anime: false, days: [-9]))
-            let backlog = try await importShow(env, tmdb: stubShow(env, "Gintama", anime: true, days: [-90]),
-                                               watched: [])
+            let backlog = try await importShow(
+                env,
+                tmdb: stubShow(env, "Gintama", anime: true, days: [-90]),
+                watched: []
+            )
 
             let items = try #require(try await env.send(.get, "/v1/library/watching").json()["items"]
                 as? [[String: Any]])
