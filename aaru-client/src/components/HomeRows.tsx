@@ -396,6 +396,8 @@ export function DiscoverCard(props: {
   adding: boolean
   onAdd: (status: LibraryStatus) => void
   onList: () => void
+  /** A title not in the library has no page: its poster opens the preview instead. */
+  onPreview: () => void
   today?: string | null
   /** `row` (default) sits in a scrolling row at a fixed width; `grid` fills its grid cell. */
   layout?: 'row' | 'grid'
@@ -430,10 +432,16 @@ export function DiscoverCard(props: {
       <Show
         when={h().libraryItemId}
         fallback={
-          <div class="relative">
+          <Button
+            variant="ghost"
+            size="bare"
+            class="relative block w-full text-left"
+            aria-label={`${h().title}, details`}
+            onClick={() => props.onPreview()}
+          >
             <Poster url={h().posterUrl} kind={kind()} />
             <DateBadge />
-          </div>
+          </Button>
         }
       >
         {(id) => (
