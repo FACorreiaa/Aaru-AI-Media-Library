@@ -9001,6 +9001,92 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Shows airing this week, grouped by channel or streamer (DISC-003).
+    ///
+    /// TMDB's on-the-air shows, the same for every user and cached by the server, each with its next episode and the channel it premieres on. `airsAt` is the exact instant when `airTimeKnown` (from TVmaze), else the UTC day: show the date only. Channels with the most shows come first, "Other" (no known channel) last. With `region`, each show also lists the services it streams on there (JustWatch data through TMDB; credit JustWatch where shown). Items the caller has carry `libraryItemId`. Empty `channels` when the provider is down and nothing is cached.
+    ///
+    /// - Remark: HTTP `GET /v1/discover/on-air`.
+    /// - Remark: Generated from `#/paths//v1/discover/on-air/get(getDiscoverOnAir)`.
+    public func getDiscoverOnAir(_ input: Operations.GetDiscoverOnAir.Input) async throws -> Operations.GetDiscoverOnAir.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetDiscoverOnAir.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/discover/on-air",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "region",
+                    value: input.query.region
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetDiscoverOnAir.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.DiscoverOnAir.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
     ///
     /// POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a kilometre) and used for this request only: never stored, never logged. With no coordinates the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in the same area, cached by the server and linked out to Ticketmaster for tickets.

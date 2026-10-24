@@ -116,7 +116,15 @@ export function DiscoverRows(props: {
             title={row().title}
             note={row().note}
             action={
-              row().id === 'anime_season' ? (
+              row().id === 'tv_on_air' ? (
+                <Link
+                  to="/app/discover"
+                  search={{ view: 'on-air' }}
+                  class="text-sm font-medium text-accent hover:underline"
+                >
+                  By channel
+                </Link>
+              ) : row().id === 'anime_season' ? (
                 <Link
                   to="/app/discover"
                   search={{ view: 'seasons', kind: 'anime' }}

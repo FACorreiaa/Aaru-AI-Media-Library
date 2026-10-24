@@ -30,6 +30,11 @@ export const CREDITS: Credit[] = [
       href: 'https://creativecommons.org/licenses/by-sa/4.0/',
     },
   },
+  {
+    lead: 'Where to stream from ',
+    name: 'JustWatch',
+    href: 'https://www.justwatch.com',
+  },
   { lead: 'Anime data from ', name: 'AniList', href: 'https://anilist.co' },
   {
     lead: 'Anime id mappings from ',

@@ -25,7 +25,12 @@ import { optionalEnum, optionalInt } from '../lib/search-params'
 import { Segmented } from '../components/Segmented'
 import { concertPlaceQuery, discoverQuery } from '../lib/queries'
 
-// The Seasons and Concerts views load on their own, the first time someone opens them.
+// The On air, Seasons and Concerts views load on their own, the first time someone opens them.
+const OnAirGuide = lazy(() =>
+  import('../components/OnAirGuide').then((m) => ({
+    default: m.OnAirGuide,
+  })),
+)
 const SeasonBrowser = lazy(() =>
   import('../components/SeasonBrowser').then((m) => ({
     default: m.SeasonBrowser,
@@ -40,6 +45,7 @@ const ConcertList = lazy(() =>
 // Discover on the web, the twin of the Apple apps' Discover tab: the same public rows Home
 // shows under the user's own (DISC-001), on a page of their own, each card addable in place.
 // The server names and orders the rows and marks the titles already on the shelf.
+// `?view=on-air` is DISC-003's On air view: this week's shows by channel or streamer.
 // `?view=seasons` is DISC-002's Seasons view: one season of anime, shows or films at a time.
 // `?view=concerts` is MUS-003's Concerts view, offered only where the server has concerts on.
 export const Route = createFileRoute('/_shell/app_/discover')({
@@ -85,6 +91,8 @@ export const Route = createFileRoute('/_shell/app_/discover')({
 })
 
 const ANILIST = CREDITS.find((c) => c.name === 'AniList')?.href ?? ''
+const TVMAZE = CREDITS.find((c) => c.name === 'TVmaze')?.href ?? ''
+const JUSTWATCH = CREDITS.find((c) => c.name === 'JustWatch')?.href ?? ''
 const OPEN_LIBRARY = CREDITS.find((c) => c.name === 'Open Library')?.href ?? ''
 
 type Source = { name: string; href: string }
@@ -96,6 +104,12 @@ function sourcesFor(
   kind: SeasonKind | undefined,
 ): Source[] {
   if (view === 'concerts') return []
+  if (view === 'on-air')
+    return [
+      TMDB,
+      { name: 'TVmaze', href: TVMAZE },
+      { name: 'JustWatch', href: JUSTWATCH },
+    ]
   if (view === 'seasons')
     return (kind ?? 'anime') === 'anime'
       ? [{ name: 'AniList', href: ANILIST }]
@@ -170,6 +184,7 @@ function DiscoverPage() {
           itemClass="px-4 py-1.5 text-sm"
           options={[
             { value: 'today', label: 'Today' },
+            { value: 'on-air', label: 'On air' },
             { value: 'seasons', label: 'Seasons' },
             ...(concertsOn()
               ? [{ value: 'concerts' as const, label: 'Concerts' }]
@@ -226,6 +241,11 @@ function DiscoverPage() {
             </Show>
           }
         >
+          <Match when={view() === 'on-air'}>
+            <Suspense fallback={<Placeholder />}>
+              <OnAirGuide onProblem={setProblem} />
+            </Suspense>
+          </Match>
           <Match when={view() === 'seasons'}>
             <Suspense fallback={<Placeholder />}>
               <SeasonBrowser

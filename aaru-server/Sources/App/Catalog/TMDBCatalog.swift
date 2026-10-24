@@ -3,7 +3,7 @@ import Foundation
 
 /// TMDB adapter (CAT-002): search and detail for movies and shows, external ids, and
 /// season/episode lists. Poster URLs are referenced, never downloaded. No TMDB field
-/// name leaves this file.
+/// name leaves this file and its `TMDBCatalog+` extensions.
 struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching {
     static let baseURL = URL(string: "https://api.themoviedb.org/3")!
     static let imageBase = "https://image.tmdb.org/t/p/w500"
@@ -135,7 +135,7 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching {
         }
     }
 
-    private func get<T: Decodable>(_: T.Type, _ path: String, _ query: [String: String]) async throws -> T {
+    func get<T: Decodable>(_: T.Type, _ path: String, _ query: [String: String]) async throws -> T {
         var components = URLComponents(url: Self.baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)
         var items = query.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
         var headers = [("Accept", "application/json")]
@@ -189,6 +189,12 @@ extension TMDBCatalog: DiscoverListing {
         }
         let page = try await get(SearchPage.self, path, query)
         return Self.rowHits(page, type: type, anime: list == .animeSeason || list == .animeTrending)
+    }
+
+    /// One page of `tv/on_the_air` as row cards with posters, and whether another follows (DISC-003).
+    func onAirPage(_ page: Int) async throws -> (hits: [CatalogHit], hasMore: Bool) {
+        let body = try await get(SearchPage.self, "tv/on_the_air", ["include_adult": "false", "page": String(page)])
+        return (Self.rowHits(body, type: .show).filter { $0.posterURL != nil }, page < (body.totalPages ?? 1))
     }
 
     /// A page as row cards. Anime rows come from AniList, the anime catalog, so TV rows drop

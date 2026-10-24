@@ -43,6 +43,40 @@ extension APIImplementation {
         ))))
     }
 
+    func getDiscoverOnAir(
+        _ input: Operations.GetDiscoverOnAir.Input
+    ) async throws -> Operations.GetDiscoverOnAir.Output {
+        let region = input.query.region?.uppercased()
+        guard region.map({ $0.count == 2 && $0.allSatisfy { $0.isASCII && $0.isLetter } }) ?? true else {
+            let message = "Two letters, as ISO 3166-1."
+            throw AppError(
+                status: .unprocessableContent, code: "validation_failed", message: message, details: ["region": message]
+            )
+        }
+        let guide = try await services.discover.onAir(userID: currentUser(), region: region)
+        return .ok(.init(body: .json(.init(
+            channels: guide.channels.map { group in
+                .init(
+                    name: group.channel.name, logoUrl: group.channel.logoURL?.absoluteString,
+                    shows: group.shows.map { show in
+                        .init(
+                            item: .init(show.item.hit, libraryItemID: show.item.libraryItemID),
+                            nextEpisode: .init(
+                                season: show.next.season, number: show.next.number, name: show.next.name,
+                                airsAt: show.next.airsAt, airTimeKnown: show.next.airTimeKnown
+                            ),
+                            streamsOn: show.streamsOn.isEmpty ? nil : show.streamsOn.map {
+                                .init(name: $0.name, logoUrl: $0.logoURL?.absoluteString)
+                            },
+                            watchLink: show.streamsOn.isEmpty ? nil : show.watchLink?.absoluteString
+                        )
+                    }
+                )
+            },
+            updatedAt: guide.updatedAt
+        ))))
+    }
+
     func getTitle(_ input: Operations.GetTitle.Input) async throws -> Operations.GetTitle.Output {
         guard let id = TitleID(uuidString: input.path.id) else { throw AppError.notFound() }
         return try await .ok(.init(body: .json(.init(catalog.detail(id)))))
