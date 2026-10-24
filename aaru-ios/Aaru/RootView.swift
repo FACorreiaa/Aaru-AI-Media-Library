@@ -172,7 +172,9 @@ private struct MainTabs: View {
     }
 
     private func isShown(_ destination: AppTab) -> Bool {
-        !compactTabBar || destination.isInCompactTabBar
+        // Sports only while this server has it on (SPT-004).
+        guard destination != .sports || router.sportsAvailable else { return false }
+        return !compactTabBar || destination.isInCompactTabBar
     }
 
     var body: some View {
@@ -252,6 +254,8 @@ private struct MainTabs: View {
             }
             // The tab's mention badge needs the counts before the tab is opened.
             .task { await groups.load() }
+            // Sports shows only when this server has it on.
+            .task { router.sportsAvailable = await SportSettingsModel.isAvailable(api: api) }
             // Renewals and Ask to Buy approvals arrive while the app runs (BIL-004).
             .task { await plus?.listen() }
             // Badges earned elsewhere (an import, another device) toast on return (GAM-004).
@@ -346,6 +350,8 @@ private struct MainTabs: View {
             FriendsScreen(social: settings.models.social)
         case .groups:
             GroupsScreen(groups: groups, social: settings.models.social)
+        case .sports:
+            SportsScreen(api: api)
         case .insights:
             NavigationStack {
                 InsightsView(api: api, library: library)

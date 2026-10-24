@@ -482,8 +482,8 @@ colour. A segmented control switches **Favorites** and **Schedule**.
 - **Refresh.** Every 90 s while the tab is visible and a live game is on screen; never a spinner
   over content that is already there. "Data: TheSportsDB" closes the tab, small and muted.
 - **Settings.** A Sports section holds the "Where to watch" country.
-- **iPhone** keeps its five tabs; Sports sits in the overflow. iPad and Mac show it in the
-  sidebar; the web nav lists it. Hidden everywhere while the server has no sports provider.
+- **iPhone** keeps its five tabs (no "More" tab); Sports opens from a button in Discover's
+  toolbar. iPad and Mac show it in the sidebar; the web nav lists it. Hidden everywhere while the server has no sports provider.
 
 ## 14. Week grid (Phase 2)
 
@@ -912,7 +912,7 @@ Where each existing piece goes:
 
 | Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
 | --- | --- | --- |
-| Account | `AccountPage`: `ProfileEditor` (handle and name), `FavoritesEditor` (kind chips, move up/down, remove, Add through `TitlePicker`), Signed in with + Link Google, Aaru Plus (`plusLine`), `AppearanceSection`, Sign out | `AccountSettings` first section; `PlusSection` + `PlusPaywall` (`Aaru/Plus`); `ProfileEditor` from `Social/FriendsView.swift`; Favorites under Handle on Friends & privacy opens `FavoritesEditor` (`Aaru/Profile`, drag to reorder, swipe to remove, Add through `TitlePickerSheet` fixed to the kind); `AppearancePicker` (off the Settings root and the Mac "General" pane) |
+| Account | `AccountPage`: `ProfileEditor` (handle and name), `FavoritesEditor` (kind chips, move up/down, remove, Add through `TitlePicker`), Signed in with + Link Google, Aaru Plus (`plusLine`), `AppearanceSection`, Sign out | `AccountSettings` first section; `PlusSection` + `PlusPaywall` (`Aaru/Plus`); `ProfileEditor` from `Social/ProfileEditor.swift`; Favorites under Handle on Friends & privacy opens `FavoritesEditor` (`Aaru/Profile`, drag to reorder, swipe to remove, Add through `TitlePickerSheet` fixed to the kind); `AppearancePicker` (off the Settings root and the Mac "General" pane) |
 | Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsPage` (`Social/FriendsView.swift`): handle, a Friends row that opens Friends (`router.showFriends()`), Show my library to friends; `ConcertPlaceSection`. The friend lists, invites and requests live on Friends (`FriendsScreen`), as on the web |
 | Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
 | Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |

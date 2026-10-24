@@ -2,11 +2,11 @@ import Foundation
 import Observation
 
 /// The app's destinations (DESIGN.md §18), in sidebar order. iPhone's tab bar shows the first
-/// four and Groups; Lists, Friends, Insights and Settings live in the sidebar (iPad, Mac) and are
-/// reached on iPhone from Library (Lists), Groups and Friends & privacy (Friends), and the
-/// account button.
+/// four and Groups; Lists, Friends, Sports, Insights and Settings live in the sidebar (iPad, Mac)
+/// and are reached on iPhone from Library (Lists), Groups and Friends & privacy (Friends),
+/// Discover (Sports), and the account button.
 enum AppTab: String, CaseIterable, Identifiable {
-    case home, discover, library, calendar, lists, friends, groups, insights, settings
+    case home, discover, library, calendar, lists, friends, groups, sports, insights, settings
 
     var id: String {
         rawValue
@@ -21,6 +21,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .lists: "Lists"
         case .friends: "Friends"
         case .groups: "Groups"
+        case .sports: "Sports"
         case .insights: "Insights"
         case .settings: "Settings"
         }
@@ -35,14 +36,15 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .lists: "list.bullet.rectangle"
         case .friends: "person.2"
         case .groups: "bubble.left.and.bubble.right"
+        case .sports: "sportscourt"
         case .insights: "chart.bar"
         case .settings: "gearshape"
         }
     }
 
-    /// The seven destinations, above the gap in the sidebar. Friends sits between Lists and Groups
-    /// (SOC-003, as on the web).
-    static let primary: [AppTab] = [.home, .discover, .library, .calendar, .lists, .friends, .groups]
+    /// The destinations above the gap in the sidebar. Friends sits between Lists and Groups
+    /// (SOC-003, as on the web); Sports (SPT-004) comes last, and only while the server has it on.
+    static let primary: [AppTab] = [.home, .discover, .library, .calendar, .lists, .friends, .groups, .sports]
 
     /// Set apart at the bottom of the sidebar. The Mac has no Settings row: Settings is its
     /// Settings scene (⌘,).
@@ -54,7 +56,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         #endif
     }
 
-    /// The Mac's Go menu: ⌘1…⌘8 for the eight sidebar rows.
+    /// The Mac's Go menu: ⌘1…⌘9 for the sidebar rows (Sports only while it is on).
     static let goMenu: [AppTab] = primary + [.insights]
 
     /// Kept in the compact tab bar. The rest are sidebar-only there (§18, UX-001).
@@ -97,6 +99,23 @@ final class AppRouter {
 
     /// Whether the main window is in a compact width right now (set by the root view).
     var isCompact = false
+
+    /// Whether this server has Sports on (`getSportSettings`); the Sports tab shows only then.
+    var sportsAvailable = false {
+        didSet {
+            if !sportsAvailable, tab == .sports {
+                tab = .home
+            }
+        }
+    }
+
+    /// iPhone: Discover pushes Sports, since Sports has no tab there.
+    var showsSportsInDiscover = false
+
+    /// The Go menu's rows, without Sports while the server has it off.
+    var goMenu: [AppTab] {
+        AppTab.goMenu.filter { $0 != .sports || sportsAvailable }
+    }
 
     /// Opens Settings on a page, or on its list when `page` is nil, wherever Settings lives on
     /// this platform: the Settings scene (Mac), the sidebar row (regular width) or a sheet.
@@ -159,6 +178,10 @@ final class AppRouter {
         case .insights where isCompact:
             // No Insights tab on iPhone: Library's More menu holds it.
             tab = .library
+        case .sports where isCompact:
+            // No Sports tab on iPhone: Discover's toolbar opens it.
+            tab = .discover
+            showsSportsInDiscover = true
         default: tab = destination
         }
     }
@@ -193,6 +216,8 @@ final class AppRouter {
         showsSearch = false
         showsListsInLibrary = false
         showsFriendsInGroups = false
+        showsSportsInDiscover = false
+        sportsAvailable = false
         pendingNewList = false
         settingsPath = []
         showsSettingsSheet = false

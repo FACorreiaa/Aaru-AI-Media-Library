@@ -2492,7 +2492,7 @@ are asked again after a few seconds. "Data: TheSportsDB" under the tab.
 
 ### SPT-004 · iOS and Mac Sports tab · M
 **Needs:** SPT-002.
-`AppTab.sports`, in the sidebar on iPad and Mac and in the overflow on iPhone. The same surfaces
+`AppTab.sports`, in the sidebar on iPad and Mac and from Discover's toolbar on iPhone. The same surfaces
 as SPT-003 in SwiftUI; refresh while the scene is active.
 
 ### SPT-005 · Where to watch, docs and key · S

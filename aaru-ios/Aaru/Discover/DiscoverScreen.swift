@@ -53,6 +53,7 @@ struct DiscoverScreen: View {
     }
 
     var body: some View {
+        @Bindable var router = router
         NavigationStack {
             Group {
                 switch section {
@@ -79,6 +80,17 @@ struct DiscoverScreen: View {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                     }
+                    // iPhone has no Sports tab: it opens from here (SPT-004).
+                    if compact, router.sportsAvailable {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button(AppTab.sports.title, systemImage: AppTab.sports.symbol) {
+                                router.showsSportsInDiscover = true
+                            }
+                        }
+                    }
+                }
+                .navigationDestination(isPresented: $router.showsSportsInDiscover) {
+                    SportsView(api: api)
                 }
                 .task { await model.loadIfNeeded() }
                 .task { await concerts.loadSetting() }
