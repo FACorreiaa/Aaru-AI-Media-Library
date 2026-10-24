@@ -10,7 +10,7 @@ protocol AirTimeRefining: Sendable {
 /// TVmaze adapter (CAT-011): no key, ~20 calls / 10 s per IP. Shows are found by TVDB or IMDb id;
 /// `airstamp` is the exact UTC instant. Data is CC BY-SA: credit TVmaze where it is shown
 /// (PRV-001). No TVmaze field name leaves this file.
-struct TVmazeAirTimes: AirTimeRefining {
+struct TVmazeAirTimes: AirTimeRefining, NextEpisodeTiming {
     static let baseURL = URL(string: "https://api.tvmaze.com")!
     /// TVmaze and TMDB can number a season differently. A time is only trusted when its date is
     /// within this of TMDB's date for the same episode number.
@@ -46,6 +46,13 @@ struct TVmazeAirTimes: AirTimeRefining {
         return refined
     }
 
+    /// The exact instant of the show's next episode, for the on-air guide (DISC-003).
+    func nextAirTime(ids: ExternalIDs) async throws -> Date? {
+        guard let show = try await lookup(ids) else { return nil }
+        let next = try await client.decode(Show.self, request("shows/\(show.id)", ["embed": "nextepisode"]))
+        return next.embedded?.nextepisode?.airstamp.flatMap(Self.instant)
+    }
+
     private func lookup(_ ids: ExternalIDs) async throws -> Show? {
         for case let (key, value?) in [("thetvdb", ids.tvdb), ("imdb", ids.imdb)] {
             do {
@@ -73,9 +80,18 @@ struct TVmazeAirTimes: AirTimeRefining {
 private struct Show: Decodable {
     struct Channel: Decodable { let name: String }
 
+    struct Embedded: Decodable { let nextepisode: Episode? }
+
     let id: Int
     let network: Channel?
     let webChannel: Channel?
+    /// `shows/{id}?embed=nextepisode` only.
+    var embedded: Embedded?
+
+    enum CodingKeys: String, CodingKey {
+        case id, network, webChannel
+        case embedded = "_embedded"
+    }
 }
 
 private struct Episode: Decodable {

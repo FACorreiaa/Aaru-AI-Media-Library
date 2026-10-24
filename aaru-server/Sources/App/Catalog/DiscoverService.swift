@@ -82,17 +82,26 @@ struct DiscoverService: Sendable {
     let animeFallback: (any DiscoverListing)?
     let cache: DiscoverCache
     let seasonCache: SeasonCache
+    /// The on-air guide (DISC-003): TMDB in production, timed by TVmaze when it is configured.
+    let onAirSource: (any OnAirListing)?
+    let nextEpisodeTiming: (any NextEpisodeTiming)?
+    let onAirCache: OnAirCache
     var now: @Sendable () -> Date = { Date() }
 
     /// `providers` are the catalog adapters; those that list nothing are skipped.
     init(
         stores: Stores, providers: [any Sendable],
         animeFallback: (any DiscoverListing)? = nil,
-        cache: DiscoverCache = DiscoverCache(), seasonCache: SeasonCache = SeasonCache()
+        nextEpisodeTiming: (any NextEpisodeTiming)? = nil,
+        cache: DiscoverCache = DiscoverCache(), seasonCache: SeasonCache = SeasonCache(),
+        onAirCache: OnAirCache = OnAirCache()
     ) {
         self.stores = stores
         self.cache = cache
         self.seasonCache = seasonCache
+        self.onAirCache = onAirCache
+        self.nextEpisodeTiming = nextEpisodeTiming
+        onAirSource = providers.lazy.compactMap { $0 as? any OnAirListing }.first
         self.animeFallback = animeFallback
         var sources: [DiscoverList: any DiscoverListing] = [:]
         for case let provider as any DiscoverListing in providers {

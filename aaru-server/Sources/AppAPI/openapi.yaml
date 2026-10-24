@@ -1872,6 +1872,35 @@ paths:
                 $ref: '#/components/schemas/SeasonPage'
         default:
           $ref: '#/components/responses/Error'
+  /v1/discover/on-air:
+    get:
+      operationId: getDiscoverOnAir
+      summary: Shows airing this week, grouped by channel or streamer (DISC-003).
+      description: >-
+        TMDB's on-the-air shows, the same for every user and cached by the server, each with its
+        next episode and the channel it premieres on. `airsAt` is the exact instant when
+        `airTimeKnown` (from TVmaze), else the UTC day: show the date only. Channels with the most
+        shows come first, "Other" (no known channel) last. With `region`, each show also lists the
+        services it streams on there (JustWatch data through TMDB; credit JustWatch where shown).
+        Items the caller has carry `libraryItemId`. Empty `channels` when the provider is down and
+        nothing is cached.
+      parameters:
+        - name: region
+          in: query
+          required: false
+          description: >-
+            ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this
+            request only and never stored. Anything but two letters is 422 `validation_failed`.
+          schema: {type: string}
+      responses:
+        '200':
+          description: The guide.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverOnAir'
+        default:
+          $ref: '#/components/responses/Error'
   /v1/concerts/near:
     post:
       operationId: getConcertsNear
@@ -4313,6 +4342,63 @@ components:
         rows:
           type: array
           items: {$ref: '#/components/schemas/DiscoverRow'}
+    DiscoverOnAir:
+      type: object
+      required: [channels]
+      properties:
+        channels:
+          type: array
+          items: {$ref: '#/components/schemas/OnAirChannel'}
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the server fetched the guide.
+    OnAirChannel:
+      type: object
+      required: [name, shows]
+      properties:
+        name:
+          type: string
+          description: Network or streaming service ("HBO", "Netflix", "BBC One"), or "Other".
+        logoUrl:
+          type: string
+          description: The channel's logo (TMDB), small, on a transparent background.
+        shows:
+          type: array
+          description: Soonest next episode first.
+          items: {$ref: '#/components/schemas/OnAirShow'}
+    OnAirShow:
+      type: object
+      required: [item, nextEpisode]
+      properties:
+        item: {$ref: '#/components/schemas/CatalogHit'}
+        nextEpisode: {$ref: '#/components/schemas/OnAirEpisode'}
+        streamsOn:
+          type: array
+          description: >-
+            Up to three services the show streams on in `region`, besides its own channel. Absent
+            without a region or when there is no data for it.
+          items: {$ref: '#/components/schemas/WatchProvider'}
+        watchLink:
+          type: string
+          description: TMDB's page of every way to watch the show in `region`.
+    OnAirEpisode:
+      type: object
+      required: [season, number, airsAt, airTimeKnown]
+      properties:
+        season: {type: integer}
+        number: {type: integer}
+        name: {type: string}
+        airsAt: {type: string, format: date-time}
+        airTimeKnown:
+          type: boolean
+          description: False while only the day is known; `airsAt` is then midnight UTC of that day.
+    WatchProvider:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        logoUrl: {type: string}
     SeasonPage:
       type: object
       required: [kind, season, year, from, until, title, items, page, hasMore, unavailable]

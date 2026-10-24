@@ -10,6 +10,8 @@ struct DiscoverCard: View {
     let libraryItemID: String?
     /// "Tomorrow", "Nov 14", "Out now": see `releaseBadge`.
     var badge: String?
+    /// Lines under the title in place of the year, e.g. On air's next episode (DISC-003).
+    var lines: [String]?
     /// A row's fixed card width; nil fills a grid cell (the Seasons view).
     let width: CGFloat?
     let isAdding: Bool
@@ -67,8 +69,8 @@ struct DiscoverCard: View {
                     .font(.caption.weight(.semibold))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                if let detail {
-                    Text(detail)
+                ForEach(lines ?? [detail].compactMap(\.self), id: \.self) { line in
+                    Text(line)
                         .font(.caption2)
                         .foregroundStyle(Color(.muted))
                         .lineLimit(1)

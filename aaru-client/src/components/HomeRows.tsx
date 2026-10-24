@@ -399,6 +399,8 @@ export function DiscoverCard(props: {
   today?: string | null
   /** `row` (default) sits in a scrolling row at a fixed width; `grid` fills its grid cell. */
   layout?: 'row' | 'grid'
+  /** Lines under the title in place of the year, e.g. On air's next episode (DISC-003). */
+  details?: JSX.Element
 }) {
   const h = () => props.hit
   const kind = () => kindOf(h().type, h().isAnime)
@@ -453,8 +455,15 @@ export function DiscoverCard(props: {
         )}
       </Show>
       <p class="mt-2 line-clamp-2 text-sm font-medium">{h().title}</p>
-      <Show when={meta()}>
-        <p class="truncate text-xs text-muted">{meta()}</p>
+      <Show
+        when={props.details}
+        fallback={
+          <Show when={meta()}>
+            <p class="truncate text-xs text-muted">{meta()}</p>
+          </Show>
+        }
+      >
+        {props.details}
       </Show>
       <Show
         when={!h().libraryItemId}

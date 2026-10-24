@@ -1,7 +1,12 @@
-// Discover's `?view=` (DISC-002, MUS-003). Its own module because route options are not
+// Discover's `?view=` (DISC-002, DISC-003, MUS-003). Its own module because route options are not
 // code-split: whatever `validateSearch` imports ships on every page.
 
-export const DISCOVER_VIEWS = ['today', 'seasons', 'concerts'] as const
+export const DISCOVER_VIEWS = [
+  'today',
+  'on-air',
+  'seasons',
+  'concerts',
+] as const
 export type DiscoverView = (typeof DISCOVER_VIEWS)[number]
 
 /** `?view=` as Discover reads it: one of its views, else absent (Today). */
