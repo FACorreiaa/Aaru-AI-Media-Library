@@ -374,6 +374,9 @@ Both are derived reads over the user's library. Neither has its own table.
   anime episodes.
   Returns episodes with watched state, so the `WeekGrid` checkbox and the week widget read one
   DTO. Times are UTC on the wire; clients localize.
+  CAL-004: neither read calls a provider. `CatalogRefresher` loads episodes in the background
+  (every minute, back to back while a pass is full). `pendingShows` counts tracked shows never
+  attempted, so a client waiting on an import asks again until it reaches 0.
 - **UPN-001 `GET /v1/up-next`** returns, per `in_progress` show, the next unwatched aired
   episode, runtime, episodes left and time left ("10 left · 8h 40m"), and a finale flag
   (last episode of the season). Ordered by last activity. It feeds `ContinueRow`, the Up Next

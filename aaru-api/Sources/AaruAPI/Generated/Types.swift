@@ -9815,15 +9815,25 @@ public enum Components {
         public struct Calendar: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/Calendar/items`.
             public var items: [Components.Schemas.CalendarEntry]
+            /// Tracked shows whose episodes have not been loaded yet (CAL-004), as after an import. Their episodes are missing from `items` until they load; ask again while this is above 0.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Calendar/pendingShows`.
+            public var pendingShows: Swift.Int?
             /// Creates a new `Calendar`.
             ///
             /// - Parameters:
             ///   - items:
-            public init(items: [Components.Schemas.CalendarEntry]) {
+            ///   - pendingShows: Tracked shows whose episodes have not been loaded yet (CAL-004), as after an import. Their episodes are missing from `items` until they load; ask again while this is above 0.
+            public init(
+                items: [Components.Schemas.CalendarEntry],
+                pendingShows: Swift.Int? = nil
+            ) {
                 self.items = items
+                self.pendingShows = pendingShows
             }
             public enum CodingKeys: String, CodingKey {
                 case items
+                case pendingShows
             }
         }
         /// - Remark: Generated from `#/components/schemas/ContinueEntry`.

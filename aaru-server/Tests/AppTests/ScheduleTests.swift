@@ -71,6 +71,50 @@ struct ScheduleTests {
         }
     }
 
+    @Test("CAL-004: the calendar never loads episodes; it counts shows still waiting until the refresher tries them")
+    func pending() async throws {
+        struct TitleRow: Decodable { let titleId: UUID }
+        try await LibraryHarness.run { env in
+            let itemID = try await env.add("show", tmdb: stubAiring(env, "Imported", days: [1, 2]))
+            let goneID = try await env.add("show", tmdb: stubAiring(env, "Gone", days: [3]))
+            // As an import leaves them: no episodes yet. "Gone" was tried once and the provider failed.
+            var titles: [TitleID] = []
+            try await withSQL { sql in
+                for item in [itemID, goneID] {
+                    let id = try #require(UUID(uuidString: item))
+                    let row = try await sql.raw("SELECT title_id FROM library_items WHERE id = \(bind: id)")
+                        .first(decoding: TitleRow.self, keyDecodingStrategy: .convertFromSnakeCase)
+                    let titleID = try #require(row).titleId
+                    try await sql.raw("DELETE FROM show_episodes WHERE title_id = \(bind: titleID)").run()
+                    try await sql.raw("""
+                    UPDATE titles SET episodes_hydrated_at = NULL,
+                        episodes_attempted_at = \(bind: item == goneID ? Date() : nil as Date?)
+                    WHERE id = \(bind: titleID)
+                    """).run()
+                    titles.append(TitleID(titleID))
+                }
+            }
+
+            let now = Date()
+            let path = "/v1/calendar?from=\(iso(now))&to=\(iso(now.addingTimeInterval(7 * Self.day)))"
+            let before = try await env.send(.get, path).json()
+            #expect((before["items"] as? [[String: Any]])?.isEmpty == true)
+            #expect(before["pendingShows"] as? Int == 1, "a show the provider failed on is not waited for")
+            #expect(try await env.stores.titles.episodes(titles[0]).isEmpty, "the read loaded nothing")
+
+            var refresher = CatalogRefresher(
+                stores: env.stores,
+                catalog: CatalogService(stores: env.stores, catalogs: FakeCatalog.providers(env.fake))
+            )
+            refresher.passLimit = 100_000
+            _ = try await refresher.runOnce()
+
+            let after = try await env.send(.get, path).json()
+            #expect((after["items"] as? [[String: Any]])?.count == 2)
+            #expect(after["pendingShows"] as? Int == 0)
+        }
+    }
+
     @Test("APP-010, CAL-002: calendar rows carry the banner, network, exact-time flag and episode still")
     func artworkAndAirTime() async throws {
         try await LibraryHarness.run { env in

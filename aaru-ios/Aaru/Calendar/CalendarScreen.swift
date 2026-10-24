@@ -83,10 +83,15 @@ struct CalendarScreen: View {
                     ToolbarItem(placement: .secondaryAction) { filterMenu }
                 }
                 .safeAreaInset(edge: .top, spacing: 0) {
-                    if switchUnderBar {
-                        modePicker
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                    VStack(spacing: 0) {
+                        if switchUnderBar {
+                            modePicker
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                        }
+                        if feed.pendingShows > 0 {
+                            pendingCaption
+                        }
                     }
                 }
                 // A Month day sheet presents its own episode sheet (UX-068).
@@ -101,6 +106,7 @@ struct CalendarScreen: View {
                 }
                 .onChange(of: currentFilter, initial: true) { feed.filter = currentFilter }
                 .task(id: mode) { await loadIfNeeded() }
+                .task(id: feed.pendingShows > 0) { await feed.recheckWhilePending() }
                 .refreshable { await reload() }
                 .refreshesOnCommand(.calendar) { await reload() }
                 .navigationDestination(for: String.self) { id in
@@ -111,6 +117,19 @@ struct CalendarScreen: View {
                 }
                 .background(Color(.paper))
         }
+    }
+
+    /// CAL-004: an import's shows are still loading their episodes; the feed asks again.
+    private var pendingCaption: some View {
+        Label(
+            "Loading episodes for \(feed.pendingShows) \(feed.pendingShows == 1 ? "show" : "shows")…",
+            systemImage: "arrow.triangle.2.circlepath"
+        )
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var modePicker: some View {

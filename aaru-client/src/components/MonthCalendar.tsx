@@ -11,7 +11,7 @@ import type { CalendarEntry } from '../lib/calendar/model'
 import { cn } from '~/lib/utils'
 import { slideIn } from '../lib/motion'
 import { EpisodeRow } from './calendar/EpisodeRow'
-import { Badge, Button, cardClass } from '~/components/ui'
+import { Badge, Button, Skeleton, cardClass } from '~/components/ui'
 
 // The month view, after Stremio's calendar (CAL-002): a month of your airings with posters in
 // each day, the neighbouring months one click away, and an agenda from the selected day on.
@@ -24,6 +24,8 @@ export interface MonthCalendarProps {
   today: string
   selected: string
   byDay: Map<string, CalendarEntry[]>
+  /** The month is still loading: the agenda shows placeholders, not "nothing airs". */
+  waiting: boolean
   pending: Set<string>
   keyOf: (entry: CalendarEntry) => string
   onSelect: (day: string) => void
@@ -79,6 +81,7 @@ export function MonthCalendar(props: MonthCalendarProps) {
         today={props.today}
         selected={props.selected}
         byDay={props.byDay}
+        waiting={props.waiting}
         pending={props.pending}
         keyOf={props.keyOf}
         onOpen={props.onOpen}
@@ -250,6 +253,7 @@ function Agenda(props: {
   today: string
   selected: string
   byDay: Map<string, CalendarEntry[]>
+  waiting: boolean
   pending: Set<string>
   keyOf: (entry: CalendarEntry) => string
   onOpen: (entry: CalendarEntry) => void
@@ -287,11 +291,22 @@ function Agenda(props: {
         <For
           each={groups()}
           fallback={
-            <p class="py-4 text-sm text-muted">
-              Nothing from your shows airs from{' '}
-              {props.selected ? agendaDayLabel(props.selected) : 'here'} to the
-              end of this view.
-            </p>
+            <Show
+              when={!props.waiting}
+              fallback={
+                <div class="flex flex-col gap-3 py-2">
+                  <For each={[0, 1, 2]}>
+                    {() => <Skeleton class="h-16 rounded-field" />}
+                  </For>
+                </div>
+              }
+            >
+              <p class="py-4 text-sm text-muted">
+                Nothing from your shows airs from{' '}
+                {props.selected ? agendaDayLabel(props.selected) : 'here'} to
+                the end of this view.
+              </p>
+            </Show>
           }
         >
           {(group) => (

@@ -441,7 +441,9 @@ function Home() {
     onCleanup(unsubscribe)
     loadLibrary()
     try {
-      setAirings(await queryClient.query(calendarQuery(airingWindow(today))))
+      setAirings(
+        (await queryClient.query(calendarQuery(airingWindow(today)))).items,
+      )
     } catch (err) {
       setProblem(
         err instanceof Error
