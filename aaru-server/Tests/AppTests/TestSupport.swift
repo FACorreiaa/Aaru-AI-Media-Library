@@ -217,7 +217,7 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func unhydratedTrackedShows(userID _: UserID, limit _: Int) async throws -> [TitleID] {
+    func pendingShowCount(userID _: UserID) async throws -> Int {
         throw Touched()
     }
 

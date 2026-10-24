@@ -55,6 +55,8 @@ final class CalendarFeed {
     private(set) var isLoading = false
     private(set) var hasLoaded = false
     private(set) var pending: Set<String> = []
+    /// Tracked shows whose episodes are still loading (CAL-004), as after an import.
+    private(set) var pendingShows = 0
     /// The last load or tick that failed. Shown until the next action.
     var problem: String?
     /// Applied to every day's episodes (CAL-003). The screen keeps it in `@AppStorage`.
@@ -144,6 +146,21 @@ final class CalendarFeed {
         await fetch(window)
     }
 
+    /// CAL-004: asks again for the loaded window while shows are still loading their episodes,
+    /// every ten seconds for at most five minutes. Ends when the caller's task is cancelled.
+    func recheckWhilePending() async {
+        let deadline = Date.now.addingTimeInterval(5 * 60)
+        while pendingShows > 0, Date.now < deadline {
+            do {
+                try await Task.sleep(for: .seconds(10))
+            } catch {
+                return
+            }
+            guard let loaded else { return }
+            await fetch(loaded)
+        }
+    }
+
     /// Replaces `entries` with `window`, in requests of at most `maxSpan` each.
     func fetch(_ window: Range<Date>) async {
         guard let api else { return }
@@ -151,12 +168,15 @@ final class CalendarFeed {
         defer { isLoading = false }
         do {
             var collected: [CalendarEntry] = []
+            var waiting = 0
             var from = window.lowerBound
             while from < window.upperBound {
                 let until = min(window.upperBound, from.addingTimeInterval(Self.maxSpan))
                 switch try await api.getCalendar(query: .init(from: from, to: until)) {
                 case let .ok(response):
-                    collected += try response.body.json.items
+                    let page = try response.body.json
+                    collected += page.items
+                    waiting = max(waiting, page.pendingShows ?? 0)
                 case let .default(_, error):
                     problem = (try? error.body.json.message) ?? "The calendar could not be loaded."
                     return
@@ -164,6 +184,7 @@ final class CalendarFeed {
                 from = until
             }
             entries = collected.uniqued(on: \.cellID)
+            pendingShows = waiting
             loaded = window
             hasLoaded = true
             problem = nil

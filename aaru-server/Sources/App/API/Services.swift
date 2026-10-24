@@ -63,7 +63,7 @@ struct Services: Sendable {
             library: library,
             lists: ListService(stores: stores, resolver: resolver, catalog: catalog),
             shelves: ShelfService(stores: stores, library: library),
-            schedule: ScheduleService(stores: stores, catalog: catalog),
+            schedule: ScheduleService(stores: stores),
             tonight: TonightService(stores: stores),
             stats: StatsService(stores: stores),
             imports: ImportService(

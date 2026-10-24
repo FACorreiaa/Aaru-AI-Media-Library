@@ -73,7 +73,7 @@ final class WeekModel {
     }
 
     var isEmptyWeek: Bool {
-        isLoaded && days.allSatisfy { entries(on: $0).isEmpty }
+        isLoaded && feed.pendingShows == 0 && days.allSatisfy { entries(on: $0).isEmpty }
     }
 
     func toggle(_ entry: CalendarEntry) async {

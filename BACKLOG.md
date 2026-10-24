@@ -581,6 +581,7 @@ account or a stranger that has not happened yet.
 | CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
 | CAL-002 | Built (web) | app_.week.tsx, components/calendar/* | Posters, sheets, Missed, filters; `stillUrl` on `CalendarEntry` |
 | CAL-003 | Built (Apple) | Calendar/CalendarEpisodeSheet, CatchUpView, CalendarFilter | Same as CAL-002 on iPhone, iPad, Mac; not seen on a device |
+| CAL-004 | Built, unverified | ScheduleTests CAL-004; CatalogRefresher | Calendar and Up Next never call a provider (a 320-show import made reads take 4–19 s); `pendingShows` on `/v1/calendar`, web and Apple show "Loading episodes for N shows…" and ask again every 10 s for up to 5 min; refresher runs every minute, back to back while a pass is full, 3 shows at once |
 | UPN-001 | Done | #2; `/v1/up-next` | |
 | APP-001 | Done | #7 432e35f; SessionMiddleware (12 concurrent 401s) | |
 | APP-002 | Done | #8; SessionKeychain.swift | Mac relaunch persistence not recorded |

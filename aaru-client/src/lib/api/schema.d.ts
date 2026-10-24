@@ -4079,6 +4079,8 @@ export interface components {
     }
     Calendar: {
       items: components['schemas']['CalendarEntry'][]
+      /** @description Tracked shows whose episodes have not been loaded yet (CAL-004), as after an import. Their episodes are missing from `items` until they load; ask again while this is above 0. */
+      pendingShows?: number
     }
     ContinueEntry: {
       /** Format: uuid */

@@ -91,7 +91,7 @@ final class MonthModel {
     }
 
     var isEmptyMonth: Bool {
-        isLoaded && gridDays.filter(isInMonth).allSatisfy { entries(on: $0).isEmpty }
+        isLoaded && feed.pendingShows == 0 && gridDays.filter(isInMonth).allSatisfy { entries(on: $0).isEmpty }
     }
 
     /// "October", or "October 2027" outside the current year. `offset` names a neighbour.
