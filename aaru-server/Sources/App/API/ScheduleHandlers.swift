@@ -5,10 +5,12 @@ import OpenAPIRuntime
 
 extension APIImplementation {
     func getCalendar(_ input: Operations.GetCalendar.Input) async throws -> Operations.GetCalendar.Output {
-        let entries = try await services.schedule.calendar(
-            userID: currentUser(), from: input.query.from, until: input.query.to
-        )
-        return .ok(.init(body: .json(.init(items: entries.map(Components.Schemas.CalendarEntry.init)))))
+        let userID = try currentUser()
+        async let entries = services.schedule.calendar(userID: userID, from: input.query.from, until: input.query.to)
+        async let pending = services.schedule.pendingShows(userID: userID)
+        return try await .ok(.init(body: .json(.init(
+            items: entries.map(Components.Schemas.CalendarEntry.init), pendingShows: pending
+        ))))
     }
 
     func getUpNext(_: Operations.GetUpNext.Input) async throws -> Operations.GetUpNext.Output {

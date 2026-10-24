@@ -4,12 +4,15 @@ import ServiceLifecycle
 
 /// Keeps tracked shows' episodes current (JOB-001's second kind). The hydration timestamps
 /// are the queue: each pass loads shows nobody has loaded yet (imports, a provider outage
-/// at add time), then shows past their CAT-006 window. Title detail still hydrates on read.
+/// at add time), then shows past their CAT-006 window. Title detail still hydrates on read;
+/// the calendar and Up Next never do (CAL-004), so this is how an import's shows arrive.
 /// Each pass also fills genres for titles stored before CAT-018.
 struct CatalogRefresher: Sendable {
     /// Shows per pass. Each costs one TMDB call per season, so this stays well inside TMDB's
     /// limit while user traffic shares it.
     var passLimit = 40
+    /// Shows loaded at once within a pass. The providers are paced.
+    static let concurrency = 3
     /// Titles per pass whose genres are filled; one provider call each.
     var genreLimit = 40
     /// A show whose refresh was attempted this recently is skipped.
@@ -29,7 +32,8 @@ struct CatalogRefresher: Sendable {
         let due = try await stores.titles.staleTrackedShows(
             now: now, retryAfter: now.addingTimeInterval(-Self.retryAfter), limit: passLimit
         )
-        for id in due {
+        let (stores, catalog) = (stores, catalog)
+        _ = try await ImportService.boundedMap(due, limit: Self.concurrency) { id in
             try Task.checkCancellation()
             // Stamped first: a show the provider no longer knows would otherwise come back every pass.
             try await stores.titles.markEpisodesAttempted(id, at: now)
@@ -73,17 +77,23 @@ struct CatalogRefresher: Sendable {
     }
 }
 
-/// Runs the catalog refresher every five minutes in the API process.
+/// Runs the catalog refresher in the API process: every minute, and again after a short pause
+/// while a full pass says more shows are waiting (an import's backlog clears in minutes).
 struct CatalogRefreshService: Service {
     let refresher: CatalogRefresher
     let logger: Logger
-    var interval: Duration = .seconds(300)
+    var interval: Duration = .seconds(60)
+    var backlogInterval: Duration = .seconds(5)
 
     func run() async throws {
         try await cancelWhenGracefulShutdown {
             while !Task.isCancelled {
+                var pause = interval
                 do {
                     let attempted = try await refresher.runOnce()
+                    if attempted >= refresher.passLimit {
+                        pause = backlogInterval
+                    }
                     if attempted > 0 {
                         logger.info("Show episodes refreshed", metadata: ["count": "\(attempted)"])
                     }
@@ -100,7 +110,7 @@ struct CatalogRefreshService: Service {
                 } catch {
                     logger.error("Show refresh pass failed", metadata: ["error": "\(error)"])
                 }
-                try? await Task.sleep(for: interval)
+                try? await Task.sleep(for: pause)
             }
         }
     }

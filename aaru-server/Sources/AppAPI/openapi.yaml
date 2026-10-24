@@ -4857,6 +4857,11 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/CalendarEntry'}
+        pendingShows:
+          type: integer
+          description: >-
+            Tracked shows whose episodes have not been loaded yet (CAL-004), as after an import.
+            Their episodes are missing from `items` until they load; ask again while this is above 0.
     ContinueEntry:
       type: object
       required: [libraryItemId, title, next, remainingCount, remainingMinutes, isFinale]

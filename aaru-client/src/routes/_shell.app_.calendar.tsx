@@ -80,6 +80,9 @@ export const Route = createFileRoute('/_shell/app_/calendar')({
 /** Days fetched around the visible week, so stepping a day rarely waits on the network. */
 const LOOK_BEHIND = 7
 const LOOK_AHEAD = 13
+/** CAL-004: while shows are still loading their episodes, ask again this often, this long. */
+const RECHECK_MS = 10_000
+const RECHECK_FOR_MS = 5 * 60_000
 const VIEW_KEY = 'calendar.view'
 
 function savedView(): CalendarView | null {
@@ -120,11 +123,15 @@ function Calendar() {
   const [loaded, setLoaded] = createSignal<{ first: string; last: string }>()
   const [loading, setLoading] = createSignal(true)
   const [problem, setProblem] = createSignal<string | null>(null)
+  // Set after every load, equal or not: each answer schedules the next recheck.
+  const [pendingShows, setPendingShows] = createSignal(0, { equals: false })
   const [pending, setPending] = createSignal<ReadonlySet<string>>(new Set())
   const [openKey, setOpenKey] = createSignal<string | null>(null)
   const [dayOpen, setDayOpen] = createSignal<string | null>(null)
   let opened: CalendarEntry | undefined
   let request = 0
+  let recheck: number | undefined
+  let recheckSince = 0
   let content: HTMLDivElement | undefined
 
   const filter = createMemo<CalendarFilter>(() => ({
@@ -157,6 +164,7 @@ function Calendar() {
   const empty = createMemo(
     () =>
       !loading() &&
+      pendingShows() === 0 &&
       view() !== 'missed' &&
       [...byDay().values()].every((list) => list.length === 0),
   )
@@ -248,16 +256,43 @@ function Calendar() {
     },
   )
 
+  const covered = () => {
+    const want = wanted()
+    const have = loaded()
+    return (
+      !!want && !!have && have.first <= want.first && want.last <= have.last
+    )
+  }
+  /** The visible days are on their way: the views show placeholders, not "nothing airs". */
+  const waiting = () => loading() && !covered()
+
   createEffect(
     on(wanted, (want) => {
-      if (!want) return
-      const have = loaded()
-      if (have && have.first <= want.first && want.last <= have.last) return
+      if (!want || covered()) return
       void load(want.fetchFirst, want.fetchLast)
     }),
   )
 
-  async function load(first: string, last: string) {
+  // CAL-004: shows just imported load their episodes in the background; the loaded range is
+  // asked again, past the cache, until none is left or five minutes have gone by.
+  createEffect(
+    on(pendingShows, (count) => {
+      window.clearTimeout(recheck)
+      if (count === 0) {
+        recheckSince = 0
+        return
+      }
+      recheckSince ||= Date.now()
+      if (Date.now() - recheckSince > RECHECK_FOR_MS) return
+      recheck = window.setTimeout(() => {
+        const have = loaded()
+        if (have) void load(have.first, have.last, true)
+      }, RECHECK_MS)
+    }),
+  )
+  onCleanup(() => window.clearTimeout(recheck))
+
+  async function load(first: string, last: string, fresh = false) {
     const mine = ++request
     setLoading(true)
     setProblem(null)
@@ -265,20 +300,25 @@ function Calendar() {
       // A six-row month is more than one request may cover.
       const pages = await Promise.all(
         fetchWindows(first, last).map((range) =>
-          queryClient.query(calendarQuery(range)),
+          fresh
+            ? queryClient.fetchQuery({ ...calendarQuery(range), staleTime: 0 })
+            : queryClient.query(calendarQuery(range)),
         ),
       )
       if (mine !== request) return
       const seen = new Set<string>()
       setEntries(
-        pages.flat().filter((entry) => {
-          const key = entryKey(entry)
-          if (seen.has(key)) return false
-          seen.add(key)
-          return true
-        }),
+        pages
+          .flatMap((page) => page.items)
+          .filter((entry) => {
+            const key = entryKey(entry)
+            if (seen.has(key)) return false
+            seen.add(key)
+            return true
+          }),
       )
       setLoaded({ first, last })
+      setPendingShows(Math.max(0, ...pages.map((page) => page.pendingShows)))
     } catch (err) {
       if (mine !== request) return
       setProblem(
@@ -446,6 +486,14 @@ function Calendar() {
         </div>
         <FilterChips filter={filter()} onFilter={setFilter} />
 
+        <Show when={pendingShows()}>
+          {(count) => (
+            <p class="mt-4 text-sm text-muted" aria-live="polite">
+              Loading episodes for {count()} {count() === 1 ? 'show' : 'shows'}…
+            </p>
+          )}
+        </Show>
+
         <Show when={problem()}>
           {(message) => (
             <Alert variant="destructive" class="mt-4">
@@ -508,6 +556,7 @@ function Calendar() {
                       today={now()}
                       selected={selected()}
                       byDay={byDay()}
+                      waiting={waiting()}
                       pending={pendingSet()}
                       keyOf={entryKey}
                       onSelect={setSelected}
@@ -522,6 +571,7 @@ function Calendar() {
                     today={now()}
                     selected={selected()}
                     byDay={byDay()}
+                    waiting={waiting()}
                     pending={pendingSet()}
                     keyOf={entryKey}
                     onSelect={tapDay}
