@@ -1757,6 +1757,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/titles/resolve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library. */
+    post: operations['resolveTitle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}': {
     parameters: {
       query?: never
@@ -3864,6 +3881,14 @@ export interface components {
       genres?: string[]
       /** @description Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet. */
       tracks?: components['schemas']['AlbumTrack'][]
+    }
+    TitlePreview: {
+      title: components['schemas']['TitleDetail']
+      /**
+       * Format: uuid
+       * @description Set when the title is in the caller's library; its title page is then the one to open.
+       */
+      libraryItemId?: string
     }
     AlbumTrack: {
       disc: number
@@ -7395,6 +7420,31 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  resolveTitle: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MediaRef']
+      }
+    }
+    responses: {
+      /** @description The title, and the caller's library item when they have it. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TitlePreview']
+        }
       }
       default: components['responses']['Error']
     }

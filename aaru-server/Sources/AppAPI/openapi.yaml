@@ -1993,6 +1993,27 @@ paths:
           description: Removed, or there was none.
         default:
           $ref: '#/components/responses/Error'
+  /v1/titles/resolve:
+    post:
+      operationId: resolveTitle
+      summary: >-
+        The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to
+        the catalog; it never adds it to the library.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaRef'
+      responses:
+        '200':
+          description: The title, and the caller's library item when they have it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitlePreview'
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}:
     get:
       operationId: getTitle
@@ -4591,6 +4612,15 @@ components:
             Albums only: the tracklist of the album's earliest official release, by disc then
             position. Absent when MusicBrainz could not be reached and none is stored yet.
           items: {$ref: '#/components/schemas/AlbumTrack'}
+    TitlePreview:
+      type: object
+      required: [title]
+      properties:
+        title: {$ref: '#/components/schemas/TitleDetail'}
+        libraryItemId:
+          type: string
+          format: uuid
+          description: Set when the title is in the caller's library; its title page is then the one to open.
     AlbumTrack:
       type: object
       required: [disc, position, name]

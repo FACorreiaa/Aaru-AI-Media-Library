@@ -2,6 +2,7 @@ import { Link } from '@tanstack/solid-router'
 import { Show } from 'solid-js'
 import { KINDS, kindOf } from '../lib/library/model'
 import type { CatalogHit, LibraryStatus } from '../lib/library/model'
+import { previewParams } from '../lib/title/preview'
 import { AddControl } from './AddControl'
 import { Poster } from './Poster'
 import {
@@ -15,8 +16,8 @@ import {
 
 /**
  * A public card the user does not have yet (Discover, Seasons, On air): what the card already
- * knows, in one place, with Add. The title page exists only for library items, so this is the
- * card's click until the title is added; then it links there.
+ * knows, in one place, with Add. "All details" opens the title's catalog page (LIB-006); once
+ * added, it links to the Title room.
  */
 export function CatalogPreviewDialog(props: {
   hit: CatalogHit
@@ -80,6 +81,21 @@ export function CatalogPreviewDialog(props: {
                   >
                     List…
                   </Button>
+                  <Show when={previewParams(h())}>
+                    {(params) => (
+                      <Link
+                        to="/app/catalog/$type/$provider/$ref"
+                        params={params()}
+                        class={buttonVariants({
+                          variant: 'outline',
+                          size: 'sm',
+                        })}
+                        onClick={() => props.onClose()}
+                      >
+                        All details
+                      </Link>
+                    )}
+                  </Show>
                 </>
               }
             >

@@ -10,7 +10,8 @@ import { getList, getLists } from './lists/server'
 import { listPendingPlans } from './plans/server'
 import { getProfileStats } from './profile/server'
 import { getStats } from './recap/server'
-import { getTitlePage } from './title/server'
+import { getTitlePage, resolveTitle } from './title/server'
+import type { PreviewParams } from './title/preview'
 
 // The reads the app's pages share, each under one cache key. A page's loader and its rows ask
 // through these, so Home and Library share one library and Home and Discover one set of rows.
@@ -42,6 +43,12 @@ export const titlePageQuery = (id: string) =>
   queryOptions({
     queryKey: ['title', id],
     queryFn: () => getTitlePage({ data: { id } }),
+  })
+
+export const titlePreviewQuery = (params: PreviewParams) =>
+  queryOptions({
+    queryKey: ['title-preview', params.type, params.provider, params.ref],
+    queryFn: () => resolveTitle({ data: params }),
   })
 
 export const listsQuery = queryOptions({

@@ -2,8 +2,8 @@ import AaruAPI
 import SwiftUI
 
 /// A public card the user does not have yet (Discover, Seasons, On air): what the card already
-/// knows, up close, with Add. The title page exists only for library items, so this is a card's
-/// tap until the title is added.
+/// knows, up close, with Add: a card's tap until the title is added. Search and list members open
+/// the full catalog page instead (LIB-006).
 struct CatalogPreviewSheet: View {
     let hit: CatalogHit
     /// The caller's item for this title once added; the sheet then says so instead of offering Add.

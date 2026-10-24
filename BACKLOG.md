@@ -587,7 +587,7 @@ account or a stranger that has not happened yet.
 | LIB-003 | Done | #2; LibraryTests | |
 | LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
 | LIB-005 | Built, unverified | `lib/paging.test.ts`; `components/Paged.tsx`, `Design/Paging.swift` | Client-only (owner, 2026-10-24); not yet run on TestFlight |
-| LIB-006 | Planned | | Title page without a library item (owner, 2026-10-24) |
+| LIB-006 | Built, unverified | TitlePreviewTests; `lib/title/preview.test.ts`; `TitlePreviewView.swift` | Needs the API promoted before clients can open it; not yet run on TestFlight |
 | AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
 | AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Clients undo through PROG-005's toast only; no undo ribbon |
 | PROG-001 | Done | #2; episodes PUT route | |
