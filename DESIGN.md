@@ -693,7 +693,9 @@ Friends stack. Upvote gives a light haptic. On iPad and Mac the column is capped
 and centred. ⌘R reloads the Board and ⌘↩ posts from the composer on Mac. The Apple composer rates
 in whole stars with the existing `RatingStars`; half stars from web posts display as halves.
 "From friends" on a title page shows up to five compact rows, and "Write about this" opens the
-Board with the title in the composer.
+Board with the title in the composer. With friends but no posts it shows "None of your friends has
+written about this yet." and the button, as on the web. The composer's draft lives in the Board's
+model, so switching to Lately or opening a post keeps it.
 
 ### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
 
