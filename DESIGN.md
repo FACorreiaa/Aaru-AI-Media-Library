@@ -420,6 +420,16 @@ It is catalog data, the same lists for everyone. It is **not** recommendations: 
 watched", no taste profile, nothing read from other users. A tab on iPhone, a sidebar
 destination on iPad, Mac and the web (§18).
 
+**On air (DISC-003, owner 2026-10-24).** Today | On air | Seasons. On air is the week's airings
+organised by where they air: one row per TV channel or streamer (HBO, Netflix, BBC One),
+busiest first, "Other" last, with "N shows" under the name. Each poster card says the next
+episode and when ("S2 E5 · Thu 9:00 PM" in the viewer's zone when the time is exact, else the
+day alone), and in muted "Also on Hulu and Max" for the viewer's country. On the web that line
+links out to TMDB's where-to-watch page; on Apple it's in the card's context menu as "Where to
+watch". The Today row "On the air" has a "By channel" link to it. The footer credits TMDB,
+TVmaze and JustWatch. Nothing is personalised: the same guide for everyone, and the country
+only picks which services to name.
+
 **Seasons (DISC-002, 2026-10-21).** A Today | Seasons control sits under the title (pinned under
 the large title on iPhone, in the toolbar on the Mac). Seasons shows one season as an object:
 its name in the display face as the headline ("Fall 2026"), "Oct – Dec · 84 anime" under it in

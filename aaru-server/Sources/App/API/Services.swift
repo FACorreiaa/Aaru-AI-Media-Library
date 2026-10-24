@@ -106,7 +106,8 @@ struct Services: Sendable {
             stores: stores,
             providers: [catalogs.tmdb, catalogs.anilist, catalogs.openLibrary]
                 + [catalogs.releases].compactMap(\.self),
-            animeFallback: catalogs.tmdb as? any DiscoverListing
+            animeFallback: catalogs.tmdb as? any DiscoverListing,
+            nextEpisodeTiming: catalogs.airTimes as? any NextEpisodeTiming
         )
     }
 

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { api } from '../api/client'
 import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
+import type { OnAirGuide } from '../discover/onAir'
 import type { SeasonPage } from '../discover/season'
 import type { DiscoverRow, UpNext } from './model'
 import type { RankedTonight } from './tonight'
@@ -55,6 +56,30 @@ export const getDiscoverSeason = createServerFn({ method: 'GET' })
     if (!page)
       throw new Error(errorMessage(error, 'This season could not be loaded.'))
     return page
+  })
+
+/** DISC-003: this week's shows by channel; `region` (never stored) adds where they stream. */
+export const getDiscoverOnAir = createServerFn({ method: 'GET' })
+  .validator(
+    z.object({
+      region: z
+        .string()
+        .regex(/^[A-Z]{2}$/)
+        .optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<OnAirGuide> => {
+    const {
+      data: guide,
+      error,
+      response,
+    } = await api(sessionToken()).GET('/v1/discover/on-air', {
+      params: { query: data },
+    })
+    if (response.status === 401) sessionRejected()
+    if (!guide)
+      throw new Error(errorMessage(error, 'On air could not be loaded.'))
+    return guide
   })
 
 /** AG-005: Tonight as the server ranks it, for the viewer's local day. */

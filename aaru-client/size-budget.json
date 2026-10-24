@@ -33,7 +33,7 @@
     "/_shell/app_/settings/connections": 111096,
     "/_shell/app_/settings/data": 94714,
     "/_shell/app_/settings/delete": 94503,
-    "/_shell/app_/settings/friends": 96505,
+    "/_shell/app_/settings/friends": 97500,
     "/_shell/app_/settings/import": 104874,
     "/_shell/app_/settings/notifications": 97668,
     "/_shell/app_/title/$id": 157892,
@@ -68,7 +68,7 @@
     "/connect/extension": 105996,
     "/i/$code": 115500,
     "/oauth/consent": 113805,
-    "/privacy": 98092,
+    "/privacy": 99000,
     "/sign-in": 114287
   }
 }

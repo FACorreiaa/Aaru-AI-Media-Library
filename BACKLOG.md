@@ -36,6 +36,11 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-24
 
+- **On air by channel on Discover (owner, 2026-10-24, DISC-003).** Discover gets an On air view:
+  the week's airings (TMDB's on-the-air set) grouped by the channel or streamer they premiere on,
+  each with the next episode's day and, when TVmaze knows it, the exact time. "Streams on" pulls
+  CAT-014's watch providers forward for this view only, for the country the device's language
+  names (sent per request, never stored). The Title room's "Where to watch" is still CAT-014.
 - **The Calendar groups by channel (owner, 2026-10-24, CAL-005).** Week and Month get a
   "Group by: Day | Channel" control: by channel, the shows airing now sit under the TV channel or
   streamer they air on, with the day and, when known, the time on each row. It is a layout, not a
@@ -612,6 +617,7 @@ account or a stranger that has not happened yet.
 | APP-008 | Partial | sidebarAdaptable + ⌘F in RootView/LibraryView | No ⌘N add shortcut |
 | APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
+| DISC-003 | Built, unverified | OnAirGuideTests, `lib/discover/onAir.test.ts`; `Catalog/OnAirGuide.swift`, `TMDBCatalog+OnAir.swift`, `OnAirGuide.tsx`, `OnAirView.swift` | TMDB, TVmaze and JustWatch checked with stubs only; not run against live providers or on a device |
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
@@ -658,7 +664,7 @@ account or a stranger that has not happened yet.
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
 | CAT-013 | Open | no Wikidata code | |
-| CAT-014 | Open | no watch-providers code | |
+| CAT-014 | Partly built | DISC-003's `watch/providers` decode in `TMDBCatalog+OnAir.swift` | On air lists services per region; the Title room panel is still open |
 | CAT-015 | Open | none | Scheduled after P2 gate |
 | CAT-016 | Open | none | Scheduled after P2 gate |
 | CAT-017 | Deferred | heading "Deferred" | |
@@ -1727,6 +1733,22 @@ Seasons control (`SeasonBrowser.swift`). The Today row "Fall 2026 anime" links t
 **Done when:** on iPhone, Mac and web, flipping Fall 2026 → Winter 2027 → Summer 2025 shows each
 kind's titles, a title adds in one tap and turns into a link to the item, and AniList being down
 says so on the Anime tab only.
+
+### DISC-003 · On air by channel · M · owner, 2026-10-24
+**Needs:** DISC-001, CAT-011.
+`GET /v1/discover/on-air?region=`: TMDB's on-the-air shows (pages 1–2, the TV row filter, 40 at
+most), one detail call each for the first network, `next_episode_to_air` and every country's
+flat-rate `watch/providers`. Grouped by channel, busiest first, "Other" last, shows by next air
+time. Cached 6 h for everyone and published with dates first. A background pass then asks
+TVmaze for each next episode's exact time (within CAT-011's two-day tolerance). `region` is two
+letters from the device language, used for that request only. It names up to three other
+services, never the channel itself or a reseller. Web: `/app/discover?view=on-air`
+(`OnAirGuide`). iPhone and Mac: Today | On air | Seasons on the Discover tab (`OnAirView.swift`).
+The Today row "On the air" links to it. TMDB, TVmaze and JustWatch are credited.
+
+**Done when:** on iPhone, Mac and web, On air lists this week's shows under their channels, a
+US broadcast show shows its time in the viewer's zone, a streaming drop shows its day, a show
+with services in the viewer's country says "Also on …", and an add turns the card into a link.
 
 ### MUS-001 · Albums as a fifth kind · L · pulled forward 2026-10-21
 **Needs:** LIB-001, APP-004.
