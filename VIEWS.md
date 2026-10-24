@@ -86,10 +86,10 @@ refuses and substitutes the nearest catalog piece.
 | `JobLedger` | Import or bulk progress | `importJobId`, step rows (done / current / to do), `state`, `stats`, `rowsMatched` of `rowsTotal` on the matching step, unmatched count |
 | `TonightStrip` | 1–3 next actions | ordered `libraryItemId` + reason + est. minutes |
 | `Shelf` | Filtered library page | `shelfId` or inline query, result page, `isPinned` |
-| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (two and "+N" on phones, three wider), selected day (a sheet on phones), agenda by date with poster rows that open the episode sheet (still, synopsis, network · time, badge, watched toggle, open show), filters (hide watched, premieres/finales, shows/anime); agent highlight string later |
+| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (two and "+N" on phones, three wider), selected day (a sheet on phones), agenda by date (or by channel, CAL-005) with poster rows that open the episode sheet (still, synopsis, network · time, badge, watched toggle, open show), filters (hide watched, premieres/finales, shows/anime); agent highlight string later |
 | `MatchTable` | Import reconciliation | `importJobId`, three buckets: matched / needs eyes / unknown |
 | `UndoRibbon` | Last agent write | `actionId`, human summary, expiry, `isUndoable` |
-| `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, synopsis, network, local time or none when `airTimeKnown` is false, banner URL = `backdropUrl` → poster → tint, state: watched / premiere / new season / finale / today); Monday start |
+| `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, synopsis, network, local time or none when `airTimeKnown` is false, banner URL = `backdropUrl` → poster → tint, state: watched / premiere / new season / finale / today); Monday start; grouped by channel (CAL-005), one section per channel over the week with day · time on each row |
 | `ContinueRow` | In-progress titles | ordered `libraryItemId`, next `EpisodeKey`, time left, remaining count + duration, `isFinale` |
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |

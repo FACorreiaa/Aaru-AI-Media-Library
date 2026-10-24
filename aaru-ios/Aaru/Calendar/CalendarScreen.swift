@@ -3,7 +3,8 @@ import SwiftUI
 
 /// What airs from the user's own shows: the CAT week grid (DESIGN.md §14), Stremio's month with
 /// its agenda (§7), or Missed, one switch apart. All read the same `CalendarFeed`; filters apply
-/// to every mode, and any episode opens the episode sheet (CAL-003).
+/// to every mode, Week and Month group by day or channel (CAL-005), and any episode opens the
+/// episode sheet (CAL-003).
 struct CalendarScreen: View {
     enum Mode: String, CaseIterable, Identifiable {
         case week, month, missed
@@ -29,6 +30,7 @@ struct CalendarScreen: View {
     @AppStorage("calendar.hideWatched") private var hideWatched = false
     @AppStorage("calendar.only") private var only: CalendarFilter.Only = .all
     @AppStorage("calendar.kind") private var kind: CalendarFilter.Kind = .all
+    @AppStorage("calendar.grouping") private var grouping: CalendarFilter.Grouping = .day
     @State private var path: [String] = []
     @State private var feed: CalendarFeed
     @State private var week: WeekModel
@@ -140,11 +142,18 @@ struct CalendarScreen: View {
     }
 
     private var currentFilter: CalendarFilter {
-        CalendarFilter(hideWatched: hideWatched, only: only, kind: kind)
+        CalendarFilter(hideWatched: hideWatched, only: only, kind: kind, grouping: grouping)
     }
 
     private var filterMenu: some View {
         Menu {
+            // A layout, not a filter: Missed is already by show, and Clear filters keeps it.
+            if mode != .missed {
+                Picker("Group by", selection: $grouping) {
+                    ForEach(CalendarFilter.Grouping.allCases) { Text($0.label).tag($0) }
+                }
+                Divider()
+            }
             Toggle("Hide watched", isOn: $hideWatched)
             Picker("Episodes", selection: $only) {
                 ForEach(CalendarFilter.Only.allCases) { Text($0.label).tag($0) }
@@ -223,6 +232,18 @@ struct CalendarScreen: View {
         .preferredColorScheme(.dark)
 }
 
+#Preview("Mac · month · by channel", traits: .fixedLayout(width: 1280, height: 800)) {
+    CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
+        .defaultAppStorage(.preview(mode: .month, grouping: .channel))
+        .environment(AppRouter())
+}
+
+#Preview("Mac · week · by channel", traits: .fixedLayout(width: 1280, height: 720)) {
+    CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
+        .defaultAppStorage(.preview(mode: .week, grouping: .channel))
+        .environment(AppRouter())
+}
+
 #Preview("Mac · week", traits: .fixedLayout(width: 1280, height: 720)) {
     CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
         .defaultAppStorage(.preview(mode: .week))
@@ -244,6 +265,13 @@ struct CalendarScreen: View {
             .environment(\.horizontalSizeClass, .compact)
             .preferredColorScheme(.dark)
     }
+
+    #Preview("iPhone · week · by channel") {
+        CalendarScreen(api: nil, library: LibraryModel(), lists: ListsModel(api: nil), feed: .sample)
+            .defaultAppStorage(.preview(mode: .week, grouping: .channel))
+            .environment(AppRouter())
+            .environment(\.horizontalSizeClass, .compact)
+    }
 #endif
 
 #Preview("Empty") {
@@ -254,9 +282,11 @@ struct CalendarScreen: View {
 }
 
 private extension UserDefaults {
-    static func preview(mode: CalendarScreen.Mode) -> UserDefaults {
-        let defaults = UserDefaults(suiteName: "calendar-preview-\(mode.rawValue)") ?? .standard
+    static func preview(mode: CalendarScreen.Mode, grouping: CalendarFilter.Grouping = .day) -> UserDefaults {
+        let suite = "calendar-preview-\(mode.rawValue)-\(grouping.rawValue)"
+        let defaults = UserDefaults(suiteName: suite) ?? .standard
         defaults.set(mode.rawValue, forKey: "calendar.mode")
+        defaults.set(grouping.rawValue, forKey: "calendar.grouping")
         return defaults
     }
 }

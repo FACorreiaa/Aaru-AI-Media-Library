@@ -246,6 +246,13 @@ show, oldest miss first, with how many episodes and how much time it adds up to.
 and show as removable chips. Every tick is a 44px round toggle that a pending write disables.
 (CAL-002 web, CAL-003 iPhone, iPad and Mac, 2026-10-21: the same modes, rows, sheets and filters;
 on Apple the filters are a toolbar menu and the episode sheet has medium and large detents.)
+**Group by: Day | Channel** (CAL-005, owner, 2026-10-24) sets how Week and Month lay out: by
+channel, the episodes in view sit under the channel or streamer they air on (busiest first,
+"Other" for none, last), and each row's line reads the day and time instead of the network. The
+wide Week trades its day columns for those sections; the phone keeps the day strip and groups the
+chosen day; Month's agenda covers the whole grid. It is a layout, so the filter badge never
+counts it; on the web it is a segmented control in the toolbar and in the URL, on Apple a picker
+at the top of the filter menu.
 Agent highlight later: "three premieres, one finale, you are behind on
 two."
 
