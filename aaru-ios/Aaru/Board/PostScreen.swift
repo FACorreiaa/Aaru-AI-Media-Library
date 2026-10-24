@@ -23,6 +23,8 @@ struct PostScreen: View {
     @State private var reply: CommentReply?
     @State private var editing = false
     @State private var confirmingDelete = false
+    @State private var pendingCommentDelete: BoardComment?
+    @State private var confirmingCommentDelete = false
     @State private var reporting = false
     @State private var showsUpvoters = false
     @State private var columnInset = AaruSpace.large
@@ -96,6 +98,20 @@ struct PostScreen: View {
             } message: {
                 Text("Its comments and upvotes go with it.")
             }
+            .confirmationDialog(
+                "Delete this comment?",
+                isPresented: $confirmingCommentDelete,
+                titleVisibility: .visible,
+                presenting: pendingCommentDelete
+            ) { comment in
+                Button("Delete comment", role: .destructive) {
+                    Task { await model.deleteComment(comment.id) }
+                }
+            } message: { comment in
+                if model.comments.contains(where: { $0.replyTo == comment.id && !$0.deleted }) {
+                    Text("Replies to it stay, under “Comment deleted”.")
+                }
+            }
             .sheet(isPresented: $reporting) { ReportPostSheet(model: model) }
             .sheet(isPresented: $showsUpvoters) { UpvotersSheet(people: model.upvoters, myHandle: myHandle) }
     }
@@ -122,8 +138,13 @@ struct PostScreen: View {
                     model: model,
                     postMine: post.mine,
                     myHandle: myHandle,
-                    inset: columnInset
-                ) { reply = CommentReply($0) }
+                    inset: columnInset,
+                    onReply: { reply = CommentReply($0) },
+                    onDelete: { comment in
+                        pendingCommentDelete = comment
+                        confirmingCommentDelete = true
+                    }
+                )
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -159,7 +180,7 @@ struct PostScreen: View {
         } label: {
             Text("\(Text(verbatim: "▲").foregroundStyle(Color(.accent))) \(count) · \(line)")
                 .font(.footnote)
-                .foregroundStyle(Color(.muted))
+                .hoverInk()
                 .multilineTextAlignment(.leading)
                 .frame(minHeight: 44, alignment: .leading)
                 .contentShape(.rect)

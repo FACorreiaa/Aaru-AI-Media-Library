@@ -131,9 +131,11 @@ struct PostRow<Editor: View>: View {
             }
             if standalone {
                 commentCount
+                    .foregroundStyle(Color(.muted))
             } else {
                 NavigationLink(value: PostRoute(postId: post.id, initial: post)) {
                     commentCount
+                        .hoverInk()
                         .frame(minHeight: 44)
                         .contentShape(.rect)
                 }
@@ -146,7 +148,6 @@ struct PostRow<Editor: View>: View {
     private var commentCount: some View {
         Label("\(post.commentCount)", systemImage: "bubble.right")
             .font(.footnote.weight(.semibold).monospacedDigit())
-            .foregroundStyle(Color(.muted))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(post.commentCount == 1 ? "1 comment" : "\(post.commentCount) comments")
     }

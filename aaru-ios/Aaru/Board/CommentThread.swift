@@ -16,9 +16,10 @@ struct CommentThread: View {
     /// The readable column's side margin, from the post screen.
     let inset: CGFloat
     let onReply: (BoardComment) -> Void
+    /// Delete was picked: the post screen asks first, from the list, so the question does not
+    /// depend on a row that may have scrolled away.
+    let onDelete: (BoardComment) -> Void
 
-    @State private var pendingDelete: BoardComment?
-    @State private var confirmingDelete = false
     @State private var loadingMore = false
 
     private var threads: [BoardThread<BoardComment>] {
@@ -31,20 +32,6 @@ struct CommentThread: View {
             .padding(.top, AaruSpace.xlarge)
             .padding(.bottom, AaruSpace.xsmall)
             .postListRow(inset: inset)
-            .confirmationDialog(
-                "Delete this comment?",
-                isPresented: $confirmingDelete,
-                titleVisibility: .visible,
-                presenting: pendingDelete
-            ) { comment in
-                Button("Delete comment", role: .destructive) {
-                    Task { await model.deleteComment(comment.id) }
-                }
-            } message: { comment in
-                if threads.first(where: { $0.comment.id == comment.id })?.replies.isEmpty == false {
-                    Text("Replies to it stay, under “Comment deleted”.")
-                }
-            }
         if threads.isEmpty, model.next == nil {
             Text("No comments yet")
                 .font(.subheadline)
@@ -104,12 +91,7 @@ struct CommentThread: View {
     }
 
     private func actions(_ comment: BoardComment) -> CommentActions {
-        CommentActions(comment: comment, canDelete: canDelete(comment), onReply: onReply, onDelete: askToDelete)
-    }
-
-    private func askToDelete(_ comment: BoardComment) {
-        pendingDelete = comment
-        confirmingDelete = true
+        CommentActions(comment: comment, canDelete: canDelete(comment), onReply: onReply, onDelete: onDelete)
     }
 
     private func canDelete(_ comment: BoardComment) -> Bool {
@@ -177,7 +159,7 @@ private struct CommentRow: View {
                     Button(action: onReply) {
                         Text("Reply")
                             .font(.footnote.weight(.semibold))
-                            .foregroundStyle(Color(.muted))
+                            .hoverInk()
                             .frame(minHeight: 32)
                             .contentShape(.rect)
                     }
