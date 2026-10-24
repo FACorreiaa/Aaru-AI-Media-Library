@@ -2,7 +2,14 @@ import { OwlEmpty } from '../components/Brand'
 import { Link, createFileRoute } from '@tanstack/solid-router'
 import { useAppShell, useSearchHost } from '../components/shell/context'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
-import { optionalBoolean, optionalEnum } from '../lib/search-params'
+import {
+  optionalBoolean,
+  optionalEnum,
+  optionalInt,
+  optionalString,
+} from '../lib/search-params'
+import { FilterField, PageControls } from '../components/Paged'
+import { clampPage, matches, pageOf } from '../lib/paging'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { CardMenu } from '../components/CardMenu'
 import { Poster } from '../components/Poster'
@@ -42,6 +49,8 @@ import type { MarkTarget } from '../lib/title/model'
 // Order (2026-10-22): the title, the filters, Now (capped, hidden while a status is chosen), then
 // the shelf under a heading that names the filter. Arriving filtered scrolls to that heading.
 // Search loads only when it is first opened: it is not part of the page's first paint.
+// LIB-005: `?q=` filters every title in the library by name (original title and byline too),
+// and the shelf shows 20 at a time with page numbers (`?page=`).
 
 const STATUSES = ['wishlist', 'in_progress', 'finished', 'dropped'] as const
 const KIND_VALUES = ['film', 'show', 'anime', 'manga', 'book', 'album'] as const
@@ -54,10 +63,14 @@ export const Route = createFileRoute('/_shell/app_/library')({
     search?: boolean
     status?: LibraryStatus
     kind?: MediaKind
+    q?: string
+    page?: number
   } => ({
     search: optionalBoolean(search.search),
     status: optionalEnum(search.status, STATUSES),
     kind: optionalEnum(search.kind, KIND_VALUES),
+    q: optionalString(search.q),
+    page: optionalInt(search.page, 1, 100_000),
   }),
   loader: ({ context: { queryClient } }) => queryClient.query(libraryQuery),
   component: Library,
@@ -85,17 +98,32 @@ function Library() {
   // Both filters live in the URL, so a link can open the library already filtered.
   const kind = () => search().kind ?? null
   const status = () => search().status ?? null
+  let shelfHeading: HTMLHeadingElement | undefined
+  // The filter answers each keystroke from this signal; the URL follows so back and reload keep it.
+  const [query, setQuery] = createSignal(search().q ?? '')
   function setFilters(next: {
     kind?: MediaKind | null
     status?: LibraryStatus | null
+    q?: string
   }) {
+    if ('q' in next) setQuery(next.q ?? '')
     void navigate({
       search: (prev) => ({
         ...prev,
         ...('kind' in next ? { kind: next.kind ?? undefined } : {}),
         ...('status' in next ? { status: next.status ?? undefined } : {}),
+        ...('q' in next ? { q: next.q || undefined } : {}),
+        // A new filter starts at its first page.
+        page: undefined,
       }),
       replace: true,
+    })
+  }
+  function setPage(page: number) {
+    void navigate({ search: (prev) => ({ ...prev, page }), replace: true })
+    shelfHeading?.scrollIntoView({
+      block: 'start',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
     })
   }
   const [layout, setLayout] = createSignal<Layout>('grid')
@@ -116,7 +144,6 @@ function Library() {
     setListTarget(entries().find((e) => e.id === libraryItemId) ?? null)
   }
 
-  let shelfHeading: HTMLHeadingElement | undefined
   onMount(() => {
     setLayout(readLayout())
     // A link that opens the library filtered (Home's count chips) means the shelf, not Now.
@@ -140,7 +167,13 @@ function Library() {
     }
   })
 
-  const rows = createMemo(() => shelf(entries(), kind(), status()))
+  const rows = createMemo(() =>
+    shelf(entries(), kind(), status()).filter((row) =>
+      matches(query(), row.title, row.originalTitle, row.byline),
+    ),
+  )
+  const page = () => clampPage(search().page, rows().length)
+  const shown = createMemo(() => pageOf(rows(), page()))
   const byId = createMemo(() => new Map(entries().map((e) => [e.id, e])))
   const targetOf = (id: string): MarkTarget => {
     const entry = byId().get(id)
@@ -235,8 +268,14 @@ function Library() {
               <SelectContent class="rounded-panel border-line bg-paper" />
             </SelectPortal>
           </Select>
+          <FilterField
+            label="Filter your library"
+            placeholder="Filter your library"
+            value={query()}
+            onChange={(q) => setFilters({ q })}
+            class="sm:ml-auto"
+          />
           <Segmented
-            class="ml-auto"
             label="Layout"
             options={[
               { value: 'grid', label: 'Grid' },
@@ -247,8 +286,8 @@ function Library() {
           />
         </div>
 
-        {/* A chosen status is the shelf's own question; Now would only repeat part of it. */}
-        <Show when={!status()}>
+        {/* A chosen status or a filter is the shelf's own question; Now would only repeat part of it. */}
+        <Show when={!status() && !query()}>
           <NowSection
             entries={entries()}
             kind={kind()}
@@ -268,12 +307,19 @@ function Library() {
                       Nothing here
                     </h2>
                     <p class="mt-2 text-muted">
-                      No titles match these filters.
+                      <Show
+                        when={query()}
+                        fallback="No titles match these filters."
+                      >
+                        No titles match “{query()}” here.
+                      </Show>
                     </p>
                     <Button
                       variant="outline"
                       class="mt-6"
-                      onClick={() => setFilters({ kind: null, status: null })}
+                      onClick={() =>
+                        setFilters({ kind: null, status: null, q: '' })
+                      }
                     >
                       Clear filters
                     </Button>
@@ -317,7 +363,7 @@ function Library() {
             when={layout() === 'grid'}
             fallback={
               <ul class="mt-3 divide-y divide-line">
-                <For each={rows()}>
+                <For each={shown()}>
                   {(row) => (
                     <li>
                       <CardMenu
@@ -376,7 +422,7 @@ function Library() {
             }
           >
             <ul class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-x-4 gap-y-6">
-              <For each={rows()}>
+              <For each={shown()}>
                 {(row) => (
                   <li>
                     <CardMenu
@@ -424,6 +470,12 @@ function Library() {
               </For>
             </ul>
           </Show>
+          <PageControls
+            page={page()}
+            total={rows().length}
+            label="Library pages"
+            onPage={setPage}
+          />
         </Show>
       </div>
       <Show when={shownTarget()}>

@@ -84,6 +84,7 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, MALBa
     private var latency: Duration?
     private var discoverHits: [DiscoverList: [CatalogHit]] = [:]
     private var seasonHits: [SeasonKind: [CatalogHit]] = [:]
+    private var onAirShows: [OnAirShow] = []
     private var trackLists: [String: [AlbumTrack]] = [:]
 
     static func providers(_ catalog: FakeCatalog) -> CatalogProviders {
@@ -200,6 +201,17 @@ extension FakeCatalog: DiscoverListing {
     func list(_ list: DiscoverList, now _: Date) async throws -> [CatalogHit] {
         try record("discover")
         return lock.withLock { discoverHits[list] ?? [] }
+    }
+}
+
+extension FakeCatalog: OnAirListing {
+    func stubOnAir(_ shows: [OnAirShow]) {
+        lock.withLock { onAirShows = shows }
+    }
+
+    func onAir(now _: Date) async throws -> [OnAirShow] {
+        try record("onAir")
+        return lock.withLock { onAirShows }
     }
 }
 

@@ -247,6 +247,8 @@ private struct MainTabs: View {
         #endif
             // Screens outside the tab (a title's "Discuss in a group…") reach groups through this.
             .environment(groups)
+            // A title page's "From friends" reads the friend count from here (BOARD-003).
+            .environment(settings.models.social)
             .onChange(of: groups.openRequest) { _, request in
                 if request != nil {
                     router.tab = .groups
@@ -347,9 +349,9 @@ private struct MainTabs: View {
         case .lists:
             ListsScreen(lists: lists, library: library, api: api)
         case .friends:
-            FriendsScreen(social: settings.models.social)
+            FriendsScreen(social: settings.models.social, board: settings.models.board)
         case .groups:
-            GroupsScreen(groups: groups, social: settings.models.social)
+            GroupsScreen(groups: groups, social: settings.models.social, board: settings.models.board)
         case .sports:
             SportsScreen(api: api)
         case .insights:

@@ -46,8 +46,26 @@ library layer stay separate, external IDs stored whenever known, no second backe
   UFC and WWE cards have results, no live score). SofaScore has no official API and scraping is
   out. Near-live means the clients refresh every 90 s while the tab is open; no socket. "Where to
   watch" reads one country from Sports settings. Users may follow anything the provider has;
-  first run suggests the owner's list. On iPhone the tab sits in the overflow; the five-tab bar
+  first run suggests the owner's list. On iPhone it opens from Discover's toolbar; the five-tab bar
   is unchanged. SPT-001…005.
+- **On air by channel on Discover (owner, 2026-10-24, DISC-003).** Discover gets an On air view:
+  the week's airings (TMDB's on-the-air set) grouped by the channel or streamer they premiere on,
+  each with the next episode's day and, when TVmaze knows it, the exact time. "Streams on" pulls
+  CAT-014's watch providers forward for this view only, for the country the device's language
+  names (sent per request, never stored). The Title room's "Where to watch" is still CAT-014.
+- **The Calendar groups by channel (owner, 2026-10-24, CAL-005).** Week and Month get a
+  "Group by: Day | Channel" control: by channel, the shows airing now sit under the TV channel or
+  streamer they air on, with the day and, when known, the time on each row. It is a layout, not a
+  filter (the filter badge does not count it, Clear filters keeps it), Missed stays by show, and it
+  is client-only: `CalendarEntry` already carries the network, `airsAt` and `airTimeKnown`.
+- **Filter and 20 to a page on Library, Lists and Discover (owner, 2026-10-24, LIB-005).** Each
+  gets a filter that searches every item the screen holds, not only the page in view, and shows
+  20 at a time: numbered pages on the web (page in the URL), 20 more on scroll on Apple. The
+  filter runs on the client over what is already loaded; catalog search stays the shell's Search.
+- **Open any title, in the library or not (owner, 2026-10-24, LIB-006).** A search hit, a
+  Discover card or a list member opens its title page; one not in the library shows the same page
+  with Add buttons and adds nothing until tapped. Needs a server route that resolves a catalog
+  ref to a title. Follows LIB-005.
 
 ## Decisions recorded 2026-10-23
 
@@ -580,6 +598,8 @@ account or a stranger that has not happened yet.
 | LIB-002 | Done | #2; LibraryTests | No EXPLAIN check in tests |
 | LIB-003 | Done | #2; LibraryTests | |
 | LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
+| LIB-005 | Built, unverified | `lib/paging.test.ts`; `components/Paged.tsx`, `Design/Paging.swift` | Client-only (owner, 2026-10-24); not yet run on TestFlight |
+| LIB-006 | Planned | | Title page without a library item (owner, 2026-10-24) |
 | AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
 | AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Clients undo through PROG-005's toast only; no undo ribbon |
 | PROG-001 | Done | #2; episodes PUT route | |
@@ -596,6 +616,7 @@ account or a stranger that has not happened yet.
 | CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
 | CAL-002 | Built (web) | app_.week.tsx, components/calendar/* | Posters, sheets, Missed, filters; `stillUrl` on `CalendarEntry` |
 | CAL-003 | Built (Apple) | Calendar/CalendarEpisodeSheet, CatchUpView, CalendarFilter | Same as CAL-002 on iPhone, iPad, Mac; not seen on a device |
+| CAL-005 | Built, unverified | `lib/calendar/channels.test.ts`; `calendar/AiringChannels.tsx`, `Calendar/AiringChannels.swift` | Group by Day / Channel on Week and Month (owner, 2026-10-24); client-only; not seen on a device |
 | CAL-004 | Built, unverified | ScheduleTests CAL-004; CatalogRefresher | Calendar and Up Next never call a provider (a 320-show import made reads take 4–19 s); `pendingShows` on `/v1/calendar`, web and Apple show "Loading episodes for N shows…" and ask again every 10 s for up to 5 min; refresher runs every minute, back to back while a pass is full, 3 shows at once |
 | UPN-001 | Done | #2; `/v1/up-next` | |
 | APP-001 | Done | #7 432e35f; SessionMiddleware (12 concurrent 401s) | |
@@ -608,6 +629,7 @@ account or a stranger that has not happened yet.
 | APP-008 | Partial | sidebarAdaptable + ⌘F in RootView/LibraryView | No ⌘N add shortcut |
 | APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
+| DISC-003 | Built, unverified | OnAirGuideTests, `lib/discover/onAir.test.ts`; `Catalog/OnAirGuide.swift`, `TMDBCatalog+OnAir.swift`, `OnAirGuide.tsx`, `OnAirView.swift` | TMDB, TVmaze and JustWatch checked with stubs only; not run against live providers or on a device |
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
@@ -620,8 +642,9 @@ account or a stranger that has not happened yet.
 | MNG-001 | Built, unverified | #175; MangaTests, AniListMangaAdapterTests; deployed f6cc317 (infra #456), TestFlight from d9c6341 | Not run on a device |
 | MNG-002 | Built, unverified | #175; MangaImportTests, AnimeListImportTests; deployed f6cc317 (infra #456) | No real MAL manga export or AniList manga list run yet |
 | FAV-001 | Built, unverified | #176; FavoritesTests, favorites model tests; deployed f6cc317 (infra #456), TestFlight from f6cc317 | Not run on a device or in a browser |
-| BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
-| BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
+| BOARD-003 | Built, unverified | AaruCoreTests BoardRulesTests; Friends → Board, post screen, title From friends | Apple only, this PR (feat/board-003-ios); not on TestFlight |
+| BOARD-002 | Built, unverified | #169 b3799f8; web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, on the beta Worker; not looked at in a browser |
+| BOARD-001 | Built, unverified | #149; BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts`; deployed b3799f8 (infra #455) | Undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -653,7 +676,7 @@ account or a stranger that has not happened yet.
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
 | CAT-013 | Open | no Wikidata code | |
-| CAT-014 | Open | no watch-providers code | |
+| CAT-014 | Partly built | DISC-003's `watch/providers` decode in `TMDBCatalog+OnAir.swift` | On air lists services per region; the Title room panel is still open |
 | CAT-015 | Open | none | Scheduled after P2 gate |
 | CAT-016 | Open | none | Scheduled after P2 gate |
 | CAT-017 | Deferred | heading "Deferred" | |
@@ -1318,6 +1341,30 @@ Includes tombstones for deletions.
 **Done when:** deleting an item on one device makes it disappear on a second device that
 only asks for changes since its last sync token.
 
+### LIB-005 · Filter and pages on Library, Lists and Discover · S · owner, 2026-10-24
+**Needs:** APP-003, APP-006, APP-012.
+Library, the Lists index, one list, and Discover's Today view each get a filter box. It matches
+every word of the query against the start of a word in the title (Library also the original
+title and byline; Lists the list name), with case, accents and punctuation folded away, over
+every item the screen holds. Twenty show at a time: the web pages with ‹ 1 2 3 … › and keeps
+`?q=` and `?page=` in the URL; Apple loads 20 more as the end scrolls into view. On Discover a
+filter swaps the rows for one grid of the matching titles, each once. A list's rows move only
+while its filter is empty. No server change: the filter reads the synced library, the list's
+members and Discover's rows.
+
+**Done when:** a 45-title library shows 20, then 20, then 5 on the web's pages and on Apple's
+scroll; "fri" finds Frieren on page 3 from page 1; a filter that shrinks the list never leaves
+an empty page; the same holds for Lists, a list and Discover.
+
+### LIB-006 · A title page for any title · M · owner, 2026-10-24
+**Needs:** LIB-005, CAT-004.
+A route that resolves a catalog ref (`MediaRef`) to a title id and its detail without adding it,
+and a title page on both clients that works without a library item: the same page, with Add
+buttons, nothing written until tapped. Search hits, Discover cards and list members open it.
+
+**Done when:** opening a hit not in the library shows its page and leaves the library unchanged
+until Add; opening one in the library shows the usual page.
+
 ### AUD-001 · Action journal · M
 **Needs:** LIB-003, SRV-006.
 Every mutating library write records one row: `id`, `userId`, `actor` (`user` | `agent`),
@@ -1477,6 +1524,23 @@ flag, and `kind` (`premiere` | `finale` | `regular`). TMDB air dates plus AniLis
 **Done when:** a week query returns one row per airing episode of a tracked show, sorted by air
 time in the requested timezone, with a premiere and a finale flagged, in one query plan (no
 N+1).
+
+### CAL-005 · Group by channel · S · owner, 2026-10-24
+**Needs:** CAL-002, CAL-003.
+Week and Month get "Group by: Day | Channel", Day by default. By channel, the episodes in view
+sit under a heading per channel (the title's `network`: a TV channel or a streamer); a title
+with none goes under "Other". The busiest channel comes first, then by name, "Other" always last;
+inside a channel, by air time, then season and episode. Each row shows the day and the time in
+the viewer's zone (the time only when `airTimeKnown`) where the network would be. Week: Mac, iPad
+and the wide web lay the week out by channel in place of the day columns; the phone keeps its
+day strip and groups the chosen day. Month: the agenda lists the whole visible grid by channel.
+Missed is unchanged. A layout, not a filter: the filter count leaves it out and Clear filters
+keeps it. Web: `?group=channel` in the URL. Apple: `@AppStorage("calendar.grouping")`, a picker
+in the filter menu. No API change.
+
+**Done when:** on web, iPhone and Mac, Channel lists this week's episodes under their channels in
+that order with day and time on each row, Day brings the grid back, and neither changes the
+filter badge.
 
 ### UPN-001 · `GET /v1/up-next` · M
 **Needs:** PROG-003.
@@ -1681,6 +1745,22 @@ Seasons control (`SeasonBrowser.swift`). The Today row "Fall 2026 anime" links t
 **Done when:** on iPhone, Mac and web, flipping Fall 2026 → Winter 2027 → Summer 2025 shows each
 kind's titles, a title adds in one tap and turns into a link to the item, and AniList being down
 says so on the Anime tab only.
+
+### DISC-003 · On air by channel · M · owner, 2026-10-24
+**Needs:** DISC-001, CAT-011.
+`GET /v1/discover/on-air?region=`: TMDB's on-the-air shows (pages 1–2, the TV row filter, 40 at
+most), one detail call each for the first network, `next_episode_to_air` and every country's
+flat-rate `watch/providers`. Grouped by channel, busiest first, "Other" last, shows by next air
+time. Cached 6 h for everyone and published with dates first. A background pass then asks
+TVmaze for each next episode's exact time (within CAT-011's two-day tolerance). `region` is two
+letters from the device language, used for that request only. It names up to three other
+services, never the channel itself or a reseller. Web: `/app/discover?view=on-air`
+(`OnAirGuide`). iPhone and Mac: Today | On air | Seasons on the Discover tab (`OnAirView.swift`).
+The Today row "On the air" links to it. TMDB, TVmaze and JustWatch are credited.
+
+**Done when:** on iPhone, Mac and web, On air lists this week's shows under their channels, a
+US broadcast show shows its time in the viewer's zone, a streaming drop shows its day, a show
+with services in the viewer's country says "Also on …", and an add turns the card into a link.
 
 ### MUS-001 · Albums as a fifth kind · L · pulled forward 2026-10-21
 **Needs:** LIB-001, APP-004.
@@ -3130,6 +3210,8 @@ upvoter names, upvote, and "From friends" on the title page. Surfaces in `DESIGN
 ### BOARD-003 · Board on iOS and Mac · L
 **Needs:** BOARD-001.
 The same surfaces as BOARD-002 in SwiftUI: Board inside Friends, reached on iPhone from Groups' Friends button.
+
+**Built 2026-10-24:** iPhone, iPad and Mac, unverified (not on TestFlight). On iPhone Groups' stack now uses a NavigationPath so posts can push from Friends.
 
 ### BOARD-004 · `@aaru` on the Board, and push · M
 **Needs:** BOARD-001, GRP-011, GRP-012.

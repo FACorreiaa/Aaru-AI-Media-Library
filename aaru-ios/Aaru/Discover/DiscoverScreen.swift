@@ -3,11 +3,13 @@ import SwiftUI
 
 /// Discover (APP-012, DISC-001): catalog rows to add from without typing, with the same cards as
 /// Home's Discover rows. Renders the cache first, then refreshes. Credits the providers whose rows
-/// are on screen (UX-048). A segmented control switches Today's rows for the Seasons view (DISC-002)
-/// and, when the server has concerts on, the Concerts view (MUS-003).
+/// are on screen (UX-048). A segmented control switches Today's rows for On air (this week's shows
+/// by channel, DISC-003), the Seasons view (DISC-002) and, when the server has concerts on, the
+/// Concerts view (MUS-003). LIB-005: Today's filter turns the rows into one grid of the titles
+/// that match, 20 at a time with more on scroll.
 struct DiscoverScreen: View {
     enum Section: String, CaseIterable, Identifiable {
-        case today, seasons, concerts
+        case today, onAir, seasons, concerts
 
         var id: String {
             rawValue
@@ -16,6 +18,7 @@ struct DiscoverScreen: View {
         var label: String {
             switch self {
             case .today: "Today"
+            case .onAir: "On air"
             case .seasons: "Seasons"
             case .concerts: "Concerts"
             }
@@ -27,10 +30,13 @@ struct DiscoverScreen: View {
     let lists: ListsModel
 
     @State private var model: DiscoverModel
+    @State private var onAir: OnAirModel
     @State private var seasons: SeasonModel
     @State private var concerts: ConcertsModel
     @State private var section: Section = .today
     @State private var listTarget: CatalogHit?
+    @State private var query = ""
+    @State private var shown = Paging.pageSize
     @Environment(AppRouter.self) private var router
     @Environment(\.dynamicTypeSize) private var dynamicType
 
@@ -48,6 +54,7 @@ struct DiscoverScreen: View {
         self.library = library
         self.lists = lists
         _model = State(initialValue: model ?? DiscoverModel(api: api, library: library))
+        _onAir = State(initialValue: OnAirModel(api: api, library: library))
         _seasons = State(initialValue: SeasonModel(api: api, library: library))
         _concerts = State(initialValue: ConcertsModel(api: api))
     }
@@ -57,7 +64,13 @@ struct DiscoverScreen: View {
         NavigationStack {
             Group {
                 switch section {
-                case .today: content
+                case .today:
+                    content
+                        .searchable(text: $query, prompt: "Filter Discover")
+                        .onChange(of: query) { shown = Paging.pageSize }
+                case .onAir:
+                    OnAirView(model: onAir, compact: compact) { listTarget = $0 }
+                        .task { await onAir.loadIfNeeded() }
                 case .seasons:
                     SeasonBrowser(model: seasons, compact: compact) { listTarget = $0 }
                 case .concerts:
@@ -115,6 +128,7 @@ struct DiscoverScreen: View {
                 .safeAreaInset(edge: .bottom) {
                     switch section {
                     case .today: ProblemBanner(message: model.problem) { model.problem = nil }
+                    case .onAir: ProblemBanner(message: onAir.problem) { onAir.problem = nil }
                     case .seasons: ProblemBanner(message: seasons.problem) { seasons.problem = nil }
                     case .concerts: ProblemBanner(message: concerts.problem) { concerts.problem = nil }
                     }
@@ -126,8 +140,18 @@ struct DiscoverScreen: View {
     private func reload() async {
         switch section {
         case .today: await model.load()
+        case .onAir: await onAir.load()
         case .seasons: await seasons.reload()
         case .concerts: await concerts.reload()
+        }
+    }
+
+    /// Rows with a fuller view of their own: this season's anime and what is on the air.
+    private func trailing(for row: String) -> (label: String, action: () -> Void)? {
+        switch row {
+        case "anime_season": ("All seasons", { showSeasons(.anime) })
+        case "tv_on_air": ("By channel", { section = .onAir })
+        default: nil
         }
     }
 
@@ -170,6 +194,8 @@ struct DiscoverScreen: View {
                 Button("Search") { router.showsSearch = true }
                     .buttonStyle(.borderedProminent)
             }
+        } else if !query.isEmpty {
+            found(model.matches(query))
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: AaruSpace.section) {
@@ -177,7 +203,7 @@ struct DiscoverScreen: View {
                         HomeRow(
                             title: row.title,
                             note: row.note,
-                            trailing: row.id == "anime_season" ? ("All seasons", { showSeasons(.anime) }) : nil
+                            trailing: trailing(for: row.id)
                         ) {
                             ForEach(row.items) { hit in
                                 DiscoverCard(
@@ -197,6 +223,45 @@ struct DiscoverScreen: View {
                     DiscoverCredits(providers: DiscoverCredits.providers(for: rows))
                 }
                 .padding(.vertical, 16)
+            }
+        }
+    }
+}
+
+extension DiscoverScreen {
+    /// The filter's grid: the titles that match, 20 more each time the end comes into view.
+    @ViewBuilder func found(_ matches: [DiscoverMatch]) -> some View {
+        if matches.isEmpty {
+            ContentUnavailableView {
+                Label("Nothing on Discover matches “\(query)”", systemImage: "magnifyingglass")
+            } description: {
+                Text("Search finds every title.")
+            } actions: {
+                Button("Search") { router.showsSearch = true }
+                    .buttonStyle(.bordered)
+            }
+        } else {
+            ScrollView {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: compact ? 104 : 140), spacing: 12, alignment: .top)],
+                    spacing: 20
+                ) {
+                    ForEach(matches.prefix(shown)) { match in
+                        DiscoverCard(
+                            hit: match.hit,
+                            libraryItemID: model.libraryItemID(match.hit),
+                            badge: DiscoverCard.releaseBadge(match.hit.releaseDate, row: match.row),
+                            width: nil,
+                            isAdding: model.adding.contains(match.hit.id)
+                        ) { status in
+                            Task { await model.add(match.hit, status: status) }
+                        } onAddToList: {
+                            listTarget = match.hit
+                        }
+                    }
+                }
+                .padding(16)
+                LoadMore(shown: $shown, total: matches.count)
             }
         }
     }

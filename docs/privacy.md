@@ -191,6 +191,10 @@ Aaru only uses these services, and only for the purpose listed:
   (Cinemeta) for a show's episode list by its IMDb id, never who you are.
 - **TMDB, TVmaze, AniList, Open Library, MusicBrainz and ListenBrainz** provide catalog data.
   Aaru's server sends them what you search for and catalog ids, never who you are.
+- **JustWatch**, through TMDB, says where a show streams in your country on Discover's On air
+  view. Your app reads the country from your device's language settings and sends it with that
+  request only. Aaru never stores it, and TMDB and JustWatch never receive it: the server
+  fetches every country's list once and picks yours.
 - **Ticketmaster** lists concerts. Aaru's server sends it an area of about 5 km around your
   city or approximate position, a distance, and artist names from albums people have added,
   never who you are. Tickets are bought on Ticketmaster's site, under its own terms.

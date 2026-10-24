@@ -6,16 +6,20 @@ import type { CalendarEntry } from './model'
 export type CalendarView = 'week' | 'month' | 'missed'
 export type OnlyFilter = 'premieres' | 'finales'
 export type KindFilter = 'show' | 'anime'
+/** CAL-005: how Week and Month lay out their episodes. Day when unset. */
+export type CalendarGroup = 'channel'
 
 export interface CalendarFilter {
   hideWatched: boolean
   only?: OnlyFilter
   kind?: KindFilter
+  /** A layout, not a filter: it hides nothing, so `activeCount` leaves it out. */
+  group?: CalendarGroup
 }
 
 export const NO_FILTER: CalendarFilter = { hideWatched: false }
 
-/** How many filters are on, for the toolbar's badge. */
+/** How many filters are on, for the toolbar's badge. The grouping is not one. */
 export const activeCount = (filter: CalendarFilter) =>
   (filter.hideWatched ? 1 : 0) + (filter.only ? 1 : 0) + (filter.kind ? 1 : 0)
 

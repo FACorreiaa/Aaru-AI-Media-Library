@@ -8,15 +8,18 @@ import {
   monthOf,
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
+import type { AiringChannel } from '../lib/calendar/channels'
 import { cn } from '~/lib/utils'
 import { slideIn } from '../lib/motion'
+import { AiringChannels } from './calendar/AiringChannels'
 import { EpisodeRow } from './calendar/EpisodeRow'
 import { Badge, Button, Skeleton, cardClass } from '~/components/ui'
 
 // The month view, after Stremio's calendar (CAL-002): a month of your airings with posters in
 // each day, the neighbouring months one click away, and an agenda from the selected day on.
 // Phones get two small posters per day and open the day as a sheet (the route decides); wider
-// screens keep the agenda beside the grid.
+// screens keep the agenda beside the grid. Grouped by channel (CAL-005), the agenda lists the
+// whole visible range by channel instead of by day.
 
 export interface MonthCalendarProps {
   month: string
@@ -24,6 +27,8 @@ export interface MonthCalendarProps {
   today: string
   selected: string
   byDay: Map<string, CalendarEntry[]>
+  /** CAL-005: the visible range's episodes by channel; set only when grouped by channel. */
+  channels?: AiringChannel[]
   /** The month is still loading: the agenda shows placeholders, not "nothing airs". */
   waiting: boolean
   pending: Set<string>
@@ -81,6 +86,7 @@ export function MonthCalendar(props: MonthCalendarProps) {
         today={props.today}
         selected={props.selected}
         byDay={props.byDay}
+        channels={props.channels}
         waiting={props.waiting}
         pending={props.pending}
         keyOf={props.keyOf}
@@ -253,6 +259,7 @@ function Agenda(props: {
   today: string
   selected: string
   byDay: Map<string, CalendarEntry[]>
+  channels?: AiringChannel[]
   waiting: boolean
   pending: Set<string>
   keyOf: (entry: CalendarEntry) => string
@@ -288,54 +295,73 @@ function Agenda(props: {
         ref={list}
         class="p-4 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto"
       >
-        <For
-          each={groups()}
+        <Show
+          when={!props.channels}
           fallback={
-            <Show
-              when={!props.waiting}
+            <AiringChannels
+              groups={props.channels ?? []}
+              waiting={props.waiting}
               fallback={
-                <div class="flex flex-col gap-3 py-2">
-                  <For each={[0, 1, 2]}>
-                    {() => <Skeleton class="h-16 rounded-field" />}
-                  </For>
-                </div>
+                <p class="py-4 text-sm text-muted">
+                  Nothing from your shows airs in this view.
+                </p>
               }
-            >
-              <p class="py-4 text-sm text-muted">
-                Nothing from your shows airs from{' '}
-                {props.selected ? agendaDayLabel(props.selected) : 'here'} to
-                the end of this view.
-              </p>
-            </Show>
+              pending={props.pending}
+              keyOf={props.keyOf}
+              onOpen={props.onOpen}
+              onToggle={props.onToggle}
+            />
           }
         >
-          {(group) => (
-            <section class="mb-4 last:mb-0">
-              <h3
-                class="eyebrow"
-                classList={{
-                  'text-accent': group.day === props.today,
-                  'text-muted': group.day !== props.today,
-                }}
+          <For
+            each={groups()}
+            fallback={
+              <Show
+                when={!props.waiting}
+                fallback={
+                  <div class="flex flex-col gap-3 py-2">
+                    <For each={[0, 1, 2]}>
+                      {() => <Skeleton class="h-16 rounded-field" />}
+                    </For>
+                  </div>
+                }
               >
-                {group.day === props.today ? 'Today · ' : ''}
-                {agendaDayLabel(group.day)}
-              </h3>
-              <ul class="mt-1 divide-y divide-line">
-                <For each={group.entries}>
-                  {(entry) => (
-                    <EpisodeRow
-                      entry={entry}
-                      pending={props.pending.has(props.keyOf(entry))}
-                      onOpen={props.onOpen}
-                      onToggle={props.onToggle}
-                    />
-                  )}
-                </For>
-              </ul>
-            </section>
-          )}
-        </For>
+                <p class="py-4 text-sm text-muted">
+                  Nothing from your shows airs from{' '}
+                  {props.selected ? agendaDayLabel(props.selected) : 'here'} to
+                  the end of this view.
+                </p>
+              </Show>
+            }
+          >
+            {(group) => (
+              <section class="mb-4 last:mb-0">
+                <h3
+                  class="eyebrow"
+                  classList={{
+                    'text-accent': group.day === props.today,
+                    'text-muted': group.day !== props.today,
+                  }}
+                >
+                  {group.day === props.today ? 'Today · ' : ''}
+                  {agendaDayLabel(group.day)}
+                </h3>
+                <ul class="mt-1 divide-y divide-line">
+                  <For each={group.entries}>
+                    {(entry) => (
+                      <EpisodeRow
+                        entry={entry}
+                        pending={props.pending.has(props.keyOf(entry))}
+                        onOpen={props.onOpen}
+                        onToggle={props.onToggle}
+                      />
+                    )}
+                  </For>
+                </ul>
+              </section>
+            )}
+          </For>
+        </Show>
       </div>
     </aside>
   )

@@ -246,6 +246,13 @@ show, oldest miss first, with how many episodes and how much time it adds up to.
 and show as removable chips. Every tick is a 44px round toggle that a pending write disables.
 (CAL-002 web, CAL-003 iPhone, iPad and Mac, 2026-10-21: the same modes, rows, sheets and filters;
 on Apple the filters are a toolbar menu and the episode sheet has medium and large detents.)
+**Group by: Day | Channel** (CAL-005, owner, 2026-10-24) sets how Week and Month lay out: by
+channel, the episodes in view sit under the channel or streamer they air on (busiest first,
+"Other" for none, last), and each row's line reads the day and time instead of the network. The
+wide Week trades its day columns for those sections; the phone keeps the day strip and groups the
+chosen day; Month's agenda covers the whole grid. It is a layout, so the filter badge never
+counts it; on the web it is a segmented control in the toolbar and in the URL, on Apple a picker
+at the top of the filter menu.
 Agent highlight later: "three premieres, one finale, you are behind on
 two."
 
@@ -412,6 +419,16 @@ AniList and Open Library credits sit in the footer.
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
 watched", no taste profile, nothing read from other users. A tab on iPhone, a sidebar
 destination on iPad, Mac and the web (§18).
+
+**On air (DISC-003, owner 2026-10-24).** Today | On air | Seasons. On air is the week's airings
+organised by where they air: one row per TV channel or streamer (HBO, Netflix, BBC One),
+busiest first, "Other" last, with "N shows" under the name. Each poster card says the next
+episode and when ("S2 E5 · Thu 9:00 PM" in the viewer's zone when the time is exact, else the
+day alone), and in muted "Also on Hulu and Max" for the viewer's country. On the web that line
+links out to TMDB's where-to-watch page; on Apple it's in the card's context menu as "Where to
+watch". The Today row "On the air" has a "By channel" link to it. The footer credits TMDB,
+TVmaze and JustWatch. Nothing is personalised: the same guide for everyone, and the country
+only picks which services to name.
 
 **Seasons (DISC-002, 2026-10-21).** A Today | Seasons control sits under the title (pinned under
 the large title on iPhone, in the toolbar on the Mac). Seasons shows one season as an object:
@@ -712,6 +729,17 @@ friends, activity, leaderboard, Invite, requests, friends). No nav rename, Group
   title and "Write about this" (to Friends with the title in the composer). Hidden when there
   are no posts and no friends.
 
+**On Apple (BOARD-003, 2026-10-24).** Board sits inside Friends, as on the web: on iPhone it is
+reached from Groups' Friends button, on iPad and Mac from the Friends sidebar item. `Board | Lately`
+is a segmented control in the navigation bar. A post's comment count pushes the post screen in the
+Friends stack. Upvote gives a light haptic. On iPad and Mac the column is capped at about 640pt
+and centred. ⌘R reloads the Board and ⌘↩ posts from the composer on Mac. The Apple composer rates
+in whole stars with the existing `RatingStars`; half stars from web posts display as halves.
+"From friends" on a title page shows up to five compact rows, and "Write about this" opens the
+Board with the title in the composer. With friends but no posts it shows "None of your friends has
+written about this yet." and the button, as on the web. The composer's draft lives in the Board's
+model, so switching to Lately or opening a post keeps it.
+
 ### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
 
 Achievements are a shelf of medallions you fill by living with your library, not a game layered
@@ -845,6 +873,11 @@ On the web, one component library, then performance:
   layout, a status picker) is `Segmented` (`src/components/Segmented.tsx`, `pill` or `chip`) on
   shadcn-solid's SegmentedControl: "radio, 2 of 3", arrows move the choice, a second tap never
   clears it. There is no ToggleGroup; a real on/off is a Switch or a Checkbox.
+- **Long screens filter, then page (LIB-005).** Library, Lists, a list and Discover carry
+  `FilterField` (`src/components/Paged.tsx`) and show 20 at a time with `PageControls`
+  (shadcn-solid Pagination, page in the URL). The filter searches every item the screen holds,
+  never just the page; a new filter starts at page 1. Apple uses `.searchable` and shows 20 more
+  as the end scrolls in (`Design/Paging.swift`).
 - **Overlays play their exit.** A dialog, sheet or drawer takes `open` and stays mounted on its
   last value (`lastShown` in `src/lib/presence.ts`) while Kobalte plays the close, then the page
   lets it go. None is mounted only while open.

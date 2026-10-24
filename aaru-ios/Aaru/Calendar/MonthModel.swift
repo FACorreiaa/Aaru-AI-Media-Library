@@ -80,6 +80,15 @@ final class MonthModel {
         }
     }
 
+    /// CAL-005: the whole grid's episodes by channel, for the agenda grouped by channel.
+    var channels: [AiringChannel] {
+        AiringChannel.group(gridDays.flatMap(entries(on:)))
+    }
+
+    var isGroupedByChannel: Bool {
+        feed.filter.grouping == .channel
+    }
+
     /// This month's grid has loaded (not just some other window's).
     var isLoaded: Bool {
         window.map(feed.covers) ?? false

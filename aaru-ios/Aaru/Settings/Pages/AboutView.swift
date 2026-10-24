@@ -40,6 +40,7 @@ struct AboutView: View {
                     url: "https://www.tvmaze.com",
                     licence: "https://creativecommons.org/licenses/by-sa/4.0/"
                 )
+                CreditLink("Where to stream from JustWatch", url: "https://www.justwatch.com")
                 CreditLink("Anime data from AniList", url: "https://anilist.co")
                 CreditLink(
                     "Anime id mappings from Fribb/anime-lists",

@@ -1661,6 +1661,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/discover/on-air': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Shows airing this week, grouped by channel or streamer (DISC-003).
+     * @description TMDB's on-the-air shows, the same for every user and cached by the server, each with its next episode and the channel it premieres on. `airsAt` is the exact instant when `airTimeKnown` (from TVmaze), else the UTC day: show the date only. Channels with the most shows come first, "Other" (no known channel) last. With `region`, each show also lists the services it streams on there (JustWatch data through TMDB; credit JustWatch where shown). Items the caller has carry `libraryItemId`. Empty `channels` when the provider is down and nothing is cached.
+     */
+    get: operations['getDiscoverOnAir']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/concerts/near': {
     parameters: {
       query?: never
@@ -3822,6 +3842,43 @@ export interface components {
     }
     DiscoverRows: {
       rows: components['schemas']['DiscoverRow'][]
+    }
+    DiscoverOnAir: {
+      channels: components['schemas']['OnAirChannel'][]
+      /**
+       * Format: date-time
+       * @description When the server fetched the guide.
+       */
+      updatedAt?: string
+    }
+    OnAirChannel: {
+      /** @description Network or streaming service ("HBO", "Netflix", "BBC One"), or "Other". */
+      name: string
+      /** @description The channel's logo (TMDB), small, on a transparent background. */
+      logoUrl?: string
+      /** @description Soonest next episode first. */
+      shows: components['schemas']['OnAirShow'][]
+    }
+    OnAirShow: {
+      item: components['schemas']['CatalogHit']
+      nextEpisode: components['schemas']['OnAirEpisode']
+      /** @description Up to three services the show streams on in `region`, besides its own channel. Absent without a region or when there is no data for it. */
+      streamsOn?: components['schemas']['WatchProvider'][]
+      /** @description TMDB's page of every way to watch the show in `region`. */
+      watchLink?: string
+    }
+    OnAirEpisode: {
+      season: number
+      number: number
+      name?: string
+      /** Format: date-time */
+      airsAt: string
+      /** @description False while only the day is known; `airsAt` is then midnight UTC of that day. */
+      airTimeKnown: boolean
+    }
+    WatchProvider: {
+      name: string
+      logoUrl?: string
     }
     SeasonPage: {
       /** @enum {string} */
@@ -7446,6 +7503,30 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SeasonPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getDiscoverOnAir: {
+    parameters: {
+      query?: {
+        /** @description ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`. */
+        region?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The guide. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DiscoverOnAir']
         }
       }
       default: components['responses']['Error']

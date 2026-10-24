@@ -255,6 +255,7 @@ GET    /v1/titles/{id}
 GET    /v1/calendar?from=&to=             # CAL-001
 GET    /v1/up-next                        # UPN-001; counts + unfinished UPN-002
 GET    /v1/discover                       # DISC-001
+GET    /v1/discover/on-air?region=        # DISC-003
 
 GET    /v1/library/items
 POST   /v1/library/items
@@ -421,6 +422,21 @@ kind. Adapters conforming to `SeasonBrowsing` serve it: AniList `Page(page:, per
 entries; 6 h, or 7 days for a season that has ended), coalesces fetches and serves stale on
 failure; nothing cached and the provider down returns `unavailable: true`. Marking against the
 library is the same `DiscoverService.mark` the rows use.
+
+**On air (DISC-003).** `GET /v1/discover/on-air` is the week's airings by channel. `TMDBCatalog`
+(`Catalog/TMDBCatalog+OnAir.swift`, as `OnAirListing`) reads `tv/on_the_air` pages 1–2 through the
+TV row filter, then one `tv/{id}?append_to_response=external_ids,watch/providers` per show (40 at
+most): its first network (name and logo), `next_episode_to_air` (kept within a day back and
+eight ahead) and every country's flat-rate services. An `OnAirCache` actor
+(`Catalog/OnAirGuide.swift`) holds the guide for 6 h and serves a stale copy while it refetches.
+It publishes the guide with dates first, then refines the times in a second, unstructured pass:
+`TVmazeAirTimes.nextAirTime` (as `NextEpisodeTiming`, two calls per show through TVmaze's
+1.8/s pacer) gives the exact instant, kept only within CAT-011's two-day tolerance. No viewer
+waits on that pass. Per request, `DiscoverService.onAir` marks hits with `mark`, picks the
+caller's `region` (two letters, from the device language, never stored; else 422), and drops
+from "streams on" the channel itself and JustWatch's resellers ("… Amazon Channel", "… with
+Ads"), keeping three at most. Channels are ordered by show count, then by name, with "Other"
+last, and each channel's shows by next air time.
 
 **Album rows (MUS-002).** `ListenBrainzReleases` (`Catalog/ListenBrainzReleases.swift`, no key,
 1 req/s with a contact User-Agent) serves `music_new` and `music_upcoming` through the same

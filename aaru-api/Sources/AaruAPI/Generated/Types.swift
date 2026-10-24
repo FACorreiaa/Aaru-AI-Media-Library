@@ -575,6 +575,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/discover/season`.
     /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)`.
     func getDiscoverSeason(_ input: Operations.GetDiscoverSeason.Input) async throws -> Operations.GetDiscoverSeason.Output
+    /// Shows airing this week, grouped by channel or streamer (DISC-003).
+    ///
+    /// TMDB's on-the-air shows, the same for every user and cached by the server, each with its next episode and the channel it premieres on. `airsAt` is the exact instant when `airTimeKnown` (from TVmaze), else the UTC day: show the date only. Channels with the most shows come first, "Other" (no known channel) last. With `region`, each show also lists the services it streams on there (JustWatch data through TMDB; credit JustWatch where shown). Items the caller has carry `libraryItemId`. Empty `channels` when the provider is down and nothing is cached.
+    ///
+    /// - Remark: HTTP `GET /v1/discover/on-air`.
+    /// - Remark: Generated from `#/paths//v1/discover/on-air/get(getDiscoverOnAir)`.
+    func getDiscoverOnAir(_ input: Operations.GetDiscoverOnAir.Input) async throws -> Operations.GetDiscoverOnAir.Output
     /// Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
     ///
     /// POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a kilometre) and used for this request only: never stored, never logged. With no coordinates the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in the same area, cached by the server and linked out to Ticketmaster for tickets.
@@ -2294,6 +2301,21 @@ extension APIProtocol {
         headers: Operations.GetDiscoverSeason.Input.Headers = .init()
     ) async throws -> Operations.GetDiscoverSeason.Output {
         try await getDiscoverSeason(Operations.GetDiscoverSeason.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Shows airing this week, grouped by channel or streamer (DISC-003).
+    ///
+    /// TMDB's on-the-air shows, the same for every user and cached by the server, each with its next episode and the channel it premieres on. `airsAt` is the exact instant when `airTimeKnown` (from TVmaze), else the UTC day: show the date only. Channels with the most shows come first, "Other" (no known channel) last. With `region`, each show also lists the services it streams on there (JustWatch data through TMDB; credit JustWatch where shown). Items the caller has carry `libraryItemId`. Empty `channels` when the provider is down and nothing is cached.
+    ///
+    /// - Remark: HTTP `GET /v1/discover/on-air`.
+    /// - Remark: Generated from `#/paths//v1/discover/on-air/get(getDiscoverOnAir)`.
+    public func getDiscoverOnAir(
+        query: Operations.GetDiscoverOnAir.Input.Query = .init(),
+        headers: Operations.GetDiscoverOnAir.Input.Headers = .init()
+    ) async throws -> Operations.GetDiscoverOnAir.Output {
+        try await getDiscoverOnAir(Operations.GetDiscoverOnAir.Input(
             query: query,
             headers: headers
         ))
@@ -8384,6 +8406,171 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case rows
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DiscoverOnAir`.
+        public struct DiscoverOnAir: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DiscoverOnAir/channels`.
+            public var channels: [Components.Schemas.OnAirChannel]
+            /// When the server fetched the guide.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DiscoverOnAir/updatedAt`.
+            public var updatedAt: Foundation.Date?
+            /// Creates a new `DiscoverOnAir`.
+            ///
+            /// - Parameters:
+            ///   - channels:
+            ///   - updatedAt: When the server fetched the guide.
+            public init(
+                channels: [Components.Schemas.OnAirChannel],
+                updatedAt: Foundation.Date? = nil
+            ) {
+                self.channels = channels
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case channels
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnAirChannel`.
+        public struct OnAirChannel: Codable, Hashable, Sendable {
+            /// Network or streaming service ("HBO", "Netflix", "BBC One"), or "Other".
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnAirChannel/name`.
+            public var name: Swift.String
+            /// The channel's logo (TMDB), small, on a transparent background.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnAirChannel/logoUrl`.
+            public var logoUrl: Swift.String?
+            /// Soonest next episode first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnAirChannel/shows`.
+            public var shows: [Components.Schemas.OnAirShow]
+            /// Creates a new `OnAirChannel`.
+            ///
+            /// - Parameters:
+            ///   - name: Network or streaming service ("HBO", "Netflix", "BBC One"), or "Other".
+            ///   - logoUrl: The channel's logo (TMDB), small, on a transparent background.
+            ///   - shows: Soonest next episode first.
+            public init(
+                name: Swift.String,
+                logoUrl: Swift.String? = nil,
+                shows: [Components.Schemas.OnAirShow]
+            ) {
+                self.name = name
+                self.logoUrl = logoUrl
+                self.shows = shows
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case logoUrl
+                case shows
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnAirShow`.
+        public struct OnAirShow: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OnAirShow/item`.
+            public var item: Components.Schemas.CatalogHit
+            /// - Remark: Generated from `#/components/schemas/OnAirShow/nextEpisode`.
+            public var nextEpisode: Components.Schemas.OnAirEpisode
+            /// Up to three services the show streams on in `region`, besides its own channel. Absent without a region or when there is no data for it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnAirShow/streamsOn`.
+            public var streamsOn: [Components.Schemas.WatchProvider]?
+            /// TMDB's page of every way to watch the show in `region`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnAirShow/watchLink`.
+            public var watchLink: Swift.String?
+            /// Creates a new `OnAirShow`.
+            ///
+            /// - Parameters:
+            ///   - item:
+            ///   - nextEpisode:
+            ///   - streamsOn: Up to three services the show streams on in `region`, besides its own channel. Absent without a region or when there is no data for it.
+            ///   - watchLink: TMDB's page of every way to watch the show in `region`.
+            public init(
+                item: Components.Schemas.CatalogHit,
+                nextEpisode: Components.Schemas.OnAirEpisode,
+                streamsOn: [Components.Schemas.WatchProvider]? = nil,
+                watchLink: Swift.String? = nil
+            ) {
+                self.item = item
+                self.nextEpisode = nextEpisode
+                self.streamsOn = streamsOn
+                self.watchLink = watchLink
+            }
+            public enum CodingKeys: String, CodingKey {
+                case item
+                case nextEpisode
+                case streamsOn
+                case watchLink
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnAirEpisode`.
+        public struct OnAirEpisode: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OnAirEpisode/season`.
+            public var season: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/OnAirEpisode/number`.
+            public var number: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/OnAirEpisode/name`.
+            public var name: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/OnAirEpisode/airsAt`.
+            public var airsAt: Foundation.Date
+            /// False while only the day is known; `airsAt` is then midnight UTC of that day.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnAirEpisode/airTimeKnown`.
+            public var airTimeKnown: Swift.Bool
+            /// Creates a new `OnAirEpisode`.
+            ///
+            /// - Parameters:
+            ///   - season:
+            ///   - number:
+            ///   - name:
+            ///   - airsAt:
+            ///   - airTimeKnown: False while only the day is known; `airsAt` is then midnight UTC of that day.
+            public init(
+                season: Swift.Int,
+                number: Swift.Int,
+                name: Swift.String? = nil,
+                airsAt: Foundation.Date,
+                airTimeKnown: Swift.Bool
+            ) {
+                self.season = season
+                self.number = number
+                self.name = name
+                self.airsAt = airsAt
+                self.airTimeKnown = airTimeKnown
+            }
+            public enum CodingKeys: String, CodingKey {
+                case season
+                case number
+                case name
+                case airsAt
+                case airTimeKnown
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WatchProvider`.
+        public struct WatchProvider: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchProvider/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/WatchProvider/logoUrl`.
+            public var logoUrl: Swift.String?
+            /// Creates a new `WatchProvider`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - logoUrl:
+            public init(
+                name: Swift.String,
+                logoUrl: Swift.String? = nil
+            ) {
+                self.name = name
+                self.logoUrl = logoUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case logoUrl
             }
         }
         /// - Remark: Generated from `#/components/schemas/SeasonPage`.
@@ -29026,6 +29213,157 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/discover/season/get(getDiscoverSeason)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Shows airing this week, grouped by channel or streamer (DISC-003).
+    ///
+    /// TMDB's on-the-air shows, the same for every user and cached by the server, each with its next episode and the channel it premieres on. `airsAt` is the exact instant when `airTimeKnown` (from TVmaze), else the UTC day: show the date only. Channels with the most shows come first, "Other" (no known channel) last. With `region`, each show also lists the services it streams on there (JustWatch data through TMDB; credit JustWatch where shown). Items the caller has carry `libraryItemId`. Empty `channels` when the provider is down and nothing is cached.
+    ///
+    /// - Remark: HTTP `GET /v1/discover/on-air`.
+    /// - Remark: Generated from `#/paths//v1/discover/on-air/get(getDiscoverOnAir)`.
+    public enum GetDiscoverOnAir {
+        public static let id: Swift.String = "getDiscoverOnAir"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/discover/on-air/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`.
+                ///
+                /// - Remark: Generated from `#/paths/v1/discover/on-air/GET/query/region`.
+                public var region: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - region: ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`.
+                public init(region: Swift.String? = nil) {
+                    self.region = region
+                }
+            }
+            public var query: Operations.GetDiscoverOnAir.Input.Query
+            /// - Remark: Generated from `#/paths/v1/discover/on-air/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetDiscoverOnAir.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetDiscoverOnAir.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetDiscoverOnAir.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetDiscoverOnAir.Input.Query = .init(),
+                headers: Operations.GetDiscoverOnAir.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/discover/on-air/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/discover/on-air/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.DiscoverOnAir)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.DiscoverOnAir {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetDiscoverOnAir.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetDiscoverOnAir.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The guide.
+            ///
+            /// - Remark: Generated from `#/paths//v1/discover/on-air/get(getDiscoverOnAir)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetDiscoverOnAir.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetDiscoverOnAir.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/discover/on-air/get(getDiscoverOnAir)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
