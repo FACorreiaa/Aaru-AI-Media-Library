@@ -341,9 +341,9 @@ private struct MainTabs: View {
         case .lists:
             ListsScreen(lists: lists, library: library, api: api)
         case .friends:
-            FriendsScreen(social: settings.models.social)
+            FriendsScreen(social: settings.models.social, board: settings.models.board)
         case .groups:
-            GroupsScreen(groups: groups, social: settings.models.social)
+            GroupsScreen(groups: groups, social: settings.models.social, board: settings.models.board)
         case .insights:
             NavigationStack {
                 InsightsView(api: api, library: library)

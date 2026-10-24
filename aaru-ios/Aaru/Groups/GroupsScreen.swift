@@ -8,6 +8,8 @@ struct GroupsScreen: View {
     let groups: GroupsModel
     /// Friends, pushed from Groups on iPhone. Nil in previews.
     var social: SocialModel?
+    /// Friends' Board, beside `social`. Nil in previews.
+    var board: BoardModel?
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
@@ -15,7 +17,7 @@ struct GroupsScreen: View {
     var body: some View {
         #if os(iOS)
             if sizeClass == .compact {
-                GroupsStack(groups: groups, social: social)
+                GroupsStack(groups: groups, social: social, board: board)
             } else {
                 GroupsSplit(groups: groups)
             }
@@ -34,6 +36,7 @@ private enum GroupRoute: Hashable {
 private struct GroupsStack: View {
     let groups: GroupsModel
     let social: SocialModel?
+    let board: BoardModel?
     @Environment(AppRouter.self) private var router
     @State private var path: [GroupRoute] = []
     @State private var sheet: GroupSheet?
@@ -49,7 +52,7 @@ private struct GroupsStack: View {
             )
             #if os(iOS)
             .toolbar {
-                if social != nil {
+                if social != nil, board != nil {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Friends", systemImage: "person.2") { router.showsFriendsInGroups = true }
                     }
@@ -57,8 +60,8 @@ private struct GroupsStack: View {
             }
             #endif
             .navigationDestination(isPresented: $router.showsFriendsInGroups) {
-                if let social {
-                    FriendsContent(model: social)
+                if let social, let board {
+                    FriendsContent(model: social, board: board)
                 }
             }
             .navigationDestination(for: GroupRoute.self) { route in

@@ -117,6 +117,28 @@ final class BoardModel {
         }
     }
 
+    /// A friend's title, added to the viewer's own library as Plan to …: the same journaled add as
+    /// a tap anywhere else. True when it was added.
+    func addToMyLibrary(_ title: TitleSummary) async -> Bool {
+        guard let api else { return false }
+        return await run("\(title.title) was not added.") {
+            switch try await api.addLibraryItem(body: .json(.init(mediaRef: title.mediaRef, status: .wishlist))) {
+            case .ok: break
+            case let .default(_, error): throw Failure(try? error.body.json.message)
+            }
+        }
+    }
+
+    /// Signing out forgets the Board.
+    func reset() {
+        sort = .recent
+        posts = []
+        hasLoaded = false
+        loadProblem = nil
+        problem = nil
+        canShowOlder = false
+    }
+
     /// The post screen reports an edit back.
     func replace(_ post: BoardPost) {
         if let index = posts.firstIndex(where: { $0.id == post.id }) {
