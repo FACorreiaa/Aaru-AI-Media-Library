@@ -451,6 +451,15 @@ asks for an approximate position once (reduced accuracy on Apple) and says it is
 saved city lives in Settings → Friends & privacy → Location ("Concerts near"), with Remove. Placeholders at the real row size
 while loading, no shimmer; a silent provider says so in one line.
 
+**Concerts by artist (MUS-010, 2026-10-24).** The "Near" section carries a search field, "Search
+an artist", that runs on submit (Return), never while typing. A submitted name turns the section
+into that artist's dates: the heading reads "<name> near <city>" or "<name> anywhere", a
+Near <city> | Anywhere switch sits beside the radius chips, and the chips hide in Anywhere, where
+each row's distance is from the city or position when there is one. Clear (the field's ✕, or
+cancelling search on Apple) returns to everything near. Empty reads "No <name> concerts within
+50 km." with "Try Anywhere." in Near, "No upcoming <name> concerts listed." in Anywhere. On iPhone
+and Mac it is the screen's own search field with search scopes; Anywhere is list only (no Map).
+
 ## 13b. Insights (pulled forward 2026-10-20)
 
 The Recap's numbers, browsable instead of played. `StatsPanel`: a 7 days / 30 days / month /

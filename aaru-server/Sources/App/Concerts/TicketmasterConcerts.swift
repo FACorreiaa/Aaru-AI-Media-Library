@@ -40,22 +40,23 @@ struct TicketmasterConcerts: ConcertListing {
     let budget: CallBudget
 
     func near(_ point: GeoPoint, radiusKm: Int, page: Int, from: Date) async throws -> ConcertResults {
-        let response = try await get(EventPage.self, "events.json", [
-            "classificationName": "music",
+        try await musicEvents(page: page, from: from, [
             "geoPoint": point.geohash(),
             "radius": String(radiusKm),
             "unit": "km",
-            "sort": "date,asc",
-            "startDateTime": Self.timestamp(from),
-            "size": String(Self.pageSize),
-            "page": String(max(0, page - 1)),
         ])
-        let current = response.page?.number ?? 0
-        let pages = response.page?.totalPages ?? 0
-        return ConcertResults(
-            concerts: response.events.compactMap(\.concert),
-            hasMore: current + 1 < pages && current + 1 < Self.maxPage
-        )
+    }
+
+    func search(_ keyword: String, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from: Date) async throws
+        -> ConcertResults
+    {
+        var query = ["keyword": keyword]
+        if let near {
+            query["geoPoint"] = near.point.geohash()
+            query["radius"] = String(near.radiusKm)
+            query["unit"] = "km"
+        }
+        return try await musicEvents(page: page, from: from, query)
     }
 
     func performing(_ attractionIDs: [String], from: Date) async throws -> [Concert] {
@@ -81,6 +82,23 @@ struct TicketmasterConcerts: ConcertListing {
                 musicbrainzIDs: ($0.externalLinks?.musicbrainz ?? []).compactMap(\.id).map { $0.lowercased() }
             )
         }
+    }
+
+    /// One page of music events from `from` on, soonest first, narrowed by `query`.
+    private func musicEvents(page: Int, from: Date, _ query: [String: String]) async throws -> ConcertResults {
+        let response = try await get(EventPage.self, "events.json", query.merging([
+            "classificationName": "music",
+            "sort": "date,asc",
+            "startDateTime": Self.timestamp(from),
+            "size": String(Self.pageSize),
+            "page": String(max(0, page - 1)),
+        ]) { given, _ in given })
+        let current = response.page?.number ?? 0
+        let pages = response.page?.totalPages ?? 0
+        return ConcertResults(
+            concerts: response.events.compactMap(\.concert),
+            hasMore: current + 1 < pages && current + 1 < Self.maxPage
+        )
     }
 
     /// `2026-10-21T18:00:00Z`: Ticketmaster wants seconds and a literal Z, no fractions.
@@ -151,10 +169,24 @@ private struct Named: Decodable {
     let name: String?
 }
 
+/// Ticketmaster sends the coordinates as strings.
+private struct VenueLocation: Decodable {
+    let latitude: String?
+    let longitude: String?
+
+    var point: GeoPoint? {
+        guard let latitude = latitude.flatMap(Double.init), let longitude = longitude.flatMap(Double.init) else {
+            return nil
+        }
+        return GeoPoint(latitude: latitude, longitude: longitude)
+    }
+}
+
 private struct Venue: Decodable {
     let name: String?
     let city: Named?
     let country: Named?
+    let location: VenueLocation?
 }
 
 private struct Performer: Decodable {
@@ -200,7 +232,8 @@ private struct Event: Decodable {
             country: venue?.country?.name,
             distanceKm: distance.map { units?.uppercased().hasPrefix("MI") == true ? $0 * 1.609344 : $0 },
             url: link,
-            imageURL: poster
+            imageURL: poster,
+            venuePoint: venue?.location?.point
         )
     }
 

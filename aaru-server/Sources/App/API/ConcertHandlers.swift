@@ -8,32 +8,15 @@ extension APIImplementation {
     func getConcertsNear(_ input: Operations.GetConcertsNear.Input) async throws -> Operations.GetConcertsNear.Output {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
         let userID = try currentUser()
-        let page = body.page ?? 1
-        guard (1 ... TicketmasterConcerts.maxPage).contains(page) else {
-            throw Self.invalid("page", "Pages run from 1 to \(TicketmasterConcerts.maxPage).")
-        }
-        var point: GeoPoint?
-        switch (body.latitude, body.longitude) {
-        case (nil, nil):
-            point = nil
-        case let (latitude?, longitude?):
-            guard let given = GeoPoint(latitude: latitude, longitude: longitude) else {
-                throw Self.invalid("latitude", "Not a position on Earth.")
-            }
-            point = given
-        default:
-            throw Self.invalid("longitude", "Send latitude and longitude together.")
-        }
+        let page = try Self.concertPage(body.page)
+        let point = try Self.oneOffPoint(body.latitude, body.longitude)
         let nearby: ConcertService.Nearby
         do {
             nearby = try await services.concerts.near(
                 userID: userID, point: point, radiusKm: body.radiusKm.rawValue, page: page
             )
         } catch is NoConcertPlace {
-            throw AppError(
-                status: .conflict, code: "no_place",
-                message: "Choose a city for concerts in Settings, or use your location."
-            )
+            throw Self.noPlace
         }
         return .ok(.init(body: .json(.init(
             place: nearby.place.map { Components.Schemas.ConcertPlace($0) },
@@ -42,6 +25,38 @@ extension APIImplementation {
             page: nearby.page,
             hasMore: nearby.results.hasMore,
             unavailable: nearby.unavailable
+        ))))
+    }
+
+    func searchConcerts(_ input: Operations.SearchConcerts.Input) async throws -> Operations.SearchConcerts.Output {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let userID = try currentUser()
+        let query = body.q.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (2 ... 100).contains(query.count) else { throw Self.invalid("q", "Type 2 to 100 characters.") }
+        let page = try Self.concertPage(body.page)
+        let point = try Self.oneOffPoint(body.latitude, body.longitude)
+        let scope: ConcertSearchScope = switch body.scope {
+        case .near: .near
+        case .anywhere: .anywhere
+        }
+        let found: ConcertService.Searched
+        do {
+            found = try await services.concerts.search(
+                ConcertSearch(query: query, scope: scope, radiusKm: body.radiusKm.rawValue, page: page),
+                userID: userID, point: point
+            )
+        } catch is NoConcertPlace {
+            throw Self.noPlace
+        }
+        return .ok(.init(body: .json(.init(
+            query: found.query,
+            scope: found.scope == .near ? .near : .anywhere,
+            place: found.place.map { Components.Schemas.ConcertPlace($0) },
+            radiusKm: found.radiusKm,
+            items: found.results.concerts.map { Components.Schemas.Concert($0) },
+            page: found.page,
+            hasMore: found.results.hasMore,
+            unavailable: found.unavailable
         ))))
     }
 
@@ -99,6 +114,33 @@ extension APIImplementation {
 
     private func setting(_ place: ConcertPlace?) -> Components.Schemas.ConcertPlaceSetting {
         .init(place: place.map { Components.Schemas.ConcertPlace($0) }, available: services.concerts.isAvailable)
+    }
+
+    private static let noPlace = AppError(
+        status: .conflict, code: "no_place", message: "Choose a city for concerts in Settings, or use your location."
+    )
+
+    private static func concertPage(_ page: Int?) throws -> Int {
+        let page = page ?? 1
+        guard (1 ... TicketmasterConcerts.maxPage).contains(page) else {
+            throw invalid("page", "Pages run from 1 to \(TicketmasterConcerts.maxPage).")
+        }
+        return page
+    }
+
+    /// A one-off position sent with the request, rounded; nil when neither coordinate was sent.
+    private static func oneOffPoint(_ latitude: Double?, _ longitude: Double?) throws -> GeoPoint? {
+        switch (latitude, longitude) {
+        case (nil, nil):
+            return nil
+        case let (latitude?, longitude?):
+            guard let point = GeoPoint(latitude: latitude, longitude: longitude) else {
+                throw invalid("latitude", "Not a position on Earth.")
+            }
+            return point
+        default:
+            throw invalid("longitude", "Send latitude and longitude together.")
+        }
     }
 
     private static func trimmed(_ text: String?) -> String? {

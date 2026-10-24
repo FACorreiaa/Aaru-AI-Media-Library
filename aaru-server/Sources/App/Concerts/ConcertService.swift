@@ -25,6 +25,19 @@ struct ConcertService: Sendable {
         var unavailable: Bool
     }
 
+    struct Searched: Sendable, Equatable {
+        /// The name as searched, trimmed.
+        var query: String
+        var scope: ConcertSearchScope
+        /// The saved city, when it was the centre or the distances are from it.
+        var place: ConcertPlace?
+        /// The radius, for `near`.
+        var radiusKm: Int?
+        var page: Int
+        var results: ConcertResults
+        var unavailable: Bool
+    }
+
     struct ForArtists: Sendable, Equatable {
         var concerts: [Concert]
         /// Library artists the provider knows.
@@ -62,6 +75,49 @@ struct ConcertService: Sendable {
         return Nearby(
             place: place, radiusKm: radiusKm, page: page,
             results: results ?? ConcertResults(concerts: [], hasMore: false), unavailable: results == nil
+        )
+    }
+
+    /// Concerts matching an artist's name (MUS-010). `near` searches around `point` (already
+    /// rounded) or the saved city; `anywhere` sends the provider the name alone and works out
+    /// each venue's distance from the point or saved city here, after the shared cache.
+    func search(_ search: ConcertSearch, userID: UserID, point: GeoPoint?) async throws -> Searched {
+        let (query, scope, page) = (search.query, search.scope, search.page)
+        let radius = scope == .near ? search.radiusKm : nil
+        guard let listing else {
+            return Searched(
+                query: query, scope: scope, place: nil, radiusKm: radius, page: page,
+                results: .init(concerts: [], hasMore: false), unavailable: true
+            )
+        }
+        let place = point == nil ? try await stores.concerts.place(userID: userID) : nil
+        let center = point ?? place?.point
+        let area: (point: GeoPoint, radiusKm: Int)?
+        switch scope {
+        case .near:
+            guard let center else { throw NoConcertPlace() }
+            area = (center, search.radiusKm)
+        case .anywhere:
+            area = nil
+        }
+        let now = now()
+        // Keyed by the name as everyone types it and the cell, never by who asked.
+        let cell = area.map { $0.point.geohash() } ?? "*"
+        let key = "search:\(query.lowercased()):\(cell):\(radius.map(String.init) ?? "*"):\(page)"
+        let found = await cache.value(key, now: now) {
+            try await listing.search(query, near: area, page: page, from: now)
+        }
+        var results = found ?? ConcertResults(concerts: [], hasMore: false)
+        if scope == .anywhere {
+            results.concerts = results.concerts.map { concert in
+                var concert = concert
+                concert.distanceKm = center.flatMap { center in concert.venuePoint.map(center.distanceKm) }
+                return concert
+            }
+        }
+        return Searched(
+            query: query, scope: scope, place: place, radiusKm: radius, page: page, results: results,
+            unavailable: found == nil
         )
     }
 

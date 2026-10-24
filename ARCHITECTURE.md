@@ -542,6 +542,12 @@ and clients hide the view). Paced at 4/s; a `CallBudget` stops at 4,500 calls a 
   even when empty), then up to 20 artists are matched by searching Ticketmaster performers by name
   and keeping only one whose `externalLinks.musicbrainz` carries the same MBID; rechecked after 30
   days. `GET /v1/concerts/artists` asks for the user's matched performers 20 ids a call, cached.
+- **Search by artist (MUS-010).** `POST /v1/concerts/search` (POST so the typed name never sits
+  in a URL): Ticketmaster's `keyword` on music events, free text, searched on submit only.
+  `scope: near` adds the same cell and radius as `/near` (no centre is 409 `no_place`);
+  `scope: anywhere` sends the keyword alone, and the server adds `distanceKm` from the point or
+  saved city to the venue's own position (haversine) after the cache, so results are shared by
+  everyone. Cache key `search:<lowercased name>:<cell|*>:<radius|*>:<page>`.
 - **City picker.** `GET /v1/concerts/places?q=` → `OpenMeteoPlaces` (no key). The request log
   drops this route's query. `PUT`/`DELETE /v1/me/concert-place` save and forget the city.
 

@@ -1923,6 +1923,30 @@ paths:
               schema: {$ref: '#/components/schemas/ConcertPage'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/concerts/search:
+    post:
+      operationId: searchConcerts
+      summary: Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+      description: >-
+        POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as
+        free text, so other acts whose events carry the word can match. `near` searches around a
+        one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`);
+        `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the
+        server from the point or saved city when there is one. Neither name nor position is
+        logged; the same list for everyone, cached by the server.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConcertSearchRequest'}
+      responses:
+        '200':
+          description: The page. `unavailable` when concerts are off or the provider is down.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConcertSearchPage'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/concerts/artists:
     get:
       operationId: getArtistConcerts
@@ -4456,7 +4480,9 @@ components:
         country: {type: string}
         distanceKm:
           type: number
-          description: From the searched point. Absent for an artist's concerts.
+          description: >-
+            From the searched point, or from the point or saved city for an `anywhere` search.
+            Absent for "Your artists on tour", and when the venue's position is unknown.
         url:
           type: string
           description: Ticketmaster's event page.
@@ -4509,6 +4535,50 @@ components:
       properties:
         place: {$ref: '#/components/schemas/ConcertPlace'}
         radiusKm: {type: integer}
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Concert'}
+        page: {type: integer}
+        hasMore: {type: boolean}
+        unavailable:
+          type: boolean
+          description: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+    ConcertSearchScope:
+      type: string
+      description: '`near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.'
+      enum: [near, anywhere]
+    ConcertSearchRequest:
+      type: object
+      required: [q, scope, radiusKm]
+      properties:
+        q:
+          type: string
+          description: The artist's name, 2 to 100 characters. Not logged.
+        scope: {$ref: '#/components/schemas/ConcertSearchScope'}
+        latitude:
+          type: number
+          description: Sent with `longitude` for a one-off position; absent uses the saved city.
+        longitude: {type: number}
+        radiusKm:
+          type: integer
+          description: Used by `near` only.
+          enum: [25, 50, 100]
+        page:
+          type: integer
+          description: 1-based, at most 10.
+          default: 1
+    ConcertSearchPage:
+      type: object
+      required: [query, scope, items, page, hasMore, unavailable]
+      properties:
+        query:
+          type: string
+          description: The name as searched, trimmed.
+        scope: {$ref: '#/components/schemas/ConcertSearchScope'}
+        place: {$ref: '#/components/schemas/ConcertPlace'}
+        radiusKm:
+          type: integer
+          description: Present for `near`.
         items:
           type: array
           items: {$ref: '#/components/schemas/Concert'}

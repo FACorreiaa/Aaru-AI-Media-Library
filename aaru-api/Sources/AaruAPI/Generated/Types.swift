@@ -589,6 +589,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/concerts/near`.
     /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)`.
     func getConcertsNear(_ input: Operations.GetConcertsNear.Input) async throws -> Operations.GetConcertsNear.Output
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    func searchConcerts(_ input: Operations.SearchConcerts.Input) async throws -> Operations.SearchConcerts.Output
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
@@ -2275,6 +2282,21 @@ extension APIProtocol {
         body: Operations.GetConcertsNear.Input.Body
     ) async throws -> Operations.GetConcertsNear.Output {
         try await getConcertsNear(Operations.GetConcertsNear.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    public func searchConcerts(
+        headers: Operations.SearchConcerts.Input.Headers = .init(),
+        body: Operations.SearchConcerts.Input.Body
+    ) async throws -> Operations.SearchConcerts.Output {
+        try await searchConcerts(Operations.SearchConcerts.Input(
             headers: headers,
             body: body
         ))
@@ -8536,7 +8558,7 @@ public enum Components {
             public var city: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Concert/country`.
             public var country: Swift.String?
-            /// From the searched point. Absent for an artist's concerts.
+            /// From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown.
             ///
             /// - Remark: Generated from `#/components/schemas/Concert/distanceKm`.
             public var distanceKm: Swift.Double?
@@ -8560,7 +8582,7 @@ public enum Components {
             ///   - venue:
             ///   - city:
             ///   - country:
-            ///   - distanceKm: From the searched point. Absent for an artist's concerts.
+            ///   - distanceKm: From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown.
             ///   - url: Ticketmaster's event page.
             ///   - imageUrl: Ticketmaster's image for the event, referenced, never hosted.
             public init(
@@ -8786,6 +8808,141 @@ public enum Components {
                 self.unavailable = unavailable
             }
             public enum CodingKeys: String, CodingKey {
+                case place
+                case radiusKm
+                case items
+                case page
+                case hasMore
+                case unavailable
+            }
+        }
+        /// `near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchScope`.
+        @frozen public enum ConcertSearchScope: String, Codable, Hashable, Sendable, CaseIterable {
+            case near = "near"
+            case anywhere = "anywhere"
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest`.
+        public struct ConcertSearchRequest: Codable, Hashable, Sendable {
+            /// The artist's name, 2 to 100 characters. Not logged.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/q`.
+            public var q: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/scope`.
+            public var scope: Components.Schemas.ConcertSearchScope
+            /// Sent with `longitude` for a one-off position; absent uses the saved city.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/latitude`.
+            public var latitude: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/longitude`.
+            public var longitude: Swift.Double?
+            /// Used by `near` only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/radiusKm`.
+            @frozen public enum RadiusKmPayload: Int, Codable, Hashable, Sendable, CaseIterable {
+                case _25 = 25
+                case _50 = 50
+                case _100 = 100
+            }
+            /// Used by `near` only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/radiusKm`.
+            public var radiusKm: Components.Schemas.ConcertSearchRequest.RadiusKmPayload
+            /// 1-based, at most 10.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/page`.
+            public var page: Swift.Int?
+            /// Creates a new `ConcertSearchRequest`.
+            ///
+            /// - Parameters:
+            ///   - q: The artist's name, 2 to 100 characters. Not logged.
+            ///   - scope:
+            ///   - latitude: Sent with `longitude` for a one-off position; absent uses the saved city.
+            ///   - longitude:
+            ///   - radiusKm: Used by `near` only.
+            ///   - page: 1-based, at most 10.
+            public init(
+                q: Swift.String,
+                scope: Components.Schemas.ConcertSearchScope,
+                latitude: Swift.Double? = nil,
+                longitude: Swift.Double? = nil,
+                radiusKm: Components.Schemas.ConcertSearchRequest.RadiusKmPayload,
+                page: Swift.Int? = nil
+            ) {
+                self.q = q
+                self.scope = scope
+                self.latitude = latitude
+                self.longitude = longitude
+                self.radiusKm = radiusKm
+                self.page = page
+            }
+            public enum CodingKeys: String, CodingKey {
+                case q
+                case scope
+                case latitude
+                case longitude
+                case radiusKm
+                case page
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchPage`.
+        public struct ConcertSearchPage: Codable, Hashable, Sendable {
+            /// The name as searched, trimmed.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/query`.
+            public var query: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/scope`.
+            public var scope: Components.Schemas.ConcertSearchScope
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/place`.
+            public var place: Components.Schemas.ConcertPlace?
+            /// Present for `near`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/radiusKm`.
+            public var radiusKm: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/items`.
+            public var items: [Components.Schemas.Concert]
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/page`.
+            public var page: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/hasMore`.
+            public var hasMore: Swift.Bool
+            /// Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `ConcertSearchPage`.
+            ///
+            /// - Parameters:
+            ///   - query: The name as searched, trimmed.
+            ///   - scope:
+            ///   - place:
+            ///   - radiusKm: Present for `near`.
+            ///   - items:
+            ///   - page:
+            ///   - hasMore:
+            ///   - unavailable: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            public init(
+                query: Swift.String,
+                scope: Components.Schemas.ConcertSearchScope,
+                place: Components.Schemas.ConcertPlace? = nil,
+                radiusKm: Swift.Int? = nil,
+                items: [Components.Schemas.Concert],
+                page: Swift.Int,
+                hasMore: Swift.Bool,
+                unavailable: Swift.Bool
+            ) {
+                self.query = query
+                self.scope = scope
+                self.place = place
+                self.radiusKm = radiusKm
+                self.items = items
+                self.page = page
+                self.hasMore = hasMore
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case query
+                case scope
                 case place
                 case radiusKm
                 case items
@@ -28762,6 +28919,148 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    public enum SearchConcerts {
+        public static let id: Swift.String = "searchConcerts"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/concerts/search/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcerts.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcerts.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchConcerts.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/concerts/search/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/search/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ConcertSearchRequest)
+            }
+            public var body: Operations.SearchConcerts.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SearchConcerts.Input.Headers = .init(),
+                body: Operations.SearchConcerts.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/search/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/concerts/search/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertSearchPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertSearchPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchConcerts.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchConcerts.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The page. `unavailable` when concerts are off or the provider is down.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchConcerts.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchConcerts.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
