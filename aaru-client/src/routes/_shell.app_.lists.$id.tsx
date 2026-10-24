@@ -26,10 +26,16 @@ import type { ListDetail } from '../lib/lists/server'
 import { createFocusReturn, focusFieldOnOpen } from '../lib/dialog-focus'
 import { flip, leave } from '../lib/motion'
 import { listQuery } from '../lib/queries'
+import { FilterField, PageControls } from '../components/Paged'
+import { clampPage, matches, pageOf } from '../lib/paging'
+import { prefersReducedMotion } from '../lib/reduced-motion'
+import { optionalInt, optionalString } from '../lib/search-params'
 
 // APP-006 on the web: one list, in order, with remove and move up/down. LST-003: rows carry
 // library status and progress, show status and the next airing; "Add titles" searches into it.
 // Search loads only when it is first opened: it is not part of the page's first paint.
+// LIB-005: a filter over the members and 20 to a page (`?q=`, `?page=`). Moving a row waits
+// for an empty filter, so ↑ and ↓ always swap with the row you can see.
 const SearchPanel = lazy(() =>
   import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
 )
@@ -37,6 +43,10 @@ const SearchPanel = lazy(() =>
 export const Route = createFileRoute('/_shell/app_/lists/$id')({
   loader: ({ params, context: { queryClient } }) =>
     queryClient.query(listQuery(params.id)),
+  validateSearch: (search): { q?: string; page?: number } => ({
+    q: optionalString(search.q),
+    page: optionalInt(search.page, 1, 100_000),
+  }),
   // UX-013: the tab names the list.
   head: ({ loaderData }) => ({
     meta: [{ title: `${loaderData?.name ?? 'List'} · Lists · Aaru` }],
@@ -72,6 +82,36 @@ function ListPage() {
   // Rows are keyed by title id, so a server answer keeps their elements and a move or a
   // removal can slide the others (FLIP) instead of redrawing the list.
   const ids = createMemo(() => rows().map((row) => row.titleId))
+  const position = createMemo(
+    () => new Map(ids().map((id, index) => [id, index])),
+  )
+
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+  // The filter answers each keystroke from this signal; the URL follows.
+  const [query, setQuery] = createSignal(search().q ?? '')
+  let heading: HTMLHeadingElement | undefined
+  function filter(q: string) {
+    setQuery(q)
+    void navigate({
+      search: (prev) => ({ ...prev, q: q || undefined, page: undefined }),
+      replace: true,
+    })
+  }
+  function setPage(page: number) {
+    void navigate({ search: (prev) => ({ ...prev, page }), replace: true })
+    heading?.scrollIntoView({
+      block: 'start',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    })
+  }
+  const matching = createMemo(() =>
+    rows()
+      .filter((row) => matches(query(), row.title, row.byline))
+      .map((row) => row.titleId),
+  )
+  const page = () => clampPage(search().page, matching().length)
+  const shown = createMemo(() => pageOf(matching(), page()))
 
   /** Applies a state change, sliding the rows that move. */
   function reflow(mutate: () => void) {
@@ -174,7 +214,10 @@ function ListPage() {
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
         <BackLink to="/app/lists" label="Lists" class="-ml-1" />
         <div class="mt-4 flex items-end justify-between gap-4">
-          <h1 class="font-display text-4xl font-medium tracking-tight">
+          <h1
+            ref={heading}
+            class="scroll-mt-20 font-display text-4xl font-medium tracking-tight"
+          >
             {detail().name}
           </h1>
           <Button
@@ -207,10 +250,26 @@ function ListPage() {
             />
           }
         >
+          <FilterField
+            label="Filter this list"
+            placeholder="Filter this list"
+            value={query()}
+            onChange={filter}
+            class="mt-8"
+          />
+          <Show when={matching().length === 0}>
+            <div class="mt-12 max-w-sm">
+              <p class="text-muted">No titles match “{query()}” here.</p>
+              <Button variant="outline" class="mt-6" onClick={() => filter('')}>
+                Clear filter
+              </Button>
+            </div>
+          </Show>
           {/* An ordered list reads top to bottom: one column, at a width rows can be read. */}
-          <ol ref={list} class="mt-8 max-w-[56rem] divide-y divide-line">
-            <For each={ids()}>
-              {(id, index) => {
+          <ol ref={list} class="mt-6 max-w-[56rem] divide-y divide-line">
+            <For each={shown()}>
+              {(id) => {
+                const index = () => position().get(id) ?? 0
                 // The last known row: it stays drawn while a removed one is torn down.
                 const row = createMemo<ListRow>(
                   (last) => rowById().get(id) ?? last,
@@ -291,26 +350,28 @@ function ListPage() {
                           </div>
                         )}
                       </Show>
-                      <Button
-                        variant="soft"
-                        size="bare"
-                        aria-label={`Move ${row().title} up`}
-                        disabled={index() === 0}
-                        class="px-2 py-1"
-                        onClick={() => move(index(), -1)}
-                      >
-                        ↑
-                      </Button>
-                      <Button
-                        variant="soft"
-                        size="bare"
-                        aria-label={`Move ${row().title} down`}
-                        disabled={index() === rows().length - 1}
-                        class="px-2 py-1"
-                        onClick={() => move(index(), 1)}
-                      >
-                        ↓
-                      </Button>
+                      <Show when={!query()}>
+                        <Button
+                          variant="soft"
+                          size="bare"
+                          aria-label={`Move ${row().title} up`}
+                          disabled={index() === 0}
+                          class="px-2 py-1"
+                          onClick={() => move(index(), -1)}
+                        >
+                          ↑
+                        </Button>
+                        <Button
+                          variant="soft"
+                          size="bare"
+                          aria-label={`Move ${row().title} down`}
+                          disabled={index() === rows().length - 1}
+                          class="px-2 py-1"
+                          onClick={() => move(index(), 1)}
+                        >
+                          ↓
+                        </Button>
+                      </Show>
                       <Button
                         variant="ghost"
                         size="bare"
@@ -325,6 +386,12 @@ function ListPage() {
               }}
             </For>
           </ol>
+          <PageControls
+            page={page()}
+            total={matching().length}
+            label="List pages"
+            onPage={setPage}
+          />
         </Show>
         <ConfirmDialog
           open={pending() !== null}

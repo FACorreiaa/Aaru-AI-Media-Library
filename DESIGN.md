@@ -847,6 +847,11 @@ On the web, one component library, then performance:
   layout, a status picker) is `Segmented` (`src/components/Segmented.tsx`, `pill` or `chip`) on
   shadcn-solid's SegmentedControl: "radio, 2 of 3", arrows move the choice, a second tap never
   clears it. There is no ToggleGroup; a real on/off is a Switch or a Checkbox.
+- **Long screens filter, then page (LIB-005).** Library, Lists, a list and Discover carry
+  `FilterField` (`src/components/Paged.tsx`) and show 20 at a time with `PageControls`
+  (shadcn-solid Pagination, page in the URL). The filter searches every item the screen holds,
+  never just the page; a new filter starts at page 1. Apple uses `.searchable` and shows 20 more
+  as the end scrolls in (`Design/Paging.swift`).
 - **Overlays play their exit.** A dialog, sheet or drawer takes `open` and stays mounted on its
   last value (`lastShown` in `src/lib/presence.ts`) while Kobalte plays the close, then the page
   lets it go. None is mounted only while open.

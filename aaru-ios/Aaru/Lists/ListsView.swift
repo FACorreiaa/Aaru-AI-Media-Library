@@ -8,6 +8,7 @@ struct ListRoute: Hashable {
 
 /// APP-006: every list, with create, rename and delete. A list is membership, not a filter. In a
 /// stack (iPhone, Library) a row pushes the list; in `ListsScreen`'s split view it selects it.
+/// LIB-005: a filter over the list names, and 20 at a time with more on scroll.
 struct ListsView: View {
     let lists: ListsModel
     let library: LibraryModel
@@ -18,6 +19,16 @@ struct ListsView: View {
     @Environment(AppRouter.self) private var router
     @State private var naming: ListNaming?
     @State private var deleting: ListSummary?
+    @State private var query = ""
+    @State private var shown = Paging.pageSize
+
+    private var matching: [ListSummary] {
+        lists.lists.filter { Paging.matches(query, $0.name) }
+    }
+
+    private var visible: [ListSummary] {
+        Array(matching.prefix(shown))
+    }
 
     init(lists: ListsModel, library: LibraryModel, api: Client?, selection: Binding<String?>? = nil) {
         self.lists = lists
@@ -33,6 +44,8 @@ struct ListsView: View {
             .overlay { state }
             .safeAreaInset(edge: .bottom) { ProblemBanner(message: lists.problem) { lists.problem = nil } }
             .navigationTitle("Lists")
+            .searchable(text: $query, prompt: "Filter your lists")
+            .onChange(of: query) { shown = Paging.pageSize }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     // ⌘N (File → New List) does the same from anywhere.
@@ -71,21 +84,25 @@ struct ListsView: View {
     @ViewBuilder private var rows: some View {
         if let selection {
             List(selection: selection) {
-                ForEach(lists.lists, id: \.id) { list in
+                ForEach(visible, id: \.id) { list in
                     NavigationLink(value: list.id) { ListRowLabel(list: list) }
                         .contextMenu { menu(list) }
                 }
                 .onDelete(perform: confirmDelete)
+                LoadMore(shown: $shown, total: matching.count)
             }
             .listStyle(.sidebar)
         } else {
             List {
-                ForEach(lists.lists, id: \.id) { list in
+                ForEach(visible, id: \.id) { list in
                     NavigationLink(value: ListRoute(id: list.id)) { ListRowLabel(list: list) }
                         .contextMenu { menu(list) }
                 }
                 .onDelete(perform: confirmDelete)
                 .listRowBackground(Color.clear)
+                LoadMore(shown: $shown, total: matching.count)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
             .listStyle(.plain)
         }
@@ -103,6 +120,8 @@ struct ListsView: View {
                     Button("New list") { naming = .new }.buttonStyle(.borderedProminent)
                 }
             }
+        } else if matching.isEmpty {
+            ContentUnavailableView.search(text: query)
         }
     }
 
@@ -113,7 +132,7 @@ struct ListsView: View {
 
     /// A swipe asks first, as the context menu does (UX-079).
     private func confirmDelete(_ offsets: IndexSet) {
-        deleting = offsets.first.map { lists.lists[$0] }
+        deleting = offsets.first.map { visible[$0] }
     }
 }
 
