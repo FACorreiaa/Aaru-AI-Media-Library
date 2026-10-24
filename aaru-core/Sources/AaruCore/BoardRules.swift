@@ -77,10 +77,10 @@ public enum BoardRules {
     /// makes a reply top-level; a cycle makes its members top-level rather than hang.
     public static func threads<C: BoardThreadComment>(_ items: [C]) -> [BoardThread<C>] {
         let byId = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        // The id of the top-level comment `c` hangs from, or nil when `c` is top-level itself.
         func rootId(of c: C) -> String? {
             var seen: Set<String> = [c.id]
             var current = c
+            // Walk up to the top-level comment `c` hangs from; nil when `c` is top-level itself.
             while let parentId = current.replyTo {
                 guard let parent = byId[parentId] else { break }
                 if seen.contains(parent.id) {
