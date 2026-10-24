@@ -298,6 +298,10 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
         let anilist: String
         let mal, anidb, tvdb, tmdb: String?
         let tmdbSeason: Int?
+
+        var mapping: AnimeMapping {
+            AnimeMapping(anilist: anilist, mal: mal, anidb: anidb, tvdb: tvdb, tmdb: tmdb, tmdbSeason: tmdbSeason)
+        }
     }
 
     func mapping(anilist: String) async throws -> AnimeMapping? {
@@ -313,12 +317,7 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
             .where(SQLIdentifier(column), .equal, SQLBind(value))
             .orderBy("anilist")
             .first(decoding: Row.self, keyDecodingStrategy: snake)
-            .map {
-                AnimeMapping(
-                    anilist: $0.anilist, mal: $0.mal, anidb: $0.anidb, tvdb: $0.tvdb,
-                    tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
-                )
-            }
+            .map(\.mapping)
     }
 
     func mappings(anilist ids: [String]) async throws -> [AnimeMapping] {
@@ -326,12 +325,7 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
         return try await sql.select().columns(SQLLiteral.all).from("anime_mappings")
             .where("anilist", .in, ids)
             .all(decoding: Row.self, keyDecodingStrategy: snake)
-            .map {
-                AnimeMapping(
-                    anilist: $0.anilist, mal: $0.mal, anidb: $0.anidb, tvdb: $0.tvdb,
-                    tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
-                )
-            }
+            .map(\.mapping)
     }
 
     func mappings(mal ids: [String]) async throws -> [String: AnimeMapping] {
@@ -342,12 +336,7 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
         ORDER BY mal, anilist
         """).all(decoding: Row.self, keyDecodingStrategy: snake)
         return Dictionary(rows.compactMap { row in
-            row.mal.map {
-                ($0, AnimeMapping(
-                    anilist: row.anilist, mal: row.mal, anidb: row.anidb, tvdb: row.tvdb,
-                    tmdb: row.tmdb, tmdbSeason: row.tmdbSeason
-                ))
-            }
+            row.mal.map { ($0, row.mapping) }
         }, uniquingKeysWith: { first, _ in first })
     }
 
@@ -356,12 +345,7 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
         return try await sql.select().columns(SQLLiteral.all).from("anime_mappings")
             .where("tmdb", .in, Array(Set(ids)))
             .all(decoding: Row.self, keyDecodingStrategy: snake)
-            .map {
-                AnimeMapping(
-                    anilist: $0.anilist, mal: $0.mal, anidb: $0.anidb, tvdb: $0.tvdb,
-                    tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
-                )
-            }
+            .map(\.mapping)
     }
 
     func upsertMany(_ mappings: [AnimeMapping]) async throws {
