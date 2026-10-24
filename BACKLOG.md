@@ -614,8 +614,9 @@ account or a stranger that has not happened yet.
 | MNG-001 | Built, unverified | #175; MangaTests, AniListMangaAdapterTests; deployed f6cc317 (infra #456), TestFlight from d9c6341 | Not run on a device |
 | MNG-002 | Built, unverified | #175; MangaImportTests, AnimeListImportTests; deployed f6cc317 (infra #456) | No real MAL manga export or AniList manga list run yet |
 | FAV-001 | Built, unverified | #176; FavoritesTests, favorites model tests; deployed f6cc317 (infra #456), TestFlight from f6cc317 | Not run on a device or in a browser |
-| BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
-| BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
+| BOARD-003 | Built, unverified | AaruCoreTests BoardRulesTests; Friends → Board, post screen, title From friends | Apple only, this PR (feat/board-003-ios); not on TestFlight |
+| BOARD-002 | Built, unverified | #169 b3799f8; web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, on the beta Worker; not looked at in a browser |
+| BOARD-001 | Built, unverified | #149; BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts`; deployed b3799f8 (infra #455) | Undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -3090,6 +3091,8 @@ upvoter names, upvote, and "From friends" on the title page. Surfaces in `DESIGN
 ### BOARD-003 · Board on iOS and Mac · L
 **Needs:** BOARD-001.
 The same surfaces as BOARD-002 in SwiftUI: Board inside Friends, reached on iPhone from Groups' Friends button.
+
+**Built 2026-10-24:** iPhone, iPad and Mac, unverified (not on TestFlight). On iPhone Groups' stack now uses a NavigationPath so posts can push from Friends.
 
 ### BOARD-004 · `@aaru` on the Board, and push · M
 **Needs:** BOARD-001, GRP-011, GRP-012.

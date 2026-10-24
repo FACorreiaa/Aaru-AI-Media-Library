@@ -8,6 +8,9 @@ final class SettingsServices {
     let account: AccountModel
     /// The name and handle (Account) and friends (Friends & privacy).
     let social: SocialModel
+    /// The Board on Friends (BOARD-003), beside `social` so the iPhone's Friends (pushed from
+    /// Groups) and the iPad and Mac sidebar's share one Board.
+    let board: BoardModel
     let notifications: NotificationsModel
     let connections: ConnectionsModel
     let data: DataModel
@@ -16,6 +19,7 @@ final class SettingsServices {
     init(api: Client?) {
         account = AccountModel(api: api)
         social = SocialModel(api: api)
+        board = BoardModel(api: api)
         notifications = NotificationsModel(api: api)
         connections = ConnectionsModel(api: api)
         data = DataModel(api: api)
@@ -25,6 +29,7 @@ final class SettingsServices {
     func reset() {
         account.reset()
         social.reset()
+        board.reset()
         notifications.reset()
         connections.reset()
         data.reset()

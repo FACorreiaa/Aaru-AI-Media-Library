@@ -1,34 +1,44 @@
 import AaruAPI
 import SwiftUI
 
-/// Friends (SOC-002 / SOC-003): friends' last two weeks, then invites, requests and friends. A
-/// friend opens their profile. A sidebar destination on iPad and Mac; on iPhone, Groups pushes
-/// `FriendsContent` (the five tabs are full, §18). Shares Settings' `SocialModel`, so the handle
-/// and the sharing switch read the same everywhere.
+/// Friends (SOC-002 / SOC-003, BOARD-003): the Board first, then Lately (friends' last two weeks,
+/// invites, requests and friends). A friend opens their profile. A sidebar destination on iPad
+/// and Mac; on iPhone, Groups pushes `FriendsContent` (the five tabs are full, §18). Shares
+/// Settings' `SocialModel` and `BoardModel`, so the handle, the sharing switch and the Board read
+/// the same everywhere.
 struct FriendsScreen: View {
     let social: SocialModel
+    let board: BoardModel
 
     var body: some View {
         NavigationStack {
-            FriendsContent(model: social)
+            FriendsContent(model: social, board: board)
         }
     }
 }
 
 /// Friends without a stack of its own, for a sidebar's stack or Groups' on iPhone. Without a
-/// handle there is nothing social yet, so it asks for one first.
+/// handle there is nothing social yet, so it asks for one first. With one, it opens on the Board,
+/// and `Board | Lately` sits in the bar (DESIGN.md "Board (BOARD-002)"). A post's comment count
+/// pushes its post screen, registered here once for both stacks.
 struct FriendsContent: View {
     let model: SocialModel
+    let board: BoardModel
+    @SceneStorage("friends.view") private var section = FriendsSection.board
+    @Environment(AppRouter.self) private var router: AppRouter?
+
+    /// Friends didn't load, or there is no handle yet: no composer to take a title.
+    private var composerUnreachable: Bool {
+        model.hasLoaded ? model.handle == nil : model.loadProblem != nil
+    }
 
     var body: some View {
         Group {
             if let problem = model.loadProblem, !model.hasLoaded {
                 LoadFailedView(title: "Friends didn't load", message: problem) { await model.load() }
-                    .navigationTitle("Friends")
             } else if !model.hasLoaded {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .navigationTitle("Friends")
             } else if model.handle == nil {
                 OwlUnavailableView(
                     title: "Choose a handle",
@@ -37,13 +47,73 @@ struct FriendsContent: View {
                     NavigationLink("Choose a handle") { ProfileEditor(model: model) }
                         .buttonStyle(.borderedProminent)
                 }
-                .navigationTitle("Friends")
             } else {
-                FriendsView(model: model)
+                switch section {
+                case .board:
+                    BoardView(board: board, social: model) { section = .lately }
+                case .lately:
+                    FriendsView(model: model)
+                }
             }
         }
-        .background(Color(.paper))
-        .task { await model.load() }
+        .navigationTitle("Friends")
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #endif
+            .toolbar {
+                if model.handle != nil {
+                    ToolbarItem(placement: .principal) {
+                        Picker("View", selection: $section) {
+                            ForEach(FriendsSection.allCases) { Text($0.label).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        .fixedSize()
+                    }
+                }
+            }
+            .background(Color(.paper))
+            .navigationDestination(for: PostRoute.self) { route in
+                PostScreen(
+                    postId: route.postId,
+                    initial: route.initial,
+                    board: board,
+                    friendHandles: model.friends.map(\.handle).filter { $0 != model.handle },
+                    myHandle: model.handle
+                )
+            }
+            .task { await model.load() }
+            // "Write about this" from a title page opens the Board, where the composer takes it.
+            // With no composer to take it, it is dropped, so it can't land in one much later.
+            .onChange(of: router?.pendingBoardTitle, initial: true) { _, pick in
+                guard pick != nil else { return }
+                if composerUnreachable {
+                    router?.pendingBoardTitle = nil
+                } else {
+                    section = .board
+                }
+            }
+            .onChange(of: composerUnreachable) { _, unreachable in
+                if unreachable {
+                    router?.pendingBoardTitle = nil
+                }
+            }
+    }
+}
+
+/// The two views of Friends: the Board, and Lately.
+enum FriendsSection: String, CaseIterable, Identifiable {
+    case board
+    case lately
+
+    var id: String {
+        rawValue
+    }
+
+    var label: String {
+        switch self {
+        case .board: "Board"
+        case .lately: "Lately"
+        }
     }
 }
 
