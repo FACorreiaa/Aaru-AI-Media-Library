@@ -16,6 +16,12 @@ extension APIImplementation {
     func getUpNext(_: Operations.GetUpNext.Input) async throws -> Operations.GetUpNext.Output {
         try await .ok(.init(body: .json(.init(services.schedule.upNext(userID: currentUser())))))
     }
+
+    func listWatching(_: Operations.ListWatching.Input) async throws -> Operations.ListWatching.Output {
+        try await .ok(.init(body: .json(.init(
+            items: services.schedule.watching(userID: currentUser()).map(Components.Schemas.WatchingItem.init)
+        ))))
+    }
 }
 
 extension Components.Schemas.UpNext {
@@ -63,6 +69,20 @@ extension Components.Schemas.ContinueEntry {
             remainingCount: entry.remainingCount,
             remainingMinutes: entry.remainingMinutes,
             isFinale: entry.isFinale
+        )
+    }
+}
+
+extension Components.Schemas.WatchingItem {
+    init(_ row: WatchingRow) {
+        self.init(
+            entry: .init(row.entry),
+            showStatus: row.airing?.status.flatMap { .init(rawValue: $0.rawValue) },
+            nextAiring: row.airing?.next.flatMap(Components.Schemas.UpcomingEpisode.init),
+            nextName: row.next?.nextName,
+            nextRuntimeMinutes: row.next?.nextRuntimeMinutes,
+            remainingCount: row.next?.remainingCount,
+            remainingMinutes: row.next?.remainingMinutes
         )
     }
 }

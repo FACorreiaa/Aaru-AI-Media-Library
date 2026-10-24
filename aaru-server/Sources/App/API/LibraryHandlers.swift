@@ -242,7 +242,9 @@ extension Components.Schemas.LibraryEntry {
                     chapter: progress.chapter,
                     volume: progress.volume
                 )
-            }
+            },
+            lastWatchedAt: entry.lastWatchedAt,
+            inBacklog: entry.inBacklog
         )
     }
 }

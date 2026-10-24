@@ -638,6 +638,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)`.
     func listTitlePosts(_ input: Operations.ListTitlePosts.Input) async throws -> Operations.ListTitlePosts.Output
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    func listWatching(_ input: Operations.ListWatching.Input) async throws -> Operations.ListWatching.Output
     /// The user's library, most recently updated first. Shelves use the same filters.
     ///
     /// - Remark: HTTP `GET /v1/library/items`.
@@ -2395,6 +2400,13 @@ extension APIProtocol {
             query: query,
             headers: headers
         ))
+    }
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    public func listWatching(headers: Operations.ListWatching.Input.Headers = .init()) async throws -> Operations.ListWatching.Output {
+        try await listWatching(Operations.ListWatching.Input(headers: headers))
     }
     /// The user's library, most recently updated first. Shelves use the same filters.
     ///
@@ -9681,6 +9693,14 @@ public enum Components {
             public var bookProgress: Components.Schemas.BookProgress?
             /// - Remark: Generated from `#/components/schemas/LibraryEntry/mangaProgress`.
             public var mangaProgress: Components.Schemas.MangaProgress?
+            /// The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/lastWatchedAt`.
+            public var lastWatchedAt: Foundation.Date?
+            /// APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/inBacklog`.
+            public var inBacklog: Swift.Bool
             /// Every watched episode of a show, in order. Only on single-item responses (the item,
             /// and episode and season writes); lists and sync leave it out.
             ///
@@ -9702,6 +9722,8 @@ public enum Components {
             ///   - progress:
             ///   - bookProgress:
             ///   - mangaProgress:
+            ///   - lastWatchedAt: The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+            ///   - inBacklog: APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching.
             ///   - watchedEpisodes: Every watched episode of a show, in order. Only on single-item responses (the item,
             public init(
                 id: Swift.String,
@@ -9716,6 +9738,8 @@ public enum Components {
                 progress: Components.Schemas.ShowProgress? = nil,
                 bookProgress: Components.Schemas.BookProgress? = nil,
                 mangaProgress: Components.Schemas.MangaProgress? = nil,
+                lastWatchedAt: Foundation.Date? = nil,
+                inBacklog: Swift.Bool,
                 watchedEpisodes: [Components.Schemas.EpisodeRef]? = nil
             ) {
                 self.id = id
@@ -9730,6 +9754,8 @@ public enum Components {
                 self.progress = progress
                 self.bookProgress = bookProgress
                 self.mangaProgress = mangaProgress
+                self.lastWatchedAt = lastWatchedAt
+                self.inBacklog = inBacklog
                 self.watchedEpisodes = watchedEpisodes
             }
             public enum CodingKeys: String, CodingKey {
@@ -9745,6 +9771,8 @@ public enum Components {
                 case progress
                 case bookProgress
                 case mangaProgress
+                case lastWatchedAt
+                case inBacklog
                 case watchedEpisodes
             }
         }
@@ -10215,6 +10243,83 @@ public enum Components {
                 case entry
                 case showStatus
                 case nextAiring
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Watching`.
+        public struct Watching: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Watching/items`.
+            public var items: [Components.Schemas.WatchingItem]
+            /// Creates a new `Watching`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.WatchingItem]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// One title in progress. Shows whose episodes are loaded carry `showStatus` and `nextAiring` (the first episode not aired yet); a show with an aired episode left to watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes` (aired, unwatched, specials left out), as Up Next's ContinueEntry does.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WatchingItem`.
+        public struct WatchingItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/entry`.
+            public var entry: Components.Schemas.LibraryEntry
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/showStatus`.
+            @frozen public enum ShowStatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case upcoming = "upcoming"
+                case returning = "returning"
+                case ended = "ended"
+                case canceled = "canceled"
+            }
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/showStatus`.
+            public var showStatus: Components.Schemas.WatchingItem.ShowStatusPayload?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextAiring`.
+            public var nextAiring: Components.Schemas.UpcomingEpisode?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextName`.
+            public var nextName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextRuntimeMinutes`.
+            public var nextRuntimeMinutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/remainingCount`.
+            public var remainingCount: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/remainingMinutes`.
+            public var remainingMinutes: Swift.Int?
+            /// Creates a new `WatchingItem`.
+            ///
+            /// - Parameters:
+            ///   - entry:
+            ///   - showStatus:
+            ///   - nextAiring:
+            ///   - nextName:
+            ///   - nextRuntimeMinutes:
+            ///   - remainingCount:
+            ///   - remainingMinutes:
+            public init(
+                entry: Components.Schemas.LibraryEntry,
+                showStatus: Components.Schemas.WatchingItem.ShowStatusPayload? = nil,
+                nextAiring: Components.Schemas.UpcomingEpisode? = nil,
+                nextName: Swift.String? = nil,
+                nextRuntimeMinutes: Swift.Int? = nil,
+                remainingCount: Swift.Int? = nil,
+                remainingMinutes: Swift.Int? = nil
+            ) {
+                self.entry = entry
+                self.showStatus = showStatus
+                self.nextAiring = nextAiring
+                self.nextName = nextName
+                self.nextRuntimeMinutes = nextRuntimeMinutes
+                self.remainingCount = remainingCount
+                self.remainingMinutes = remainingMinutes
+            }
+            public enum CodingKeys: String, CodingKey {
+                case entry
+                case showStatus
+                case nextAiring
+                case nextName
+                case nextRuntimeMinutes
+                case remainingCount
+                case remainingMinutes
             }
         }
         /// - Remark: Generated from `#/components/schemas/UpcomingEpisode`.
@@ -30218,6 +30323,135 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    public enum ListWatching {
+        public static let id: Swift.String = "listWatching"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/library/watching/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListWatching.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListWatching.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListWatching.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListWatching.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/library/watching/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/library/watching/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Watching)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Watching {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListWatching.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListWatching.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The titles in progress.
+            ///
+            /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListWatching.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListWatching.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

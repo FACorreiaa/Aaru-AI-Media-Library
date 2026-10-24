@@ -22,6 +22,7 @@ function entry(
     id,
     status: 'wishlist',
     isOwned: false,
+    inBacklog: false,
     addedAt: '2026-10-01T00:00:00Z',
     updatedAt: '2026-10-01T00:00:00Z',
     title: {

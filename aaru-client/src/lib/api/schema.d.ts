@@ -1828,6 +1828,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/library/watching': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first. */
+    get: operations['listWatching']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/library/items': {
     parameters: {
       query?: never
@@ -4046,6 +4063,13 @@ export interface components {
       bookProgress?: components['schemas']['BookProgress']
       mangaProgress?: components['schemas']['MangaProgress']
       /**
+       * Format: date-time
+       * @description The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+       */
+      lastWatchedAt?: string
+      /** @description APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching. */
+      inBacklog: boolean
+      /**
        * @description Every watched episode of a show, in order. Only on single-item responses (the item,
        *     and episode and season writes); lists and sync leave it out.
        */
@@ -4144,6 +4168,20 @@ export interface components {
       /** @enum {string} */
       showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
       nextAiring?: components['schemas']['UpcomingEpisode']
+    }
+    Watching: {
+      items: components['schemas']['WatchingItem'][]
+    }
+    /** @description One title in progress. Shows whose episodes are loaded carry `showStatus` and `nextAiring` (the first episode not aired yet); a show with an aired episode left to watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes` (aired, unwatched, specials left out), as Up Next's ContinueEntry does. */
+    WatchingItem: {
+      entry: components['schemas']['LibraryEntry']
+      /** @enum {string} */
+      showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
+      nextAiring?: components['schemas']['UpcomingEpisode']
+      nextName?: string
+      nextRuntimeMinutes?: number
+      remainingCount?: number
+      remainingMinutes?: number
     }
     UpcomingEpisode: {
       season: number
@@ -7574,6 +7612,27 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['BoardPostPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listWatching: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The titles in progress. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Watching']
         }
       }
       default: components['responses']['Error']
