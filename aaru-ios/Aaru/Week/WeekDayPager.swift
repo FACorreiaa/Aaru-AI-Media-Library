@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// iPhone: the same cells, one day at a time. A strip of the seven days on top; swipe between
-/// days. Stepping past either end moves the week a day, as the grid does.
+/// days. Stepping past either end moves the week a day, as the grid does. Grouped by channel
+/// (CAL-005), each day's cells sit under a heading per channel.
 struct WeekDayPager: View {
     let model: WeekModel
     @Binding var selection: Date
@@ -84,14 +85,17 @@ private struct WeekDayList: View {
     var body: some View {
         let entries = model.entries(on: day)
         ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(entries, id: \.cellID) { entry in
-                    Button { model.feed.open(entry) } label: {
-                        WeekCell(entry: entry, isPending: model.pending.contains(entry.cellID)) {
-                            Task { await model.toggle(entry) }
+            LazyVStack(spacing: 12, pinnedViews: [.sectionHeaders]) {
+                if model.feed.filter.grouping == .channel {
+                    ForEach(AiringChannel.group(entries)) { group in
+                        Section {
+                            ForEach(group.entries, id: \.cellID) { cell($0, detail: $0.dayAndTime) }
+                        } header: {
+                            AiringChannelHeader(group: group, inset: 0)
                         }
                     }
-                    .buttonStyle(.plain)
+                } else {
+                    ForEach(entries, id: \.cellID) { cell($0) }
                 }
                 if entries.isEmpty, model.isLoaded {
                     Text(filtersActive
@@ -106,5 +110,14 @@ private struct WeekDayList: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
+    }
+
+    private func cell(_ entry: CalendarEntry, detail: String? = nil) -> some View {
+        Button { model.feed.open(entry) } label: {
+            WeekCell(entry: entry, isPending: model.pending.contains(entry.cellID), detail: detail) {
+                Task { await model.toggle(entry) }
+            }
+        }
+        .buttonStyle(.plain)
     }
 }

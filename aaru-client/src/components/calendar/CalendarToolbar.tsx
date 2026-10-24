@@ -1,6 +1,10 @@
 import { For, Show, createSignal, lazy } from 'solid-js'
 import { activeCount } from '../../lib/calendar/filters'
-import type { CalendarFilter, CalendarView } from '../../lib/calendar/filters'
+import type {
+  CalendarFilter,
+  CalendarGroup,
+  CalendarView,
+} from '../../lib/calendar/filters'
 import {
   Badge,
   Button,
@@ -18,8 +22,14 @@ const VIEWS: { value: CalendarView; label: string }[] = [
   { value: 'missed', label: 'Missed' },
 ]
 
+// CAL-005: Week and Month by day (the default) or by where the episodes air.
+const GROUPS: { value: 'day' | CalendarGroup; label: string }[] = [
+  { value: 'day', label: 'Day' },
+  { value: 'channel', label: 'Channel' },
+]
+
 /** The calendar's controls (CAL-002): the view, day and week steps, Today, a date to jump to,
- * and filters that apply to whatever is loaded. */
+ * Group by day or channel (CAL-005), and filters that apply to whatever is loaded. */
 export function CalendarToolbar(props: {
   view: CalendarView
   ready: boolean
@@ -126,6 +136,23 @@ export function CalendarToolbar(props: {
             <TextFieldInput type="date" class="w-auto rounded-full px-3" />
           </TextField>
         </nav>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-muted" aria-hidden="true">
+            Group by
+          </span>
+          <Segmented
+            label="Group by"
+            itemClass="flex min-h-9 items-center px-3 text-sm"
+            options={GROUPS}
+            value={props.filter.group ?? 'day'}
+            onChange={(group) =>
+              props.onFilter({
+                ...props.filter,
+                group: group === 'day' ? undefined : group,
+              })
+            }
+          />
+        </div>
       </Show>
 
       <Button

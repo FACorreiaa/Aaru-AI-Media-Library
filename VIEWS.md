@@ -47,7 +47,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Music scrobblers (Settings) | none — a section of Settings → Connections: the last listen, pick a scrobbler (Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin, other), connect, its steps from the server with values to copy and the token shown once, a wait for the first listen, live scrobblers with last use, disconnect | `GET`/`POST /v1/agent/tokens?for=music` (`scrobbler`), `GET /v1/me/listens?limit=1`, `DELETE /v1/agent/tokens/{id}` | 2 · MUS-007 (owner exception 2026-10-21) |
 | Invite (the Friends section) | none — "Invite a friend" (optionally with a title picked from search), the share sheet, open invites with time left and Revoke | `GET`/`POST /v1/social/invites`, `DELETE /v1/social/invites/{code}`, `GET /v1/search` | 4 · SOC-002 (owner pulled forward 2026-10-21) |
 | Invite letter | none — web `/i/{code}`, an `InviteSheet` in the apps: who sent it, the title it carries with an "Add to my Plan to watch" switch, a handle field when the friend has none, Join Aaru (signed out) or Add as a friend | `GET /v1/invites/{code}` (public), `POST /v1/social/invites/{code}/redeem`, `PUT /v1/me/profile` | 4 · SOC-002 (2026-10-21) |
-| Friends (`/app/friends` on the web; a sidebar destination on iPad and Mac, pushed from Groups' toolbar and Friends & privacy on iPhone) | none — opens on Board; `Board \| Lately`. Lately: friends' last two weeks, Invite, requests, friends, blocks | `GET /v1/activity`, `/v1/social/*` | 4 · SOC-003 minimal (owner 2026-10-21) |
+| Friends (`/app/friends` on the web; a sidebar destination on iPad and Mac, pushed from Groups' toolbar and Friends & privacy on iPhone) | none — opens on Board; `Board \| Lately`. On Apple it gains Board and the post screen (BOARD-003). Lately: friends' last two weeks, Invite, requests, friends, blocks | `GET /v1/activity`, `/v1/social/*` | 4 · SOC-003 minimal (owner 2026-10-21) |
 | Board (the default view of Friends) | `PostComposer`, `PostCard` — Recent / Top this week, "Show older", owl empty states | `GET /v1/board`, `POST /v1/board/posts`, `PUT`/`DELETE …/upvote` | BOARD-002 (2026-10-23) |
 | Post page (`/app/friends/posts/$postId`) | `PostCard` (standalone, with upvoter names), `CommentThread` — one level of replies, Reply, Edit / Delete / Report | `GET`/`PATCH`/`DELETE /v1/board/posts/{id}`, `…/comments[/{cid}]` | BOARD-002 (2026-10-23) |
 | From friends (on a title page) | `PostCard` ×5, "Write about this" opens Friends with `?title=` | `GET /v1/titles/{id}/posts` | BOARD-002 (2026-10-23) |
@@ -86,10 +86,10 @@ refuses and substitutes the nearest catalog piece.
 | `JobLedger` | Import or bulk progress | `importJobId`, step rows (done / current / to do), `state`, `stats`, `rowsMatched` of `rowsTotal` on the matching step, unmatched count |
 | `TonightStrip` | 1–3 next actions | ordered `libraryItemId` + reason + est. minutes |
 | `Shelf` | Filtered library page | `shelfId` or inline query, result page, `isPinned` |
-| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (two and "+N" on phones, three wider), selected day (a sheet on phones), agenda by date with poster rows that open the episode sheet (still, synopsis, network · time, badge, watched toggle, open show), filters (hide watched, premieres/finales, shows/anime); agent highlight string later |
+| `CalendarMonth` | Your airings, Stremio-style | month, Monday-start weeks, day → poster thumbs (two and "+N" on phones, three wider), selected day (a sheet on phones), agenda by date (or by channel, CAL-005) with poster rows that open the episode sheet (still, synopsis, network · time, badge, watched toggle, open show), filters (hide watched, premieres/finales, shows/anime); agent highlight string later |
 | `MatchTable` | Import reconciliation | `importJobId`, three buckets: matched / needs eyes / unknown |
 | `UndoRibbon` | Last agent write | `actionId`, human summary, expiry, `isUndoable` |
-| `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, synopsis, network, local time or none when `airTimeKnown` is false, banner URL = `backdropUrl` → poster → tint, state: watched / premiere / new season / finale / today); Monday start |
+| `WeekGrid` | Seven-day airing grid, check in place | week start, day → episode cells (`libraryItemId`, `EpisodeKey`, name, synopsis, network, local time or none when `airTimeKnown` is false, banner URL = `backdropUrl` → poster → tint, state: watched / premiere / new season / finale / today); Monday start; grouped by channel (CAL-005), one section per channel over the week with day · time on each row |
 | `ContinueRow` | In-progress titles | ordered `libraryItemId`, next `EpisodeKey`, time left, remaining count + duration, `isFinale` |
 | `StartRow` | Wishlist titles you can start | ordered `libraryItemId`, runtime |
 | `CalendarRow` | Next airings | episode refs + relative badge (`today` / `new` / `in N hours` / `in N days`) |
@@ -211,7 +211,7 @@ Wording that follows from this: the user "pins a shelf", "adds to a list". Do no
 
 ## Board components (app chrome)
 
-`PostCard`, `PostComposer` and `CommentThread` (BOARD-002) are app chrome, like `Poster` or
+`PostCard`, `PostComposer` and `CommentThread` (BOARD-002; `PostRow`, `PostComposer` and `CommentThread` on Apple, BOARD-003) are app chrome, like `Poster` or
 `SpoilerVeil`'s host rows. They are not in the catalog above and the agent never emits them: a
 Board post is written by a person, and `@aaru` on the Board waits for BOARD-004.
 

@@ -34,6 +34,14 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-24
+
+- **The Calendar groups by channel (owner, 2026-10-24, CAL-005).** Week and Month get a
+  "Group by: Day | Channel" control: by channel, the shows airing now sit under the TV channel or
+  streamer they air on, with the day and, when known, the time on each row. It is a layout, not a
+  filter (the filter badge does not count it, Clear filters keeps it), Missed stays by show, and it
+  is client-only: `CalendarEntry` already carries the network, `airsAt` and `airTimeKnown`.
+
 ## Decisions recorded 2026-10-23
 
 - **No paying plans for now** (owner, 2026-10-23). Plus (BIL-001…004) stays live in code, but
@@ -581,6 +589,7 @@ account or a stranger that has not happened yet.
 | CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
 | CAL-002 | Built (web) | app_.week.tsx, components/calendar/* | Posters, sheets, Missed, filters; `stillUrl` on `CalendarEntry` |
 | CAL-003 | Built (Apple) | Calendar/CalendarEpisodeSheet, CatchUpView, CalendarFilter | Same as CAL-002 on iPhone, iPad, Mac; not seen on a device |
+| CAL-005 | Built, unverified | `lib/calendar/channels.test.ts`; `calendar/AiringChannels.tsx`, `Calendar/AiringChannels.swift` | Group by Day / Channel on Week and Month (owner, 2026-10-24); client-only; not seen on a device |
 | CAL-004 | Built, unverified | ScheduleTests CAL-004; CatalogRefresher | Calendar and Up Next never call a provider (a 320-show import made reads take 4–19 s); `pendingShows` on `/v1/calendar`, web and Apple show "Loading episodes for N shows…" and ask again every 10 s for up to 5 min; refresher runs every minute, back to back while a pass is full, 3 shows at once |
 | UPN-001 | Done | #2; `/v1/up-next` | |
 | APP-001 | Done | #7 432e35f; SessionMiddleware (12 concurrent 401s) | |
@@ -605,8 +614,9 @@ account or a stranger that has not happened yet.
 | MNG-001 | Built, unverified | #175; MangaTests, AniListMangaAdapterTests; deployed f6cc317 (infra #456), TestFlight from d9c6341 | Not run on a device |
 | MNG-002 | Built, unverified | #175; MangaImportTests, AnimeListImportTests; deployed f6cc317 (infra #456) | No real MAL manga export or AniList manga list run yet |
 | FAV-001 | Built, unverified | #176; FavoritesTests, favorites model tests; deployed f6cc317 (infra #456), TestFlight from f6cc317 | Not run on a device or in a browser |
-| BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
-| BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
+| BOARD-003 | Built, unverified | AaruCoreTests BoardRulesTests; Friends → Board, post screen, title From friends | Apple only, this PR (feat/board-003-ios); not on TestFlight |
+| BOARD-002 | Built, unverified | #169 b3799f8; web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, on the beta Worker; not looked at in a browser |
+| BOARD-001 | Built, unverified | #149; BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts`; deployed b3799f8 (infra #455) | Undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -1462,6 +1472,23 @@ flag, and `kind` (`premiere` | `finale` | `regular`). TMDB air dates plus AniLis
 **Done when:** a week query returns one row per airing episode of a tracked show, sorted by air
 time in the requested timezone, with a premiere and a finale flagged, in one query plan (no
 N+1).
+
+### CAL-005 · Group by channel · S · owner, 2026-10-24
+**Needs:** CAL-002, CAL-003.
+Week and Month get "Group by: Day | Channel", Day by default. By channel, the episodes in view
+sit under a heading per channel (the title's `network`: a TV channel or a streamer); a title
+with none goes under "Other". The busiest channel comes first, then by name, "Other" always last;
+inside a channel, by air time, then season and episode. Each row shows the day and the time in
+the viewer's zone (the time only when `airTimeKnown`) where the network would be. Week: Mac, iPad
+and the wide web lay the week out by channel in place of the day columns; the phone keeps its
+day strip and groups the chosen day. Month: the agenda lists the whole visible grid by channel.
+Missed is unchanged. A layout, not a filter: the filter count leaves it out and Clear filters
+keeps it. Web: `?group=channel` in the URL. Apple: `@AppStorage("calendar.grouping")`, a picker
+in the filter menu. No API change.
+
+**Done when:** on web, iPhone and Mac, Channel lists this week's episodes under their channels in
+that order with day and time on each row, Day brings the grid back, and neither changes the
+filter badge.
 
 ### UPN-001 · `GET /v1/up-next` · M
 **Needs:** PROG-003.
@@ -3064,6 +3091,8 @@ upvoter names, upvote, and "From friends" on the title page. Surfaces in `DESIGN
 ### BOARD-003 · Board on iOS and Mac · L
 **Needs:** BOARD-001.
 The same surfaces as BOARD-002 in SwiftUI: Board inside Friends, reached on iPhone from Groups' Friends button.
+
+**Built 2026-10-24:** iPhone, iPad and Mac, unverified (not on TestFlight). On iPhone Groups' stack now uses a NavigationPath so posts can push from Friends.
 
 ### BOARD-004 · `@aaru` on the Board, and push · M
 **Needs:** BOARD-001, GRP-011, GRP-012.
