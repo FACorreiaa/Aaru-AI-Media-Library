@@ -188,6 +188,7 @@ struct PeriodStats: Sendable, Equatable {
         var animeFinished = 0
         var booksFinished = 0
         var albumsFinished = 0
+        var mangaFinished = 0
     }
 
     struct Bucket: Sendable, Equatable {
@@ -224,9 +225,9 @@ struct PeriodStats: Sendable, Equatable {
     }
 
     /// The kinds a person counts in: anime is its own kind, whatever its type. Albums (MUS-001)
-    /// have no minutes; they count as finishes only.
+    /// have no minutes; they count as finishes only. So does manga (MNG-001).
     enum Kind: String, Sendable, CaseIterable {
-        case movie, show, anime, book, album
+        case movie, show, anime, book, album, manga
     }
 
     struct KindTotals: Sendable, Equatable {
@@ -270,7 +271,7 @@ struct PeriodStats: Sendable, Equatable {
     var totals: Totals
     /// GAM-006d: the previous equal-length window's totals; rolling spans only.
     var prior: Totals?
-    /// Movie, show, anime and book, always; album after them only when the period has one. They
+    /// Movie, show, anime and book, always; album and manga after them only when the period has one. They
     /// sum to `totals`.
     var byKind: [KindTotals]
     var buckets: [Bucket]

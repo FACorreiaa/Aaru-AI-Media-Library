@@ -131,7 +131,7 @@ struct TMDBCatalog: CatalogSearching, EpisodeListing, MultiSearching {
         switch type {
         case .movie: return "movie"
         case .show: return "tv"
-        case .book, .album: throw ProviderError(provider: "tmdb", kind: .notFound)
+        case .book, .album, .manga: throw ProviderError(provider: "tmdb", kind: .notFound)
         }
     }
 

@@ -58,6 +58,8 @@ let allMigrations: [any Migration] = [
     AddCapture(),
     AddEntitlements(),
     CreateBoards(),
+    AddManga(),
+    CreateFavorites(),
     CreateMALConnections(),
 ]
 

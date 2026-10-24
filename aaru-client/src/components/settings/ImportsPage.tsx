@@ -183,7 +183,7 @@ export function ImportsPage(props: {
                 Import from AniList
               </TextFieldLabel>
               <TextFieldDescription class="text-xs text-muted">
-                Your username. The anime list must be public.
+                Your username. Its anime and manga lists must be public.
               </TextFieldDescription>
               <div class="mt-1 flex flex-wrap gap-2">
                 <TextFieldInput

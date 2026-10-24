@@ -5,6 +5,7 @@ import {
   idKeys,
   isOnShelf,
   kindOf,
+  mangaProgressLabel,
   shelf,
   statusLabel,
   statusOptions,
@@ -112,6 +113,44 @@ describe('library model', () => {
     const updated = upsert(entries, entry('a', { status: 'finished' }))
     expect(updated).toHaveLength(2)
     expect(updated[0]).toMatchObject({ id: 'a', status: 'finished' })
+  })
+})
+
+describe('manga (MNG-001)', () => {
+  const manga = (overrides: Partial<LibraryEntry> = {}) =>
+    entry('m', {
+      title: {
+        id: 't-m',
+        type: 'manga',
+        title: 'Berserk',
+        isAnime: false,
+        ids: { anilist: '30002' },
+        chapterCount: 364,
+      },
+      ...overrides,
+    })
+
+  it('is its own shelf, read like a book, with a poster', () => {
+    expect(kindOf('manga', false)).toBe('manga')
+    expect(KINDS.map((k) => k.kind)).toContain('manga')
+    expect(coverShape('manga')).toBe('poster')
+    expect(statusLabel('in_progress', 'manga')).toBe('Reading')
+    expect(statusLabel('wishlist', 'manga')).toBe('Plan to read')
+  })
+
+  it('names the chapter against the total, and the volume', () => {
+    expect(mangaProgressLabel(manga())).toBeUndefined()
+    expect(
+      mangaProgressLabel(
+        manga({ mangaProgress: { chapter: 112, volume: 12 } }),
+      ),
+    ).toBe('Ch. 112 of 364 · Vol. 12')
+    expect(mangaProgressLabel(manga({ mangaProgress: { volume: 3 } }))).toBe(
+      'Vol. 3',
+    )
+    expect(toRow(manga({ mangaProgress: { chapter: 5 } })).detail).toBe(
+      'Ch. 5 of 364',
+    )
   })
 })
 

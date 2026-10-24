@@ -84,7 +84,7 @@ extension PostgresGamificationStore {
             }
         }
         for item in facts.bookForward {
-            guard let title = items[item], title.type == .book else { continue }
+            guard let title = items[item], title.type == .book || title.type == .manga else { continue }
             awards.append(PointsAward(
                 .bookProgress, root: PointsRoot.bookDay(title.id, date), titleID: title.id, actionID: actionID
             ))
@@ -112,7 +112,8 @@ extension PostgresGamificationStore {
     static func finishKind(_ type: MediaType) -> PointsKind? {
         switch type {
         case .movie: .movieFinished
-        case .book: .bookFinished
+        // Manga is reading: it earns as a book does (MNG-001).
+        case .book, .manga: .bookFinished
         case .album: .albumFinished
         case .show: nil
         }

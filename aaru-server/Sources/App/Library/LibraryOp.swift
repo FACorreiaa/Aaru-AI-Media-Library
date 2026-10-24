@@ -10,6 +10,9 @@ struct ItemFields: Codable, Sendable, Equatable {
     var finishedAt: Date?
     var bookPage: Int?
     var bookPercent: Double?
+    /// MNG-001: the last chapter and volume read.
+    var mangaChapter: Int?
+    var mangaVolume: Int?
     /// The user chose this status themselves, so an import never moves it. `nil` leaves the
     /// stored flag as it is; inverses carry the stored value, so undo restores it.
     var statusByHand: Bool?
@@ -106,11 +109,15 @@ struct LibraryEntry: Sendable, Equatable {
     var title: Title
     var bookProgress: (page: Int?, percent: Double?)?
     var progress: ProgressSummary?
+    /// Manga only (MNG-001).
+    var mangaProgress: (chapter: Int?, volume: Int?)?
 
     static func == (lhs: LibraryEntry, rhs: LibraryEntry) -> Bool {
         lhs.item == rhs.item && lhs.title == rhs.title && lhs.progress == rhs.progress
             && lhs.bookProgress?.page == rhs.bookProgress?.page
             && lhs.bookProgress?.percent == rhs.bookProgress?.percent
+            && lhs.mangaProgress?.chapter == rhs.mangaProgress?.chapter
+            && lhs.mangaProgress?.volume == rhs.mangaProgress?.volume
     }
 }
 

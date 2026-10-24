@@ -34,6 +34,8 @@ struct PostgresTitleStore: TitleStore {
         let network: String?
         let byline: String?
         let pageCount: Int?
+        let chapterCount: Int?
+        let volumeCount: Int?
         let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb, musicbrainz: String?
         let isAnime: Bool
         let status: String?
@@ -56,6 +58,8 @@ struct PostgresTitleStore: TitleStore {
                 network: network,
                 byline: byline,
                 pageCount: pageCount,
+                chapterCount: chapterCount,
+                volumeCount: volumeCount,
                 ids: ExternalIDs(
                     tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
                     openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb, musicbrainz: musicbrainz
@@ -73,7 +77,9 @@ struct PostgresTitleStore: TitleStore {
             originalTitle: title.originalTitle, year: title.year, synopsis: title.synopsis,
             posterUrl: title.posterURL?.absoluteString,
             backdropUrl: title.backdropURL?.absoluteString, network: title.network, byline: title.byline,
-            pageCount: title.pageCount, tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb,
+            pageCount: title.pageCount, chapterCount: title.chapterCount, volumeCount: title.volumeCount,
+            tmdb: ids.tmdb,
+            imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb,
             isbn: ids.isbn,
             openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb,
             musicbrainz: ids.musicbrainz,

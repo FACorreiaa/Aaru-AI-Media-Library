@@ -76,6 +76,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
     func updateProfile(_ input: Operations.UpdateProfile.Input) async throws -> Operations.UpdateProfile.Output
+    /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+    ///
+    /// - Remark: HTTP `GET /v1/me/favorites`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)`.
+    func getMyFavorites(_ input: Operations.GetMyFavorites.Input) async throws -> Operations.GetMyFavorites.Output
+    /// Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
+    func setMyFavorites(_ input: Operations.SetMyFavorites.Input) async throws -> Operations.SetMyFavorites.Output
     /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
@@ -714,7 +724,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/capture`.
     /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)`.
     func createCaptureImport(_ input: Operations.CreateCaptureImport.Input) async throws -> Operations.CreateCaptureImport.Output
-    /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+    /// Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
     /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
@@ -956,6 +966,28 @@ extension APIProtocol {
         body: Operations.UpdateProfile.Input.Body
     ) async throws -> Operations.UpdateProfile.Output {
         try await updateProfile(Operations.UpdateProfile.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+    ///
+    /// - Remark: HTTP `GET /v1/me/favorites`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)`.
+    public func getMyFavorites(headers: Operations.GetMyFavorites.Input.Headers = .init()) async throws -> Operations.GetMyFavorites.Output {
+        try await getMyFavorites(Operations.GetMyFavorites.Input(headers: headers))
+    }
+    /// Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
+    public func setMyFavorites(
+        path: Operations.SetMyFavorites.Input.Path,
+        headers: Operations.SetMyFavorites.Input.Headers = .init(),
+        body: Operations.SetMyFavorites.Input.Body
+    ) async throws -> Operations.SetMyFavorites.Output {
+        try await setMyFavorites(Operations.SetMyFavorites.Input(
+            path: path,
             headers: headers,
             body: body
         ))
@@ -2602,7 +2634,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+    /// Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
     /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
@@ -5008,6 +5040,10 @@ public enum Components {
             public var lastEpisode: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/FriendItem/bookPage`.
             public var bookPage: Swift.Int?
+            /// Manga. The last chapter they read.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendItem/mangaChapter`.
+            public var mangaChapter: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/FriendItem/finishedAt`.
             public var finishedAt: Foundation.Date?
             /// - Remark: Generated from `#/components/schemas/FriendItem/updatedAt`.
@@ -5021,6 +5057,7 @@ public enum Components {
             ///   - lastSeason: Shows. The last episode they ticked.
             ///   - lastEpisode:
             ///   - bookPage:
+            ///   - mangaChapter: Manga. The last chapter they read.
             ///   - finishedAt:
             ///   - updatedAt:
             public init(
@@ -5030,6 +5067,7 @@ public enum Components {
                 lastSeason: Swift.Int? = nil,
                 lastEpisode: Swift.Int? = nil,
                 bookPage: Swift.Int? = nil,
+                mangaChapter: Swift.Int? = nil,
                 finishedAt: Foundation.Date? = nil,
                 updatedAt: Foundation.Date
             ) {
@@ -5039,6 +5077,7 @@ public enum Components {
                 self.lastSeason = lastSeason
                 self.lastEpisode = lastEpisode
                 self.bookPage = bookPage
+                self.mangaChapter = mangaChapter
                 self.finishedAt = finishedAt
                 self.updatedAt = updatedAt
             }
@@ -5049,6 +5088,7 @@ public enum Components {
                 case lastSeason
                 case lastEpisode
                 case bookPage
+                case mangaChapter
                 case finishedAt
                 case updatedAt
             }
@@ -5065,6 +5105,10 @@ public enum Components {
             public var book: Swift.Int
             /// - Remark: Generated from `#/components/schemas/KindCounts/album`.
             public var album: Swift.Int
+            /// MNG-001. Absent from servers before it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/KindCounts/manga`.
+            public var manga: Swift.Int?
             /// Creates a new `KindCounts`.
             ///
             /// - Parameters:
@@ -5073,18 +5117,21 @@ public enum Components {
             ///   - anime:
             ///   - book:
             ///   - album:
+            ///   - manga: MNG-001. Absent from servers before it.
             public init(
                 movie: Swift.Int,
                 show: Swift.Int,
                 anime: Swift.Int,
                 book: Swift.Int,
-                album: Swift.Int
+                album: Swift.Int,
+                manga: Swift.Int? = nil
             ) {
                 self.movie = movie
                 self.show = show
                 self.anime = anime
                 self.book = book
                 self.album = album
+                self.manga = manga
             }
             public enum CodingKeys: String, CodingKey {
                 case movie
@@ -5092,6 +5139,7 @@ public enum Components {
                 case anime
                 case book
                 case album
+                case manga
             }
         }
         /// - Remark: Generated from `#/components/schemas/FriendCompare`.
@@ -5147,6 +5195,10 @@ public enum Components {
             public var compare: Components.Schemas.FriendCompare?
             /// - Remark: Generated from `#/components/schemas/FriendProfile/achievements`.
             public var achievements: Components.Schemas.FriendAchievements?
+            /// Their top 10s (FAV-001). Sent only while they share their library.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/favorites`.
+            public var favorites: Components.Schemas.Favorites?
             /// Creates a new `FriendProfile`.
             ///
             /// - Parameters:
@@ -5158,6 +5210,7 @@ public enum Components {
             ///   - recentlyFinished:
             ///   - compare:
             ///   - achievements:
+            ///   - favorites: Their top 10s (FAV-001). Sent only while they share their library.
             public init(
                 user: Components.Schemas.SocialUser,
                 friendsSince: Foundation.Date,
@@ -5166,7 +5219,8 @@ public enum Components {
                 watching: [Components.Schemas.FriendItem]? = nil,
                 recentlyFinished: [Components.Schemas.FriendItem]? = nil,
                 compare: Components.Schemas.FriendCompare? = nil,
-                achievements: Components.Schemas.FriendAchievements? = nil
+                achievements: Components.Schemas.FriendAchievements? = nil,
+                favorites: Components.Schemas.Favorites? = nil
             ) {
                 self.user = user
                 self.friendsSince = friendsSince
@@ -5176,6 +5230,7 @@ public enum Components {
                 self.recentlyFinished = recentlyFinished
                 self.compare = compare
                 self.achievements = achievements
+                self.favorites = favorites
             }
             public enum CodingKeys: String, CodingKey {
                 case user
@@ -5186,6 +5241,84 @@ public enum Components {
                 case recentlyFinished
                 case compare
                 case achievements
+                case favorites
+            }
+        }
+        /// A favorites kind. Anime is any anime, film or series.
+        ///
+        /// - Remark: Generated from `#/components/schemas/FavoriteKind`.
+        @frozen public enum FavoriteKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case film = "film"
+            case show = "show"
+            case anime = "anime"
+            case manga = "manga"
+            case book = "book"
+            case album = "album"
+        }
+        /// An ordered top 10 per kind (FAV-001), first is the favorite.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Favorites`.
+        public struct Favorites: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Favorites/film`.
+            public var film: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/show`.
+            public var show: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/anime`.
+            public var anime: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/manga`.
+            public var manga: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/book`.
+            public var book: [Components.Schemas.TitleSummary]
+            /// - Remark: Generated from `#/components/schemas/Favorites/album`.
+            public var album: [Components.Schemas.TitleSummary]
+            /// Creates a new `Favorites`.
+            ///
+            /// - Parameters:
+            ///   - film:
+            ///   - show:
+            ///   - anime:
+            ///   - manga:
+            ///   - book:
+            ///   - album:
+            public init(
+                film: [Components.Schemas.TitleSummary],
+                show: [Components.Schemas.TitleSummary],
+                anime: [Components.Schemas.TitleSummary],
+                manga: [Components.Schemas.TitleSummary],
+                book: [Components.Schemas.TitleSummary],
+                album: [Components.Schemas.TitleSummary]
+            ) {
+                self.film = film
+                self.show = show
+                self.anime = anime
+                self.manga = manga
+                self.book = book
+                self.album = album
+            }
+            public enum CodingKeys: String, CodingKey {
+                case film
+                case show
+                case anime
+                case manga
+                case book
+                case album
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/FavoritesUpdate`.
+        public struct FavoritesUpdate: Codable, Hashable, Sendable {
+            /// The whole kind, in order. Empty clears it. More than 10 is a 422.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FavoritesUpdate/items`.
+            public var items: [Components.Schemas.MediaRef]
+            /// Creates a new `FavoritesUpdate`.
+            ///
+            /// - Parameters:
+            ///   - items: The whole kind, in order. Empty clears it. More than 10 is a 422.
+            public init(items: [Components.Schemas.MediaRef]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
             }
         }
         /// Absent when the friend turned off showing their badges and level.
@@ -7846,7 +7979,7 @@ public enum Components {
                 case musicbrainz
             }
         }
-        /// `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress.
+        /// `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
         ///
         /// - Remark: Generated from `#/components/schemas/MediaType`.
         @frozen public enum MediaType: String, Codable, Hashable, Sendable, CaseIterable {
@@ -7854,6 +7987,7 @@ public enum Components {
             case show = "show"
             case book = "book"
             case album = "album"
+            case manga = "manga"
         }
         /// - Remark: Generated from `#/components/schemas/CatalogHit`.
         public struct CatalogHit: Codable, Hashable, Sendable {
@@ -7869,7 +8003,7 @@ public enum Components {
             public var posterUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CatalogHit/overview`.
             public var overview: Swift.String?
-            /// Authors, for books; the artist credit, for albums.
+            /// Authors, for books and manga; the artist credit, for albums.
             ///
             /// - Remark: Generated from `#/components/schemas/CatalogHit/byline`.
             public var byline: Swift.String?
@@ -7894,7 +8028,7 @@ public enum Components {
             ///   - year:
             ///   - posterUrl:
             ///   - overview:
-            ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - byline: Authors, for books and manga; the artist credit, for albums.
             ///   - isAnime:
             ///   - ids:
             ///   - libraryItemId: The caller's library item for this title, when they have one. Discover only.
@@ -8578,7 +8712,7 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleDetail/seasons`.
             public var seasons: [Components.Schemas.Season]?
-            /// Authors, for books; the artist credit, for albums.
+            /// Authors, for books and manga; the artist credit, for albums.
             ///
             /// - Remark: Generated from `#/components/schemas/TitleDetail/byline`.
             public var byline: Swift.String?
@@ -8605,7 +8739,7 @@ public enum Components {
             ///   - status:
             ///   - runtimeMinutes:
             ///   - seasons: Shows only.
-            ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - byline: Authors, for books and manga; the artist credit, for albums.
             ///   - genres: Albums only (MUS-001), at most five, most tagged first.
             ///   - tracks: Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet.
             public init(
@@ -8785,11 +8919,20 @@ public enum Components {
             public var bookPage: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/bookPercent`.
             public var bookPercent: Swift.Double?
+            /// Manga only. The last chapter read.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/mangaChapter`.
+            public var mangaChapter: Swift.Int?
+            /// Manga only. The last volume read.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/mangaVolume`.
+            public var mangaVolume: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/ClearPayload`.
             @frozen public enum ClearPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case rating = "rating"
                 case notes = "notes"
                 case bookProgress = "bookProgress"
+                case mangaProgress = "mangaProgress"
             }
             /// Fields to empty.
             ///
@@ -8808,6 +8951,8 @@ public enum Components {
             ///   - isOwned:
             ///   - bookPage:
             ///   - bookPercent:
+            ///   - mangaChapter: Manga only. The last chapter read.
+            ///   - mangaVolume: Manga only. The last volume read.
             ///   - clear: Fields to empty.
             public init(
                 status: Components.Schemas.LibraryStatus? = nil,
@@ -8816,6 +8961,8 @@ public enum Components {
                 isOwned: Swift.Bool? = nil,
                 bookPage: Swift.Int? = nil,
                 bookPercent: Swift.Double? = nil,
+                mangaChapter: Swift.Int? = nil,
+                mangaVolume: Swift.Int? = nil,
                 clear: Components.Schemas.LibraryItemPatch.ClearPayload? = nil
             ) {
                 self.status = status
@@ -8824,6 +8971,8 @@ public enum Components {
                 self.isOwned = isOwned
                 self.bookPage = bookPage
                 self.bookPercent = bookPercent
+                self.mangaChapter = mangaChapter
+                self.mangaVolume = mangaVolume
                 self.clear = clear
             }
             public enum CodingKeys: String, CodingKey {
@@ -8833,6 +8982,8 @@ public enum Components {
                 case isOwned
                 case bookPage
                 case bookPercent
+                case mangaChapter
+                case mangaVolume
                 case clear
             }
         }
@@ -8928,6 +9079,31 @@ public enum Components {
                 case percent
             }
         }
+        /// MNG-001. Either or both.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MangaProgress`.
+        public struct MangaProgress: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MangaProgress/chapter`.
+            public var chapter: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/MangaProgress/volume`.
+            public var volume: Swift.Int?
+            /// Creates a new `MangaProgress`.
+            ///
+            /// - Parameters:
+            ///   - chapter:
+            ///   - volume:
+            public init(
+                chapter: Swift.Int? = nil,
+                volume: Swift.Int? = nil
+            ) {
+                self.chapter = chapter
+                self.volume = volume
+            }
+            public enum CodingKeys: String, CodingKey {
+                case chapter
+                case volume
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/TitleSummary`.
         public struct TitleSummary: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/TitleSummary/id`.
@@ -8950,7 +9126,7 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/network`.
             public var network: Swift.String?
-            /// Authors, for books; the artist credit, for albums.
+            /// Authors, for books and manga; the artist credit, for albums.
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/byline`.
             public var byline: Swift.String?
@@ -8958,6 +9134,14 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/TitleSummary/pageCount`.
             public var pageCount: Swift.Int?
+            /// Manga only, once AniList knows it (absent while a series runs).
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/chapterCount`.
+            public var chapterCount: Swift.Int?
+            /// Manga only, once AniList knows it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleSummary/volumeCount`.
+            public var volumeCount: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/TitleSummary/isAnime`.
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/TitleSummary/ids`.
@@ -8973,8 +9157,10 @@ public enum Components {
             ///   - posterUrl:
             ///   - backdropUrl: Wide art (TMDB backdrop, AniList banner), for banners such as the week grid.
             ///   - network: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
-            ///   - byline: Authors, for books; the artist credit, for albums.
+            ///   - byline: Authors, for books and manga; the artist credit, for albums.
             ///   - pageCount: Books only, when known (Open Library's median across editions).
+            ///   - chapterCount: Manga only, once AniList knows it (absent while a series runs).
+            ///   - volumeCount: Manga only, once AniList knows it.
             ///   - isAnime:
             ///   - ids:
             public init(
@@ -8988,6 +9174,8 @@ public enum Components {
                 network: Swift.String? = nil,
                 byline: Swift.String? = nil,
                 pageCount: Swift.Int? = nil,
+                chapterCount: Swift.Int? = nil,
+                volumeCount: Swift.Int? = nil,
                 isAnime: Swift.Bool,
                 ids: Components.Schemas.ExternalIds
             ) {
@@ -9001,6 +9189,8 @@ public enum Components {
                 self.network = network
                 self.byline = byline
                 self.pageCount = pageCount
+                self.chapterCount = chapterCount
+                self.volumeCount = volumeCount
                 self.isAnime = isAnime
                 self.ids = ids
             }
@@ -9015,6 +9205,8 @@ public enum Components {
                 case network
                 case byline
                 case pageCount
+                case chapterCount
+                case volumeCount
                 case isAnime
                 case ids
             }
@@ -9043,6 +9235,8 @@ public enum Components {
             public var progress: Components.Schemas.ShowProgress?
             /// - Remark: Generated from `#/components/schemas/LibraryEntry/bookProgress`.
             public var bookProgress: Components.Schemas.BookProgress?
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/mangaProgress`.
+            public var mangaProgress: Components.Schemas.MangaProgress?
             /// Every watched episode of a show, in order. Only on single-item responses (the item,
             /// and episode and season writes); lists and sync leave it out.
             ///
@@ -9063,6 +9257,7 @@ public enum Components {
             ///   - finishedAt:
             ///   - progress:
             ///   - bookProgress:
+            ///   - mangaProgress:
             ///   - watchedEpisodes: Every watched episode of a show, in order. Only on single-item responses (the item,
             public init(
                 id: Swift.String,
@@ -9076,6 +9271,7 @@ public enum Components {
                 finishedAt: Foundation.Date? = nil,
                 progress: Components.Schemas.ShowProgress? = nil,
                 bookProgress: Components.Schemas.BookProgress? = nil,
+                mangaProgress: Components.Schemas.MangaProgress? = nil,
                 watchedEpisodes: [Components.Schemas.EpisodeRef]? = nil
             ) {
                 self.id = id
@@ -9089,6 +9285,7 @@ public enum Components {
                 self.finishedAt = finishedAt
                 self.progress = progress
                 self.bookProgress = bookProgress
+                self.mangaProgress = mangaProgress
                 self.watchedEpisodes = watchedEpisodes
             }
             public enum CodingKeys: String, CodingKey {
@@ -9103,6 +9300,7 @@ public enum Components {
                 case finishedAt
                 case progress
                 case bookProgress
+                case mangaProgress
                 case watchedEpisodes
             }
         }
@@ -9229,6 +9427,8 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AccountExport/listens`.
             public var listens: [Components.Schemas.Listen]?
+            /// - Remark: Generated from `#/components/schemas/AccountExport/favorites`.
+            public var favorites: Components.Schemas.Favorites?
             /// Creates a new `AccountExport`.
             ///
             /// - Parameters:
@@ -9242,6 +9442,7 @@ public enum Components {
             ///   - groups:
             ///   - groupMessages: Messages you wrote in groups, oldest first.
             ///   - listens: Every listen in your listening log, newest first (MUS-005).
+            ///   - favorites:
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
@@ -9252,7 +9453,8 @@ public enum Components {
                 blocked: [Components.Schemas.SocialUser]? = nil,
                 groups: Components.Schemas.AccountExport.GroupsPayload? = nil,
                 groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil,
-                listens: [Components.Schemas.Listen]? = nil
+                listens: [Components.Schemas.Listen]? = nil,
+                favorites: Components.Schemas.Favorites? = nil
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
@@ -9264,6 +9466,7 @@ public enum Components {
                 self.groups = groups
                 self.groupMessages = groupMessages
                 self.listens = listens
+                self.favorites = favorites
             }
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
@@ -9276,6 +9479,7 @@ public enum Components {
                 case groups
                 case groupMessages
                 case listens
+                case favorites
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.
@@ -10312,7 +10516,7 @@ public enum Components {
             public var totals: Components.Schemas.StatsTotals
             /// - Remark: Generated from `#/components/schemas/Stats/prior`.
             public var prior: Components.Schemas.StatsTotals?
-            /// Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`.
+            /// Movie, show, anime and book, always, in that order; then album (MUS-001) and manga (MNG-001), each only when the period finished one. They sum to `totals`.
             ///
             /// - Remark: Generated from `#/components/schemas/Stats/byKind`.
             public var byKind: [Components.Schemas.StatsKind]
@@ -10371,7 +10575,7 @@ public enum Components {
             ///   - isPartial: The period is not over yet in the user's time zone (always true for `all`).
             ///   - totals:
             ///   - prior:
-            ///   - byKind: Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`.
+            ///   - byKind: Movie, show, anime and book, always, in that order; then album (MUS-001) and manga (MNG-001), each only when the period finished one. They sum to `totals`.
             ///   - buckets: One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order.
             ///   - busiest:
             ///   - mostEpisodes:
@@ -11022,6 +11226,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/StatsTotals/albumsFinished`.
             public var albumsFinished: Swift.Int
+            /// MNG-001. Manga has no minutes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsTotals/mangaFinished`.
+            public var mangaFinished: Swift.Int?
             /// Creates a new `StatsTotals`.
             ///
             /// - Parameters:
@@ -11033,6 +11241,7 @@ public enum Components {
             ///   - animeFinished: Anime shows and films. Not counted again as shows or movies.
             ///   - booksFinished:
             ///   - albumsFinished: MUS-001. Albums have no minutes.
+            ///   - mangaFinished: MNG-001. Manga has no minutes.
             public init(
                 episodesWatched: Swift.Int,
                 minutesWatched: Swift.Int,
@@ -11041,7 +11250,8 @@ public enum Components {
                 showsFinished: Swift.Int,
                 animeFinished: Swift.Int,
                 booksFinished: Swift.Int,
-                albumsFinished: Swift.Int
+                albumsFinished: Swift.Int,
+                mangaFinished: Swift.Int? = nil
             ) {
                 self.episodesWatched = episodesWatched
                 self.minutesWatched = minutesWatched
@@ -11051,6 +11261,7 @@ public enum Components {
                 self.animeFinished = animeFinished
                 self.booksFinished = booksFinished
                 self.albumsFinished = albumsFinished
+                self.mangaFinished = mangaFinished
             }
             public enum CodingKeys: String, CodingKey {
                 case episodesWatched
@@ -11061,6 +11272,7 @@ public enum Components {
                 case animeFinished
                 case booksFinished
                 case albumsFinished
+                case mangaFinished
             }
         }
         /// - Remark: Generated from `#/components/schemas/StatsKind`.
@@ -11074,6 +11286,7 @@ public enum Components {
                 case anime = "anime"
                 case book = "book"
                 case album = "album"
+                case manga = "manga"
             }
             /// Anime is its own kind, films and shows alike; never counted again as either.
             ///
@@ -13083,6 +13296,291 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+    ///
+    /// - Remark: HTTP `GET /v1/me/favorites`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)`.
+    public enum GetMyFavorites {
+        public static let id: Swift.String = "getMyFavorites"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/favorites/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetMyFavorites.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetMyFavorites.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetMyFavorites.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetMyFavorites.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/favorites/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/favorites/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Favorites)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Favorites {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetMyFavorites.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetMyFavorites.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Every kind, each in your order; an empty list for a kind with none.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetMyFavorites.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetMyFavorites.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
+    public enum SetMyFavorites {
+        public static let id: Swift.String = "setMyFavorites"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/path/kind`.
+                public var kind: Components.Schemas.FavoriteKind
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - kind:
+                public init(kind: Components.Schemas.FavoriteKind) {
+                    self.kind = kind
+                }
+            }
+            public var path: Operations.SetMyFavorites.Input.Path
+            /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetMyFavorites.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetMyFavorites.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SetMyFavorites.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.FavoritesUpdate)
+            }
+            public var body: Operations.SetMyFavorites.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.SetMyFavorites.Input.Path,
+                headers: Operations.SetMyFavorites.Input.Headers = .init(),
+                body: Operations.SetMyFavorites.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/favorites/{kind}/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Favorites)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Favorites {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SetMyFavorites.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SetMyFavorites.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// All your favorites after the change.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SetMyFavorites.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SetMyFavorites.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
@@ -27302,8 +27800,9 @@ public enum Operations {
                     case anime = "anime"
                     case book = "book"
                     case album = "album"
+                    case manga = "manga"
                 }
-                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
+                /// `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList (MNG-001; empty and incomplete while AniList is down).
                 ///
                 /// - Remark: Generated from `#/paths/v1/search/GET/query/type`.
                 public var _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -27311,7 +27810,7 @@ public enum Operations {
                 ///
                 /// - Parameters:
                 ///   - q:
-                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
+                ///   - _type: `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList (MNG-001; empty and incomplete while AniList is down).
                 public init(
                     q: Swift.String,
                     _type: Operations.SearchCatalog.Input.Query._TypePayload
@@ -32043,7 +32542,7 @@ public enum Operations {
                     case mal = "mal"
                     case csv = "csv"
                 }
-                /// `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
+                /// `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
                 ///
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
                 public var source: Operations.CreateCSVImport.Input.Query.SourcePayload
@@ -32054,7 +32553,7 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - source: `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
+                ///   - source: `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
                 ///   - filename: The file's name. Letterboxd's watchlist export is told apart by it.
                 public init(
                     source: Operations.CreateCSVImport.Input.Query.SourcePayload,
@@ -32675,7 +33174,7 @@ public enum Operations {
             }
         }
     }
-    /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+    /// Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
     /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.

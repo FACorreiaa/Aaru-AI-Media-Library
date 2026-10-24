@@ -15,14 +15,14 @@ struct GroupAgentTools {
     static let definitions: [ModelTool] = [
         ModelTool(
             name: "search_titles",
-            description: "Search the catalog for films, shows, anime or books. "
+            description: "Search the catalog for films, shows, anime, books or manga. "
                 + "Returns refs to use with the other tools.",
             inputSchema: schema(
                 [
                     "query": .object(["type": .string("string")]),
                     "kind": .object([
                         "type": .string("string"),
-                        "enum": .array(["movie", "show", "anime", "book"].map(ModelJSON.string)),
+                        "enum": .array(["movie", "show", "anime", "book", "manga"].map(ModelJSON.string)),
                     ]),
                 ],
                 required: ["query"]

@@ -2,16 +2,18 @@ import AaruAPI
 import SwiftUI
 
 /// Settings → Friends & privacy (§18, SOC-001): your handle, the way to Friends, whether friends
-/// see your library, and Location, the one place Aaru stores where you are (UX-022). The friend
-/// lists, invites and requests live on Friends itself.
+/// see your library, your favorites (FAV-001), and Location, the one place Aaru stores where you
+/// are (UX-022). The friend lists, invites and requests live on Friends itself.
 struct FriendsPage: View {
     let social: SocialModel
     @State private var concerts: ConcertsModel
+    @State private var favorites: FavoritesModel
     @Environment(AppRouter.self) private var router
 
     init(api: Client?, social: SocialModel) {
         self.social = social
         _concerts = State(initialValue: ConcertsModel(api: api))
+        _favorites = State(initialValue: FavoritesModel(api: api))
     }
 
     var body: some View {
@@ -22,6 +24,9 @@ struct FriendsPage: View {
                     ProfileEditor(model: social)
                 } label: {
                     LabeledContent("Handle", value: social.handle.map { "@\($0)" } ?? "Choose one")
+                }
+                NavigationLink(destination: FavoritesEditor(model: favorites)) {
+                    Label("Favorites", systemImage: "star")
                 }
                 if social.handle != nil {
                     Button {

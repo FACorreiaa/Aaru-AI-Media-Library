@@ -7,9 +7,9 @@ typealias LibraryStatus = Components.Schemas.LibraryStatus
 typealias CatalogHit = Components.Schemas.CatalogHit
 
 /// How the library is browsed: anime is its own shelf even though it is a show or a film. Music
-/// is albums (MUS-001).
+/// is albums (MUS-001); manga is AniList's MANGA type (MNG-001).
 enum MediaKind: String, CaseIterable, Identifiable {
-    case film, show, anime, book, music
+    case film, show, anime, manga, book, music
 
     var id: String {
         rawValue
@@ -20,6 +20,7 @@ enum MediaKind: String, CaseIterable, Identifiable {
         case .film: "Films"
         case .show: "Shows"
         case .anime: "Anime"
+        case .manga: "Manga"
         case .book: "Books"
         case .music: "Music"
         }
@@ -31,6 +32,7 @@ enum MediaKind: String, CaseIterable, Identifiable {
         case .film: "Film"
         case .show: "Show"
         case .anime: "Anime"
+        case .manga: "Manga"
         case .book: "Book"
         case .music: "Album"
         }
@@ -41,6 +43,7 @@ enum MediaKind: String, CaseIterable, Identifiable {
         case .film: "film"
         case .show: "tv"
         case .anime: "sparkles.tv"
+        case .manga: "book.pages"
         case .book: "book.closed"
         case .music: "music.note"
         }
@@ -55,6 +58,7 @@ enum MediaKind: String, CaseIterable, Identifiable {
         switch type {
         case .book: self = .book
         case .album: self = .music
+        case .manga: self = .manga
         case _ where isAnime: self = .anime
         case .movie: self = .film
         case .show: self = .show
@@ -67,6 +71,7 @@ enum MediaKind: String, CaseIterable, Identifiable {
         case .film: .movie
         case .show: .show
         case .anime: .anime
+        case .manga: .manga
         case .book: .book
         case .music: .album
         }
@@ -82,7 +87,7 @@ extension LibraryStatus: @retroactive Identifiable {
     /// "Listening" to an album. With no kind (a mixed shelf, the Any filter) the neutral words.
     func label(for kind: MediaKind?) -> String {
         let words = switch kind {
-        case .book: Words(planned: "Plan to read", active: "Reading", done: "Read")
+        case .book, .manga: Words(planned: "Plan to read", active: "Reading", done: "Read")
         case .music: Words(planned: "Plan to listen", active: "Listening", done: "Listened")
         case .film, .show, .anime: Words(planned: "Plan to watch", active: "Watching", done: "Watched")
         case nil: Words(planned: "Planned", active: "In progress", done: "Finished")
@@ -127,6 +132,8 @@ struct LibraryRow: Identifiable, Hashable {
         updatedAt = entry.updatedAt
         if let progress = entry.progress, progress.airedCount > 0 {
             detail = "\(progress.watchedCount) of \(progress.airedCount) episodes"
+        } else if let manga = entry.mangaProgressLabel {
+            detail = manga
         } else if let page = entry.bookProgress?.page {
             detail = "Page \(page)"
         } else if let percent = entry.bookProgress?.percent {
@@ -134,6 +141,21 @@ struct LibraryRow: Identifiable, Hashable {
         } else {
             detail = nil
         }
+    }
+}
+
+extension LibraryEntry {
+    /// Where a manga reader is (MNG-001): "Ch. 112 of 364 · Vol. 12", either part alone, or nil
+    /// before they log any.
+    var mangaProgressLabel: String? {
+        var parts: [String] = []
+        if let chapter = mangaProgress?.chapter {
+            parts.append(title.chapterCount.map { "Ch. \(chapter) of \($0)" } ?? "Ch. \(chapter)")
+        }
+        if let volume = mangaProgress?.volume {
+            parts.append("Vol. \(volume)")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 }
 

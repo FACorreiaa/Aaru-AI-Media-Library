@@ -31,8 +31,10 @@ extension ImportFileSource: @retroactive Identifiable {
             "Unzip your TV Time export, then upload one CSV at a time: tvtime-series-episodes.csv, "
                 + "tvtime-series.csv and tvtime-movies.csv, or from a GDPR export tracking-prod-records-v2.csv "
                 + "and tracking-prod-records.csv."
-        case .goodreads: "goodreads_library_export.csv. Custom shelves become lists."
-        case .mal: "On MyAnimeList: Profile → Export → Anime list. The .xml or .xml.gz file."
+        case .goodreads:
+            "On Goodreads: My Books → Import and export → Export Library, then upload the CSV. "
+                + "Goodreads closed its API, so there is no connect option. Custom shelves become lists."
+        case .mal: "On MyAnimeList: Profile → Export → Anime list or Manga list. The .xml or .xml.gz file."
         }
     }
 }
@@ -110,7 +112,7 @@ enum HistorySource: Hashable, Identifiable {
         case .stremio: "What you watched before, approved on stremio.com."
         case let .file(source): source.hint
         case .cat: "Your iCal link or file, or a list of shows."
-        case .aniList: "Your public anime list, by username."
+        case .aniList: "Your public anime and manga lists, by username."
         }
     }
 }
