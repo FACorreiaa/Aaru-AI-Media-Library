@@ -186,7 +186,9 @@ public enum BoardRules {
     /// one holding only the old prefill) takes the new one; typed words keep, with the new tag in
     /// front unless they already start with it.
     public static func prefillReply(_ text: String, from old: String, to new: String) -> String {
-        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text == old { return new }
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text == old {
+            return new
+        }
         let rest = !old.isEmpty && text.hasPrefix(old) ? String(text.dropFirst(old.count)) : text
         return rest.hasPrefix(new) ? rest : new + rest
     }
