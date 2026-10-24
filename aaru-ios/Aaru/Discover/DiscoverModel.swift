@@ -38,6 +38,18 @@ final class DiscoverModel {
         rows.filter { !$0.items.isEmpty }
     }
 
+    /// LIB-005: every title on Discover that matches the filter, once, under the first row that
+    /// has it (its release badge reads that row).
+    func matches(_ query: String) -> [DiscoverMatch] {
+        var seen = Set<String>()
+        return visibleRows.flatMap { row in
+            row.items.compactMap { hit -> DiscoverMatch? in
+                guard Paging.matches(query, hit.title, hit.byline), seen.insert(hit.id).inserted else { return nil }
+                return DiscoverMatch(row: row.id, hit: hit)
+            }
+        }
+    }
+
     func loadIfNeeded() async {
         guard !hasLoaded else { return }
         await load()
@@ -79,5 +91,15 @@ final class DiscoverModel {
         adding.insert(hit.id)
         defer { adding.remove(hit.id) }
         problem = await library.add(hit, status: status, api: api)
+    }
+}
+
+/// One title the Discover filter found, with the row it came from.
+struct DiscoverMatch: Identifiable {
+    let row: String
+    let hit: CatalogHit
+
+    var id: String {
+        hit.id
     }
 }

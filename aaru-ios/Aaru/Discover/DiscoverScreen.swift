@@ -4,7 +4,8 @@ import SwiftUI
 /// Discover (APP-012, DISC-001): catalog rows to add from without typing, with the same cards as
 /// Home's Discover rows. Renders the cache first, then refreshes. Credits the providers whose rows
 /// are on screen (UX-048). A segmented control switches Today's rows for the Seasons view (DISC-002)
-/// and, when the server has concerts on, the Concerts view (MUS-003).
+/// and, when the server has concerts on, the Concerts view (MUS-003). LIB-005: Today's filter turns
+/// the rows into one grid of the titles that match, 20 at a time with more on scroll.
 struct DiscoverScreen: View {
     enum Section: String, CaseIterable, Identifiable {
         case today, seasons, concerts
@@ -31,6 +32,8 @@ struct DiscoverScreen: View {
     @State private var concerts: ConcertsModel
     @State private var section: Section = .today
     @State private var listTarget: CatalogHit?
+    @State private var query = ""
+    @State private var shown = Paging.pageSize
     @Environment(AppRouter.self) private var router
     @Environment(\.dynamicTypeSize) private var dynamicType
 
@@ -56,7 +59,10 @@ struct DiscoverScreen: View {
         NavigationStack {
             Group {
                 switch section {
-                case .today: content
+                case .today:
+                    content
+                        .searchable(text: $query, prompt: "Filter Discover")
+                        .onChange(of: query) { shown = Paging.pageSize }
                 case .seasons:
                     SeasonBrowser(model: seasons, compact: compact) { listTarget = $0 }
                 case .concerts:
@@ -158,6 +164,8 @@ struct DiscoverScreen: View {
                 Button("Search") { router.showsSearch = true }
                     .buttonStyle(.borderedProminent)
             }
+        } else if !query.isEmpty {
+            found(model.matches(query))
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: AaruSpace.section) {
@@ -185,6 +193,45 @@ struct DiscoverScreen: View {
                     DiscoverCredits(providers: DiscoverCredits.providers(for: rows))
                 }
                 .padding(.vertical, 16)
+            }
+        }
+    }
+}
+
+extension DiscoverScreen {
+    /// The filter's grid: the titles that match, 20 more each time the end comes into view.
+    @ViewBuilder func found(_ matches: [DiscoverMatch]) -> some View {
+        if matches.isEmpty {
+            ContentUnavailableView {
+                Label("Nothing on Discover matches “\(query)”", systemImage: "magnifyingglass")
+            } description: {
+                Text("Search finds every title.")
+            } actions: {
+                Button("Search") { router.showsSearch = true }
+                    .buttonStyle(.bordered)
+            }
+        } else {
+            ScrollView {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: compact ? 104 : 140), spacing: 12, alignment: .top)],
+                    spacing: 20
+                ) {
+                    ForEach(matches.prefix(shown)) { match in
+                        DiscoverCard(
+                            hit: match.hit,
+                            libraryItemID: model.libraryItemID(match.hit),
+                            badge: DiscoverCard.releaseBadge(match.hit.releaseDate, row: match.row),
+                            width: nil,
+                            isAdding: model.adding.contains(match.hit.id)
+                        ) { status in
+                            Task { await model.add(match.hit, status: status) }
+                        } onAddToList: {
+                            listTarget = match.hit
+                        }
+                    }
+                }
+                .padding(16)
+                LoadMore(shown: $shown, total: matches.count)
             }
         }
     }

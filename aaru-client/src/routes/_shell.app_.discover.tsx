@@ -21,7 +21,9 @@ import type { DiscoverView } from '../lib/concerts/view'
 import type { DiscoverRow } from '../lib/home/model'
 import { seasonOf } from '../lib/discover/season'
 import type { SeasonKey, SeasonKind } from '../lib/discover/season'
-import { optionalEnum, optionalInt } from '../lib/search-params'
+import { optionalEnum, optionalInt, optionalString } from '../lib/search-params'
+import { FilterField } from '../components/Paged'
+import { prefersReducedMotion } from '../lib/reduced-motion'
 import { Segmented } from '../components/Segmented'
 import { concertPlaceQuery, discoverQuery } from '../lib/queries'
 
@@ -42,6 +44,7 @@ const ConcertList = lazy(() =>
 // The server names and orders the rows and marks the titles already on the shelf.
 // `?view=seasons` is DISC-002's Seasons view: one season of anime, shows or films at a time.
 // `?view=concerts` is MUS-003's Concerts view, offered only where the server has concerts on.
+// LIB-005: `?q=` filters Today's rows into one grid of matching titles, 20 to a `?page=`.
 export const Route = createFileRoute('/_shell/app_/discover')({
   head: () => ({ meta: [{ title: 'Discover · Aaru' }] }),
   validateSearch: (
@@ -51,6 +54,8 @@ export const Route = createFileRoute('/_shell/app_/discover')({
     kind?: SeasonKind
     season?: SeasonKey['season']
     year?: number
+    q?: string
+    page?: number
   } => ({
     view: parseView(search.view),
     kind: optionalEnum(search.kind, [
@@ -61,6 +66,8 @@ export const Route = createFileRoute('/_shell/app_/discover')({
     ]),
     season: optionalEnum(search.season, ['winter', 'spring', 'summer', 'fall']),
     year: optionalInt(search.year, 1970, 2200),
+    q: optionalString(search.q),
+    page: optionalInt(search.page, 1, 100_000),
   }),
   loader: async ({ context: { queryClient } }) => {
     const [discover, concerts] = await Promise.all([
@@ -134,6 +141,29 @@ function DiscoverPage() {
     loaded().concerts,
   )
 
+  // The filter answers each keystroke from this signal; the URL follows.
+  const [query, setQuery] = createSignal(search().q ?? '')
+  let heading: HTMLHeadingElement | undefined
+  function filter(q: string) {
+    setQuery(q)
+    void navigate({
+      search: (prev) => ({ ...prev, q: q || undefined, page: undefined }),
+      replace: true,
+      resetScroll: false,
+    })
+  }
+  function setPage(page: number) {
+    void navigate({
+      search: (prev) => ({ ...prev, page }),
+      replace: true,
+      resetScroll: false,
+    })
+    heading?.scrollIntoView({
+      block: 'start',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    })
+  }
+
   // The release badges count days from the viewer's today, which only the browser knows.
   onMount(() => setToday(localDayKey(new Date())))
 
@@ -157,7 +187,10 @@ function DiscoverPage() {
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
-        <h1 class="mt-6 font-display text-4xl font-medium tracking-tight">
+        <h1
+          ref={heading}
+          class="mt-6 scroll-mt-20 font-display text-4xl font-medium tracking-tight"
+        >
           Discover
         </h1>
         <p class="mt-2 text-muted">
@@ -176,12 +209,14 @@ function DiscoverPage() {
               : []),
           ]}
           value={view()}
-          onChange={(next) =>
+          onChange={(next) => {
+            // Another view starts unfiltered.
+            setQuery('')
             void navigate({
               search: next === 'today' ? {} : { view: next },
               replace: true,
             })
-          }
+          }}
         />
 
         <Show when={problem()}>
@@ -217,11 +252,21 @@ function DiscoverPage() {
                 />
               }
             >
+              <FilterField
+                label="Filter Discover"
+                placeholder="Filter Discover"
+                value={query()}
+                onChange={filter}
+                class="mt-6"
+              />
               <DiscoverRows
                 rows={rows()}
                 onRowsChange={setRows}
                 today={today()}
                 onProblem={setProblem}
+                query={query()}
+                page={search().page}
+                onPage={setPage}
               />
             </Show>
           }

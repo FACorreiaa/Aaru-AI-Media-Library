@@ -112,6 +112,8 @@ extension LibraryStatus: @retroactive Identifiable {
 struct LibraryRow: Identifiable, Hashable {
     let id: String
     let title: String
+    /// The title in its own language, so the filter finds "進撃の巨人" too.
+    let originalTitle: String?
     let year: Int?
     /// The artist for an album, the authors for a book.
     let byline: String?
@@ -124,6 +126,7 @@ struct LibraryRow: Identifiable, Hashable {
     init(_ entry: LibraryEntry) {
         id = entry.id
         title = entry.title.title
+        originalTitle = entry.title.originalTitle
         year = entry.title.year
         byline = entry.title.byline
         posterURL = entry.title.posterUrl.flatMap(URL.init(string:))
