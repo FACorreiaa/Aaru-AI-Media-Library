@@ -20,15 +20,21 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { createList, deleteList, renameList } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
-import { optionalEnum } from '../lib/search-params'
+import { optionalEnum, optionalInt, optionalString } from '../lib/search-params'
+import { FilterField, PageControls } from '../components/Paged'
+import { clampPage, matches, pageOf } from '../lib/paging'
+import { prefersReducedMotion } from '../lib/reduced-motion'
 import { listsQuery } from '../lib/queries'
 
-// APP-006 on the web: every list, with create, rename and delete.
+// APP-006 on the web: every list, with create, rename and delete. LIB-005: a filter over the
+// list names and 20 lists to a page, both in the URL (`?q=`, `?page=`).
 export const Route = createFileRoute('/_shell/app_/lists/')({
   head: () => ({ meta: [{ title: 'Lists · Aaru' }] }),
   // UX-080: Home's "New list" lands here with `?new=1`, on the name field.
-  validateSearch: (search): { new?: '1' } => ({
+  validateSearch: (search): { new?: '1'; q?: string; page?: number } => ({
     new: optionalEnum(String(search.new ?? ''), ['1']),
+    q: optionalString(search.q),
+    page: optionalInt(search.page, 1, 100_000),
   }),
   loader: ({ context: { queryClient } }) => queryClient.query(listsQuery),
   component: Lists,
@@ -55,8 +61,33 @@ function Lists() {
     if (search().new !== '1') return
     nameField?.focus()
     // Back or a reload does not focus it again.
-    void navigate({ search: {}, replace: true })
+    void navigate({
+      search: (prev) => ({ ...prev, new: undefined }),
+      replace: true,
+    })
   })
+  let heading: HTMLHeadingElement | undefined
+  // The filter answers each keystroke from this signal; the URL follows.
+  const [query, setQuery] = createSignal(search().q ?? '')
+  function filter(q: string) {
+    setQuery(q)
+    void navigate({
+      search: (prev) => ({ ...prev, q: q || undefined, page: undefined }),
+      replace: true,
+    })
+  }
+  function setPage(page: number) {
+    void navigate({ search: (prev) => ({ ...prev, page }), replace: true })
+    heading?.scrollIntoView({
+      block: 'start',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    })
+  }
+  const matching = createMemo(() =>
+    lists().filter((list) => matches(query(), list.name)),
+  )
+  const page = () => clampPage(search().page, matching().length)
+  const shown = createMemo(() => pageOf(matching(), page()))
   /** Focuses a row's rename field once it is on the page. */
   const focusOnMount = (el: HTMLInputElement) =>
     queueMicrotask(() => {
@@ -103,7 +134,10 @@ function Lists() {
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
-        <h1 class="mt-4 font-display text-4xl font-medium tracking-tight">
+        <h1
+          ref={heading}
+          class="mt-4 scroll-mt-20 font-display text-4xl font-medium tracking-tight"
+        >
           Lists
         </h1>
         <form
@@ -146,12 +180,27 @@ function Lists() {
             />
           }
         >
+          <FilterField
+            label="Filter your lists"
+            placeholder="Filter your lists"
+            value={query()}
+            onChange={filter}
+            class="mt-8"
+          />
+          <Show when={matching().length === 0}>
+            <div class="mx-auto mt-12 max-w-sm text-center">
+              <p class="text-muted">No lists match “{query()}”.</p>
+              <Button variant="outline" class="mt-6" onClick={() => filter('')}>
+                Clear filter
+              </Button>
+            </div>
+          </Show>
           {/* WEB-006: as many columns as the width holds. */}
           <ul
             ref={grid}
             class="mt-8 grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-3"
           >
-            <For each={lists()}>
+            <For each={shown()}>
               {(list) => (
                 <li
                   ref={(el) => {
@@ -245,6 +294,12 @@ function Lists() {
               )}
             </For>
           </ul>
+          <PageControls
+            page={page()}
+            total={matching().length}
+            label="List pages"
+            onPage={setPage}
+          />
         </Show>
         <ConfirmDialog
           open={pending() !== null}

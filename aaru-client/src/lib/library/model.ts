@@ -127,6 +127,8 @@ export function coverShape(kind: MediaKind): 'square' | 'poster' {
 export interface LibraryRow {
   id: string
   title: string
+  /** The title in its own language ("葬送のフリーレン"): the Library filter matches it too. */
+  originalTitle?: string
   year?: number
   posterUrl?: string
   kind: MediaKind
@@ -165,6 +167,7 @@ export function toRow(entry: LibraryEntry): LibraryRow {
   return {
     id: entry.id,
     title: entry.title.title,
+    originalTitle: entry.title.originalTitle,
     year: entry.title.year,
     posterUrl: entry.title.posterUrl,
     kind: kindOf(entry.title.type, entry.title.isAnime),

@@ -8,7 +8,8 @@ struct ListMemberRoute: Hashable {
 
 /// One list: its titles in order, swipe to remove, drag to reorder, "Add titles" to search into
 /// it. Rows carry status, progress and the next airing (LST-003). A member not in the library
-/// gets an Add control (UX-072).
+/// gets an Add control (UX-072). LIB-005: a filter over its titles, and 20 at a time with more
+/// on scroll. Dragging waits for an empty filter, so a move lands where it looks.
 struct ListDetailView: View {
     let listID: String
     let lists: ListsModel
@@ -21,12 +22,23 @@ struct ListDetailView: View {
     @State private var showsSearch = false
     /// A failed add from a row.
     @State private var problem: String?
+    @State private var query = ""
+    @State private var shown = Paging.pageSize
+
+    private var matching: [ListItem] {
+        (detail?.items ?? []).filter { Paging.matches(query, $0.title.title, $0.title.byline) }
+    }
+
+    private var visible: [ListItem] {
+        Array(matching.prefix(shown))
+    }
 
     var body: some View {
         List {
-            ForEach(detail?.items ?? [], id: \.title.id) { item in
+            ForEach(visible, id: \.title.id) { item in
                 row(for: item)
                     .listRowBackground(Color.clear)
+                    .moveDisabled(!query.isEmpty)
                     .contextMenu {
                         Button("Remove from list", systemImage: "minus.circle", role: .destructive) {
                             Task { await remove([item.title.id]) }
@@ -34,11 +46,13 @@ struct ListDetailView: View {
                     }
             }
             .onDelete { offsets in
-                guard let detail else { return }
-                let ids = offsets.map { detail.items[$0].title.id }
+                let ids = offsets.map { visible[$0].title.id }
                 Task { await remove(ids) }
             }
             .onMove(perform: move)
+            LoadMore(shown: $shown, total: matching.count)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
@@ -51,6 +65,8 @@ struct ListDetailView: View {
             }
         }
         .navigationTitle(detail?.name ?? "List")
+        .searchable(text: $query, prompt: "Filter this list")
+        .onChange(of: query) { shown = Paging.pageSize }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Add titles", systemImage: "plus") { showsSearch = true }
@@ -79,6 +95,8 @@ struct ListDetailView: View {
                 OwlUnavailableView(title: "Nothing on this list") {
                     Button("Add titles") { showsSearch = true }.buttonStyle(.borderedProminent)
                 }
+            } else if matching.isEmpty {
+                ContentUnavailableView.search(text: query)
             }
         } else if loadFailed, !loading {
             LoadFailedView(

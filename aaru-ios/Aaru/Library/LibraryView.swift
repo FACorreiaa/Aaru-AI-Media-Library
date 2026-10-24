@@ -12,7 +12,8 @@ struct LibraryFilter: Equatable {
 }
 
 /// APP-003: the library. Filter by kind and status, poster grid or rows, readable offline. On
-/// iPhone it is also the way into Lists, which has no tab there (DESIGN.md §18).
+/// iPhone it is also the way into Lists, which has no tab there (DESIGN.md §18). LIB-005: a
+/// filter over every title by name, and 20 at a time with more on scroll.
 struct LibraryView: View {
     let api: Client?
     let library: LibraryModel
@@ -33,9 +34,12 @@ struct LibraryView: View {
     @State private var removing: LibraryRow?
     /// A failed "Now" write (APP-017) or removal.
     @State private var problem: String?
+    @State private var query = ""
+    @State private var shown = Paging.pageSize
 
     private var rows: [LibraryRow] {
         library.rows(kind: filter.kind, status: filter.status)
+            .filter { Paging.matches(query, $0.title, $0.originalTitle, $0.byline) }
     }
 
     /// iPhone (and a compact iPad window): Lists opens from here.
@@ -58,6 +62,9 @@ struct LibraryView: View {
                         syncProblem: library.firstSyncProblem == nil ? library.syncProblem : nil
                     )
                 }
+                .searchable(text: $query, prompt: "Filter your library")
+                .onChange(of: query) { shown = Paging.pageSize }
+                .onChange(of: filter) { shown = Paging.pageSize }
                 .toolbar { toolbar }
                 .accountButton()
                 .refreshable { await library.sync(api: api) }
@@ -119,7 +126,8 @@ struct LibraryView: View {
                         .padding(.top, 8)
                 }
                 now
-                LibraryGrid(rows: rows) { row in rowMenu(row) }
+                LibraryGrid(rows: Array(rows.prefix(shown))) { row in rowMenu(row) }
+                LoadMore(shown: $shown, total: rows.count)
             }
         } else {
             List {
@@ -131,11 +139,14 @@ struct LibraryView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
-                ForEach(rows) { row in
+                ForEach(rows.prefix(shown)) { row in
                     NavigationLink(value: row.id) { LibraryListRow(row: row) }
                         .listRowBackground(Color.clear)
                         .contextMenu { rowMenu(row) }
                 }
+                LoadMore(shown: $shown, total: rows.count)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -161,19 +172,25 @@ struct LibraryView: View {
                 Button("Bring your history") { router.openSettings(.imports) }
                     .buttonStyle(.bordered)
             }
+        } else if !query.isEmpty, !filter.isActive {
+            ContentUnavailableView.search(text: query)
         } else {
             ContentUnavailableView {
                 Label("No titles match these filters", systemImage: "line.3.horizontal.decrease.circle")
             } actions: {
-                Button("Clear filters") { filter = LibraryFilter() }
-                    .buttonStyle(.bordered)
+                Button("Clear filters") {
+                    filter = LibraryFilter()
+                    query = ""
+                }
+                .buttonStyle(.bordered)
             }
         }
     }
 
     /// Hidden while a status other than in progress is chosen: Now is the in-progress part.
+    /// Hidden while filtering too: the results lead.
     @ViewBuilder private var now: some View {
-        if filter.status == nil || filter.status == .inProgress {
+        if query.isEmpty, filter.status == nil || filter.status == .inProgress {
             NowSection(library: library, api: api, kind: filter.kind) { problem = $0 }
         }
     }

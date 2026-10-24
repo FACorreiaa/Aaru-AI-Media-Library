@@ -46,6 +46,14 @@ library layer stay separate, external IDs stored whenever known, no second backe
   streamer they air on, with the day and, when known, the time on each row. It is a layout, not a
   filter (the filter badge does not count it, Clear filters keeps it), Missed stays by show, and it
   is client-only: `CalendarEntry` already carries the network, `airsAt` and `airTimeKnown`.
+- **Filter and 20 to a page on Library, Lists and Discover (owner, 2026-10-24, LIB-005).** Each
+  gets a filter that searches every item the screen holds, not only the page in view, and shows
+  20 at a time: numbered pages on the web (page in the URL), 20 more on scroll on Apple. The
+  filter runs on the client over what is already loaded; catalog search stays the shell's Search.
+- **Open any title, in the library or not (owner, 2026-10-24, LIB-006).** A search hit, a
+  Discover card or a list member opens its title page; one not in the library shows the same page
+  with Add buttons and adds nothing until tapped. Needs a server route that resolves a catalog
+  ref to a title. Follows LIB-005.
 
 ## Decisions recorded 2026-10-23
 
@@ -578,6 +586,8 @@ account or a stranger that has not happened yet.
 | LIB-002 | Done | #2; LibraryTests | No EXPLAIN check in tests |
 | LIB-003 | Done | #2; LibraryTests | |
 | LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
+| LIB-005 | Built, unverified | `lib/paging.test.ts`; `components/Paged.tsx`, `Design/Paging.swift` | Client-only (owner, 2026-10-24); not yet run on TestFlight |
+| LIB-006 | Planned | | Title page without a library item (owner, 2026-10-24) |
 | AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
 | AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Clients undo through PROG-005's toast only; no undo ribbon |
 | PROG-001 | Done | #2; episodes PUT route | |
@@ -1318,6 +1328,30 @@ Includes tombstones for deletions.
 
 **Done when:** deleting an item on one device makes it disappear on a second device that
 only asks for changes since its last sync token.
+
+### LIB-005 · Filter and pages on Library, Lists and Discover · S · owner, 2026-10-24
+**Needs:** APP-003, APP-006, APP-012.
+Library, the Lists index, one list, and Discover's Today view each get a filter box. It matches
+every word of the query against the start of a word in the title (Library also the original
+title and byline; Lists the list name), with case, accents and punctuation folded away, over
+every item the screen holds. Twenty show at a time: the web pages with ‹ 1 2 3 … › and keeps
+`?q=` and `?page=` in the URL; Apple loads 20 more as the end scrolls into view. On Discover a
+filter swaps the rows for one grid of the matching titles, each once. A list's rows move only
+while its filter is empty. No server change: the filter reads the synced library, the list's
+members and Discover's rows.
+
+**Done when:** a 45-title library shows 20, then 20, then 5 on the web's pages and on Apple's
+scroll; "fri" finds Frieren on page 3 from page 1; a filter that shrinks the list never leaves
+an empty page; the same holds for Lists, a list and Discover.
+
+### LIB-006 · A title page for any title · M · owner, 2026-10-24
+**Needs:** LIB-005, CAT-004.
+A route that resolves a catalog ref (`MediaRef`) to a title id and its detail without adding it,
+and a title page on both clients that works without a library item: the same page, with Add
+buttons, nothing written until tapped. Search hits, Discover cards and list members open it.
+
+**Done when:** opening a hit not in the library shows its page and leaves the library unchanged
+until Add; opening one in the library shows the usual page.
 
 ### AUD-001 · Action journal · M
 **Needs:** LIB-003, SRV-006.
