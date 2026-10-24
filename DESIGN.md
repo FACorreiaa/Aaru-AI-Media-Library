@@ -459,6 +459,32 @@ track, "artist · album" and the time, under Today / Yesterday / date headings, 
 Top is twenty rows for 7 days, 30 days, this year or all time. Wide screens show both side by
 side; a phone switches Recent | Top. An album row is a link only where it leads somewhere.
 
+## 13c. Sports (SPT-003…004, owner 2026-10-24)
+
+A tab of its own, and the only place sports appear: nothing on the Field, in the library, the
+calendar, Insights or a friend's profile. SofaScore is the reference for density, not for
+colour. A segmented control switches **Favorites** and **Schedule**.
+
+- **Favorites.** One card per follow, in follow order: badge, name, sport. Under it, a live
+  game first (both sides, the score large in the display face, the clock beside a live dot),
+  else the next fixture (local day and time), then the last result in muted. A UFC or WWE card
+  has no sides: its name and poster. A follow still being fetched shows a placeholder at the real
+  size, then fills in on its own.
+- **Schedule.** A date strip, three days back to a week ahead, Today marked. The day's events
+  grouped by league under the league badge; leagues with a followed team first. A row is time or
+  clock, the two sides with badges, the score; a followed team's row carries the amber accent.
+- **Event.** A sheet: the sides, score or kick-off, status, venue and round, then "Where to
+  watch": channels in the chosen country first; with no country chosen, one line that points to
+  Sports settings; "Other countries" folded, grouped by country.
+- **Follow.** Search across leagues, teams and players with a Follow toggle. First run, before
+  anything is followed, shows the owner's picks (Premier League, La Liga, NBA, NFL, UFC, WWE…)
+  as tappable badges.
+- **Refresh.** Every 90 s while the tab is visible and a live game is on screen; never a spinner
+  over content that is already there. "Data: TheSportsDB" closes the tab, small and muted.
+- **Settings.** A Sports section holds the "Where to watch" country.
+- **iPhone** keeps its five tabs; Sports sits in the overflow. iPad and Mac show it in the
+  sidebar; the web nav lists it. Hidden everywhere while the server has no sports provider.
+
 ## 14. Week grid (Phase 2)
 
 The `CalendarMonth` (§7) answers "what did I miss." The week grid answers "what is on this

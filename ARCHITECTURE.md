@@ -529,6 +529,30 @@ and clients hide the view). Paced at 4/s; a `CallBudget` stops at 4,500 calls a 
 - **City picker.** `GET /v1/concerts/places?q=` → `OpenMeteoPlaces` (no key). The request log
   drops this route's query. `PUT`/`DELETE /v1/me/concert-place` save and forget the city.
 
+### Sports (SPT-001…005)
+
+`Sources/App/Sports/`, behind `SportsListing` (named for the job). `TheSportsDBSports` calls
+TheSportsDB v2 with `THESPORTSDB_API_KEY` in `X-API-KEY`, and v1 (key in the path) for the two
+calls v2 lacks: a league's events on one day and an event's TV listings. Without the key
+`CatalogProviders.sports` is nil and every Sports answer is `unavailable` (`GET
+/v1/me/sport-settings` says `available: false`; clients hide the tab).
+
+- **Follows.** `sport_follows` (league, team or player by provider id, with a name, sport, badge,
+  league and team snapshot; at most 100) and `sport_settings` (the "Where to watch" country).
+  Following looks the entity up first; a player's league comes from their team, so a fighter's
+  fixtures are the promotion's cards, by id and never by name.
+- **Cache.** `SportsCache` holds every answer by key with its own freshness (livescores 90 s,
+  event 5 min, league day 15 min, schedules 30 min, TV 6 h, entities 24 h), shared by all users,
+  stale on failure and retried after a minute. Fetches are unstructured so a caller's deadline
+  never cancels them. A request primes what it needs, waits `patience` (3 s), and answers with
+  the rest `pending`; clients ask again a few seconds later.
+- **Answers.** Favorites (each follow's live, next and last), one local day (`date` + IANA `tz`,
+  fetched as the one or two UTC days it covers, plus followed teams' other competitions), and an
+  event with broadcasts split by country. The livescore feed is laid over listed events by id;
+  a past event with a score is finished.
+- **Isolation.** Sports writes no library row, action, point, activity or push, and no agent or
+  MCP tool reads it. The export carries the follows and the country.
+
 ### Anime catalog (AniList)
 
 Anime is first-class from Phase 1 (CAT-007…009).

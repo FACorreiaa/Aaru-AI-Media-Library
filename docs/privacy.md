@@ -145,6 +145,11 @@ asks your device for an approximate position once; it is rounded the same way, u
 one search, and never stored or logged. To find concerts by your artists, Aaru looks up the
 artists of the albums in your library; that list is catalog data, not about you.
 
+**Sports.** The leagues, teams and players you follow in Sports, and the country you choose for
+"Where to watch", are stored until you unfollow, clear the country, or delete your account. They
+appear only in your Sports tab: never on your profile, to friends, in your library or in your
+stats. The export includes them.
+
 **Error reports.** When the app, the website, the browser extension or Aaru's server hits an
 error or crashes, it sends a report to Sentry: what failed, where in Aaru's code, the device or
 browser type and app version, and the page address without anything after the `?`. It never
@@ -189,6 +194,9 @@ Aaru only uses these services, and only for the purpose listed:
 - **Ticketmaster** lists concerts. Aaru's server sends it an area of about 5 km around your
   city or approximate position, a distance, and artist names from albums people have added,
   never who you are. Tickets are bought on Ticketmaster's site, under its own terms.
+- **TheSportsDB** provides sports leagues, teams, players, fixtures, scores and TV listings. Aaru's
+  server sends it what you search for in Sports and the ids of what people follow, never who you
+  are or your country.
 - **Open-Meteo** turns the city you type for "Concerts near" into a place. It receives that
   text only.
 - **Sentry** (Germany) receives the error reports described above.
