@@ -14,9 +14,11 @@ struct MALSection: View {
         Section {
             if let connection = model.mal, connection.connected {
                 if connection.needsReconnect {
-                    Label("MyAnimeList stopped accepting Aaru. Nothing is sent until you reconnect.",
-                          systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(Color(.danger))
+                    Label(
+                        "MyAnimeList stopped accepting Aaru. Nothing is sent until you reconnect.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .foregroundStyle(Color(.danger))
                     Button(action: connect) { row("Reconnect", systemImage: "arrow.clockwise") }
                         .disabled(model.malBusy)
                 } else {
