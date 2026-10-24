@@ -8,6 +8,8 @@ struct GroupsScreen: View {
     let groups: GroupsModel
     /// Friends, pushed from Groups on iPhone. Nil in previews.
     var social: SocialModel?
+    /// Friends' Board, beside `social`. Nil in previews.
+    var board: BoardModel?
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
@@ -15,7 +17,7 @@ struct GroupsScreen: View {
     var body: some View {
         #if os(iOS)
             if sizeClass == .compact {
-                GroupsStack(groups: groups, social: social)
+                GroupsStack(groups: groups, social: social, board: board)
             } else {
                 GroupsSplit(groups: groups)
             }
@@ -26,48 +28,52 @@ struct GroupsScreen: View {
 }
 
 private enum GroupRoute: Hashable {
+    /// iPhone: Friends, pushed from Groups' toolbar or `AppRouter.showFriends()`.
+    case friends
     case group(String)
     case channel(group: String, channel: String)
 }
 
-/// iPhone: one column, pushed.
+/// iPhone: one column, pushed. The path is a `NavigationPath`, not `[GroupRoute]`, so Friends'
+/// post screen (`PostRoute`, registered in `FriendsContent`) can push onto it too.
 private struct GroupsStack: View {
     let groups: GroupsModel
     let social: SocialModel?
+    let board: BoardModel?
     @Environment(AppRouter.self) private var router
-    @State private var path: [GroupRoute] = []
+    @State private var path = NavigationPath()
+    /// The bottom of `path` (Friends or a group): a `NavigationPath` cannot be read back.
+    @State private var root: GroupRoute?
     @State private var sheet: GroupSheet?
     @State private var confirm: GroupConfirm?
 
     var body: some View {
-        @Bindable var router = router
         NavigationStack(path: $path) {
             GroupsHome(
                 groups: groups,
-                onOpen: { path = [.group($0.id)] },
+                onOpen: { show([.group($0.id)]) },
                 onCreate: { sheet = .create }
             )
             #if os(iOS)
             .toolbar {
-                if social != nil {
+                if social != nil, board != nil {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Friends", systemImage: "person.2") { router.showsFriendsInGroups = true }
                     }
                 }
             }
             #endif
-            .navigationDestination(isPresented: $router.showsFriendsInGroups) {
-                if let social {
-                    FriendsContent(model: social)
-                }
-            }
             .navigationDestination(for: GroupRoute.self) { route in
                 switch route {
+                case .friends:
+                    if let social, let board {
+                        FriendsContent(model: social, board: board)
+                    }
                 case let .group(groupID):
                     ChannelListView(
                         groups: groups, groupID: groupID,
                         present: { sheet = $0 }, confirm: { confirm = $0 },
-                        onOpen: { path.append(.channel(group: groupID, channel: $0.id)) }
+                        onOpen: { path.append(GroupRoute.channel(group: groupID, channel: $0.id)) }
                     )
                 case let .channel(groupID, channelID):
                     ChannelDestination(groups: groups, groupID: groupID, channelID: channelID) {
@@ -81,23 +87,49 @@ private struct GroupsStack: View {
             groups: groups, sheet: $sheet, confirm: $confirm,
             onCreated: { detail in
                 let id = detail.group.id
-                path = [.group(id), .channel(group: id, channel: detail.group.defaultChannelId)]
+                show([.group(id), .channel(group: id, channel: detail.group.defaultChannelId)])
             },
-            onChannelCreated: { groupID, channel in path.append(.channel(group: groupID, channel: channel.id)) },
+            onChannelCreated: { groupID, channel in
+                path.append(GroupRoute.channel(group: groupID, channel: channel.id))
+            },
             onShowMembers: { sheet = .members($0) }
         ))
         .task { await groups.load() }
         // Leaving or deleting a group, or being removed, closes it.
         .onChange(of: groups.groups.map(\.id)) { _, ids in
-            if case let .group(groupID) = path.first, !ids.contains(groupID) {
-                path = []
+            if case let .group(groupID)? = root, !ids.contains(groupID) {
+                show([])
             }
         }
         // "Discuss in a group…" from a title.
         .onChange(of: groups.openRequest, initial: true) { _, request in
             guard let request else { return }
-            path = [.group(request.group), .channel(group: request.group, channel: request.channel)]
+            show([.group(request.group), .channel(group: request.group, channel: request.channel)])
             groups.openRequest = nil
+        }
+        // Friends is shown while the router says so, and the router hears when it is popped.
+        .onChange(of: router.showsFriendsInGroups, initial: true) { _, shows in
+            if shows, root != .friends {
+                show([.friends])
+            } else if !shows, root == .friends {
+                show([])
+            }
+        }
+        .onChange(of: path.isEmpty) { _, empty in
+            guard empty else { return }
+            if root == .friends {
+                router.showsFriendsInGroups = false
+            }
+            root = nil
+        }
+    }
+
+    /// Replaces the whole stack, remembering what sits at its bottom.
+    private func show(_ routes: [GroupRoute]) {
+        path = NavigationPath(routes)
+        root = routes.first
+        if root != .friends, router.showsFriendsInGroups {
+            router.showsFriendsInGroups = false
         }
     }
 }

@@ -246,6 +246,13 @@ show, oldest miss first, with how many episodes and how much time it adds up to.
 and show as removable chips. Every tick is a 44px round toggle that a pending write disables.
 (CAL-002 web, CAL-003 iPhone, iPad and Mac, 2026-10-21: the same modes, rows, sheets and filters;
 on Apple the filters are a toolbar menu and the episode sheet has medium and large detents.)
+**Group by: Day | Channel** (CAL-005, owner, 2026-10-24) sets how Week and Month lay out: by
+channel, the episodes in view sit under the channel or streamer they air on (busiest first,
+"Other" for none, last), and each row's line reads the day and time instead of the network. The
+wide Week trades its day columns for those sections; the phone keeps the day strip and groups the
+chosen day; Month's agenda covers the whole grid. It is a layout, so the filter badge never
+counts it; on the web it is a segmented control in the toolbar and in the URL, on Apple a picker
+at the top of the filter menu.
 Agent highlight later: "three premieres, one finale, you are behind on
 two."
 
@@ -685,6 +692,17 @@ friends, activity, leaderboard, Invite, requests, friends). No nav rename, Group
 - **From friends on a title.** After the notes on a title page: up to five post rows about this
   title and "Write about this" (to Friends with the title in the composer). Hidden when there
   are no posts and no friends.
+
+**On Apple (BOARD-003, 2026-10-24).** Board sits inside Friends, as on the web: on iPhone it is
+reached from Groups' Friends button, on iPad and Mac from the Friends sidebar item. `Board | Lately`
+is a segmented control in the navigation bar. A post's comment count pushes the post screen in the
+Friends stack. Upvote gives a light haptic. On iPad and Mac the column is capped at about 640pt
+and centred. ⌘R reloads the Board and ⌘↩ posts from the composer on Mac. The Apple composer rates
+in whole stars with the existing `RatingStars`; half stars from web posts display as halves.
+"From friends" on a title page shows up to five compact rows, and "Write about this" opens the
+Board with the title in the composer. With friends but no posts it shows "None of your friends has
+written about this yet." and the button, as on the web. The composer's draft lives in the Board's
+model, so switching to Lately or opening a post keeps it.
 
 ### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
 

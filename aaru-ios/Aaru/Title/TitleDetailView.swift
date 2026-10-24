@@ -234,5 +234,6 @@ extension TitleDetailView {
         if model.isShow {
             TitleSeasons(model: model, expanded: $expandedSeasons, onOpen: { openEpisode = $0 }, retry: load)
         }
+        TitleFromFriends(api: model.api, summary: entry.title)
     }
 }

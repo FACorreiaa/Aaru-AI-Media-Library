@@ -36,6 +36,7 @@ import {
   withWatched,
 } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
+import { groupByChannel } from '../lib/calendar/channels'
 import { MISSED_DAYS, applyFilter, catchUp } from '../lib/calendar/filters'
 import type {
   CalendarFilter,
@@ -51,7 +52,7 @@ import { slideIn } from '../lib/motion'
 // APP-010, CAL-002 on the web: what airs from the user's own shows, as CAT's dense week,
 // Stremio's month with an agenda, or what was missed. Rendered in the browser: "today" and
 // every day boundary are the viewer's, not the Worker's (UTC). Filters and the view live in the
-// URL; the sheets and Missed load on first use, so the page stays inside its size budget.
+// URL, and so does Group by day or channel (CAL-005); the sheets and Missed load on first use, so the page stays inside its size budget.
 
 const CalendarEpisodeSheet = lazy(
   () => import('../components/calendar/CalendarEpisodeSheet'),
@@ -64,6 +65,8 @@ interface Search {
   hide?: 'watched'
   only?: OnlyFilter
   kind?: KindFilter
+  /** CAL-005: Week and Month by channel. A layout, kept with the filters in the URL. */
+  group?: 'channel'
 }
 
 export const Route = createFileRoute('/_shell/app_/calendar')({
@@ -73,6 +76,7 @@ export const Route = createFileRoute('/_shell/app_/calendar')({
     hide: optionalEnum(search.hide, ['watched']),
     only: optionalEnum(search.only, ['premieres', 'finales']),
     kind: optionalEnum(search.kind, ['show', 'anime']),
+    group: optionalEnum(search.group, ['channel']),
   }),
   component: Calendar,
 })
@@ -138,6 +142,7 @@ function Calendar() {
     hideWatched: search().hide === 'watched',
     only: search().only,
     kind: search().kind,
+    group: search().group,
   }))
 
   /** Week view paging: the moved week slides in from the side it came from. */
@@ -151,6 +156,12 @@ function Calendar() {
   const visible = () => (view() === 'week' ? weekDays() : grid())
   const shown = createMemo(() => applyFilter(entries(), filter()))
   const byDay = createMemo(() => groupByDay(shown(), visible()))
+  /** CAL-005: the visible days' episodes by channel, only while grouped that way. */
+  const channels = createMemo(() =>
+    filter().group === 'channel'
+      ? groupByChannel([...byDay().values()].flat())
+      : undefined,
+  )
   const missed = createMemo(() =>
     view() === 'missed'
       ? catchUp(
@@ -353,6 +364,7 @@ function Calendar() {
         hide: next.hideWatched ? 'watched' : undefined,
         only: next.only,
         kind: next.kind,
+        group: next.group,
       }),
       replace: true,
     })
@@ -464,7 +476,9 @@ function Calendar() {
                 fallback={
                   view() === 'missed'
                     ? 'Aired in the last four weeks, not watched yet'
-                    : 'Your shows, by the day they air'
+                    : filter().group === 'channel'
+                      ? 'Your shows, by where they air'
+                      : 'Your shows, by the day they air'
                 }
               >
                 {rangeLabel(weekDays()[0], weekDays()[6])}
@@ -556,6 +570,7 @@ function Calendar() {
                       today={now()}
                       selected={selected()}
                       byDay={byDay()}
+                      channels={channels()}
                       waiting={waiting()}
                       pending={pendingSet()}
                       keyOf={entryKey}
@@ -571,6 +586,7 @@ function Calendar() {
                     today={now()}
                     selected={selected()}
                     byDay={byDay()}
+                    channels={channels()}
                     waiting={waiting()}
                     pending={pendingSet()}
                     keyOf={entryKey}

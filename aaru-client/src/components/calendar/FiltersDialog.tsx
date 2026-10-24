@@ -103,7 +103,12 @@ export default function FiltersDialog(props: {
               size="sm"
               class="self-start"
               disabled={activeCount(props.filter) === 0}
-              onClick={() => props.onFilter({ hideWatched: false })}
+              onClick={() =>
+                props.onFilter({
+                  hideWatched: false,
+                  group: props.filter.group,
+                })
+              }
             >
               Clear filters
             </Button>

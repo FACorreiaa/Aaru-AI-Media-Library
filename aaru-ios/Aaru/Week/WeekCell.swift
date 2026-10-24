@@ -6,6 +6,8 @@ import SwiftUI
 struct WeekCell: View {
     let entry: CalendarEntry
     let isPending: Bool
+    /// Replaces "network · time", e.g. the day and time when grouped by channel (CAL-005).
+    var detail: String?
     let onToggle: () -> Void
 
     var body: some View {
@@ -31,7 +33,7 @@ struct WeekCell: View {
                         .font(.caption)
                         .lineLimit(2)
                 }
-                if let detail = entry.whereAndWhen {
+                if let detail = detail ?? entry.whereAndWhen {
                     Text(detail)
                         .font(.caption2)
                         .foregroundStyle(Color(.muted))
@@ -66,7 +68,7 @@ struct WeekCell: View {
 
     private var accessibilityText: String {
         [
-            entry.title.title, entry.code, entry.episodeName, entry.whereAndWhen,
+            entry.title.title, entry.code, entry.episodeName, detail ?? entry.whereAndWhen,
             entry.badge?.label, entry.watched ? "Watched" : nil,
         ].compactMap(\.self).joined(separator: ", ")
     }
