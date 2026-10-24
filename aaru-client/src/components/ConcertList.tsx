@@ -13,6 +13,7 @@ import { cn } from '~/lib/utils'
 import { CREDITS } from '../lib/credits'
 import {
   DEFAULT_RADIUS,
+  MIN_SEARCH,
   RADII,
   artistsEmptyLine,
   dateBlock,
@@ -20,6 +21,8 @@ import {
   pendingLine,
   placeLine,
   roundPosition,
+  searchEmptyLine,
+  searchHeading,
 } from '../lib/concerts/model'
 import type {
   ArtistConcerts,
@@ -27,11 +30,23 @@ import type {
   ConcertPage,
   ConcertPlaceSetting,
   Radius,
+  SearchScope,
 } from '../lib/concerts/model'
-import { getArtistConcerts, getConcertsNear } from '../lib/concerts/server'
+import {
+  getArtistConcerts,
+  getConcertsNear,
+  searchConcerts,
+} from '../lib/concerts/server'
 import { play } from '../lib/motion'
 import { CityPicker } from './CityPicker'
-import { Alert, Button, buttonVariants } from '~/components/ui'
+import {
+  Alert,
+  Button,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+  buttonVariants,
+} from '~/components/ui'
 import { Segmented } from './Segmented'
 
 const TICKETMASTER = CREDITS.find((c) => c.name === 'Ticketmaster')?.href
@@ -43,11 +58,20 @@ const SKELETON_ROWS = 3
 
 type Position = { latitude: number; longitude: number }
 
+/** What the list keeps of a page, everything nearby or one artist's (MUS-010). */
+type Listed = Pick<
+  ConcertPage,
+  'page' | 'hasMore' | 'unavailable' | 'place'
+> & {
+  /** Absent for a search anywhere. */
+  radiusKm?: number
+}
+
 type Near =
   | { state: 'loading' }
   | { state: 'no_place' }
   | { state: 'failed'; message: string }
-  | { state: 'ready'; page: ConcertPage; items: Concert[] }
+  | { state: 'ready'; page: Listed; items: Concert[] }
 
 /**
  * MUS-003: Discover's Concerts view. Two date-led lists: upcoming shows by the artists of the
@@ -73,6 +97,11 @@ export function ConcertList(props: {
   const [locating, setLocating] = createSignal(false)
   const [locateProblem, setLocateProblem] = createSignal<string | null>(null)
   const [picking, setPicking] = createSignal(false)
+  // MUS-010: an artist's name, searched only once submitted (each search spends the provider's
+  // daily calls), near the same centre and radius or anywhere.
+  const [text, setText] = createSignal('')
+  const [query, setQuery] = createSignal<string | null>(null)
+  const [scope, setScope] = createSignal<SearchScope>('near')
   let list: HTMLUListElement | undefined
   let latest = 0
 
@@ -95,8 +124,11 @@ export function ConcertList(props: {
   async function loadNear(page: number, fade = false) {
     const request = ++latest
     const at = position()
+    const name = query()
+    const where = scope()
     setMoreFailed(null)
-    if (!at && !props.setting.place) {
+    // Anywhere needs no centre; everything else does.
+    if (!at && !props.setting.place && !(name && where === 'anywhere')) {
       setBusy(false)
       setNear({ state: 'no_place' })
       return
@@ -105,9 +137,19 @@ export function ConcertList(props: {
     if (page === 1 && current.state !== 'ready') setNear({ state: 'loading' })
     setBusy(true)
     try {
-      const result = await getConcertsNear({
-        data: { ...(at ?? {}), radiusKm: radius(), page },
-      })
+      const result = name
+        ? await searchConcerts({
+            data: {
+              q: name,
+              scope: where,
+              ...(at ?? {}),
+              radiusKm: radius(),
+              page,
+            },
+          })
+        : await getConcertsNear({
+            data: { ...(at ?? {}), radiusKm: radius(), page },
+          })
       if (request !== latest) return
       if (result.noPlace) {
         setNear({ state: 'no_place' })
@@ -134,10 +176,17 @@ export function ConcertList(props: {
     }
   }
 
-  // A new radius, position or saved city starts over at page 1.
+  // A new radius, position, saved city, artist or scope starts over at page 1.
   createEffect(
     on(
-      () => [radius(), position(), props.setting.place] as const,
+      () =>
+        [
+          radius(),
+          position(),
+          props.setting.place,
+          query(),
+          query() ? scope() : null,
+        ] as const,
       (_, previous) => void loadNear(1, previous !== undefined),
     ),
   )
@@ -173,13 +222,38 @@ export function ConcertList(props: {
   }
 
   const savedName = () => props.setting.place?.name
-  const heading = () => {
-    if (position()) return 'Near you'
+  /** The city the list is around; null for a one-off position or no city. */
+  const centreName = () => {
+    if (position()) return null
     const current = near()
-    const name =
+    return (
       (current.state === 'ready' ? current.page.place?.name : undefined) ??
-      savedName()
-    return name ? `Near ${name}` : 'Near you'
+      savedName() ??
+      null
+    )
+  }
+  const heading = () => {
+    const name = query()
+    if (name) return searchHeading(name, scope(), centreName())
+    const centre = centreName()
+    return centre ? `Near ${centre}` : 'Near you'
+  }
+
+  function submit(event: SubmitEvent) {
+    event.preventDefault()
+    const name = text().trim()
+    if (name.length >= MIN_SEARCH) setQuery(name)
+  }
+  function typeName(value: string) {
+    setText(value)
+    // Emptying the field (its own ×) goes back to everything near.
+    if (!value.trim()) setQuery(null)
+  }
+  function clearSearch() {
+    batch(() => {
+      setText('')
+      setQuery(null)
+    })
   }
   const shownArtists = () => {
     const items = artists()?.items ?? []
@@ -293,7 +367,61 @@ export function ConcertList(props: {
           </Show>
         </div>
 
-        <Show when={near().state !== 'no_place'}>
+        <form
+          role="search"
+          class="mt-4 flex flex-wrap items-center gap-2"
+          onSubmit={submit}
+        >
+          <TextField
+            value={text()}
+            onChange={typeName}
+            class="min-w-0 flex-1 sm:max-w-sm"
+          >
+            <TextFieldLabel class="sr-only">Search an artist</TextFieldLabel>
+            <TextFieldInput
+              type="search"
+              autocomplete="off"
+              spellcheck={false}
+              enterkeyhint="search"
+              placeholder="Search an artist"
+              maxlength={100}
+              class="rounded-full border-0 bg-surface px-4 text-sm"
+            />
+          </TextField>
+          <Button
+            type="submit"
+            variant="quiet"
+            size="sm"
+            disabled={text().trim().length < MIN_SEARCH}
+          >
+            Search
+          </Button>
+          <Show when={query()}>
+            <Button variant="ghost" size="sm" onClick={clearSearch}>
+              Clear
+            </Button>
+          </Show>
+        </form>
+
+        <Show when={query()}>
+          <Segmented
+            label="Where"
+            class="mt-3"
+            itemClass="px-4 py-1.5 text-sm whitespace-nowrap"
+            options={[
+              { value: 'near', label: `Near ${centreName() ?? 'you'}` },
+              { value: 'anywhere', label: 'Anywhere' },
+            ]}
+            value={scope()}
+            onChange={setScope}
+          />
+        </Show>
+
+        <Show
+          when={
+            near().state !== 'no_place' && !(query() && scope() === 'anywhere')
+          }
+        >
           <Segmented
             label="Distance"
             variant="chip"
@@ -378,10 +506,39 @@ export function ConcertList(props: {
               <Show
                 when={current().items.length > 0}
                 fallback={
-                  <Quiet>
-                    No concerts within {current().page.radiusKm} km yet.
-                    <Show when={radius() !== 100}> Try a wider distance.</Show>
-                  </Quiet>
+                  <Show
+                    when={query()}
+                    fallback={
+                      <Quiet>
+                        No concerts within {current().page.radiusKm} km yet.
+                        <Show when={radius() !== 100}>
+                          {' '}
+                          Try a wider distance.
+                        </Show>
+                      </Quiet>
+                    }
+                  >
+                    {(name) => (
+                      <div class="mt-3 flex flex-wrap items-center gap-3">
+                        <Quiet class="mt-0">
+                          {searchEmptyLine(
+                            name(),
+                            scope(),
+                            current().page.radiusKm,
+                          )}
+                        </Quiet>
+                        <Show when={scope() === 'near'}>
+                          <Button
+                            variant="quiet"
+                            size="sm"
+                            onClick={() => setScope('anywhere')}
+                          >
+                            Try Anywhere
+                          </Button>
+                        </Show>
+                      </div>
+                    )}
+                  </Show>
                 }
               >
                 <ul

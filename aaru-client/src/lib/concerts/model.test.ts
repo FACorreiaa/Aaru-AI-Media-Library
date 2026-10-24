@@ -11,6 +11,8 @@ import {
   placeQuery,
   roundCoordinate,
   roundPosition,
+  searchEmptyLine,
+  searchHeading,
   shownView,
 } from './model'
 import type { Concert } from './model'
@@ -155,5 +157,26 @@ describe('your artists', () => {
     expect(
       artistsEmptyLine({ ...found, matched: 1, items: [concert()] }),
     ).toBeNull()
+  })
+})
+
+describe('search by artist', () => {
+  it('heads the section with the artist and where it looks', () => {
+    expect(searchHeading('Radiohead', 'near', 'Lisbon')).toBe(
+      'Radiohead near Lisbon',
+    )
+    expect(searchHeading('Radiohead', 'near', null)).toBe('Radiohead near you')
+    expect(searchHeading('Radiohead', 'anywhere', 'Lisbon')).toBe(
+      'Radiohead anywhere',
+    )
+  })
+
+  it('says what was empty: the radius near, every date anywhere', () => {
+    expect(searchEmptyLine('Radiohead', 'near', 50)).toBe(
+      'No Radiohead concerts within 50 km.',
+    )
+    expect(searchEmptyLine('Radiohead', 'anywhere', undefined)).toBe(
+      'No upcoming Radiohead concerts listed.',
+    )
   })
 })

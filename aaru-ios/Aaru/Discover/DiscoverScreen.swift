@@ -74,6 +74,18 @@ struct DiscoverScreen: View {
                     SeasonBrowser(model: seasons, compact: compact) { listTarget = $0 }
                 case .concerts:
                     ConcertsView(model: concerts)
+                        .searchable(text: $concerts.searchText, prompt: "Search an artist")
+                        .searchScopes($concerts.scope) {
+                            Text(concerts.nearScopeLabel).tag(ConcertSearchScope.near)
+                            Text("Anywhere").tag(ConcertSearchScope.anywhere)
+                        }
+                        .onSubmit(of: .search) { concerts.submitSearch() }
+                        // Cancel, or the field's ×, goes back to everything near.
+                        .onChange(of: concerts.searchText) { _, text in
+                            if text.trimmingCharacters(in: .whitespaces).isEmpty {
+                                concerts.clearSearch()
+                            }
+                        }
                 }
             }
             .navigationTitle("Discover")

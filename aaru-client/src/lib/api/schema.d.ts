@@ -1701,6 +1701,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/concerts/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+     * @description POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+     */
+    post: operations['searchConcerts']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/concerts/artists': {
     parameters: {
       query?: never
@@ -3785,7 +3805,7 @@ export interface components {
       venue?: string
       city?: string
       country?: string
-      /** @description From the searched point. Absent for an artist's concerts. */
+      /** @description From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown. */
       distanceKm?: number
       /** @description Ticketmaster's event page. */
       url: string
@@ -3827,6 +3847,42 @@ export interface components {
     ConcertPage: {
       place?: components['schemas']['ConcertPlace']
       radiusKm: number
+      items: components['schemas']['Concert'][]
+      page: number
+      hasMore: boolean
+      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+      unavailable: boolean
+    }
+    /**
+     * @description `near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.
+     * @enum {string}
+     */
+    ConcertSearchScope: 'near' | 'anywhere'
+    ConcertSearchRequest: {
+      /** @description The artist's name, 2 to 100 characters. Not logged. */
+      q: string
+      scope: components['schemas']['ConcertSearchScope']
+      /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
+      latitude?: number
+      longitude?: number
+      /**
+       * @description Used by `near` only.
+       * @enum {integer}
+       */
+      radiusKm: 25 | 50 | 100
+      /**
+       * @description 1-based, at most 10.
+       * @default 1
+       */
+      page: number
+    }
+    ConcertSearchPage: {
+      /** @description The name as searched, trimmed. */
+      query: string
+      scope: components['schemas']['ConcertSearchScope']
+      place?: components['schemas']['ConcertPlace']
+      /** @description Present for `near`. */
+      radiusKm?: number
       items: components['schemas']['Concert'][]
       page: number
       hasMore: boolean
@@ -7309,6 +7365,31 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ConcertPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  searchConcerts: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConcertSearchRequest']
+      }
+    }
+    responses: {
+      /** @description The page. `unavailable` when concerts are off or the provider is down. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertSearchPage']
         }
       }
       default: components['responses']['Error']

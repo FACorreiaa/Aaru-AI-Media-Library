@@ -9,6 +9,8 @@ export type ConcertPage = components['schemas']['ConcertPage']
 export type ArtistConcerts = components['schemas']['ArtistConcerts']
 export type ConcertPlace = components['schemas']['ConcertPlace']
 export type ConcertPlaceSetting = components['schemas']['ConcertPlaceSetting']
+export type ConcertSearchPage = components['schemas']['ConcertSearchPage']
+export type SearchScope = components['schemas']['ConcertSearchScope']
 
 export const RADII = [25, 50, 100] as const
 export type Radius = (typeof RADII)[number]
@@ -151,4 +153,31 @@ export function artistsEmptyLine(found: ArtistConcerts): string | null {
   if (found.matched === 0)
     return 'No artists to look for yet. Albums you add bring their artists here.'
   return 'None of your artists are touring soon.'
+}
+
+/** The shortest artist name a search sends (MUS-010); the server refuses less. */
+export const MIN_SEARCH = 2
+
+/**
+ * The "Near" section's heading while an artist is searched: "Radiohead near Lisbon",
+ * "Radiohead near you" for a one-off position or no city, "Radiohead anywhere".
+ */
+export function searchHeading(
+  query: string,
+  scope: SearchScope,
+  placeName: string | null,
+): string {
+  if (scope === 'anywhere') return `${query} anywhere`
+  return `${query} near ${placeName ?? 'you'}`
+}
+
+/** The quiet line when a search by artist finds nothing. */
+export function searchEmptyLine(
+  query: string,
+  scope: SearchScope,
+  radiusKm: number | undefined,
+): string {
+  if (scope === 'anywhere' || radiusKm === undefined)
+    return `No upcoming ${query} concerts listed.`
+  return `No ${query} concerts within ${radiusKm} km.`
 }
