@@ -190,9 +190,6 @@ public enum BoardRules {
         let rest = !old.isEmpty && text.hasPrefix(old) ? String(text.dropFirst(old.count)) : text
         return rest.hasPrefix(new) ? rest : new + rest
     }
-        let rest = !from.isEmpty && text.hasPrefix(from) ? String(text.dropFirst(from.count)) : text
-        return rest.hasPrefix(to) ? rest : to + rest
-    }
 
     /// How many characters are left, shown only near the limit: nil until 200 or fewer remain.
     public static func remaining(_ text: String, limit: Int = 4000) -> Int? {
